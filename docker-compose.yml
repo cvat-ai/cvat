@@ -1,0 +1,51 @@
+version: "2.3"
+
+services:
+  cvat_db:
+    container_name: cvat_db
+    image: postgres:10.3-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_DB: cvat
+    volumes:
+      - cvat_db:/var/lib/postgresql/data
+
+  cvat_redis:
+    container_name: cvat_redis
+    image: redis:4.0.5-alpine
+    restart: always
+
+  cvat:
+    container_name: cvat
+    image: cvat
+    restart: always
+    depends_on:
+      - cvat_redis
+      - cvat_db
+    ports:
+      - "8080:8080"
+    build:
+      context: .
+      args:
+        http_proxy:
+        https_proxy:
+        no_proxy:
+        TF_ANNOTATION: "no"
+        USER: "django"
+        DJANGO_CONFIGURATION: "production"
+        WITH_TESTS: "no"
+    environment:
+      DJANGO_MODWSGI_EXTRA_ARGS: ""
+      DJANGO_LOG_SERVER_URL: ""
+    volumes:
+      - cvat_data:/home/django/data
+      - cvat_keys:/home/django/keys
+      - cvat_logs:/home/django/logs
+      - ./share:/home/django/share
+
+volumes:
+  cvat_db:
+  cvat_data:
+  cvat_keys:
+  cvat_logs:

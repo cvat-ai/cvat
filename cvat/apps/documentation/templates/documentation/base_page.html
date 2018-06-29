@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+{% load static compress %}
+
+<head>
+    <title>
+        {% block title %}
+        {% endblock %}
+    </title>
+    {% compress js file thirdparty %}
+    <script type="text/javascript" src="{% static 'documentation/js/3rdparty/showdown.js' %}"></script>
+    <script type="text/javascript" src="{% static 'documentation/js/3rdparty/showdown-toc.js' %}"></script>
+    {% endcompress %}
+</head>
+
+<body>
+    <xmp id=content style="display: none;">
+        {% autoescape off %}
+        {% block content %}
+        {% endblock %}
+        {% endautoescape %}
+    </xmp>
+    <script type="text/javascript">
+        var converter = new showdown.Converter({extensions: ['toc']});
+        converter.setFlavor('github');
+        var user_guide = document.getElementById("content").innerHTML;
+        document.body.innerHTML = converter.makeHtml(user_guide);
+    </script>
+</body>

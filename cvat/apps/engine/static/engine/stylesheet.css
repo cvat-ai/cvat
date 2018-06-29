@@ -1,0 +1,392 @@
+/* ----------------------- Classes ----------------------- */
+.playerButton {
+    fill: #09c;
+    stroke-width: 2px;
+    stroke: black;
+    margin-top: 1%;
+    margin-right: 15px;
+    float:left;
+    width: 40px;
+    height: 40px;
+}
+
+.playerButton:hover {
+    fill: rgba(0,0,0,0);
+}
+
+.playerButton:active {
+    fill: #017196;
+}
+
+.disabledPlayerButton {
+    fill:grey !important;
+    stroke: grey !important;
+}
+
+
+
+.close {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    width: 32px;
+    height: 32px;
+    opacity: 0.3;
+  }
+
+  .close:hover {
+    opacity: 1;
+  }
+
+  .close:before, .close:after {
+    position: absolute;
+    left: 15px;
+    content: ' ';
+    height: 22px;
+    width: 2px;
+    background-color: #333;
+  }
+
+  .close:before {
+    transform: rotate(45deg);
+  }
+
+  .close:after {
+    transform: rotate(-45deg);
+  }
+
+
+
+  .graphicButton {
+    width: 20px;
+    height: 20px;
+    border: none;
+    outline: none;
+    margin-right: 10px;
+}
+
+.lockButton {
+    background: url("icons/unlock.png") no-repeat;
+    background-size: 20px;
+}
+
+.locked {
+    background: url("icons/lock.png") no-repeat;
+    background-size: 20px;
+}
+
+.occludedButton {
+    background: url("icons/non-occluded.png") no-repeat;
+    background-size: 20px;
+}
+
+.occluded {
+    background: url("icons/occluded.png") no-repeat;
+    background-size: 20px;
+}
+
+.outsidedButton {
+    background: url("icons/non-outside.png") no-repeat;
+    background-size: 20px;
+}
+
+.outsided {
+    background: url("icons/outside.png") no-repeat;
+    background-size: 20px;
+}
+
+.keyFrameButton {
+    background: url("icons/non-keyframe.png") no-repeat;
+    background-size: 20px;
+}
+
+.keyFrame {
+    background: url("icons/keyframe.png") no-repeat;
+    background-size: 20px;
+}
+
+
+
+.uiElement {
+    width: 93%;
+    border-radius: 2px;
+    margin: 1% auto;
+    padding: 1%;
+    text-align: left;
+    position: relative;
+    border: 3px solid rgba(0,0,0,0);
+    opacity: 0.65;
+}
+
+.attribute {
+    margin: 1% 10%;
+}
+
+.uiRadio {
+    width: 60%;
+    margin-bottom: 5px;
+}
+
+.uiSelect {
+    font-size: 1em;
+}
+
+.left {
+    float: left;
+}
+
+.center {
+    text-align: center;
+}
+
+
+
+
+.shape {
+    stroke-location: inside;
+    fill-opacity: 0;
+    stroke-width: 2px;
+    position: relative;
+    shape-rendering: optimizespeed;
+    color-rendering: optimizeSpeed;
+    mix-blend-mode: hard-light;
+}
+
+.shapeText {
+    font-size: 1.2em;
+    fill: white;
+    text-shadow: 0px 0px 3px black;
+    cursor: default;
+}
+
+.highlightedShape {
+    fill-opacity: 0.2;
+    stroke-opacity: 1;
+}
+
+.occludedShape {
+    stroke-dasharray: 5;
+}
+
+.mergeHighlighted {
+    fill: blue;
+    fill-opacity: 0.5;
+}
+
+.highlightedUI {
+    border: 3px solid black;
+    opacity: 1;
+}
+
+.lockedShape {
+    mix-blend-mode: screen;
+}
+
+.lockedText {
+    fill-opacity: 0.5;
+}
+
+
+.menuButton {
+    width: 80%;
+    height: 40px;
+    margin-top: 2px;
+}
+
+
+.settingsBox {
+    width: 20px;
+    height: 20px;
+}
+
+
+/* ----------------------- IDs ----------------------- */
+#helpWindowContent, #settingsWindowContent {
+    width: 700px;
+    height: 400px;
+}
+
+#taskAnnotationMenu
+{
+    background-color: #B0C4DE;
+    padding: 8px 0;
+    height: auto;
+    width: 700px;
+    z-index: 100;
+    float: left;
+    position: absolute;
+    border-radius: 5px;
+    border: 1px solid black;
+    padding: 5px;
+}
+
+#taskAnnotationCenterPanel {
+    width: 82%;
+    height: 100%;
+    float: left;
+}
+
+#taskAnnotationRightPanel {
+    height: 100%;
+    width: 15%;
+    float: left;
+    margin: 0px 10px;
+}
+
+#uiContent, #trackManagement, #aamMenu {
+    border: 1px black solid;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    background-color: #B0C4DE;
+    text-align: center;
+}
+
+#labelSelect, #trackTypeSelect {
+    display: inline-block;
+    width: 40%;
+    margin-left: auto;
+    margin-top: 1%;
+}
+
+#trackManagement, #aamMenu {
+    padding-top: 1em;
+    height: 22%;
+    width: 100%;
+    margin: 10px 0px;
+}
+
+#aamMenu {
+    text-align: center;
+}
+
+#aamHelpContainer {
+    text-align: left;
+    margin-left: 5px;
+    overflow-y: scroll;
+}
+
+#uiContent {
+    height: 75%;
+    width: 100%;
+    overflow-y: scroll;
+}
+
+#player {
+    margin: auto;
+    width: 100%;
+    height: 100%;
+}
+
+#playerFrame {
+    width: 100%;
+    height: 85%;
+    border: 1px black solid;
+    border-radius: 5px;
+    background-color: #B0C4DE;
+    overflow: hidden;
+}
+
+#frameContent {
+    vector-effect: non-scaling-stroke;
+    position: relative;
+    background-repeat: no-repeat;
+    -moz-transform-origin: top left;
+    -webkit-transform-origin: top left;
+}
+
+#frameLoadingAnimation {
+    fill-opacity: 0;
+    stroke: #09c;
+    stroke-width: 3px;
+    stroke-dasharray: 50;
+    animation: dash 1s linear infinite;
+}
+
+#statTable {
+    margin: 0px auto;
+    border: 1px solid dimgrey;
+    border-radius: 6px;
+    text-align: left;
+    width: 100%;
+    text-align: center;
+}
+
+#playerPanel {
+    width: 100%;
+    height: 5%;
+}
+
+#playerSettings {
+    width: 50%;
+    height: 100%;
+}
+
+#playerStep {
+   width: 2em;
+}
+
+
+
+#filterInputString {
+    margin-right: 10px;
+    width: 300px;
+}
+
+
+#playerProgress {
+    -webkit-appearance: none;
+    margin-top: 1.1%;
+    background-color: rgba(0,0,0,0);
+}
+
+#playerProgress::-webkit-slider-runnable-track {
+    height: 70%;
+    cursor: pointer;
+    background: #09c;
+    border-radius: 3px;
+    border: 1px solid #010101;
+}
+
+#playerProgress:focus {
+    outline-color: transparent;
+    outline-style: none;
+}
+
+#playerProgress::-webkit-slider-thumb {
+    border: 1px solid #000000;
+    height: 36px;
+    width: 16px;
+    border-radius: 3px;
+    background: #ffffff;
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-top: -10px;
+}
+
+#playerProgress::-moz-range-track {
+    height: 90%;
+    cursor: pointer;
+    background: #09c;
+    border-radius: 3px;
+    border: 1px solid #010101;
+}
+
+#playerProgress::-moz-range-thumb {
+    border: 1px solid #000000;
+    height: 36px;
+    width: 16px;
+    border-radius: 3px;
+    background: #ffffff;
+    cursor: pointer;
+}
+
+#playerProgress::-moz-focus-outer { border: 0; }
+
+
+@keyframes dash {
+    0%   {stroke-dashoffset: 1; stroke: #09c;}
+    50%  {stroke-dashoffset: 100; stroke: #f44;}
+    100% {stroke-dashoffset: 300; stroke: #09c;}
+}
+
+

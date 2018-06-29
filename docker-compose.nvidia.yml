@@ -1,0 +1,13 @@
+version: "2.3"
+
+services:
+  cvat:
+    build:
+      context: .
+      args:
+        TF_ANNOTATION: "yes"
+    runtime: "nvidia"
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      NVIDIA_REQUIRE_CUDA: "cuda>=9.0"

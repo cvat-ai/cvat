@@ -1,0 +1,187 @@
+{% extends 'engine/base.html' %}
+{% load static %}
+{% load pagination_tags %}
+
+{% block head_title %}
+    CVAT Dashboard
+{% endblock %}
+
+{% block head_css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/stylesheet.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/jstree/themes/default/style.css' %}">
+{% endblock %}
+
+{% block head_js_3rdparty %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/jstree/jstree.js' %}"></script>
+    {% for js_file in js_3rdparty %}
+        <script type="text/javascript" src="{% static js_file %}" defer></script>
+    {% endfor %}
+{% endblock %}
+
+{% block head_js_cvat %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'dashboard/js/dashboard.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/listener.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/labelsInfo.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/annotationParser.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/trackModel.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/collectionModel.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/server.js' %}"></script>
+    <script>
+        window.maxUploadSize = {{ max_upload_size }};
+        window.maxUploadCount = {{ max_upload_count }};
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div id="content">
+        <center>
+            <table style="width: 65%;">
+                <tr>
+                    <td><button id="dashboardCreateTaskButton" class="regular h1"> Create New Task </button></td>
+                    <td>
+                        <div style="width: 300px; float: right;">
+                            <input type="text" id="dashboardSearchInput" class="regular h1" placeholder="Search.." name="search">
+                            <button id="dashboardSearchSubmit" class="regular h1"> &#x1F50D; </button>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </center>
+
+        {% autopaginate data %}
+        <div style="float: left; width: 100%">
+            {% for item in data %}
+                {% include "dashboard/task.html" %}
+            {% endfor %}
+        </div>
+        <center>{% paginate %}</center>
+    </div>
+
+    <div id="dashboardCreateModal" class="modal hidden">
+        <form id="dashboardCreateContent" class="modal-content" autocomplete="on" onsubmit="return false">
+            <center>
+                <label class="semiBold h1"> Task Configuration </label>
+            </center>
+
+            <table style="width: 100%; text-align: left;">
+                <tr>
+                    <td style="width: 25%"> <label class="regular h2"> Name: </label> </td>
+                    <td> <input type="text" id="dashboardNameInput" class="regular" style="width: 90%"/> </td>
+                </tr>
+                <tr>
+                    <td> <label class="regular h2"> Labels: </label> </td>
+                    <td> <input type="text" id="dashboardLabelsInput" class="regular" style="width: 90%" title='
+Example:
+car @select=color:blue,red,black ~checkbox=parked:true
+@text=plate:"" @select=model:volvo,mazda,bmw
+~radio=quality:good,bad
+
+Specification:
+<prefix>checkbox=id:true/false
+<prefix>radio=id:name1,name2,...
+<prefix>number=id:min,max,step
+<prefix>text=id:"default value"
+<prefix>select=id:value1,value2,...
+
+<prefix> can be @ for unique properties and ~ for properties
+which can change its value during lifetime of the object.
+Default value for all elements is the first value after ":".
+
+For "select" and "radio" types the special value is available: "__undefined__".
+Specify the value FIRST if the attribute should be annotated explicitly.
+Example: @select=race:__undefined__,skip,asian,black,caucasian,other'/>
+                </td>
+                </tr>
+                <tr>
+                    <td> <label class="regular h2"> Bug Tracker: </label> </td>
+                    <td> <input type="text" id="dashboardBugTrackerInput" class="regular" style="width: 90%", placeholder="Please specify full URL"/> </td>
+                </tr>
+                <tr>
+                    <td> <label class="regular h2"> Source: </label> </td>
+                    <td>
+                        <input id="dashboardLocalSource" type="radio" name="sourceType" value="local" checked=true/> <label class="regular h2" for="localSource"> Local </label>
+                        <br> <input id="dashboardShareSource" type="radio" name="sourceType" value="share"/> <label class="regular h2" for="shareSource"> Share </label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label class="regular h2"> Flip images </label>
+                    </td>
+                    <td>
+                        <input type="checkbox" id="dashboardFlipImages"/>
+                    </td>
+                </tr>
+                <tr>
+                        <td>
+                            <label class="regular h2"> Overlap Size </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardOverlap" class="regular" max="50000" min="0" value="0" disabled=true/>
+                            <input type="checkbox" id="dashboardCustomOverlap" title="Custom overlap size"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Segment Size </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardSegmentSize" class="regular" max="50000" min="100" value="5000" disabled=true/>
+                            <input type="checkbox" id="dashboardCustomSegment" title="Custom segment size"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Image Quality </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardImageQuality" class="regular" style="width: 4.5em;" max="95" min="1" value="50" disabled=true/>
+                            <input type="checkbox" id="dashboardCustomQuality" title="Custom image quality"/>
+                        </td>
+                    </tr>
+            </table>
+
+
+            <div style="text-align: left;">
+                <div>
+                    <button id="dashboardSelectFiles" class="regular h2"> Select Files </button>
+                    <label id="dashboardFilesLabel" class="regular h2" style="margin-left: 10px"> No Files </label>
+                    <input id="dashboardLocalFileSelector" type="file" style="display: none" multiple/>
+                </div>
+            </div>
+            <div style="width: 100%; height: 14%; padding-top: 10px;">
+                <div style="float: left; height: 50px;  overflow: auto; width: 63%; height: auto;">
+                    <label id="dashboardCreateTaskMessage" class="regular h2 selectable" style="float:left;">  </label>
+                </div>
+                <div style="float: right; width: 35%; height: 50px;">
+                    <button id="dashboardCancelTask" class="regular h2"> Cancel </button>
+                    <button id="dashboardSubmitTask" class="regular h2"> Submit </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div id="dashboardShareBrowseModal" class="modal hidden">
+        <div style="width: 600px; height: 400px;" class="modal-content noSelect">
+            <center> <label class="regular h1"> //icv-cifs/icv_projects/cvat/data </label> </center>
+            <div id="dashboardShareBrowser"> </div>
+            <center>
+                <button id="dashboardCancelBrowseServer" class="regular h2" style="margin: 0px 10px"> Cancel </button>
+                <button id="dashboardSubmitBrowseServer" class="regular h2" style="margin: 0px 10px"> Submit </button>
+            </center>
+        </div>
+    </div>
+
+    <div id="dashboardUpdateModal" class="modal hidden">
+        <div id="dashboardUpdateContent" class="modal-content">
+            <input id="dashboardOldLabels" type="text" readonly=true placeholder="Please Wait.." class="regular h2">
+            <input id="dashboardNewLabels" type="text" placeholder="New Labels" class="regular h2">
+            <center>
+                <button id="dashboardCancelUpdate" class="regular h2"> Cancel </button>
+                <button id="dashboardSubmitUpdate" class="regular h2"> Update </button>
+            </center>
+        </div>
+    </div>
+{% endblock %}

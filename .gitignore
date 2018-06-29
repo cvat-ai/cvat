@@ -1,0 +1,15 @@
+# Project Specific
+/data/
+/share/
+/static/
+/db.sqlite3
+/.env
+/keys
+/logs
+
+# Ignore temporary files
+docker-compose.override.yml
+/.vscode
+__pycache__
+*.pyc
+._*
