@@ -319,6 +319,7 @@ def _parse_db_labels(db_labels):
 
 @transaction.atomic
 def _create_thread(tid, params):
+    # TODO: Improve a function logic. Need filter paths from a share storage before their copy to the server
     db_task = db_task = models.Task.objects.select_for_update().get(pk=tid)
 
     upload_dir = db_task.get_upload_dirname()
@@ -361,7 +362,9 @@ def _create_thread(tid, params):
         compress_quality = int(params.get('compress_quality', 50))
 
         if mode == 'interpolation':
-            extractor = _FrameExtractor(params['TARGET_PATHS'][0], compress_quality, flip_flag)
+            # Last element in params['TARGET_PATHS'] must contain video due to a sort by path len above
+            # Early elements (if exist) contain parent dirs for video
+            extractor = _FrameExtractor(params['TARGET_PATHS'][-1], compress_quality, flip_flag)
             for frame, image_orig_path in enumerate(extractor):
                 image_dest_path = _get_frame_path(frame, output_dir)
                 db_task.size += 1

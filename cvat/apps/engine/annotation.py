@@ -742,6 +742,13 @@ class _XmlAnnotationWriter(_AnnotationWriter):
                 self._add_meta(v)
                 self._indent()
                 self.xmlgen.endElement(k)
+            elif type(v) == list:
+                self._indent()
+                self.xmlgen.startElement(k, {})
+                for tup in v:
+                    self._add_meta(OrderedDict([tup]))
+                self._indent()
+                self.xmlgen.endElement(k)
             else:
                 self._indent()
                 self.xmlgen.startElement(k, {})
@@ -972,23 +979,23 @@ class _AnnotationForTask(_Annotation):
                 ("created", str(timezone.localtime(db_task.created_date))),
                 ("updated", str(timezone.localtime(db_task.updated_date))),
 
-                ("labels", OrderedDict(
-                    [("label", OrderedDict([
+                ("labels", [
+                    ("label", OrderedDict([
                         ("name", db_label.name),
-                        ("attributes", OrderedDict([("attribute", db_attr.text)
-                            for db_attr in db_label.attributespec_set.all()]))
-                    ])) for db_label in db_labels]
-                )),
+                        ("attributes", [("attribute", db_attr.text)
+                            for db_attr in db_label.attributespec_set.all()])
+                    ])) for db_label in db_labels
+                ]),
 
-                ("segments", OrderedDict(
-                    [("segment", OrderedDict([
+                ("segments", [
+                    ("segment", OrderedDict([
                         ("id", str(db_segment.id)),
                         ("start", str(db_segment.start_frame)),
                         ("stop", str(db_segment.stop_frame)),
                         ("url", "{0}://{1}/?id={2}".format(
                             scheme, host, db_segment.job_set.all()[0].id))
-                    ])) for db_segment in db_segments]
-                )),
+                    ])) for db_segment in db_segments
+                ]),
 
                 ("owner", OrderedDict([
                     ("username", db_task.owner.username),
