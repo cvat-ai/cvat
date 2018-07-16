@@ -5,7 +5,7 @@ from PIL import Image
 from pascal_voc_writer import Writer
 
 
-def read_cvat_xml(xml_file, img_dir, annotation_dir):
+def process_cvat_xml(xml_file, img_dir, annotation_dir):
     os.makedirs(annotation_dir)
     cvat_xml = xml.etree.ElementTree.parse(xml_file)
 
@@ -39,4 +39,4 @@ parser.add_argument('annotation_dir')
 
 if __name__ == '__main__':
     args = vars(parser.parse_args())
-    read_cvat_xml(args['cvat_xml'], args['img_dir'], args['annotation_dir'])
+    process_cvat_xml(args['cvat_xml'], args['img_dir'], args['annotation_dir'])
