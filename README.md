@@ -1,4 +1,5 @@
 # Fork for integrating keypoint annotation and implementing separate user s annotations
+Use `git clone git@github.com:aaelsay2/cvat.git`
 
 # Computer Vision Annotation Tool (CVAT)
 
