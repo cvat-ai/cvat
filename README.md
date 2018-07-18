@@ -1,5 +1,11 @@
 # Fork for integrating keypoint annotation and implementing separate user s annotations
 Use `git clone git@github.com:aaelsay2/cvat.git`
+Few Notes:
+to give user permissions to run docker use
+`sudo usermod -a -G docker $USER`
+If you are using puycharm follow this instructions for enabling docker in the development:
+https://www.jetbrains.com/help/pycharm/docker.html
+
 
 ###To use with pycharm
 - File>Settings>Project Interpreter>(click the gear icon)>Add
