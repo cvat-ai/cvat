@@ -10,6 +10,8 @@ services:
       POSTGRES_DB: cvat
     volumes:
       - cvat_db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
   cvat_redis:
     container_name: cvat_redis
@@ -38,6 +40,8 @@ services:
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
       DJANGO_LOG_SERVER_URL: ""
+      ALLOWED_HOSTS: http://visualconstruction.cee.illinois.edu/
+
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
