@@ -1,3 +1,27 @@
+# Fork for integrating keypoint annotation and implementing separate user s annotations
+Use `git clone git@github.com:aaelsay2/cvat.git`
+Few Notes:
+to give user permissions to run docker use
+`sudo usermod -a -G docker $USER`
+If you are using puycharm follow this instructions for enabling docker in the development:
+https://www.jetbrains.com/help/pycharm/docker.html
+
+
+###To use with pycharm
+- Setup the interpreter
+    - File>Settings>Project Interpreter>(click the gear icon)>Add
+    - Choose Docker Compose, select docker as the server (you might need to install docker first)
+ `sudo apt install docker docker-compose && sudo usermod -a -G docker $USER` and then logout from you machine and log in again
+    - point the configuration file to docker-compose.yaml and interpretter path to python3
+- Setup the server configuration
+    - Run>Edit Configurations>Add (top right plus icon)> Docker-compose> (change name to CVAT and point to docker-compose.yaml for configuration)
+    - Run>Run 'CVAT'
+    - go to [localhost:8080](http://localhost:8080)
+- To connect to DB
+    - Select View>Tool Windows>Database
+    - Add(plus icon top left ot the database window)>Data Source>PosgreSQL
+    - Type root in the User field and then Test Connection
+
 # Computer Vision Annotation Tool (CVAT)
 
 CVAT is completely re-designed and re-implemented version of [Video Annotation Tool from Irvine, California](http://carlvondrick.com/vatic/) tool. It is free, online, interactive video and image annotation tool for computer vision. It is being used by our team to annotate million of objects with different properties. Many UI and UX decisions are based on feedbacks from professional data annotation team.

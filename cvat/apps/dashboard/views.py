@@ -51,9 +51,9 @@ def JsTreeView(request):
         json_dumps_params=dict(ensure_ascii=False))
 
 
-def MainTaskInfo(task, dst_dict):
+def MainTaskInfo(task, segments, dst_dict):
     dst_dict["status"] = task.status
-    dst_dict["num_of_segments"] = task.segment_set.count()
+    dst_dict["num_of_segments"] = len(segments)
     dst_dict["mode"] = task.mode.capitalize()
     dst_dict["name"] = task.name
     dst_dict["task_id"] = task.id
@@ -65,12 +65,12 @@ def MainTaskInfo(task, dst_dict):
     dst_dict["id"] = task.id
     dst_dict["segments"] = []
 
-def DetailTaskInfo(request, task, dst_dict):
+def DetailTaskInfo(request, task, segments, dst_dict):
     scheme = request.scheme
     host = request.get_host()
     dst_dict['segments'] = []
 
-    for segment in task.segment_set.all():
+    for segment in segments:
         for job in segment.job_set.all():
             segment_url = "{0}://{1}/?id={2}".format(scheme, host, job.id)
             dst_dict["segments"].append({
@@ -99,10 +99,12 @@ def DashboardView(request):
 
     data = []
     for task in tasks_query_set:
-        task_info = {}
-        MainTaskInfo(task, task_info)
-        DetailTaskInfo(request, task, task_info)
-        data.append(task_info)
+        segments = task.get_user_segments(request.user)
+        if len(segments) >0:
+            task_info = {}
+            MainTaskInfo(task, segments, task_info)
+            DetailTaskInfo(request, task, segments, task_info)
+            data.append(task_info)
 
     return render(request, 'dashboard/dashboard.html', {
         'data': data,
