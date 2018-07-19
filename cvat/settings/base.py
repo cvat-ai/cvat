@@ -160,7 +160,7 @@ CACHEOPS_DEGRADE_ON_FAILURE = True
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Europe/Moscow'
+TIME_ZONE = 'America/Chicago'
 
 USE_I18N = True
 

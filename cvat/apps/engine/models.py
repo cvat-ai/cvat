@@ -52,6 +52,13 @@ class Task(models.Model):
     def get_task_dirname(self):
         return self.path
 
+    def get_user_segments(self, user):
+        segments = []
+        for segment in self.segment_set.all():
+            if segment.check_user_access(user):
+                segments.append(segment)
+        return segments
+
     def __str__(self):
         return self.name
 
@@ -60,10 +67,36 @@ class Segment(models.Model):
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
 
+    def get_task_name(self):
+        return self.task.name
+    get_task_name.short_description = 'Task'
+
+    def get_annotator(self):
+        return self.job_set.first().annotator
+
+    def check_user_access(self, user):
+        if user.is_superuser:
+            return True
+        segment_user = self.get_annotator()
+        return segment_user.get_username() == user.get_username()
+
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     annotator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+
+    def get_task_name(self):
+        return self.segment.get_task_name()
+    get_task_name.short_description = 'Task'
+    get_task_name.admin_order_field = 'segment__task__name'
+
+    def get_id(self):
+        return str(self.id)
+    get_id.short_description = 'Job ID'
+    get_id.admin_order_field = 'id'
+
     # TODO: add sub-issue number for the task
+    def __str__(self):
+        return self.get_task_name() + ':' + self.get_id()
 
 class Label(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)

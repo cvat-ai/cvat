@@ -35,7 +35,7 @@ services:
         no_proxy:
         TF_ANNOTATION: "no"
         USER: "django"
-        DJANGO_CONFIGURATION: "production"
+        DJANGO_CONFIGURATION: "staging"
         WITH_TESTS: "no"
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
