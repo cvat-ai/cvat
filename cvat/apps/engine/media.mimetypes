@@ -196,3 +196,27 @@ image/x-kde-raw	mos
 image/x-dds	dds
 image/x-quicktime	qif
 
+# possible archive mimetypes (limited set)
+application/gzip gz
+application/rar rar
+application/x-7z-compressed 7z
+application/x-bzip bz bz2
+application/x-bzip-compressed-tar tar.bz tar.bz2 tb2 tbz tbz2
+application/x-compress z
+application/x-compressed-tar tar.gz tgz
+application/x-cpio				cpio
+application/x-gtar-compressed tgz taz
+application/x-lha lzh
+application/x-lhz lhz
+application/x-lrzip-compressed-tar tar.lrz tlrz
+application/x-lz4 lz4
+application/x-lzip lz
+application/x-lzip-compressed-tar tar.lz
+application/x-lzma lzma
+application/x-lzma-compressed-tar tar.lzma tlz
+application/x-lzop lzo
+application/x-tar gtar tar
+application/x-tarz tar.z
+application/x-tzo tar.lzo
+application/x-xz-compressed-tar txz
+application/zip zip

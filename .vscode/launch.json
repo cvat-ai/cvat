@@ -1,0 +1,97 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "CVAT Server",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "pythonPath": "${config:python.pythonPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "runserver",
+                "--noreload",
+                "--nothreading",
+                "--insecure",
+                "127.0.0.1:7000"
+            ],
+            "debugOptions": [
+                "RedirectOutput",
+                "DjangoDebugging"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "envFile": "${workspaceFolder}/.env",
+        },
+        {
+            "name": "CVAT Client",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:7000/",
+            "disableNetworkCache":true,
+            "trace": true,
+            "showAsyncStacks": true,
+            "pathMapping":{
+                "/static/engine/": "${workspaceFolder}/cvat/apps/engine/static/engine/",
+                "/static/dashboard/": "${workspaceFolder}/cvat/apps/dashboard/static/dashboard/",
+            }
+        },
+        {
+            "name": "CVAT RQ - default",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "pythonPath": "${config:python.pythonPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqworker",
+                "default",
+                "--worker-class",
+                "cvat.simpleworker.SimpleWorker",
+            ],
+            "debugOptions": [
+                "RedirectOutput",
+                "DjangoDebugging"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "envFile": "${workspaceFolder}/.env",
+
+        },
+        {
+            "name": "CVAT RQ - low",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "pythonPath": "${config:python.pythonPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqworker",
+                "low",
+                "--worker-class",
+                "cvat.simpleworker.SimpleWorker",
+            ],
+            "debugOptions": [
+                "RedirectOutput",
+                "DjangoDebugging"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "envFile": "${workspaceFolder}/.env",
+        },
+    ],
+    "compounds": [
+        {
+            "name": "CVAT Debugging",
+            "configurations": [
+                "CVAT Client",
+                "CVAT Server",
+                "CVAT RQ - default",
+                "CVAT RQ - low",
+            ]
+        }
+    ]
+}

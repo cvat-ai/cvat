@@ -298,6 +298,10 @@ def _parse_labels(labels):
     last_label = ""
     for token in shlex.split(labels):
         if token[0] != "~" and token[0] != "@":
+            if token in parsed_labels:
+                raise ValueError("labels string is not corect. " + 
+                    "`{}` label is specified at least twice.".format(token))
+
             parsed_labels[token] = {}
             last_label = token
         else:
@@ -306,7 +310,29 @@ def _parse_labels(labels):
             atype = match.group(2)
             aname = match.group(3)
             values = list(csv.reader(StringIO(match.group(4)), quotechar="'"))[0]
-            parsed_labels[last_label][aname] = {'prefix':prefix, 'type':atype, 'values':values}
+            attr = {'prefix':prefix, 'name':aname, 'type':atype, 'values':values, 'text':token}
+
+            if not attr['type'] in ['checkbox', 'radio', 'number', 'text', 'select']:
+                raise ValueError("labels string is not corect. " +
+                    "`{}` attribute has incorrect type {}.".format(
+                    attr['name'], attr['type']))
+
+            if attr['name'] in parsed_labels[last_label]:
+                raise ValueError("labels string is not corect. " + 
+                    "`{}` attribute is specified at least twice.".format(attr['name']))
+
+            if attr['type'] == 'checkbox': # <prefix>checkbox=name:true/false
+                if not (len(values) == 1 and values[0] in ['true', 'false']):
+                    raise ValueError("labels string is not corect. " +
+                        "`{}` attribute has incorrect value.".format(attr['name']))
+            elif attr['type'] == 'number': # <prefix>number=name:min,max,step
+                if not (len(values) == 3 and values[0].isdigit() and \
+                    values[1].isdigit() and values[2].isdigit() and \
+                    int(values[0]) < int(values[1])):
+                    raise ValueError("labels string is not corect. " +
+                        "`{}` attribute has incorrect format.".format(attr['name']))
+
+            parsed_labels[last_label][attr['name']] = attr
 
     return parsed_labels
 
@@ -437,22 +463,20 @@ def _create_thread(tid, params):
             db_job.segment = db_segment
             db_job.save()
 
-        labels = params['labels']
-        global_logger.info("labels with attributes for task #{} is {}".format(db_task.id, labels))
-        db_label = None
-        for token in shlex.split(labels):
-            if token[0] != "~" and token[0] != "@":
-                db_label = models.Label()
-                db_label.task = db_task
-                db_label.name = token
-                db_label.save()
-            elif db_label != None:
+        global_logger.info("labels with attributes for task #{} is {}".format(
+            db_task.id, params['labels']))
+        parsed_labels = _parse_labels(params['labels'])
+        for label in parsed_labels:
+            db_label = models.Label()
+            db_label.task = db_task
+            db_label.name = label
+            db_label.save()
+
+            for attr in parsed_labels[label]:
                 db_attrspec = models.AttributeSpec()
                 db_attrspec.label = db_label
-                db_attrspec.text = token
+                db_attrspec.text = parsed_labels[label][attr]['text']
                 db_attrspec.save()
-            else:
-                raise ValueError("Invalid labels format {}".format(labels))
 
     db_task.mode = mode
     db_task.save()

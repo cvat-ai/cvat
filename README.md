@@ -82,8 +82,7 @@ Type your login/password for the superuser [on the login page](http://localhost:
 
 ### Stop all containers
 
-The command below will stop and remove containers, networks, volumes, and images
-created by `up`.
+The command below will stop and remove containers and networks created by `up`. See documentation for [docker-compose down](https://docs.docker.com/compose/reference/down/) for more details.
 
 ```bash
 docker-compose down
