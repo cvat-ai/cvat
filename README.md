@@ -23,6 +23,8 @@ Code released under the [MIT License](https://opensource.org/licenses/MIT).
 
 These instructions below should work for Ubuntu 16.04. Probably it will work on other OSes as well with minor modifications.
 
+For Windows: **Before** cloning the repository use `git config --global core.autocrlf false` to enable Linux style line ending. This is necessary for the server to work. Otherwise the error `/usr/bin/env: ‘bash\r’: No such file or directory`  will be shown. After building the image the setting can be set to `true` again.
+
 ### Install [Docker CE](https://www.docker.com/community-edition) or [Docker EE](https://www.docker.com/enterprise-edition) from official site
 
 Please read official manual [here](https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/).
