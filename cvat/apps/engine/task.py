@@ -413,6 +413,7 @@ def _create_thread(tid, params):
             for name in filenames:
                 compressed_name = os.path.splitext(name)[0] + '.jpg'
                 image = Image.open(name)
+                image = image.convert('RGB')
                 image.save(compressed_name, quality=compress_quality, optimize=True)
                 compressed_names.append(compressed_name)
                 if compressed_name != name:
