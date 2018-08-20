@@ -18,5 +18,6 @@
 # Contributors
 
 - **[Victor Salimonov](https://github.com/VikTorSalimonov)**
+- **[Sebastián Yonekura](https://github.com/syonekura)**
 
   * Documentation, screencasts
