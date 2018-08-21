@@ -1,8 +1,25 @@
+"""
+Given a CVAT XML and a directory with the image dataset, this script reads the
+CVAT XML and writes the annotations in PASCAL VOC format into a given
+directory.
+
+This implementation only supports bounding boxes in CVAT annotation format, and
+warns if it encounter any tracks or annotations that are not bounding boxes,
+ignoring them in both cases.
+
+To use the script run:
+
+python convert_to_voc.py cvat.xml path_to_image_directory output_directory
+"""
 import os
 import argparse
 import xml.etree.ElementTree
 from PIL import Image
 from pascal_voc_writer import Writer
+import logging
+
+logger = logging.getLogger()
+KNOWN_TAGS = {'box', 'image', 'attribute'}
 
 
 def process_cvat_xml(xml_file, img_dir, annotation_dir):
@@ -18,6 +35,12 @@ def process_cvat_xml(xml_file, img_dir, annotation_dir):
     os.makedirs(annotation_dir)
     cvat_xml = xml.etree.ElementTree.parse(xml_file)
 
+    tracks = [(x.get('id'), x.get('label'))
+              for x in cvat_xml.findall('track')]
+    if tracks:
+        logger.warn('Cannot parse interpolation tracks, ignoring {} tracks'
+                    .format(len(tracks)))
+
     for img_tag in cvat_xml.findall('image'):
         filename = img_tag.get('name')
 
@@ -26,6 +49,11 @@ def process_cvat_xml(xml_file, img_dir, annotation_dir):
             width, height = img.size
 
         writer = Writer(filepath, width, height)
+
+        unknown_tags = {x.tag for x in img_tag.iter()}.difference(KNOWN_TAGS)
+        if unknown_tags:
+            logger.warn('Ignoring tags for image {}: {}'
+                        .format(filepath, unknown_tags))
 
         for box in img_tag.findall('box'):
             label = box.get('label')
