@@ -1,0 +1,1 @@
+pascal-voc-writer==0.1.4
