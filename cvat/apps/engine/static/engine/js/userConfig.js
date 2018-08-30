@@ -1,4 +1,10 @@
-/* exported userConfig */
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/* exported Config */
 "use strict";
 
 
@@ -9,49 +15,73 @@ class Config {
             switch_lock_property: {
                 value: "l",
                 view_value: "L",
-                description: "switch lock property for highlighted track"
+                description: "switch lock property for active shape"
             },
 
             switch_all_lock_property: {
-                value: "l t",
-                view_value: "L + T",
-                description: "switch lock property for all current tracks"
+                value: "t l",
+                view_value: "T + L",
+                description: "switch lock property for all shapes on current frame"
             },
 
             switch_occluded_property: {
-                value: "q,-",
-                view_value: "Q or Num-",
-                description: "switch occluded property for highlighted track"
+                value: "q,/".split(','),
+                view_value: "Q or Num Devision",
+                description: "switch occluded property for active shape"
             },
 
             switch_draw_mode: {
                 value: "n",
                 view_value: "N",
-                description: "open/close draw mode"
+                description: "start draw / stop draw"
+            },
+
+            cancel_draw_mode: {
+                value: "alt+n",
+                view_value: "Alt + N",
+                description: "close draw mode without create"
             },
 
             switch_merge_mode: {
                 value: "m",
                 view_value: "M",
-                description: "open/apply merge mode"
+                description: "start merge / apply changes"
             },
 
             cancel_merge_mode: {
-                value: "ctrl+m",
-                view_value: "Ctrl + M",
+                value: "alt+m",
+                view_value: "Alt + M",
                 description: "close merge mode without apply the merge"
             },
 
-            change_default_label: {
-                value: "ctrl+1,ctrl+2,ctrl+3,ctrl+4,ctrl+5,ctrl+6,ctrl+7,ctrl+8,ctrl+9",
-                view_value: "Ctrl + (1,2,3,4,5,6,7,8,9)",
-                description: "change default label when draw new object"
+            switch_group_mode: {
+                value: "g",
+                view_value: "G",
+                description: "start group / apply changes"
             },
 
-            change_track_label: {
-                value: "shift+1,shift+2,shift+3,shift+4,shift+5,shift+6,shift+7,shift+8,shift+9",
+            cancel_group_mode: {
+                value: "alt+g",
+                view_value: "Alt + G",
+                description: "close group mode without changes"
+            },
+
+            reset_group: {
+                value: "shift+g",
+                view_value: "Shift + G",
+                description: "reset group for selected shapes"
+            },
+
+            change_shape_label: {
+                value: "ctrl+1,ctrl+2,ctrl+3,ctrl+4,ctrl+5,ctrl+6,ctrl+7,ctrl+8,ctrl+9".split(','),
+                view_value: "Ctrl + (1,2,3,4,5,6,7,8,9)",
+                description: "change shape label for existing object"
+            },
+
+            change_default_label: {
+                value: "shift+1,shift+2,shift+3,shift+4,shift+5,shift+6,shift+7,shift+8,shift+9".split(','),
                 view_value: "Shift + (1,2,3,4,5,6,7,8,9)",
-                description: "change label for active track"
+                description: "change label default label"
             },
 
             change_shape_color: {
@@ -61,49 +91,43 @@ class Config {
             },
 
             change_player_brightness: {
-                value: "shift+b,alt+b",
-                view_value: "Shift+B / Ctrl+B",
+                value: "shift+b,alt+b".split(','),
+                view_value: "Shift+B / Alt+B",
                 description: "increase/decrease brightness of an image"
             },
 
             change_player_contrast: {
-                value: "shift+c,alt+c",
-                view_value: "Shift+C / Ctrl+C",
+                value: "shift+c,alt+c".split(','),
+                view_value: "Shift+C / Alt+C",
                 description: "increase/decrease contrast of an image"
             },
 
             change_player_saturation: {
-                value: "shift+s,alt+s",
-                view_value: "Shift+S / Ctrl+S",
+                value: "shift+s,alt+s".split(','),
+                view_value: "Shift+S / Alt+S",
                 description: "increase/decrease saturation of an image"
             },
 
-            hide_shapes: {
+            switch_hide_mode: {
                 value: "h",
                 view_value: "H",
-                description: "hide shapes on the frame"
+                description: "switch hide mode for active shape"
             },
 
-            hide_labels: {
-                value: "j",
-                view_value: "J",
-                description: "hide labels on the frame"
+            switch_all_hide_mode: {
+                value: "t h",
+                view_value: "T + H",
+                description: "switch hide mode for all shapes"
             },
 
-            hide_filtered_tracks: {
-                value: "k",
-                view_value: "K",
-                description: "hide filtered tracks on the frame"
-            },
-
-            delete_track: {
-                value: "del,shift+del",
+            delete_shape: {
+                value: "del,shift+del".split(','),
                 view_value: "Del, Shift + Del",
-                description: "delete highlighted track (use shift for force deleting)"
+                description: "delete active shape (use shift for force deleting)"
             },
 
             focus_to_frame: {
-                value: '`,~',
+                value: '`,~'.split(','),
                 view_value: '~ / `',
                 description: "focus to 'go to frame' element"
             },
@@ -183,19 +207,19 @@ class Config {
             copy_shape: {
                 value: "ctrl+c",
                 view_value: "Ctrl + C",
-                description: "copy highlighted shape to buffer"
+                description: "copy active shape to buffer"
             },
 
-            paste_shape: {
+            propagate_shape: {
+                value: "ctrl+b",
+                view_value: "Ctrl + B",
+                description: "propagate active shape"
+            },
+
+            switch_paste: {
                 value: "ctrl+v",
                 view_value: "Ctrl + V",
-                description: "paste shape from buffer"
-            },
-
-            cancel_pasting: {
-                value: "esc",
-                view_value: "Esc",
-                description: "close paste mode without new track inserting"
+                description: "swich paste mode"
             },
 
             switch_aam_mode: {
@@ -216,25 +240,62 @@ class Config {
                 description: "move to previous attribute in attribute annotation mode"
             },
 
-            aam_next_track: {
+            aam_next_shape: {
                 value: "tab",
                 view_value: "Tab",
-                description: "move to next track in attribute annotation mode"
+                description: "move to next shape in attribute annotation mode"
             },
 
-            aam_prev_track: {
+            aam_prev_shape: {
                 value: "shift+tab",
                 view_value: "Shift + Tab",
-                description: "move to previous track in attribute annotation mode"
+                description: "move to previous shape in attribute annotation mode"
             },
 
             select_i_attribute: {
-                value: "1,2,3,4,5,6,7,8,9,0",
+                value: "1,2,3,4,5,6,7,8,9,0".split(','),
                 view_value: "1,2,3,4,5,6,7,8,9,0",
                 description: "setup corresponding attribute value in attribute annotation mode"
             },
+
+            change_grid_opacity: {
+                value: ['alt+g+=', 'alt+g+-'],
+                view_value: "Alt + G + '+', Alt + G + '-'",
+                description: "increase/decrease grid opacity"
+            },
+
+            change_grid_color: {
+                value: "alt+g+enter",
+                view_value: "Alt + G + Enter",
+                description: "change grid color"
+            },
+
+            undo: {
+                value: "ctrl+z",
+                view_value: "Ctrl + Z",
+                description: "undo"
+            },
+
+            redo: {
+                value: ['ctrl+shift+z', 'ctrl+y'],
+                view_value: "Ctrl + Shift + Z / Ctrl + Y",
+                description: "redo"
+            },
         };
 
+        if (window.cvat && window.cvat.job && window.cvat.job.z_order) {
+            this._shortkeys['inc_z'] = {
+                value: '+,='.split(','),
+                view_value: '+',
+                description: 'increase z order for active shape',
+            };
+
+            this._shortkeys['dec_z'] = {
+                value: '-,_'.split(','),
+                view_value: '-',
+                description: 'decrease z order for active shape',
+            };
+        }
 
         this._settings = {
             player_step: {
@@ -283,6 +344,3 @@ class Config {
         return JSON.parse(JSON.stringify(this._settings));
     }
 }
-
-
-let userConfig = new Config();

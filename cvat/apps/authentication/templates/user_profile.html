@@ -1,3 +1,8 @@
+<!--
+    Copyright (C) 2018 Intel Corporation
+
+    SPDX-License-Identifier: MIT
+-->
 <div class='userProfile'>
   {% if user.is_authenticated %}
     {% if user.ldap_user and 'thumbnailPhoto' in user.ldap_user.attrs %}

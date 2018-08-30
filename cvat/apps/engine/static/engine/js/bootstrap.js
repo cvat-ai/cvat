@@ -1,15 +1,14 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 "use strict";
 
 String.prototype.normalize = function() {
     let target = this;
     target = target.charAt(0).toUpperCase() + target.substr(1);
-    target = target.replace(/_/g, " ");
-    return target;
-};
-
-String.prototype.toJSId = function() {
-    let target = this;
-    target = target.replace(/\W/g,'_');
     return target;
 };
 

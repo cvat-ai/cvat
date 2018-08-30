@@ -82,7 +82,8 @@ Type your login/password for the superuser [on the login page](http://localhost:
 
 ### Stop all containers
 
-The command below will stop and remove containers and networks created by `up`. See documentation for [docker-compose down](https://docs.docker.com/compose/reference/down/) for more details.
+The command below will stop and remove containers, networks, volumes, and images
+created by `up`.
 
 ```bash
 docker-compose down
@@ -116,3 +117,26 @@ cvat:
     environment:
       DJANGO_LOG_SERVER_URL: https://annotation.example.com:5000
 ```
+
+### Share path
+
+You can use a share storage for data uploading during you are creating a task. To do that you can mount it to CVAT docker container. Example of docker-compose.override.yml for this purpose:
+
+```yml
+version: "2.3"
+
+services:
+  cvat:
+    environment:
+      CVAT_SHARE_URL: "Mounted from /mnt/share host directory"
+    volumes:
+      cvat_share:/home/django/share:ro
+      
+volumes:
+  cvat_share:
+    driver_opts:
+      type: none
+      device: /mnt/share
+      o: bind
+```
+You can change the share device path to your actual share. For user convenience we have defined the enviroment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser. 

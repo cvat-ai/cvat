@@ -1,3 +1,8 @@
+
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate, post_save
 from .settings.authentication import DJANGO_AUTH_TYPE

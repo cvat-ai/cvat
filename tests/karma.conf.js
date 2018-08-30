@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 const path = require('path');
 module.exports = function(config) {
   config.set({
@@ -8,11 +14,7 @@ module.exports = function(config) {
       'engine/static/engine/js/annotationParser.js',
       'engine/static/engine/js/listener.js',
       'engine/static/engine/js/player.js',
-      'engine/static/engine/js/trackFilter.js',
-      'engine/static/engine/js/trackModel.js',
-      'engine/static/engine/js/collectionModel.js',
-      'engine/static/engine/js/merger.js',
-      'engine/static/engine/js/attributeAnnotationMode.js',
+      'engine/static/engine/js/shapes.js',
       'engine/static/engine/js/qunitTests.js',
     ],
     port: 9876,

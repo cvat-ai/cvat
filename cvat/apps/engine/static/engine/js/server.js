@@ -1,4 +1,10 @@
-/* exported serverRequest saveJobOnServer encodeFilePathToURI */
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/* exported serverRequest saveJobRequest encodeFilePathToURI */
 "use strict";
 
 function serverRequest(url, successCallback)
@@ -11,13 +17,15 @@ function serverRequest(url, successCallback)
     });
 }
 
-function saveJobOnServer(jid, data, onsucces, onerror) {
+function saveJobRequest(jid, data, success, error) {
     $.ajax({
         url: "save/annotation/job/" + jid,
         type: "POST",
-        data: data,
-        success: onsucces,
-        error: onerror
+        data: JSON.stringify(data),
+        contentType: "application/json; charset=utf-8",
+        success: success,
+        error: error,
+        processData: false,
     });
 }
 

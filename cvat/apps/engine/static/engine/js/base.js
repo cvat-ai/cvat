@@ -1,9 +1,16 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 /* exported confirm showMessage showOverlay dumpAnnotationRequest */
 "use strict";
 
 Math.clamp = function(x, min, max) {
     return Math.min(Math.max(x, min), max);
 };
+
 
 function confirm(message, onagree, ondisagree) {
     let template = $('#confirmTemplate');
@@ -26,6 +33,12 @@ function confirm(message, onagree, ondisagree) {
         if (ondisagree) ondisagree();
     });
 
+    disagreeConfirm.focus();
+
+    confirmWindow.on('keydown', (e) => {
+        e.stopPropagation();
+    });
+
     function hideConfirm() {
         agreeConfirm.off('click');
         disagreeConfirm.off('click');
@@ -44,10 +57,17 @@ function showMessage(message) {
     messageText.text(message);
     $('body').append(messageWindow);
 
+    messageWindow.on('keydown', (e) => {
+        e.stopPropagation();
+    });
+
     okButton.on('click', function() {
         okButton.off('click');
         messageWindow.remove();
     });
+
+    okButton.focus();
+    return messageWindow;
 }
 
 
@@ -70,6 +90,7 @@ function showOverlay(message) {
 
 
 function dumpAnnotationRequest(dumpButton, taskID) {
+    dumpButton = $(dumpButton);
     dumpButton.attr('disabled', true);
 
     $.ajax({
@@ -157,7 +178,7 @@ $.ajaxSetup({
 
 $(document).ready(function(){
     $('body').css({
-        width: window.screen.width * 0.97 + 'px',
-        height: window.screen.height * 0.97 + 'px'
+        width: window.screen.width * 0.95 + 'px',
+        height: window.screen.height * 0.95 + 'px'
     });
 });

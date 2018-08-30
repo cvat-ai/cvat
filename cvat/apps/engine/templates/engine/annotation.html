@@ -1,3 +1,8 @@
+<!--
+    Copyright (C) 2018 Intel Corporation
+
+    SPDX-License-Identifier: MIT
+-->
 {% extends 'engine/base.html' %}
 {% load static %}
 
@@ -9,11 +14,16 @@
 
 {% block head_js_3rdparty %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'engine/js/3rdparty/interact.js' %}"></script>
-    <script type="text/javascript" src="{% static 'engine/js/3rdparty/object_hash.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/3rdparty/svg.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/3rdparty/svg.draw.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/3rdparty/svg.resize.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/3rdparty/svg.draggable.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/3rdparty/svg.select.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/3rdparty/md5.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/defiant.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/jquery-3.3.1.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/js.cookie.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/3rdparty/jquery.fullscreen.js' %}"></script>
     {% for js_file in js_3rdparty %}
         <script type="text/javascript" src="{% static js_file %}"></script>
     {% endfor %}
@@ -25,28 +35,25 @@
         <script type="text/javascript" src="{% static 'engine/js/logger.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/server.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/listener.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/history.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/labelsInfo.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/annotationParser.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/attributeAnnotationMode.js' %}"></script>
-        <script type="text/javascript" src="{% static 'engine/js/trackFilter.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/shapeFilter.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/shapeSplitter.js' %}"></script>
 
         <script type="text/javascript" src="{% static 'engine/js/bootstrap.js' %}"></script>
 
-        <script type="text/javascript" src="{% static 'engine/js/trackModel.js' %}"></script>
-        <script type="text/javascript" src="{% static 'engine/js/trackController.js' %}"></script>
-        <script type="text/javascript" src="{% static 'engine/js/trackView.js' %}"></script>
-
-        <script type="text/javascript" src="{% static 'engine/js/collectionModel.js' %}"></script>
-        <script type="text/javascript" src="{% static 'engine/js/collectionController.js' %}"></script>
-        <script type="text/javascript" src="{% static 'engine/js/collectionView.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/shapes.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/shapeCollection.js' %}"></script>
 
         <script type="text/javascript" src="{% static 'engine/js/player.js' %}"></script>
 
-        <script type="text/javascript" src="{% static 'engine/js/merger.js' %}"></script>
-        <script type="text/javascript" src="{% static 'engine/js/drawer.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/shapeMerger.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/shapeCreator.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/shapeBuffer.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/shapeGrouper.js' %}"></script>
 
-        <script type="text/javascript" src="{% static 'engine/js/api.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/annotationUI.js' %}"></script>
 {% endblock %}
 
@@ -58,9 +65,31 @@
             <svg id="frameLoadingAnim" style="width: 100%; height: 100%;" class="hidden">
                 <circle r="30" cx="50%" cy="50%" id="frameLoadingAnimation"/>
             </svg>
-            <svg id="frameContent">
-
+            <svg id="frameContent"> </svg>
+            <svg id="frameBackground"> </svg>
+            <svg id="frameGrid" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="playerGridPattern" width="100" height="100" patternUnits="userSpaceOnUse">
+                        <!-- Max size value for grid is 1000. Path size should be >= such value in order to it displayed correct -->
+                        <path id="playerGridPath" d="M 1000 0 L 0 0 0 1000" fill="none" stroke="white" opacity="0" stroke-width="2"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#playerGridPattern)" />
             </svg>
+            <ul id="shapeContextMenu" class='custom-menu' oncontextmenu="return false;">
+                <li action="change_color"> Change Color </li>
+                <li action="remove_shape"> Remove Shape </li>
+                <li action="switch_occluded"> Switch Occluded </li>
+                <li action="switch_lock"> Switch Lock </li>
+                <li class="interpolationItem" action="split_track"> Split </li>
+                <li class="polygonItem" action="drag_polygon"> Enable Dragging </li>
+            </ul>
+
+            <ul id="pointContextMenu" class='custom-menu' oncontextmenu="return false;">
+                <li action="remove_point"> Remove </li>
+                <li action="clone_point_before"> Clone Before </li>
+                <li action="clone_point_after"> Clone After </li>
+            </ul>
         </div>
         <div id="playerPanel">
             <svg id="firstButton" class="playerButton">
@@ -101,10 +130,47 @@
             <label class="regular h1" style="margin-left: 50px"> Filter: </label>
             <input type="text" id="filterInputString" class="regular h2"/>
             <button id="resetFilterButton" class="regular h1"> Reset </button>
+            <button class="regular h1" id="undoButton" disabled> &#x27F2; </button>
+            <select size="2" class="regular" style="overflow: hidden; width: 15%; top: 0.5em; position: relative;" disabled>
+                <option id="lastUndoText" title="Undo Action" selected> None </option>
+                <option id="lastRedoText" title="Redo Action"> None </option>
+            </select>
+            <button class="regular h1" id="redoButton" disabled> &#10227; </button>
             <div style="float: right;">
                 <label class="regular h1"> Frame </label>
                 <input class="regular h2" style="width: 3.5em;" type="number" id="frameNumber">
             </div>
+            <hr>
+            <table class="regular" cellpadding="20">
+                <tr>
+                    <td>
+                        <div style="float: left;"> <label class="semiBold"> Fill Opacity: </label> </div>
+                        <div style="float: left; margin-left: 1em;"> <input type="range" min="-5" max="5" value="0" id="fillOpacityRange"/> </div>
+                    </td>
+                    <td style="width: auto;">
+                        <div style="float: left;"> <label class="semiBold"> Black Stroke: </label> </div>
+                        <div style="float: left; margin-left: 1em;"> <input type="checkbox" id="blackStrokeCheckbox" class="settingsBox"/> </div>
+                    </td>
+                    <td style="width: auto;">
+
+                    </td>
+                    <td style="width: auto;">
+                        <div style="float: left;"> <label class="semiBold"> Color by: </label> </div>
+                        <div style="float: left; margin-left: 10px;">
+                            <label style="margin-right: 10px;"> Instance </label>
+                            <input type="radio" name="colorByRadio" id="colorByInstanceRadio" checked class="settingsBox"/>
+                        </div>
+                        <div style="float: left; margin-left: 10px;">
+                            <label style="margin-right: 10px;"> Group </label>
+                            <input type="radio" name="colorByRadio" id="colorByGroupRadio" class="settingsBox"/>
+                        </div>
+                        <div style="float: left; margin-left: 10px;">
+                            <label style="margin-right: 10px;"> Label </label>
+                            <input type="radio" name="colorByRadio" id="colorByLabelRadio" class="settingsBox"/>
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>  <!-- END of PLAYER -->
 
@@ -115,85 +181,94 @@
                     <label class="h1 semiBold"> Shortkeys: </label> <br>
                     <table class="regular" id="shortkeyHelpTable"> </table>
                     <label class="h1 semiBold"> <br> Hints: <br> </label>
-                    <label class="regular"> - Hold SHIFT key when move the frame and boxes will be fixed. </label> <br>
+                    <label class="regular"> - Hold MOUSEWHEEL in order to move frame (during drawing for example). </label> <br>
                     <label class="regular"> - Hold CTRL key when track highlighted and fix it. </label> <br>
                     <label class="regular"> - Hold CTRL key when paste shape from buffer for multiple pasting. </label> <br>
                     <label class="h1 semiBold"> <br> Filter Help: <br> </label>
                     <label class="regular">
-                        Filter Format: //label[property operator "value"] (USE LOWER CASE ONLY) <br>
+                        Filter Format: label[property operator "value"] (USE LOWER CASE ONLY) <br>
                         Label is a type of bounding box (car, person, etc). Use "*" for any label. <br>
                         Property is a limited set of values: id, type, lock, occluded, attr. <br>
                         Operator is "=", "!=" for any properties and ">", "<", ">=", "<=" for numeric properties. <br>
                         For complex conditions please use 'or', 'and' (for properties) "|" (for labels) operators. <br> <br>
                         Examples: <br>
-                        //*[type="annotation"] - only annotation tracks <br>
-                        //car[occluded="true"] - only occluded cars <br>
-                        //*[lock!="true"] - only unlocked tracks <br>
-                        //person[attr/age>="25" and attr/age<="35"] - persons with age (number) beetween [25,40] years <br>
-                        //car[attr/parked="true"] - only parked cars <br>
-                        //person[attr/race="asian"] | //car[attr/model="bmw"] - asians and BMW cars <br>
-                        //face[attr/glass="sunglass" or attr/glass="no"] - faces with sunglass or without glass <br>
-                        //*[attr/*="__undefined__"] - any tracks with any unlabeled attributes <br>
+                        *[mode="annotation"] - only annotation objects <br>
+                        *[type="polygon"] - only polygon objects <br>
+                        car[occluded="true"] - only occluded cars <br>
+                        *[lock!="true"] - only unlocked tracks <br>
+                        person[attr/age>="25" and attr/age<="35"] - persons with age (number) beetween [25,40] years <br>
+                        car[attr/parked="true"] - only parked cars <br>
+                        person[attr/race="asian"] | car[attr/model="bmw"] - asians and BMW cars <br>
+                        face[attr/glass="sunglass" or attr/glass="no"] - faces with sunglass or without glass <br>
+                        *[attr/*="__undefined__"] - any tracks with any unlabeled attributes <br>
                      </label>
                 </div>
             </div>
             <center> <button id="closeHelpButton" class="regular h1" style="margin-top: 15px;"> Close </button> </center>
-
-
         </div>
     </div>
 
-     <div id="settingsWindow" class="modal hidden">
+    <div id="settingsWindow" class="modal hidden">
         <div id="settingsWindowContent" class="modal-content">
             <div id="playerSettings" style="width: 48%; height: 90%; float: left;">
                 <center> <label class="semiBold h1"> Player Settings </label> </center>
-                <table style="border-collapse: separate; border-spacing: 10px; overflow-y: auto;">
+                <table style="border-collapse: separate; border-spacing: 10px; overflow-y: auto;" class="regular">
                     <tr>
-                        <td> <label class="regular h2"> Player Step </label> </td>
-                        <td> <input type = "number" min="1" max="100" value="10" id="playerStep" class="regular h2"/> </td>
+                        <td> <label> Player Step </label> </td>
+                        <td> <input type="number" min="1" max="100" value="10" id="playerStep" class="regular h2"/> </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2"> Player Speed </label> </td>
+                        <td> <label> Player Speed </label> </td>
                         <td>
                             <select id="speedSelect" class="regular h3">
                                 <option value="1"> 1 FPS </option>
                                 <option value="2"> 5 FPS </option>
                                 <option value="3"> 12 FPS </option>
-                                <option value="4" selected="selected"> 25 FPS </option>
+                                <option value="4" selected> 25 FPS </option>
                                 <option value="5"> 50 FPS </option>
                                 <option value="6"> 100 FPS </option>
                             </select>
                         </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2"> Hide Boxes </label> </td>
-                        <td> <input type = "checkbox" id="hideBoxesBox" class="settingsBox"/> </td>
+                        <td> <label> Reset Zoom </label> </td>
+                        <td> <input type="checkbox"  id="resetZoomBox" class="settingsBox"/> </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2"> Hide Labels </label> </td>
-                        <td> <input type = "checkbox"  id="hideLabelsBox" class="settingsBox"/> </td>
+                        <td> <label> Greed Size </label> </td>
+                        <td> <input type="number" min="5" max="1000" value="100" id="playerGridSizeInput" class="regular h2"/> </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2"> Reset Zoom </label> </td>
-                        <td> <input type = "checkbox"  id="resetZoomBox" class="settingsBox"/> </td>
+                        <td> <label> Greed Opacity </label> </td>
+                        <td> <input type="range" min="0" max="5" value="0" id="playerGridOpacityInput" class="regular h2"/> </td>
+                    </tr>
+                    <tr>
+                        <td> <label> Greed Stroke </label> </td>
+                        <td>
+                            <select id="playerGridStrokeInput" class="regular h2">
+                                <option value="black"> Black </option>
+                                <option value="red"> Red </option>
+                                <option value="green"> Green </option>
+                                <option value="blue"> Blue </option>
+                                <option value="white" selected> White </option>
+                            </select>
+                        </td>
                     </tr>
                     <tr>
                         <td> <label class="regular h2" for="playerBrightnessRange"> Brightness: </label> </td>
-                        <td> <input type="range" min="50" max="200" value="100" id="playerBrightnessRange"/> </td>
+                        <td> <input type="range" min="50" max="200" value="100" id="playerBrightnessRange"> </td>
                     </tr>
                     <tr>
                         <td> <label class="regular h2" for="playerContrastRange"> Contrast: </label> </td>
-                        <td> <input type="range" min="50" max="200" value="100"   id="playerContrastRange"/> </td>
+                        <td> <input type="range" min="50" max="200" value="100" id="playerContrastRange"> </td>
                     </tr>
                     <tr>
                         <td> <label class="regular h2" for="playerSaturationRange"> Saturation: </label> </td>
-                        <td> <input type="range" min="0" max="300" value="100"   id="playerSaturationRange"/> </td>
+                        <td> <input type="range" min="0" max="300" value="100" id="playerSaturationRange"> </td>
                     </tr>
                     <tr>
                         <td colspan="2">
-                            <center>
-                                    <button id="resetPlayerFilterButton" class="regular h1"> Reset Color Settings </button>
-                            </center>
+                            <button id="resetPlayerFilterButton" class="regular h1"> Reset Color Settings </button>
                         </td>
                     </tr>
                 </table>
@@ -201,40 +276,26 @@
 
             <div id="otherSettigns" style="width: 48%; height: 90%; float: left;">
                 <center> <label class="semiBold h1"> Other Settings </label> </center>
-                <table style="border-collapse: separate; border-spacing: 10px; overflow-y: auto;">
+                <table style="border-collapse: separate; border-spacing: 10px; overflow-y: auto;" class="regular">
                     <tr>
-                        <td> <label class="regular h2"> Show All Interpolation Tracks </label> </td>
+                        <td> <label> Show All Interpolation Tracks </label> </td>
                         <td> <input type = "checkbox"  id="showAllInterBox" class="settingsBox"/> </td>
                     </tr>
-                    <tr>
-                        <td> <label class="regular h2"> Zoom boxes in Attribute Annotation Mode </label> </td>
-                        <td> <input type = "checkbox"  id="zoomAAMBoxesBox" class="settingsBox"/> </td>
-                    </tr>
                     <tr >
-                        <td colspan="2">
-                            <label class="regular h2"> Zoom Margin </label>
-                            <input type="range" min="0" max="500" value="100" id="aamZoomMargin"/>
-                        </td>
+                        <td> <label> AAM Zoom Margin </label> </td>
+                        <td> <input type="range" min="0" max="1000" value="100" id="aamZoomMargin"/> </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2"> Hide Other in Attribute Annotation Mode </label> </td>
-                        <td> <input type = "checkbox"  id="hideNonActiveBox" class="settingsBox"/> </td>
-                    </tr>
-                    <tr>
-                        <td> <label class="regular h2"> Hide Filtered Tracks </label> </td>
-                        <td> <input type = "checkbox"  id="hideFilteredBox" class="settingsBox"/> </td>
-                    </tr>
-                    <tr>
-                        <td> <label class="regular h2"> Enable Auto Saving </label> </td>
+                        <td> <label> Enable Auto Saving </label> </td>
                         <td> <input type = "checkbox"  id="autoSaveBox" class="settingsBox"/> </td>
                     </tr>
                     <tr>
-                        <td>
-                            <label class="regular h2"> Auto Saving Interval (Min) </label>
-                        </td>
-                        <td>
-                            <input type = "number"  id="autoSaveTime" style="width: 3em" min="5" max="60" value="15" class="regular h2"/>
-                        </td>
+                        <td> <label> Auto Saving Interval (Min) </label> </td>
+                        <td> <input type = "number"  id="autoSaveTime" style="width: 3em" min="5" max="60" value="15" class="regular h2"/> </td>
+                    </tr>
+                    <tr>
+                        <td> <label> Propagate Frames </label> </td>
+                        <td> <input type = "number" id="propagateFramesInput" style="width: 3em" min="1" max="10000" value="50" class="regular h2"/> </td>
                     </tr>
                 </table>
             </div>
@@ -243,42 +304,103 @@
         </div>
     </div>
 
-    <div id="taskAnnotationMenu" class="hidden regular">
-        <div style="float:left; width: 40%; height: 100%;" id="engineMenuButtons">
-            <button id="downloadAnnotation" class="menuButton semiBold h2"> Dump Annotation </button>
-            <button id="uploadAnnotation" class="menuButton semiBold h2"> Upload Annotation </button>
+    <div id="annotationMenu" class="hidden regular">
+        <center style="float:left; width: 28%; height: 100%;" id="engineMenuButtons">
+            <button id="downloadAnnotationButton" class="menuButton semiBold h2"> Dump Annotation </button>
+            <button id="uploadAnnotationButton" class="menuButton semiBold h2"> Upload Annotation </button>
             <button id="removeAnnotationButton" class="menuButton semiBold h2"> Remove Annotation </button>
             <button id="settingsButton" class="menuButton semiBold h2"> Settings </button>
+            <button id="fullScreenButton" class="menuButton semiBold h2"> Fullscreen Player </button>
+            <button id="switchAAMButton" class="menuButton semiBold h2"> Switch AAM </button>
             <button id="helpButton" class="menuButton semiBold h2"> Help </button>
             <button id="saveButton" class="menuButton semiBold h2"> Save Work </button>
             <input type="file" id="annotationFileSelector" style="display: none"/>
-        </div>
-        <div style="float:left; width: 58%; height: 100%; text-align: left;" class="selectable">
+        </center>
+        <div style="float:left; width: 70%; height: 100%; text-align: left;" class="selectable">
             <center>
                 <label id="statTaskName" class="semiBold h2"> </label>  <br>
                 <label id="statTaskStatus" class="regular h2"> </label>
             </center>
-            <label class="regular h2"> Start Frame: </label>
-            <label id="statStartFrame" class="regular h2"> </label> <br>
-            <label class="regular h2"> Stop Frame: </label>
-            <label id="statStopFrame" class="regular h2"> </label>  <br>
-            <center> <label class="semiBold h2"> Job Statistic </label> </center>
-            <div id="statByLabels" style="text-align: center;"> </div>
+            <center>
+                <table style="width: 100%">
+                    <tr>
+                        <td style="width: 20%;">
+                            <label class="regular h2"> Frames: </label>
+                            <label id="statFrames" class="regular h2"> </label>
+                        </td>
+                        <td style="width: 15%;">
+                            <label class="regular h2"> Overlap: </label>
+                            <label id="statOverlap" class="regular h2"> </label>
+                        </td>
+                        <td style="width: 15%;">
+                            <label class="regular h2"> Z-Order: </label>
+                            <label id="statZOrder" class="regular h2"> </label>
+                        </td>
+                        <td style="width: 15%;">
+                            <label class="regular h2"> Flipped: </label>
+                            <label id="statFlipped" class="regular h2"> </label>
+                        </td>
+                    </tr>
+                </table>
+            </center>
+            <center> <label class="semiBold h2"> Segment Statistic </label> </center>
+            <div style="text-align: center; max-height: 250px; overflow: auto; display: block;">
+                <table id="annotationStatisticTable" cellspacing="3" cellpadding="3">
+                    <tr class="semiBold">
+                        <td> Label </td>
+                        <td colspan="2"> Boxes </td>
+                        <td colspan="2"> Polygons </td>
+                        <td colspan="2"> Polylines </td>
+                        <td colspan="2"> Points </td>
+                        <td> Manually </td>
+                        <td> Interpolated </td>
+                        <td> Total </td>
+                    </tr>
+                    <tr>
+                        <td> </td> <!-- Empty -->
+                        <td> S </td>
+                        <td> T </td>
+                        <td> S </td>
+                        <td> T </td>
+                        <td> S </td>
+                        <td> T </td>
+                        <td> S </td>
+                        <td> T </td>
+                        <td> </td>  <!-- Empty -->
+                        <td> </td>  <!-- Empty -->
+                    </tr>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
-
 <div id="taskAnnotationRightPanel">
+    <div class="tab customizedTab">
+        <button class="h2 regular activeTabButton" id="sidePanelObjectsButton" style="width: 50%">Objects</button>
+        <button class="h2 regular" id="sidePanelLabelsButton" style="width: 50%">Labels</button>
+    </div>
     <div id="uiContent"> </div>
+    <div id="labelsContent" class="hidden"> </div>
     <div id="trackManagement">
-        <button id="createTrackButton" class="regular h2" style="width: 80%;"> Create Track </button>
-        <button id="mergeTracksButton" class="regular h2" style="width: 80%; margin-top: 5px;"> Merge Tracks </button>
-        <select id="labelSelect" class="regular h2"> </select>
-        <select id="trackTypeSelect" class="regular h2">
+        <button id="createShapeButton" class="regular h2" style="width: 80%;"> Create Shape </button>
+        <button id="mergeTracksButton" class="regular h2" style="width: 80%; margin-top: 5px;"> Merge Shapes </button>
+        <button id="groupShapesButton" class="regular h2" style="width: 80%; margin-top: 5px;"> Group Shapes </button>
+        <select id="shapeLabelSelector" class="regular h2"> </select>
+        <select id="shapeModeSelector" class="regular h2">
             <option value="annotation" class="regular"> Annotation </option>
             <option value="interpolation" class="regular"> Interpolation </option>
         </select>
+        <select id="shapeTypeSelector" class="regular h2">
+            <option value="box" class="regular"> Box </option>
+            <option value="polygon" class="regular"> Polygon </option>
+            <option value="polyline" class="regular"> Polyline </option>
+            <option value="points" class="regular"> Points </option>
+        </select>
+        <div id="polyShapeSizeWrapper">
+            <label for="polyShapeSize" class="regular h2"> Poly Shape Size: </label>
+            <input id="polyShapeSize" type="text" value="" class="regular h2" style="width: 30%; margin-top: 1%;" placeholder="0-100"/>
+        </div>
     </div>
     <div id="aamMenu" class="hidden">
         <label class="regular h1"> AAM Mode </label>

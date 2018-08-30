@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 module.exports = {
     'env': {
         'browser': true,
@@ -36,68 +42,79 @@ module.exports = {
         // from annotationUI.js
         'callAnnotationUI': true,
         'translateSVGPos': true,
+        'blurAllElements': true,
+        'drawBoxSize': true,
         // from base.js
         'showMessage': true,
         'showOverlay': true,
         'confirm': true,
         'dumpAnnotationRequest': true,
-        // from collectionController.js, collectionModel.js, collectionView.js
-        'CollectionController': true,
-        'CollectionModel': true,
-        'CollectionView': true,
-        // from drawer.js
-        'DrawerController': true,
-        'DrawerModel': true,
-        'DrawerView': true,
-        // from interact.js
-        'interact': true,
+        // from shapeCollection.js
+        'ShapeCollectionModel': true,
+        'ShapeCollectionController': true,
+        'ShapeCollectionView': true,
+        // from shapeCreator.js
+        'ShapeCreatorModel': true,
+        'ShapeCreatorController': true,
+        'ShapeCreatorView': true,
+        // from shapeGrouper.js
+        'ShapeGrouperModel': true,
+        'ShapeGrouperController': true,
+        'ShapeGrouperView': true,
         // from labelsInfo.js
         'LabelsInfo': true,
         // from listener.js
         'Listener': true,
         // from logger.js
         'Logger': true,
-        // from merger.js
-        'MergerController': true,
-        'MergerModel': true,
-        'MergerView': true,
-        // from trackModel.js
-        'MIN_BOX_SIZE': true,
+        // from shapeMerger.js
+        'ShapeMergerModel': true,
+        'ShapeMergerController': true,
+        'ShapeMergerView': true,
+        // from shapes.js
+        'PolyShapeModel': true,
+        'buildShapeModel': true,
+        'buildShapeController': true,
+        'buildShapeView': true,
+        'STROKE_WIDTH': true,
+        'POINT_RADIUS': true,
+        'AREA_TRESHOLD': true,
+        'SELECT_POINT_STROKE_WIDTH': true,
         // from mousetrap.js
         'Mousetrap': true,
-        // from objecthash.js
-        'objectHash': true,
+        // from md5.js
+        'md5': true,
         // from platform.js
         'platform': true,
-        // from playerController.js, playerModel.js, playerView.js
+        // from player.js
         'PlayerController': true,
         'PlayerModel': true,
         'PlayerView': true,
         // from server.js
         'serverRequest': true,
-        'encodeFilePathToURI': true,
-        'saveJobOnServer': true,
+        'saveJobRequest': true,
         // from shapeBuffer.js
         'ShapeBufferController': true,
         'ShapeBufferModel': true,
         'ShapeBufferView': true,
-        // from trackController.js, trackModel.js, trackView.js
-        'TrackController': true,
-        'TrackModel':true,
-        'TrackView': true,
-        'MIN_BOX_SIZE': true,
         // from trackFilter.js
-        'TrackFilterModel': true,
-        'TrackFilterController': true,
-        'TrackFilterView': true,
+        'FilterModel': true,
+        'FilterController': true,
+        'FilterView': true,
+        // from shapeSplitter.js
+        'ShapeSplitter': true,
         // from userConfig.js
-        'userConfig': true,
+        'Config': true,
         // from cookies.js
         'Cookies': true,
-        // from api.js
-        'setupAPI': true,
         // from dashboard django template
         'maxUploadCount': true,
         'maxUploadSize': true,
+        // from SVG.js
+        'SVG': true,
+        // from history.js
+        'HistoryModel': true,
+        'HistoryController': true,
+        'HistoryView': true,
     },
 };

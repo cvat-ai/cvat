@@ -1,3 +1,8 @@
+
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 """
 Django settings for CVAT project.
 
@@ -118,8 +123,9 @@ RQ_EXCEPTION_HANDLERS = ['cvat.apps.engine.views.rq_handler']
 
 COMPRESS_CSS_FILTERS = [
     'compressor.filters.css_default.CssAbsoluteFilter',
-    'compressor.filters.cssmin.rCSSMinFilter',
+    'compressor.filters.cssmin.rCSSMinFilter'
 ]
+COMPRESS_JS_FILTERS = []  # No compression for js files (template literals were compressed bad)
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators

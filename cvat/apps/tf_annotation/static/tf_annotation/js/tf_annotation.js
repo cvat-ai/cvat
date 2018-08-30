@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 function CheckTFAnnotationRequest(taskId, tfAnnotationButton) {
     let frequence = 5000;
     let errorCount = 0;

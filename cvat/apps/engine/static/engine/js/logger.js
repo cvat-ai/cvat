@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 /* exported Logger */
 "use strict";
 
@@ -268,10 +274,10 @@ var Logger = {
      * Logger.EventType Enumeration.
      */
     EventType: {
-        // dumped as "Add object". "count" is required field with number value.
-        addObject: 0,
-        // dumped as "Change object". There are no additional required fields.
-        changeObject: 1,
+        // dumped as "Paste object". There are no additional required fields.
+        pasteObject: 0,
+        // dumped as "Change attribute". There are no additional required fields.
+        changeAttribute: 1,
         // dumped as "Drag object". There are no additional required fields.
         dragObject: 2,
         // dumped as "Delete object". "count" is required field, value of deleted objects should be positive number.
@@ -284,7 +290,7 @@ var Logger = {
         sendLogs: 6,
         // dumped as "Save job". It's expected that event has "duration" field, but it isn't necessary.
         saveJob: 7,
-        // dumped as "Jump frame". It's expected that event has "frame" field, but it isn't necessary.
+        // dumped as "Jump frame". There are no additional required fields.
         jumpFrame: 8,
         // dumped as "Draw object". It's expected that event has "duration" field, but it isn't necessary.
         drawObject: 9,
@@ -302,8 +308,8 @@ var Logger = {
         lockObject: 15,
         // dumped as "Merge objects". "count" is required field with positive or negative number value.
         mergeObjects: 16,
-        // dumped as "Copy track". "count" is required field with number value.
-        copyTrack: 17,
+        // dumped as "Copy object". "count" is required field with number value.
+        copyObject: 17,
         // dumped as "Propagate object". "count" is required field with number value.
         propagateObject: 18,
         // dumped as "Undo action". "count" is required field with positive or negative number value.
@@ -315,6 +321,8 @@ var Logger = {
         // dumped as "Send exception". Use to send any exception events to the server.
         // "message", "filename", "line" are mandatory fields. "stack" and "column" are optional.
         sendException: 22,
+        // dumped as "Change frame". There are no additional required fields.
+        changeFrame: 23,
     },
 
     /**
@@ -445,8 +453,8 @@ var Logger = {
     eventTypeToString: function(type)
     {
         switch(type) {
-        case this.EventType.addObject: return 'Add object';
-        case this.EventType.changeObject: return 'Change object';
+        case this.EventType.pasteObject: return 'Paste object';
+        case this.EventType.changeAttribute: return 'Change attribute';
         case this.EventType.dragObject: return 'Drag object';
         case this.EventType.deleteObject: return 'Delete object';
         case this.EventType.pressShortcut: return 'Press shortcut';
@@ -462,12 +470,13 @@ var Logger = {
         case this.EventType.zoomImage: return 'Zoom image';
         case this.EventType.lockObject: return 'Lock object';
         case this.EventType.mergeObjects: return 'Merge objects';
-        case this.EventType.copyTrack: return 'Copy track';
+        case this.EventType.copyObject: return 'Copy object';
         case this.EventType.propagateObject: return 'Propagate object';
         case this.EventType.undoAction: return 'Undo action';
         case this.EventType.redoAction: return 'Redo action';
         case this.EventType.sendUserActivity: return 'Send user activity';
         case this.EventType.sendException: return 'Send exception';
+        case this.EventType.changeFrame: return 'Change frame';
         default: return 'Unknown';
         }
     },

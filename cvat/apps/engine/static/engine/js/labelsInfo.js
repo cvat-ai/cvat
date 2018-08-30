@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 /* exported LabelsInfo */
 "use strict";
 
@@ -5,6 +11,7 @@ class LabelsInfo {
     constructor(job) {
         this._labels = new Object;
         this._attributes = new Object;
+        this._colorIdxs = new Object;
 
         for (let labelKey in job.labels) {
             let label = {
@@ -18,6 +25,7 @@ class LabelsInfo {
             }
 
             this._labels[labelKey] = label;
+            this._colorIdxs[labelKey] = +labelKey;
         }
 
         function parseAttributeRow(attrRow) {
@@ -34,6 +42,16 @@ class LabelsInfo {
                 name: match[3],
                 values: this.strToValues(match[2], match[4]),
             };
+        }
+    }
+
+    labelColorIdx(labelId) {
+        return this._colorIdxs[labelId];
+    }
+
+    updateLabelColorIdx(labelId) {
+        if (labelId in this._colorIdxs) {
+            this._colorIdxs[labelId] += 1;
         }
     }
 
@@ -117,8 +135,6 @@ class LabelsInfo {
         return null;
     }
 
-
-
     strToValues(type, string) {
         switch (type) {
         case 'checkbox':
@@ -126,7 +142,7 @@ class LabelsInfo {
         case 'text':
             return [string];
         default:
-            return string.split(',');
+            return string.toString().split(',');
         }
     }
 }

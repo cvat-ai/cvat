@@ -1,0 +1,29 @@
+*               text=auto whitespace=trailing-space,space-before-tab,-indent-with-non-tab,tab-in-indent,tabwidth=4
+
+.git*           text export-ignore
+
+*.txt           text
+*.htm           text
+*.html          text
+*.js            text
+*.py            text
+*.css           text
+*.md            text
+*.yml           text
+Dockerfile      text
+LICENSE         text
+*.conf          text
+*.mimetypes     text
+*.sh            text eol=lf
+
+*.avi           binary
+*.bmp           binary
+*.exr           binary
+*.ico           binary
+*.jpeg          binary
+*.jpg           binary
+*.png           binary
+*.gif           binary
+*.ttf           binary
+*.pdf           binary
+

@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 "use strict";
 
 let qunit_tests = [];
@@ -21,17 +27,19 @@ qunit_tests.push(function() {
     });
 
     QUnit.test('labelIdOf', function(assert) {
-        assert.equal(labels_info.labelIdOf('car'), 1, 'Id of "car" must be 1');
-        assert.equal(labels_info.labelIdOf('bicycle'), 2, 'Id of "bicycle" must be 2');
-        assert.equal(labels_info.labelIdOf('person'), 3, 'Id of "person" must be 3');
-        assert.equal(labels_info.labelIdOf('motorcycle'), 4, 'Id of "motorcycle" must be 4');
+        assert.equal(labels_info.labelIdOf('person'), 1, 'Id of "car" must be 1');
+        assert.equal(labels_info.labelIdOf('face'), 2, 'Id of "bicycle" must be 2');
+        assert.equal(labels_info.labelIdOf('car'), 3, 'Id of "person" must be 3');
+        assert.equal(labels_info.labelIdOf('bicycle'), 4, 'Id of "motorcycle" must be 4');
+        assert.equal(labels_info.labelIdOf('motorcycle'), 5, 'Id of "unknown" must be 5');
+        assert.equal(labels_info.labelIdOf('road'), 6, 'Id of "unknown" must be 6');
         assert.equal(labels_info.labelIdOf('unknown'), null, 'Id of "unknown" must be null');
     });
 
 
     QUnit.test('attrIdOf', function(assert) {
-        assert.equal(labels_info.attrIdOf('2','driver'), 4, 'Attribute id must be equal 4');
-        assert.equal(labels_info.attrIdOf('3','age'), 7, 'Attribute id must be equal 7');
+        assert.equal(labels_info.attrIdOf('2','beard'), 8, 'Attribute id must be equal 8');
+        assert.equal(labels_info.attrIdOf('3','parked'), 12, 'Attribute id must be equal 12');
         assert.equal(labels_info.attrIdOf('unknown','driver'), null, 'Attribute id must be equal null');
         assert.equal(labels_info.attrIdOf('1','unknown'), null, 'Attribute id must be equal null');
     });
@@ -48,16 +56,18 @@ qunit_tests.push(function() {
         assert.deepEqual(labels_info.strToValues('text', 'value1,together value2 and 3'), ['value1,together value2 and 3']);
         assert.deepEqual(labels_info.strToValues('radio', 'value'), ['value']);
         assert.deepEqual(labels_info.strToValues('number', '1,2,3'), ['1','2','3']);
+        assert.deepEqual(labels_info.strToValues('number', 1), ['1']);
     });
 
 
     QUnit.test('labels', function(assert) {
         let expected = {
-            1: "car",
-            2: "bicycle",
-            3: "person",
-            4: "motorcycle",
-            5: "road",
+            1:"person",
+            2:"face",
+            3:"car",
+            4:"bicycle",
+            5:"motorcycle",
+            6:"road"
         };
         assert.deepEqual(labels_info.labels(), expected, 'Return value must be like expected');
     });
@@ -65,14 +75,21 @@ qunit_tests.push(function() {
 
     QUnit.test('attributes', function(assert) {
         let expected = {
-            1: "model",
-            2: "driver",
-            3: "parked",
-            4: "driver",
-            5: "sport",
-            6: "clother",
-            7: "age",
-            8: "model",
+            1:"action",
+            2:"age",
+            3:"gender",
+            4:"false_positive",
+            5:"clother",
+            6:"age",
+            7:"glass",
+            8:"beard",
+            9:"race",
+            10:"model",
+            11:"driver",
+            12:"parked",
+            13:"driver",
+            14:"sport",
+            15:"model"
         };
         assert.deepEqual(labels_info.attributes(), expected, 'Return value must be like expected');
     });
@@ -80,60 +97,83 @@ qunit_tests.push(function() {
 
     QUnit.test('labelAttributes', function(assert) {
         let expected_1 = {
-            1: "model",
-            2: "driver",
-            3: "parked",
+            1:"action",
+            2:"age",
+            3:"gender",
+            4:"false_positive",
+            5:"clother"
         };
 
         let expected_2 = {
-            4: "driver",
-            5: "sport",
+            6:"age",
+            7:"glass",
+            8:"beard",
+            9:"race"
         };
 
         let expected_3 = {
-            6: "clother",
-            7: "age",
+            10:"model",
+            11:"driver",
+            12:"parked"
         };
 
         let expected_4 = {
-            8: "model",
+            13:"driver",
+            14:"sport"
         };
 
         assert.deepEqual(labels_info.labelAttributes(1), labels_info.labelAttributes("1"), 'Return values must be equal');
-        assert.deepEqual(labels_info.labelAttributes("1"), expected_1, 'Return value must be like expected');
+        assert.deepEqual(labels_info.labelAttributes(1), expected_1, 'Return value must be like expected');
         assert.deepEqual(labels_info.labelAttributes("2"), expected_2, 'Return value must be like expected');
         assert.deepEqual(labels_info.labelAttributes(3), expected_3, 'Return value must be like expected');
         assert.deepEqual(labels_info.labelAttributes(4), expected_4, 'Return value must be like expected');
         assert.deepEqual(labels_info.labelAttributes(45), {}, 'Return value must be empty object');
         assert.deepEqual(labels_info.labelAttributes(), {}, 'Return value must be empty object');
         assert.deepEqual(labels_info.labelAttributes(null), {}, 'Return value must be empty object');
-        assert.deepEqual(labels_info.labelAttributes("car"), {}, 'Return value must be empty object');
+        assert.deepEqual(labels_info.labelAttributes("road"), {}, 'Return value must be empty object');
     });
 
 
     QUnit.test('attrInfo', function(assert) {
-        let expected_4 = {
-            name: "driver",
-            type: "radio",
-            mutable: false,
-            values: ["man", "woman"],
+        let expected_1 = {
+            name:"action",
+            type:"select",
+            mutable:true,
+            values: [
+                "__undefined__",
+                "sitting",
+                "raising_hand",
+                "standing"
+            ]
         };
 
-        let expected_6 = {
-            name: "clother",
-            type: "text",
-            mutable: true,
-            values: ["non-initialized"],
+        let expected_5 = {
+            name:"clother",
+            type:"text",
+            mutable:true,
+            values: [
+                "non-initialized"
+            ]
+        };
+
+        let expected_13 = {
+            name:"driver",
+            type:"radio",
+            mutable:false,
+            values: [
+                "man",
+                "woman"
+            ]
         };
 
         assert.deepEqual(labels_info.attrInfo(4), labels_info.attrInfo("4"), 'Return values must be equal');
-        assert.deepEqual(labels_info.attrInfo(4), expected_4, 'Return value must be like expected');
-        assert.deepEqual(labels_info.attrInfo(6), expected_6, 'Return value must be like expected');
+        assert.deepEqual(labels_info.attrInfo(1), expected_1, 'Return value must be like expected');
+        assert.deepEqual(labels_info.attrInfo(5), expected_5, 'Return value must be like expected');
+        assert.deepEqual(labels_info.attrInfo(13), expected_13, 'Return value must be like expected');
         assert.deepEqual(labels_info.attrInfo(45), {}, 'Return value must be empty object');
         assert.deepEqual(labels_info.attrInfo(), {}, 'Return value must be empty object');
         assert.deepEqual(labels_info.attrInfo("clother"), {}, 'Return value must be empty object');
         assert.deepEqual(labels_info.attrInfo(null), {}, 'Return value must be empty object');
-
     });
 });
 
@@ -150,95 +190,118 @@ qunit_tests.push(function() {
         }
     });
 
-    let correct_xml = `
-	<annotations count="4">
-		<image id="0" name="NongDa_South_Road_Fewer_2_000390.png">
-			<box label="car" xtl="818.46" ytl="558.00" xbr="924.07" ybr="640.97" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="299.22" ytl="530.34" xbr="438.78" ybr="605.77" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="0.00" ytl="535.37" xbr="104.98" ybr="610.80" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="1135.91" ytl="565.54" xbr="1207.57" ybr="620.86" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="988.82" ytl="552.97" xbr="1030.30" ybr="595.71" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="person" xtl="1664.58" ytl="550.45" xbr="1737.50" ybr="842.13" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="person" xtl="1574.06" ytl="565.54" xbr="1631.89" ybr="779.27" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="person" xtl="1499.88" ytl="555.48" xbr="1548.91" ybr="762.93" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="person" xtl="1448.34" ytl="558.00" xbr="1491.08" ybr="727.72" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="person" xtl="1413.13" ytl="549.20" xbr="1445.82" ybr="712.64" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="person" xtl="1350.27" ytl="549.20" xbr="1381.70" ybr="682.46" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-		</image>
-		<image id="1" name="NongDa_South_Road_Fewer_2_000480.png">
-			<box label="person" xtl="1576.57" ytl="552.97" xbr="1659.55" ybr="901.22" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="person" xtl="1802.88" ytl="585.66" xbr="1909.74" ybr="972.88" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="person" xtl="1354.04" ytl="561.77" xbr="1411.88" ybr="771.73" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="bicycle" xtl="985.67" ytl="565.54" xbr="1063.62" ybr="634.69" occluded="0"><attribute name="driver">man</attribute><attribute name="sport">false</attribute></box>
-			<box label="bicycle" xtl="614.79" ytl="548.57" xbr="704.05" ybr="617.72" occluded="0"><attribute name="driver">man</attribute><attribute name="sport">false</attribute></box>
-			<box label="bicycle" xtl="809.03" ytl="549.82" xbr="863.09" ybr="598.86" occluded="0"><attribute name="driver">man</attribute><attribute name="sport">false</attribute></box>
-		</image>
-		<image id="2" name="NongDa_South_Road_Fewer_2_001170.png">
-			<box label="bicycle" xtl="1037.22" ytl="794.36" xbr="1198.15" ybr="1025.69" occluded="0"><attribute name="driver">man</attribute><attribute name="sport">false</attribute></box>
-			<box label="person" xtl="1037.22" ytl="646.00" xbr="1186.83" ybr="853.45" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="person" xtl="1284.89" ytl="571.83" xbr="1340.21" ybr="770.47" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="person" xtl="1020.88" ytl="602.00" xbr="1054.82" ybr="697.55" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="car" xtl="727.94" ytl="589.43" xbr="802.12" ybr="651.03" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="613.53" ytl="586.91" xbr="696.51" ybr="647.26" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="335.68" ytl="579.37" xbr="423.69" ybr="632.17" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="199.90" ytl="565.54" xbr="296.71" ybr="627.14" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="299.22" ytl="576.86" xbr="350.77" ybr="628.40" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-		</image>
-		<image id="3" name="NongDa_South_Road_Fewer_2_003150.png">
-			<box label="car" xtl="1052.31" ytl="493.88" xbr="1160.43" ybr="586.91" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="936.64" ytl="422.22" xbr="1035.96" ybr="550.45" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="1171.74" ytl="446.10" xbr="1217.00" ybr="506.45" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="305.51" ytl="498.91" xbr="422.43" ybr="559.25" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="424.95" ytl="492.62" xbr="510.44" ybr="545.42" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="0.00" ytl="503.94" xbr="218.76" ybr="593.20" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="bicycle" xtl="255.22" ytl="486.33" xbr="316.82" ybr="593.20" occluded="0"><attribute name="driver">man</attribute><attribute name="sport">false</attribute></box>
-			<box label="motorcycle" xtl="1213.23" ytl="472.50" xbr="1243.41" ybr="544.17" occluded="0"><attribute name="model">non_initialized</attribute></box>
-			<box label="motorcycle" xtl="1165.46" ytl="480.05" xbr="1186.83" ybr="519.02" occluded="0"><attribute name="model">non_initialized</attribute></box>
-			<box label="road" xtl="5.03" ytl="617.09" xbr="1916.03" ybr="1078.49" occluded="0"></box>
-		</image>
-	</annotations>
-    `;
+    let correct_xml =
+    `<?xml version="1.0" encoding="utf-8"?>
+    <annotations>
+    <version>1.0</version>
+        <image id="0" name="1*FJ8Ws7JJ3fz5gpXfQeN73A.jpg">
+            <box label="face" xtl="1045.98" ytl="403.64" xbr="1127.48" ybr="498.08" occluded="0" z_order="8">
+                <attribute name="age">adult (20-45)</attribute>
+                <attribute name="glass">no</attribute>
+                <attribute name="beard">no</attribute>
+                <attribute name="race">asian</attribute>
+            </box>
+            <box label="face" xtl="766.53" ytl="426.93" xbr="858.39" ybr="534.31" occluded="0" z_order="9">
+                <attribute name="age">__undefined__</attribute>
+                <attribute name="glass">no</attribute>
+                <attribute name="beard">no</attribute>
+                <attribute name="race">asian</attribute>
+            </box>
+            <polygon label="person" points="1014.31,1043.74;1024.71,1053.62;1041.87,1061.93;1052.78,1067.13;1060.58,1069.21;1076.18,1070.25;1079.30,1068.69;1077.74,1057.26;1077.22,1048.94;1076.70,1041.14;1078.26,1031.26;1081.90,1016.70;1091.78,995.91;1101.14,975.11;1108.42,950.67;1118.81,967.31;1130.77,992.27;1132.33,1004.22;1127.13,1009.94;1120.89,1017.74;1115.69,1025.54;1104.26,1030.74;1096.46,1039.58;1096.46,1046.34;1104.26,1047.38;1125.05,1048.94;1141.69,1045.82;1144.29,1040.10;1158.85,1036.46;1171.33,1030.22;1172.89,1026.58;1167.69,1012.02;1157.81,993.31;1152.09,986.03;1152.09,977.19;1148.45,967.31;1142.21,944.95;1138.05,930.92;1138.05,922.08;1134.41,911.68;1128.17,897.64;1122.45,883.60;1120.37,856.57;1137.01,812.37;1256.07,783.78;1245.67,737.51;1240.99,701.11;1230.60,654.84;1216.56,609.09;1204.60,610.64;1198.36,608.57;1197.32,603.89;1192.10,598.90;1187.44,597.65;1185.36,581.53;1182.76,571.65;1177.56,553.45;1167.17,535.78;1164.57,525.38;1157.29,519.66;1145.33,513.42;1145.33,509.26;1139.09,505.62;1144.29,475.99;1139.09,449.99;1126.09,437.51;1124.53,436.99;1121.93,422.43;1113.61,414.12;1099.58,410.48;1079.82,410.48;1065.78,416.20;1055.38,419.83;1054.34,433.87;1052.78,445.83;1053.30,453.63;1051.74,462.99;1053.82,472.87;1056.94,484.82;1059.02,495.22;1062.66,498.86;1054.86,508.74;1041.87,514.98;1033.55,519.14;1028.35,529.02;1022.63,550.33;1020.55,563.85;1014.83,585.17;1009.63,602.33;1005.99,618.44;1006.51,630.40;1015.35,641.32;1019.51,643.92;1020.55,659.52;1018.99,677.71;1014.31,694.35;1012.75,706.31;1012.75,719.31;1010.15,728.67;1012.23,737.51;1012.23,752.06;1010.15,769.74;1007.03,794.18;1007.55,809.25;1021.59,810.29;1023.67,785.34;1025.75,760.90;1034.59,759.86;1041.87,758.82;1046.55,781.70;1053.82,800.94;1062.14,820.69;1067.34,839.41;1073.06,853.45;1071.50,873.20;1073.06,884.12;1075.14,891.92;1074.10,921.04;1069.94,945.99;1066.82,968.87;1063.18,996.42;1060.06,1012.54;1055.38,1017.22;1046.55,1016.70;1039.79,1016.18;1036.67,1019.30;1038.75,1025.02;1032.51,1026.58;1024.19,1025.02;1014.83,1029.18" occluded="0" z_order="6">
+                <attribute name="age">25</attribute>
+                <attribute name="gender">female</attribute>
+                <attribute name="false_positive">false</attribute>
+                <attribute name="action">standing</attribute>
+                <attribute name="clother">non-initialized</attribute>
+            </polygon>
+            <polygon label="person" points="860.26,1048.76;871.05,1049.52;885.84,1047.76;896.87,1043.75;901.38,1034.47;904.39,1023.19;908.15,1013.91;906.90,1008.40;904.14,1006.64;901.63,991.35;897.62,990.34;897.12,985.58;893.61,983.82;892.61,976.55;899.38,969.78;902.14,964.02;900.13,957.50;898.63,951.48;898.12,940.70;896.37,930.17;893.86,924.40;892.11,909.11;888.09,894.56;881.58,879.77;874.56,870.24;871.05,861.47;871.30,854.20;871.30,835.89;873.05,817.34;876.31,801.29;880.32,786.75;889.60,786.75;905.40,783.99;922.45,782.24;930.47,780.48;934.23,778.22;939.50,776.47;944.01,771.45;944.76,764.18;942.25,750.14;937.49,734.09;932.47,714.54;927.96,705.76;924.20,682.69;914.42,641.07;909.66,623.27;905.65,608.48;903.39,598.45;900.13,599.20;924.20,707.02;914.67,710.02;895.87,711.28;889.10,711.28;884.33,708.52;877.06,706.26;876.06,701.25;878.57,701.25;879.82,700.25;880.82,698.74;885.59,698.24;890.35,698.24;890.10,695.73;889.35,692.72;888.85,688.71;882.58,690.47;877.06,690.47;874.81,685.45;875.81,681.44;876.31,675.92;874.56,671.16;873.55,668.65;873.30,663.14;874.30,655.87;876.31,651.60;877.56,644.83;878.07,639.32;882.83,633.30;885.34,623.27;891.35,611.99;892.86,603.46;894.36,595.94;895.87,591.93;897.87,593.68;897.87,595.94;898.88,598.45;900.63,598.95;903.64,598.95;901.63,588.17;898.12,575.38;897.12,571.37;897.62,553.57;894.61,548.80;890.35,544.79;889.35,538.02;884.84,536.52;880.57,537.27;878.57,537.52;877.06,535.77;872.80,535.01;870.29,535.01;868.04,533.76;869.54,526.74;867.28,516.96;866.03,510.19;861.52,505.18;857.76,501.42;854.00,492.14;852.49,482.36;851.99,475.34;848.23,458.79;841.71,440.24;831.43,432.46;821.40,428.20;808.86,426.45;797.33,427.95;787.55,431.46;778.02,438.23;771.00,446.76;772.76,457.79;775.27,471.08;778.02,476.34;779.03,482.61;778.27,488.88;778.02,493.89;781.03,499.91;784.04,506.18;789.81,515.71;793.07,519.97;795.83,524.73;796.08,527.74;790.56,531.25;784.54,534.76;774.01,536.02;765.74,537.52;757.96,542.28;754.71,548.80;749.44,559.59;745.93,569.87;741.42,585.16;737.40,599.95;733.39,610.48;729.63,619.51;725.62,629.54;723.61,637.81;724.62,646.59;725.12,656.87;725.87,663.89;727.38,669.16;731.14,672.16;735.65,673.92;745.93,675.17;755.71,678.18;751.45,689.21;747.18,701.00;745.68,714.04;754.71,718.80;751.45,725.32;748.44,735.85;745.68,745.38;742.42,755.41;740.16,769.45;739.41,784.49;737.66,800.79;738.16,842.41;737.25,863.17;736.35,880.92;733.64,896.57;731.54,910.11;731.84,924.25;729.73,935.68;727.63,950.13;726.42,966.98;724.32,982.62;721.61,1004.59;718.30,1013.61;708.37,1022.04;702.05,1026.55;691.22,1025.95;680.69,1024.44;673.77,1028.96;673.47,1041.89;682.49,1051.82;698.14,1057.24;709.87,1063.56;721.91,1068.07;732.14,1071.38;738.76,1071.98;743.57,1067.77;743.57,1056.64;745.08,1046.11;747.78,1036.18;746.28,1031.06;745.98,1019.93;749.89,1006.69;751.70,1000.67;756.21,999.77;764.03,995.86;764.33,983.52;768.24,973.29;770.35,955.84;773.66,938.99;777.27,921.84;779.98,904.99;781.18,895.07;789.31,860.77;791.11,845.42;798.33,831.88;807.66,815.63;810.97,805.10;815.18,823.16;821.50,840.00;825.41,861.07;830.23,877.31;832.93,893.26;840.76,907.40;850.38,919.14;853.09,929.06;857.00,944.11;859.11,957.35;861.52,965.77;865.43,977.51;869.04,982.92;868.74,991.35;868.14,999.77;868.14,1008.20;868.14,1013.91;865.43,1022.64;862.12,1029.26;858.21,1037.08;857.61,1043.10" occluded="0" z_order="7">
+                <attribute name="age">25</attribute>
+                <attribute name="gender">female</attribute>
+                <attribute name="false_positive">false</attribute>
+                <attribute name="action">standing</attribute>
+                <attribute name="clother">non-initialized</attribute>
+            </polygon>
+            <polyline label="road" points="1917.90,1060.20;1813.70,1033.40;1696.00,1007.70;1570.48,980.03;1428.17,952.86;1316.91,932.16;1217.29,916.64;1134.50,903.70;1063.34,890.77;976.66,880.42;889.98,870.07;816.24,862.30;724.38,854.54;649.35,845.49;541.97,836.04;437.05,826.73;329.15,819.87;246.87,816.64;139.23,811.46;34.18,806.93" occluded="1" z_order="5">
+            </polyline>
+            <points label="road" points="1334.48,1137.18;511.50,1134.40;515.55,706.37;1334.48,707.67" occluded="0" z_order="10">
+            </points>
+        </image>
+    </annotations>`;
 
-    let incorrect_xml = `
-	<annotations count="4">
-		<image id="0" name="NongDa_South_Road_Fewer_2_000390.png">
-			<box label="car" xtl="818.46" ytl="558.00" xbr="924.07" ybr="640.97" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="299.22" ytl="530.34" xbr="438.78" ybr="605.77" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box la
-    `;
+    let incorrect_xml =
+    `<?xml version="1.0" encoding="utf-8"?>
+    <annotations>
+    <version>1.0</version>
+        <image id="0" name="1*FJ8Ws7JJ3fz5gpXfQeN73A.jpg">
+            <box label="face" xtl="1045.98" ytl="403.64" xbr="1127.48" ybr="498.08" occluded="0" z_order="8">
+            <attribute name="age">adult (20-
+        </image>
+    </annotations>`;
 
-    let unknown_label = `
-	<annotations count="4">
-		<image id="0" name="NongDa_South_Road_Fewer_2_000390.png">
-			<box label="person" xtl="1664.58" ytl="550.45" xbr="1737.50" ybr="842.13" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="unknown" xtl="1574.06" ytl="565.54" xbr="1631.89" ybr="779.27" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-		</image>
-	</annotations>
-    `;
+    let unknown_label =
+    `<?xml version="1.0" encoding="utf-8"?>
+    <annotations>
+    <version>1.0</version>
+        <image id="0" name="1*FJ8Ws7JJ3fz5gpXfQeN73A.jpg">
+            <box label="unknown" xtl="1045.98" ytl="403.64" xbr="1127.48" ybr="498.08" occluded="0" z_order="8">
+                <attribute name="age">adult (20-45)</attribute>
+                <attribute name="glass">no</attribute>
+                <attribute name="beard">no</attribute>
+                <attribute name="race">asian</attribute>
+            </box>
+            <polyline label="road" points="1917.90,1060.20;1813.70,1033.40;1696.00,1007.70;1570.48,980.03;1428.17,952.86;1316.91,932.16;1217.29,916.64;1134.50,903.70;1063.34,890.77;976.66,880.42;889.98,870.07;816.24,862.30;724.38,854.54;649.35,845.49;541.97,836.04;437.05,826.73;329.15,819.87;246.87,816.64;139.23,811.46;34.18,806.93" occluded="1" z_order="5">
+            </polyline>
+            <points label="road" points="1334.48,1137.18;511.50,1134.40;515.55,706.37;1334.48,707.67" occluded="0" z_order="10">
+            </points>
+        </image>
+    </annotations>`;
 
-    let unknown_attribute = `
-	<annotations count="4">
-		<image id="0" name="NongDa_South_Road_Fewer_2_000390.png">
-			<box label="person" xtl="1664.58" ytl="550.45" xbr="1737.50" ybr="842.13" occluded="0"><attribute name="age">1</attribute><attribute name="clother">non-initialized</attribute></box>
-			<box label="person" xtl="1499.88" ytl="555.48" xbr="1548.91" ybr="762.93" occluded="0"><attribute name="unknown">1</attribute><attribute name="clother">non-initialized</attribute></box>
-		</image>
-	</annotations>
-    `;
+    let unknown_attribute =
+    `<?xml version="1.0" encoding="utf-8"?>
+    <annotations>
+    <version>1.0</version>
+        <image id="0" name="1*FJ8Ws7JJ3fz5gpXfQeN73A.jpg">
+            <box label="face" xtl="1045.98" ytl="403.64" xbr="1127.48" ybr="498.08" occluded="0" z_order="8">
+                <attribute name="age">adult (20-45)</attribute>
+                <attribute name="unknown">no</attribute>
+                <attribute name="beard">no</attribute>
+                <attribute name="race">asian</attribute>
+            </box>
+        </image>
+    </annotations>`;
 
-    let bad_attr_values = `
-	<annotations count="4">
-		<image id="0" name="NongDa_South_Road_Fewer_2_000390.png">
-		<box label="car" xtl="727.94" ytl="589.43" xbr="802.12" ybr="651.03" occluded="0"><attribute name="model">bad_attribute</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-			<box label="car" xtl="613.53" ytl="586.91" xbr="696.51" ybr="647.26" occluded="0"><attribute name="model">__undefined__</attribute><attribute name="driver">__undefined__</attribute><attribute name="parked">true</attribute></box>
-		</image>
-	</annotations>
-    `;
+    let bad_attr_values =
+    `<?xml version="1.0" encoding="utf-8"?>
+    <annotations>
+    <version>1.0</version>
+        <image id="0" name="1*FJ8Ws7JJ3fz5gpXfQeN73A.jpg">
+            <box label="face" xtl="1045.98" ytl="403.64" xbr="1127.48" ybr="498.08" occluded="0" z_order="8">
+                <attribute name="age">adult (20-45)</attribute>
+                <attribute name="glass">some bad value</attribute>
+                <attribute name="beard">no</attribute>
+                <attribute name="race">asian</attribute>
+            </box>
+        </image>
+    </annotations>`;
 
-    let empty_xml = `<annotations count="4"></annotations>`;
+    let empty_xml =
+    `<?xml version="1.0" encoding="utf-8"?>
+    <annotations> </annotations>`;
+
+    let empty = {
+        "boxes": [],
+        "box_paths": [],
+        "polygons": [],
+        "polygon_paths": [],
+        "points": [],
+        "points_paths": [],
+        "polylines": [],
+        "polyline_paths": [],
+    };
 
     QUnit.test('parse', function(assert) {
-        assert.deepEqual(annotation_parser.parse(correct_xml), window.job_tracks, 'Return value must be like expected.');
-        assert.deepEqual(annotation_parser.parse(empty_xml), {"boxes": [], "tracks": []}, 'Return value must be like expected.');
+        assert.deepEqual(annotation_parser.parse(correct_xml), window.job_data, 'Return value must be like expected.');
+        assert.deepEqual(annotation_parser.parse(empty_xml), empty, 'Return value must be like expected.');
         assert.throws(annotation_parser.parse.bind(annotation_parser, bad_attr_values), 'This function must throw exception. Bad attribute values into XML.');
         assert.throws(annotation_parser.parse.bind(annotation_parser, incorrect_xml),'This function must throw exception. Bad input xml.');
         assert.throws(annotation_parser.parse.bind(annotation_parser, unknown_label),'This function must throw exception. Unknown label in input xml.');
@@ -357,186 +420,13 @@ qunit_tests.push(function() {
     });
 });
 
-
-// collection model unit tests
-qunit_tests.push(function() {
-    let labels_info = null;
-    let track_filter_model = null;
-    let collection_model = null;
-
-    QUnit.module('collection_model_class', {
-        beforeEach: function() {
-            labels_info = make_labels_info();
-            track_filter_model = make_track_filter_model(labels_info);
-            collection_model = make_collection_model(labels_info, track_filter_model);
-        }
-    });
-
-    QUnit.test('import_empty_track', function(assert) {
-        let data = {
-            "boxes":[],
-            "tracks":[
-                {
-                    "frame":0,
-                    "boxes": [],
-                    "attributes":[
-                        {
-                            "value":"__undefined__",
-                            "id":1
-                        },
-                        {
-                            "value":"man",
-                            "id":2
-                        }
-                    ],
-                    "label_id":1
-                }
-            ]
-        };
-
-        collection_model.importTracks(data);
-        assert.equal(collection_model._allTracks.length, 0, "Empty track should not be imported");
-    });
-
-    QUnit.test('import_non_empty_track', function(assert) {
-        let data = {
-            "boxes":[],
-            "tracks":[
-                {
-                    "frame":0,
-                    "boxes": [
-                        {
-                            "ytl":686.2345581054688,
-                            "ybr":903.736328125,
-                            "occluded":false,
-                            "xtl":401.05816650390625,
-                            "outside":false,
-                            "xbr":528.0390014648438,
-                            "frame":0,
-                            "attributes":[
-                                {
-                                    "value":"true",
-                                    "id":3
-                                }
-                            ]
-                        }
-                    ],
-                    "attributes":[
-                        {
-                            "value":"__undefined__",
-                            "id":1
-                        },
-                        {
-                            "value":"man",
-                            "id":2
-                        }
-                    ],
-                    "label_id":1
-                }
-            ]
-        };
-
-
-        collection_model.importTracks(data);
-        assert.equal(collection_model._allTracks.length, 1, 'Track should be imported');
-    });
-
-    QUnit.test('save_outside_track', function(assert) {
-        let data = {
-            label: 1,
-            boxes: [ [379, 254, 539, 407, 0, 1, 0], [379, 254, 539, 407, 1, 1, 0] ],
-            attributes: []
-        };
-
-        collection_model.add(data);
-        assert.deepEqual(JSON.parse(collection_model.exportTracks()), {tracks:[],boxes:[]}, 'Empty tracks should not be exported');
-    });
-});
-
-
-// merger model unit tests
-qunit_tests.push(function() {
-    let labels_info = null;
-    let track_filter_model = null;
-    let collection_model = null;
-    let merger_model = null;
-
-    QUnit.module('merger_model_class', {
-        before: function()  {
-            labels_info = make_labels_info();
-            track_filter_model = make_track_filter_model(labels_info);
-            collection_model = make_collection_model(labels_info, track_filter_model);
-            collection_model.importTracks(window.job_tracks);
-            merger_model = make_merger_model(collection_model);
-            collection_model.onchangeframe(0);
-            merger_model.enableMergeMode();
-        },
-        after: function() {
-            merger_model.disableMergeMode();
-            collection_model.resetactivetrack();
-        }
-    });
-
-
-    QUnit.test('add_to_merge', function(assert) {
-        let rand_track = collection_model.currentTracks[0].trackModel;   // get any track
-        collection_model.setactivetrack(rand_track.id);  // simulate mouseover
-        rand_track.onSelect();   // simulate mousedown
-        assert.ok(merger_model._mergeTracks[0] == rand_track, '');
-    });
-});
-
-
-// attribute annotation mode unit tests
-qunit_tests.push(function() {
-    let labels_info = null;
-    let track_filter_model = null;
-    let player_model = null;
-    let collection_model = null;
-    let aam_model = null;
-
-    QUnit.module('attribute_annotation_model_class', {
-        before: function() {
-            labels_info = make_labels_info();
-            track_filter_model = make_track_filter_model(labels_info);
-            collection_model = make_collection_model(labels_info, track_filter_model);
-            collection_model.importTracks(window.job_tracks);
-            player_model = make_player_model();
-            aam_model = make_aam_model(labels_info, collection_model, player_model);
-            collection_model.subscribe(aam_model);
-            collection_model.onchangeframe(3);
-        }
-    });
-
-    QUnit.test('enableAAMModel', function(assert) {
-        assert.expect(0);
-        aam_model.enableAAM();
-    });
-
-    QUnit.test('disableAAMModel', function(assert) {
-        assert.expect(0);
-        aam_model.disableAAM();
-    });
-
-    QUnit.test('move_beetween_the_tracks', function(assert) {
-        assert.expect(0);
-        aam_model.enableAAM();
-        aam_model.nextTrack(-1);     // move to track without attributes
-        aam_model.nextTrack(1);
-        aam_model.helps;
-        aam_model.disableAAM();
-    });
-});
-
 function make_labels_info() {
     return new LabelsInfo(window.job);
 }
 
-
-function make_annotation_parser(labels_info) {
-    return new AnnotationParser(labels_info, window.job);
+function make_annotation_parser() {
+    return new AnnotationParser(window.job, make_labels_info());
 }
-
 
 function make_player_model() {
     let fake_player_geometry = {
@@ -549,67 +439,179 @@ function make_player_model() {
     return new PlayerModel(window.job, fake_player_geometry);
 }
 
-
-function make_track_filter_model(labels_info) {
-    return new TrackFilterModel(labels_info);
-}
-
-
-function make_collection_model(labels_info, track_filter_model) {
-    return new CollectionModel(labels_info, window.job, track_filter_model);
-}
-
-
-function make_merger_model(collection_model) {
-    return new MergerModel(collection_model);
-}
-
-
-function make_aam_model(labels_info, collection_model, player_model) {
-    return new AAMModel(labels_info,
-        (id) => collection_model.setactivetrack(id),
-        () => collection_model.resetactivetrack(),
-        (xtl, xbr, ytl, ybr) => player_model.focus(xtl, xbr, ytl, ybr));
-}
-
 // stub data
 window.job = {
-    "status": "Annotate",
-    "overlap": 0,
-    "blowradius": 0,
-    "jobid": 1,
-    "mode": "annotation",
-    "taskid": 1,
-    "labels": {
-        "1": "car",
-        "2": "bicycle",
-        "3": "person",
-        "4": "motorcycle",
-        "5": "road"
+    "jobid":1,
+    "labels":{
+        "1":"person",
+        "2":"face",
+        "3":"car",
+        "4":"bicycle",
+        "5":"motorcycle",
+        "6":"road"
     },
-    "slug": "QUnitTask",
-    "stop": 190,
-    "start": 0,
-    "attributes":
-    {
-        "1": {
-            "1": "@select=model:__undefined__,bmw,mazda,suzuki,kia",
-            "2": "@select=driver:__undefined__,man,woman",
-            "3": "~checkbox=parked:true"
+    "taskid":1,
+    "stop":12,
+    "z_order":true,
+    "overlap":0,
+    "slug":"QUnitTests",
+    "status":"Annotate",
+    "attributes":{
+        "1":{
+            "1":"~select=action:__undefined__,sitting,raising_hand,standing",
+            "2":"@number=age:1,100,1",
+            "3":"@select=gender:male,female",
+            "4":"@checkbox=false_positive:false",
+            "5":"~text=clother:non-initialized"
         },
-        "2": {
-            "4": "@radio=driver:man,woman",
-            "5": "~checkbox=sport:false"
+        "2":{
+            "8":"@select=beard:__undefined__,skip,no,yes",
+            "9":"@select=race:__undefined__,skip,asian,black,caucasian,other",
+            "6":"@select=age:__undefined__,skip,baby (0-5),child (6-12),adolescent (13-19),adult (20-45),middle-age (46-64),old (65-)",
+            "7":"@select=glass:__undefined__,skip,no,sunglass,transparent,other"
         },
-        "3": {
-            "6": "~text=clother:non-initialized",
-            "7": "@number=age:1,100,1"
+        "3":{
+            "10":"@select=model:__undefined__,bmw,mazda,suzuki,kia",
+            "11":"@select=driver:__undefined__,man,woman",
+            "12":"~checkbox=parked:true"
         },
-        "4": {
-            "8": "@text=model:non_initialized"
+        "4":{
+            "13":"@radio=driver:man,woman",
+            "14":"~checkbox=sport:false"
         },
-        "5": {}
-    }
+        "5":{
+            "15":"@text=model:unknown"
+        },
+        "6":{
+
+        }
+    },
+    "flipped": false,
+    "image_meta_data": {
+        "original_size": [{
+            "width": 3240,
+            "height": 2000
+        }]
+    },
+    "mode":"annotation",
+    "start":0
 };
 
-window.job_tracks = {"boxes":[{"label_id":1,"xtl":818.46,"ytl":558,"xbr":924.07,"ybr":640.97,"occluded":0,"frame":0,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":299.22,"ytl":530.34,"xbr":438.78,"ybr":605.77,"occluded":0,"frame":0,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":0,"ytl":535.37,"xbr":104.98,"ybr":610.8,"occluded":0,"frame":0,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":1135.91,"ytl":565.54,"xbr":1207.57,"ybr":620.86,"occluded":0,"frame":0,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":988.82,"ytl":552.97,"xbr":1030.3,"ybr":595.71,"occluded":0,"frame":0,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":3,"xtl":1664.58,"ytl":550.45,"xbr":1737.5,"ybr":842.13,"occluded":0,"frame":0,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":3,"xtl":1574.06,"ytl":565.54,"xbr":1631.89,"ybr":779.27,"occluded":0,"frame":0,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":3,"xtl":1499.88,"ytl":555.48,"xbr":1548.91,"ybr":762.93,"occluded":0,"frame":0,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":3,"xtl":1448.34,"ytl":558,"xbr":1491.08,"ybr":727.72,"occluded":0,"frame":0,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":3,"xtl":1413.13,"ytl":549.2,"xbr":1445.82,"ybr":712.64,"occluded":0,"frame":0,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":3,"xtl":1350.27,"ytl":549.2,"xbr":1381.7,"ybr":682.46,"occluded":0,"frame":0,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":3,"xtl":1576.57,"ytl":552.97,"xbr":1659.55,"ybr":901.22,"occluded":0,"frame":1,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":3,"xtl":1802.88,"ytl":585.66,"xbr":1909.74,"ybr":972.88,"occluded":0,"frame":1,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":3,"xtl":1354.04,"ytl":561.77,"xbr":1411.88,"ybr":771.73,"occluded":0,"frame":1,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":2,"xtl":985.67,"ytl":565.54,"xbr":1063.62,"ybr":634.69,"occluded":0,"frame":1,"attributes":[{"id":"4","value":"man"},{"id":"5","value":false}]},{"label_id":2,"xtl":614.79,"ytl":548.57,"xbr":704.05,"ybr":617.72,"occluded":0,"frame":1,"attributes":[{"id":"4","value":"man"},{"id":"5","value":false}]},{"label_id":2,"xtl":809.03,"ytl":549.82,"xbr":863.09,"ybr":598.86,"occluded":0,"frame":1,"attributes":[{"id":"4","value":"man"},{"id":"5","value":false}]},{"label_id":2,"xtl":1037.22,"ytl":794.36,"xbr":1198.15,"ybr":1025.69,"occluded":0,"frame":2,"attributes":[{"id":"4","value":"man"},{"id":"5","value":false}]},{"label_id":3,"xtl":1037.22,"ytl":646,"xbr":1186.83,"ybr":853.45,"occluded":0,"frame":2,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":3,"xtl":1284.89,"ytl":571.83,"xbr":1340.21,"ybr":770.47,"occluded":0,"frame":2,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":3,"xtl":1020.88,"ytl":602,"xbr":1054.82,"ybr":697.55,"occluded":0,"frame":2,"attributes":[{"id":"6","value":"non-initialized"},{"id":"7","value":"1"}]},{"label_id":1,"xtl":727.94,"ytl":589.43,"xbr":802.12,"ybr":651.03,"occluded":0,"frame":2,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":613.53,"ytl":586.91,"xbr":696.51,"ybr":647.26,"occluded":0,"frame":2,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":335.68,"ytl":579.37,"xbr":423.69,"ybr":632.17,"occluded":0,"frame":2,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":199.9,"ytl":565.54,"xbr":296.71,"ybr":627.14,"occluded":0,"frame":2,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":299.22,"ytl":576.86,"xbr":350.77,"ybr":628.4,"occluded":0,"frame":2,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":1052.31,"ytl":493.88,"xbr":1160.43,"ybr":586.91,"occluded":0,"frame":3,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":936.64,"ytl":422.22,"xbr":1035.96,"ybr":550.45,"occluded":0,"frame":3,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":1171.74,"ytl":446.1,"xbr":1217,"ybr":506.45,"occluded":0,"frame":3,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":305.51,"ytl":498.91,"xbr":422.43,"ybr":559.25,"occluded":0,"frame":3,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":424.95,"ytl":492.62,"xbr":510.44,"ybr":545.42,"occluded":0,"frame":3,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":1,"xtl":0,"ytl":503.94,"xbr":218.76,"ybr":593.2,"occluded":0,"frame":3,"attributes":[{"id":"1","value":"__undefined__"},{"id":"2","value":"__undefined__"},{"id":"3","value":true}]},{"label_id":2,"xtl":255.22,"ytl":486.33,"xbr":316.82,"ybr":593.2,"occluded":0,"frame":3,"attributes":[{"id":"4","value":"man"},{"id":"5","value":false}]},{"label_id":4,"xtl":1213.23,"ytl":472.5,"xbr":1243.41,"ybr":544.17,"occluded":0,"frame":3,"attributes":[{"id":"8","value":"non_initialized"}]},{"label_id":4,"xtl":1165.46,"ytl":480.05,"xbr":1186.83,"ybr":519.02,"occluded":0,"frame":3,"attributes":[{"id":"8","value":"non_initialized"}]},{"label_id":5,"xtl":5.03,"ytl":617.09,"xbr":1916.03,"ybr":1078.49,"occluded":0,"frame":3,"attributes":[]}],"tracks":[]};
+window.job_data = {
+    "boxes": [{
+        "label_id": 2,
+        "frame": 0,
+        "group_id": 0,
+        "occluded": 0,
+        "xtl": 1045.98,
+        "ytl": 403.64,
+        "xbr": 1127.48,
+        "ybr": 498.08,
+        "z_order": 8,
+        "attributes": [{
+            "id": "6",
+            "value": "adult (20-45)"
+        }, {
+            "id": "7",
+            "value": "no"
+        }, {
+            "id": "8",
+            "value": "no"
+        }, {
+            "id": "9",
+            "value": "asian"
+        }]
+    }, {
+        "label_id": 2,
+        "frame": 0,
+        "group_id": 0,
+        "occluded": 0,
+        "xtl": 766.53,
+        "ytl": 426.93,
+        "xbr": 858.39,
+        "ybr": 534.31,
+        "z_order": 9,
+        "attributes": [{
+            "id": "6",
+            "value": "__undefined__"
+        }, {
+            "id": "7",
+            "value": "no"
+        }, {
+            "id": "8",
+            "value": "no"
+        }, {
+            "id": "9",
+            "value": "asian"
+        }]
+    }],
+    "polygons": [{
+        "label_id": 1,
+        "frame": 0,
+        "group_id": 0,
+        "points": "1014.31,1043.74 1024.71,1053.62 1041.87,1061.93 1052.78,1067.13 1060.58,1069.21 1076.18,1070.25 1079.3,1068.69 1077.74,1057.26 1077.22,1048.94 1076.7,1041.14 1078.26,1031.26 1081.9,1016.7 1091.78,995.91 1101.14,975.11 1108.42,950.67 1118.81,967.31 1130.77,992.27 1132.33,1004.22 1127.13,1009.94 1120.89,1017.74 1115.69,1025.54 1104.26,1030.74 1096.46,1039.58 1096.46,1046.34 1104.26,1047.38 1125.05,1048.94 1141.69,1045.82 1144.29,1040.1 1158.85,1036.46 1171.33,1030.22 1172.89,1026.58 1167.69,1012.02 1157.81,993.31 1152.09,986.03 1152.09,977.19 1148.45,967.31 1142.21,944.95 1138.05,930.92 1138.05,922.08 1134.41,911.68 1128.17,897.64 1122.45,883.6 1120.37,856.57 1137.01,812.37 1256.07,783.78 1245.67,737.51 1240.99,701.11 1230.6,654.84 1216.56,609.09 1204.6,610.64 1198.36,608.57 1197.32,603.89 1192.1,598.9 1187.44,597.65 1185.36,581.53 1182.76,571.65 1177.56,553.45 1167.17,535.78 1164.57,525.38 1157.29,519.66 1145.33,513.42 1145.33,509.26 1139.09,505.62 1144.29,475.99 1139.09,449.99 1126.09,437.51 1124.53,436.99 1121.93,422.43 1113.61,414.12 1099.58,410.48 1079.82,410.48 1065.78,416.2 1055.38,419.83 1054.34,433.87 1052.78,445.83 1053.3,453.63 1051.74,462.99 1053.82,472.87 1056.94,484.82 1059.02,495.22 1062.66,498.86 1054.86,508.74 1041.87,514.98 1033.55,519.14 1028.35,529.02 1022.63,550.33 1020.55,563.85 1014.83,585.17 1009.63,602.33 1005.99,618.44 1006.51,630.4 1015.35,641.32 1019.51,643.92 1020.55,659.52 1018.99,677.71 1014.31,694.35 1012.75,706.31 1012.75,719.31 1010.15,728.67 1012.23,737.51 1012.23,752.06 1010.15,769.74 1007.03,794.18 1007.55,809.25 1021.59,810.29 1023.67,785.34 1025.75,760.9 1034.59,759.86 1041.87,758.82 1046.55,781.7 1053.82,800.94 1062.14,820.69 1067.34,839.41 1073.06,853.45 1071.5,873.2 1073.06,884.12 1075.14,891.92 1074.1,921.04 1069.94,945.99 1066.82,968.87 1063.18,996.42 1060.06,1012.54 1055.38,1017.22 1046.55,1016.7 1039.79,1016.18 1036.67,1019.3 1038.75,1025.02 1032.51,1026.58 1024.19,1025.02 1014.83,1029.18",
+        "occluded": 0,
+        "z_order": 6,
+        "attributes": [{
+            "id": "1",
+            "value": "standing"
+        }, {
+            "id": "2",
+            "value": "25"
+        }, {
+            "id": "3",
+            "value": "female"
+        }, {
+            "id": "4",
+            "value": false
+        }, {
+            "id": "5",
+            "value": "non-initialized"
+        }]
+    }, {
+        "label_id": 1,
+        "frame": 0,
+        "group_id": 0,
+        "points": "860.26,1048.76 871.05,1049.52 885.84,1047.76 896.87,1043.75 901.38,1034.47 904.39,1023.19 908.15,1013.91 906.9,1008.4 904.14,1006.64 901.63,991.35 897.62,990.34 897.12,985.58 893.61,983.82 892.61,976.55 899.38,969.78 902.14,964.02 900.13,957.5 898.63,951.48 898.12,940.7 896.37,930.17 893.86,924.4 892.11,909.11 888.09,894.56 881.58,879.77 874.56,870.24 871.05,861.47 871.3,854.2 871.3,835.89 873.05,817.34 876.31,801.29 880.32,786.75 889.6,786.75 905.4,783.99 922.45,782.24 930.47,780.48 934.23,778.22 939.5,776.47 944.01,771.45 944.76,764.18 942.25,750.14 937.49,734.09 932.47,714.54 927.96,705.76 924.2,682.69 914.42,641.07 909.66,623.27 905.65,608.48 903.39,598.45 900.13,599.2 924.2,707.02 914.67,710.02 895.87,711.28 889.1,711.28 884.33,708.52 877.06,706.26 876.06,701.25 878.57,701.25 879.82,700.25 880.82,698.74 885.59,698.24 890.35,698.24 890.1,695.73 889.35,692.72 888.85,688.71 882.58,690.47 877.06,690.47 874.81,685.45 875.81,681.44 876.31,675.92 874.56,671.16 873.55,668.65 873.3,663.14 874.3,655.87 876.31,651.6 877.56,644.83 878.07,639.32 882.83,633.3 885.34,623.27 891.35,611.99 892.86,603.46 894.36,595.94 895.87,591.93 897.87,593.68 897.87,595.94 898.88,598.45 900.63,598.95 903.64,598.95 901.63,588.17 898.12,575.38 897.12,571.37 897.62,553.57 894.61,548.8 890.35,544.79 889.35,538.02 884.84,536.52 880.57,537.27 878.57,537.52 877.06,535.77 872.8,535.01 870.29,535.01 868.04,533.76 869.54,526.74 867.28,516.96 866.03,510.19 861.52,505.18 857.76,501.42 854,492.14 852.49,482.36 851.99,475.34 848.23,458.79 841.71,440.24 831.43,432.46 821.4,428.2 808.86,426.45 797.33,427.95 787.55,431.46 778.02,438.23 771,446.76 772.76,457.79 775.27,471.08 778.02,476.34 779.03,482.61 778.27,488.88 778.02,493.89 781.03,499.91 784.04,506.18 789.81,515.71 793.07,519.97 795.83,524.73 796.08,527.74 790.56,531.25 784.54,534.76 774.01,536.02 765.74,537.52 757.96,542.28 754.71,548.8 749.44,559.59 745.93,569.87 741.42,585.16 737.4,599.95 733.39,610.48 729.63,619.51 725.62,629.54 723.61,637.81 724.62,646.59 725.12,656.87 725.87,663.89 727.38,669.16 731.14,672.16 735.65,673.92 745.93,675.17 755.71,678.18 751.45,689.21 747.18,701 745.68,714.04 754.71,718.8 751.45,725.32 748.44,735.85 745.68,745.38 742.42,755.41 740.16,769.45 739.41,784.49 737.66,800.79 738.16,842.41 737.25,863.17 736.35,880.92 733.64,896.57 731.54,910.11 731.84,924.25 729.73,935.68 727.63,950.13 726.42,966.98 724.32,982.62 721.61,1004.59 718.3,1013.61 708.37,1022.04 702.05,1026.55 691.22,1025.95 680.69,1024.44 673.77,1028.96 673.47,1041.89 682.49,1051.82 698.14,1057.24 709.87,1063.56 721.91,1068.07 732.14,1071.38 738.76,1071.98 743.57,1067.77 743.57,1056.64 745.08,1046.11 747.78,1036.18 746.28,1031.06 745.98,1019.93 749.89,1006.69 751.7,1000.67 756.21,999.77 764.03,995.86 764.33,983.52 768.24,973.29 770.35,955.84 773.66,938.99 777.27,921.84 779.98,904.99 781.18,895.07 789.31,860.77 791.11,845.42 798.33,831.88 807.66,815.63 810.97,805.1 815.18,823.16 821.5,840 825.41,861.07 830.23,877.31 832.93,893.26 840.76,907.4 850.38,919.14 853.09,929.06 857,944.11 859.11,957.35 861.52,965.77 865.43,977.51 869.04,982.92 868.74,991.35 868.14,999.77 868.14,1008.2 868.14,1013.91 865.43,1022.64 862.12,1029.26 858.21,1037.08 857.61,1043.1",
+        "occluded": 0,
+        "z_order": 7,
+        "attributes": [{
+            "id": "1",
+            "value": "standing"
+        }, {
+            "id": "2",
+            "value": "25"
+        }, {
+            "id": "3",
+            "value": "female"
+        }, {
+            "id": "4",
+            "value": false
+        }, {
+            "id": "5",
+            "value": "non-initialized"
+        }]
+    }],
+    "polylines": [{
+        "label_id": 6,
+        "frame": 0,
+        "group_id": 0,
+        "points": "1917.9,1060.2 1813.7,1033.4 1696,1007.7 1570.48,980.03 1428.17,952.86 1316.91,932.16 1217.29,916.64 1134.5,903.7 1063.34,890.77 976.66,880.42 889.98,870.07 816.24,862.3 724.38,854.54 649.35,845.49 541.97,836.04 437.05,826.73 329.15,819.87 246.87,816.64 139.23,811.46 34.18,806.93",
+        "occluded": 1,
+        "z_order": 5,
+        "attributes": []
+    }],
+    "points": [{
+        "label_id": 6,
+        "frame": 0,
+        "group_id": 0,
+        "points": "1334.48,1137.18 511.5,1134.4 515.55,706.37 1334.48,707.67",
+        "occluded": 0,
+        "z_order": 10,
+        "attributes": []
+    }],
+    "box_paths": [],
+    "polygon_paths": [],
+    "polyline_paths": [],
+    "points_paths": []
+};

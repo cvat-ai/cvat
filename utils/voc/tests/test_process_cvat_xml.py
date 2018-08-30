@@ -2,7 +2,7 @@ import tempfile
 import shutil
 import os
 from unittest import TestCase, mock
-from cvat.utils.convert_to_voc import process_cvat_xml
+from utils.voc.converter import process_cvat_xml
 
 XML_ANNOTATION_EXAMPLE = """<?xml version="1.0" encoding="utf-8"?>
 <annotations>
@@ -40,25 +40,25 @@ XML_ANNOTATION_EXAMPLE = """<?xml version="1.0" encoding="utf-8"?>
     </task>
     <dumped>2018-06-06 15:47:04.386866+03:00</dumped>
   </meta>
-  <image id="0" name="C15_L1_0001.jpg">
+  <image id="0" name="C15_L1_0001.jpg" width="600" height="400">
     <box label="car" xtl="38.95" ytl="26.51" xbr="140.64" ybr="54.29" occluded="0">
       <attribute name="parked">false</attribute>
       <attribute name="model">a</attribute>
     </box>
   </image>
-  <image id="1" name="C15_L1_0002.jpg">
+  <image id="1" name="C15_L1_0002.jpg" width="600" height="400">
     <box label="car" xtl="49.13" ytl="23.34" xbr="149.54" ybr="53.88" occluded="0">
       <attribute name="parked">true</attribute>
       <attribute name="model">a</attribute>
     </box>
   </image>
-  <image id="2" name="C15_L1_0003.jpg">
+  <image id="2" name="C15_L1_0003.jpg" width="600" height="400">
     <box label="car" xtl="50.73" ytl="30.26" xbr="146.72" ybr="59.97" occluded="0">
       <attribute name="parked">false</attribute>
       <attribute name="model">b</attribute>
     </box>
   </image>
-  <image id="39" name="C15_L1_0040.jpg">
+  <image id="39" name="C15_L1_0040.jpg" width="600" height="400">
     <box label="car" xtl="49.60" ytl="30.15" xbr="150.19" ybr="58.06" occluded="0">
       <attribute name="parked">false</attribute>
       <attribute name="model">c</attribute>
@@ -139,32 +139,23 @@ class TestProcessCvatXml(TestCase):
     def tearDown(self):
         shutil.rmtree(self.test_dir)
 
-    @mock.patch('cvat.utils.convert_to_voc.logger')
-    @mock.patch('cvat.utils.convert_to_voc.Image')
-    def test_parse_annotation_xml(self, mock_image, mock_logger):
+    @mock.patch('utils.voc.converter.log')
+    def test_parse_annotation_xml(self, mock_log):
         xml_filename = os.path.join(self.test_dir, 'annotations.xml')
         with open(xml_filename, mode='x') as file:
             file.write(XML_ANNOTATION_EXAMPLE)
 
         voc_dir = os.path.join(self.test_dir, 'voc_dir')
 
-        width, height = 600, 400
-        img = mock.MagicMock()
-        img.size = width, height
-        mock_image.open.return_value.__enter__.return_value = img
-
         images = ['C15_L1_0001', 'C15_L1_0002', 'C15_L1_0003', 'C15_L1_0040']
         expected_xmls = [os.path.join(voc_dir, x + '.xml')
                          for x in images]
-        expected_warn = "Ignoring tags for image img_dir/C15_L1_0040.jpg: " \
-                        "{'point'}"
         process_cvat_xml(xml_filename, 'img_dir', voc_dir)
         for exp in expected_xmls:
             self.assertTrue(os.path.exists(exp))
-        mock_logger.warn.assert_called_once_with(expected_warn)
 
-    @mock.patch('cvat.utils.convert_to_voc.logger')
-    def test_parse_interpolation_xml(self, mock_logger):
+    @mock.patch('utils.voc.converter.log')
+    def test_parse_interpolation_xml(self, mock_log):
         xml_filename = os.path.join(self.test_dir, 'interpolations.xml')
         with open(xml_filename, mode='x') as file:
             file.write(XML_INTERPOLATION_EXAMPLE)
@@ -176,4 +167,4 @@ class TestProcessCvatXml(TestCase):
 
         self.assertTrue(os.path.exists(voc_dir))
         self.assertTrue(len(os.listdir(voc_dir)) == 0)
-        mock_logger.warn.assert_called_once_with(expected_warn)
+        mock_log.warn.assert_called_once_with(expected_warn)

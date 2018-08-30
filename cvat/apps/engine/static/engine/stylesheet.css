@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 /* ----------------------- Classes ----------------------- */
 .playerButton {
     fill: #09c;
@@ -57,12 +63,21 @@
 
 
 
-  .graphicButton {
+.graphicButton {
+    opacity: 0.6;
     width: 20px;
     height: 20px;
     border: none;
     outline: none;
     margin-right: 10px;
+}
+
+.graphicButton:hover {
+    opacity: 1;
+}
+
+.graphicButton:active {
+    opacity: 0.2;
 }
 
 .lockButton {
@@ -85,12 +100,37 @@
     background-size: 20px;
 }
 
-.outsidedButton {
+.copyButton {
+    background: url("icons/copy.png") no-repeat;
+    background-size: 20px;
+}
+
+.propagateButton {
+    background: url("icons/propagate.png") no-repeat;
+    background-size: 20px;
+}
+
+.hiddenButton {
+    background: url("icons/non-hidden.png") no-repeat;
+    background-size: 20px;
+}
+
+.hiddenText {
+    background: url("icons/hidden-text.png") no-repeat;
+    background-size: 20px;
+}
+
+.hiddenShape {
+    background: url("icons/hidden-shape.png") no-repeat;
+    background-size: 20px;
+}
+
+.outsideButton {
     background: url("icons/non-outside.png") no-repeat;
     background-size: 20px;
 }
 
-.outsided {
+.outside {
     background: url("icons/outside.png") no-repeat;
     background-size: 20px;
 }
@@ -105,9 +145,23 @@
     background-size: 20px;
 }
 
+.prevKeyFrameButton {
+    background: url("icons/prevKeyFrame.png") no-repeat;
+    background-size: 20px;
+}
+
+.initKeyFrameButton {
+    background: url("icons/initKeyFrame.png") no-repeat;
+    background-size: 20px;
+}
+
+.nextKeyFrameButton {
+    background: url("icons/nextKeyFrame.png") no-repeat;
+    background-size: 20px;
+}
 
 
-.uiElement {
+.uiElement, .labelContentElement {
     width: 93%;
     border-radius: 2px;
     margin: 1% auto;
@@ -118,38 +172,90 @@
     opacity: 0.65;
 }
 
-.attribute {
-    margin: 1% 10%;
+.labelContentElement:active {
+    opacity: 0.6;
 }
 
-.uiRadio {
+.highlightedUI {
+    border: 3px solid black;
+    opacity: 1;
+}
+
+.uiAttr {
+    margin-left: 5%;
+    margin-bottom: 2px;
+}
+
+.selectAttr {
     width: 60%;
-    margin-bottom: 5px;
 }
 
-.uiSelect {
-    font-size: 1em;
+.numberAttr {
+    width: 20%;
 }
 
-.left {
-    float: left;
+.textAttr {
+    width: 60%;
 }
-
-.center {
-    text-align: center;
-}
-
-
-
 
 .shape {
-    stroke-location: inside;
-    fill-opacity: 0;
-    stroke-width: 2px;
     position: relative;
-    shape-rendering: optimizespeed;
-    color-rendering: optimizeSpeed;
-    mix-blend-mode: hard-light;
+    shape-rendering: geometricprecision;
+    color-rendering: optimizeQuality;
+}
+
+.selectedShape {
+    cursor: move;
+}
+
+.polyline {
+    fill: none !important;
+}
+
+.points {
+    stroke: none !important;
+    fill: none !important;
+}
+
+.shapeSelect {
+    fill-opacity: 0;
+    stroke-opacity: 1;
+    visibility: hidden;
+}
+
+.shapeCreation {
+    stroke: #fff;
+    fill-opacity: 0;
+}
+
+.svg_select_points {
+    fill-opacity: 1;
+    cursor: pointer;
+}
+
+.svg_select_points_lt{
+    cursor: nw-resize;
+}
+.svg_select_points_rt{
+    cursor: ne-resize;
+}
+.svg_select_points_rb{
+    cursor: se-resize;
+}
+.svg_select_points_lb{
+    cursor: sw-resize;
+}
+.svg_select_points_t{
+    cursor: n-resize;
+}
+.svg_select_points_r{
+    cursor: e-resize;
+}
+.svg_select_points_b{
+    cursor: s-resize;
+}
+.svg_select_points_l{
+    cursor: w-resize;
 }
 
 .shapeText {
@@ -168,14 +274,34 @@
     stroke-dasharray: 5;
 }
 
-.mergeHighlighted {
+.mergeShape {
     fill: blue;
     fill-opacity: 0.5;
 }
 
-.highlightedUI {
-    border: 3px solid black;
-    opacity: 1;
+.mergePoints {
+    fill: blue;
+    fill-opacity: 0.5;
+}
+
+.mergeLine {
+    stroke: blue;
+    stroke-opacity: 1;
+}
+
+.groupShape {
+    fill: darkmagenta;
+    fill-opacity: 0.5;
+}
+
+.groupPoints {
+    fill: darkmagenta;
+    fill-opacity: 0.5;
+}
+
+.groupLine {
+    stroke: darkmagenta;
+    stroke-opacity: 1;
 }
 
 .lockedShape {
@@ -188,30 +314,62 @@
 
 
 .menuButton {
-    width: 80%;
+    width: 90%;
     height: 40px;
     margin-top: 2px;
 }
 
 
 .settingsBox {
-    width: 20px;
-    height: 20px;
+    width: 15px;
+    height: 15px;
+    margin-left: 0px;
 }
 
+.custom-menu {
+    display: none;
+    z-index: 1000;
+    position: absolute;
+    overflow: hidden;
+    border: 1px solid #CCC;
+    white-space: nowrap;
+    font-family: sans-serif;
+    background: #FFF;
+    color: #333;
+    border-radius: 5px;
+    padding: 0;
+}
+
+/* Each of the items in the list */
+.custom-menu li {
+    padding: 8px 12px;
+    cursor: pointer;
+    list-style-type: none;
+    transition: all .3s ease;
+    user-select: none;
+}
+
+.custom-menu li:hover {
+    background-color: #DEF;
+}
+
+.customizedTab {
+    border-radius: 5px 5px 0px 0px;
+    width: 100%;
+}
 
 /* ----------------------- IDs ----------------------- */
-#helpWindowContent, #settingsWindowContent {
+#helpWindowContent, #settingsWindowContent, #colorUIWindowContent {
     width: 700px;
-    height: 400px;
+    height: 450px;
 }
 
-#taskAnnotationMenu
+#annotationMenu
 {
     background-color: #B0C4DE;
     padding: 8px 0;
     height: auto;
-    width: 700px;
+    max-width: 1000px;
     z-index: 100;
     float: left;
     position: absolute;
@@ -221,7 +379,7 @@
 }
 
 #taskAnnotationCenterPanel {
-    width: 82%;
+    width: 83%;
     height: 100%;
     float: left;
 }
@@ -233,7 +391,7 @@
     margin: 0px 10px;
 }
 
-#uiContent, #trackManagement, #aamMenu {
+#uiContent, #trackManagement, #aamMenu, #labelsContent {
     border: 1px black solid;
     border-radius: 5px;
     box-shadow: 0 0 5px rgba(0,0,0,0.5);
@@ -241,16 +399,15 @@
     text-align: center;
 }
 
-#labelSelect, #trackTypeSelect {
-    display: inline-block;
-    width: 40%;
+#shapeLabelSelector, #shapeModeSelector, #shapeTypeSelector, polyShapeSizeWrapper {
+    width: 80%;
     margin-left: auto;
-    margin-top: 1%;
+    margin-top: 2%;
 }
 
 #trackManagement, #aamMenu {
-    padding-top: 1em;
-    height: 22%;
+    padding: 1em 0;
+    height: auto;
     width: 100%;
     margin: 10px 0px;
 }
@@ -262,13 +419,14 @@
 #aamHelpContainer {
     text-align: left;
     margin-left: 5px;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
-#uiContent {
-    height: 75%;
+#uiContent, #labelsContent {
+    height: 75.4%;
     width: 100%;
-    overflow-y: scroll;
+    border-radius: 0px 0px 5px 5px;
+    overflow-y: auto;
 }
 
 #player {
@@ -279,16 +437,32 @@
 
 #playerFrame {
     width: 100%;
-    height: 85%;
+    height: 80%;
     border: 1px black solid;
     border-radius: 5px;
     background-color: #B0C4DE;
     overflow: hidden;
+    position: relative;
 }
 
 #frameContent {
-    vector-effect: non-scaling-stroke;
-    position: relative;
+    position: absolute;
+    z-index: 1;
+    -moz-transform-origin: top left;
+    -webkit-transform-origin: top left;
+}
+
+#frameGrid {
+    position: absolute;
+    z-index: 2;
+    -moz-transform-origin: top left;
+    -webkit-transform-origin: top left;
+    pointer-events: none;
+}
+
+#frameBackground {
+    position: absolute;
+    z-index: 0;
     background-repeat: no-repeat;
     -moz-transform-origin: top left;
     -webkit-transform-origin: top left;
@@ -302,7 +476,12 @@
     animation: dash 1s linear infinite;
 }
 
-#statTable {
+#frameLoadingAnim {
+    z-index: 2;
+    position: absolute;
+}
+
+#annotationStatisticTable {
     margin: 0px auto;
     border: 1px solid dimgrey;
     border-radius: 6px;

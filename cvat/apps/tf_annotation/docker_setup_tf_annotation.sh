@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+#
 set -e
 
 NVIDIA_GPGKEY_SUM=d1be581509378368edeec8c1eb2958702feedf3bc3d17011adbf24efacce4ab5 && \

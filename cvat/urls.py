@@ -1,3 +1,8 @@
+
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 """CVAT URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
