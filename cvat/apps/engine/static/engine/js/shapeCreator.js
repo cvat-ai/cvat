@@ -261,6 +261,75 @@ class ShapeCreatorView {
         }.bind(this));
     }
 
+
+    _createPolyEvents() {
+        // If number of points for poly shape specified, use it.
+        // Dicrement number on draw new point events. Drawstart trigger when create first point
+
+        if (this._polyShapeSize) {
+            let size = this._polyShapeSize;
+            let sizeDecrement = function() {
+                if (!--size) {
+                    this._drawInstance.draw('done');
+                }
+            }.bind(this);
+
+            let sizeIncrement = function() {
+                size ++;
+            };
+
+            this._drawInstance.on('drawstart', sizeDecrement);
+            this._drawInstance.on('drawpoint', sizeDecrement);
+            this._drawInstance.on('undopoint', sizeIncrement);
+        }
+        // Otherwise draw will stop by Ctrl + N press
+
+        // Callbacks for point scale
+        this._drawInstance.on('drawstart', this._rescaleDrawPoints.bind(this));
+        this._drawInstance.on('drawpoint', this._rescaleDrawPoints.bind(this));
+        this._frameContent.on('mousedown.shapeCreator', (e) => {
+            if (e.which === 3) {
+                this._drawInstance.draw('undo');
+            }
+        });
+
+        this._drawInstance.on('drawstop', () => {
+            this._frameContent.off('mousedown.shapeCreator');
+        });
+        // Also we need callback on drawdone event for get points
+        this._drawInstance.on('drawdone', function(e) {
+            let points = PolyShapeModel.convertStringToNumberArray(e.target.getAttribute('points'));
+            for (let point of points) {
+                point.x = Math.clamp(point.x, 0, window.cvat.player.geometry.frameWidth);
+                point.y = Math.clamp(point.y, 0, window.cvat.player.geometry.frameHeight);
+            }
+
+            // Min 2 points for polyline and 3 points for polygon
+            if (points.length) {
+                if (this._type === 'polyline' && points.length < 2) {
+                    showMessage("Min 2 points must be for polyline drawing.");
+                }
+                else if (this._type === 'polygon' && points.length < 3) {
+                    showMessage("Min 3 points must be for polygon drawing.");
+                }
+                else {
+                    points = PolyShapeModel.convertNumberArrayToString(points);
+
+                    // Update points in view in order to get updated box
+                    e.target.setAttribute('points', points);
+                    let box = e.target.getBBox();
+                    if (box.width * box.height >= AREA_TRESHOLD || this._type === 'points' ||
+                        this._type === 'polyline' && (box.width >= AREA_TRESHOLD || box.height >= AREA_TRESHOLD)) {
+                        this._controller.finish({points: e.target.getAttribute('points')}, this._type);
+                    }
+                }
+            }
+
+            this._controller.switchCreateMode(true);
+        }.bind(this));
+    }
+
+
     _create() {
         let sizeUI = null;
         switch(this._type) {
@@ -302,7 +371,7 @@ class ShapeCreatorView {
             this._drawInstance = this._frameContent.polyline().draw({snapToGrid: 0.1}).addClass('shapeCreation').attr({
                 'stroke-width': 0,
             });
-            createPolyEvents.call(this);
+            this._createPolyEvents();
             break;
         case 'polygon':
             if (this._polyShapeSize && this._polyShapeSize < 3) {
@@ -315,7 +384,7 @@ class ShapeCreatorView {
             this._drawInstance = this._frameContent.polygon().draw({snapToGrid: 0.1}).addClass('shapeCreation').attr({
                 'stroke-width':  STROKE_WIDTH / this._scale,
             });
-            createPolyEvents.call(this);
+            this._createPolyEvents();
             break;
         case 'polyline':
             if (this._polyShapeSize && this._polyShapeSize < 2) {
@@ -328,7 +397,7 @@ class ShapeCreatorView {
             this._drawInstance = this._frameContent.polyline().draw({snapToGrid: 0.1}).addClass('shapeCreation').attr({
                 'stroke-width':  STROKE_WIDTH / this._scale,
             });
-            createPolyEvents.call(this);
+            this._createPolyEvents();
             break;
         default:
             throw Error(`Bad type found ${this._type}`);
@@ -368,73 +437,6 @@ class ShapeCreatorView {
         this._drawInstance.attr({
             'z_order': Number.MAX_SAFE_INTEGER,
         });
-
-        function createPolyEvents() {
-            // If number of points for poly shape specified, use it.
-            // Dicrement number on draw new point events. Drawstart trigger when create first point
-
-            if (this._polyShapeSize) {
-                let size = this._polyShapeSize;
-                let sizeDecrement = function() {
-                    if (!--size) {
-                        this._drawInstance.draw('done');
-                    }
-                }.bind(this);
-
-                let sizeIncrement = function() {
-                    size ++;
-                };
-
-                this._drawInstance.on('drawstart', sizeDecrement);
-                this._drawInstance.on('drawpoint', sizeDecrement);
-                this._drawInstance.on('undopoint', sizeIncrement);
-            }
-            // Otherwise draw will stop by Ctrl + N press
-
-            // Callbacks for point scale
-            this._drawInstance.on('drawstart', this._rescaleDrawPoints.bind(this));
-            this._drawInstance.on('drawpoint', this._rescaleDrawPoints.bind(this));
-            this._frameContent.on('mousedown.shapeCreator', (e) => {
-                if (e.which === 3) {
-                    this._drawInstance.draw('undo');
-                }
-            });
-
-            this._drawInstance.on('drawstop', () => {
-                this._frameContent.off('mousedown.shapeCreator');
-            });
-            // Also we need callback on drawdone event for get points
-            this._drawInstance.on('drawdone', function(e) {
-                let points = PolyShapeModel.convertStringToNumberArray(e.target.getAttribute('points'));
-                for (let point of points) {
-                    point.x = Math.clamp(point.x, 0, window.cvat.player.geometry.frameWidth);
-                    point.y = Math.clamp(point.y, 0, window.cvat.player.geometry.frameHeight);
-                }
-
-                // Min 2 points for polyline and 3 points for polygon
-                if (points.length) {
-                    if (this._type === 'polyline' && points.length < 2) {
-                        showMessage("Min 2 points must be for polyline drawing.");
-                    }
-                    else if (this._type === 'polygon' && points.length < 3) {
-                        showMessage("Min 3 points must be for polygon drawing.");
-                    }
-                    else {
-                        points = PolyShapeModel.convertNumberArrayToString(points);
-
-                        // Update points in view in order to get updated box
-                        e.target.setAttribute('points', points);
-                        let box = e.target.getBBox();
-                        if (box.width * box.height >= AREA_TRESHOLD || this._type === 'points' ||
-                            this._type === 'polyline' && (box.width >= AREA_TRESHOLD || box.height >= AREA_TRESHOLD)) {
-                            this._controller.finish({points: e.target.getAttribute('points')}, this._type);
-                        }
-                    }
-                }
-
-                this._controller.switchCreateMode(true);
-            }.bind(this));
-        }
     }
 
     _rescaleDrawPoints() {
@@ -477,7 +479,7 @@ class ShapeCreatorView {
             this._type = model.defaultType;
             this._mode = model.defaultMode;
 
-            if (this._type === 'box') {
+            if (!['polygon', 'polyline', 'points'].includes(this._type)) {
                 this._drawAim();
             }
 
@@ -486,10 +488,7 @@ class ShapeCreatorView {
             this._create();
         }
         else {
-            if (this._type === 'box') {
-                this._removeAim();
-            }
-
+            this._removeAim();
             this._cancel = true;
             this._createButton.text("Create Shape");
             document.oncontextmenu = null;
@@ -526,7 +525,7 @@ class ShapeCreatorView {
                     this._aim.x.attr('stroke-width', STROKE_WIDTH / this._scale);
                     this._aim.y.attr('stroke-width', STROKE_WIDTH / this._scale);
                 }
-                if (this._type != 'points') {
+                if (['box', 'polygon', 'polyline'].includes(this._type)) {
                     this._drawInstance.attr('stroke-width', STROKE_WIDTH / this._scale);
                 }
             }
