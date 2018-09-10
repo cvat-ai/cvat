@@ -356,6 +356,9 @@
 .customizedTab {
     border-radius: 5px 5px 0px 0px;
     width: 100%;
+    width: 15%;
+    float: left;
+    margin: 0px 10px;
 }
 
 /* ----------------------- IDs ----------------------- */
@@ -392,7 +395,9 @@
 }
 
 #uiContent, #trackManagement, #aamMenu, #labelsContent {
-    border: 1px black solid;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+    border-left: 1px solid black;
     border-radius: 5px;
     box-shadow: 0 0 5px rgba(0,0,0,0.5);
     background-color: #B0C4DE;
