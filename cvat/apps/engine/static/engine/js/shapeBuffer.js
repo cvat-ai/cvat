@@ -149,7 +149,7 @@ class ShapeBufferModel extends Listener  {
             this._collection.add(object, `annotation_${this._shape.type}`);
         }
 
-         // Undo/redo code
+        // Undo/redo code
         let model = this._collection.shapes.slice(-1)[0];
         window.cvat.addAction('Paste Object', () => {
             model.removed = true;

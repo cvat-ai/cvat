@@ -24,7 +24,7 @@ class ShapeModel extends Listener {
         this._label = data.label_id;
         this._frame = type.split('_')[0] === 'annotation' ? data.frame :
             positions.filter((pos) => pos.frame < window.cvat.player.frames.start).length ?
-            window.cvat.player.frames.start : Math.min(...positions.map((pos) => pos.frame));
+                window.cvat.player.frames.start : Math.min(...positions.map((pos) => pos.frame));
         this._removed = false;
         this._locked = false;
         this._merging = false;
@@ -846,7 +846,7 @@ class BoxModel extends ShapeModel {
                     occluded: last_key_in_prev_segm.occluded,
                     outside: last_key_in_prev_segm.outside,
                     z_order: last_key_in_prev_segm.z_order,
-                }
+                };
             }
 
             return imported;

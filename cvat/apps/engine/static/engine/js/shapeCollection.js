@@ -1252,7 +1252,7 @@ class ShapeCollectionView {
         let parents = {
             uis: this._UIContent.parent(),
             shapes: this._frameContent.node.parentNode
-        }
+        };
 
         this._frameContent.node.parent = null;
         this._UIContent.detach();
