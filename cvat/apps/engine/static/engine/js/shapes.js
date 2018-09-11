@@ -22,7 +22,8 @@ class ShapeModel extends Listener {
         this._type = type;
         this._color = color;
         this._label = data.label_id;
-        this._frame = positions.filter((pos) => pos.frame < window.cvat.player.frames.start).length ?
+        this._frame = type.split('_')[0] === 'annotation' ? data.frame :
+            positions.filter((pos) => pos.frame < window.cvat.player.frames.start).length ?
             window.cvat.player.frames.start : Math.min(...positions.map((pos) => pos.frame));
         this._removed = false;
         this._locked = false;
@@ -838,13 +839,13 @@ class BoxModel extends ShapeModel {
 
             if (last_key_in_prev_segm && !(segm_start in imported)) {
                 imported[segm_start] = {
-                    last_key_in_prev_segm: pos.xtl,
-                    last_key_in_prev_segm: pos.ytl,
-                    last_key_in_prev_segm: pos.xbr,
-                    last_key_in_prev_segm: pos.ybr,
-                    last_key_in_prev_segm: pos.occluded,
-                    last_key_in_prev_segm: pos.outside,
-                    last_key_in_prev_segm: pos.z_order,
+                    xtl: last_key_in_prev_segm.xtl,
+                    ytl: last_key_in_prev_segm.ytl,
+                    xbr: last_key_in_prev_segm.xbr,
+                    ybr: last_key_in_prev_segm.ybr,
+                    occluded: last_key_in_prev_segm.occluded,
+                    outside: last_key_in_prev_segm.outside,
+                    z_order: last_key_in_prev_segm.z_order,
                 }
             }
 
@@ -1095,10 +1096,10 @@ class PolyShapeModel extends ShapeModel {
 
             if (last_key_in_prev_segm && !(segm_start in imported)) {
                 imported[segm_start] = {
-                    last_key_in_prev_segm: pos.points,
-                    last_key_in_prev_segm: pos.occluded,
-                    last_key_in_prev_segm: pos.outside,
-                    last_key_in_prev_segm: pos.z_order,
+                    points: last_key_in_prev_segm.points,
+                    occluded: last_key_in_prev_segm.occluded,
+                    outside: last_key_in_prev_segm.outside,
+                    z_order: last_key_in_prev_segm.z_order,
                 };
             }
 
