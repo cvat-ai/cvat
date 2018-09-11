@@ -958,7 +958,7 @@ class PolyShapeModel extends ShapeModel {
                         id: +attrId,
                         value: this._attributes.mutable[this._frame][attrId],
                     });
-                }window.cvat.player.frame.start
+                }
             }
 
             return Object.assign({}, this._positions[this._frame], {
