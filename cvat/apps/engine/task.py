@@ -544,7 +544,6 @@ def _find_and_compress_images(upload_dir, output_dir, db_task, compress_quality,
     filenames.sort()
 
     if len(filenames):
-        compressed_names = []
         for idx, name in enumerate(filenames):
             job.meta['status'] = 'Images are being compressed.. {}%'.format(idx * 100 // len(filenames))
             job.save_meta()
@@ -560,8 +559,6 @@ def _find_and_compress_images(upload_dir, output_dir, db_task, compress_quality,
                 # We need save it as jpeg for compression and after rename the file
                 # Else annotation file will contain invalid file names (with other extensions)
                 os.rename(compressed_name, name)
-            compressed_names.append(name)
-        filenames = compressed_names
 
         for frame, image_orig_path in enumerate(filenames):
             image_dest_path = _get_frame_path(frame, output_dir)
