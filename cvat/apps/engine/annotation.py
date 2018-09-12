@@ -768,7 +768,7 @@ class _AnnotationForJob(_Annotation):
             for box in path['shapes']:
                 if int(box['frame']) < self.start_frame:
                     has_boxes_on_prev_segm = True
-                    if last_box_on_prev_segm is None or int(last_box_on_prev_segm["frame"] < box["frame"]):
+                    if last_box_on_prev_segm is None or int(last_box_on_prev_segm["frame"]) < int(box["frame"]):
                         last_box_on_prev_segm = box
                 elif int(box['frame']) == self.start_frame:
                     has_box_on_start_frame = True
@@ -821,7 +821,7 @@ class _AnnotationForJob(_Annotation):
                 for poly_shape in path['shapes']:
                     if int(poly_shape['frame']) < self.start_frame:
                         has_shapes_on_prev_segm = True
-                        if last_shape_on_prev_segm is None or int(last_shape_on_prev_segm["frame"] < poly_shape["frame"]):
+                        if last_shape_on_prev_segm is None or int(last_shape_on_prev_segm["frame"]) < (poly_shape["frame"]):
                             last_shape_on_prev_segm = box
                     elif int(poly_shape['frame']) == self.start_frame:
                         has_shape_on_start_frame = True
