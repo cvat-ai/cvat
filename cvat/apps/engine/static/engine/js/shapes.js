@@ -22,7 +22,9 @@ class ShapeModel extends Listener {
         this._type = type;
         this._color = color;
         this._label = data.label_id;
-        this._frame = data.frame;
+        this._frame = type.split('_')[0] === 'annotation' ? data.frame :
+            positions.filter((pos) => pos.frame < window.cvat.player.frames.start).length ?
+                window.cvat.player.frames.start : Math.min(...positions.map((pos) => pos.frame));
         this._removed = false;
         this._locked = false;
         this._merging = false;
@@ -333,7 +335,17 @@ class ShapeModel extends Listener {
         let oldPos = Object.assign({}, this._positions[frame]);
         window.cvat.addAction('Change Outside', () => {
             if (!Object.keys(oldPos).length) {
+                // Frame hasn't been a keyframe, remove it from position and redestribute attributes
                 delete this._positions[frame];
+                this._frame = Math.min(...Object.keys(this._positions).map((el) => +el));
+                if (frame < this._frame && frame in this._attributes.mutable) {
+                    this._attributes.mutable[this._frame] = this._attributes.mutable[frame];
+                }
+
+                if (frame in this._attributes.mutable) {
+                    delete this._attributes.mutable[frame];
+                }
+
                 this._updateReason = 'outside';
                 this.notify();
             }
@@ -349,6 +361,15 @@ class ShapeModel extends Listener {
         position.outside = !position.outside;
         this.updatePosition(frame, position, true);
 
+        // Update the start frame if need and redestribute attributes
+        if (frame < this._frame) {
+            if (this._frame in this._attributes.mutable) {
+                this._attributes.mutable[frame] = this._attributes.mutable[this._frame];
+                delete(this._attributes.mutable[this._frame]);
+            }
+            this._frame = frame;
+        }
+
         this._updateReason = 'outside';
         this.notify();
     }
@@ -360,38 +381,28 @@ class ShapeModel extends Listener {
         }
 
         // Undo/redo code
-        let oldPos = Object.assign({}, this._positions[frame]);
         window.cvat.addAction('Change Keyframe', () => {
-            if (!Object.keys(oldPos).length) {
-                delete this._positions[frame];
-                this._updateReason = 'outside';
-                this.notify();
-            }
-            else {
-                this.updatePosition(frame, oldPos, true);
-                this._updateReason = 'keyframe';
-                this.notify();
-            }
+            this.switchKeyFrame(frame);
         }, () => {
             this.switchKeyFrame(frame);
         }, frame);
         // End of undo/redo code
 
         if (frame in this._positions && Object.keys(this._positions).length > 1) {
-            // If frame is first frame, need to redestribute attributes to new first frame
+            // If frame is first object frame, need redestribute attributes
             if (frame === this._frame) {
-                this._frame = +Object.keys(this._positions).sort((a,b) => +a - +b)[1];
+                this._frame = Object.keys(this._positions).map((el) => +el).sort((a,b) => a - b)[1];
                 if (frame in this._attributes.mutable) {
                     this._attributes.mutable[this._frame] = this._attributes.mutable[frame];
+                    delete(this._attributes.mutable[frame]);
                 }
             }
-
             delete(this._positions[frame]);
-            if (frame in this._attributes.mutable) {
-                delete(this._attributes.mutable[frame]);
-            }
         }
         else {
+            let position = this._interpolatePosition(frame);
+            this.updatePosition(frame, position, true);
+
             if (frame < this._frame) {
                 if (this._frame in this._attributes.mutable) {
                     this._attributes.mutable[frame] = this._attributes.mutable[this._frame];
@@ -399,9 +410,6 @@ class ShapeModel extends Listener {
                 }
                 this._frame = frame;
             }
-
-            let position = this._interpolatePosition(frame);
-            this.updatePosition(frame, position, true);
         }
         this._updateReason = 'keyframe';
         this.notify();
@@ -803,17 +811,44 @@ class BoxModel extends ShapeModel {
     static importPositions(positions) {
         let imported = {};
         if (this._type === 'interpolation_box') {
+            let last_key_in_prev_segm = null;
+            let segm_start = window.cvat.player.frames.start;
+            let segm_stop = window.cvat.player.frames.stop;
+
             for (let pos of positions) {
-                imported[pos.frame] = {
-                    xtl: pos.xtl,
-                    ytl: pos.ytl,
-                    xbr: pos.xbr,
-                    ybr: pos.ybr,
-                    occluded: pos.occluded,
-                    outside: pos.outside,
-                    z_order: pos.z_order,
+                let frame = pos.frame;
+
+                if (frame >= segm_start && frame <= segm_stop) {
+                    imported[frame] = {
+                        xtl: pos.xtl,
+                        ytl: pos.ytl,
+                        xbr: pos.xbr,
+                        ybr: pos.ybr,
+                        occluded: pos.occluded,
+                        outside: pos.outside,
+                        z_order: pos.z_order,
+                    };
+                }
+                else {
+                    console.log(`Frame ${frame} has been found in segment [${segm_start}-${segm_stop}]. It have been ignored.`);
+                    if (!last_key_in_prev_segm || frame > last_key_in_prev_segm.frame) {
+                        last_key_in_prev_segm = pos;
+                    }
+                }
+            }
+
+            if (last_key_in_prev_segm && !(segm_start in imported)) {
+                imported[segm_start] = {
+                    xtl: last_key_in_prev_segm.xtl,
+                    ytl: last_key_in_prev_segm.ytl,
+                    xbr: last_key_in_prev_segm.xbr,
+                    ybr: last_key_in_prev_segm.ybr,
+                    occluded: last_key_in_prev_segm.occluded,
+                    outside: last_key_in_prev_segm.outside,
+                    z_order: last_key_in_prev_segm.z_order,
                 };
             }
+
             return imported;
         }
 
@@ -836,6 +871,7 @@ class PolyShapeModel extends ShapeModel {
         this._positions = PolyShapeModel.importPositions.call(this, data.shapes || data);
         this._setupKeyFrames();
     }
+
 
     _interpolatePosition(frame) {
         if (frame in this._positions) {
@@ -1036,14 +1072,37 @@ class PolyShapeModel extends ShapeModel {
     static importPositions(positions) {
         let imported = {};
         if (this._type.startsWith('interpolation')) {
+            let last_key_in_prev_segm = null;
+            let segm_start = window.cvat.player.frames.start;
+            let segm_stop = window.cvat.player.frames.stop;
+
             for (let pos of positions) {
-                imported[pos.frame] = {
-                    points: pos.points,
-                    occluded: pos.occluded,
-                    outside: pos.outside,
-                    z_order: pos.z_order,
+                let frame = pos.frame;
+                if (frame >= segm_start && frame <= segm_stop) {
+                    imported[pos.frame] = {
+                        points: pos.points,
+                        occluded: pos.occluded,
+                        outside: pos.outside,
+                        z_order: pos.z_order,
+                    };
+                }
+                else {
+                    console.log(`Frame ${frame} has been found in segment [${segm_start}-${segm_stop}]. It have been ignored.`);
+                    if (!last_key_in_prev_segm || frame > last_key_in_prev_segm.frame) {
+                        last_key_in_prev_segm = pos;
+                    }
+                }
+            }
+
+            if (last_key_in_prev_segm && !(segm_start in imported)) {
+                imported[segm_start] = {
+                    points: last_key_in_prev_segm.points,
+                    occluded: last_key_in_prev_segm.occluded,
+                    outside: last_key_in_prev_segm.outside,
+                    z_order: last_key_in_prev_segm.z_order,
                 };
             }
+
             return imported;
         }
 
