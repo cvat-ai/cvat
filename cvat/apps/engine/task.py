@@ -362,7 +362,7 @@ def _parse_labels(labels):
     for token in shlex.split(labels):
         if token[0] != "~" and token[0] != "@":
             if token in parsed_labels:
-                raise ValueError("labels string is not corect. " + 
+                raise ValueError("labels string is not corect. " +
                     "`{}` label is specified at least twice.".format(token))
 
             parsed_labels[token] = {}
@@ -388,7 +388,7 @@ def _parse_labels(labels):
                         "`{}` attribute has incorrect format.".format(attr['name']))
 
             if attr['name'] in parsed_labels[last_label]:
-                raise ValueError("labels string is not corect. " + 
+                raise ValueError("labels string is not corect. " +
                     "`{}` attribute is specified at least twice.".format(attr['name']))
 
             parsed_labels[last_label][attr['name']] = attr
@@ -554,9 +554,13 @@ def _find_and_compress_images(upload_dir, output_dir, db_task, compress_quality,
                 image = image.transpose(Image.ROTATE_180)
             image.save(compressed_name, quality=compress_quality, optimize=True)
             image.close()
-            compressed_names.append(compressed_name)
             if compressed_name != name:
                 os.remove(name)
+                # PIL::save uses filename in order to define image extension.
+                # We need save it as jpeg for compression and after rename the file
+                # Else annotation file will contain invalid file names (with other extensions)
+                os.rename(compressed_name, name)
+            compressed_names.append(name)
         filenames = compressed_names
 
         for frame, image_orig_path in enumerate(filenames):
