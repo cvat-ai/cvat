@@ -322,8 +322,6 @@ class AnnotationParser {
                     Ignore all frames more then stop.
                 */
                 let significant = keyFrame || frame === this._startFrame;
-                significant = significant && frame >= this._startFrame;
-                significant = significant && frame <= this._stopFrame;
 
                 if (significant) {
                     let attributeList = this._getAttributeList(shape, labelId);
@@ -348,7 +346,7 @@ class AnnotationParser {
                     path.attributes = pathAttributes;
 
                     if (type === 'boxes') {
-                        let [xtl, ytl, xbr, ybr, occluded, z_order] = this._getBoxPosition(shape, frame);
+                        let [xtl, ytl, xbr, ybr, occluded, z_order] = this._getBoxPosition(shape, Math.clamp(frame, this._startFrame, this._stopFrame));
                         path.shapes.push({
                             frame: frame,
                             occluded: occluded,
@@ -362,7 +360,7 @@ class AnnotationParser {
                         });
                     }
                     else {
-                        let [points, occluded, z_order] = this._getPolyPosition(shape, frame);
+                        let [points, occluded, z_order] = this._getPolyPosition(shape, Math.clamp(frame, this._startFrame, this._stopFrame));
                         path.shapes.push({
                             frame: frame,
                             occluded: occluded,

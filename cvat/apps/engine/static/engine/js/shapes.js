@@ -830,7 +830,7 @@ class BoxModel extends ShapeModel {
                     };
                 }
                 else {
-                    console.error(`Frame ${frame} has been found in segment [${segm_start}-${segm_stop}]. It have been ignored.`);
+                    console.log(`Frame ${frame} has been found in segment [${segm_start}-${segm_stop}]. It have been ignored.`);
                     if (!last_key_in_prev_segm || frame > last_key_in_prev_segm.frame) {
                         last_key_in_prev_segm = pos;
                     }
@@ -1087,7 +1087,7 @@ class PolyShapeModel extends ShapeModel {
                     };
                 }
                 else {
-                    console.error(`Frame ${frame} has been found in segment [${segm_start}-${segm_stop}]. It have been ignored.`);
+                    console.log(`Frame ${frame} has been found in segment [${segm_start}-${segm_stop}]. It have been ignored.`);
                     if (!last_key_in_prev_segm || frame > last_key_in_prev_segm.frame) {
                         last_key_in_prev_segm = pos;
                     }
