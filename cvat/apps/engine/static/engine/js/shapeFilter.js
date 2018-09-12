@@ -26,10 +26,11 @@ class FilterModel {
             lock: shape.model.lock
         };
 
+        // We replace all dashes due to defiant.js can't work with it
         function convertAttributes(attributes) {
             let converted = {};
             for (let attrId in attributes) {
-                converted[attributes[attrId].name.toLowerCase()] = ('' + attributes[attrId].value).toLowerCase();
+                converted[attributes[attrId].name.toLowerCase().replace(/-/g, "_")] = ('' + attributes[attrId].value).toLowerCase();
             }
             return converted;
         }
@@ -38,11 +39,11 @@ class FilterModel {
     _convertCollection(collection) {
         let converted = {};
         for (let labelId in this._labels) {
-            converted[this._labels[labelId]] = [];
+            converted[this._labels[labelId].replace(/-/g, "_")] = [];
         }
 
         for (let shape of collection) {
-            converted[this._labels[shape.model.label].toLowerCase()].push(this._convertShape(shape));
+            converted[this._labels[shape.model.label].toLowerCase().replace(/-/g, "_")].push(this._convertShape(shape));
         }
         return converted;
     }
@@ -109,7 +110,7 @@ class FilterView {
         this._filterString.on('change', (e) => {
             let value = $.trim(e.target.value);
             if (value.length) {
-                value = value.split('|').map(x => '/d:data/' + x).join('|').toLowerCase();
+                value = value.split('|').map(x => '/d:data/' + x).join('|').toLowerCase().replace(/-/g, "_");
             }
             if (this._controller.updateFilter(value)) {
                 this._filterString.css('color', 'green');
