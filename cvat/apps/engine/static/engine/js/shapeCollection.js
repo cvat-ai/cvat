@@ -725,13 +725,6 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    clonePointForActiveShape(idx, direction, insertPoint) {
-        if (this._activeShape && !this._activeShape.lock) {
-            return this._activeShape.clonePoint(idx, direction, insertPoint);
-        }
-        else return null;
-    }
-
     split() {
         if (this._activeShape) {
             if (!this._activeShape.lock && this._activeShape.type.split('_')[0] === 'interpolation') {
@@ -968,10 +961,6 @@ class ShapeCollectionController {
         this._model.removePointFromActiveShape(idx);
     }
 
-    clonePointForActiveShape(idx, direction, insertPoint) {
-        return this._model.clonePointForActiveShape(idx, direction, insertPoint);
-    }
-
     splitForActive() {
         this._model.split();
     }
@@ -1163,44 +1152,6 @@ class ShapeCollectionView {
             switch($(e.target).attr("action")) {
             case "remove_point":
                 this._controller.removePointFromActiveShape(idx);
-                break;
-            case "clone_point_before":
-                this._controller.clonePointForActiveShape(idx, 'before', true);
-                break;
-            case "clone_point_after":
-                this._controller.clonePointForActiveShape(idx, 'after', true);
-                break;
-            }
-        });
-
-        $('#pointContextMenu').mouseout(() => {
-            $(this._frameContent.node).find('.tmp_inserted_point').remove();
-        });
-
-        $('#pointContextMenu li').mouseover((e) => {
-            $(this._frameContent.node).find('.tmp_inserted_point').remove();
-            let menu = $('#pointContextMenu');
-            let idx = +menu.attr('point_idx');
-            let point = null;
-
-            switch($(e.target).attr("action")) {
-            case "clone_point_before":
-                point = this._controller.clonePointForActiveShape(idx, 'before', false);
-                if (point) {
-                    this._frameContent.circle(POINT_RADIUS * 2 / this._scale).center(point.x, point.y)
-                        .addClass('tmp_inserted_point tempMarker').fill('white').stroke('black').attr({
-                            'stroke-width': STROKE_WIDTH / this._scale
-                        });
-                }
-                break;
-            case "clone_point_after":
-                point = this._controller.clonePointForActiveShape(idx, 'after', false);
-                if (point) {
-                    this._frameContent.circle(POINT_RADIUS * 2 / this._scale).center(point.x, point.y)
-                        .addClass('tmp_inserted_point tempMarker').fill('white').stroke('black').attr({
-                            'stroke-width': STROKE_WIDTH / this._scale
-                        });
-                }
                 break;
             }
         });

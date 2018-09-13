@@ -116,5 +116,9 @@ module.exports = {
         'HistoryModel': true,
         'HistoryController': true,
         'HistoryView': true,
+        // from polyshapeEditor.js
+        'PolyshapeEditorModel': true,
+        'PolyshapeEditorController': true,
+        'PolyshapeEditorView': true,
     },
 };
