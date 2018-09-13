@@ -264,26 +264,57 @@ class PolyshapeEditorView {
                 let correctPoints = PolyShapeModel.convertStringToNumberArray(this._correctLine.attr('points'));
                 let resultPoints = [];
 
-                let startPtIdx = this._data.start;
-                let stopPtIdx = $(instance.node).index();
-                let offset = this._findMinCircleDistance(currentPoints, currentPoints[startPtIdx], currentPoints[stopPtIdx]);
+                if (this._data.type === 'polygon') {
+                    let startPtIdx = this._data.start;
+                    let stopPtIdx = $(instance.node).index();
+                    let offset = this._findMinCircleDistance(currentPoints, currentPoints[startPtIdx], currentPoints[stopPtIdx]);
 
-                if (!offset) {
-                    currentPoints = this._resortPoints(currentPoints, currentPoints[startPtIdx], currentPoints[stopPtIdx]);
-                    resultPoints.push(...correctPoints.slice(0, -2));
-                    resultPoints.push(...currentPoints);
-                }
-                else {
-                    resultPoints.push(...correctPoints.slice(0, -1));
-                    if (offset < 0) {
-                        resultPoints = resultPoints.reverse();
+                    if (!offset) {
                         currentPoints = this._resortPoints(currentPoints, currentPoints[startPtIdx], currentPoints[stopPtIdx]);
+                        resultPoints.push(...correctPoints.slice(0, -2));
+                        resultPoints.push(...currentPoints);
                     }
                     else {
-                        currentPoints = this._resortPoints(currentPoints, currentPoints[stopPtIdx], currentPoints[startPtIdx]);
-                    }
+                        resultPoints.push(...correctPoints.slice(0, -1));
+                        if (offset < 0) {
+                            resultPoints = resultPoints.reverse();
+                            currentPoints = this._resortPoints(currentPoints, currentPoints[startPtIdx], currentPoints[stopPtIdx]);
+                        }
+                        else {
+                            currentPoints = this._resortPoints(currentPoints, currentPoints[stopPtIdx], currentPoints[startPtIdx]);
+                        }
 
-                    resultPoints.push(...currentPoints);
+                        resultPoints.push(...currentPoints);
+                    }
+                }
+                else {
+                    let startPtIdx = this._data.start;
+                    let stopPtIdx = $(instance.node).index();
+
+                    if (startPtIdx === stopPtIdx) {
+                        resultPoints.push(...correctPoints.slice(1, -1).reverse());
+                        resultPoints.push(...currentPoints);
+                    }
+                    else {
+                        if (startPtIdx > stopPtIdx) {
+                            if (startPtIdx < currentPoints.length - 1) {
+                                resultPoints.push(...currentPoints.slice(startPtIdx + 1).reverse());
+                            }
+                            resultPoints.push(...correctPoints.slice(0, -1));
+                            if (stopPtIdx > 0) {
+                                resultPoints.push(...currentPoints.slice(0, stopPtIdx).reverse());
+                            }
+                        }
+                        else {
+                            if (startPtIdx > 0) {
+                                resultPoints.push(...currentPoints.slice(0, startPtIdx));
+                            }
+                            resultPoints.push(...correctPoints.slice(0, -1));
+                            if (stopPtIdx < currentPoints.length) {
+                                resultPoints.push(...currentPoints.slice(stopPtIdx + 1));
+                            }
+                        }
+                    }
                 }
 
                 this._correctLine.draw('cancel');
