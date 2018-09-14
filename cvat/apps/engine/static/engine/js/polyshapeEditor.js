@@ -218,7 +218,7 @@ class PolyshapeEditorView {
         this._correctLine.draw('point', this._data.event);
         this._rescaleDrawPoints();
         this._frameContent.on('mousemove.polyshapeEditor', (e) => {
-            if (e.shiftKey) {
+            if (e.shiftKey && this._data.type != 'points') {
                 let delta = Math.sqrt(Math.pow(e.clientX - prevPoint.x, 2) + Math.pow(e.clientY - prevPoint.y, 2));
                 let deltaTreshold = 10;
                 if (delta > deltaTreshold) {
@@ -275,7 +275,7 @@ class PolyshapeEditorView {
                         resultPoints.push(...currentPoints);
                     }
                     else {
-                        resultPoints.push(...correctPoints.slice(0, -1));
+                        resultPoints.push(...correctPoints);
                         if (offset < 0) {
                             resultPoints = resultPoints.reverse();
                             currentPoints = this._resortPoints(currentPoints, currentPoints[startPtIdx], currentPoints[stopPtIdx]);
