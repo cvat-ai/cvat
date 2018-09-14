@@ -231,17 +231,16 @@ class PolyshapeEditorView {
             }
         });
 
-        this._frameContent.on('mousedown.polyshapeEditor', (e) => {
-            if (e.which === 3) {
-                if (PolyShapeModel.convertStringToNumberArray(this._correctLine.attr('points')).length > 2) {
-                    this._correctLine.draw('undo');
-                }
-            }
-        });
-
         this._frameContent.on('contextmenu.polyshapeEditor', (e) => {
-            e.stopPropagation();
+            if (PolyShapeModel.convertStringToNumberArray(this._correctLine.attr('points')).length > 2) {
+                this._correctLine.draw('undo');
+            }
+            else {
+                // Finish without points argument is just cancel
+                this._controller.finish();
+            }
             e.preventDefault();
+            e.stopPropagation();
         });
 
         this._correctLine.on('drawpoint', (e) => {
