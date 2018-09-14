@@ -25,7 +25,7 @@ class PolyshapeEditorModel extends Listener {
     }
 
     edit(type, points, color, start, event, oncomplete) {
-        if (!this._active && !window.cvat.mode && ['polygon', 'polyline'].indexOf(type) != -1) {
+        if (!this._active && !window.cvat.mode) {
             window.cvat.mode = this._modeName;
             this._active = true;
             this._data.points = points;
@@ -37,7 +37,7 @@ class PolyshapeEditorModel extends Listener {
             this.notify();
         }
         else if (this._active) {
-            throw Error('Poly shape is being edited already');
+            throw Error('Polyshape has been being edited already');
         }
     }
 
@@ -170,15 +170,16 @@ class PolyshapeEditorView {
 
     _startEdit() {
         this._frame = window.cvat.player.frames.current;
-        if (!['polygon', 'polyline'].includes(this._data.type)) {
-            throw Error('Type of editable shape must be polygon or polyline');
-        }
+        let strokeWidth = this._data.type === 'points' ? 0 : STROKE_WIDTH / this._scale;
 
         // Draw copy of original shape
-        if (this._data.type === 'polygon') this._originalShape = this._frameContent.polygon(this._data.points);
-        else this._originalShape = this._frameContent.polyline(this._data.points);
+        if (this._data.type === 'polygon') {
+            this._originalShape = this._frameContent.polygon(this._data.points);
+        }
+        else {
+            this._originalShape = this._frameContent.polyline(this._data.points);
+        }
 
-        let strokeWidth = STROKE_WIDTH / this._scale;
         this._originalShape.attr({
             'stroke-width': strokeWidth,
             'stroke': 'white',
@@ -287,7 +288,7 @@ class PolyshapeEditorView {
                         resultPoints.push(...currentPoints);
                     }
                 }
-                else {
+                else if (this._data.type === 'polyline') {
                     let startPtIdx = this._data.start;
                     let stopPtIdx = $(instance.node).index();
 
@@ -315,6 +316,10 @@ class PolyshapeEditorView {
                             }
                         }
                     }
+                }
+                else {
+                    resultPoints.push(...currentPoints);
+                    resultPoints.push(...correctPoints.slice(1, -1).reverse());
                 }
 
                 this._correctLine.draw('cancel');
@@ -362,7 +367,7 @@ class PolyshapeEditorView {
         if (this._scale != scale) {
             this._scale = scale;
 
-            let strokeWidth = STROKE_WIDTH / this._scale;
+            let strokeWidth = this._data && this._data.type === 'points' ? 0 : STROKE_WIDTH / this._scale;
             let pointRadius = POINT_RADIUS / this._scale;
 
             if (this._originalShape) {
