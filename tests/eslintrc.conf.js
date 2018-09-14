@@ -73,6 +73,7 @@ module.exports = {
         'ShapeMergerView': true,
         // from shapes.js
         'PolyShapeModel': true,
+        'PolyShapeView': true,
         'buildShapeModel': true,
         'buildShapeController': true,
         'buildShapeView': true,

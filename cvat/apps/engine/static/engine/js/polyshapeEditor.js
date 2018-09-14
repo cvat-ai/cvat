@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
- /* exported PolyshapeEditorModel PolyshapeEditorController PolyshapeEditorView */
+/* exported PolyshapeEditorModel PolyshapeEditorController PolyshapeEditorView */
 
 "use strict";
 
@@ -21,7 +21,7 @@ class PolyshapeEditorModel extends Listener {
             oncomplete: null,
             type: null,
             event: null,
-        }
+        };
     }
 
     edit(type, points, color, start, event, oncomplete) {
@@ -125,9 +125,10 @@ class PolyshapeEditorView {
         }
 
         let idx = points.indexOf(start) + 1;
-        while (true) {
+        let condition = true;  // constant condition is eslint error
+        while (condition) {
             if (idx >= points.length) idx = 0;
-            if (points[idx] === stop) break;
+            if (points[idx] === stop) condition = false;
             else sorted.push(points[idx++]);
         }
 
@@ -247,7 +248,7 @@ class PolyshapeEditorView {
             prevPoint = {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY
-            }
+            };
             this._rescaleDrawPoints();
         });
 
@@ -259,7 +260,8 @@ class PolyshapeEditorView {
                 instance.attr('stroke-width', STROKE_WIDTH * 2 / this._scale);
             }).on('mouseout', () => {
                 instance.attr('stroke-width', STROKE_WIDTH / this._scale);
-            }).on('mousedown', () => {
+            }).on('mousedown', (e) => {
+                if (e.which != 1) return;
                 let currentPoints = PolyShapeModel.convertStringToNumberArray(this._data.points);
                 let correctPoints = PolyShapeModel.convertStringToNumberArray(this._correctLine.attr('points'));
                 let resultPoints = [];
