@@ -221,7 +221,7 @@ class PolyshapeEditorView {
         this._frameContent.on('mousemove.polyshapeEditor', (e) => {
             if (e.shiftKey && this._data.type != 'points') {
                 let delta = Math.sqrt(Math.pow(e.clientX - prevPoint.x, 2) + Math.pow(e.clientY - prevPoint.y, 2));
-                let deltaTreshold = 10;
+                let deltaTreshold = 15;
                 if (delta > deltaTreshold) {
                     this._correctLine.draw('point', e);
                     prevPoint = {

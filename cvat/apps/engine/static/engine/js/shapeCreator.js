@@ -265,6 +265,10 @@ class ShapeCreatorView {
     _createPolyEvents() {
         // If number of points for poly shape specified, use it.
         // Dicrement number on draw new point events. Drawstart trigger when create first point
+        let lastPoint = {
+            x: null,
+            y: null,
+        }
 
         if (this._polyShapeSize) {
             let size = this._polyShapeSize;
@@ -287,14 +291,50 @@ class ShapeCreatorView {
         // Callbacks for point scale
         this._drawInstance.on('drawstart', this._rescaleDrawPoints.bind(this));
         this._drawInstance.on('drawpoint', this._rescaleDrawPoints.bind(this));
+
+        this._drawInstance.on('drawstart', (e) => {
+            lastPoint = {
+                x: e.detail.event.clientX,
+                y: e.detail.event.clientY,
+            }
+        });
+
+        this._drawInstance.on('drawpoint', (e) => {
+            lastPoint = {
+                x: e.detail.event.clientX,
+                y: e.detail.event.clientY,
+            }
+        });
+
         this._frameContent.on('mousedown.shapeCreator', (e) => {
             if (e.which === 3) {
                 this._drawInstance.draw('undo');
             }
         });
 
+
+        this._frameContent.on('mousemove.shapeCreator', (e) => {
+            if (e.shiftKey && this._type != 'points') {
+                if (lastPoint.x === null || lastPoint.y === null) {
+                    this._drawInstance.draw('point', e);
+                }
+                else {
+                    let delta = Math.sqrt(Math.pow(e.clientX - lastPoint.x, 2) + Math.pow(e.clientY - lastPoint.y, 2));
+                    let deltaTreshold = 15;
+                    if (delta > deltaTreshold) {
+                        this._drawInstance.draw('point', e);
+                        lastPoint = {
+                            x: e.clientX,
+                            y: e.clientY
+                        };
+                    }
+                }
+            }
+        });
+
         this._drawInstance.on('drawstop', () => {
             this._frameContent.off('mousedown.shapeCreator');
+            this._frameContent.off('mousemove.shapeCreator');
         });
         // Also we need callback on drawdone event for get points
         this._drawInstance.on('drawdone', function(e) {
