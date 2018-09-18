@@ -1646,8 +1646,8 @@ class ShapeView extends Listener {
 
     _removeShapeUI() {
         if (this._uis.shape) {
-            this._uis.shape.off('click');
             this._uis.shape.remove();
+            SVG.off(this._uis.shape.node);
             this._uis.shape = null;
         }
     }
@@ -1656,6 +1656,7 @@ class ShapeView extends Listener {
     _removeShapeText() {
         if (this._uis.text) {
             this._uis.text.remove();
+            SVG.off(this._uis.text.node);
             this._uis.text = null;
         }
     }
