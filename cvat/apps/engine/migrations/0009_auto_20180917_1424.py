@@ -9,41 +9,162 @@ class Migration(migrations.Migration):
         ('engine', '0008_auto_20180917_1424'),
     ]
 
+
+
     operations = [
-        migrations.RunSQL('ALTER TABLE "engine_objectpath" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_objectpathattributeval" ALTER COLUMN "track_id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedbox" ALTER COLUMN "track_id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpoints" ALTER COLUMN "track_id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpolygon" ALTER COLUMN "track_id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpolyline" ALTER COLUMN "track_id" TYPE bigint;'),
-
-        migrations.RunSQL('ALTER TABLE "engine_trackedbox" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpoints" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpolygon" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpolyline" ALTER COLUMN "id" TYPE bigint;'),
-
-        migrations.RunSQL('ALTER TABLE "engine_trackedboxattributeval" ALTER COLUMN "box_id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpointsattributeval" ALTER COLUMN "points_id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpolygonattributeval" ALTER COLUMN "polygon_id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpolylineattributeval" ALTER COLUMN "polyline_id" TYPE bigint;'),
-
-        migrations.RunSQL('ALTER TABLE "engine_trackedboxattributeval" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpointsattributeval" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpolygonattributeval" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_trackedpolylineattributeval" ALTER COLUMN "id" TYPE bigint;'),
-
-        migrations.RunSQL('ALTER TABLE "engine_labeledbox" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_labeledpoints" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_labeledpolygon" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_labeledpolyline" ALTER COLUMN "id" TYPE bigint;'),
-
-        migrations.RunSQL('ALTER TABLE "engine_labeledboxattributeval" ALTER COLUMN "box_id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_labeledpointsattributeval" ALTER COLUMN "points_id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_labeledpolygonattributeval" ALTER COLUMN "polygon_id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_labeledpolylineattributeval" ALTER COLUMN "polyline_id" TYPE bigint;'),
-
-        migrations.RunSQL('ALTER TABLE "engine_labeledboxattributeval" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_labeledpointsattributeval" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_labeledpolygonattributeval" ALTER COLUMN "id" TYPE bigint;'),
-        migrations.RunSQL('ALTER TABLE "engine_labeledpolylineattributeval" ALTER COLUMN "id" TYPE bigint;'),
+        migrations.AlterField(
+            model_name='labeledbox',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='labeledboxattributeval',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='labeledpoints',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='labeledpointsattributeval',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='labeledpolygon',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='labeledpolygonattributeval',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='labeledpolyline',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='labeledpolylineattributeval',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='objectpath',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='objectpathattributeval',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='trackedbox',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='trackedboxattributeval',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='trackedpoints',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='trackedpointsattributeval',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='trackedpolygon',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='trackedpolygonattributeval',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='trackedpolyline',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='trackedpolylineattributeval',
+            name='id',
+            field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AlterField(
+            model_name='objectpathattributeval',
+            name='track_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='objectpathattributeval',
+            name='track_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='trackedpoints',
+            name='track_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='trackedpolygon',
+            name='track_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='trackedpolyline',
+            name='track_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='trackedboxattributeval',
+            name='box_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='trackedpointsattributeval',
+            name='points_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='trackedpolygonattributeval',
+            name='polygon_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='trackedpolylineattributeval',
+            name='polyline_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='labeledboxattributeval',
+            name='box_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='labeledpointsattributeval',
+            name='points_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='labeledpolygonattributeval',
+            name='polygon_id',
+            field=models.BigIntegerField(),
+        ),
+        migrations.AlterField(
+            model_name='labeledpolylineattributeval',
+            name='polyline_id',
+            field=models.BigIntegerField(),
+        ),
     ]
