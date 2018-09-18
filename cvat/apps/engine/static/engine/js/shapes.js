@@ -804,10 +804,6 @@ class BoxModel extends ShapeModel {
         // nothing do
     }
 
-    clonePoint() {
-        // nothing do
-    }
-
     static importPositions(positions) {
         let imported = {};
         if (this._type === 'interpolation_box') {
@@ -1009,40 +1005,6 @@ class PolyShapeModel extends ShapeModel {
             position.points = PolyShapeModel.convertNumberArrayToString(points);
             this.updatePosition(frame, position);
         }
-    }
-
-    clonePoint(idx, direction, inserPoint) {
-        let frame = window.cvat.player.frames.current;
-        let position = this._interpolatePosition(frame);
-        let points = PolyShapeModel.convertStringToNumberArray(position.points);
-
-        let otherIdx = null;
-        if (direction === 'before') {
-            otherIdx = idx - 1 >= 0 ? idx - 1: points.length - 1;
-        }
-        else {
-            otherIdx = idx + 1 in points ? idx + 1: 0;
-        }
-        let curP = points[idx];
-        let otherP = points[otherIdx];
-        let newP = {
-            x: curP.x + (otherP.x - curP.x) / 2,
-            y: curP.y + (otherP.y - curP.y) / 2,
-        };
-
-        if (direction === 'before') {
-            points.splice(idx, 0, newP);
-        }
-        else {
-            points.splice(idx + 1, 0, newP);
-        }
-
-        if (inserPoint) {
-            position.points = PolyShapeModel.convertNumberArrayToString(points);
-            this.updatePosition(frame, position);
-        }
-
-        return newP;
     }
 
     static convertStringToNumberArray(serializedPoints) {
@@ -2868,9 +2830,11 @@ class PolyShapeView extends ShapeView {
         if (this._flags.editable) {
             for (let point of $('.svg_select_points')) {
                 point = $(point);
+
                 point.on('contextmenu.contextMenu', (e) => {
                     this._shapeContextMenu.hide(100);
                     this._pointContextMenu.attr('point_idx', point.index());
+                    this._pointContextMenu.attr('dom_point_id', point.attr('id'));
 
                     this._pointContextMenu.finish().show(100).offset({
                         top: e.pageY - 20,
@@ -2878,6 +2842,38 @@ class PolyShapeView extends ShapeView {
                     });
 
                     e.preventDefault();
+                });
+
+                point.on('dblclick.polyshapeEditor', (e) => {
+                    if (e.shiftKey) {
+                        if (!window.cvat.mode) {
+                            // Get index before detach shape from DOM
+                            let index = point.index();
+
+                            // Make non active view and detach shape from DOM
+                            this._makeNotEditable();
+                            this._deselect();
+                            if (this._controller.hiddenText) {
+                                this._hideShapeText();
+                            }
+                            this._uis.shape.addClass('hidden');
+
+                            // Run edit mode
+                            PolyShapeView.editor.edit(this._controller.type.split('_')[1],
+                                this._uis.shape.attr('points'), this._color, index, e,
+                                (points) => {
+                                    this._uis.shape.removeClass('hidden');
+                                    if (points) {
+                                        this._uis.shape.attr('points', points);
+                                        this._controller.updatePosition(window.cvat.player.frames.current, this._buildPosition());
+                                    }
+                                }
+                            );
+                        }
+                    }
+                    else {
+                        this._controller.model().removePoint(point.index());
+                    }
                     e.stopPropagation();
                 });
             }
@@ -2888,6 +2884,7 @@ class PolyShapeView extends ShapeView {
     _makeNotEditable() {
         for (let point of $('.svg_select_points')) {
             $(point).off('contextmenu.contextMenu');
+            $(point).off('dblclick.polyshapeEditor');
         }
         ShapeView.prototype._makeNotEditable.call(this);
     }
