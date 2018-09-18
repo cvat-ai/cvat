@@ -128,6 +128,7 @@ class AttributeSpec(models.Model):
 
 class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
+    id = models.BigAutoField(primary_key=True)
     spec = models.ForeignKey(AttributeSpec, on_delete=models.CASCADE)
     value = models.CharField(max_length=64)
     class Meta:
@@ -148,6 +149,7 @@ class Shape(models.Model):
         abstract = True
 
 class BoundingBox(Shape):
+    id = models.BigAutoField(primary_key=True)
     xtl = models.FloatField()
     ytl = models.FloatField()
     xbr = models.FloatField()
@@ -156,6 +158,7 @@ class BoundingBox(Shape):
         abstract = True
 
 class PolyShape(Shape):
+    id = models.BigAutoField(primary_key=True)
     points = models.TextField()
     class Meta:
         abstract = True
@@ -185,6 +188,7 @@ class LabeledPointsAttributeVal(AttributeVal):
     points = models.ForeignKey(LabeledPoints, on_delete=models.CASCADE)
 
 class ObjectPath(Annotation):
+    id = models.BigAutoField(primary_key=True)
     shapes = models.CharField(max_length=10, default='boxes')
 
 class ObjectPathAttributeVal(AttributeVal):
