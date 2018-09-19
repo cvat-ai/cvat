@@ -1247,8 +1247,17 @@ class ShapeCollectionView {
             view.erase();
         }
 
-        this._currentViews = [];
+        // Save parents and detach elements from DOM
+        // in order to increase performance in the buildShapeView function
+        let parents = {
+            uis: this._UIContent.parent(),
+            shapes: this._frameContent.node.parentNode
+        };
 
+        this._frameContent.node.parent = null;
+        this._UIContent.detach();
+
+        this._currentViews = [];
         for (let shape of collection.currentShapes) {
             let model = shape.model;
             let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
@@ -1259,6 +1268,10 @@ class ShapeCollectionView {
             view.subscribe(this);
             this._labelsContent.find(`.labelContentElement[label_id="${model.label}"]`).removeClass('hidden');
         }
+
+        parents.shapes.append(this._frameContent.node);
+        parents.uis.prepend(this._UIContent);
+
         ShapeCollectionView.sortByZOrder();
     }
 

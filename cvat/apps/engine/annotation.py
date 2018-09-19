@@ -761,14 +761,29 @@ class _AnnotationForJob(_Annotation):
             label = _Label(self.db_labels[int(path['label_id'])])
             boxes = []
             frame = -1
+
+            has_boxes_on_prev_segm = False
+            last_box_on_prev_segm = None
+            has_box_on_start_frame = False
             for box in path['shapes']:
-                if int(box['frame']) <= self.stop_frame:
+                if int(box['frame']) < self.start_frame:
+                    has_boxes_on_prev_segm = True
+                    if last_box_on_prev_segm is None or int(last_box_on_prev_segm["frame"]) < int(box["frame"]):
+                        last_box_on_prev_segm = box
+                elif int(box['frame']) == self.start_frame:
+                    has_box_on_start_frame = True
+                    break
+            if has_boxes_on_prev_segm and not has_box_on_start_frame:
+                last_box_on_prev_segm["frame"] = self.start_frame
+
+            for box in path['shapes']:
+                if int(box['frame']) <= self.stop_frame and int(box['frame']) >= self.start_frame:
                     frame_idx = int(box['frame']) if db_task.mode == 'annotation' else 0
                     xtl, ytl, xbr, ybr = self._clamp_box(float(box['xtl']), float(box['ytl']),
                         float(box['xbr']), float(box['ybr']), image_meta['original_size'][frame_idx])
                     tracked_box = _TrackedBox(xtl, ytl, xbr, ybr, int(box['frame']), strtobool(str(box['occluded'])),
                         int(box['z_order']), strtobool(str(box['outside'])))
-                    assert tracked_box.frame >  frame
+                    assert tracked_box.frame > frame
                     frame = tracked_box.frame
 
                     for attr in box['attributes']:
@@ -780,7 +795,7 @@ class _AnnotationForJob(_Annotation):
                     boxes.append(tracked_box)
                 else:
                     self.logger.error("init_from_client: ignore frame #%d " +
-                        "because stop_frame is %d", int(box['frame']), self.stop_frame)
+                        "because it out of segment range [%d-%d]", int(box['frame']), self.start_frame, self.stop_frame)
 
             attributes = []
             for attr in path['attributes']:
@@ -790,7 +805,7 @@ class _AnnotationForJob(_Annotation):
                 attributes.append(attr)
 
             assert frame <= self.stop_frame
-            box_path = _BoxPath(label, int(path['frame']), self.stop_frame,
+            box_path = _BoxPath(label, min(list(map(lambda box: box.frame, boxes))), self.stop_frame,
                 int(path['group_id']), boxes, attributes)
             self.box_paths.append(box_path)
 
@@ -799,8 +814,23 @@ class _AnnotationForJob(_Annotation):
                 label = _Label(self.db_labels[int(path['label_id'])])
                 poly_shapes = []
                 frame = -1
+
+                has_shapes_on_prev_segm = False
+                last_shape_on_prev_segm = None
+                has_shape_on_start_frame = False
                 for poly_shape in path['shapes']:
-                    if int(poly_shape['frame']) <= self.stop_frame:
+                    if int(poly_shape['frame']) < self.start_frame:
+                        has_shapes_on_prev_segm = True
+                        if last_shape_on_prev_segm is None or int(last_shape_on_prev_segm["frame"]) < (poly_shape["frame"]):
+                            last_shape_on_prev_segm = box
+                    elif int(poly_shape['frame']) == self.start_frame:
+                        has_shape_on_start_frame = True
+                        break
+                if has_shapes_on_prev_segm and not has_shape_on_start_frame:
+                    last_shape_on_prev_segm["frame"] = self.start_frame
+
+                for poly_shape in path['shapes']:
+                    if int(poly_shape['frame']) <= self.stop_frame and int(poly_shape['frame']) >= self.start_frame:
                         frame_idx = int(poly_shape['frame']) if db_task.mode == 'annotation' else 0
                         points = self._clamp_poly(poly_shape['points'], image_meta['original_size'][frame_idx])
                         tracked_poly_shape = _TrackedPolyShape(points, int(poly_shape['frame']), strtobool(str(poly_shape['occluded'])),
@@ -817,7 +847,7 @@ class _AnnotationForJob(_Annotation):
                         poly_shapes.append(tracked_poly_shape)
                     else:
                         self.logger.error("init_from_client: ignore frame #%d " +
-                            "because stop_frame is %d", int(poly_shape['frame']), self.stop_frame)
+                            "because it out of segment range [%d-%d]", int(poly_shape['frame']), self.start_frame, self.stop_frame)
 
                 attributes = []
                 for attr in path['attributes']:
@@ -826,7 +856,7 @@ class _AnnotationForJob(_Annotation):
                     attr = _Attribute(spec, str(attr['value']))
                     attributes.append(attr)
 
-                poly_path = _PolyPath(label, int(path['frame']), self.stop_frame + 1,
+                poly_path = _PolyPath(label, min(list(map(lambda shape: shape.frame, poly_shapes))), self.stop_frame + 1,
                     int(path['group_id']), poly_shapes, attributes)
 
                 getattr(self, poly_path_type).append(poly_path)

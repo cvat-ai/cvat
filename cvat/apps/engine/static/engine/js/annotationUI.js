@@ -12,8 +12,10 @@ function callAnnotationUI(jid) {
     let loadJobEvent = Logger.addContinuedEvent(Logger.EventType.loadJob);
     serverRequest("/get/job/" + jid, function(job) {
         serverRequest("get/annotation/job/" + jid, function(data) {
-            buildAnnotationUI(job, data, loadJobEvent);
             $('#loadingOverlay').remove();
+            setTimeout(() => {
+                buildAnnotationUI(job, data, loadJobEvent);
+            }, 0);
         });
     });
 }
