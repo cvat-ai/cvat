@@ -36,11 +36,12 @@ services:
         ELK_VERSION: 6.4.0
         http_proxy: ${http_proxy}
         https_proxy: ${https_proxy}
+        no_proxy: ${no_proxy}
     image: cvat_logstash
     ports:
-      - "${LOGSTASH_PORT}:5000"
+      - "${LOGSTASH_PORT}:5044"
     restart: always
 
   cvat:
     environment:
-      DJANGO_LOG_SERVER_URL: "${LOGSTASH_PORT}:5000"
+       DJANGO_LOG_SERVER_URL: "http://${LOGSTASH_HOST}:${LOGSTASH_PORT}"
