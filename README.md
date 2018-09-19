@@ -132,7 +132,6 @@ services:
       CVAT_SHARE_URL: "Mounted from /mnt/share host directory"
     volumes:
       cvat_share:/home/django/share:ro
-
 volumes:
   cvat_share:
     driver_opts:
