@@ -8,6 +8,7 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 
 - [User's guide](cvat/apps/documentation/user_guide.md)
 - [XML annotation format](cvat/apps/documentation/xml_format.md)
+- [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
 
 ## Screencasts
 
@@ -131,7 +132,7 @@ services:
       CVAT_SHARE_URL: "Mounted from /mnt/share host directory"
     volumes:
       cvat_share:/home/django/share:ro
-      
+
 volumes:
   cvat_share:
     driver_opts:
@@ -139,12 +140,4 @@ volumes:
       device: /mnt/share
       o: bind
 ```
-You can change the share device path to your actual share. For user convenience we have defined the enviroment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser. 
-
-### CVAT - AWS-Deployment guide.
-
-Tensorflow annotation feature is dependent on graphich hardware. One of the easy way to launch CVAT with tf annotation app is to use AWS P3 instances, which provides the NVIDIA GPU. Read more about [P3 instances here.](https://aws.amazon.com/about-aws/whats-new/2017/10/introducing-amazon-ec2-p3-instances/)
-Overall setup instruction works well as explained above except Installing nvidia drivers. 
-- Download the Nvidia Drivers from Nvidia website. For more check [Installing the NVIDIA Driver on Linux Instances](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-nvidia-driver.html) link.
-- Don't forget to add exposed AWS public IP address to `docker-compose.override.com`. 
-
+You can change the share device path to your actual share. For user convenience we have defined the enviroment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser.
