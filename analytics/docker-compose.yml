@@ -1,0 +1,46 @@
+version: '2.3'
+services:
+  cvat_elasticsearch:
+    container_name: cvat_elasticsearch
+    env_file:
+      - .env
+    build:
+      context: ./analytics/elasticsearch
+      args:
+        ELK_VERSION: 6.4.0
+    image: cvat_elasticsearch
+    ports:
+      - "${ELASTICSEARCH_PORT}:9200"
+    restart: always
+
+  cvat_kibana:
+    container_name: cvat_kibana
+    env_file:
+      - .env
+    build:
+      context: ./analytics/kibana
+      args:
+        ELK_VERSION: 6.4.0
+    image: cvat_kibana
+    ports:
+      - "${KIBANA_PORT}:5601"
+    restart: always
+
+  cvat_logstash:
+    container_name: cvat_logstash
+    env_file:
+      - .env
+    build:
+      context: ./analytics/logstash
+      args:
+        ELK_VERSION: 6.4.0
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+    image: cvat_logstash
+    ports:
+      - "${LOGSTASH_PORT}:5000"
+    restart: always
+
+  cvat:
+    environment:
+      DJANGO_LOG_SERVER_URL: "${LOGSTASH_PORT}:5000"
