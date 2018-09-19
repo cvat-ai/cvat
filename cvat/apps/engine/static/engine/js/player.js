@@ -44,6 +44,8 @@ class FrameProvider extends Listener {
         this._loaded = frame;
         this._frameCollection[frame] = image;
         this._loadAllowed = true;
+        image.onload = null;
+        image.onerror = null;
         this.notify();
     }
 
@@ -109,6 +111,8 @@ class FrameProvider extends Listener {
                 image.onload = this._onImageLoad.bind(this, image, frame);
                 image.onerror = () => {
                     this._loadAllowed = true;
+                    image.onload = null;
+                    image.onerror = null;
                 };
                 image.src = `get/task/${this._tid}/frame/${frame}`;
             }.bind(this), 25);
