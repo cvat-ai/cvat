@@ -161,6 +161,30 @@ function dumpAnnotationRequest(dumpButton, taskID) {
 }
 
 
+function setURISearchParameter(name, value) {
+    let urlSearchParams = new URLSearchParams(window.location.search);
+    if (value != null) {
+        urlSearchParams.set(name, value);
+    }
+    else if (urlSearchParams.has(name)) {
+        urlSearchParams.delete(name);
+    }
+
+    let url = window.location.protocol + '//' + window.location.host +
+        window.location.pathname + '?' + urlSearchParams.toString()
+    window.history.pushState({path:url},'',url);
+}
+
+
+function getURISearchParameter(name) {
+    let urlSearchParams = new URLSearchParams(decodeURIComponent(window.location.search));
+    if (urlSearchParams.has(name)) {
+        return urlSearchParams.get(name);
+    }
+    else return null;
+}
+
+
 /* These HTTP methods do not require CSRF protection */
 function csrfSafeMethod(method) {
     return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
