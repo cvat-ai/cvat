@@ -241,7 +241,7 @@ def save_annotation_for_job(request, jid):
         job_logger[jid].info("save annotation for {} job".format(jid))
         data = json.loads(request.body.decode('utf-8'))
         if 'annotation' in data:
-            annotation.save_job(jid, json.loads(data['annotation']))
+            mapping = annotation.save_job(jid, json.loads(data['annotation']))
         if 'logs' in data:
             client_log_proxy.push_logs(jid, json.loads(data['logs']))
     except RequestException as e:
@@ -251,8 +251,7 @@ def save_annotation_for_job(request, jid):
         job_logger[jid].error("cannot save annotation for job {}".format(jid), exc_info=True)
         return HttpResponseBadRequest(str(e))
 
-    return HttpResponse()
-
+    return JsonResponse(mapping)
 
 @login_required
 @permission_required(perm=['engine.view_task', 'engine.change_annotation'], raise_exception=True)

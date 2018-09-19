@@ -14,8 +14,16 @@ const AREA_TRESHOLD = 9;
 const TEXT_MARGIN = 10;
 
 /******************************** SHAPE MODELS  ********************************/
+
+const ShapeState = Object.freeze({
+    'nothing': 0,
+    'create': 1,
+    'update': 2,
+    'delete': 3
+});
+
 class ShapeModel extends Listener {
-    constructor(data, positions, type, id, color) {
+    constructor(data, positions, type, id, color, exportState) {
         super('onShapeUpdate', () => this );
         this._id = id;
         this._groupId = data.group_id;
@@ -37,6 +45,8 @@ class ShapeModel extends Listener {
         this._hiddenText = true;
         this._updateReason = null;
         this._importAttributes(data.attributes, positions);
+        this._dbId = data.db_id ? data.db_id : null;
+        this._exportState = exportState;
     }
 
     _importAttributes(attributes, positions) {
@@ -229,6 +239,9 @@ class ShapeModel extends Listener {
         window.cvat.addAction('Change Attribute', () => {
             if (typeof(oldAttr) === 'undefined') {
                 delete this._attributes.mutable[frame][attrId];
+                if (this.state !== ShapeState.create) {
+                    this.state = ShapeState.update;
+                }
                 this._updateReason = 'attributes';
                 this.notify();
             }
@@ -249,6 +262,10 @@ class ShapeModel extends Listener {
             this._attributes.immutable[attrId] = labelsInfo.strToValues(attrInfo.type, value)[0];
         }
 
+        if (this.state !== ShapeState.create) {
+            this.state = ShapeState.update;
+        }
+
         this._updateReason = 'attributes';
         this.notify();
     }
@@ -263,6 +280,9 @@ class ShapeModel extends Listener {
             this._label = +labelId;
             this._importAttributes([], []);
             this._setupKeyFrames();
+            if (this.state !== ShapeState.create) {
+                this.state = ShapeState.update;
+            }
             this._updateReason = 'changelabel';
             this.notify();
         }
@@ -297,6 +317,9 @@ class ShapeModel extends Listener {
         // End of undo/redo code
 
         this.updatePosition(frame, position, true);
+        if (this.state !== ShapeState.create) {
+            this.state = ShapeState.update;
+        }
         this._updateReason = 'occluded';
         this.notify();
     }
@@ -347,6 +370,9 @@ class ShapeModel extends Listener {
                 }
 
                 this._updateReason = 'outside';
+                if (this.state !== ShapeState.create) {
+                    this.state = ShapeState.update;
+                }
                 this.notify();
             }
             else {
@@ -360,6 +386,9 @@ class ShapeModel extends Listener {
         let position = this._interpolatePosition(frame);
         position.outside = !position.outside;
         this.updatePosition(frame, position, true);
+        if (this.state !== ShapeState.create) {
+            this.state = ShapeState.update;
+        }
 
         // Update the start frame if need and redestribute attributes
         if (frame < this._frame) {
@@ -410,6 +439,9 @@ class ShapeModel extends Listener {
                 }
                 this._frame = frame;
             }
+        }
+        if (this.state !== ShapeState.create) {
+            this.state = ShapeState.update;
         }
         this._updateReason = 'keyframe';
         this.notify();
@@ -464,14 +496,19 @@ class ShapeModel extends Listener {
         });
 
         this.removed = true;
+        const newState = this.state === ShapeState.create ? ShapeState.nothing : ShapeState.delete;
 
         // Undo/redo code
         window.cvat.addAction('Remove Object', () => {
             this.removed = false;
+            this.state = this._dbId ? ShapeState.update : ShapeState.create;
         }, () => {
             this.removed = true;
+            this.state = newState;
+
         }, window.cvat.player.frames.current);
         // End of undo/redo code
+        this.state = newState;
     }
 
     set z_order(value) {
@@ -481,6 +518,7 @@ class ShapeModel extends Listener {
             position.z_order = value;
             this.updatePosition(frame, position, true);
             this._updateReason = 'z_order';
+            this.state = ShapeState.update;
             this.notify();
         }
     }
@@ -492,6 +530,14 @@ class ShapeModel extends Listener {
         this._removed = value;
         this._updateReason = 'remove';
         this.notify();
+    }
+
+    set state(state) {
+        this._exportState = state;
+    }
+
+    get state() {
+        return this._exportState;
     }
 
     get removed() {
@@ -599,8 +645,8 @@ class ShapeModel extends Listener {
 
 
 class BoxModel extends ShapeModel {
-    constructor(data, type, id, color) {
-        super(data, data.shapes || [], type, id, color);
+    constructor(data, type, id, color, state) {
+        super(data, data.shapes || [], type, id, color, state);
         this._positions = BoxModel.importPositions.call(this, data.shapes || data);
         this._setupKeyFrames();
     }
@@ -683,6 +729,9 @@ class BoxModel extends ShapeModel {
                 window.cvat.addAction('Change Position', () => {
                     if (!Object.keys(oldPos).length) {
                         delete this._positions[frame];
+                        if (this.state !== ShapeState.create) {
+                            this.state = ShapeState.update;
+                        }
                         this._updateReason = 'position';
                         this.notify();
                     }
@@ -702,6 +751,10 @@ class BoxModel extends ShapeModel {
                 this._positions[frame] = Object.assign(pos, {
                     outside: position.outside,
                 });
+            }
+
+            if (this.state !== ShapeState.create) {
+                this.state = ShapeState.update;
             }
         }
 
@@ -763,6 +816,8 @@ class BoxModel extends ShapeModel {
             }
 
             return Object.assign({}, this._positions[this._frame], {
+                db_id: this._dbId,
+                client_id: this._id,
                 attributes: immutableAttributes,
                 label_id: this._label,
                 group_id: this._groupId,
@@ -771,6 +826,8 @@ class BoxModel extends ShapeModel {
         }
         else {
             let boxPath = {
+                db_id: this._dbId,
+                client_id: this._id,
                 label_id: this._label,
                 group_id: this._groupId,
                 frame: this._frame,
@@ -862,8 +919,8 @@ class BoxModel extends ShapeModel {
 }
 
 class PolyShapeModel extends ShapeModel {
-    constructor(data, type, id, color) {
-        super(data, data.shapes || [], type, id, color);
+    constructor(data, type, id, color, state) {
+        super(data, data.shapes || [], type, id, color, state);
         this._positions = PolyShapeModel.importPositions.call(this, data.shapes || data);
         this._setupKeyFrames();
     }
@@ -930,6 +987,9 @@ class PolyShapeModel extends ShapeModel {
                     outside: position.outside,
                 });
             }
+            if (this.state !== ShapeState.create) {
+                this.state =  ShapeState.update;
+            }
         }
 
         if (!silent) {
@@ -958,6 +1018,8 @@ class PolyShapeModel extends ShapeModel {
             }
 
             return Object.assign({}, this._positions[this._frame], {
+                db_id: this._dbId,
+                client_id: this._id,
                 attributes: immutableAttributes,
                 label_id: this._label,
                 group_id: this._groupId,
@@ -966,6 +1028,8 @@ class PolyShapeModel extends ShapeModel {
         }
         else {
             let polyPath = {
+                db_id: this._dbId,
+                client_id: this._id,
                 label_id: this._label,
                 group_id: this._groupId,
                 frame: this._frame,
@@ -1019,16 +1083,7 @@ class PolyShapeModel extends ShapeModel {
     }
 
     static convertNumberArrayToString(arrayPoints) {
-        let serializedPoints = '';
-        for (let point of arrayPoints) {
-            serializedPoints += `${point.x},${point.y} `;
-        }
-        let len = serializedPoints.length;
-        if (len) {
-            serializedPoints = serializedPoints.substring(0, len - 1);
-        }
-
-        return serializedPoints;
+        return arrayPoints.map(point => `${point.x},${point.y}`).join(' ');
     }
 
     static importPositions(positions) {
@@ -1079,8 +1134,8 @@ class PolyShapeModel extends ShapeModel {
 }
 
 class PointsModel extends PolyShapeModel {
-    constructor(data, type, id, color) {
-        super(data, type, id, color);
+    constructor(data, type, id, color, state) {
+        super(data, type, id, color, state);
         this._minPoints = 1;
     }
 
@@ -1105,8 +1160,8 @@ class PointsModel extends PolyShapeModel {
 
 
 class PolylineModel extends PolyShapeModel {
-    constructor(data, type, id, color) {
-        super(data, type, id, color);
+    constructor(data, type, id, color, state) {
+        super(data, type, id, color, state);
         this._minPoints = 2;
     }
 
@@ -1141,8 +1196,8 @@ class PolylineModel extends PolyShapeModel {
 
 
 class PolygonModel extends PolyShapeModel {
-    constructor(data, type, id, color) {
-        super(data, type, id, color);
+    constructor(data, type, id, color, state) {
+        super(data, type, id, color, state);
         this._minPoints = 3;
         this._draggable = false;
     }
@@ -3152,20 +3207,20 @@ class PointsView extends PolyShapeView {
 
 
 
-function buildShapeModel(data, type, idx, color) {
+function buildShapeModel(data, type, idx, color, initialState) {
     switch (type) {
     case 'interpolation_box':
     case 'annotation_box':
-        return new BoxModel(data, type, idx, color);
+        return new BoxModel(data, type, idx, color, initialState);
     case 'interpolation_points':
     case 'annotation_points':
-        return new PointsModel(data, type, idx, color);
+        return new PointsModel(data, type, idx, color, initialState);
     case 'interpolation_polyline':
     case 'annotation_polyline':
-        return new PolylineModel(data, type, idx, color);
+        return new PolylineModel(data, type, idx, color, initialState);
     case 'interpolation_polygon':
     case 'annotation_polygon':
-        return new PolygonModel(data, type, idx, color);
+        return new PolygonModel(data, type, idx, color, initialState);
     }
     throw Error('Unreacheable code was reached.');
 }
