@@ -139,4 +139,4 @@ volumes:
       device: /mnt/share
       o: bind
 ```
-You can change the share device path to your actual share. For user convenience we have defined the enviroment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser.
+You can change the share device path to your actual share. For user convenience we have defined the enviroment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser. 
