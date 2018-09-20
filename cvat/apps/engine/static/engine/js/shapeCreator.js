@@ -268,7 +268,7 @@ class ShapeCreatorView {
         let lastPoint = {
             x: null,
             y: null,
-        }
+        };
 
         if (this._polyShapeSize) {
             let size = this._polyShapeSize;
@@ -296,14 +296,14 @@ class ShapeCreatorView {
             lastPoint = {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY,
-            }
+            };
         });
 
         this._drawInstance.on('drawpoint', (e) => {
             lastPoint = {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY,
-            }
+            };
         });
 
         this._frameContent.on('mousedown.shapeCreator', (e) => {

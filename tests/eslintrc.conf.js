@@ -49,6 +49,8 @@ module.exports = {
         'showOverlay': true,
         'confirm': true,
         'dumpAnnotationRequest': true,
+        'getURISearchParameter': true,
+        'setURISearchParameter': true,
         // from shapeCollection.js
         'ShapeCollectionModel': true,
         'ShapeCollectionController': true,
