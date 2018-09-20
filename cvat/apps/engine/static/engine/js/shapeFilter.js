@@ -119,6 +119,10 @@ class FilterView {
         this._filterString.on('keypress keydown keyup', (e) => e.stopPropagation());
         this._filterString.on('change', (e) => {
             let value = $.trim(e.target.value);
+            if (value.length) {
+                value = value.split('|').map(x => '/d:data/' + x).join('|').toLowerCase().replace(/-/g, "_");
+            }
+            if (this._controller.updateFilter(value)) {
 
             if (this._controller.updateFilter(value, false)) {
                 this._filterString.css('color', 'green');
