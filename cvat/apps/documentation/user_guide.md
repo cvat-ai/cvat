@@ -92,7 +92,7 @@ There are four shapes you can annotate your images with:
 - ``polyline``
 - ``points``
 
-And here how they all looks like:
+And here how they all look like:
 
 ![](static/documentation/images/image038.jpg) ![](static/documentation/images/image033.jpg)
 
@@ -109,7 +109,7 @@ Usage examples:
 
 2. Create a new annotation:
 
-   - Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
+   - Choose right ``Shape`` (e.g. box) and ``Label`` (was specified by you while creating the task) beforehand:
 
     ![](static/documentation/images/image080.jpg) ![](static/documentation/images/image083.jpg)
 
@@ -117,7 +117,7 @@ Usage examples:
 
     ![](static/documentation/images/image011.jpg)
 
-    - It is possible to adjust boundaries and location of the bounding box using mouse. In the top right corner boxes' size is shown. You can check it by clicking one of the boxes' points. You can also undo/redo your actions by using ``Ctrl+Z`` / ``Shift+Ctrl+Z Ctrl+Y``.
+    - It is possible to adjust boundaries and location of the bounding box using mouse. In the top right corner size of the box is shown. You can also undo/redo your actions by using ``Ctrl+Z`` / ``Shift+Ctrl+Z Ctrl+Y``.
 
 3. In the list of objects you can see the labeled car. In the side panel you can perform basic operations under the object.
 
@@ -262,10 +262,10 @@ The tool is composed of:
 ![](static/documentation/images/image034.jpg)
 
 There are also:
-- ``Settings`` (F2) — contains different parameters which can be adjust by the user needs; and
+- ``Settings`` (F2) — contains different parameters which can be adjusted by the user needs
 
 
-- ``Context menu`` — click right mouse button inside of a shape or at point (only in poly-shapes)
+- ``Context menu`` — click right mouse button inside of a shape or at a point (only in poly-shapes)
 
 ![](static/documentation/images/image070.jpg) ![](static/documentation/images/image071.jpg)
 
@@ -279,8 +279,8 @@ Click ``F2`` to access settings menu.
 There is ``Player Settings`` which adjusting ``Workspace`` and ``Other Settings``.
 
 In ``Player Settings`` you can:
- - Regulate Step of ``C`` and ``V`` shortcuts
- - Regulate Speed of ``Space``/Play button
+ - Control step of ``C`` and ``V`` shortcuts
+ - Control speed of ``Space``/Play button
  - Show every image in full or zoomed out like previous (reset by default)
 
   - Enable ``Grid`` when you don't need too small annotation. ``Grid`` can have different opacity, color and cells' size — use ``F2`` to tune settings.
@@ -297,7 +297,7 @@ Shortcuts:
      ![](static/documentation/images/image069.jpg)
 
 ``Other Settings`` contain:
- - ``Show All Interpolation Tracks`` checkbox — shows hidden object card on Side panel for every interpolated object (turned off by default)
+ - ``Show All Interpolation Tracks`` checkbox — shows hidden object on side panel for every interpolated object (turned off by default)
  - ``AAM Zoom Margin`` slider — defines margins for shape in attribute annotation mode
  - ``Enable AutoSaving`` checkbox — turned off by default
  - ``AutoSaving Interval (Min)`` input box — 15 minutes by default
@@ -413,12 +413,12 @@ To change a type of a highlighted shape using keyboard you need to press ``Shift
 
 ### Bottom side panel
 
-- ``Create Shape`` — ``N`` — start/stop draw new shape mode
-- ``Merge Shapes`` — ``M`` — start/stop merge boxes mode
-- ``Group Shapes`` — ``G`` — start/stop grouping boxes mode
-- ``Label Type`` — choosing on of the created with a task ``Labels`` (Face, Person, Vehicle)
-- ``Working Mode`` — Annotation or Interpolation modes. You can't interpolate Polygons/Polylines/Points, but you can propagate them using ``Ctrl+B`` or merge to a track
-- ``Shape type`` — Box, Polygon, Polyline, Points
+- ``Create Shape`` (``N``) — start/stop draw new shape mode
+- ``Merge Shapes`` (``M``) — start/stop merge boxes mode
+- ``Group Shapes`` (``G``) — start/stop grouping boxes mode
+- ``Label Type`` — (e.g. Face, Person, Vehicle)
+- ``Working Mode`` — Annotation or Interpolation modes. You can't interpolate Polygons/Polylines/Points, but you can propagate them using ``Ctrl+B`` or merge into a track
+- ``Shape type`` — (e.g. Box, Polygon, Polyline, Points)
 - ``Poly Shape Size`` — (optional) hard number of dots for creating Polygon/Polyline shapes
 
 ![](static/documentation/images/image082.jpg)
@@ -444,7 +444,7 @@ Example: both cars on the figure below should be labeled as __occluded__.
 
 ![](static/documentation/images/image054.jpg)
 
-If a frame contains too many objects and it is difficult to annotate them due to many bounding boxes are placed mostly in the same place when it makes sense to lock them. Bounding boxes for locked objects are transparent and it is easy to annotate new objects. Also it will not be possible to change previously annotated objects by an accident. Shortcut: ``L``.
+If a frame contains too many objects and it is difficult to annotate them due to many shapes are placed mostly in the same place when it makes sense to lock them. Shapes for locked objects are transparent and it is easy to annotate new objects. Also it will not be possible to change previously annotated objects by an accident. Shortcut: ``L``.
 
 ![](static/documentation/images/image066.jpg)
 
@@ -503,7 +503,7 @@ can add/delete points after finishing.
 
 ![](static/documentation/images/gif005.gif)
 
-Result with an opacity and black stroke:
+Below you can see results with opacity and black stroke:
 
 ![](static/documentation/images/image064.jpg)
 
@@ -561,7 +561,7 @@ Grouped shapes will have ``group_id`` filed in dumped annotation.
 
 Also you may switch color distribution from by instance (default) to by group. For it need switch ``Color By Group`` checkbox.
 
-Shapes which haven't ``group_id`` will highlighted with white color.
+Shapes which haven't ``group_id`` will be highlighted with white color.
 
 ![](static/documentation/images/image078.jpg)
 
