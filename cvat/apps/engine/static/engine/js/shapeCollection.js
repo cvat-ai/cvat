@@ -223,25 +223,6 @@ class ShapeCollectionModel extends Listener {
         return this;
     }
 
-    _createExportContainer() {
-        const container = {};
-        ['create', 'update', 'delete'].forEach( action => {
-            container[action] = {
-                "boxes": [],
-                "box_paths": [],
-                "points": [],
-                "points_paths": [],
-                "polygons": [],
-                "polygon_paths": [],
-                "polylines": [],
-                "polyline_paths": [],
-            };
-        });
-        container.pre_erase = this._erased;
-
-        return container;
-    }
-
     _getExportTargetContainer(export_type, shape_type, container) {
         let shape_container_target = undefined;
         let export_action_container = undefined;
@@ -401,8 +382,9 @@ class ShapeCollectionModel extends Listener {
     }
 
     export() {
-        const response = this._createExportContainer();
-        this._saved_state = this._createExportContainer();
+        const response = createExportContainer();
+        this._saved_state = createExportContainer();
+        response.pre_erase = this._erased;
 
         for (const shape of this._shapes) {
             if (shape.state === ShapeState.nothing) {

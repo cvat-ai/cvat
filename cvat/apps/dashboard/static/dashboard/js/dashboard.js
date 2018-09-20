@@ -542,11 +542,15 @@ function uploadAnnotationRequest() {
                         return;
                     }
 
+                    const exportData = createExportContainer();
+                    exportData.create = parsed;
+                    exportData.pre_erase = true;
+
                     let asyncSave = function() {
                         $.ajax({
                             url: '/save/annotation/task/' + window.cvat.dashboard.taskID,
                             type: 'POST',
-                            data: JSON.stringify(parsed),
+                            data: JSON.stringify(exportData),
                             contentType: 'application/json',
                             success: function() {
                                 let message = 'Annotation successfully uploaded';

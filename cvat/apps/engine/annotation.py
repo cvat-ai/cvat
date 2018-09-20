@@ -105,16 +105,20 @@ def save_task(tid, data):
         jid = segment.job_set.first().id
         start = segment.start_frame
         stop = segment.stop_frame
-        splitted_data[jid] = {
-            "boxes": list(filter(lambda x: start <= int(x['frame']) <= stop, data['boxes'])),
-            "polygons": list(filter(lambda x: start <= int(x['frame']) <= stop, data['polygons'])),
-            "polylines": list(filter(lambda x: start <= int(x['frame']) <= stop, data['polylines'])),
-            "points": list(filter(lambda x: start <= int(x['frame']) <= stop, data['points'])),
-            "box_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data['box_paths'])),
-            "polygon_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data['polygon_paths'])),
-            "polyline_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data['polyline_paths'])),
-            "points_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data['points_paths'])),
-        }
+        splitted_data[jid] = {}
+        for action in ['create', 'update', 'delete']:
+            splitted_data[jid][action] = {
+                "boxes": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['boxes'])),
+                "polygons": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['polygons'])),
+                "polylines": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['polylines'])),
+                "points": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['points'])),
+                "box_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['box_paths'])),
+                "polygon_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['polygon_paths'])),
+                "polyline_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['polyline_paths'])),
+                "points_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['points_paths'])),
+            }
+
+        splitted_data[jid]['pre_erase'] = data['pre_erase']
 
     for jid, _data in splitted_data.items():
         save_job(jid, _data)
@@ -1091,6 +1095,8 @@ class _AnnotationForJob(_Annotation):
 
                     db_shapes.append(db_shape)
                 db_paths.append(db_path)
+            # in case of sqlite have to store exists ids
+            db_paths_ids = list(self.db_job.objectpath_set.values_list('id', flat=True))
             db_paths = models.ObjectPath.objects.bulk_create(db_paths)
 
             if db_paths and db_paths[0].id == None:
@@ -1099,13 +1105,13 @@ class _AnnotationForJob(_Annotation):
                 # for Postgres bulk_create will return objects with ids even ids
                 # are auto incremented. Thus we will not be inside the 'if'.
                 if shape_type == 'polygon_paths':
-                    db_paths = list(self.db_job.objectpath_set.filter(shapes="polygons"))
+                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=db_paths_ids).filter(shapes="polygons"))
                 elif shape_type == 'polyline_paths':
-                    db_paths = list(self.db_job.objectpath_set.filter(shapes="polylines"))
+                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=db_paths_ids).filter(shapes="polylines"))
                 elif shape_type == 'box_paths':
-                    db_paths = list(self.db_job.objectpath_set.filter(shapes="boxes"))
+                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=db_paths_ids).filter(shapes="boxes"))
                 elif shape_type == 'points_paths':
-                    db_paths = list(self.db_job.objectpath_set.filter(shapes="points"))
+                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=db_paths_ids).filter(shapes="points"))
 
             id_mapping[shape_type] = {client_shape.client_id: db_shape.id for client_shape, db_shape in zip(shapes, db_paths) }
 
@@ -1116,6 +1122,7 @@ class _AnnotationForJob(_Annotation):
             for db_shape in db_shapes:
                 db_shape.track_id = db_paths[db_shape.track_id].id
 
+            db_shapes_ids = list(self._get_shape_class(shape_type).objects.filter(track__job_id=self.db_job.id).values_list('id', flat=True))
             db_shapes = self._get_shape_class(shape_type).objects.bulk_create(db_shapes)
 
             if db_shapes and db_shapes[0].id == None:
@@ -1123,7 +1130,7 @@ class _AnnotationForJob(_Annotation):
                 # but it definetely doesn't work for Postgres. Need to say that
                 # for Postgres bulk_create will return objects with ids even ids
                 # are auto incremented. Thus we will not be inside the 'if'.
-                db_shapes = list(self._get_shape_class(shape_type).objects.filter(track__job_id=self.db_job.id))
+                db_shapes = list(self._get_shape_class(shape_type).objects.exclude(id__in=db_shapes_ids).filter(track__job_id=self.db_job.id))
 
             for db_attrval in db_shape_attrvals:
                 if shape_type == 'polygon_paths':
@@ -1193,6 +1200,7 @@ class _AnnotationForJob(_Annotation):
 
                 db_shapes.append(db_shape)
 
+            db_shapes_ids = list(self._get_shape_class(shape_type).objects.filter(job_id=self.db_job.id).values_list('id', flat=True))
             db_shapes = self._get_shape_class(shape_type).objects.bulk_create(db_shapes)
 
             if db_shapes and db_shapes[0].id == None:
@@ -1200,7 +1208,7 @@ class _AnnotationForJob(_Annotation):
                 # but it definetely doesn't work for Postgres. Need to say that
                 # for Postgres bulk_create will return objects with ids even ids
                 # are auto incremented. Thus we will not be inside the 'if'.
-                db_shapes = list(self._get_shape_set(shape_type).all())
+                db_shapes = list(self._get_shape_set(shape_type).exclude(id__in=db_shapes_ids))
 
             id_mapping[shape_type] = {client_shape.client_id: db_shape.id for client_shape, db_shape in zip(shapes, db_shapes) }
 
@@ -1357,6 +1365,7 @@ class _AnnotationForJob(_Annotation):
 
             models.ObjectPathAttributeVal.objects.bulk_create(db_path_attrvals)
 
+            db_shapes_ids = list(self._get_shape_class(shape_type).objects.filter(track__job_id=self.db_job.id).values_list('id', flat=True))
             db_shapes = self._get_shape_class(shape_type).objects.bulk_create(db_shapes)
 
             if db_shapes and db_shapes[0].id == None:
@@ -1364,7 +1373,7 @@ class _AnnotationForJob(_Annotation):
                 # but it definetely doesn't work for Postgres. Need to say that
                 # for Postgres bulk_create will return objects with ids even ids
                 # are auto incremented. Thus we will not be inside the 'if'.
-                db_shapes = list(self._get_shape_class(shape_type).objects.filter(track__job_id=self.db_job.id))
+                db_shapes = list(self._get_shape_class(shape_type).objects.exclude(id__in=db_shapes_ids).filter(track__job_id=self.db_job.id))
 
             for db_attrval in db_shape_attrvals:
                 if shape_type == 'polygon_paths':
@@ -1389,7 +1398,7 @@ class _AnnotationForJob(_Annotation):
             db_ids_to_delete = list(shape.db_id for shape in getattr(self, shape_type))
             deleted = self._get_shape_set(shape_type).filter(id__in=db_ids_to_delete).delete()
             class_name = 'engine.{}'.format(self._get_shape_class(shape_type).__name__)
-            if not (deleted[0] == 0 and len(db_ids_to_delete) == 0) or (class_name in deleted[1] and deleted[1][class_name] != len(db_ids_to_delete)):
+            if not (deleted[0] == 0 and len(db_ids_to_delete) == 0) and (class_name in deleted[1] and deleted[1][class_name] != len(db_ids_to_delete)):
                 raise Exception('Number of deleted object doesn\'t match with requested number')
 
             deleted_client_ids = list(shape.client_id for shape in getattr(self, shape_type))

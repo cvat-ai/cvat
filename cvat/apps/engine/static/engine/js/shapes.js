@@ -496,19 +496,15 @@ class ShapeModel extends Listener {
         });
 
         this.removed = true;
-        const newState = this.state === ShapeState.create ? ShapeState.nothing : ShapeState.delete;
 
         // Undo/redo code
         window.cvat.addAction('Remove Object', () => {
             this.removed = false;
-            this.state = this._dbId ? ShapeState.update : ShapeState.create;
         }, () => {
             this.removed = true;
-            this.state = newState;
 
         }, window.cvat.player.frames.current);
         // End of undo/redo code
-        this.state = newState;
     }
 
     set z_order(value) {
@@ -526,6 +522,9 @@ class ShapeModel extends Listener {
     set removed(value) {
         if (value) {
             this._active = false;
+            this.state = this.state === ShapeState.create ? ShapeState.nothing : ShapeState.delete;
+        } else {
+            this.state = this._dbId ? ShapeState.update : ShapeState.create;
         }
         this._removed = value;
         this._updateReason = 'remove';
@@ -3203,6 +3202,25 @@ class PointsView extends PolyShapeView {
             }
         }
     }
+}
+
+function createExportContainer() {
+    const container = {};
+    ['create', 'update', 'delete'].forEach( action => {
+        container[action] = {
+            "boxes": [],
+            "box_paths": [],
+            "points": [],
+            "points_paths": [],
+            "polygons": [],
+            "polygon_paths": [],
+            "polylines": [],
+            "polyline_paths": [],
+        };
+    });
+    container.pre_erase = false;
+
+    return container;
 }
 
 
