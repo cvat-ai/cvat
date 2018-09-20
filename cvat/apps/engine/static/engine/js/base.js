@@ -162,22 +162,36 @@ function dumpAnnotationRequest(dumpButton, taskID) {
 
 
 function setURISearchParameter(name, value) {
-    let urlSearchParams = new URLSearchParams(window.location.search);
-    if (value != null) {
-        urlSearchParams.set(name, value);
+    let searchParams = new URLSearchParams(window.location.search);
+    if (typeof value === 'undefined' || value === null) {
+        if (searchParams.has(name)) {
+            searchParams.delete(name);
+        }
     }
-    else if (urlSearchParams.has(name)) {
-        urlSearchParams.delete(name);
-    }
+    else searchParams.set(name, value);
 
-    let url = window.location.protocol + '//' + window.location.host +
-        window.location.pathname + '?' + urlSearchParams.toString()
-    window.history.pushState({path:url},'',url);
+    window.history.replaceState(null, null, `?${searchParams.toString()}`);
+}
+
+
+function resetURISearchParameters() {
+    let searchParams = new URLSearchParams();
+    searchParams.set('id', window.cvat.job.id);
+    window.history.replaceState(null, null, `?${searchParams.toString()}`);
 }
 
 
 function getURISearchParameter(name) {
-    let urlSearchParams = new URLSearchParams(decodeURIComponent(window.location.search));
+    let decodedURI = '';
+    try {
+        decodedURI = decodeURIComponent(window.location.search);
+    }
+    catch {
+        showMessage('Bad URL has been found');
+        resetURISearchParameters();
+    }
+
+    let urlSearchParams = new URLSearchParams(decodedURI);
     if (urlSearchParams.has(name)) {
         return urlSearchParams.get(name);
     }

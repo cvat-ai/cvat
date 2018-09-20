@@ -65,13 +65,7 @@ class FilterModel {
     }
 
     updateFilter(value, silent) {
-        let xpathValue = '';
-        if (value.length) {
-            xpathValue = value.split('|').map(x => '/d:data/' + x).join('|').toLowerCase().replace(/-/g, "_");
-        }
-
         this._filter = xpathValue;
-
         if (!silent) {
             this._update();
         }
@@ -89,20 +83,20 @@ class FilterController {
 
     updateFilter(value, silent) {
         if (value.length) {
+            value = value.split('|').map(x => '/d:data/' + x).join('|').toLowerCase().replace(/-/g, "_");
             try {
                 document.evaluate(value, document, () => 'ns');
             }
-            catch (error) {
+            catch {
                 return false;
             }
             this._model.updateFilter(value, silent);
             return true;
         }
         else {
-            this._model.updateFilter(value, silent);
+            this._model.updateFilter('', silent);
             return true;
         }
-
     }
 
     deactivate() {
