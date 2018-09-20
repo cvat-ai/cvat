@@ -57,7 +57,7 @@ There you can:
 
     __Source__. To create huge tasks please use ``shared`` server directory (choose ``Share`` option in the dialog).
 
-    __Flip images__. All selected files will be turned around 180. 
+    __Flip images__. All selected files will be turned around 180.
 
     __Z-Order__. Defines the order on drawn polygons. Check the box for enable layered dislaying.
 
@@ -108,12 +108,12 @@ Usage examples:
     ![](static/documentation/images/image082.jpg) ![](static/documentation/images/image081.jpg)
 
 2. Create a new annotation:
-  
+
    - Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
 
     ![](static/documentation/images/image080.jpg) ![](static/documentation/images/image083.jpg)
 
-   - Create a bounding box by clicking on ``Create Shape`` button or ``N`` shortcut. Choose opposite points. Your first bounding box is ready! 
+   - Create a bounding box by clicking on ``Create Shape`` button or ``N`` shortcut. Choose opposite points. Your first bounding box is ready!
 
     ![](static/documentation/images/image011.jpg)
 
@@ -248,7 +248,7 @@ Usage examples:
 ---
 **Annotation** is a set of bounding boxes and tracks. There are several types of annotations:
 - *Manual* which is created by a person
-- *Semi-automatic* which is created automatically but modified by a person
+- *Semi-automatic* which is created mainly automatically but the user provides some data (e.g. interpolation)
 - *Automatic* which is created automatically without a person in the loop
 
 ## Interface of the annotation tool
@@ -285,7 +285,7 @@ In ``Player Settings`` you can:
 
   - Enable ``Grid`` when you don't need too small annotation. ``Grid`` can have different opacity, color and cells' size — use ``F2`` to tune settings.
 
-    ![](static/documentation/images/image068.jpg)  
+    ![](static/documentation/images/image068.jpg)
 
  - Adjust ``Brightness``/``Contrast``/``Saturation`` of too expose or too dark images using ``F2`` — color settings (changes displaying and not the image itself).
 Shortcuts:
@@ -395,7 +395,7 @@ You can copy and paste this object on this or other frame. ``Ctrl+C``/``Ctrl+V``
 ![](static/documentation/images/image052.jpg)
 
 ---
-You can propagate this object on next X frames. ``Ctrl+B`` shortcut works under mouse point. ``F2`` for change on how many frames to propagate this object. 
+You can propagate this object on next X frames. ``Ctrl+B`` shortcut works under mouse point. ``F2`` for change on how many frames to propagate this object.
 
 ![](static/documentation/images/image053.jpg)
 
@@ -425,8 +425,8 @@ To change a type of a highlighted shape using keyboard you need to press ``Shift
 
 #### Fullscreen player mode
 
-Go to ``Open Menu`` —> ``Fullscreen Player``  
-Exit with ``F11`` or ``Ecs``. 
+Go to ``Open Menu`` —> ``Fullscreen Player``
+Exit with ``F11`` or ``Ecs``.
 
 That is how it looks like.
 
