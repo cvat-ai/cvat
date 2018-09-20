@@ -119,7 +119,6 @@ class FilterView {
         this._filterString.on('keypress keydown keyup', (e) => e.stopPropagation());
         this._filterString.on('change', (e) => {
             let value = $.trim(e.target.value);
-
             if (this._controller.updateFilter(value, false)) {
                 this._filterString.css('color', 'green');
                 setURISearchParameter('filter', value || null);

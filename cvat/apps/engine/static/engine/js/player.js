@@ -549,7 +549,7 @@ class PlayerController {
 
             let frames = this._model.frames;
             let progressWidth = e.target.clientWidth;
-            let x = e.clientX - e.target.offsetLeft;
+            let x = e.clientX + window.pageXOffset - e.target.offsetLeft;
             let percent = x / progressWidth;
             let targetFrame = Math.round((frames.stop - frames.start) * percent);
             this._model.pause();
