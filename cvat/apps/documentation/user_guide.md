@@ -485,7 +485,7 @@ By default in the mode objects are zoomed in to full screen. Check
 
 It is used for semantic / instance segmentation.
 
-Be sure ``Z-Order`` flag in ``Create task`` dialog is enabled if you want annotate polygons. This allows to choose with ``+/-`` buttons which polygons are on the background and which are on the front.
+Be sure ``Z-Order`` flag in ``Create task`` dialog is enabled if you want annotate polygons. Z-Order flag defines order of drawing. It is necessary to get right annotation mask without extra work (additional drawing of borders). Z-order can be changed by `+`/`-` which set maximum/minimum z-order respectively.
 
 ![](static/documentation/images/image074.jpg)
 
