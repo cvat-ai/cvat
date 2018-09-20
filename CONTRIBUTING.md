@@ -10,7 +10,7 @@ patches and features.
 
 ## Branching model
 
-The project uses [A successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model).
+The project uses [a successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model).
 Thus it has a couple of branches. Some of them are described below:
 
 - `origin/master` to be the main branch where the source code of
