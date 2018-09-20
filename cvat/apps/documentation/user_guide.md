@@ -57,9 +57,13 @@ There you can:
 
     __Source__. To create huge tasks please use ``shared`` server directory (choose ``Share`` option in the dialog).
 
+    __Flip images__. All selected files will be turned around 180. 
+
+    __Z-Order__. Defines the order on drawn polygons. Check the box for enable layered dislaying.
+
     __Overlap Size__. Use this option to make overlapped segments. The option makes tracks continuous from one segment into another. Use it for interpolation mode.
 
-    __Segment size__. Use this option to divide huge dataset on several segments.
+    __Segment size__. Use this option to divide huge dataset by a few less size segments.
 
     __Image Quality__. Use this option to specify quality of uploaded images. The option makes it faster to load high-quality datasets. Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
 
@@ -99,7 +103,7 @@ Usage examples:
  - Create new annotations for a set of images.
  - Add/modify/delete objects for existing annotations.
 
-1. Before start need to be sure that ``Annotation`` is selected.
+1. Before start need to check that ``Annotation`` is selected:
 
     ![](static/documentation/images/image082.jpg) ![](static/documentation/images/image081.jpg)
 
@@ -182,8 +186,6 @@ Usage examples:
         ![](static/documentation/images/gif003.gif)
 
 ### Attribute Annotation mode (basics)
-Usage examples:
-- Edit attributes using keyboard with fast navigation between objects and frames.
 
 - In this Mode you can edit attributes with fast navigation between objects and frames using keyboard. Press ``Shift+Enter`` shortcut to enter AAMode. After that it is possible to change attributes using keyboard.
 
@@ -197,7 +199,7 @@ Usage examples:
 
     ![](static/documentation/images/image026.jpg) ![](static/documentation/images/image027.jpg)
 
-- Use ``Right Arrow``/``Left Arrow`` keys to move on previous/next image.
+- Use ``Right Arrow``/``Left Arrow`` keys to move on previous/next image with annotation.
 
 ### Downloading annotations
 
@@ -296,7 +298,7 @@ Shortcuts:
 
 ``Other Settings`` contain:
  - ``Show All Interpolation Tracks`` checkbox — shows hidden object card on Side panel for every interpolated object (turned off by default)
- - ``AAM Zoom Margin`` slider — allow to choose the size of bounding box on new frame
+ - ``AAM Zoom Margin`` slider — defines margins for shape in attribute annotation mode
  - ``Enable AutoSaving`` checkbox — turned off by default
  - ``AutoSaving Interval (Min)`` input box — 15 minutes by default
  - ``Propagate Frames`` input box — allow to choose on how many frames selected object will be copied in by ``Ctrl+B`` (50 by default)
@@ -341,7 +343,7 @@ It is the main menu for the annotation tool. It can be used to download, upload 
 ---
 __Filter__ input box
 
-__[All about Filters](./documentation/user_guide.html#filter)__
+How to use filters is described in the Advanced guide (below).
 
 ![](static/documentation/images/image059.jpg)
 
@@ -363,7 +365,7 @@ In the Side Panel you can see the list of available objects on the current frame
 |![](static/documentation/images/image044.jpg)|![](static/documentation/images/image045.jpg)|
 
 #### Labels
-You also can see all labels that used on this frame.
+You also can see all labels that used on this frame and highlight them by clicking needed label.
 
 ![](static/documentation/images/image062.jpg)
 
@@ -371,17 +373,17 @@ You also can see all labels that used on this frame.
 ---
 __Objects' card__
 
-A bounding box can be removed. Shortcut: ``Delete``. A locked bounding box can be deleted using ``Shift+Delete`` shortcut.
+A shape can be removed. Shortcut: ``Delete``. A locked shape can be deleted using ``Shift+Delete`` shortcut.
 
 ![](static/documentation/images/image047.jpg)
 
 ---
-A bounding box can be locked to prevent its modification or moving by an accident. Shortcut to lock an object: ``l``.
+A shape can be locked to prevent its modification or moving by an accident. Shortcut to lock an object: ``l``.
 
 ![](static/documentation/images/image046.jpg)
 
 ---
-A bounding box can be **Occluded**. Shortcut: ``q``. Such bounding boxes have dashed boundaries.
+A shape can be **Occluded**. Shortcut: ``q``. Such shapes have dashed boundaries.
 
 ![](static/documentation/images/image048.jpg)
 
@@ -398,24 +400,24 @@ You can propagate this object on next X frames. ``Ctrl+B`` shortcut works under 
 ![](static/documentation/images/image053.jpg)
 
 ---
-You can change this objects' annotation is displayed on this frame. It could be Hide, Shows Only Box, Shows Box and Title. ``H`` is for this object, ``T+H`` for all objects on this frame.
+You can change how this objects' annotation is displayed on this frame. It could be Hide, Shows Only Box, Shows Box and Title. ``H`` is for this object, ``T+H`` for all objects on this frame.
 
 ![](static/documentation/images/image055.jpg)
 
 ---
-The type of a bounding box can be changed by selecting __Label__ property. For instance, it can look like on the figure below:
+The type of a shape can be changed by selecting __Label__ property. For instance, it can look like on the figure below:
 
 ![](static/documentation/images/image050.jpg)
 
-To change a type of a bounding box using keyboard you need to press ``Shift+<number>``.
+To change a type of a highlighted shape using keyboard you need to press ``Shift+<number>``.
 
 ### Bottom side panel
 
-- ``Create Shape`` — ``N`` — start/stop draw new bounding box mode
+- ``Create Shape`` — ``N`` — start/stop draw new shape mode
 - ``Merge Shapes`` — ``M`` — start/stop merge boxes mode
 - ``Group Shapes`` — ``G`` — start/stop grouping boxes mode
 - ``Label Type`` — choosing on of the created with a task ``Labels`` (Face, Person, Vehicle)
-- ``Working Mode`` — Annotation or Interpolation modes. You can't interpolate Polygons/Polylines/Points, but you can propagate them using ``Ctrl+B``.
+- ``Working Mode`` — Annotation or Interpolation modes. You can't interpolate Polygons/Polylines/Points, but you can propagate them using ``Ctrl+B`` or merge to a track
 - ``Shape type`` — Box, Polygon, Polyline, Points
 - ``Poly Shape Size`` — (optional) hard number of dots for creating Polygon/Polyline shapes
 
@@ -468,29 +470,38 @@ It is possible to handle many objects on the same frame in the mode.
 
 ![](static/documentation/images/image058.jpg)
 
-It is more convenient to annotate objects of the same type. For the purpose it is possible to specify a corresponding filter. For example, the following filter will hide all objects except pedestrians: ``pedestrian``.
+It is more convenient to annotate objects of the same type. For the purpose
+it is possible to specify a corresponding filter. For example, the following
+filter will hide all objects except pedestrians: ``pedestrian``.
 
 To navigate between objects (pedestrians in the case) use the following shortcuts:
 - ``Tab`` — go to the next object
 - ``Shift+Tab`` — go to the previous object.
 
-By default in the mode objects are zoomed. To disable the functionality uncheck the corresponding setting: ``Open Menu`` —> ``Settings`` —> ``Zoom boxes in Attribute Annotation Mode``.
-
-By default other objects are hidden. To change the behavior uncheck the corresponding setting: ``Open Menu`` —> ``Setting`` —> ``Hide Other in Attribute Annotation Mode``.
+By default in the mode objects are zoomed in to full screen. Check
+``Open Menu`` —> ``Settings`` —> ``AAM Zoom Margin`` for adjust that.
 
 ## Annotation with polygons
 
 It is used for semantic / instance segmentation.
 
-Be sure ``Z-Order`` flag in ``Create task`` dialog is enabled if you want annotate polygons.
+Be sure ``Z-Order`` flag in ``Create task`` dialog is enabled if you want annotate polygons. This allows to choose with ``+/-`` buttons which polygons are on the background and which are on the front.
 
-![](static/documentation/images/imag74.jpg)
+![](static/documentation/images/image074.jpg)
 
 Before start need to be sure that ``Polygon`` is selected.
 
 ![](static/documentation/images/image084.jpg)
 
-Click ``N`` for entering drawing mode. Now you can start your polygon. You can zoom in/out while drawing. Click ``N`` again for completing the shape. You can fix a position of an individual points after finishing the object. You can not add/delete points after finishing.
+Click ``N`` for entering drawing mode. Now you can start your polygon.
+You can zoom in/out (on mouse wheel scroll) and move (on mouse wheel press
+and mouse move) while drawing. Click ``N`` again for completing the shape.
+Also you can set fixed number of points in the field "Poly Shape Size", then
+drawing will be stopped automatically. You can drag object after it was drawn
+and fix a position of an individual points after finishing the object. You
+can add/delete points after finishing.
+
+![](static/documentation/images/gif005.gif)
 
 Result with an opacity and black stroke:
 
@@ -506,7 +517,13 @@ Before start need to be sure that ``Polyline`` is selected.
 
 ![](static/documentation/images/image085.jpg)
 
-Click ``N`` for entering drawing mode. Now you can start your polyline. You can zoom in/out while drawing. Click ``N`` again for completing the line. You can fix a position of an individual points after finishing the object. You can not add/delete points after finishing.
+Click ``N`` for entering drawing mode. Now you can start your polyline.
+You can zoom in/out (on mouse wheel scroll) and move (on mouse wheel press and
+mouse move) while drawing. Click ``N`` again for completing the shape. Also
+you can set fixed number of points in the field "Poly Shape Size", then drawing
+ will be stopped automatically. You can drag object after it was drawn and fix
+ a position of an individual points after finishing the object. You can
+ add/delete points after finishing.
 
 ![](static/documentation/images/image039.jpg)
 
@@ -518,7 +535,14 @@ Before start need to be sure that ``Points`` is selected.
 
 ![](static/documentation/images/image042.jpg)
 
-Click ``N`` for entering drawing mode. Now you can start marking a needed area. Click ``N`` again for finishing marking an area. Points are automatically grouped — between individual start and finish all points will be considered linked. You can zoom in/out while drawing. You can fix a position of an individual points after finishing the object. You can not add/delete points after finishing.
+Click ``N`` for entering drawing mode. Now you can start marking a needed area.
+Click ``N`` again for finishing marking an area. Also you can set fixed number
+of points in the field "Poly Shape Size", then drawing will be stopped
+automatically. Points are automatically grouped — between individual start
+ and finish all points will be considered linked. You can zoom in/out (on mouse
+ wheel scroll) and move (on mouse wheel press and mouse move) while drawing.
+You can drag object after it was drawn and fix a position of an individual
+points after finishing the object. You can add/delete points after finishing.
 
 ![](static/documentation/images/image063.jpg)
 
@@ -549,8 +573,8 @@ Shapes which haven't ``group_id`` will highlighted with white color.
 
 There are several reasons to use the feature:
 
-1. When use a filter objects which don't correspond to the filter will be hidden. Use ``Settings`` —> ``Hide Filtered Tracks`` or ``K`` shortcut if you want to change the behavior.
-2. Fast navigation between frames which have an object of interest. Use ``Left Arrow/Right Arrow`` keys for the purpose. If the filter is empty the mentioned arrows will go to previous/next frames.
+1. When use a filter objects which don't correspond to the filter will be hidden.
+2. Fast navigation between frames which have an object of interest. Use ``Left Arrow/Right Arrow`` keys for the purpose. If the filter is empty the mentioned arrows will go to previous/next frames which contain any objects.
 
 To use the functionality it is enough to specify a value inside ``Filter`` text box and defocus the text box (for example, click on the image). After that the filter will be applied.
 
@@ -591,8 +615,8 @@ The functionality allows to create more complex conditions. Several filters can 
 
 Example                                                 | Description
 --------------------------------------------------------|-------------
-``person[attr/age>="25" and attr/age<="35"]``         | people with age between 25 and 35.
-``face[attr/glass="sunglass" or attr/glass="no"]``    | faces with sunglasses or without glasses at all.
+``person[attr/age>="25" and attr/age<="35"]``           | people with age between 25 and 35.
+``face[attr/glass="sunglass" or attr/glass="no"]``      | faces with sunglasses or without glasses at all.
 ```person[attr/race="asian"] | car[attr/model="bmw" or attr/model="mazda"]``` | asian persons or bmw or mazda cars.
 
 
@@ -634,6 +658,7 @@ Many UI elements have shortcut hints. Put your pointer to an interesting element
 ``Shift+S``/``Alt+S``  | increase/decrease saturation on an image
 ``Ctrl+S``             | save job
 ``Ctrl+B``             | propagate active shape
+``+``/``-``            | change relative order of highlighted polygon
 |                      | __Interpolation__             |
 ``M``                  | enter/apply merge mode
 ``Alt+M``              | close merge mode without apply the merge
@@ -653,7 +678,6 @@ Many UI elements have shortcut hints. Put your pointer to an interesting element
 |                      | __Filter__                    |
 ``Left Arrow``         | go to the previous frame which corresponds to the specified filter value
 ``Right Arrow``        | go to the next frame which corresponds to the specified filter value
-``K``                  | hide all shapes which don't correspond to the specified filter value
 
 ### Hints
 
