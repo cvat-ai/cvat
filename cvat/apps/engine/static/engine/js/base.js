@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported confirm showMessage showOverlay dumpAnnotationRequest */
+/* exported confirm showMessage showOverlay dumpAnnotationRequest getURISearchParameter setURISearchParameter */
 "use strict";
 
 Math.clamp = function(x, min, max) {
@@ -186,7 +186,7 @@ function getURISearchParameter(name) {
     try {
         decodedURI = decodeURIComponent(window.location.search);
     }
-    catch {
+    catch (error) {
         showMessage('Bad URL has been found');
         resetURISearchParameters();
     }

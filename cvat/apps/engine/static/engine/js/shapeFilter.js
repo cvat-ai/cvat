@@ -65,7 +65,7 @@ class FilterModel {
     }
 
     updateFilter(value, silent) {
-        this._filter = xpathValue;
+        this._filter = value;
         if (!silent) {
             this._update();
         }
@@ -87,7 +87,7 @@ class FilterController {
             try {
                 document.evaluate(value, document, () => 'ns');
             }
-            catch {
+            catch (error) {
                 return false;
             }
             this._model.updateFilter(value, silent);
