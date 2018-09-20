@@ -241,12 +241,12 @@ Usage examples:
     ![](static/documentation/images/image072.jpg)
 
 ---
-**Track** is a set of bounding boxes on different frames which corresponds to one object. Tracks are created in ``Interpolation mode`` mode.
+**Track** is a set of shapes on different frames which corresponds to one object. Tracks are created in ``Interpolation mode`` mode.
 
 ![](static/documentation/images/gif004.gif)
 
 ---
-**Annotation** is a set of bounding boxes and tracks. There are several types of annotations:
+**Annotation** is a set of shapes and tracks. There are several types of annotations:
 - *Manual* which is created by a person
 - *Semi-automatic* which is created mainly automatically but the user provides some data (e.g. interpolation)
 - *Automatic* which is created automatically without a person in the loop
@@ -265,7 +265,7 @@ There are also:
 - ``Settings`` (F2) — contains different parameters which can be adjust by the user needs; and
 
 
-- ``Context menu`` — click right mouse button inside of bounding box or at point (only in poly-shapes)
+- ``Context menu`` — click right mouse button inside of a shape or at point (only in poly-shapes)
 
 ![](static/documentation/images/image070.jpg) ![](static/documentation/images/image071.jpg)
 
