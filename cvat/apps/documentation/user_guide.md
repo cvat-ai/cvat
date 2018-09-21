@@ -61,7 +61,11 @@ There you can:
 
     __Z-Order__. Defines the order on drawn polygons. Check the box for enable layered dislaying.
 
-    __Overlap Size__. Use this option to make overlapped segments. The option makes tracks continuous from one segment into another. Use it for interpolation mode.
+    __Overlap Size__. Use this option to make overlapped segments. The option makes tracks continuous from one segment into another. Use it for interpolation mode. There are several use cases for the parameter:
+    - For an interpolation task (video sequence) if an object exists on overlapped segments it will be automatically merged into one track if overlap is greater than zero and annotation is good enough on adjacent segments. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file you will have several tracks, one for each segment, which correspond to the object).
+    - For an annotation task (independent images) if an object exists on overlapped segments bounding boxes will be automatically merged into one if overlap is greater than zero and annotation is good enough on adjacent segments. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file you will have several bounding boxes for the same object.
+
+    Thus you annotate an object on first segment. You annotate the same object on second segment and if you do it right you will have one track inside your annotation file. If annotations on different segments (on overlapped frames) are very different or overlap is zero you will have two tracks for the same object. The functionality only works for bounding boxes. Polygon, polyline, points don't support automatic merge on overlapped segments even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
 
     __Segment size__. Use this option to divide huge dataset by a few less size segments.
 
