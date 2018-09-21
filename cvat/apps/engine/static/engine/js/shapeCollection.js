@@ -1021,7 +1021,7 @@ class ShapeCollectionView {
             let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
             e.target.value = value;
             if (value >= 0) {
-                this._colorSettings["fill-opacity"] = value / 5;
+                this._colorSettings["fill-opacity"] = value;
                 delete this._colorSettings['white-opacity'];
 
                 for (let view of this._currentViews) {
@@ -1030,7 +1030,7 @@ class ShapeCollectionView {
             }
             else {
                 value *= -1;
-                this._colorSettings["white-opacity"] = value / 5;
+                this._colorSettings["white-opacity"] = value;
 
                 for (let view of this._currentViews) {
                     view.updateColorSettings(this._colorSettings);
@@ -1041,7 +1041,7 @@ class ShapeCollectionView {
         this._selectedFillOpacityRange.on('input', (e) => {
             let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
             e.target.value = value;
-            this._colorSettings["selected-fill-opacity"] = value / 5;
+            this._colorSettings["selected-fill-opacity"] = value;
 
             for (let view of this._currentViews) {
                 view.updateColorSettings(this._colorSettings);
