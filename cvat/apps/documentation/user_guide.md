@@ -32,9 +32,13 @@ There you can:
 
     ![](static/documentation/images/image005.jpg)
 
-    __Labels__. Use the following schema to create labels: ``label_name <prefix>input_type=attribute_name:attribute_value1,attribute_value2``
+    __Labels__. Use the following schema to create labels: ``label_name <prefix>input_type=attribute_name:attribute_value1,attribute_value2``. You can specify multiple labels and multiple attributes separated by space. Attributes belong to previous label.
 
-    Example: ``vehicle @select=type:__undefined__,car,truck,bus,train ~radio=quality:good,bad ~checkbox=parked:false``
+    Example:
+    - ``vehicle @select=type:__undefined__,car,truck,bus,train ~radio=quality:good,bad ~checkbox=parked:false`` -
+    one label with multiple attributes
+    - ``car person bike`` - three labels without attributes
+    - ``circle @radio=color:green,red,blue @number=radius:0,10,0.1 line square`` - one label with two attributes and two labels without attributes
 
     ``label_name``: for example *vehicle, person, face etc.*
 
