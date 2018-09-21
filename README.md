@@ -1,5 +1,7 @@
 # Computer Vision Annotation Tool (CVAT)
 
+[![Gitter chat](https://badges.gitter.im/opencv-cvat/gitter.png)](https://gitter.im/opencv-cvat)
+
 CVAT is completely re-designed and re-implemented version of [Video Annotation Tool from Irvine, California](http://carlvondrick.com/vatic/) tool. It is free, online, interactive video and image annotation tool for computer vision. It is being used by our team to annotate million of objects with different properties. Many UI and UX decisions are based on feedbacks from professional data annotation team.
 
 ![CVAT screenshot](cvat/apps/documentation/static/documentation/images/gif003.gif)
@@ -132,7 +134,7 @@ services:
       CVAT_SHARE_URL: "Mounted from /mnt/share host directory"
     volumes:
       cvat_share:/home/django/share:ro
-      
+
 volumes:
   cvat_share:
     driver_opts:
@@ -140,4 +142,4 @@ volumes:
       device: /mnt/share
       o: bind
 ```
-You can change the share device path to your actual share. For user convenience we have defined the enviroment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser. 
+You can change the share device path to your actual share. For user convenience we have defined the enviroment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser.
