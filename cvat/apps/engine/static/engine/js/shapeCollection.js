@@ -999,6 +999,7 @@ class ShapeCollectionView {
         this._labelsContent = $('#labelsContent');
         this._showAllInterpolationBox = $('#showAllInterBox');
         this._fillOpacityRange = $('#fillOpacityRange');
+        this._selectedFillOpacityRange = $('#selectedFillOpacityRange');
         this._blackStrokeCheckbox = $('#blackStrokeCheckbox');
         this._colorByInstanceRadio = $('#colorByInstanceRadio');
         this._colorByGroupRadio = $('#colorByGroupRadio');
@@ -1034,6 +1035,16 @@ class ShapeCollectionView {
                 for (let view of this._currentViews) {
                     view.updateColorSettings(this._colorSettings);
                 }
+            }
+        });
+
+        this._selectedFillOpacityRange.on('input', (e) => {
+            let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
+            e.target.value = value;
+            this._colorSettings["selected-fill-opacity"] = value / 5;
+
+            for (let view of this._currentViews) {
+                view.updateColorSettings(this._colorSettings);
             }
         });
 
