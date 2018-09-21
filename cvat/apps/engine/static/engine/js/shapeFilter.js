@@ -70,10 +70,6 @@ class FilterModel {
             this._update();
         }
     }
-
-    get filterRow() {
-        return this._filter;
-    }
 }
 
 class FilterController {
@@ -101,10 +97,6 @@ class FilterController {
 
     deactivate() {
         this._model.active = false;
-    }
-
-    get filterRow() {
-        return this._model.filterRow;
     }
 }
 

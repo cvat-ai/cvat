@@ -216,7 +216,7 @@ $.ajaxSetup({
 
 $(document).ready(function(){
     $('body').css({
-        width: window.screen.width * 0.95 + 'px',
+        width: window.screen.width + 'px',
         height: window.screen.height * 0.95 + 'px'
     });
 });
