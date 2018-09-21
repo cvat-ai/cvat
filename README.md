@@ -4,7 +4,7 @@
 
 CVAT is completely re-designed and re-implemented version of [Video Annotation Tool from Irvine, California](http://carlvondrick.com/vatic/) tool. It is free, online, interactive video and image annotation tool for computer vision. It is being used by our team to annotate million of objects with different properties. Many UI and UX decisions are based on feedbacks from professional data annotation team.
 
-![CVAT screenshot](cvat/apps/documentation/static/documentation/images/gif003.gif)
+![CVAT screenshot](cvat/apps/documentation/static/documentation/images/cvat.jpg)
 
 ## Documentation
 
@@ -14,9 +14,10 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 
 ## Screencasts
 
-- [Annotation mode](https://www.youtube.com/watch?v=uSqaQENdyJE)
-- [Interpolation mode](https://www.youtube.com/watch?v=sc5X5hvxNfA)
-- [Attribute mode](https://www.youtube.com/watch?v=5yXaG0V7X0Q)
+- [Annotation mode](https://youtu.be/6h7HxGL6Ct4)
+- [Interpolation mode](https://youtu.be/U3MYDhESHo4)
+- [Attribute mode](https://youtu.be/UPNfWl8Egd8)
+- [Segmentation mode](https://youtu.be/6IJ0QN7PBKo)
 
 ## LICENSE
 
