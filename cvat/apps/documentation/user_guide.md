@@ -32,9 +32,13 @@ There you can:
 
     ![](static/documentation/images/image005.jpg)
 
-    __Labels__. Use the following schema to create labels: ``label_name <prefix>input_type=attribute_name:attribute_value1,attribute_value2``
+    __Labels__. Use the following schema to create labels: ``label_name <prefix>input_type=attribute_name:attribute_value1,attribute_value2``. You can specify multiple labels and multiple attributes separated by space. Attributes belong to previous label.
 
-    Example: ``vehicle @select=type:__undefined__,car,truck,bus,train ~radio=quality:good,bad ~checkbox=parked:false``
+    Example:
+    - ``vehicle @select=type:__undefined__,car,truck,bus,train ~radio=quality:good,bad ~checkbox=parked:false`` -
+    one label with multiple attributes
+    - ``car person bike`` - three labels without attributes
+    - ``circle @radio=color:green,red,blue @number=radius:0,10,0.1 line square`` - one label with two attributes and two labels without attributes
 
     ``label_name``: for example *vehicle, person, face etc.*
 
@@ -61,7 +65,11 @@ There you can:
 
     __Z-Order__. Defines the order on drawn polygons. Check the box for enable layered dislaying.
 
-    __Overlap Size__. Use this option to make overlapped segments. The option makes tracks continuous from one segment into another. Use it for interpolation mode.
+    __Overlap Size__. Use this option to make overlapped segments. The option makes tracks continuous from one segment into another. Use it for interpolation mode. There are several use cases for the parameter:
+    - For an interpolation task (video sequence) if an object exists on overlapped segments it will be automatically merged into one track if overlap is greater than zero and annotation is good enough on adjacent segments. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file you will have several tracks, one for each segment, which correspond to the object).
+    - For an annotation task (independent images) if an object exists on overlapped segments bounding boxes will be automatically merged into one if overlap is greater than zero and annotation is good enough on adjacent segments. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file you will have several bounding boxes for the same object.
+
+    Thus you annotate an object on first segment. You annotate the same object on second segment and if you do it right you will have one track inside your annotation file. If annotations on different segments (on overlapped frames) are very different or overlap is zero you will have two tracks for the same object. The functionality only works for bounding boxes. Polygon, polyline, points don't support automatic merge on overlapped segments even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
 
     __Segment size__. Use this option to divide huge dataset by a few less size segments.
 
