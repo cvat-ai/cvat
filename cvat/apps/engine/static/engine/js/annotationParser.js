@@ -15,6 +15,7 @@ class AnnotationParser {
         this._flipped = job.flipped;
         this._im_meta = job.image_meta_data;
         this._labelsInfo = labelsInfo;
+        this.counter = 0;
     }
 
     _xmlParseError(parsedXML) {
@@ -224,6 +225,7 @@ class AnnotationParser {
                         ybr: ybr,
                         z_order: z_order,
                         attributes: attributeList,
+                        client_id: this.counter++,
                     });
                 }
                 else {
@@ -236,6 +238,7 @@ class AnnotationParser {
                         occluded: occluded,
                         z_order: z_order,
                         attributes: attributeList,
+                        client_id: this.counter++,
                     });
                 }
             }
@@ -307,7 +310,8 @@ class AnnotationParser {
                 group_id: +groupId,
                 frame: +parsed[type][0].getAttribute('frame'),
                 attributes: [],
-                shapes: []
+                shapes: [],
+                client_id: this.counter++,
             };
 
             for (let shape of parsed[type]) {

@@ -51,6 +51,8 @@ class ShapeCollectionModel extends Listener {
         this._colorIdx = 0;
         this._filter = new FilterModel(() => this.update());
         this._splitter = new ShapeSplitter();
+        this._saved_state = {};
+        this._erased = false;
     }
 
     _nextIdx() {
@@ -184,83 +186,216 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    import(data) {
+    import(data, initialState = ShapeState.nothing) {
         for (let box of data.boxes) {
-            this.add(box, 'annotation_box');
+            this.add(box, 'annotation_box', initialState);
         }
 
         for (let box_path of data.box_paths) {
-            this.add(box_path, 'interpolation_box');
+            this.add(box_path, 'interpolation_box', initialState);
         }
 
         for (let points of data.points) {
-            this.add(points, 'annotation_points');
+            this.add(points, 'annotation_points', initialState);
         }
 
         for (let points_path of data.points_paths) {
-            this.add(points_path, 'interpolation_points');
+            this.add(points_path, 'interpolation_points', initialState);
         }
 
         for (let polygon of data.polygons) {
-            this.add(polygon, 'annotation_polygon');
+            this.add(polygon, 'annotation_polygon', initialState);
         }
 
         for (let polygon_path of data.polygon_paths) {
-            this.add(polygon_path, 'interpolation_polygon');
+            this.add(polygon_path, 'interpolation_polygon', initialState);
         }
 
         for (let polyline of data.polylines) {
-            this.add(polyline, 'annotation_polyline');
+            this.add(polyline, 'annotation_polyline', initialState);
         }
 
         for (let polyline_path of data.polyline_paths) {
-            this.add(polyline_path, 'interpolation_polyline');
+            this.add(polyline_path, 'interpolation_polyline', initialState);
         }
 
         this.notify();
         return this;
     }
 
+    _getExportTargetContainer(export_type, shape_type, container) {
+        let shape_container_target = undefined;
+        let export_action_container = undefined;
+
+        if (export_type === ShapeState.create) {
+            export_action_container = container.create;
+        } else if (export_type === ShapeState.update) {
+            export_action_container = container.update;
+        } else if (export_type === ShapeState.delete) {
+            export_action_container = container.delete;
+        }
+
+        if (!export_action_container) {
+            throw Error('Undefined action of shape');
+        }
+
+        switch (shape_type) {
+        case 'annotation_box':
+            shape_container_target = export_action_container.boxes;
+            break;
+        case 'interpolation_box':
+            shape_container_target = export_action_container.box_paths;
+            break;
+        case 'annotation_points':
+            shape_container_target = export_action_container.points;
+            break;
+        case 'interpolation_points':
+            shape_container_target = export_action_container.points_paths;
+            break;
+        case 'annotation_polygon':
+            shape_container_target = export_action_container.polygons;
+            break;
+        case 'interpolation_polygon':
+            shape_container_target = export_action_container.polygon_paths;
+            break;
+        case 'annotation_polyline':
+            shape_container_target = export_action_container.polylines;
+            break;
+        case 'interpolation_polyline':
+            shape_container_target = export_action_container.polyline_paths;
+        }
+
+        if (!shape_container_target) {
+            throw Error('Undefined shape type');
+        }
+        return shape_container_target;
+    }
+
+    _updateShapeDbIds(response) {
+        /*
+        Function updates db ids for successfully saved objects and makes simple sanity checks.
+        */
+        for (const shape_type in response['create']) {
+            const shapes = response['create'][shape_type];
+            const saved_states = this._saved_state['create'][shape_type];
+            for (const shape_client_id in shapes) {
+                //check saved state
+                if (!saved_states.includes(+shape_client_id)) {
+                    throw Error('Unexpected behaviour: cretaed object has unexpected client id');
+                }
+                // current state cannot be created
+                if (this._shapes[shape_client_id] === ShapeState.create) {
+                    throw Error('Unexpected behaviour: unexpected current state for created object');
+                }
+                this._shapes[shape_client_id]._dbId = shapes[shape_client_id];
+            }
+        }
+
+        for (const shape_type in response['update']) {
+            const shapes = response['update'][shape_type];
+            const saved_states = this._saved_state['update'][shape_type];
+            for (const shape_client_id of shapes) {
+                //check saved state
+                if (!saved_states.includes(+shape_client_id)) {
+                    throw Error('Unexpected behaviour: updated object has unexpected client id');
+                }
+                // current state cannot be created
+                if (this._shapes[shape_client_id] === ShapeState.create) {
+                    throw Error('Unexpected behaviour: unexpected current state for updated object');
+                }
+            }
+        }
+
+        for (const shape_type in response['delete']) {
+            const shapes = response['delete'][shape_type];
+            const saved_states = this._saved_state['delete'][shape_type];
+            for (const shape_client_id of shapes) {
+                //check saved state
+                if (!saved_states.includes(+shape_client_id)) {
+                    throw Error('Unexpected behaviour: deleted object has unexpected client id');
+                }
+
+                if (this._shapes[shape_client_id] === ShapeState.created) {
+                    throw Error('Unexpected behaviour: unexpected current state for deleted object');
+                }
+                // TODO: check need of this condition
+                if (this._shapes[shape_client_id] === ShapeState.delete) {
+                    this._shapes[shape_client_id].state = ShapeState.nothing;
+                }
+                // object was deleted and has no db id
+                this._shapes[shape_client_id]._dbId = null;
+            }
+        }
+    }
+
+    _revertUnsavedStates() {
+        /*
+        Function reverts shape export states in case of failed save request
+        */
+        for (const shape_type in this._saved_state['create']) {
+            for (const shape_client_id of this._saved_state['create'][shape_type]) {
+                const currentState = this._shapes[shape_client_id].state;
+                if (currentState === ShapeState.delete) {
+                    this._shapes[shape_client_id].state = ShapeState.nothing;
+                } else {
+                    this._shapes[shape_client_id].state = ShapeState.create;
+                }
+            }
+        }
+
+        for (const shape_type in this._saved_state['update']) {
+            for (const shape_client_id of this._saved_state['update'][shape_type]) {
+                const currentState = this._shapes[shape_client_id].state;
+                if (currentState === ShapeState.create) {
+                    throw Error('Unexpected behaviour: unexpected current state for object that should be updated');
+                } else if (currentState === ShapeState.nothing) {
+                    this._shapes[shape_client_id].state = ShapeState.update;
+                }
+            }
+        }
+
+        for (const shape_type in this._saved_state['delete']) {
+            for (const shape_client_id of this._saved_state['delete'][shape_type]) {
+                const currentState = this._shapes[shape_client_id].state;
+                if (currentState === ShapeState.create) {
+                    throw Error('Unexpected behaviour: unexpected current state for object that should be deleted');
+                } else if (currentState === ShapeState.nothing) {
+                    this._shapes[shape_client_id].state = ShapeState.delete;
+                }
+            }
+        }
+    }
+
+    syncWithDB(response, isSuccess) {
+        if (isSuccess) {
+            this._updateShapeDbIds(response);
+        } else {
+            this._revertUnsavedStates();
+        }
+    }
+
+    reset_state() {
+        for (const shape of this._shapes) {
+            shape.state = ShapeState.nothing;
+        }
+        this._erased = false;
+    }
 
     export() {
-        let response = {
-            "boxes": [],
-            "box_paths": [],
-            "points": [],
-            "points_paths": [],
-            "polygons": [],
-            "polygon_paths": [],
-            "polylines": [],
-            "polyline_paths": [],
-        };
+        const response = createExportContainer();
+        this._saved_state = createExportContainer();
+        response.pre_erase = this._erased;
 
-        for (let shape of this._shapes) {
-            if (shape.removed) continue;
-            switch (shape.type) {
-            case 'annotation_box':
-                response.boxes.push(shape.export());
-                break;
-            case 'interpolation_box':
-                response.box_paths.push(shape.export());
-                break;
-            case 'annotation_points':
-                response.points.push(shape.export());
-                break;
-            case 'interpolation_points':
-                response.points_paths.push(shape.export());
-                break;
-            case 'annotation_polygon':
-                response.polygons.push(shape.export());
-                break;
-            case 'interpolation_polygon':
-                response.polygon_paths.push(shape.export());
-                break;
-            case 'annotation_polyline':
-                response.polylines.push(shape.export());
-                break;
-            case 'interpolation_polyline':
-                response.polyline_paths.push(shape.export());
+        for (const shape of this._shapes) {
+            if (shape.state === ShapeState.nothing) {
+                continue;
             }
+
+            const target_export_container = this._getExportTargetContainer(shape.state, shape.type, response);
+            target_export_container.push(shape.export());
+
+            const saved_state_container_target = this._getExportTargetContainer(shape.state, shape.type, this._saved_state);
+            saved_state_container_target.push(shape.id);
         }
 
         return JSON.stringify(response);
@@ -336,11 +471,12 @@ class ShapeCollectionModel extends Listener {
         this._shapes = [];
         this._idx = 0;
         this._colorIdx = 0;
+        this._erased = true;
         this._interpolate();
     }
 
-    add(data, type) {
-        let model = buildShapeModel(data, type, this._nextIdx(), this.nextColor());
+    add(data, type, initialState=ShapeState.create) {
+        let model = buildShapeModel(data, type, this._nextIdx(), this.nextColor(), initialState);
         if (type.startsWith('interpolation')) {
             this._interpolationShapes.push(model);
         }
@@ -800,6 +936,10 @@ class ShapeCollectionModel extends Listener {
 
     get shapes() {
         return this._shapes;
+    }
+
+    get erased() {
+        return this._erased;
     }
 }
 

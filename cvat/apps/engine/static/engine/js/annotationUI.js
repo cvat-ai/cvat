@@ -571,7 +571,7 @@ function uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, 
                     try {
                         historyModel.empty();
                         shapeCollectionModel.empty();
-                        shapeCollectionModel.import(data);
+                        shapeCollectionModel.import(data, ShapeState.create);
                         shapeCollectionModel.update();
                     }
                     finally {
@@ -609,8 +609,9 @@ function saveAnnotation(shapeCollectionModel, job) {
         'points count': totalStat.points.annotation + totalStat.points.interpolation,
     });
 
-    let exportedData = shapeCollectionModel.export();
-    let annotationLogs = Logger.getLogs();
+    const exportedData = shapeCollectionModel.export();
+    shapeCollectionModel.reset_state();
+    const annotationLogs = Logger.getLogs();
 
     const data = {
         annotation: exportedData,
@@ -620,8 +621,9 @@ function saveAnnotation(shapeCollectionModel, job) {
     saveButton.prop('disabled', true);
     saveButton.text('Saving..');
 
-    saveJobRequest(job.jobid, data, () => {
+    saveJobRequest(job.jobid, data, (response) => {
         // success
+        shapeCollectionModel.syncWithDB(response, true);
         shapeCollectionModel.updateHash();
         saveButton.text('Success!');
         setTimeout(() => {
@@ -630,6 +632,7 @@ function saveAnnotation(shapeCollectionModel, job) {
         }, 3000);
     }, (response) => {
         // error
+        shapeCollectionModel.syncWithDB(response, false);
         saveButton.prop('disabled', false);
         saveButton.text('Save Work');
         let message = `Impossible to save job. Errors was occured. Status: ${response.status}`;
