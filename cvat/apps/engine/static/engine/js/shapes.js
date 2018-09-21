@@ -1400,7 +1400,7 @@ class ShapeView extends Listener {
         this._appearance = {
             colors: shapeModel.color,
             fillOpacity: 0,
-            selectedFillOpacity: 0.1,
+            selectedFillOpacity: 0.2,
         };
 
         this._flags = {
@@ -2643,6 +2643,10 @@ class ShapeView extends Listener {
                 this._appearance.stroke = color;
                 this._appearance.fill = color;
             }
+        }
+
+        if ('selected-fill-opacity' in settings) {
+            this._appearance.selectedFillOpacity = settings['selected-fill-opacity'];
         }
 
         if (settings['black-stroke']) {
