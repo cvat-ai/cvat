@@ -49,8 +49,6 @@ module.exports = {
         'showOverlay': true,
         'confirm': true,
         'dumpAnnotationRequest': true,
-        'getURISearchParameter': true,
-        'setURISearchParameter': true,
         // from shapeCollection.js
         'ShapeCollectionModel': true,
         'ShapeCollectionController': true,
@@ -75,7 +73,6 @@ module.exports = {
         'ShapeMergerView': true,
         // from shapes.js
         'PolyShapeModel': true,
-        'PolyShapeView': true,
         'buildShapeModel': true,
         'buildShapeController': true,
         'buildShapeView': true,
@@ -119,9 +116,5 @@ module.exports = {
         'HistoryModel': true,
         'HistoryController': true,
         'HistoryView': true,
-        // from polyshapeEditor.js
-        'PolyshapeEditorModel': true,
-        'PolyshapeEditorController': true,
-        'PolyshapeEditorView': true,
     },
 };

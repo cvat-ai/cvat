@@ -64,11 +64,9 @@ class FilterModel {
         }
     }
 
-    updateFilter(value, silent) {
+    updateFilter(value) {
         this._filter = value;
-        if (!silent) {
-            this._update();
-        }
+        this._update();
     }
 }
 
@@ -77,22 +75,22 @@ class FilterController {
         this._model = filterModel;
     }
 
-    updateFilter(value, silent) {
+    updateFilter(value) {
         if (value.length) {
-            value = value.split('|').map(x => '/d:data/' + x).join('|').toLowerCase().replace(/-/g, "_");
             try {
                 document.evaluate(value, document, () => 'ns');
             }
             catch (error) {
                 return false;
             }
-            this._model.updateFilter(value, silent);
+            this._model.updateFilter(value);
             return true;
         }
         else {
-            this._model.updateFilter('', silent);
+            this._model.updateFilter(value);
             return true;
         }
+
     }
 
     deactivate() {
@@ -111,13 +109,14 @@ class FilterView {
         this._filterString.on('keypress keydown keyup', (e) => e.stopPropagation());
         this._filterString.on('change', (e) => {
             let value = $.trim(e.target.value);
-            if (this._controller.updateFilter(value, false)) {
+            if (value.length) {
+                value = value.split('|').map(x => '/d:data/' + x).join('|').toLowerCase().replace(/-/g, "_");
+            }
+            if (this._controller.updateFilter(value)) {
                 this._filterString.css('color', 'green');
-                setURISearchParameter('filter', value || null);
             }
             else {
                 this._filterString.css('color', 'red');
-                setURISearchParameter('filter', null);
             }
         });
 
@@ -128,21 +127,9 @@ class FilterView {
 
         this._resetFilterButton.on('click', () => {
             this._filterString.prop('value', '');
-            this._controller.updateFilter('', false);
-            setURISearchParameter('filter', null);
+            this._controller.updateFilter('');
         });
-
-        if (getURISearchParameter('filter')) {
-            let value = getURISearchParameter('filter');
-            this._filterString.prop('value', value);
-            if (this._controller.updateFilter(value, true)) {
-                this._filterString.css('color', 'green');
-            }
-            else {
-                setURISearchParameter('filter', null);
-                this._filterString.prop('value', '');
-                this._filterString.css('color', 'red');
-            }
-        }
     }
+
+
 }

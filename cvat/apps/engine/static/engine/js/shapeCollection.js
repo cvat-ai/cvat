@@ -725,6 +725,13 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
+    clonePointForActiveShape(idx, direction, insertPoint) {
+        if (this._activeShape && !this._activeShape.lock) {
+            return this._activeShape.clonePoint(idx, direction, insertPoint);
+        }
+        else return null;
+    }
+
     split() {
         if (this._activeShape) {
             if (!this._activeShape.lock && this._activeShape.type.split('_')[0] === 'interpolation') {
@@ -961,6 +968,10 @@ class ShapeCollectionController {
         this._model.removePointFromActiveShape(idx);
     }
 
+    clonePointForActiveShape(idx, direction, insertPoint) {
+        return this._model.clonePointForActiveShape(idx, direction, insertPoint);
+    }
+
     splitForActive() {
         this._model.split();
     }
@@ -999,7 +1010,6 @@ class ShapeCollectionView {
         this._labelsContent = $('#labelsContent');
         this._showAllInterpolationBox = $('#showAllInterBox');
         this._fillOpacityRange = $('#fillOpacityRange');
-        this._selectedFillOpacityRange = $('#selectedFillOpacityRange');
         this._blackStrokeCheckbox = $('#blackStrokeCheckbox');
         this._colorByInstanceRadio = $('#colorByInstanceRadio');
         this._colorByGroupRadio = $('#colorByGroupRadio');
@@ -1021,7 +1031,7 @@ class ShapeCollectionView {
             let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
             e.target.value = value;
             if (value >= 0) {
-                this._colorSettings["fill-opacity"] = value;
+                this._colorSettings["fill-opacity"] = value / 5;
                 delete this._colorSettings['white-opacity'];
 
                 for (let view of this._currentViews) {
@@ -1030,21 +1040,11 @@ class ShapeCollectionView {
             }
             else {
                 value *= -1;
-                this._colorSettings["white-opacity"] = value;
+                this._colorSettings["white-opacity"] = value / 5;
 
                 for (let view of this._currentViews) {
                     view.updateColorSettings(this._colorSettings);
                 }
-            }
-        });
-
-        this._selectedFillOpacityRange.on('input', (e) => {
-            let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
-            e.target.value = value;
-            this._colorSettings["selected-fill-opacity"] = value;
-
-            for (let view of this._currentViews) {
-                view.updateColorSettings(this._colorSettings);
             }
         });
 
@@ -1163,6 +1163,44 @@ class ShapeCollectionView {
             switch($(e.target).attr("action")) {
             case "remove_point":
                 this._controller.removePointFromActiveShape(idx);
+                break;
+            case "clone_point_before":
+                this._controller.clonePointForActiveShape(idx, 'before', true);
+                break;
+            case "clone_point_after":
+                this._controller.clonePointForActiveShape(idx, 'after', true);
+                break;
+            }
+        });
+
+        $('#pointContextMenu').mouseout(() => {
+            $(this._frameContent.node).find('.tmp_inserted_point').remove();
+        });
+
+        $('#pointContextMenu li').mouseover((e) => {
+            $(this._frameContent.node).find('.tmp_inserted_point').remove();
+            let menu = $('#pointContextMenu');
+            let idx = +menu.attr('point_idx');
+            let point = null;
+
+            switch($(e.target).attr("action")) {
+            case "clone_point_before":
+                point = this._controller.clonePointForActiveShape(idx, 'before', false);
+                if (point) {
+                    this._frameContent.circle(POINT_RADIUS * 2 / this._scale).center(point.x, point.y)
+                        .addClass('tmp_inserted_point tempMarker').fill('white').stroke('black').attr({
+                            'stroke-width': STROKE_WIDTH / this._scale
+                        });
+                }
+                break;
+            case "clone_point_after":
+                point = this._controller.clonePointForActiveShape(idx, 'after', false);
+                if (point) {
+                    this._frameContent.circle(POINT_RADIUS * 2 / this._scale).center(point.x, point.y)
+                        .addClass('tmp_inserted_point tempMarker').fill('white').stroke('black').attr({
+                            'stroke-width': STROKE_WIDTH / this._scale
+                        });
+                }
                 break;
             }
         });

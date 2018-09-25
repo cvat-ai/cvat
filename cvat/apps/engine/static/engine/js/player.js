@@ -778,10 +778,7 @@ class PlayerView {
         }
 
         this._loadingUI.addClass('hidden');
-        if (this._playerBackgroundUI.css('background-image').slice(5,-2) != image.src) {
-            this._playerBackgroundUI.css('background-image', 'url(' + '"' + image.src + '"' + ')');
-            setURISearchParameter('frame', frames.current);
-        }
+        this._playerBackgroundUI.css('background-image', 'url(' + '"' + image.src + '"' + ')');
 
         if (model.playing) {
             this._playButtonUI.addClass('hidden');

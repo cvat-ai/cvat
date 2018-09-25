@@ -41,7 +41,6 @@
         <script type="text/javascript" src="{% static 'engine/js/attributeAnnotationMode.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/shapeFilter.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/shapeSplitter.js' %}"></script>
-        <script type="text/javascript" src="{% static 'engine/js/polyshapeEditor.js' %}"></script>
 
         <script type="text/javascript" src="{% static 'engine/js/bootstrap.js' %}"></script>
 
@@ -88,6 +87,8 @@
 
             <ul id="pointContextMenu" class='custom-menu' oncontextmenu="return false;">
                 <li action="remove_point"> Remove </li>
+                <li action="clone_point_before"> Clone Before </li>
+                <li action="clone_point_after"> Clone After </li>
             </ul>
         </div>
         <div id="playerPanel">
@@ -142,17 +143,16 @@
             <hr>
             <table class="regular" cellpadding="20">
                 <tr>
-                <td style="width: auto;">
+                    <td>
                         <div style="float: left;"> <label class="semiBold"> Fill Opacity: </label> </div>
-                        <div style="float: left; margin-left: 1em;"> <input type="range" min="-1" max="1" step="0.2" value="0" id="fillOpacityRange"/> </div>
-                    </td>
-                    <td style="width: auto;">
-                        <div style="float: left;"> <label class="semiBold"> Selected Fill Opacity: </label> </div>
-                        <div style="float: left; margin-left: 1em;"> <input type="range" min="0" max="1" value="0.2" step="0.2" id="selectedFillOpacityRange"/> </div>
+                        <div style="float: left; margin-left: 1em;"> <input type="range" min="-5" max="5" value="0" id="fillOpacityRange"/> </div>
                     </td>
                     <td style="width: auto;">
                         <div style="float: left;"> <label class="semiBold"> Black Stroke: </label> </div>
                         <div style="float: left; margin-left: 1em;"> <input type="checkbox" id="blackStrokeCheckbox" class="settingsBox"/> </div>
+                    </td>
+                    <td style="width: auto;">
+
                     </td>
                     <td style="width: auto;">
                         <div style="float: left;"> <label class="semiBold"> Color by: </label> </div>
