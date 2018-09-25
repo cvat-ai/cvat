@@ -1282,7 +1282,7 @@ class _AnnotationWriter:
 
 class _XmlAnnotationWriter(_AnnotationWriter):
     def __init__(self, file):
-        super().__init__(file, "1.0")
+        super().__init__(file, "1.1")
         self.xmlgen = XMLGenerator(self.file, 'utf-8')
         self._level = 0
 
