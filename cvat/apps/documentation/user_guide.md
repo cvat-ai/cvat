@@ -217,7 +217,7 @@ Usage examples:
 
     ![](static/documentation/images/image028.jpg)
 
-3. The annotation will be written into **.xml** file. To find the annotation file go to the directory where your browser saves downloaded files by default. For more information visit [.xml format page](./documentation/xml_format.html).
+3. The annotation will be written into **.xml** file. To find the annotation file go to the directory where your browser saves downloaded files by default. For more information visit [.xml format page](/documentation/xml_format.html).
 
     ![](static/documentation/images/image029.jpg)
 
