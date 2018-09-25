@@ -16,16 +16,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - License header for most of all files
 - .gitattribute to avoid problems with bash scripts inside a container
 - CHANGELOG.md itself
+- Drawing size of a bounding box during resize
+- Color by instance, group, label
+- Group objects
+- Object propagation on next frames
+- Full screen view
 
 ### Changed
 - Documentation, screencasts, the primary screenshot
 - Content-type for save_job request is application/json
-- More strict check for 'checkbox' and 'number' values
-- More strict labels verification
 
 ### Fixed
 - Player navigation if the browser's window is scrolled
 - Filter doesn't support dash (-)
+- Several memory leaks
+- Inconsistent extensions between filenames in an annotation file and real filenames
 
 ## [0.1.2] - 2018-08-07
 ### Added
@@ -40,7 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - More strict verification for labels with attributes
-- More strict check for values of checkbox/number type of attributes
 
 ## [0.1.1] - 2018-07-6
 ### Added
