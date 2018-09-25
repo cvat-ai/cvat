@@ -85,6 +85,13 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     let shapeCreatorController = new ShapeCreatorController(shapeCreatorModel);
     let shapeCreatorView = new ShapeCreatorView(shapeCreatorModel, shapeCreatorController);
 
+    let polyshapeEditorModel = new PolyshapeEditorModel();
+    let polyshapeEditorController = new PolyshapeEditorController(polyshapeEditorModel);
+    let polyshapeEditorView = new PolyshapeEditorView(polyshapeEditorModel, polyshapeEditorController);
+
+    // Add static member for class. It will be used by all polyshapes.
+    PolyShapeView.editor = polyshapeEditorModel;
+
     let shapeMergerModel = new ShapeMergerModel(shapeCollectionModel);
     let shapeMergerController = new ShapeMergerController(shapeMergerModel);
     new ShapeMergerView(shapeMergerModel, shapeMergerController);
@@ -129,7 +136,8 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     playerModel.subscribe(shapeCreatorView);
     playerModel.subscribe(shapeBufferView);
     playerModel.subscribe(shapeGrouperView);
-    playerModel.shift(0);
+    playerModel.subscribe(polyshapeEditorView);
+    playerModel.shift(getURISearchParameter('frame') || 0, true);
 
     let shortkeys = window.cvat.config.shortkeys;
 
@@ -459,13 +467,15 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
     });
 
     $('#removeAnnotationButton').on('click', () => {
-        hide();
-        confirm('Do you want to remove all annotations? The action cannot be undone!',
-            () => {
-                historyModel.empty();
-                shapeCollectionModel.empty();
-            }
-        );
+        if (!window.cvat.mode) {
+            hide();
+            confirm('Do you want to remove all annotations? The action cannot be undone!',
+                () => {
+                    historyModel.empty();
+                    shapeCollectionModel.empty();
+                }
+            );
+        }
     });
 
     $('#saveButton').on('click', () => {
