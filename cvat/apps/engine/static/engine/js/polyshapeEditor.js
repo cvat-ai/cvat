@@ -52,7 +52,10 @@ class PolyshapeEditorModel extends Listener {
     cancel() {
         if (this._active) {
             this._active = false;
-            if (window.cvat.mode === this._modeName) {
+            if (window.cvat.mode != this._modeName) {
+                throw Error(`Inconsistent behaviour has been detected. Edit mode is activated, but mode variable is '${window.cvat.mode}'`);
+            }
+            else {
                 window.cvat.mode = null;
             }
 

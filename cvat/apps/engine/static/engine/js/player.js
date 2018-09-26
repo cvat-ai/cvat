@@ -44,6 +44,8 @@ class FrameProvider extends Listener {
         this._loaded = frame;
         this._frameCollection[frame] = image;
         this._loadAllowed = true;
+        image.onload = null;
+        image.onerror = null;
         this.notify();
     }
 
@@ -109,6 +111,8 @@ class FrameProvider extends Listener {
                 image.onload = this._onImageLoad.bind(this, image, frame);
                 image.onerror = () => {
                     this._loadAllowed = true;
+                    image.onload = null;
+                    image.onerror = null;
                 };
                 image.src = `get/task/${this._tid}/frame/${frame}`;
             }.bind(this), 25);
@@ -545,7 +549,7 @@ class PlayerController {
 
             let frames = this._model.frames;
             let progressWidth = e.target.clientWidth;
-            let x = e.clientX - e.target.offsetLeft;
+            let x = e.clientX + window.pageXOffset - e.target.offsetLeft;
             let percent = x / progressWidth;
             let targetFrame = Math.round((frames.stop - frames.start) * percent);
             this._model.pause();
@@ -774,7 +778,10 @@ class PlayerView {
         }
 
         this._loadingUI.addClass('hidden');
-        this._playerBackgroundUI.css('background-image', 'url(' + '"' + image.src + '"' + ')');
+        if (this._playerBackgroundUI.css('background-image').slice(5,-2) != image.src) {
+            this._playerBackgroundUI.css('background-image', 'url(' + '"' + image.src + '"' + ')');
+            setURISearchParameter('frame', frames.current);
+        }
 
         if (model.playing) {
             this._playButtonUI.addClass('hidden');

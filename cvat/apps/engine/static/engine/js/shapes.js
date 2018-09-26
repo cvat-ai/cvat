@@ -1400,7 +1400,7 @@ class ShapeView extends Listener {
         this._appearance = {
             colors: shapeModel.color,
             fillOpacity: 0,
-            selectedFillOpacity: 0.1,
+            selectedFillOpacity: 0.2,
         };
 
         this._flags = {
@@ -1608,8 +1608,8 @@ class ShapeView extends Listener {
 
     _removeShapeUI() {
         if (this._uis.shape) {
-            this._uis.shape.off('click');
             this._uis.shape.remove();
+            SVG.off(this._uis.shape.node);
             this._uis.shape = null;
         }
     }
@@ -1618,6 +1618,7 @@ class ShapeView extends Listener {
     _removeShapeText() {
         if (this._uis.text) {
             this._uis.text.remove();
+            SVG.off(this._uis.text.node);
             this._uis.text = null;
         }
     }
@@ -2642,6 +2643,10 @@ class ShapeView extends Listener {
                 this._appearance.stroke = color;
                 this._appearance.fill = color;
             }
+        }
+
+        if ('selected-fill-opacity' in settings) {
+            this._appearance.selectedFillOpacity = settings['selected-fill-opacity'];
         }
 
         if (settings['black-stroke']) {

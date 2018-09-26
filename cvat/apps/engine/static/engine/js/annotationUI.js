@@ -137,7 +137,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     playerModel.subscribe(shapeBufferView);
     playerModel.subscribe(shapeGrouperView);
     playerModel.subscribe(polyshapeEditorView);
-    playerModel.shift(0);
+    playerModel.shift(getURISearchParameter('frame') || 0, true);
 
     let shortkeys = window.cvat.config.shortkeys;
 
