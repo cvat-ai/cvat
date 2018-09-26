@@ -813,7 +813,7 @@ class ShapeCollectionModel extends Listener {
     }
 
     get activeShape() {
-        return this._activeShape;
+        return this._activeAAMShape || this._activeShape;
     }
 
     get currentShapes() {
