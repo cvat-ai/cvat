@@ -1561,4 +1561,5 @@ class ShapeCollectionView {
             }
         }
     }
+
 }
