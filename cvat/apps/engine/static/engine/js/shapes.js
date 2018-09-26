@@ -2428,16 +2428,13 @@ class ShapeView extends Listener {
 
     onShapeUpdate(model) {
         let interpolation = model.interpolate(window.cvat.player.frames.current);
-        let hiddenText = model.hiddenText;
-        let hiddenShape = model.hiddenShape;
-        let activeAAM = {
-            attributeId: model.activeAttribute,
-            shape: model.activeAttribute === null ? false : true,
-        }
+        let activeAttribute = model.activeAttribute;
+        let hiddenText = model.hiddenText && activeAttribute === null;
+        let hiddenShape = model.hiddenShape && activeAttribute === null;
 
         this._makeNotEditable();
         this._deselect();
-        if (hiddenText && !activeAAM.shape) {
+        if (hiddenText) {
             this._hideShapeText();
         }
 
@@ -2449,7 +2446,8 @@ class ShapeView extends Listener {
             break;
         case 'attributes':
             this._updateMenuContent(interpolation);
-            setupHidden.call(this, hiddenShape, hiddenText, activeAAM, model.active, interpolation);
+            setupHidden.call(this, hiddenShape, hiddenText,
+                activeAttribute != null, activeAttribute, model.active, interpolation);
             break;
         case 'merge':
             this._setupMergeView(model.merge);
@@ -2473,7 +2471,8 @@ class ShapeView extends Listener {
             this._updateButtonsBlock(interpolation.position);
             break;
         case 'hidden':
-            setupHidden.call(this, hiddenShape, hiddenText, activeAAM, model.active, interpolation);
+            setupHidden.call(this, hiddenShape, hiddenText,
+                activeAttribute != null, activeAttribute, model.active, interpolation);
             this._updateButtonsBlock(interpolation.position);
             this.notify('hidden');
             break;
@@ -2506,17 +2505,18 @@ class ShapeView extends Listener {
             break;
         }
         case 'activeAttribute':
-            this._setupAAMView(activeAAM.shape, interpolation.position);
-            setupHidden.call(this, hiddenShape, hiddenText, activeAAM, model.active, interpolation);
+            this._setupAAMView(activeAttribute != null, interpolation.position);
+            setupHidden.call(this, hiddenShape, hiddenText,
+                activeAttribute != null, activeAttribute, model.active, interpolation);
 
-            if (activeAAM.shape && this._uis.shape) {
+            if (activeAttribute != null && this._uis.shape) {
                 this._uis.shape.node.dispatchEvent(new Event('click'));
-                this._highlightAttribute(activeAAM.attributeId);
+                this._highlightAttribute(activeAttribute);
 
-                let attrInfo = window.cvat.labelsInfo.attrInfo(activeAAM.attributeId);
+                let attrInfo = window.cvat.labelsInfo.attrInfo(activeAttribute);
                 if (attrInfo.type === 'text' || attrInfo.type === 'number') {
-                    this._uis.attributes[activeAAM.attributeId].focus();
-                    this._uis.attributes[activeAAM.attributeId].select();
+                    this._uis.attributes[activeAttribute].focus();
+                    this._uis.attributes[activeAttribute].select();
                 }
                 else {
                     blurAllElements();
@@ -2551,9 +2551,9 @@ class ShapeView extends Listener {
         }
         }
 
-        if (model.active || activeAAM.shape) {
+        if (model.active || activeAttribute != null) {
             this._select();
-            if (!activeAAM.shape) {
+            if (activeAttribute === null) {
                 this._makeEditable();
             }
         }
@@ -2562,25 +2562,25 @@ class ShapeView extends Listener {
             this._showShapeText();
         }
 
-        function setupHidden(hiddenShape, hiddenText, activeAAM, active, interpolation) {
+        function setupHidden(hiddenShape, hiddenText, selectOnly, attributeId, active, interpolation) {
             this._makeNotEditable();
             this._removeShapeUI();
             this._removeShapeText();
 
-            if (!hiddenShape || activeAAM.shape) {
+            if (!hiddenShape) {
                 this._drawShapeUI(interpolation.position);
                 this._setupOccludedUI(interpolation.position.occluded);
-                if (!hiddenText || active || activeAAM.shape) {
+                if (!hiddenText || active) {
                     this._showShapeText();
                 }
 
-                if (model.active || activeAAM.shape) {
+                if (active || selectOnly) {
                     this._select();
-                    if (!activeAAM.shape) {
+                    if (!selectOnly) {
                         this._makeEditable();
                     }
                     else {
-                        this._highlightAttribute(activeAAM.attributeId);
+                        this._highlightAttribute(attributeId);
                     }
                 }
             }
