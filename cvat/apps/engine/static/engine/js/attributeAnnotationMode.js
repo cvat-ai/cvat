@@ -121,10 +121,7 @@ class AAMModel extends Listener {
             let [xtl, ytl, xbr, ybr] = this._bbRect(this._currentShapes[this._activeIdx].interpolation.position);
             this._focus(xtl - this._margin, xbr + this._margin, ytl - this._margin, ybr + this._margin);
 
-            this._active.activeAAM = {
-                shape: true,
-                attribute: attrId,
-            };
+            this._active.activeAttribute = attrId;
 
             this.notify();
 
@@ -139,10 +136,7 @@ class AAMModel extends Listener {
 
     _deactivate() {
         if (this._activeAAM && this._active) {
-            this._active.activeAAM = {
-                shape: false,
-                attribute: null
-            };
+            this._active.activeAttribute = null;
         }
     }
 

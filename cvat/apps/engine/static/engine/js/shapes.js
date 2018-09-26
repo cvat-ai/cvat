@@ -31,8 +31,7 @@ class ShapeModel extends Listener {
         this._merging = false;
         this._active = false;
         this._selected = false;
-        this._activeAAM = false;
-        this._activeAAMAttributeId = null;
+        this._activeAttributeId = null;
         this._merge = false;
         this._hiddenShape = false;
         this._hiddenText = true;
@@ -524,17 +523,14 @@ class ShapeModel extends Listener {
         return this._active;
     }
 
-    set activeAAM(active) {
-        this._activeAAM = active.shape;
-        this._activeAAMAttributeId = active.attribute;
-        this.notify('activeAAM');
+    set activeAttribute(value) {
+        this._activeAttributeId = value;
+        this._updateReason = 'activeAttribute';
+        this.notify();
     }
 
-    get activeAAM() {
-        return {
-            shape: this._activeAAM,
-            attributeId: this._activeAAMAttributeId
-        };
+    get activeAttribute() {
+        return this._activeAttributeId;
     }
 
     set merge(value) {
@@ -2438,7 +2434,10 @@ class ShapeView extends Listener {
         let interpolation = model.interpolate(window.cvat.player.frames.current);
         let hiddenText = model.hiddenText;
         let hiddenShape = model.hiddenShape;
-        let activeAAM = model.activeAAM;
+        let activeAAM = {
+            attributeId: model.activeAttribute,
+            shape: model.activeAttribute === null ? false : true,
+        }
 
         this._makeNotEditable();
         this._deselect();
@@ -2516,7 +2515,7 @@ class ShapeView extends Listener {
             this._uis.attributes[attrId].select();
             break;
         }
-        case 'activeAAM':
+        case 'activeAttribute':
             this._setupAAMView(activeAAM.shape, interpolation.position);
             setupHidden.call(this, hiddenShape, hiddenText, activeAAM, model.active, interpolation);
 
