@@ -21,7 +21,6 @@ class ShapeCollectionModel extends Listener {
         this._groupIdx = 0;
         this._frame = null;
         this._activeShape = null;
-        this._activeAAMShape = null;
         this._lastPos = {
             x: 0,
             y: 0,
@@ -97,11 +96,10 @@ class ShapeCollectionModel extends Listener {
         this._z_order.min = 0;
 
         if (this._activeShape) {
-            this._activeShape.active = false;
-        }
-
-        if (this._activeAAMShape) {
-            this._activeAAMShape.activeAttribute = null;
+            if (this._activeShape.activeAttribute != null) {
+                this._activeShape.activeAttribute = null;
+            }
+            this.resetActive();
         }
 
         this._currentShapes = [];
@@ -479,13 +477,14 @@ class ShapeCollectionModel extends Listener {
 
             // If frame was not changed and collection already interpolated (for example after pause() call)
             if (frame === this._frame && this._currentShapes.length) return;
+
             if (this._activeShape) {
-                this._activeShape.active = false;
-                this._activeShape = null;
+                if (this._activeShape.activeAttribute != null) {
+                    this._activeShape.activeAttribute = null;
+                }
+                this.resetActive();
             }
-            if (this._activeAAMShape) {
-                this._activeAAMShape.activeAttribute = null;
-            }
+
             this._frame = frame;
             this._interpolate();
         }
@@ -499,10 +498,23 @@ class ShapeCollectionModel extends Listener {
         switch (model.updateReason) {
         case 'activeAttribute':
             if (model.activeAttribute != null) {
-                this._activeAAMShape = model;
+                if (this._activeShape && this._activeShape != model) {
+                    if (this._activeShape.activeAttribute != null) {
+                        this._activeShape.activeAttribute = null;
+                    }
+                    this.resetActive();
+                }
+                this._activeShape = model;
             }
-            else if (this._activeAAMShape === model) {
-                this._activeAAMShape = null;
+            else if (this._activeShape) {
+                if (this._activeShape != model) {
+                    throw Error('Unexpected behaviour. Variable _activeShape is obsolete');
+                }
+
+                if (this._activeShape.activeAttribute != null) {
+                    this._activeShape.activeAttribute = null;
+                }
+                this.resetActive();
             }
             break;
         case 'activation': {
@@ -813,7 +825,7 @@ class ShapeCollectionModel extends Listener {
     }
 
     get activeShape() {
-        return this._activeAAMShape || this._activeShape;
+        return this._activeShape;
     }
 
     get currentShapes() {
