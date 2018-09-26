@@ -116,22 +116,13 @@ class AAMModel extends Listener {
         if (this._activeAAM && this._active) {
             let label = this._active.label;
             let attrId = +this._attrIdByIdx(label, this._attrNumberByLabel[label].current);
-            let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
 
             let [xtl, ytl, xbr, ybr] = this._bbRect(this._currentShapes[this._activeIdx].interpolation.position);
             this._focus(xtl - this._margin, xbr + this._margin, ytl - this._margin, ybr + this._margin);
 
             this._active.activeAttribute = attrId;
-
-            this.notify();
-
-            if (attrInfo.type === 'text' || attrInfo.type === 'number') {
-                this._active.aamAttributeFocus();
-            }
         }
-        else {
-            this.notify();
-        }
+        this.notify();
     }
 
     _deactivate() {
@@ -384,7 +375,5 @@ class AAMView {
                 this._trackManagement.removeClass('hidden');
             }
         }
-        // blur on change text attribute to other or on exit from aam
-        blurAllElements();
     }
 }
