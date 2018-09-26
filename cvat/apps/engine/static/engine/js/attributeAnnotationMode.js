@@ -267,6 +267,10 @@ class AAMModel extends Listener {
         return this._activeAAM;
     }
 
+    get active() {
+        return this._active;
+    }
+
     set margin(value) {
         this._margin = value;
     }
@@ -344,6 +348,7 @@ class AAMView {
         this._aamCounter = $('#aamCounter');
         this._aamHelpContainer = $('#aamHelpContainer');
         this._zoomMargin = $('#aamZoomMargin');
+        this._frameContent = SVG.adopt($('#frameContent')[0]);
         this._controller = aamController;
 
         this._zoomMargin.on('change', (e) => {
@@ -353,7 +358,57 @@ class AAMView {
         aamModel.subscribe(this);
     }
 
+
+    _setupAAMView(active, type, pos) {
+        let oldRect = $('#outsideRect');
+        let oldMask = $('#outsideMask');
+
+        if (active) {
+            if (oldRect.length) {
+                oldRect.remove();
+                oldMask.remove();
+            }
+
+            let size = {
+                x: 0,
+                y: 0,
+                width: window.cvat.player.geometry.frameWidth,
+                height: window.cvat.player.geometry.frameHeight
+            };
+
+            let excludeField = this._frameContent.rect(size.width, size.height).move(size.x, size.y).fill('#666');
+            let includeField = null;
+
+            if (type === 'box') {
+                includeField = this._frameContent.rect(pos.xbr - pos.xtl, pos.ybr - pos.ytl).move(pos.xtl, pos.ytl);
+            }
+            else {
+                includeField = this._frameContent.polygon(pos.points);
+            }
+
+            this._frameContent.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
+            this._frameContent.rect(size.width, size.height).move(size.x, size.y).attr({
+                mask: 'url(#outsideMask)',
+                id: 'outsideRect'
+            });
+
+            let content = $(this._frameContent.node);
+            let texts = content.find('.shapeText');
+            for (let text of texts) {
+                content.append(text);
+            }
+        }
+        else {
+            oldRect.remove();
+            oldMask.remove();
+        }
+    }
+
     onAAMUpdate(aam) {
+        this._setupAAMView(aam.active ? true : false,
+            aam.active ? aam.active.type.split('_')[1] : '',
+            aam.active ? aam.active.interpolate(window.cvat.player.frames.current).position : 0);
+
         if (aam.activeAAM) {
             if (this._aamMenu.hasClass('hidden')) {
                 this._trackManagement.addClass('hidden');

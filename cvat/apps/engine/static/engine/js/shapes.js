@@ -2505,7 +2505,6 @@ class ShapeView extends Listener {
             break;
         }
         case 'activeAttribute':
-            this._setupAAMView(activeAttribute != null, interpolation.position);
             setupHidden.call(this, hiddenShape, hiddenText,
                 activeAttribute != null, activeAttribute, model.active, interpolation);
 
@@ -2753,38 +2752,6 @@ class BoxView extends ShapeView {
 
         ShapeView.prototype._drawShapeUI.call(this);
     }
-
-
-    _setupAAMView(active, pos) {
-        let oldRect = $('#outsideRect');
-        let oldMask = $('#outsideMask');
-
-        if (active) {
-            if (oldRect.length) {
-                oldRect.remove();
-                oldMask.remove();
-            }
-
-            let size = {
-                x: 0,
-                y: 0,
-                width: window.cvat.player.geometry.frameWidth,
-                height: window.cvat.player.geometry.frameHeight
-            };
-
-            let excludeField = this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).fill('#666');
-            let includeField = this._scenes.svg.rect(pos.xbr - pos.xtl, pos.ybr - pos.ytl).move(pos.xtl, pos.ytl);
-            this._scenes.svg.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
-            this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).attr({
-                mask: 'url(#outsideMask)',
-                id: 'outsideRect'
-            });
-        }
-        else {
-            oldRect.remove();
-            oldMask.remove();
-        }
-    }
 }
 
 
@@ -2802,39 +2769,6 @@ class PolyShapeView extends ShapeView {
             z_order: +this._uis.shape.node.getAttribute('z_order'),
         };
     }
-
-
-    _setupAAMView(active, pos) {
-        let oldRect = $('#outsideRect');
-        let oldMask = $('#outsideMask');
-
-        if (active) {
-            if (oldRect.length) {
-                oldRect.remove();
-                oldMask.remove();
-            }
-
-            let size = {
-                x: 0,
-                y: 0,
-                width: window.cvat.player.geometry.frameWidth,
-                height: window.cvat.player.geometry.frameHeight
-            };
-
-            let excludeField = this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).fill('#666');
-            let includeField = this._scenes.svg.polygon(pos.points);
-            this._scenes.svg.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
-            this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).attr({
-                mask: 'url(#outsideMask)',
-                id: 'outsideRect'
-            });
-        }
-        else {
-            oldRect.remove();
-            oldMask.remove();
-        }
-    }
-
 
     _makeEditable() {
         ShapeView.prototype._makeEditable.call(this);
