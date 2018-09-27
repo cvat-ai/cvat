@@ -3080,9 +3080,11 @@ class PointsView extends PolyShapeView {
 
     _makeNotEditable() {
         PolyShapeView.prototype._makeNotEditable.call(this);
-        let interpolation = this._controller.interpolate(window.cvat.player.frames.current);
-        if (interpolation.position.points) {
-            this._drawPointMarkers(interpolation.position);
+        if (!this._controller.hiddenShape) {
+            let interpolation = this._controller.interpolate(window.cvat.player.frames.current);
+            if (interpolation.position.points) {
+                this._drawPointMarkers(interpolation.position);
+            }
         }
     }
 
