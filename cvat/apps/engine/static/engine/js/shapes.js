@@ -1418,7 +1418,6 @@ class ShapeView extends Listener {
                 this._uis.shape.draggable().on('dragstart', () => {
                     events.drag = Logger.addContinuedEvent(Logger.EventType.dragObject);
                     this._flags.dragging = true;
-                    blurAllElements();
                     this._hideShapeText();
                     this.notify('drag');
                 }).on('dragend', (e) => {
@@ -2093,7 +2092,7 @@ class ShapeView extends Listener {
 
             let stopProp = function(e) {
                 let key = e.keyCode;
-                let serviceKeys = [37, 38, 39, 40, 13, 16, 9, 109, 17];
+                let serviceKeys = [37, 38, 39, 40, 13, 16, 9, 109];
                 if (serviceKeys.includes(key)) {
                     e.preventDefault();
                     return;
@@ -2121,7 +2120,7 @@ class ShapeView extends Listener {
 
             let stopProp = function(e) {
                 let key = e.keyCode;
-                let serviceKeys = [37, 38, 39, 40, 13, 16, 9, 109, 17];
+                let serviceKeys = [37, 38, 39, 40, 13, 16, 9, 109];
                 if (serviceKeys.includes(key)) {
                     e.preventDefault();
                     return;

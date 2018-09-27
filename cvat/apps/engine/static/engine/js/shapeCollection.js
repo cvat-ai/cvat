@@ -978,6 +978,7 @@ class ShapeCollectionController {
                         if (key < 0) {
                             key = 10;
                         }
+                        e.preventDefault();
                     }
                     else {
                         if (attrInfo.values[0] === AAMUndefinedKeyword) {
@@ -1020,7 +1021,7 @@ class ShapeCollectionController {
                 Mousetrap.bind(shortkeys["dec_z"].value, decZHandler.bind(this), 'keydown');
             }
 
-            $(window.document).on('mousewheel', (e) => {
+            $('#frameContent').on('mousewheel', (e) => {
                 let active = this._model.activeShape;
                 if (active && active.activeAttribute) {
                     let label = active.label;
@@ -1033,8 +1034,8 @@ class ShapeCollectionController {
                     if (idxInArr >= attributes.length) idxInArr = 0;
                     else if (idxInArr < 0) idxInArr = attributes.length - 1;
                     active.activeAttribute = attributes[idxInArr];
-                    e.preventDefault();
                 }
+                e.preventDefault();
             });
         }
     }
