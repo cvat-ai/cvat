@@ -2,6 +2,7 @@ version: '2.3'
 services:
   cvat_elasticsearch:
     container_name: cvat_elasticsearch
+    image: cvat_elasticsearch
     networks:
       default:
         aliases:
@@ -10,11 +11,11 @@ services:
       context: ./analytics/elasticsearch
       args:
         ELK_VERSION: 6.4.0
-    image: cvat_elasticsearch
     restart: always
 
   cvat_kibana:
     container_name: cvat_kibana
+    image: cvat_kibana
     networks:
       default:
         aliases:
@@ -23,15 +24,13 @@ services:
       context: ./analytics/kibana
       args:
         ELK_VERSION: 6.4.0
-    image: cvat_kibana
     ports:
       - "5601:5601"
     restart: always
-    environment:
-      no_proxy: elasticsearch,${no_proxy}
 
   cvat_logstash:
     container_name: cvat_logstash
+    image: cvat_logstash
     networks:
       default:
         aliases:
@@ -40,14 +39,9 @@ services:
       context: ./analytics/logstash
       args:
         ELK_VERSION: 6.4.0
-        http_proxy: ${http_proxy}
+        http_proxy:  ${http_proxy}
         https_proxy: ${https_proxy}
-    image: cvat_logstash
-    ports:
-      - "5000:5000"
     restart: always
-    environment:
-      no_proxy: elasticsearch,${no_proxy}
 
   cvat:
     environment:
