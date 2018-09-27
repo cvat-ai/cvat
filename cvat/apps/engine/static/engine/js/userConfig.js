@@ -55,13 +55,13 @@ class Config {
             },
 
             change_shape_label: {
-                value: "ctrl+1,ctrl+2,ctrl+3,ctrl+4,ctrl+5,ctrl+6,ctrl+7,ctrl+8,ctrl+9".split(','),
-                view_value: "Ctrl + (1,2,3,4,5,6,7,8,9)",
+                value: [1,2,3,4,5,6,7,8,9].map((x) => `ctrl+shift+${x}`),
+                view_value: "Ctrl + Shift + (1,2,3,4,5,6,7,8,9)",
                 description: "change shape label for existing object"
             },
 
             change_default_label: {
-                value: "shift+1,shift+2,shift+3,shift+4,shift+5,shift+6,shift+7,shift+8,shift+9".split(','),
+                value: [1,2,3,4,5,6,7,8,9].map((x) => `shift+${x}`),
                 view_value: "Shift + (1,2,3,4,5,6,7,8,9)",
                 description: "change label default label"
             },
@@ -286,6 +286,12 @@ class Config {
                 value: 'esc',
                 view_value: "Esc",
                 description: "cancel active mode"
+            },
+
+            select_object: {
+                value: 'ctrl',
+                view_value: "Ctrl",
+                description: "Select highlighted object"
             }
         };
 

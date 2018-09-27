@@ -514,7 +514,6 @@ class ShapeCollectionModel extends Listener {
                 if (this._activeShape.activeAttribute != null) {
                     this._activeShape.activeAttribute = null;
                 }
-                this.resetActive();
             }
             break;
         case 'activation': {
@@ -933,7 +932,73 @@ class ShapeCollectionController {
                 }
             }.bind(this));
 
+
+            let selectObjectHandler = function() {
+                let active = this._model.activeShape;
+                if (active) {
+                    let label = active.label;
+                    let attributes = window.cvat.labelsInfo.labelAttributes(label);
+                    let firstKey = Object.keys(attributes)[0];
+                    if (typeof(firstKey) != 'undefined' && this._model.activeShape) {
+                        if (!window.cvat.mode) {
+                            this._model.activeShape.activeAttribute = +firstKey;
+                        }
+                    }
+                }
+            }.bind(this);
+
+            let unselectObjectHandler = function() {
+                if (this._model.activeShape) {
+                    if (!window.cvat.mode) {
+                        this._model.activeShape.activeAttribute = null;
+                    }
+                }
+            }.bind(this);
+
+            let selectAttributeHandler = Logger.shortkeyLogDecorator(function(e) {
+                let active = this._model.activeShape;
+                if (active && active.activeAttribute) {
+                    let key = e.keyCode;
+                    if (key >= 48 && key <= 57) {
+                        key -= 48;  // 0 and 9
+                    }
+                    else if (key >= 96 && key <= 105) {
+                        key -= 96; // num 0 and 9
+                    }
+                    else {
+                        return;
+                    }
+
+                    let attrId = active.activeAttribute;
+                    let frame = window.cvat.player.frames.current;
+                    let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
+
+                    if (e.ctrlKey) {
+                        key --;
+                        if (key < 0) {
+                            key = 10;
+                        }
+                    }
+                    else {
+                        if (attrInfo.values[0] === AAMUndefinedKeyword) {
+                            if (key >= attrInfo.values.length - 1) {
+                                return;
+                            }
+                            key ++;
+                        }
+                    }
+
+                    if (key >= attrInfo.values.length) {
+                        if (attrInfo.type === 'checkbox' && key < 2) {
+                            active.updateAttribute(frame, attrId, !attrInfo.values[0]);
+                        }
+                        return;
+                    }
+                    active.updateAttribute(frame, attrId, attrInfo.values[key]);
+                }
+            }.bind(this));
             let shortkeys = window.cvat.config.shortkeys;
+
             Mousetrap.bind(shortkeys["switch_lock_property"].value, switchLockHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["switch_all_lock_property"].value, switchAllLockHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["switch_occluded_property"].value, switchOccludedHandler.bind(this), 'keydown');
@@ -945,11 +1010,32 @@ class ShapeCollectionController {
             Mousetrap.bind(shortkeys["change_shape_label"].value, switchLabelHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["delete_shape"].value, removeActiveHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["change_shape_color"].value, changeShapeColorHandler.bind(this), 'keydown');
+            Mousetrap.bind(shortkeys["select_object"].value, selectObjectHandler.bind(this), 'keydown');
+            Mousetrap.bind(shortkeys["select_object"].value, unselectObjectHandler.bind(this), 'keyup');
+            Mousetrap.bind(shortkeys["select_i_attribute"].value.concat(
+                shortkeys["select_i_attribute"].value.map((x) => `ctrl+${x}`)), selectAttributeHandler, 'keydown');
 
             if (window.cvat.job.z_order) {
                 Mousetrap.bind(shortkeys["inc_z"].value, incZHandler.bind(this), 'keydown');
                 Mousetrap.bind(shortkeys["dec_z"].value, decZHandler.bind(this), 'keydown');
             }
+
+            $(window.document).on('mousewheel', (e) => {
+                let active = this._model.activeShape;
+                if (active && active.activeAttribute) {
+                    let label = active.label;
+                    let attributes = Object.keys(window.cvat.labelsInfo.labelAttributes(label));
+                    let idxInArr = attributes.indexOf(active.activeAttribute);
+
+                    if (e.originalEvent.deltaY < 0) idxInArr--;
+                    else idxInArr++;
+
+                    if (idxInArr >= attributes.length) idxInArr = 0;
+                    else if (idxInArr < 0) idxInArr = attributes.length - 1;
+                    active.activeAttribute = attributes[idxInArr];
+                    e.preventDefault();
+                }
+            });
         }
     }
 

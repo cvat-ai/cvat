@@ -475,6 +475,8 @@ class PlayerController {
     }
 
     zoom(e) {
+        if (e.ctrlKey) return;
+
         let x = e.originalEvent.pageX - this._leftOffset;
         let y = e.originalEvent.pageY - this._topOffset;
 

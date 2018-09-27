@@ -217,33 +217,6 @@ class AAMModel extends Listener {
         this._activate();
     }
 
-    setupAttributeValue(key) {
-        if (!this._activeAAM || !this._active) {
-            return;
-        }
-
-        let label = this._active.label;
-        let frame = window.cvat.player.frames.current;
-        let attrId = this._attrIdByIdx(label, this._attrNumberByLabel[label].current);
-        let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
-
-        if (key >= attrInfo.values.length) {
-            if (attrInfo.type === 'checkbox' && key < 2) {
-                this._active.updateAttribute(frame, attrId, !attrInfo.values[0]);
-            }
-            return;
-        }
-
-        if (attrInfo.values[0] === AAMUndefinedKeyword) {
-            if (key >= attrInfo.values.length - 1) {
-                return;
-            }
-            key ++;
-        }
-
-        this._active.updateAttribute(frame, attrId, attrInfo.values[key]);
-    }
-
     onCollectionUpdate() {
         if (this._activeAAM) {
             // No need deactivate active view because all listeners already unsubscribed
@@ -309,28 +282,12 @@ class AAMController {
                 e.preventDefault();
             }.bind(this));
 
-            let selectAttributeHandler = Logger.shortkeyLogDecorator(function(e) {
-                let key = e.keyCode;
-                if (key >= 48 && key <= 57) {
-                    key -= 48;  // 0 and 9
-                }
-                else if (key >= 96 && key <= 105) {
-                    key -= 96; // num 0 and 9
-                }
-                else {
-                    return;
-                }
-
-                this._model.setupAttributeValue(key);
-            }.bind(this));
-
             let shortkeys = window.cvat.config.shortkeys;
             Mousetrap.bind(shortkeys["switch_aam_mode"].value, switchAAMHandler, 'keydown');
             Mousetrap.bind(shortkeys["aam_next_attribute"].value, nextAttributeHandler, 'keydown');
             Mousetrap.bind(shortkeys["aam_prev_attribute"].value, prevAttributeHandler, 'keydown');
             Mousetrap.bind(shortkeys["aam_next_shape"].value, nextShapeHandler, 'keydown');
             Mousetrap.bind(shortkeys["aam_prev_shape"].value, prevShapeHandler, 'keydown');
-            Mousetrap.bind(shortkeys["select_i_attribute"].value, selectAttributeHandler, 'keydown');
         }
     }
 
