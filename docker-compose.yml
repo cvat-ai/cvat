@@ -23,8 +23,6 @@ services:
   cvat_redis:
     container_name: cvat_redis
     image: redis:4.0.5-alpine
-    container_name: cvat_db
-    image: postgres:10.3-alpine
     networks:
       default:
         aliases:
