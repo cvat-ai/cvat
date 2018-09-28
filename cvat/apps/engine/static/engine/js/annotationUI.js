@@ -1,15 +1,21 @@
-/* exported callAnnotationUI translateSVGPos */
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+/* exported callAnnotationUI translateSVGPos blurAllElements drawBoxSize */
 "use strict";
 
-function callAnnotationUI(jobID) {
-    initLogger(jobID);
-
+function callAnnotationUI(jid) {
+    initLogger(jid);
     let loadJobEvent = Logger.addContinuedEvent(Logger.EventType.loadJob);
-
-    serverRequest("/get/job/" + jobID, function(job) {
-        serverRequest("get/annotation/job/" + jobID, function(data) {
-            buildAnnotationUI(job, data, loadJobEvent);
+    serverRequest("/get/job/" + jid, function(job) {
+        serverRequest("get/annotation/job/" + jid, function(data) {
             $('#loadingOverlay').remove();
+            setTimeout(() => {
+                buildAnnotationUI(job, data, loadJobEvent);
+            }, 0);
         });
     });
 }
@@ -17,107 +23,146 @@ function callAnnotationUI(jobID) {
 function initLogger(jobID) {
     if (!Logger.initializeLogger('CVAT', jobID))
     {
-        console.error('Could not initialize Logger');
-        let message = 'Please immediately report the problem to support team';
+        let message = 'Could not initialize Logger. Please immediately report the problem to support team';
+        console.error(message);
         showMessage(message);
+        return;
     }
+
     Logger.setTimeThreshold(Logger.EventType.zoomImage);
-    Logger.setTimeThreshold(Logger.EventType.dragObject);
-    Logger.setTimeThreshold(Logger.EventType.resizeObject);
 
     serverRequest('/get/username', function(response) {
         Logger.setUsername(response.username);
     });
 }
 
-function buildAnnotationUI(job, trackData, loadJobEvent) {
-    let labelsInfo = new LabelsInfo(job);
-    let annotationParser = new AnnotationParser(labelsInfo, job);
+function buildAnnotationUI(job, shapeData, loadJobEvent) {
+    // Setup some API
+    window.cvat = {
+        labelsInfo: new LabelsInfo(job),
+        player: {
+            geometry: {
+                scale: 1,
+            },
+            frames: {
+                current: job.start,
+                start: job.start,
+                stop: job.stop,
+            }
+        },
+        mode: null,
+        job: {
+            z_order: job.z_order,
+            id: job.jobid
+        },
+    };
 
-    setupLabelSelector(labelsInfo);
-    $('#trackTypeSelect').prop('value', job.mode);
+    window.cvat.config = new Config();
 
-    let trackFilterModel = new TrackFilterModel(labelsInfo);
-    let trackFilterController = new TrackFilterController(trackFilterModel);
-    new TrackFilterView(trackFilterModel, trackFilterController);
+    // Setup components
+    let annotationParser = new AnnotationParser(job, window.cvat.labelsInfo);
 
-    let collectionModel = new CollectionModel(labelsInfo, job, trackFilterModel);
-    collectionModel.importTracks(trackData);
+    let shapeCollectionModel = new ShapeCollectionModel().import(shapeData).updateHash();
+    let shapeCollectionController = new ShapeCollectionController(shapeCollectionModel);
+    let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
+
+    window.cvat.data = {
+        get: () => shapeCollectionModel.export(),
+        set: (data) => {
+            shapeCollectionModel.empty();
+            shapeCollectionModel.import(data);
+            shapeCollectionModel.update();
+        },
+        clear: () => shapeCollectionModel.empty(),
+    };
+
+    let shapeBufferModel = new ShapeBufferModel(shapeCollectionModel);
+    let shapeBufferController = new ShapeBufferController(shapeBufferModel);
+    let shapeBufferView = new ShapeBufferView(shapeBufferModel, shapeBufferController);
+
+    $('#shapeModeSelector').prop('value', job.mode);
+    let shapeCreatorModel = new ShapeCreatorModel(shapeCollectionModel, job);
+    let shapeCreatorController = new ShapeCreatorController(shapeCreatorModel);
+    let shapeCreatorView = new ShapeCreatorView(shapeCreatorModel, shapeCreatorController);
+
+    let shapeMergerModel = new ShapeMergerModel(shapeCollectionModel);
+    let shapeMergerController = new ShapeMergerController(shapeMergerModel);
+    new ShapeMergerView(shapeMergerModel, shapeMergerController);
+
+    let shapeGrouperModel = new ShapeGrouperModel(shapeCollectionModel);
+    let shapeGrouperController = new ShapeGrouperController(shapeGrouperModel);
+    let shapeGrouperView = new ShapeGrouperView(shapeGrouperModel, shapeGrouperController);
+
+    let aamModel = new AAMModel(shapeCollectionModel, (xtl, xbr, ytl, ybr) => {
+        playerModel.focus(xtl, xbr, ytl, ybr);
+    });
+    let aamController = new AAMController(aamModel);
+    new AAMView(aamModel, aamController);
+
+    shapeCreatorModel.subscribe(shapeCollectionModel);
+    shapeGrouperModel.subscribe(shapeCollectionView);
+    shapeCollectionModel.subscribe(shapeGrouperModel);
 
     $('#playerProgress').css('width', $('#player')["0"].clientWidth - 420);
 
     let playerGeometry = {
         width: $('#playerFrame').width(),
         height: $('#playerFrame').height(),
-        left: $('#playerFrame').offset().left,
-        top: $('#playerFrame').offset().top
     };
-    let playerModel = new PlayerModel(job, playerGeometry);
-    let playerController = new PlayerController(playerModel, () => collectionModel.activeTrack,
-        (direction) => collectionModel.findFilterFrame(direction),
-        playerGeometry, job);
 
+    let playerModel = new PlayerModel(job, playerGeometry);
+    let playerController = new PlayerController(playerModel,
+        () => shapeCollectionModel.activeShape,
+        (direction) => shapeCollectionModel.find(direction),
+        Object.assign({}, playerGeometry, {
+            left: $('#playerFrame').offset().left,
+            top: $('#playerFrame').offset().top,
+        }), job);
     new PlayerView(playerModel, playerController, job);
 
-    let collectionController = new CollectionController(collectionModel);
-    let collectionView = new CollectionView(collectionController, collectionModel, playerModel, labelsInfo);
+    let historyModel = new HistoryModel(playerModel);
+    let historyController = new HistoryController(historyModel);
+    new HistoryView(historyController, historyModel);
 
-    let mergerModel = new MergerModel(collectionModel);
-    let mergerController = new MergerController(mergerModel);
-    let mergerView = new MergerView(mergerModel, mergerController);
-
-    let drawerModel = new DrawerModel(collectionModel);
-    let drawerController = new DrawerController(drawerModel);
-    let drawerView = new DrawerView(drawerController);
-
-    let shapeBufferModel = new ShapeBufferModel(collectionModel);
-    let shapeBufferController = new ShapeBufferController(shapeBufferModel);
-    let shapeBufferView = new ShapeBufferView(shapeBufferController);
-
-    let aamModel = new AAMModel(labelsInfo,
-        (id) => collectionModel.setactivetrack(id),
-        () => collectionModel.resetactivetrack(),
-        (xtl, xbr, ytl, ybr) => playerModel.focus(xtl,xbr,ytl,ybr));
-
-    let aamController = new AAMController(aamModel);
-    new AAMView(aamModel, aamController);
-
-    mergerModel.subscribe(drawerModel);
-    mergerModel.subscribe(shapeBufferModel);
-
-    drawerModel.subscribe(drawerView);
-    drawerModel.subscribe(mergerView);
-    drawerModel.subscribe(collectionController);
-    drawerModel.subscribe(collectionView);
-    drawerModel.subscribe(mergerModel);
-    drawerModel.subscribe(shapeBufferModel);
-
-    playerModel.subscribe(drawerView);
-    playerModel.subscribe(shapeBufferModel);
+    playerModel.subscribe(shapeCollectionModel);
+    playerModel.subscribe(shapeCollectionView);
+    playerModel.subscribe(shapeCreatorView);
     playerModel.subscribe(shapeBufferView);
+    playerModel.subscribe(shapeGrouperView);
     playerModel.shift(0);
 
-    shapeBufferModel.subscribe(drawerModel);
-    shapeBufferModel.subscribe(mergerModel);
-    shapeBufferModel.subscribe(shapeBufferView);
-    shapeBufferModel.subscribe(collectionController);
+    let shortkeys = window.cvat.config.shortkeys;
 
-    aamModel.subscribe(mergerModel);
-    aamModel.subscribe(drawerModel);
-    aamModel.subscribe(shapeBufferModel);
-    aamModel.subscribe(collectionController);
-
-    collectionModel.subscribe(aamModel);
-
+    setupHelpWindow(shortkeys);
+    setupSettingsWindow();
+    setupMenu(job, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel);
     setupFrameFilters();
-    setupAnnotationShortkeys();
-    setupMenu(job, collectionModel, collectionController, annotationParser);
+    setupShortkeys(shortkeys);
 
-    let shortkeys = userConfig.shortkeys;
-    setupHelpShortkeys(shortkeys);
+    $(window).on('click', function(event) {
+        Logger.updateUserActivityTimer();
+        if (['helpWindow', 'settingsWindow'].indexOf(event.target.id) != -1) {
+            event.target.classList.add('hidden');
+        }
+    });
+
+    let totalStat = shapeCollectionModel.collectStatistic()[1];
+    loadJobEvent.addValues({
+        'track count': totalStat.boxes.annotation + totalStat.boxes.interpolation +
+            totalStat.polygons.annotation + totalStat.polygons.interpolation +
+            totalStat.polylines.annotation + totalStat.polylines.interpolation +
+            totalStat.points.annotation + totalStat.points.interpolation,
+        'frame count': job.stop - job.start + 1,
+        'object count': totalStat.total,
+        'box count': totalStat.boxes.annotation + totalStat.boxes.interpolation,
+        'polygon count': totalStat.polygons.annotation + totalStat.polygons.interpolation,
+        'polyline count': totalStat.polylines.annotation + totalStat.polylines.interpolation,
+        'points count': totalStat.points.annotation + totalStat.points.interpolation,
+    });
+    loadJobEvent.close();
 
     window.onbeforeunload = function(e) {
-        if (collectionController.hasUnsavedChanges()) {
+        if (shapeCollectionModel.hasUnsavedChanges()) {
             let message = "You have unsaved changes. Leave this page?";
             e.returnValue = message;
             return message;
@@ -125,59 +170,49 @@ function buildAnnotationUI(job, trackData, loadJobEvent) {
         return;
     };
 
-    let statistics = collectionModel.collectStatistic();
-    loadJobEvent.addValues({
-        'track count': statistics.totalObjectCount.tracks,
-        'frame count': job.stop - job.start + 1,
-        'object count': statistics.totalObjectCount.manuallyShapes + statistics.totalObjectCount.interpolatedShapes,
+    $('#player').on('click', (e) => {
+        if (e.target.tagName.toLowerCase() != 'input') {
+            blurAllElements();
+        }
     });
-    loadJobEvent.close();
-
-    setupAPI(collectionModel , job);
-
-
-    $('#createTrackButton').attr('title',
-        `${shortkeys["switch_draw_mode"].view_value} - ${shortkeys["switch_draw_mode"].description}`);
-    $('#mergeTracksButton').attr('title',
-        `${shortkeys["switch_merge_mode"].view_value} - ${shortkeys["switch_merge_mode"].description}` + "\n" +
-        `${shortkeys["cancel_merge_mode"].view_value} - ${shortkeys["cancel_merge_mode"].description}`);
-    $('#saveButton').attr('title', `${shortkeys["save_work"].view_value}`);
-    $('#helpButton').attr('title', `${shortkeys["open_help"].view_value}`);
-    $('#settingsButton').attr('title', `${shortkeys["open_settings"].view_value}`);
-
-    $('#labelSelect').attr('title',
-        `${shortkeys["change_default_label"].view_value} - ${shortkeys["change_default_label"].description}`);
-    $('#hideBoxesBox').attr('title', `${shortkeys["hide_shapes"].view_value}`);
-    $('#hideLabelsBox').attr('title', `${shortkeys["hide_labels"].view_value}`);
-    $('#hideFilteredBox').attr('title', `${shortkeys["hide_filtered_tracks"].view_value}`);
 }
-
 
 function setupFrameFilters() {
     let brightnessRange = $('#playerBrightnessRange');
     let contrastRange = $('#playerContrastRange');
     let saturationRange = $('#playerSaturationRange');
-    let frameContent = $('#frameContent');
+    let frameBackground = $('#frameBackground');
     let reset = $('#resetPlayerFilterButton');
     let brightness = 100;
     let contrast = 100;
     let saturation = 100;
 
-    let shortkeys = userConfig.shortkeys;
-    Mousetrap.bind(shortkeys["change_player_brightness"].value.split(','), (e) => {
+    let shortkeys = window.cvat.config.shortkeys;
+    brightnessRange.attr('title', `
+        ${shortkeys['change_player_brightness'].view_value} - ${shortkeys['change_player_brightness'].description}`);
+    contrastRange.attr('title', `
+        ${shortkeys['change_player_contrast'].view_value} - ${shortkeys['change_player_contrast'].description}`);
+    saturationRange.attr('title', `
+        ${shortkeys['change_player_saturation'].view_value} - ${shortkeys['change_player_saturation'].description}`);
+
+    let changeBrightnessHandler = Logger.shortkeyLogDecorator(function(e) {
         if (e.shiftKey) brightnessRange.prop('value', brightness + 10).trigger('input');
         else brightnessRange.prop('value', brightness - 10).trigger('input');
-    }, 'keydown');
+    });
 
-    Mousetrap.bind(shortkeys["change_player_contrast"].value.split(','), (e) => {
+    let changeContrastHandler = Logger.shortkeyLogDecorator(function(e) {
         if (e.shiftKey) contrastRange.prop('value', contrast + 10).trigger('input');
         else contrastRange.prop('value', contrast - 10).trigger('input');
-    }, 'keydown');
+    });
 
-    Mousetrap.bind(shortkeys["change_player_saturation"].value.split(','), (e) => {
+    let changeSaturationHandler = Logger.shortkeyLogDecorator(function(e) {
         if (e.shiftKey) saturationRange.prop('value', saturation + 10).trigger('input');
         else saturationRange.prop('value', saturation - 10).trigger('input');
-    }, 'keydown');
+    });
+
+    Mousetrap.bind(shortkeys["change_player_brightness"].value, changeBrightnessHandler, 'keydown');
+    Mousetrap.bind(shortkeys["change_player_contrast"].value, changeContrastHandler, 'keydown');
+    Mousetrap.bind(shortkeys["change_player_saturation"].value, changeSaturationHandler, 'keydown');
 
     reset.on('click', function() {
         brightness = 100;
@@ -208,271 +243,42 @@ function setupFrameFilters() {
     });
 
     function updateFilterParameters() {
-        frameContent.css('filter', `contrast(${contrast}%) brightness(${brightness}%) saturate(${saturation}%)`);
+        frameBackground.css('filter', `contrast(${contrast}%) brightness(${brightness}%) saturate(${saturation}%)`);
     }
 }
 
 
-function setupHelpShortkeys(shortkeys) {
-    let helpTable = $('#shortkeyHelpTable');
-    helpTable.empty();
-
-    for (let key in shortkeys) {
-        helpTable.append($(`<tr> <td> ${shortkeys[key].view_value} </td> <td> ${shortkeys[key].description} </td> </tr>`));
-    }
-}
-
-
-function setupLabelSelector(labelsInfo) {
-    let labels = labelsInfo.labels();
-    let labelSelector = $('#labelSelect');
-    for (let labelId in labels) {
-        let option = $(`<option value=${labelId}> ${labels[labelId].normalize()} </option>`);
-        option.appendTo(labelSelector);
-    }
-}
-
-
-function setupMenu(job, collectionModel, collectionController, annotationParser) {
-    let annotationMenu = $('#taskAnnotationMenu');
-    let menuButton = $('#menuButton');
-    let helpButton = $('#helpButton');
-    let helpWindow = $('#helpWindow');
-    let closeHelpButton = $('#closeHelpButton');
-    let closeSettingsButton = $('#closeSettignsButton');
-    let downloadAnnotationButton = $('#downloadAnnotation');
-    let uploadAnnotationButton = $('#uploadAnnotation');
-    let annotationFileSelector = $('#annotationFileSelector');
-    let removeAnnotationButton = $('#removeAnnotationButton');
-    let saveButton = $('#saveButton');
-    let settingsButton = $('#settingsButton');
+function setupShortkeys(shortkeys) {
+    let annotationMenu = $('#annotationMenu');
     let settingsWindow = $('#settingsWindow');
-    let autoSaveBox = $('#autoSaveBox');
-    let autoSaveTime = $('#autoSaveTime');
+    let helpWindow = $('#helpWindow');
 
-    let hideMenu = function() {
-        annotationMenu.addClass('hidden');
-    };
-
-    let visibleTimer;
-
-    let statistic = collectionModel.collectStatistic();
-    fillStat(statistic, job);
-    let top = menuButton.offset().top - annotationMenu.height() - menuButton.height();
-    annotationMenu.css('top', top + 'px');
-
-
-    menuButton.on('click', function() {
-        let statistic = collectionModel.collectStatistic();
-        fillStat(statistic, job);
-        annotationMenu.removeClass('hidden');
-        clearTimeout(visibleTimer);
-        visibleTimer = setTimeout(hideMenu, 1000);
-    });
-
-    annotationMenu.on('mouseout', function() {
-        visibleTimer = setTimeout(hideMenu, 500);
-    });
-
-    annotationMenu.on('mouseover', function() {
-        clearTimeout(visibleTimer);
-    });
-
-    helpButton.on('click', function() {
-        hideMenu();
-        helpWindow.css('display', 'block');
-    });
-
-    closeHelpButton.on('click', function() {
-        helpWindow.css('display', 'none');
-    });
-
-    closeSettingsButton.on('click', function() {
-        settingsWindow.css('display', 'none');
-    });
-
-    downloadAnnotationButton.on('click', () => dumpAnnotationRequest(downloadAnnotationButton, job.taskid, job.slug));
-
-    uploadAnnotationButton.on('click', function() {
-        hideMenu();
-        let message = 'Current annotation will be removed from the client. Continue?';
-        let onagree = function() {
-            annotationFileSelector.click();
-        };
-
-        confirm(message, onagree, null);
-    });
-
-    annotationFileSelector.on('change', function(e) {
-        let file = e.target.files['0'];
-        e.target.value = "";
-        if (!file || file.type != 'text/xml') return;
-        uploadAnnotationButton.text('Preparing..');
-        uploadAnnotationButton.prop('disabled', true);
-
-        let fileReader = new FileReader();
-        fileReader.onload = function(e) {
-            let data = [];
-            try {
-                data = annotationParser.parse(e.target.result);
-            }
-            catch (err) {
-                showMessage(err.message);
-                return;
-            }
-            finally {
-                uploadAnnotationButton.text('Upload Annotation');
-                uploadAnnotationButton.prop('disabled', false);
-            }
-
-            collectionModel.removeTracks();
-            collectionModel.importTracks(data);
-            collectionModel.update();
-        };
-        fileReader.readAsText(file);
-    });
-
-
-    saveButton.on('click', function() {
-        Logger.addEvent(Logger.EventType.saveJob);
-        let statistics = collectionModel.collectStatistic();
-
-        Logger.addEvent(Logger.EventType.sendTaskInfo,
-            {'track count': statistics.totalObjectCount.tracks,
-                'frame count': job.stop - job.start + 1,
-                'object count': statistics.totalObjectCount.manuallyShapes + statistics.totalObjectCount.interpolatedShapes,
-            });
-
-        saveButton.prop('disabled', true);
-        saveButton.text('Saving..');
-        const exportData = collectionModel.exportTracks();
-        const annotationLogs = Logger.getLogs();
-
-        const data = {
-            'annotation': exportData,
-            'logs': JSON.stringify(annotationLogs.export()),
-        };
-
-        let onsuccess = function() {
-            collectionController.updateHash();
-            saveButton.text('Success!');
-
-            setTimeout(function() {
-                saveButton.prop('disabled', false);
-                saveButton.text('Save Work');
-            }, 3000);
-        };
-
-        let onerror = function(response) {
-            saveButton.text('Save Work');
-            saveButton.prop('disabled', false);
-
-            if (response.status === 0) {
-                annotationLogs.save();
-                return;   // ignore such errors
-            }
-            let error = `Status: ${response.status}.`;
-            let message = 'Impossible to save job. Errors was occured. ' + error;
-            showMessage(message);
-            throw new Error(message);
-        };
-
-        saveJobOnServer(job.jobid, data, onsuccess, onerror);
-    });
-
-    let saveInterval = null;
-
-    autoSaveBox.on('change', function(e) {
-        let checked = e.target.checked;
-        clearSaveInterval();
-
-        if (checked) {
-            let time = +autoSaveTime.prop('value');
-            saveInterval = setInterval(function() {
-                if (!saveButton.prop('disabled')) {
-                    saveButton.click();
-                }
-            }, time * 60 * 1000);
-        }
-
-        function clearSaveInterval() {
-            if (saveInterval != null) {
-                clearInterval(saveInterval);
-                saveInterval = null;
-            }
-        }
-    });
-
-    autoSaveTime.on('change', function(e) {
-        let value = +e.target.value;
-        let min = +e.target.min;
-        let max = +e.target.max;
-        if (value < min) value = min;
-        if (value > max) value = max;
-        e.target.value = value;
-        autoSaveBox.trigger('change');
-    });
-
-
-    removeAnnotationButton.on('click', function() {
-        hideMenu();
-        let message = 'Do you want to remove all annotations? The action cannot be undone!';
-        let onagree = function() {
-            collectionModel.removeTracks();
-        };
-
-        confirm(message, onagree, null);
-    });
-
-    settingsButton.on('click', function() {
-        settingsWindow.css('display', 'block');
-        hideMenu();
-    });
-
-    $(window).on('click', function(event) {
-        Logger.updateUserActivityTimer();
-        if (event.target == helpWindow['0']) {
-            helpWindow.css('display', 'none');
-        }
-        else if (event.target == settingsWindow['0']) {
-            settingsWindow.css('display', 'none');
-        }
-    });
-}
-
-function setupAnnotationShortkeys() {
     Mousetrap.prototype.stopCallback = function() {
         return false;
     };
 
-    let hideBoxesHandler = Logger.shortkeyLogDecorator(function() {
-        $('#hideBoxesBox').click();
-    });
-
-    let hideLabelsHandler = Logger.shortkeyLogDecorator(function() {
-        $('#hideLabelsBox').click();
-    });
-
     let openHelpHandler = Logger.shortkeyLogDecorator(function() {
-        let helpVisibility = $('#helpWindow').css('display');
-        if (helpVisibility == 'none') {
-            $('#taskAnnotationMenu').addClass('hidden');
-            $('#helpWindow').css('display','block');
+        let helpInvisible = helpWindow.hasClass('hidden');
+        if (helpInvisible) {
+            annotationMenu.addClass('hidden');
+            settingsWindow.addClass('hidden');
+            helpWindow.removeClass('hidden');
         }
         else {
-            $('#helpWindow').css('display','none');
+            helpWindow.addClass('hidden');
         }
         return false;
     });
 
     let openSettingsHandler = Logger.shortkeyLogDecorator(function() {
-        let settignsVisibility = $('#settingsWindow').css('display');
-        if (settignsVisibility == 'none') {
-            $('#taskAnnotationMenu').addClass('hidden');
-            $('#settingsWindow').css('display','block');
+        let settingsInvisible = settingsWindow.hasClass('hidden');
+        if (settingsInvisible) {
+            annotationMenu.addClass('hidden');
+            helpWindow.addClass('hidden');
+            settingsWindow.removeClass('hidden');
         }
         else {
-            $('#settingsWindow').css('display','none');
+            $('#settingsWindow').addClass('hidden');
         }
         return false;
     });
@@ -485,82 +291,344 @@ function setupAnnotationShortkeys() {
         return false;
     });
 
-    let changeDefLabelHandler = Logger.shortkeyLogDecorator(function(e) {
-        if ($('#labelSelect').prop('disabled')) return;
-        $('#labelSelect option').eq(e.keyCode - '1'.charCodeAt(0)).prop('selected', true);
-        e.preventDefault();
-    });
-
-    let shortkeys = userConfig.shortkeys;
-
-    Mousetrap.bind(shortkeys["hide_shapes"].value, hideBoxesHandler, 'keydown');
-    Mousetrap.bind(shortkeys["hide_labels"].value, hideLabelsHandler, 'keydown');
     Mousetrap.bind(shortkeys["open_help"].value, openHelpHandler, 'keydown');
     Mousetrap.bind(shortkeys["open_settings"].value, openSettingsHandler, 'keydown');
     Mousetrap.bind(shortkeys["save_work"].value, saveHandler, 'keydown');
-    Mousetrap.bind(shortkeys["change_default_label"].value.split(','), changeDefLabelHandler, 'keydown');
 }
 
 
-function fillStat(labelStatistic, job) {
-    let statTaskName = $('#statTaskName');
-    let statTaskStatus = $('#statTaskStatus');
-    let statStartFrame = $('#statStartFrame');
-    let statStopFrame = $('#statStopFrame');
-    let statByLabels = $('#statByLabels');
+function setupHelpWindow(shortkeys) {
+    let closeHelpButton = $('#closeHelpButton');
+    let helpTable = $('#shortkeyHelpTable');
 
-    statTaskName.text(job.slug);
-    statTaskStatus.text(job.status);
-    statStartFrame.text(job.start);
-    statStopFrame.text(job.stop);
+    closeHelpButton.on('click', function() {
+        $('#helpWindow').addClass('hidden');
+    });
 
-    let table = $('<table id="statTable"></table').addClass('regular h3');
-    let header = `
-    <tr>
-      <td>Label</td><td>Tracks</td><td>Manually</td><td>Interpolated</td><td>Total</td>
-    </tr>
-    `;
-    table.append($(header).addClass('semiBold'));
+    for (let key in shortkeys) {
+        helpTable.append($(`<tr> <td> ${shortkeys[key].view_value} </td> <td> ${shortkeys[key].description} </td> </tr>`));
+    }
+}
 
-    let totalTracks = 0;
-    let totalManually = 0;
-    let totalInterpolated = 0;
-    let totalAnnotated = 0;
 
-    for (let label in labelStatistic) {
-        let tracks = labelStatistic[label].tracks;
-        let manually = labelStatistic[label].manuallyShapes;
-        let interpolated = labelStatistic[label].interpolatedShapes;
-        let total = manually + interpolated;
+function setupSettingsWindow() {
+    let closeSettingsButton = $('#closeSettignsButton');
+    let autoSaveBox = $('#autoSaveBox');
+    let autoSaveTime = $('#autoSaveTime');
 
-        totalTracks += tracks;
-        totalManually += manually;
-        totalInterpolated += interpolated;
-        totalAnnotated += total;
+    closeSettingsButton.on('click', function() {
+        $('#settingsWindow').addClass('hidden');
+    });
 
-        let row = `
-        <tr>
-          <td class='bold'>${label.normalize()}</td><td>${tracks}</td><td>${manually}</td>
-          <td>${interpolated}</td><td>${total}</td>
-        </tr>
-        `;
-        table.append($(row));
+    let saveInterval = null;
+    autoSaveBox.on('change', function(e) {
+        if (saveInterval) {
+            clearInterval(saveInterval);
+            saveInterval = null;
+        }
+
+        if (e.target.checked) {
+            let time = +autoSaveTime.prop('value');
+            saveInterval = setInterval(() => {
+                let saveButton = $('#saveButton');
+                if (!saveButton.prop('disabled')) {
+                    saveButton.click();
+                }
+            }, time * 1000 * 60);
+        }
+
+        autoSaveTime.on('change', () => {
+            let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
+            e.target.value = value;
+            autoSaveBox.trigger('change');
+        });
+    });
+}
+
+
+function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel) {
+    let annotationMenu = $('#annotationMenu');
+    let menuButton = $('#menuButton');
+
+    function hide() {
+        annotationMenu.addClass('hidden');
     }
 
-    let totalRow = `
-    <tr>
-      <td class='bold'>Total</td><td>${totalTracks}</td><td>${totalManually}</td>
-      <td>${totalInterpolated}</td><td>${totalAnnotated}</td>
-    </tr>
-    `;
-    table.append($(totalRow));
+    (function setupVisibility() {
+        let timer = null;
+        menuButton.on('click', () => {
+            let [byLabelsStat, totalStat] = shapeCollectionModel.collectStatistic();
+            let table = $('#annotationStatisticTable');
+            table.find('.temporaryStatisticRow').remove();
 
-    statByLabels.empty();
-    table.appendTo(statByLabels);
+            for (let labelId in byLabelsStat) {
+                $(`<tr>
+                    <td class="semiBold"> ${window.cvat.labelsInfo.labels()[labelId].normalize()} </td>
+                    <td> ${byLabelsStat[labelId].boxes.annotation} </td>
+                    <td> ${byLabelsStat[labelId].boxes.interpolation} </td>
+                    <td> ${byLabelsStat[labelId].polygons.annotation} </td>
+                    <td> ${byLabelsStat[labelId].polygons.interpolation} </td>
+                    <td> ${byLabelsStat[labelId].polylines.annotation} </td>
+                    <td> ${byLabelsStat[labelId].polylines.interpolation} </td>
+                    <td> ${byLabelsStat[labelId].points.annotation} </td>
+                    <td> ${byLabelsStat[labelId].points.interpolation} </td>
+                    <td> ${byLabelsStat[labelId].manually} </td>
+                    <td> ${byLabelsStat[labelId].interpolated} </td>
+                    <td class="semiBold"> ${byLabelsStat[labelId].total} </td>
+                </tr>`).addClass('temporaryStatisticRow').appendTo(table);
+            }
+
+            $(`<tr class="semiBold">
+                <td> Total: </td>
+                <td> ${totalStat.boxes.annotation} </td>
+                <td> ${totalStat.boxes.interpolation} </td>
+                <td> ${totalStat.polygons.annotation} </td>
+                <td> ${totalStat.polygons.interpolation} </td>
+                <td> ${totalStat.polylines.annotation} </td>
+                <td> ${totalStat.polylines.interpolation} </td>
+                <td> ${totalStat.points.annotation} </td>
+                <td> ${totalStat.points.interpolation} </td>
+                <td> ${totalStat.manually} </td>
+                <td> ${totalStat.interpolated} </td>
+                <td> ${totalStat.total} </td>
+            </tr>`).addClass('temporaryStatisticRow').appendTo(table);
+        });
+
+        menuButton.on('click', () => {
+            annotationMenu.removeClass('hidden');
+            annotationMenu.css('top', menuButton.offset().top - annotationMenu.height() - menuButton.height() + 'px');
+            if (timer) {
+                clearTimeout(timer);
+                timer = null;
+            }
+
+            timer = setTimeout(hide, 1000);
+        });
+
+        annotationMenu.on('mouseout', () => {
+            if (timer) {
+                clearTimeout(timer);
+                timer = null;
+            }
+
+            timer = setTimeout(hide, 500);
+        });
+
+        annotationMenu.on('mouseover', function() {
+            if (timer) {
+                clearTimeout(timer);
+                timer = null;
+            }
+        });
+    })();
+
+    $('#statTaskName').text(job.slug);
+    $('#statTaskStatus').text(job.status);
+    $('#statFrames').text(`[${job.start}-${job.stop}]`);
+    $('#statOverlap').text(job.overlap);
+    $('#statZOrder').text(job.z_order);
+    $('#statFlipped').text(job.flipped);
+
+
+    let shortkeys = window.cvat.config.shortkeys;
+    $('#helpButton').on('click', () => {
+        hide();
+        $('#helpWindow').removeClass('hidden');
+    });
+    $('#helpButton').attr('title', `
+        ${shortkeys['open_help'].view_value} - ${shortkeys['open_help'].description}`);
+
+    $('#settingsButton').on('click', () => {
+        hide();
+        $('#settingsWindow').removeClass('hidden');
+    });
+    $('#settingsButton').attr('title', `
+        ${shortkeys['open_settings'].view_value} - ${shortkeys['open_settings'].description}`);
+
+    $('#downloadAnnotationButton').on('click', (e) => {
+        dumpAnnotationRequest(e.target, job.taskid, job.slug);
+    });
+
+    $('#uploadAnnotationButton').on('click', () => {
+        hide();
+        confirm('Current annotation will be removed from the client. Continue?',
+            () => {
+                uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, $('#uploadAnnotationButton'));
+            }
+        );
+    });
+
+    $('#removeAnnotationButton').on('click', () => {
+        hide();
+        confirm('Do you want to remove all annotations? The action cannot be undone!',
+            () => {
+                historyModel.empty();
+                shapeCollectionModel.empty();
+            }
+        );
+    });
+
+    $('#saveButton').on('click', () => {
+        saveAnnotation(shapeCollectionModel, job);
+    });
+    $('#saveButton').attr('title', `
+        ${shortkeys['save_work'].view_value} - ${shortkeys['save_work'].description}`);
+
+    // JS function cancelFullScreen don't work after pressing
+    // and it is famous problem.
+    $('#fullScreenButton').on('click', () => {
+        $('#playerFrame').toggleFullScreen();
+    });
+
+    $('#playerFrame').on('fullscreenchange webkitfullscreenchange mozfullscreenchange', () => {
+        playerModel.updateGeometry({
+            width: $('#playerFrame').width(),
+            height: $('#playerFrame').height(),
+        });
+        playerModel.fit();
+    });
+
+    $('#switchAAMButton').on('click', () => {
+        hide();
+        aamModel.switchAAMMode();
+    });
+
+    $('#switchAAMButton').attr('title', `
+        ${shortkeys['switch_aam_mode'].view_value} - ${shortkeys['switch_aam_mode'].description}`);
 }
 
 
-function translateSVGPos(svgCanvas, clientX, clientY, playerScale) {
+function drawBoxSize(scene, box) {
+    let scale = window.cvat.player.geometry.scale;
+    let width = +box.getAttribute('width');
+    let height = +box.getAttribute('height');
+    let text = `${width.toFixed(1)}x${height.toFixed(1)}`;
+    let obj = this && this.textUI && this.rm ? this : {
+        textUI: scene.text('').font({
+            weight: 'bolder'
+        }).fill('white'),
+
+        rm: function() {
+            if (this.textUI) {
+                this.textUI.remove();
+            }
+        }
+    };
+
+    obj.textUI.clear().plain(text);
+
+    obj.textUI.font({
+        size: 20 / scale,
+    }).style({
+        stroke: 'black',
+        'stroke-width': 1 / scale
+    });
+
+    obj.textUI.move(+box.getAttribute('x'), +box.getAttribute('y'));
+
+    return obj;
+}
+
+
+function uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, uploadAnnotationButton) {
+    $('#annotationFileSelector').one('change', (e) => {
+        let file = e.target.files['0'];
+        e.target.value = "";
+        if (!file || file.type != 'text/xml') return;
+        uploadAnnotationButton.text('Preparing..');
+        uploadAnnotationButton.prop('disabled', true);
+        let overlay = showOverlay("File is being uploaded..");
+
+        let fileReader = new FileReader();
+        fileReader.onload = function(e) {
+            let data = null;
+
+            let asyncParse = function() {
+                try {
+                    data = annotationParser.parse(e.target.result);
+                }
+                catch (err) {
+                    overlay.remove();
+                    showMessage(err.message);
+                    return;
+                }
+                finally {
+                    uploadAnnotationButton.text('Upload Annotation');
+                    uploadAnnotationButton.prop('disabled', false);
+                }
+
+                let asyncImport = function() {
+                    try {
+                        historyModel.empty();
+                        shapeCollectionModel.empty();
+                        shapeCollectionModel.import(data);
+                        shapeCollectionModel.update();
+                    }
+                    finally {
+                        overlay.remove();
+                    }
+                };
+
+                overlay.setMessage('Data are being imported..');
+                setTimeout(asyncImport);
+            };
+
+            overlay.setMessage('File is being parsed..');
+            setTimeout(asyncParse);
+        };
+        fileReader.readAsText(file);
+    }).click();
+}
+
+
+function saveAnnotation(shapeCollectionModel, job) {
+    let saveButton = $('#saveButton');
+
+    Logger.addEvent(Logger.EventType.saveJob);
+    let totalStat = shapeCollectionModel.collectStatistic()[1];
+    Logger.addEvent(Logger.EventType.sendTaskInfo, {
+        'track count': totalStat.boxes.annotation + totalStat.boxes.interpolation +
+            totalStat.polygons.annotation + totalStat.polygons.interpolation +
+            totalStat.polylines.annotation + totalStat.polylines.interpolation +
+            totalStat.points.annotation + totalStat.points.interpolation,
+        'frame count': job.stop - job.start + 1,
+        'object count': totalStat.total,
+        'box count': totalStat.boxes.annotation + totalStat.boxes.interpolation,
+        'polygon count': totalStat.polygons.annotation + totalStat.polygons.interpolation,
+        'polyline count': totalStat.polylines.annotation + totalStat.polylines.interpolation,
+        'points count': totalStat.points.annotation + totalStat.points.interpolation,
+    });
+
+    let exportedData = shapeCollectionModel.export();
+    let annotationLogs = Logger.getLogs();
+
+    const data = {
+        annotation: exportedData,
+        logs: JSON.stringify(annotationLogs.export()),
+    };
+
+    saveButton.prop('disabled', true);
+    saveButton.text('Saving..');
+
+    saveJobRequest(job.jobid, data, () => {
+        // success
+        shapeCollectionModel.updateHash();
+        saveButton.text('Success!');
+        setTimeout(() => {
+            saveButton.prop('disabled', false);
+            saveButton.text('Save Work');
+        }, 3000);
+    }, (response) => {
+        // error
+        saveButton.prop('disabled', false);
+        saveButton.text('Save Work');
+        let message = `Impossible to save job. Errors was occured. Status: ${response.status}`;
+        showMessage(message + ' ' + 'Please immediately report the problem to support team');
+        throw Error(message);
+    });
+}
+
+function translateSVGPos(svgCanvas, clientX, clientY) {
     let pt = svgCanvas.createSVGPoint();
     pt.x = clientX;
     pt.y = clientY;
@@ -572,9 +640,14 @@ function translateSVGPos(svgCanvas, clientX, clientY, playerScale) {
     };
 
     if (platform.name.toLowerCase() == 'firefox') {
-        pos.x /= playerScale;
-        pos.y /= playerScale;
+        pos.x /= window.cvat.player.geometry.scale;
+        pos.y /= window.cvat.player.geometry.scale;
     }
 
     return pos;
+}
+
+
+function blurAllElements() {
+    document.activeElement.blur();
 }

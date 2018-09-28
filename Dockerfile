@@ -87,6 +87,7 @@ COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 RUN  pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 COPY cvat/ ${HOME}/cvat
 COPY tests ${HOME}/tests
+RUN patch -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
 RUN  chown -R ${USER}:${USER} .
 
 # RUN all commands below as 'django' user

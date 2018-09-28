@@ -1,3 +1,8 @@
+
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, QueryDict
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
@@ -103,7 +108,13 @@ def make_image_list(path_to_data):
 def convert_to_cvat_format(data):
     result = {
         "boxes": [],
-        "tracks": []
+        "polygons": [],
+        "polylines": [],
+        "points": [],
+        "box_paths": [],
+        "polygon_paths": [],
+        "polyline_paths": [],
+        "points_paths": [],
     }
     for label in data:
         boxes = data[label]
@@ -115,6 +126,8 @@ def convert_to_cvat_format(data):
                 "ytl": box[2],
                 "xbr": box[3],
                 "ybr": box[4],
+                "z_order": 0,
+                "group_id": 0,
                 "occluded": False,
                 "attributes": []
             })

@@ -1,3 +1,8 @@
+
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import os
 import json
 import logging
@@ -234,7 +239,7 @@ def get_annotation(request, jid):
 def save_annotation_for_job(request, jid):
     try:
         job_logger[jid].info("save annotation for {} job".format(jid))
-        data = request.POST.dict()
+        data = json.loads(request.body.decode('utf-8'))
         if 'annotation' in data:
             annotation.save_job(jid, json.loads(data['annotation']))
         if 'logs' in data:

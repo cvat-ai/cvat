@@ -1,9 +1,16 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 "use strict";
 
 /* Dashboard entrypoint */
 window.cvat = window.cvat || {};
 window.cvat.dashboard = window.cvat.dashboard || {};
 window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
+window.cvat.config = new Config();
 
 window.cvat.dashboard.uiCallbacks.push(function(elements) {
     elements.each(function(idx) {
@@ -93,6 +100,7 @@ function setupTaskCreator() {
     let cancelBrowseServer = $('#dashboardCancelBrowseServer');
     let submitBrowseServer = $('#dashboardSubmitBrowseServer');
     let flipImagesBox = $('#dashboardFlipImages');
+    let zOrderBox = $('#dashboardZOrder');
     let segmentSizeInput = $('#dashboardSegmentSize');
     let customSegmentSize = $('#dashboardCustomSegment');
     let overlapSizeInput = $('#dashboardOverlap');
@@ -109,6 +117,7 @@ function setupTaskCreator() {
     let bugTrackerLink = bugTrackerInput.prop('value');
     let source = 'local';
     let flipImages = false;
+    let zOrder = false;
     let segmentSize = 5000;
     let overlapSize = 0;
     let compressQuality = 50;
@@ -168,7 +177,13 @@ function setupTaskCreator() {
         updateSelectedFiles();
     });
 
-    flipImagesBox.on('click', (e) => {flipImages = e.target.checked;});
+    flipImagesBox.on('click', (e) => {
+        flipImages = e.target.checked;
+    });
+
+    zOrderBox.on('click', (e) => {
+        zOrder = e.target.checked;
+    });
     customSegmentSize.on('change', (e) => segmentSizeInput.prop('disabled', !e.target.checked));
     customOverlapSize.on('change', (e) => overlapSizeInput.prop('disabled', !e.target.checked));
     customCompressQuality.on('change', (e) => imageQualityInput.prop('disabled', !e.target.checked));
@@ -258,6 +273,7 @@ function setupTaskCreator() {
         taskData.append('bug_tracker_link', bugTrackerLink);
         taskData.append('labels', labels);
         taskData.append('flip_flag', flipImages);
+        taskData.append('z_order', zOrder);
         taskData.append('storage', source);
 
         if (customSegmentSize.prop('checked')) {
@@ -285,7 +301,11 @@ function setupTaskCreator() {
                 taskMessage.css('color', 'red');
                 taskMessage.text(response);
             },
-            () => submitCreate.prop('disabled', false));
+            () => submitCreate.prop('disabled', false),
+            (status) => {
+                taskMessage.css('color', 'blue');
+                taskMessage.text(status);
+            });
     });
 
     function updateSelectedFiles() {
@@ -385,7 +405,7 @@ function setupSearch() {
 
 
 /* Server requests */
-function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete) {
+function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {
     $.ajax({
         url: '/create/task',
         type: 'POST',
@@ -432,6 +452,9 @@ function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, on
                 clearInterval(requestInterval);
                 onComplete();
                 onError(data.stderr);
+            }
+            else if (data['state'] == 'started' && 'status' in data) {
+                onUpdateStatus(data['status']);
             }
         }
     }
@@ -488,7 +511,7 @@ function uploadAnnotationRequest() {
 
     function loadXML(e) {
         input.remove();
-        let overlay = showOverlay("File uploading..");
+        let overlay = showOverlay("File is being uploaded..");
         let file = e.target.files[0];
         let fileReader = new FileReader();
         fileReader.onload = (e) => parseFile(e, overlay);
@@ -501,39 +524,48 @@ function uploadAnnotationRequest() {
         $.ajax({
             url: '/get/task/' + window.cvat.dashboard.taskID,
             success: function(data) {
-                let labels = new LabelsInfo(data.spec);
-                let fakeJob = {
+                let annotationParser = new AnnotationParser({
                     start: 0,
-                    stop: data.size
-                };
-                let annotationParser = new AnnotationParser(labels, fakeJob);
-                let parsed = null;
-                try {
-                    parsed = annotationParser.parse(xmlText);
-                }
-                catch(error) {
-                    let message = "Parsing errors was occured. " + error;
-                    showMessage(message);
-                    overlay.remove();
-                    return;
-                }
-                overlay.setMessage('Annotation saving..');
+                    stop: data.size,
+                    image_meta_data: data.image_meta_data,
+                    flipped: data.flipped
+                }, new LabelsInfo(data.spec));
 
-                $.ajax({
-                    url: '/save/annotation/task/' + window.cvat.dashboard.taskID,
-                    type: 'POST',
-                    data: JSON.stringify(parsed),
-                    contentType: 'application/json',
-                    success: function() {
-                        let message = 'Annotation successfully uploaded';
-                        showMessage(message);
-                    },
-                    error: function(response) {
-                        let message = 'Annotation uploading errors was occured. ' + response.responseText;
-                        showMessage(message);
-                    },
-                    complete: () => overlay.remove()
-                });
+                let asyncParse = function() {
+                    let parsed = null;
+                    try {
+                        parsed = annotationParser.parse(xmlText);
+                    }
+                    catch(error) {
+                        overlay.remove();
+                        showMessage("Parsing errors was occured. " + error);
+                        return;
+                    }
+
+                    let asyncSave = function() {
+                        $.ajax({
+                            url: '/save/annotation/task/' + window.cvat.dashboard.taskID,
+                            type: 'POST',
+                            data: JSON.stringify(parsed),
+                            contentType: 'application/json',
+                            success: function() {
+                                let message = 'Annotation successfully uploaded';
+                                showMessage(message);
+                            },
+                            error: function(response) {
+                                let message = 'Annotation uploading errors was occured. ' + response.responseText;
+                                showMessage(message);
+                            },
+                            complete: () => overlay.remove()
+                        });
+                    };
+
+                    overlay.setMessage('Annotation is being saved..');
+                    setTimeout(asyncSave);
+                };
+
+                overlay.setMessage('File is being parsed..');
+                setTimeout(asyncParse);
             },
             error: function(response) {
                 overlay.remove();

@@ -1,3 +1,8 @@
+
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.shortcuts import resolve_url, reverse
 from django.http import JsonResponse

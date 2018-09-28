@@ -1,507 +1,393 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 /* exported AAMModel AAMController AAMView */
 "use strict";
 
 const AAMUndefinedKeyword = '__undefined__';
 
-/* AAM is Attribute Annotation Mode with using keyboard only */
-class AAMModel extends Listener  {
-    constructor(labelsInfo, setActiveTrack, resetActiveTrack, focus) {
-        super('onAAMUpdate', getState);
-        this._activeAAM = false;
-        this._labelsInfo = labelsInfo;
-        this._currentTracks = [];
-        this._activeTrack = null;
-        this._curFrame = null;
-        this._setActiveTrackCallback = setActiveTrack;
-        this._resetActiveTrackCallback = resetActiveTrack;
+class AAMModel extends Listener {
+    constructor(shapeCollection, focus) {
+        super('onAAMUpdate', () => this);
+        this._shapeCollection = shapeCollection;
         this._focus = focus;
-        this._zoomBoxes = true;
-        this._zoomMargin = 100;
-        this._hideNonActive = true;
-
-        this._attributeByLabel = new Object();
-        this._titles = new Object();
-        this._helps = new Object();
-
-        let labels = labelsInfo.labels();
-        for (let labelId in labels) {
-            let attributes = labelsInfo.labelAttributes(labelId);
-
-            this._attributeByLabel[labelId] = Object.keys(attributes).length ? 0 : null;
-            for (let attrId in attributes) {
-                this._titles[attrId] = labels[labelId].normalize() + ' : ' + attributes[attrId].normalize();
-                this._helps[attrId] = [];
-
-                let attrInfo = labelsInfo.attrInfo(attrId);
-                switch (attrInfo.type) {
-                case 'text':
-                case 'number':
-                    continue;
-                case 'checkbox':
-                    this._helps[attrId].push('0 - ' + attrInfo.values[0]);
-                    this._helps[attrId].push('1 - ' + !attrInfo.values[0]);
-                    break;
-                default:
-                    for (let idx = 0; idx < attrInfo.values.length; idx ++) {
-                        if (idx > 9) break;
-                        if (attrInfo.values[0] === AAMUndefinedKeyword) {
-                            if (!idx) continue;
-                            this._helps[attrId].push(idx - 1 + ' - ' + attrInfo.values[idx]);
-                        }
-                        else {
-                            this._helps[attrId].push(idx + ' - ' + attrInfo.values[idx]);
-                        }
-                    }
-                }   // switch
-            }   // attribute for
-        }   // label for
-
-        let self = this;
-        function getState() {
-            return self;
-        }
-    }   // constructor
-
-
-    _labelId() {
-        if (this._activeTrack != null) {
-            return this._currentTracks[this._activeTrack].label;
-        }
-        return null;
-    }
-
-
-    _attributeId() {
-        let labelId = this._labelId();
-        let attrKeys = Object.keys(this._labelsInfo.labelAttributes(labelId));
-        let attrOrderIdx = this._attributeByLabel[labelId];
-        if (attrOrderIdx != null) {
-            return +attrKeys[attrOrderIdx];
-        }
-    }
-
-
-    _updateActiveTrack(active) {
-        if (this._activeTrack === null) return;
-        let track = this._currentTracks[this._activeTrack];
-        track.activeAAMTrack = active;
-        track.hidden = !active && this._hideNonActive;
-        if (active) {
-            if (this._curFrame != null && this._zoomBoxes) {
-                let pos = track.interpolate(this._curFrame).position;
-                this._focus(pos.xtl - this._zoomMargin, pos.xbr + this._zoomMargin, pos.ytl - this._zoomMargin, pos.ybr + this._zoomMargin);
-            }
-            this._setActiveTrackCallback(track.id); // via track collection for occluded property
-        }
-        else {
-            this._resetActiveTrackCallback();
-        }
-    }
-
-
-    _updateActiveAttribute(active) {
-        if (this._activeTrack === null) return;
-        if (active) {
-            let attrId = this._attributeId();
-            if (Number.isInteger(+attrId)) {
-                this._currentTracks[this._activeTrack].activeAttribute = attrId;
-            }
-        }
-        else {
-            this._currentTracks[this._activeTrack].activeAttribute = null;
-        }
-    }
-
-
-    _switchHidden(value) {
-        for (let idx = 0; idx < this._currentTracks.length; idx++) {
-            this._currentTracks[idx].hidden = this._hideNonActive && value && (idx != this._activeTrack);
-        }
-    }
-
-
-    switchAAM() {
-        if (this._activeAAM) {
-            this.disableAAM();
-        }
-        else {
-            this.enableAAM();
-        }
-    }
-
-
-    enableAAM() {
-        this._activeAAM = true;
-        this.notify();
-        this._switchHidden(true);
-        this._updateActiveAttribute(true);
-        this._updateActiveTrack(true);
-    }
-
-
-    disableAAM() {
         this._activeAAM = false;
-        this._updateActiveAttribute(false);
-        this._updateActiveTrack(false);
-        this._switchHidden(false);
-        this.notify();
-    }
+        this._activeIdx = null;
+        this._active = null;
+        this._margin = 100;
+        this._currentShapes = [];
+        this._attrNumberByLabel = {};
+        this._helps = {};
+        for (let labelId in window.cvat.labelsInfo.labels()) {
+            let labelAttributes = window.cvat.labelsInfo.labelAttributes(labelId);
+            if (Object.keys(labelAttributes).length) {
+                this._attrNumberByLabel[labelId] = {
+                    current: 0,
+                    end: Object.keys(labelAttributes).length
+                };
 
-
-    nextTrack(direction) {
-        if (!this._activeAAM || !this._currentTracks.length) return;
-        this._updateActiveAttribute(false);
-        let newActiveTrack = this._activeTrack + 1 * direction;
-        if (newActiveTrack < 0) {
-            newActiveTrack = this._currentTracks.length - 1;
-        }
-        else if (newActiveTrack >= this._currentTracks.length) {
-            newActiveTrack = 0;
-        }
-        this._updateActiveTrack(false);
-        this._activeTrack = newActiveTrack;
-        this._updateActiveTrack(true);
-        this.nextAttribute(0);
-    }
-
-
-    nextAttribute(direction) {
-        if (!this._activeAAM || !this._currentTracks.length) return;
-        let labelId = this._labelId();
-        let attributes = this._labelsInfo.labelAttributes(labelId);
-        let numOfAttributes = Object.keys(attributes).length;
-        let currentAttr = this._attributeByLabel[labelId];
-        if (numOfAttributes >= 2) {
-            currentAttr += 1 * direction;
-            if (currentAttr < 0) {
-                this._attributeByLabel[labelId] = numOfAttributes - 1;
-            }
-            else if (currentAttr >= numOfAttributes) {
-                this._attributeByLabel[labelId] = 0;
-            }
-            else {
-                this._attributeByLabel[labelId] = currentAttr;
-            }
-        }
-        this._updateActiveAttribute(true);
-        this.notify();     // notify for help update in view
-    }
-
-
-    setupAttributeValue(attrValueIndex) {
-        if (!this._activeAAM || this._activeTrack === null) return;
-        let labelId = this._labelId();
-        let attrOrderIdx = this._attributeByLabel[labelId];
-        if (attrOrderIdx === null) return;
-        let attrId = this._attributeId();
-        let attrInfo = this._labelsInfo.attrInfo(attrId);
-        let values = attrInfo.values;
-        if (attrInfo.type === 'text' || attrInfo.type === 'number') return;
-        if (attrValueIndex >= values.length) {
-            if (attrInfo.type === 'checkbox' && attrValueIndex < 2) {
-                values.push(!values[0]);
-            }
-            else return;
-        }
-        if (values[0] === AAMUndefinedKeyword) {
-            if (attrValueIndex >= values.length - 1) return;
-            attrValueIndex ++;
-        }
-        this._currentTracks[this._activeTrack].recordAttribute(attrId, values[attrValueIndex]);
-    }
-
-
-    onCollectionUpdate(collection) {
-        if (this._activeAAM) {
-            this._updateActiveTrack(false);
-            this._updateActiveAttribute(false);
-            this._switchHidden(false);
-        }
-
-        this._currentTracks = [];
-        this._curFrame = collection._curFrame;
-        for (let track of collection.currentTracks) {
-            if (!track.trackModel.removed) {
-                this._currentTracks.push(track.trackModel);
+                for (let attrId in labelAttributes) {
+                    this._helps[attrId] = {
+                        title: `${window.cvat.labelsInfo.labels()[labelId]}, ${window.cvat.labelsInfo.attributes()[attrId]}`,
+                        help: getHelp(attrId),
+                    };
+                }
             }
         }
 
-        for (let track of this._currentTracks) {
-            track.subscribe(this);
-        }
-
-        if (this._currentTracks.length) this._activeTrack = 0;
-        else this._activeTrack = null;
-
-        if (this._activeAAM) {
-            this._switchHidden(true);
-            this._updateActiveTrack(true);
-            this._updateActiveAttribute(true);
-        }
-        this.notify();
-    }
-
-
-    onTrackUpdate(track) {
-        if (track.model.removed) {
-            let idx = this._currentTracks.indexOf(track.model);
-            if (idx != -1) {
-                this._currentTracks.splice(idx, 1);
-                if (this._currentTracks.length) {
-                    if (this._activeTrack != null) {
-                        if (idx <= this._activeTrack && this._activeTrack > 0) this._activeTrack --;
+        function getHelp(attrId) {
+            let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
+            let help = [];
+            switch (attrInfo.type) {
+            case 'checkbox':
+                help.push('0 - ' + attrInfo.values[0]);
+                help.push('1 - ' + !attrInfo.values[0]);
+                break;
+            default:
+                for (let idx = 0; idx < attrInfo.values.length; idx ++) {
+                    if (idx > 9) break;
+                    if (attrInfo.values[0] === AAMUndefinedKeyword) {
+                        if (!idx) continue;
+                        help.push(idx - 1 + ' - ' + attrInfo.values[idx]);
+                    }
+                    else {
+                        help.push(idx + ' - ' + attrInfo.values[idx]);
                     }
                 }
-                else {
-                    this._activeTrack = null;
-                }
+            }
+
+            return help;
+        }
+
+        shapeCollection.subscribe(this);
+    }
+
+    _bbRect(pos) {
+        if ('points' in pos) {
+            let points = PolyShapeModel.convertStringToNumberArray(pos.points);
+            let xtl = Number.MAX_SAFE_INTEGER;
+            let ytl = Number.MAX_SAFE_INTEGER;
+            let xbr = Number.MIN_SAFE_INTEGER;
+            let ybr = Number.MIN_SAFE_INTEGER;
+            for (let point of points) {
+                xtl = Math.min(xtl, point.x);
+                ytl = Math.min(ytl, point.y);
+                xbr = Math.max(xbr, point.x);
+                ybr = Math.max(ybr, point.y);
+            }
+            return [xtl,  ytl, xbr, ybr];
+        }
+        else {
+            return [pos.xtl, pos.ytl, pos.xbr, pos.ybr];
+        }
+    }
+
+    _updateCollection() {
+        this._currentShapes = [];
+
+        for (let shape of  this._shapeCollection.currentShapes) {
+            let labelAttributes = window.cvat.labelsInfo.labelAttributes(shape.model.label);
+            if (Object.keys(labelAttributes).length && !shape.model.removed && !shape.interpolation.position.outside) {
+                this._currentShapes.push(shape);
             }
         }
+
+        if (this._currentShapes.length) {
+            this._activeIdx = 0;
+            this._active = this._currentShapes[0].model;
+        }
+        else {
+            this._activeIdx = null;
+            this._active = null;
+        }
     }
 
-
-    set zoomBoxes(value) {
-        if (value != true && value != false) {
-            throw new Error(`Input value must be boolean, but ${value} found.`);
-        }
-        this._zoomBoxes = value;
+    _attrIdByIdx(labelId, attrIdx) {
+        return Object.keys(window.cvat.labelsInfo.labelAttributes(labelId))[attrIdx];
     }
 
+    _activate() {
+        if (this._activeAAM && this._active) {
+            let label = this._active.label;
+            let attrId = +this._attrIdByIdx(label, this._attrNumberByLabel[label].current);
+            let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
 
-    set hideNonActive(value) {
-        if (value != true && value != false) {
-            throw new Error(`Input value must be boolean, but ${value} found.`);
+            let [xtl, ytl, xbr, ybr] = this._bbRect(this._currentShapes[this._activeIdx].interpolation.position);
+            this._focus(xtl - this._margin, xbr + this._margin, ytl - this._margin, ybr + this._margin);
+
+            this._active.activeAAM = {
+                shape: true,
+                attribute: attrId,
+            };
+
+            this.notify();
+
+            if (attrInfo.type === 'text' || attrInfo.type === 'number') {
+                this._active.aamAttributeFocus();
+            }
         }
-        this._hideNonActive = value;
+        else {
+            this.notify();
+        }
+    }
+
+    _deactivate() {
+        if (this._activeAAM && this._active) {
+            this._active.activeAAM = {
+                shape: false,
+                attribute: null
+            };
+        }
+    }
+
+    _enable() {
+        if (window.cvat.mode === null) {
+            window.cvat.mode = 'aam';
+            this._shapeCollection.resetActive();
+            this._activeAAM = true;
+            this._updateCollection();
+            this.notify();
+            this._activate();
+        }
+    }
+
+    _disable() {
+        if (this._activeAAM && window.cvat.mode === 'aam') {
+            this._deactivate();
+            window.cvat.mode = null;
+            this._activeAAM = false;
+            this._activeIdx = null;
+            this._active = null;
+
+            // Notify for remove aam UI
+            this.notify();
+        }
+    }
+
+    switchAAMMode() {
         if (this._activeAAM) {
-            this._switchHidden(value);
+            this._disable();
+        }
+        else {
+            this._enable();
         }
     }
 
-    set zoomMargin(value) {
-        value = Math.clamp(value, 0, 500);
-        this._zoomMargin = value;
+    moveShape(direction) {
+        if (!this._activeAAM || this._currentShapes.length < 2) {
+            return;
+        }
+
+        this._deactivate();
+        if (Math.sign(direction) > 0) {
+            // next
+            this._activeIdx ++;
+            if (this._activeIdx >= this._currentShapes.length) {
+                this._activeIdx = 0;
+            }
+        }
+        else {
+            // prev
+            this._activeIdx --;
+            if (this._activeIdx < 0) {
+                this._activeIdx = this._currentShapes.length - 1;
+            }
+        }
+
+        this._active = this._currentShapes[this._activeIdx].model;
+        this._activate();
     }
 
-    get zoomMargin() {
-        return this._zoomMargin;
+    moveAttr(direction) {
+        if (!this._activeAAM || !this._active) {
+            return;
+        }
+
+        let curAttr = this._attrNumberByLabel[this._active.label];
+
+        if (curAttr.end < 2) {
+            return;
+        }
+
+        if (Math.sign(direction) > 0) {
+            // next
+            curAttr.current ++;
+            if (curAttr.current >= curAttr.end) {
+                curAttr.current = 0;
+            }
+        }
+        else {
+            // prev
+            curAttr.current --;
+            if (curAttr.current < 0) {
+                curAttr.current = curAttr.end - 1;
+            }
+        }
+        this._activate();
+    }
+
+    setupAttributeValue(key) {
+        if (!this._activeAAM || !this._active) {
+            return;
+        }
+
+        let label = this._active.label;
+        let frame = window.cvat.player.frames.current;
+        let attrId = this._attrIdByIdx(label, this._attrNumberByLabel[label].current);
+        let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
+
+        if (key >= attrInfo.values.length) {
+            if (attrInfo.type === 'checkbox' && key < 2) {
+                this._active.updateAttribute(frame, attrId, !attrInfo.values[0]);
+            }
+            return;
+        }
+
+        if (attrInfo.values[0] === AAMUndefinedKeyword) {
+            if (key >= attrInfo.values.length - 1) {
+                return;
+            }
+            key ++;
+        }
+
+        this._active.updateAttribute(frame, attrId, attrInfo.values[key]);
+    }
+
+    onCollectionUpdate() {
+        if (this._activeAAM) {
+            // No need deactivate active view because all listeners already unsubscribed
+            this._updateCollection();
+            this._activate();
+        }
+    }
+
+    generateHelps() {
+        if (this._active) {
+            let label = this._active.label;
+            let attrId = +this._attrIdByIdx(label, this._attrNumberByLabel[label].current);
+            return [this._helps[attrId].title, this._helps[attrId].help, `${this._activeIdx + 1}/${this._currentShapes.length}`];
+        }
+        else {
+            return ['No Shapes Found', '', '0/0'];
+        }
     }
 
     get activeAAM() {
         return this._activeAAM;
     }
 
-
-    get helps() {
-        let title = '';
-        let helps = [];
-        let counter = '0/0';
-        let label = this._labelId();
-        if (label != null) {
-            counter = (this._activeTrack + 1) + '/' + this._currentTracks.length;
-            let attrOrderIdx = this._attributeByLabel[label];
-            if (attrOrderIdx != null) {
-                let attrId = this._attributeId();
-                title = this._titles[attrId];
-                helps = this._helps[attrId].slice();
-            }
-        }
-
-        return [title, helps, counter];
-    }
-
-
-    get activeAttribute() {
-        let labelId = this._labelId();
-        if (labelId === null) return [null];
-
-        let activeTrack = this._currentTracks[this._activeTrack];
-        let activeTrackId = activeTrack.id;
-
-        let attrOrderIdx = this._attributeByLabel[labelId];
-        if (attrOrderIdx === null) return [null];
-
-        let attrId = this._attributeId();
-        let attrInfo = this._labelsInfo.attrInfo(attrId);
-
-        return [activeTrackId, attrInfo.type, attrInfo.name];
-    }
-
-
-    get zoomBoxes() {
-        return this._zoomBoxes;
-    }
-
-    get hideNonActive() {
-        return this._hideNonActive;
+    set margin(value) {
+        this._margin = value;
     }
 }
 
 
 
 class AAMController {
-    constructor(model) {
-        this._model = model;
+    constructor(aamModel) {
+        this._model = aamModel;
+
         setupAAMShortkeys.call(this);
 
         function setupAAMShortkeys() {
             let switchAAMHandler = Logger.shortkeyLogDecorator(function() {
-                this._model.switchAAM();
+                this._model.switchAAMMode();
             }.bind(this));
 
             let nextAttributeHandler = Logger.shortkeyLogDecorator(function(e) {
-                this._model.nextAttribute(1);
+                this._model.moveAttr(1);
                 e.preventDefault();
             }.bind(this));
 
             let prevAttributeHandler = Logger.shortkeyLogDecorator(function(e) {
-                this._model.nextAttribute(-1);
+                this._model.moveAttr(-1);
                 e.preventDefault();
             }.bind(this));
 
-            let nextTrackHandler = Logger.shortkeyLogDecorator(function(e) {
-                this._model.nextTrack(1);
+            let nextShapeHandler = Logger.shortkeyLogDecorator(function(e) {
+                this._model.moveShape(1);
                 e.preventDefault();
             }.bind(this));
 
-            let prevTrackHandler = Logger.shortkeyLogDecorator(function(e) {
-                this._model.nextTrack(-1);
+            let prevShapeHandler = Logger.shortkeyLogDecorator(function(e) {
+                this._model.moveShape(-1);
                 e.preventDefault();
             }.bind(this));
 
             let selectAttributeHandler = Logger.shortkeyLogDecorator(function(e) {
                 let key = e.keyCode;
-                if (key >= 48 && key <= 57) key -= 48;  // 0 and 9
-                else if (key >= 96 && key <= 105) key -= 96; // num 0 and 9
-                else return;
+                if (key >= 48 && key <= 57) {
+                    key -= 48;  // 0 and 9
+                }
+                else if (key >= 96 && key <= 105) {
+                    key -= 96; // num 0 and 9
+                }
+                else {
+                    return;
+                }
+
                 this._model.setupAttributeValue(key);
             }.bind(this));
 
-            let shortkeys = userConfig.shortkeys;
-
+            let shortkeys = window.cvat.config.shortkeys;
             Mousetrap.bind(shortkeys["switch_aam_mode"].value, switchAAMHandler, 'keydown');
             Mousetrap.bind(shortkeys["aam_next_attribute"].value, nextAttributeHandler, 'keydown');
             Mousetrap.bind(shortkeys["aam_prev_attribute"].value, prevAttributeHandler, 'keydown');
-            Mousetrap.bind(shortkeys["aam_next_track"].value, nextTrackHandler, 'keydown');
-            Mousetrap.bind(shortkeys["aam_prev_track"].value, prevTrackHandler, 'keydown');
-            Mousetrap.bind(shortkeys["select_i_attribute"].value.split(','), selectAttributeHandler, 'keydown');
+            Mousetrap.bind(shortkeys["aam_next_shape"].value, nextShapeHandler, 'keydown');
+            Mousetrap.bind(shortkeys["aam_prev_shape"].value, prevShapeHandler, 'keydown');
+            Mousetrap.bind(shortkeys["select_i_attribute"].value, selectAttributeHandler, 'keydown');
         }
     }
 
-    zoomMargin(value) {
-        this._model.zoomMargin = value;
-    }
-
-    zoomBoxes(value) {
-        this._model.zoomBoxes = value;
-    }
-
-    hideNonActive(value) {
-        this._model.hideNonActive = value;
+    setMargin(value) {
+        this._model.margin = value;
     }
 }
 
 
 class AAMView {
-    constructor(model, controller) {
-        this._controller = controller;
-        this._trackManagementMenu = $('#trackManagement');
+    constructor(aamModel, aamController) {
+        this._trackManagement = $('#trackManagement');
         this._aamMenu = $('#aamMenu');
         this._aamTitle = $('#aamTitle');
         this._aamCounter = $('#aamCounter');
         this._aamHelpContainer = $('#aamHelpContainer');
-        this._removeAnnotationButton = $('#removeAnnotationButton');
-        this._zoomBoxesBox = $('#zoomAAMBoxesBox');
-        this._hideNonActiveBox = $('#hideNonActiveBox');
         this._zoomMargin = $('#aamZoomMargin');
+        this._controller = aamController;
 
-        this._zoomBoxesBox.prop('checked', model.zoomBoxes);
-        this._zoomBoxesBox.on('change', function(e) {
-            let value = e.target.checked;
-            this._controller.zoomBoxes(value);
-        }.bind(this));
-
-        this._zoomMargin.prop('checked', model.zoomMargin);
-        this._zoomMargin.on('change', function(e) {
+        this._zoomMargin.on('change', (e) => {
             let value = +e.target.value;
-            this._controller.zoomMargin(value);
-        }.bind(this));
-
-        this._hideNonActiveBox.prop('checked', model.hideNonActive);
-        this._hideNonActiveBox.on('change', function(e) {
-            let value = e.target.checked;
-            this._controller.hideNonActive(value);
-        }.bind(this));
-
-        model.subscribe(this);
+            this._controller.setMargin(value);
+        }).trigger('change');
+        aamModel.subscribe(this);
     }
-
-
-    _blurAll(){
-        var tmp = document.createElement("input");
-        document.body.appendChild(tmp);
-        tmp.focus();
-        document.body.removeChild(tmp);
-    }
-
 
     onAAMUpdate(aam) {
-        if (aam.activeAAM && this._aamMenu.hasClass('hidden')) {
-            this._trackManagementMenu.addClass('hidden');
-            this._aamMenu.removeClass('hidden');
-            this._removeAnnotationButton.prop('disabled', true);
-        }
-        else if (!aam.activeAAM) {
-            this._blurAll();
-            window.getSelection().removeAllRanges();
-            this._aamMenu.addClass('hidden');
-            this._trackManagementMenu.removeClass('hidden');
-            this._removeAnnotationButton.prop('disabled', false);
-            return;
-        }
-        let [title, helps, counter] = aam.helps;
-        this._aamTitle.text(title);
-        this._aamCounter.text(counter);
-        this._aamHelpContainer.empty();
+        if (aam.activeAAM) {
+            if (this._aamMenu.hasClass('hidden')) {
+                this._trackManagement.addClass('hidden');
+                this._aamMenu.removeClass('hidden');
+            }
 
-        let table = $('<table></table>').css({
-            'width': '100%',
-            'text-align': 'left'
-        }).appendTo(this._aamHelpContainer);
-        while (helps.length) {
-            let row = $('<tr></tr>').appendTo(table);
-            let first = helps.shift();
-            let second = helps.shift();
-            row.append(`<td>${first}</td>`);
-            if (second) {
-                row.append(`<td>${second}</td>`);
+            let [title, help, counter] = aam.generateHelps();
+            this._aamHelpContainer.empty();
+            this._aamCounter.text(counter);
+            this._aamTitle.text(title);
+
+            for (let helpRow of help) {
+                $(`<label> ${helpRow} <label> <br>`).appendTo(this._aamHelpContainer);
             }
         }
-        for (let help of helps) {
-            let helpView = $(`<label> ${help} </label>`).addClass('regular');
-            helpView.appendTo(this._aamHelpContainer);
-            $('<br>').appendTo(this._aamHelpContainer);
+        else {
+            if (this._trackManagement.hasClass('hidden')) {
+                this._aamMenu.addClass('hidden');
+                this._trackManagement.removeClass('hidden');
+            }
         }
-
-        let [activeTrackId, type, name] = aam.activeAttribute;
-        if (activeTrackId === null) return;
-
-        switch (type) {
-        case 'text': {
-            let text = $(`#${activeTrackId}_${name}_text`)[0];
-            text.focus();
-            text.select();
-            break;
-        }
-        case 'number': {
-            let number = $(`#${activeTrackId}_${name}_number`)[0];
-            number.focus();
-            number.select();
-            break;
-        }
-        default:
-            this._blurAll();
-            window.getSelection().removeAllRanges();
-        }
+        // blur on change text attribute to other or on exit from aam
+        blurAllElements();
     }
 }

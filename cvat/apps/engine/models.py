@@ -1,3 +1,8 @@
+
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from django.db import models
 from django.conf import settings
 
@@ -15,12 +20,14 @@ class Task(models.Model):
     size = models.PositiveIntegerField()
     path = models.CharField(max_length=256)
     mode = models.CharField(max_length=32)
-    owner = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     bug_tracker = models.CharField(max_length=2000, default="")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=32, default="annotate")
     overlap = models.PositiveIntegerField(default=0)
+    z_order = models.BooleanField(default=False)
+    flipped = models.BooleanField(default=False)
 
     # Extend default permission model
     class Meta:
@@ -37,13 +44,17 @@ class Task(models.Model):
         return os.path.join(self.path, "data")
 
     def get_dump_path(self):
-        return os.path.join(self.path, "{}.dump".format(self.name))
+        name = re.sub(r'[\\/*?:"<>|]', '_', self.name)
+        return os.path.join(self.path, "{}.dump".format(name))
 
     def get_log_path(self):
         return os.path.join(self.path, "task.log")
 
     def get_client_log_path(self):
         return os.path.join(self.path, "client.log")
+
+    def get_image_meta_cache_path(self):
+        return os.path.join(self.path, "image_meta.cache")
 
     def set_task_dirname(self, path):
         self.path = path
@@ -72,18 +83,24 @@ class Label(models.Model):
     def __str__(self):
         return self.name
 
+def parse_attribute(text):
+    match = re.match(r'^([~@])(\w+)=(\w+):(.+)?$', text)
+    prefix = match.group(1)
+    type = match.group(2)
+    name = match.group(3)
+    if match.group(4):
+        values = list(csv.reader(StringIO(match.group(4)), quotechar="'"))[0]
+    else:
+        values = []
+
+    return {'prefix':prefix, 'type':type, 'name':name, 'values':values}
+
 class AttributeSpec(models.Model):
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     text  = models.CharField(max_length=1024)
 
     def get_attribute(self):
-        match = re.match(r'^([~@])(\w+)=(\w+):(.+)$', self.text)
-        prefix = match.group(1)
-        type = match.group(2)
-        name = match.group(3)
-        values = list(csv.reader(StringIO(match.group(4)), quotechar="'"))[0]
-
-        return {'prefix':prefix, 'type':type, 'name':name, 'values':values}
+        return parse_attribute(self.text)
 
     def is_mutable(self):
         attr = self.get_attribute()
@@ -111,6 +128,7 @@ class AttributeSpec(models.Model):
 
 class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
+    id = models.BigAutoField(primary_key=True)
     spec = models.ForeignKey(AttributeSpec, on_delete=models.CASCADE)
     value = models.CharField(max_length=64)
     class Meta:
@@ -120,16 +138,28 @@ class Annotation(models.Model):
     job   = models.ForeignKey(Job, on_delete=models.CASCADE)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
+    group_id = models.PositiveIntegerField(default=0)
     class Meta:
         abstract = True
 
-class BoundingBox(models.Model):
+class Shape(models.Model):
+    occluded = models.BooleanField(default=False)
+    z_order = models.IntegerField(default=0)
+    class Meta:
+        abstract = True
+
+class BoundingBox(Shape):
+    id = models.BigAutoField(primary_key=True)
     xtl = models.FloatField()
     ytl = models.FloatField()
     xbr = models.FloatField()
     ybr = models.FloatField()
-    # TODO: need to think where to define below properties
-    occluded = models.BooleanField(default=False)
+    class Meta:
+        abstract = True
+
+class PolyShape(Shape):
+    id = models.BigAutoField(primary_key=True)
+    points = models.TextField()
     class Meta:
         abstract = True
 
@@ -139,8 +169,27 @@ class LabeledBox(Annotation, BoundingBox):
 class LabeledBoxAttributeVal(AttributeVal):
     box = models.ForeignKey(LabeledBox, on_delete=models.CASCADE)
 
-class ObjectPath(Annotation):
+class LabeledPolygon(Annotation, PolyShape):
     pass
+
+class LabeledPolygonAttributeVal(AttributeVal):
+    polygon = models.ForeignKey(LabeledPolygon, on_delete=models.CASCADE)
+
+class LabeledPolyline(Annotation, PolyShape):
+    pass
+
+class LabeledPolylineAttributeVal(AttributeVal):
+    polyline = models.ForeignKey(LabeledPolyline, on_delete=models.CASCADE)
+
+class LabeledPoints(Annotation, PolyShape):
+    pass
+
+class LabeledPointsAttributeVal(AttributeVal):
+    points = models.ForeignKey(LabeledPoints, on_delete=models.CASCADE)
+
+class ObjectPath(Annotation):
+    id = models.BigAutoField(primary_key=True)
+    shapes = models.CharField(max_length=10, default='boxes')
 
 class ObjectPathAttributeVal(AttributeVal):
     track = models.ForeignKey(ObjectPath, on_delete=models.CASCADE)
@@ -157,3 +206,21 @@ class TrackedBox(TrackedObject, BoundingBox):
 
 class TrackedBoxAttributeVal(AttributeVal):
     box = models.ForeignKey(TrackedBox, on_delete=models.CASCADE)
+
+class TrackedPolygon(TrackedObject, PolyShape):
+    pass
+
+class TrackedPolygonAttributeVal(AttributeVal):
+    polygon = models.ForeignKey(TrackedPolygon, on_delete=models.CASCADE)
+
+class TrackedPolyline(TrackedObject, PolyShape):
+    pass
+
+class TrackedPolylineAttributeVal(AttributeVal):
+    polyline = models.ForeignKey(TrackedPolyline, on_delete=models.CASCADE)
+
+class TrackedPoints(TrackedObject, PolyShape):
+    pass
+
+class TrackedPointsAttributeVal(AttributeVal):
+    points = models.ForeignKey(TrackedPoints, on_delete=models.CASCADE)

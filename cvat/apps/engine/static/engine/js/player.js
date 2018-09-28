@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 /* exported PlayerModel PlayerController PlayerView */
 "use strict";
 
@@ -34,11 +40,12 @@ class FrameProvider extends Listener {
         if (next <= this._stop && this._loadCounter > 0) {
             this._stack.push(next);
         }
-
         this._loadCounter--;
         this._loaded = frame;
         this._frameCollection[frame] = image;
         this._loadAllowed = true;
+        image.onload = null;
+        image.onerror = null;
         this.notify();
     }
 
@@ -102,6 +109,11 @@ class FrameProvider extends Listener {
                 this._loadAllowed = false;
                 let image = new Image();
                 image.onload = this._onImageLoad.bind(this, image, frame);
+                image.onerror = () => {
+                    this._loadAllowed = true;
+                    image.onload = null;
+                    image.onerror = null;
+                };
                 image.src = `get/task/${this._tid}/frame/${frame}`;
             }.bind(this), 25);
         }
@@ -139,7 +151,7 @@ class PlayerModel extends Listener {
             left: 0,
             top: 0,
             width: playerSize.width,
-            height: playerSize.height
+            height: playerSize.height,
         };
 
         this._frameProvider.subscribe(this);
@@ -190,6 +202,10 @@ class PlayerModel extends Listener {
         this._settings.resetZoom = value;
     }
 
+    ready() {
+        return this._frame.previous === this._frame.current;
+    }
+
     onFrameLoad(last) {  // callback for FrameProvider instance
         if (last === this._frame.current) {
             if (this._continueTimeout) {
@@ -234,36 +250,58 @@ class PlayerModel extends Listener {
     }
 
     pause() {
-        clearInterval(this._playInterval);
-        this._playInterval = null;
-        this._pauseFlag = true;
-        this.notify();
+        if (this._playInterval) {
+            clearInterval(this._playInterval);
+            this._playInterval = null;
+            this._pauseFlag = true;
+            this.notify();
+        }
+    }
+
+    updateGeometry(geometry) {
+        this._geometry.width = geometry.width;
+        this._geometry.height = geometry.height;
     }
 
     shift(delta, absolute) {
+        if (['resize', 'drag'].indexOf(window.cvat.mode) != -1) {
+            return false;
+        }
+
         this._continueAfterLoad = false;  // default reset continue
         this._frame.current = Math.clamp(
             absolute ? delta : this._frame.current + delta,
             this._frame.start,
             this._frame.stop
         );
-        if (!this._frameProvider.require(this._frame.current)) {
+        let frame = this._frameProvider.require(this._frame.current);
+        if (!frame) {
             this._continueAfterLoad = this.playing;
             this._pauseFlag = true;
             this.notify();
             return false;
         }
 
+        window.cvat.player.frames.current = this._frame.current;
+        window.cvat.player.geometry.frameWidth = frame.width;
+        window.cvat.player.geometry.frameHeight = frame.height;
+
+        Logger.addEvent(Logger.EventType.changeFrame, {
+            from: this._frame.previous,
+            to: this._frame.current,
+        });
+
+        let changed = this._frame.previous != this._frame.current;
         if (this._settings.resetZoom || this._frame.previous === null) {  // fit in annotation mode or once in interpolation mode
+            this._frame.previous = this._frame.current;
             this.fit();     // notify() inside the fit()
         }
         else {
+            this._frame.previous = this._frame.current;
             this.notify();
         }
 
-        let frameChanged = this._frame.previous - this._frame.current;
-        this._frame.previous = this._frame.current;
-        return frameChanged != 0;
+        return changed;
     }
 
     fit() {
@@ -272,11 +310,16 @@ class PlayerModel extends Listener {
         this._geometry.scale = Math.min(this._geometry.width / img.width, this._geometry.height / img.height);
         this._geometry.top = (this._geometry.height - img.height * this._geometry.scale) / 2;
         this._geometry.left = (this._geometry.width - img.width * this._geometry.scale ) / 2;
+
+        window.cvat.player.geometry.scale = this._geometry.scale;
         this.notify();
     }
 
     focus(xtl, xbr, ytl, ybr) {
-        if (!this._frameProvider.require(this._frame.current)) return;
+        let img = this._frameProvider.require(this._frame.current);
+        if (!img) return;
+        let fittedScale = Math.min(this._geometry.width / img.width, this._geometry.height / img.height);
+
         let boxWidth = xbr - xtl;
         let boxHeight = ybr - ytl;
         let wScale = this._geometry.width / boxWidth;
@@ -284,10 +327,20 @@ class PlayerModel extends Listener {
         this._geometry.scale = Math.min(wScale, hScale);
         this._geometry.scale = Math.min(this._geometry.scale, MAX_PLAYER_SCALE);
         this._geometry.scale = Math.max(this._geometry.scale, MIN_PLAYER_SCALE);
-        this._geometry.left = (this._geometry.width / this._geometry.scale - xtl * 2 - boxWidth) * this._geometry.scale / 2;
-        this._geometry.top = (this._geometry.height / this._geometry.scale - ytl * 2 - boxHeight) * this._geometry.scale / 2;
+
+        if (this._geometry.scale < fittedScale) {
+            this._geometry.scale = fittedScale;
+            this._geometry.top = (this._geometry.height - img.height * this._geometry.scale) / 2;
+            this._geometry.left = (this._geometry.width - img.width * this._geometry.scale ) / 2;
+        }
+        else {
+            this._geometry.left = (this._geometry.width / this._geometry.scale - xtl * 2 - boxWidth) * this._geometry.scale / 2;
+            this._geometry.top = (this._geometry.height / this._geometry.scale - ytl * 2 - boxHeight) * this._geometry.scale / 2;
+        }
+        window.cvat.player.geometry.scale = this._geometry.scale;
         this._frame.previous = this._frame.current;     // fix infinite loop via playerUpdate->collectionUpdate*->AAMUpdate->playerUpdate->...
         this.notify();
+
     }
 
     scale(x, y, value) {
@@ -309,6 +362,8 @@ class PlayerModel extends Listener {
 
         this._geometry.left += (newCenter.x - currentCenter.x) * this._geometry.scale;
         this._geometry.top += (newCenter.y - currentCenter.y) * this._geometry.scale;
+
+        window.cvat.player.geometry.scale = this._geometry.scale;
         this.notify();
     }
 
@@ -321,8 +376,9 @@ class PlayerModel extends Listener {
 
 
 class PlayerController {
-    constructor(playerModel, activeTrack, filterFrame, playerOffset) {
+    constructor(playerModel, activeTrack, find, playerOffset) {
         this._model = playerModel;
+        this._find = find;
         this._rewinding = false;
         this._moving = false;
         this._leftOffset = playerOffset.left;
@@ -330,6 +386,10 @@ class PlayerController {
         this._lastClickX = 0;
         this._lastClickY = 0;
         this._moveFrameEvent = null;
+        this._events = {
+            jump: null,
+            move: null,
+        };
 
         setupPlayerShortcuts.call(this, playerModel);
 
@@ -346,8 +406,8 @@ class PlayerController {
 
             let nextKeyFrameHandler = Logger.shortkeyLogDecorator(function() {
                 let active = activeTrack();
-                if (active && active.trackType === 'interpolation') {
-                    let nextKeyFrame = active.nextKeyFrame;
+                if (active && active.type.split('_')[0] === 'interpolation') {
+                    let nextKeyFrame = active.nextKeyFrame();
                     if (nextKeyFrame != null) {
                         this._model.shift(nextKeyFrame, true);
                     }
@@ -356,16 +416,17 @@ class PlayerController {
 
             let prevKeyFrameHandler = Logger.shortkeyLogDecorator(function() {
                 let active = activeTrack();
-                if (active && active.trackType === 'interpolation') {
-                    let prevKeyFrame = active.prevKeyFrame;
+                if (active && active.type.split('_')[0] === 'interpolation') {
+                    let prevKeyFrame = active.prevKeyFrame();
                     if (prevKeyFrame != null) {
                         this._model.shift(prevKeyFrame, true);
                     }
                 }
             }.bind(this));
 
+
             let nextFilterFrameHandler = Logger.shortkeyLogDecorator(function(e) {
-                let frame = filterFrame(1);
+                let frame = this._find(1);
                 if (frame != null) {
                     this._model.shift(frame, true);
                 }
@@ -373,12 +434,13 @@ class PlayerController {
             }.bind(this));
 
             let prevFilterFrameHandler = Logger.shortkeyLogDecorator(function(e) {
-                let frame = filterFrame(-1);
+                let frame = this._find(-1);
                 if (frame != null) {
                     this._model.shift(frame, true);
                 }
                 e.preventDefault();
             }.bind(this));
+
 
             let forwardHandler = Logger.shortkeyLogDecorator(function() {
                 this.forward();
@@ -398,7 +460,7 @@ class PlayerController {
                 return false;
             }.bind(this));
 
-            let shortkeys = userConfig.shortkeys;
+            let shortkeys = window.cvat.config.shortkeys;
 
             Mousetrap.bind(shortkeys["next_frame"].value, nextHandler, 'keydown');
             Mousetrap.bind(shortkeys["prev_frame"].value, prevHandler, 'keydown');
@@ -413,8 +475,8 @@ class PlayerController {
     }
 
     zoom(e) {
-        let x = e.originalEvent.clientX - this._leftOffset;
-        let y = e.originalEvent.clientY - this._topOffset;
+        let x = e.originalEvent.pageX - this._leftOffset;
+        let y = e.originalEvent.pageY - this._topOffset;
 
         let zoomImageEvent = Logger.addContinuedEvent(Logger.EventType.zoomImage);
         if (e.originalEvent.deltaY < 0) {
@@ -432,24 +494,28 @@ class PlayerController {
     }
 
     frameMouseDown(e) {
-        if (e.shiftKey || e.target.id == 'frameContent') {
+        if ((e.which === 1 && !window.cvat.mode) || (e.which === 2)) {
             this._moving = true;
             this._lastClickX = e.clientX;
             this._lastClickY = e.clientY;
-            this._moveFrameEvent = Logger.addContinuedEvent(Logger.EventType.moveImage);
+            e.preventDefault();
         }
     }
 
     frameMouseUp() {
         this._moving = false;
-        if (this._moveFrameEvent) {
-            this._moveFrameEvent.close();
-            this._moveFrameEvent = null;
+        if (this._events.move) {
+            this._events.move.close();
+            this._events.move = null;
         }
     }
 
     frameMouseMove(e) {
         if (this._moving) {
+            if (!this._events.move) {
+                this._events.move = Logger.addContinuedEvent(Logger.EventType.moveImage);
+            }
+
             let topOffset = e.clientY - this._lastClickY;
             let leftOffset = e.clientX - this._lastClickX;
             this._lastClickX = e.clientX;
@@ -465,6 +531,10 @@ class PlayerController {
 
     progressMouseUp() {
         this._rewinding = false;
+        if (this._events.jump) {
+            this._events.jump.close();
+            this._events.jump = null;
+        }
     }
 
     progressMouseMove(e) {
@@ -473,27 +543,27 @@ class PlayerController {
 
     _rewind(e) {
         if (this._rewinding) {
+            if (!this._events.jump) {
+                this._events.jump = Logger.addContinuedEvent(Logger.EventType.jumpFrame);
+            }
+
             let frames = this._model.frames;
-            let jumpFrameEvent = Logger.addContinuedEvent(Logger.EventType.jumpFrame);
             let progressWidth = e.target.clientWidth;
-            let x = e.clientX - e.target.offsetLeft;
+            let x = e.clientX + window.pageXOffset - e.target.offsetLeft;
             let percent = x / progressWidth;
             let targetFrame = Math.round((frames.stop - frames.start) * percent);
             this._model.pause();
             this._model.shift(targetFrame + frames.start, true);
-            jumpFrameEvent.close();
         }
     }
 
     changeStep(e) {
-        let value = +e.target.value;
-        value = Math.max(2, value);
-        value = Math.min(100, value);
+        let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
+        e.target.value = value;
         this._model.multipleStep = value;
     }
 
     changeFPS(e) {
-        let value = +e.target.value;
         let fpsMap = {
             1: 1,
             2: 5,
@@ -502,8 +572,7 @@ class PlayerController {
             5: 50,
             6: 100,
         };
-        value = Math.max(1, value);
-        value = Math.min(6, value);
+        let value = Math.clamp(+e.target.value, 1, 6);
         this._model.fps = fpsMap[value];
     }
 
@@ -559,7 +628,9 @@ class PlayerView {
     constructor(playerModel, playerController) {
         this._controller = playerController;
         this._playerUI = $('#playerFrame');
+        this._playerBackgroundUI = $('#frameBackground');
         this._playerContentUI = $('#frameContent');
+        this._playerGridUI = $('#frameGrid');
         this._progressUI = $('#playerProgress');
         this._loadingUI = $('#frameLoadingAnim');
         this._playButtonUI = $('#playButton');
@@ -574,11 +645,13 @@ class PlayerView {
         this._playerSpeedUI = $('#speedSelect');
         this._resetZoomUI = $('#resetZoomBox');
         this._frameNumber = $('#frameNumber');
+        this._playerGridPattern = $('#playerGridPattern');
+        this._playerGridPath = $('#playerGridPath');
 
         $('*').on('mouseup', () => this._controller.frameMouseUp());
         this._playerUI.on('wheel', (e) => this._controller.zoom(e));
         this._playerUI.on('dblclick', () => this._controller.fit());
-        this._playerUI.on('mousedown', (e) => this._controller.frameMouseDown(e));
+        this._playerContentUI.on('mousedown', (e) => this._controller.frameMouseDown(e));
         this._playerUI.on('mousemove', (e) => this._controller.frameMouseMove(e));
         this._progressUI.on('mousedown', (e) => this._controller.progressMouseDown(e));
         this._progressUI.on('mouseup', () => this._controller.progressMouseUp());
@@ -591,16 +664,76 @@ class PlayerView {
         this._multiplePrevButtonUI.on('click', () => this._controller.backward());
         this._firstButtonUI.on('click', () => this._controller.first());
         this._lastButtonUI.on('click', () => this._controller.last());
-        this._playerStepUI.on('change', (e) => this._controller.changeStep(e));
         this._playerSpeedUI.on('change', (e) => this._controller.changeFPS(e));
         this._resetZoomUI.on('change', (e) => this._controller.changeResetZoom(e));
+        this._playerStepUI.on('change', (e) => this._controller.changeStep(e));
         this._frameNumber.on('change', (e) =>
         {
             if (Number.isInteger(+e.target.value)) {
                 this._controller.seek(+e.target.value);
+                blurAllElements();
             }
         });
-        Mousetrap.bind(userConfig.shortkeys['focus_to_frame'].value.split(','), () => this._frameNumber.focus(), 'keydown');
+
+        let shortkeys = window.cvat.config.shortkeys;
+        let playerGridOpacityInput = $('#playerGridOpacityInput');
+        playerGridOpacityInput.on('input', (e) => {
+            let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
+            e.target.value = value;
+            this._playerGridPath.attr({
+                'opacity': value / +e.target.max,
+            });
+        });
+
+        playerGridOpacityInput.attr('title', `
+            ${shortkeys['change_grid_opacity'].view_value} - ${shortkeys['change_grid_opacity'].description}`);
+
+        let playerGridStrokeInput = $('#playerGridStrokeInput');
+        playerGridStrokeInput.on('change', (e) => {
+            this._playerGridPath.attr({
+                'stroke': e.target.value,
+            });
+        });
+
+        playerGridStrokeInput.attr('title', `
+            ${shortkeys['change_grid_color'].view_value} - ${shortkeys['change_grid_color'].description}`);
+
+        $('#playerGridSizeInput').on('change', (e) => {
+            let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
+            e.target.value = value;
+            this._playerGridPattern.attr({
+                width: value,
+                height: value,
+            });
+        });
+
+        Mousetrap.bind(shortkeys['focus_to_frame'].value, () => this._frameNumber.focus(), 'keydown');
+        Mousetrap.bind(shortkeys["change_grid_opacity"].value,
+            Logger.shortkeyLogDecorator(function(e) {
+                let ui = playerGridOpacityInput;
+                let value = +ui.prop('value');
+                value += e.key === '=' ? 1 : -1;
+                value = Math.clamp(value, 0, 5);
+                ui.prop('value', value);
+                this._playerGridPath.attr({
+                    'opacity': value / +ui.prop('max'),
+                });
+            }.bind(this)),
+            'keydown');
+
+        Mousetrap.bind(shortkeys["change_grid_color"].value,
+            Logger.shortkeyLogDecorator(function() {
+                let ui = playerGridStrokeInput;
+                let colors = [];
+                for (let opt of ui.find('option')) {
+                    colors.push(opt.value);
+                }
+                let idx = colors.indexOf(this._playerGridPath.attr('stroke')) + 1;
+                let value = colors[idx] || colors[0];
+                this._playerGridPath.attr('stroke', value);
+                ui.prop('value', value);
+            }.bind(this)),
+            'keydown');
 
         this._progressUI['0'].max = playerModel.frames.stop - playerModel.frames.start;
         this._progressUI['0'].value = 0;
@@ -609,25 +742,26 @@ class PlayerView {
         this._playerStepUI.prop('value', playerModel.multipleStep);
         this._playerSpeedUI.prop('value', '4');
 
-        let shortkeys = userConfig.shortkeys;
+        this._frameNumber.attr('title', `
+            ${shortkeys['focus_to_frame'].view_value} - ${shortkeys['focus_to_frame'].description}`);
 
         this._nextButtonUI.find('polygon').append($(document.createElementNS('http://www.w3.org/2000/svg', 'title'))
-            .html(shortkeys["next_frame"].view_value));
+            .html(`${shortkeys['next_frame'].view_value} - ${shortkeys['next_frame'].description}`));
 
         this._prevButtonUI.find('polygon').append($(document.createElementNS('http://www.w3.org/2000/svg', 'title'))
-            .html(shortkeys["prev_frame"].view_value));
+            .html(`${shortkeys['prev_frame'].view_value} - ${shortkeys['prev_frame'].description}`));
 
         this._playButtonUI.find('polygon').append($(document.createElementNS('http://www.w3.org/2000/svg', 'title'))
-            .html(shortkeys["play_pause"].view_value));
+            .html(`${shortkeys['play_pause'].view_value} - ${shortkeys['play_pause'].description}`));
 
         this._pauseButtonUI.find('polygon').append($(document.createElementNS('http://www.w3.org/2000/svg', 'title'))
-            .html(shortkeys["play_pause"].view_value));
+            .html(`${shortkeys['play_pause'].view_value} - ${shortkeys['play_pause'].description}`));
 
         this._multipleNextButtonUI.find('polygon').append($(document.createElementNS('http://www.w3.org/2000/svg', 'title'))
-            .html(shortkeys["forward_frame"].view_value));
+            .html(`${shortkeys['forward_frame'].view_value} - ${shortkeys['forward_frame'].description}`));
 
         this._multiplePrevButtonUI.find('polygon').append($(document.createElementNS('http://www.w3.org/2000/svg', 'title'))
-            .html(shortkeys["backward_frame"].view_value));
+            .html(`${shortkeys['backward_frame'].view_value} - ${shortkeys['backward_frame'].description}`));
 
         playerModel.subscribe(this);
     }
@@ -639,11 +773,12 @@ class PlayerView {
 
         if (!image) {
             this._loadingUI.removeClass('hidden');
+            this._playerBackgroundUI.css('background-image', '');
             return;
         }
 
         this._loadingUI.addClass('hidden');
-        this._playerContentUI.css('background-image', 'url(' + '"' + image.src + '"' + ')');
+        this._playerBackgroundUI.css('background-image', 'url(' + '"' + image.src + '"' + ')');
 
         if (model.playing) {
             this._playButtonUI.addClass('hidden');
@@ -679,11 +814,16 @@ class PlayerView {
         }
 
         this._progressUI['0'].value = frames.current - frames.start;
-        this._playerContentUI.css('width', image.width);
-        this._playerContentUI.css('height', image.height);
-        this._playerContentUI.css('top', geometry.top);
-        this._playerContentUI.css('left', geometry.left);
-        this._playerContentUI.css('transform', 'scale(' + geometry.scale + ')');
+
+        for (let obj of [this._playerBackgroundUI, this._playerContentUI, this._playerGridUI]) {
+            obj.css('width', image.width);
+            obj.css('height', image.height);
+            obj.css('top', geometry.top);
+            obj.css('left', geometry.left);
+            obj.css('transform', 'scale(' + geometry.scale + ')');
+        }
+
+        this._playerGridPath.attr('stroke-width', 2 / geometry.scale);
         this._frameNumber.prop('value', frames.current);
     }
 }

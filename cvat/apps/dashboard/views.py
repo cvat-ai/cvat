@@ -1,3 +1,8 @@
+
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import redirect
 from django.shortcuts import render
@@ -108,5 +113,6 @@ def DashboardView(request):
         'data': data,
         'max_upload_size': settings.LOCAL_LOAD_MAX_FILES_SIZE,
         'max_upload_count': settings.LOCAL_LOAD_MAX_FILES_COUNT,
+        'share_path': os.getenv('CVAT_SHARE_URL', default=r'${cvat_root}/share'),
         'js_3rdparty': JS_3RDPARTY.get('dashboard', [])
     })

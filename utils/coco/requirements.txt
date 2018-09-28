@@ -1,0 +1,11 @@
+wheel
+setuptools
+cython>=0.28.3
+argparse>=1.1
+numpy==1.14.2
+lxml>=3.5.0
+glog>=0.3.1
+tqdm>=4.19.6
+opencv-python>=3.4.0
+scikit-image>=0.14.0
+pycocotools

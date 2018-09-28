@@ -1,3 +1,8 @@
+
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from django.conf import settings
 import ldap
 from django_auth_ldap.config import LDAPSearch, NestedActiveDirectoryGroupType

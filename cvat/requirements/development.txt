@@ -6,7 +6,7 @@ mccabe==0.6.1
 pylint==1.8.3
 pylint-django==0.9.4
 pylint-plugin-utils==0.2.6
-rope==0.10.7
+rope==0.11
 six==1.11.0
 wrapt==1.10.11
 django-extensions==2.0.6

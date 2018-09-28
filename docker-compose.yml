@@ -1,3 +1,8 @@
+#
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+#
 version: "2.3"
 
 services:
@@ -42,7 +47,6 @@ services:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
-      - ./share:/home/django/share
 
 volumes:
   cvat_db:

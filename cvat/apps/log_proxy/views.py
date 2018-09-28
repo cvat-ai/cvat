@@ -1,3 +1,8 @@
+
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.contrib.auth.decorators import permission_required
 from .proxy_logger import client_log_proxy
