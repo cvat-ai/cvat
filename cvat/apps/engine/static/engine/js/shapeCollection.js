@@ -904,19 +904,19 @@ class ShapeCollectionController {
     }
 
     switchActiveOccluded() {
-        if (!window.cvat.mode) {
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
             this._model.switchActiveOccluded();
         }
     }
 
     switchAllLock() {
-        if (!window.cvat.mode) {
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
             this._model.switchAllLock();
         }
     }
 
     switchActiveLock() {
-        if (!window.cvat.mode) {
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
             this._model.switchActiveLock();
         }
     }
@@ -1327,17 +1327,17 @@ class ShapeCollectionView {
     static sortByZOrder() {
         if (window.cvat.job.z_order) {
             let content = $('#frameContent');
-            let shapes = content.find('.shape, .pointTempGroup, .shapeCreation, .aim').toArray().sort(
+            let shapes = $(content.find('.shape, .pointTempGroup, .shapeCreation, .aim').toArray().sort(
                 (a,b) => (+a.attributes.z_order.nodeValue - +b.attributes.z_order.nodeValue)
-            );
+            ));
+            let children = content.children().not(shapes);
 
             for (let shape of shapes) {
                 content.append(shape);
             }
 
-            let texts = content.find('.shapeText');
-            for (let text of texts) {
-                content.append(text);
+            for (let child of children) {
+                content.append(child);
             }
         }
     }
