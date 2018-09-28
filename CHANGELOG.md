@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- CVAT URL contains frame number and filter string. So, now you can create URL to frames and to objects.
+- Ability to change opacity for selected shape with help "Selected Fill Opacity" slider.
+- Ability to remove polyshapes points by double click.
+- Ability to draw/change polyshapes (except for points) by slip method. Just press ENTER and moving a cursor. 
+
+### Changed
+- Polyshape editing method has been improved. You can redraw part of shape instead of points cloning.
+
+
 ## [0.2.0] - 2018-09-28
 ### Added
 - New annotation shapes: polygons, polylines, points

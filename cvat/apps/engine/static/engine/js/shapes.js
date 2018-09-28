@@ -2862,12 +2862,18 @@ class PolyShapeView extends ShapeView {
                                 this._hideShapeText();
                             }
                             this._uis.shape.addClass('hidden');
+                            if (this._uis.points) {
+                                this._uis.points.addClass('hidden');
+                            }
 
                             // Run edit mode
                             PolyShapeView.editor.edit(this._controller.type.split('_')[1],
                                 this._uis.shape.attr('points'), this._color, index, e,
                                 (points) => {
                                     this._uis.shape.removeClass('hidden');
+                                    if (this._uis.points) {
+                                        this._uis.points.removeClass('hidden');
+                                    }
                                     if (points) {
                                         this._uis.shape.attr('points', points);
                                         this._controller.updatePosition(window.cvat.player.frames.current, this._buildPosition());
@@ -3081,9 +3087,11 @@ class PointsView extends PolyShapeView {
 
     _makeNotEditable() {
         PolyShapeView.prototype._makeNotEditable.call(this);
-        let interpolation = this._controller.interpolate(window.cvat.player.frames.current);
-        if (interpolation.position.points) {
-            this._drawPointMarkers(interpolation.position);
+        if (!this._controller.hiddenShape) {
+            let interpolation = this._controller.interpolate(window.cvat.player.frames.current);
+            if (interpolation.position.points) {
+                this._drawPointMarkers(interpolation.position);
+            }
         }
     }
 
