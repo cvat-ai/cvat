@@ -26,7 +26,15 @@ services:
         ELK_VERSION: 6.4.0
     ports:
       - "5601:5601"
+    depends_on: ['cvat_elasticsearch']
     restart: always
+
+  cvat_kibana_setup:
+    image: centos:7
+    container_name: cvat_kibana_setup
+    volumes: ['./analystics/kibana/setup.sh:/usr/local/bin/kibana-setup.sh:ro']
+    depends_on: ['cvat_kibana']
+    command: ['/bin/bash', '-c', '/usr/local/bin/kibana-setup.sh']
 
   cvat_logstash:
     container_name: cvat_logstash
@@ -41,6 +49,7 @@ services:
         ELK_VERSION: 6.4.0
         http_proxy:  ${http_proxy}
         https_proxy: ${https_proxy}
+    depends_on: ['cvat_elasticsearch']
     restart: always
 
   cvat:
