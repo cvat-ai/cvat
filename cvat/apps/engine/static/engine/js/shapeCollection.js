@@ -1215,16 +1215,17 @@ class ShapeCollectionView {
             shapes: this._frameContent.node.parentNode
         };
 
-        this._frameContent.node.parent = null;
-        this._UIContent.detach();
-
         let oldModels = this._currentModels;
         let oldViews = this._currentViews;
         let newShapes = collection.currentShapes;
         let newModels = newShapes.map((el) => el.model);
 
-
         let frameChanged = this._frameMarker != window.cvat.player.frames.current;
+
+        if (frameChanged) {
+            this._frameContent.node.parent = null;
+            this._UIContent.detach();
+        }
 
         this._currentViews = [];
         this._currentModels = [];
@@ -1259,8 +1260,11 @@ class ShapeCollectionView {
             }
         }
 
-        parents.shapes.append(this._frameContent.node);
-        parents.uis.prepend(this._UIContent);
+        if (frameChanged) {
+            parents.shapes.append(this._frameContent.node);
+            parents.uis.prepend(this._UIContent);
+        }
+
 
         ShapeCollectionView.sortByZOrder();
         this._frameMarker = window.cvat.player.frames.current;
