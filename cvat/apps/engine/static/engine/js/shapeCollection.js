@@ -1228,8 +1228,13 @@ class ShapeCollectionView {
 
         this._currentViews = [];
         this._currentModels = [];
+
+        // Check which old models are new models
         for (let oldIdx = 0; oldIdx < oldModels.length; oldIdx ++) {
             let newIdx = newModels.indexOf(oldModels[oldIdx]);
+
+            // Changed frame means a changed position in common case. We need redraw it.
+            // If shape has been restored after removing, it view already removed. We need redraw it.
             if (newIdx === -1 || frameChanged || oldModels[oldIdx].updateReason === 'remove') {
                 let view = oldViews[oldIdx];
                 view.unsubscribe(this);
@@ -1237,36 +1242,20 @@ class ShapeCollectionView {
                 view.erase();
 
                 if (newIdx != -1 && (frameChanged || oldModels[oldIdx].updateReason === 'remove')) {
-                    let shape = newShapes[newIdx];
-                    let model = newModels[newIdx];
-                    let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
-                    view.draw(shape.interpolation);
-                    view.updateColorSettings(this._colorSettings);
-                    this._currentViews.push(view);
-                    this._currentModels.push(model);
-                    model.subscribe(view);
-                    view.subscribe(this);
-                    this._labelsContent.find(`.labelContentElement[label_id="${model.label}"]`).removeClass('hidden');
+                    drawView.call(this, newShapes[newIdx], newModels[newIdx])
                 }
             }
             else {
                 this._currentViews.push(oldViews[oldIdx]);
                 this._currentModels.push(oldModels[oldIdx]);
+                this._labelsContent.find(`.labelContentElement[label_id="${oldModels[oldIdx].label}"]`).removeClass('hidden');
             }
         }
 
+        // Now we need draw new models which aren't on previous collection
         for (let newIdx = 0; newIdx < newModels.length; newIdx ++) {
             if (!oldModels.includes(newModels[newIdx])) {
-                let shape = newShapes[newIdx];
-                let model = newModels[newIdx];
-                let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
-                view.draw(shape.interpolation);
-                view.updateColorSettings(this._colorSettings);
-                model.subscribe(view);
-                view.subscribe(this);
-                this._currentViews.push(view);
-                this._currentModels.push(model);
-                this._labelsContent.find(`.labelContentElement[label_id="${model.label}"]`).removeClass('hidden');
+                drawView.call(this, newShapes[newIdx], newModels[newIdx])
             }
         }
 
@@ -1275,6 +1264,18 @@ class ShapeCollectionView {
 
         ShapeCollectionView.sortByZOrder();
         this._frameMarker = window.cvat.player.frames.current;
+
+
+        function drawView(shape, model) {
+            let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
+            view.draw(shape.interpolation);
+            view.updateColorSettings(this._colorSettings);
+            model.subscribe(view);
+            view.subscribe(this);
+            this._currentViews.push(view);
+            this._currentModels.push(model);
+            this._labelsContent.find(`.labelContentElement[label_id="${model.label}"]`).removeClass('hidden');
+        }
     }
 
     onPlayerUpdate(player) {
