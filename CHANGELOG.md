@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Polyshape editing method has been improved. You can redraw part of shape instead of points cloning.
 
+### Fixed
+- Performance bottleneck has been fixed during you create new objects (draw, copy, merge etc).
+
 
 ## [0.2.0] - 2018-09-28
 ### Added
