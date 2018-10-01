@@ -121,7 +121,7 @@ class ShapeCollectionModel extends Listener {
             }
         }
 
-        this._currentShapes = this._filter.filter(this._currentShapes).reverse();
+        this._currentShapes = this._filter.filter(this._currentShapes);
         this.notify();
     }
 
@@ -1007,6 +1007,10 @@ class ShapeCollectionView {
         this._colorByGroupCheckbox = $('#colorByGroupCheckbox');
         this._filterView = new FilterView(this._controller.filterController);
         this._currentViews = [];
+
+        this._currentModels = [];
+        this._frameMarker = null;
+
         this._activeShapeUI = null;
         this._scale = 1;
         this._colorSettings = {
@@ -1203,11 +1207,6 @@ class ShapeCollectionView {
 
     onCollectionUpdate(collection) {
         this._labelsContent.find('.labelContentElement').addClass('hidden');
-        for (let view of this._currentViews) {
-            view.unsubscribe(this);
-            view.controller().model().unsubscribe(view);
-            view.erase();
-        }
 
         // Save parents and detach elements from DOM
         // in order to increase performance in the buildShapeView function
@@ -1219,22 +1218,63 @@ class ShapeCollectionView {
         this._frameContent.node.parent = null;
         this._UIContent.detach();
 
+        let oldModels = this._currentModels;
+        let oldViews = this._currentViews;
+        let newShapes = collection.currentShapes;
+        let newModels = newShapes.map((el) => el.model);
+
+
+        let frameChanged = this._frameMarker != window.cvat.player.frames.current;
+
         this._currentViews = [];
-        for (let shape of collection.currentShapes) {
-            let model = shape.model;
-            let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
-            view.draw(shape.interpolation);
-            view.updateColorSettings(this._colorSettings);
-            this._currentViews.push(view);
-            model.subscribe(view);
-            view.subscribe(this);
-            this._labelsContent.find(`.labelContentElement[label_id="${model.label}"]`).removeClass('hidden');
+        this._currentModels = [];
+        for (let oldIdx = 0; oldIdx < oldModels.length; oldIdx ++) {
+            let newIdx = newModels.indexOf(oldModels[oldIdx]);
+            if (newIdx === -1 || frameChanged || oldModels[oldIdx].updateReason === 'remove') {
+                let view = oldViews[oldIdx];
+                view.unsubscribe(this);
+                view.controller().model().unsubscribe(view);
+                view.erase();
+
+                if (newIdx != -1 && (frameChanged || oldModels[oldIdx].updateReason === 'remove')) {
+                    let shape = newShapes[newIdx];
+                    let model = newModels[newIdx];
+                    let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
+                    view.draw(shape.interpolation);
+                    view.updateColorSettings(this._colorSettings);
+                    this._currentViews.push(view);
+                    this._currentModels.push(model);
+                    model.subscribe(view);
+                    view.subscribe(this);
+                    this._labelsContent.find(`.labelContentElement[label_id="${model.label}"]`).removeClass('hidden');
+                }
+            }
+            else {
+                this._currentViews.push(oldViews[oldIdx]);
+                this._currentModels.push(oldModels[oldIdx]);
+            }
+        }
+
+        for (let newIdx = 0; newIdx < newModels.length; newIdx ++) {
+            if (!oldModels.includes(newModels[newIdx])) {
+                let shape = newShapes[newIdx];
+                let model = newModels[newIdx];
+                let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
+                view.draw(shape.interpolation);
+                view.updateColorSettings(this._colorSettings);
+                model.subscribe(view);
+                view.subscribe(this);
+                this._currentViews.push(view);
+                this._currentModels.push(model);
+                this._labelsContent.find(`.labelContentElement[label_id="${model.label}"]`).removeClass('hidden');
+            }
         }
 
         parents.shapes.append(this._frameContent.node);
         parents.uis.prepend(this._UIContent);
 
         ShapeCollectionView.sortByZOrder();
+        this._frameMarker = window.cvat.player.frames.current;
     }
 
     onPlayerUpdate(player) {
