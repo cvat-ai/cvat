@@ -185,7 +185,7 @@ class AAMModel extends Listener {
         }
 
         this._deactivate();
-        if (Math.sign(direction) > 0) {
+        if (Math.sign(direction) < 0) {
             // next
             this._activeIdx ++;
             if (this._activeIdx >= this._currentShapes.length) {
