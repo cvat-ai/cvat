@@ -30,11 +30,15 @@ services:
     restart: always
 
   cvat_kibana_setup:
-    image: centos:7
     container_name: cvat_kibana_setup
-    volumes: ['./analystics/kibana/setup.sh:/usr/local/bin/kibana-setup.sh:ro']
-    depends_on: ['cvat_kibana']
-    command: ['/bin/bash', '-c', '/usr/local/bin/kibana-setup.sh']
+    image: cvat
+    volumes: ['./analytics/kibana:/home/django/kibana:ro']
+    depends_on: ['cvat']
+    working_dir: '/home/django'
+    entrypoint: ['bash', 'wait-for-it.sh', 'kibana:5601', '-t', '0', '--',
+      '/usr/bin/python3', 'kibana/setup.py', 'kibana/export.json']
+    environment:
+      no_proxy: kibana,${no_proxy}
 
   cvat_logstash:
     container_name: cvat_logstash
