@@ -25,7 +25,7 @@ Code released under the [MIT License](https://opensource.org/licenses/MIT).
 
 ## INSTALLATION
 
-These instructions below should work for Ubuntu 16.04. Probably it will work on other OSes as well with minor modifications.
+The instructions below should work for `Ubuntu 16.04`. It will probably work on other Operating Systems such as `Windows` and `macOS`, but may require minor modifications.
 
 ### Install [Docker CE](https://www.docker.com/community-edition) or [Docker EE](https://www.docker.com/enterprise-edition) from official site
 
