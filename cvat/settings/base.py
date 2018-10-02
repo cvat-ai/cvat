@@ -187,18 +187,31 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'standard',
         },
-        'file': {
+        'server_file': {
             'class': 'logging.handlers.RotatingFileHandler',
             'level': 'DEBUG',
-            'filename': os.path.join(BASE_DIR, 'logs', 'cvat.log'),
+            'filename': os.path.join(BASE_DIR, 'logs', 'cvat_server.log'),
+            'formatter': 'standard',
+            'maxBytes': 1024*1024*50, # 50 MB
+            'backupCount': 5,
+        },
+        'client_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'level': 'DEBUG',
+            'filename': os.path.join(BASE_DIR, 'logs', 'cvat_client.log'),
             'formatter': 'standard',
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
         }
     },
     'loggers': {
-        'cvat': {
-            'handlers': ['console', 'file'],
+        'cvat.server': {
+            'handlers': ['console', 'server_file'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+
+        'cvat.client': {
+            'handlers': ['client_file'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         }
     },

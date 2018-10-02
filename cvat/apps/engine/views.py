@@ -22,7 +22,7 @@ from cvat.apps.log_proxy.proxy_logger import client_log_proxy
 from requests.exceptions import RequestException
 from .logging import task_logger, job_logger
 
-global_logger = logging.getLogger(__name__)
+global_logger = logging.getLogger('cvat')
 
 ############################# High Level server API
 @login_required
