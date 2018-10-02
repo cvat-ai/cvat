@@ -38,7 +38,7 @@ class ClientLoggerStorage:
         try:
             return Task.objects.get(pk=tid)
         except Exception:
-            raise Exception('Key must be task indentificator')
+            raise Exception('{} key must be a task identifier'.format(tid))
 
 class ClientLogProxy():
     class _HandlerType(Enum):
@@ -67,7 +67,7 @@ class ClientLogProxy():
             parse_result = urlparse(log_server_url)
 
             if parse_result.scheme and 'http' not in parse_result.scheme:
-                raise Exception('unsuported annotation log destination')
+                raise Exception('unsupported annotation log destination')
 
             def http_log_handler(taskID, messages):
                 r = create_retry_session().post(url=log_server_url, json=messages, verify=False)
@@ -86,6 +86,6 @@ class ClientLogProxy():
             job = Job.objects.select_related("segment__task").get(id=jid)
             return job.segment.task.id
         except:
-            raise Exception('Key must be job indentificator')
+            raise Exception('{} key must be a job identifier'.format(jid))
 
 client_log_proxy = ClientLogProxy()

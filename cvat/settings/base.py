@@ -189,7 +189,7 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+            'level': 'DEBUG',
             'filename': os.path.join(BASE_DIR, 'logs', 'cvat.log'),
             'formatter': 'standard',
             'maxBytes': 1024*1024*50, # 50 MB
@@ -203,6 +203,20 @@ LOGGING = {
         }
     },
 }
+
+log_server_url = os.getenv('DJANGO_LOG_SERVER_URL')
+if log_server_url:
+    from urllib.parse import urlparse
+    url = urlparse(log_server_url)
+    LOGGING['handlers']['logstash'] = {
+        'level': 'INFO',
+        'class': 'logstash.TCPLogstashHandler',
+        'host': url.hostname,
+        'port': url.port,
+        'version': 1,
+        'message_type': 'django',
+    }
+    LOGGING['loggers']['cvat']['handlers'] += ['logstash']
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/

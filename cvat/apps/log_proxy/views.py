@@ -11,7 +11,6 @@ from cvat.apps.authentication.decorators import login_required
 
 import json
 
-# Create your views here.
 @login_required()
 @permission_required('engine.view_task', raise_exception=True)
 def exception_receiver(request, jid):
