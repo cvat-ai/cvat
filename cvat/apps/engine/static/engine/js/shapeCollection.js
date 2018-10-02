@@ -121,7 +121,7 @@ class ShapeCollectionModel extends Listener {
             }
         }
 
-        this._currentShapes = this._filter.filter(this._currentShapes).reverse();
+        this._currentShapes = this._filter.filter(this._currentShapes);
         this.notify();
     }
 
@@ -1007,6 +1007,10 @@ class ShapeCollectionView {
         this._colorByGroupCheckbox = $('#colorByGroupCheckbox');
         this._filterView = new FilterView(this._controller.filterController);
         this._currentViews = [];
+
+        this._currentModels = [];
+        this._frameMarker = null;
+
         this._activeShapeUI = null;
         this._scale = 1;
         this._colorSettings = {
@@ -1203,11 +1207,6 @@ class ShapeCollectionView {
 
     onCollectionUpdate(collection) {
         this._labelsContent.find('.labelContentElement').addClass('hidden');
-        for (let view of this._currentViews) {
-            view.unsubscribe(this);
-            view.controller().model().unsubscribe(view);
-            view.erase();
-        }
 
         // Save parents and detach elements from DOM
         // in order to increase performance in the buildShapeView function
@@ -1216,25 +1215,71 @@ class ShapeCollectionView {
             shapes: this._frameContent.node.parentNode
         };
 
-        this._frameContent.node.parent = null;
-        this._UIContent.detach();
+        let oldModels = this._currentModels;
+        let oldViews = this._currentViews;
+        let newShapes = collection.currentShapes;
+        let newModels = newShapes.map((el) => el.model);
+
+        let frameChanged = this._frameMarker != window.cvat.player.frames.current;
+
+        if (frameChanged) {
+            this._frameContent.node.parent = null;
+            this._UIContent.detach();
+        }
 
         this._currentViews = [];
-        for (let shape of collection.currentShapes) {
-            let model = shape.model;
+        this._currentModels = [];
+
+        // Check which old models are new models
+        for (let oldIdx = 0; oldIdx < oldModels.length; oldIdx ++) {
+            let newIdx = newModels.indexOf(oldModels[oldIdx]);
+
+            // Changed frame means a changed position in common case. We need redraw it.
+            // If shape has been restored after removing, it view already removed. We need redraw it.
+            if (newIdx === -1 || frameChanged || oldModels[oldIdx].updateReason === 'remove') {
+                let view = oldViews[oldIdx];
+                view.unsubscribe(this);
+                view.controller().model().unsubscribe(view);
+                view.erase();
+
+                if (newIdx != -1 && (frameChanged || oldModels[oldIdx].updateReason === 'remove')) {
+                    drawView.call(this, newShapes[newIdx], newModels[newIdx])
+                }
+            }
+            else {
+                this._currentViews.push(oldViews[oldIdx]);
+                this._currentModels.push(oldModels[oldIdx]);
+                this._labelsContent.find(`.labelContentElement[label_id="${oldModels[oldIdx].label}"]`).removeClass('hidden');
+            }
+        }
+
+        // Now we need draw new models which aren't on previous collection
+        for (let newIdx = 0; newIdx < newModels.length; newIdx ++) {
+            if (!oldModels.includes(newModels[newIdx])) {
+                drawView.call(this, newShapes[newIdx], newModels[newIdx])
+            }
+        }
+
+        if (frameChanged) {
+            parents.shapes.append(this._frameContent.node);
+            parents.uis.prepend(this._UIContent);
+        }
+
+
+        ShapeCollectionView.sortByZOrder();
+        this._frameMarker = window.cvat.player.frames.current;
+
+
+        function drawView(shape, model) {
             let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
             view.draw(shape.interpolation);
             view.updateColorSettings(this._colorSettings);
-            this._currentViews.push(view);
             model.subscribe(view);
             view.subscribe(this);
+            this._currentViews.push(view);
+            this._currentModels.push(model);
             this._labelsContent.find(`.labelContentElement[label_id="${model.label}"]`).removeClass('hidden');
         }
-
-        parents.shapes.append(this._frameContent.node);
-        parents.uis.prepend(this._UIContent);
-
-        ShapeCollectionView.sortByZOrder();
     }
 
     onPlayerUpdate(player) {
