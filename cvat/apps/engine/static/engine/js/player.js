@@ -780,7 +780,7 @@ class PlayerView {
         this._loadingUI.addClass('hidden');
         if (this._playerBackgroundUI.css('background-image').slice(5,-2) != image.src) {
             this._playerBackgroundUI.css('background-image', 'url(' + '"' + image.src + '"' + ')');
-            setURISearchParameter('frame', frames.current);
+            window.cvat.search.set('frame', frames.current);
         }
 
         if (model.playing) {
