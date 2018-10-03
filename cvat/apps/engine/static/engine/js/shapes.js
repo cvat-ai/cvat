@@ -195,6 +195,17 @@ class ShapeModel extends Listener {
         return counter;
     }
 
+    notify(updateReason) {
+        let oldReason = this._updateReason;
+        this._updateReason = updateReason;
+        try {
+            Listener.prototype.notify.call(this);
+        }
+        finally {
+            this._updateReason = oldReason;
+        }
+    }
+
     collectStatistic() {
         let collectObj = {};
         collectObj.type = this._type.split('_')[1];
@@ -229,8 +240,7 @@ class ShapeModel extends Listener {
         window.cvat.addAction('Change Attribute', () => {
             if (typeof(oldAttr) === 'undefined') {
                 delete this._attributes.mutable[frame][attrId];
-                this._updateReason = 'attributes';
-                this.notify();
+                this.notify('attributes');
             }
             else {
                 this.updateAttribute(frame, attrId, oldAttr);
@@ -249,8 +259,7 @@ class ShapeModel extends Listener {
             this._attributes.immutable[attrId] = labelsInfo.strToValues(attrInfo.type, value)[0];
         }
 
-        this._updateReason = 'attributes';
-        this.notify();
+        this.notify('attributes');
     }
 
     changeLabel(labelId) {
@@ -263,8 +272,7 @@ class ShapeModel extends Listener {
             this._label = +labelId;
             this._importAttributes([], []);
             this._setupKeyFrames();
-            this._updateReason = 'changelabel';
-            this.notify();
+            this.notify('attributes');
         }
         else {
             throw Error(`Unknown label id value found: ${labelId}`);
@@ -273,8 +281,7 @@ class ShapeModel extends Listener {
 
     changeColor(color) {
         this._color = color;
-        this._updateReason = 'color';
-        this.notify();
+        this.notify('color');
     }
 
     interpolate(frame) {
@@ -297,14 +304,12 @@ class ShapeModel extends Listener {
         // End of undo/redo code
 
         this.updatePosition(frame, position, true);
-        this._updateReason = 'occluded';
-        this.notify();
+        this.notify('occluded');
     }
 
     switchLock() {
         this._locked = !this._locked;
-        this._updateReason = 'lock';
-        this.notify();
+        this.notify('lock');
     }
 
     switchHide() {
@@ -321,8 +326,7 @@ class ShapeModel extends Listener {
             this._hiddenText = false;
         }
 
-        this._updateReason = 'hidden';
-        this.notify();
+        this.notify('hidden');
     }
 
     switchOutside(frame) {
@@ -346,8 +350,7 @@ class ShapeModel extends Listener {
                     delete this._attributes.mutable[frame];
                 }
 
-                this._updateReason = 'outside';
-                this.notify();
+                this.notify('outside');
             }
             else {
                 this.switchOutside(frame);
@@ -370,8 +373,7 @@ class ShapeModel extends Listener {
             this._frame = frame;
         }
 
-        this._updateReason = 'outside';
-        this.notify();
+        this.notify('outside');
     }
 
     switchKeyFrame(frame) {
@@ -381,8 +383,12 @@ class ShapeModel extends Listener {
         }
 
         // Undo/redo code
+        let oldPos = Object.assign({}, this._positions[frame]);
         window.cvat.addAction('Change Keyframe', () => {
             this.switchKeyFrame(frame);
+            if (Object.keys(oldPos).length && oldPos.outside) {
+                this.switchOutside(frame);
+            }
         }, () => {
             this.switchKeyFrame(frame);
         }, frame);
@@ -411,13 +417,12 @@ class ShapeModel extends Listener {
                 this._frame = frame;
             }
         }
-        this._updateReason = 'keyframe';
-        this.notify();
+
+        this.notify('keyframe');
     }
 
     click() {
-        this._updateReason = 'click';
-        this.notify();
+        this.notify('click');
     }
 
     prevKeyFrame() {
@@ -437,23 +442,20 @@ class ShapeModel extends Listener {
     }
 
     aamAttributeFocus() {
-        this._updateReason = 'attributeFocus';
-        this.notify();
+        this.notify('attributeFocus');
     }
 
     select() {
         if (!this._selected) {
             this._selected = true;
-            this._updateReason = 'selection';
-            this.notify();
+            this.notify('selection');
         }
     }
 
     deselect() {
         if (this._selected) {
             this._selected = false;
-            this._updateReason = 'selection';
-            this.notify();
+            this.notify('selection');
         }
     }
 
@@ -480,8 +482,7 @@ class ShapeModel extends Listener {
             let position = this._interpolatePosition(frame);
             position.z_order = value;
             this.updatePosition(frame, position, true);
-            this._updateReason = 'z_order';
-            this.notify();
+            this.notify('z_order');
         }
     }
 
@@ -490,8 +491,7 @@ class ShapeModel extends Listener {
             this._active = false;
         }
         this._removed = value;
-        this._updateReason = 'remove';
-        this.notify();
+        this.notify('remove');
     }
 
     get removed() {
@@ -513,8 +513,7 @@ class ShapeModel extends Listener {
     set active(value) {
         this._active = value;
         if (!this._removed) {
-            this._updateReason = 'activation';
-            this.notify();
+            this.notify('activation');
         }
     }
 
@@ -525,8 +524,7 @@ class ShapeModel extends Listener {
     set activeAAM(active) {
         this._activeAAM = active.shape;
         this._activeAAMAttributeId = active.attribute;
-        this._updateReason = 'activeAAM';
-        this.notify();
+        this.notify('activeAAM');
     }
 
     get activeAAM() {
@@ -538,8 +536,7 @@ class ShapeModel extends Listener {
 
     set merge(value) {
         this._merge = value;
-        this._updateReason = 'merge';
-        this.notify();
+        this.notify('merge');
     }
 
     get merge() {
@@ -548,8 +545,7 @@ class ShapeModel extends Listener {
 
     set groupping(value) {
         this._groupping = value;
-        this._updateReason = 'groupping';
-        this.notify();
+        this.notify('groupping');
     }
 
     get groupping() {
@@ -683,8 +679,7 @@ class BoxModel extends ShapeModel {
                 window.cvat.addAction('Change Position', () => {
                     if (!Object.keys(oldPos).length) {
                         delete this._positions[frame];
-                        this._updateReason = 'position';
-                        this.notify();
+                        this.notify('position');
                     }
                     else {
                         this.updatePosition(frame, oldPos, false);
@@ -706,8 +701,7 @@ class BoxModel extends ShapeModel {
         }
 
         if (!silent) {
-            this._updateReason = 'position';
-            this.notify();
+            this.notify('position');
         }
     }
 
@@ -933,8 +927,7 @@ class PolyShapeModel extends ShapeModel {
         }
 
         if (!silent) {
-            this._updateReason = 'position';
-            this.notify();
+            this.notify('position');
         }
     }
 
@@ -1209,8 +1202,7 @@ class PolygonModel extends PolyShapeModel {
 
     set draggable(value) {
         this._draggable = value;
-        this._updateReason = 'draggable';
-        this.notify();
+        this.notify('draggable');
     }
 
     get draggable() {
