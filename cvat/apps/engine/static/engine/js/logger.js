@@ -80,7 +80,7 @@ var LoggerHandler = function(applicationName, jobId)
 
         return new Promise( (resolve, reject) => {
             let xhr = new XMLHttpRequest();
-            xhr.open('POST', '/logs/exception/' + this._jobId);
+            xhr.open('POST', '/save/exception/' + this._jobId);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
 

@@ -22,4 +22,5 @@ urlpatterns = [
     path('save/annotation/task/<int:tid>', views.save_annotation_for_task),
     path('get/annotation/job/<int:jid>', views.get_annotation),
     path('get/username', views.get_username),
+    path('save/exception/<int:jid>', views.catch_client_exception)
 ]

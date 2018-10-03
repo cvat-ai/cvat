@@ -195,13 +195,13 @@ LOGGING = {
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
         },
-        'client_file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'level': 'DEBUG',
-            'filename': os.path.join(BASE_DIR, 'logs', 'cvat_client.log'),
-            'formatter': 'standard',
-            'maxBytes': 1024*1024*50, # 50 MB
-            'backupCount': 5,
+        'logstash': {
+            'level': 'INFO',
+            'class': 'logstash.TCPLogstashHandler',
+            'host': os.getenv('DJANGO_LOG_SERVER_HOST', 'localhost'),
+            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 5000),
+            'version': 1,
+            'message_type': 'django',
         }
     },
     'loggers': {
@@ -211,25 +211,15 @@ LOGGING = {
         },
 
         'cvat.client': {
-            'handlers': ['client_file'],
+            'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         }
     },
 }
 
-log_server_url = os.getenv('DJANGO_LOG_SERVER_URL')
-if log_server_url:
-    from urllib.parse import urlparse
-    url = urlparse(log_server_url)
-    LOGGING['handlers']['logstash'] = {
-        'level': 'INFO',
-        'class': 'logstash.TCPLogstashHandler',
-        'host': url.hostname,
-        'port': url.port,
-        'version': 1,
-        'message_type': 'django',
-    }
-    LOGGING['loggers']['cvat']['handlers'] += ['logstash']
+if os.getenv('DJANGO_LOG_SERVER_HOST'):
+    LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
+    LOGGING['loggers']['cvat.client']['handlers'] += ['logstash']
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
