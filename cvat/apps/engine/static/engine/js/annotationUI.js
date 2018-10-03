@@ -183,7 +183,13 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     setupSettingsWindow();
     setupMenu(job, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel);
     setupFrameFilters();
-    setupShortkeys(shortkeys);
+    setupShortkeys(shortkeys, {
+        aam: aamModel,
+        shapeCreator: shapeCreatorModel,
+        shapeMerger: shapeMergerModel,
+        shapeGrouper: shapeGrouperModel,
+        shapeBuffer: shapeBufferModel
+    });
 
     $(window).on('click', function(event) {
         Logger.updateUserActivityTimer();
@@ -304,7 +310,7 @@ function setupFrameFilters() {
 }
 
 
-function setupShortkeys(shortkeys) {
+function setupShortkeys(shortkeys, models) {
     let annotationMenu = $('#annotationMenu');
     let settingsWindow = $('#settingsWindow');
     let helpWindow = $('#helpWindow');
@@ -347,9 +353,30 @@ function setupShortkeys(shortkeys) {
         return false;
     });
 
+    let cancelModeHandler = Logger.shortkeyLogDecorator(function() {
+        switch (window.cvat.mode) {
+        case 'aam':
+            models.aam.switchAAMMode();
+            break;
+        case 'creation':
+            models.shapeCreator.switchCreateMode(true);
+            break;
+        case 'merge':
+            models.shapeMerger.cancel();
+            break;
+        case 'groupping':
+            models.shapeGrouper.cancel();
+            break
+        case 'paste':
+            models.shapeBuffer.switchPaste();
+        }
+        return false;
+    });
+
     Mousetrap.bind(shortkeys["open_help"].value, openHelpHandler, 'keydown');
     Mousetrap.bind(shortkeys["open_settings"].value, openSettingsHandler, 'keydown');
     Mousetrap.bind(shortkeys["save_work"].value, saveHandler, 'keydown');
+    Mousetrap.bind(shortkeys["cancel_mode"].value, cancelModeHandler, 'keydown');
 }
 
 

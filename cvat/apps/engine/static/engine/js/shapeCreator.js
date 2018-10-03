@@ -136,15 +136,7 @@ class ShapeCreatorController {
                 this.switchCreateMode(false);
             }.bind(this));
 
-            let closeDrawHandler = Logger.shortkeyLogDecorator(function(e) {
-                e.preventDefault();
-                if (this._model.createMode) {
-                    this.switchCreateMode(true);
-                }
-            }.bind(this));
-
             Mousetrap.bind(shortkeys["switch_draw_mode"].value, switchDrawHandler.bind(this), 'keydown');
-            Mousetrap.bind(shortkeys["cancel_draw_mode"].value, closeDrawHandler.bind(this), 'keydown');
         }
     }
 
@@ -195,8 +187,7 @@ class ShapeCreatorView {
 
         let shortkeys = window.cvat.config.shortkeys;
         this._createButton.attr('title', `
-            ${shortkeys['switch_draw_mode'].view_value} - ${shortkeys['switch_draw_mode'].description}` + `\n` +
-            `${shortkeys['cancel_draw_mode'].view_value} - ${shortkeys['cancel_draw_mode'].description}`);
+            ${shortkeys['switch_draw_mode'].view_value} - ${shortkeys['switch_draw_mode'].description}`);
 
         this._labelSelector.attr('title', `
             ${shortkeys['change_default_label'].view_value} - ${shortkeys['change_default_label'].description}`);
