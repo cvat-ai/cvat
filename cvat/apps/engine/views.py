@@ -27,8 +27,7 @@ from .logging import task_logger, job_logger, global_logger, job_client_logger
 def catch_client_exception(request, jid):
     data = json.loads(request.body.decode('utf-8'))
     for event in json.loads(data['exceptions']):
-        event.update({'name': 'cvat.client', 'level': logging.INFO})
-        job_client_logger[jid].info("client", extra=event)
+        job_client_logger[jid].info(json.dumps(event))
 
 @login_required
 def dispatch_request(request):
@@ -249,7 +248,7 @@ def save_annotation_for_job(request, jid):
             annotation.save_job(jid, json.loads(data['annotation']))
         if 'logs' in data:
             for event in json.loads(data['logs']):
-                job_client_logger[jid].info("client", extra=event)
+                job_client_logger[jid].info(json.dumps(event))
     except RequestException as e:
         job_logger[jid].error("cannot send annotation logs for job {}".format(jid), exc_info=True)
         return HttpResponseBadRequest(str(e))

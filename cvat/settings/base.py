@@ -211,7 +211,7 @@ LOGGING = {
         },
 
         'cvat.client': {
-            'handlers': ['console'],
+            'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         }
     },
