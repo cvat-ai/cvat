@@ -36,34 +36,16 @@ class Config {
                 description: "start draw / stop draw"
             },
 
-            cancel_draw_mode: {
-                value: "alt+n",
-                view_value: "Alt + N",
-                description: "close draw mode without create"
-            },
-
             switch_merge_mode: {
                 value: "m",
                 view_value: "M",
                 description: "start merge / apply changes"
             },
 
-            cancel_merge_mode: {
-                value: "alt+m",
-                view_value: "Alt + M",
-                description: "close merge mode without apply the merge"
-            },
-
             switch_group_mode: {
                 value: "g",
                 view_value: "G",
                 description: "start group / apply changes"
-            },
-
-            cancel_group_mode: {
-                value: "alt+g",
-                view_value: "Alt + G",
-                description: "close group mode without changes"
             },
 
             reset_group: {
@@ -112,6 +94,18 @@ class Config {
                 value: "h",
                 view_value: "H",
                 description: "switch hide mode for active shape"
+            },
+
+            switch_active_keyframe: {
+                value: "k",
+                view_value: "K",
+                description: "switch keyframe property for active shape"
+            },
+
+            switch_active_outside: {
+                value: "o",
+                view_value: "O",
+                description: "switch outside property for active shape"
             },
 
             switch_all_hide_mode: {
@@ -281,6 +275,12 @@ class Config {
                 view_value: "Ctrl + Shift + Z / Ctrl + Y",
                 description: "redo"
             },
+
+            cancel_mode: {
+                value: 'esc',
+                view_value: "Esc",
+                description: "cancel active mode"
+            }
         };
 
         if (window.cvat && window.cvat.job && window.cvat.job.z_order) {
