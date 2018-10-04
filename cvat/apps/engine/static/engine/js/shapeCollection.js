@@ -1223,9 +1223,15 @@ class ShapeCollectionView {
         });
     }
 
-    onCollectionUpdate(collection) {
+    _updateLabelUIs() {
         this._labelsContent.find('.labelContentElement').addClass('hidden');
+        let labels = new Set(this._currentModels.map((el) => el.label));
+        for (let label of labels) {
+            this._labelsContent.find(`.labelContentElement[label_id="${label}"]`).removeClass('hidden');
+        }
+    }
 
+    onCollectionUpdate(collection) {
         // Save parents and detach elements from DOM
         // in order to increase performance in the buildShapeView function
         let parents = {
@@ -1268,7 +1274,6 @@ class ShapeCollectionView {
             else {
                 this._currentViews.push(oldViews[oldIdx]);
                 this._currentModels.push(oldModels[oldIdx]);
-                this._labelsContent.find(`.labelContentElement[label_id="${oldModels[oldIdx].label}"]`).removeClass('hidden');
             }
         }
 
@@ -1284,10 +1289,9 @@ class ShapeCollectionView {
             parents.uis.prepend(this._UIContent);
         }
 
-
         ShapeCollectionView.sortByZOrder();
         this._frameMarker = window.cvat.player.frames.current;
-
+        this._updateLabelUIs();
 
         function drawView(shape, model) {
             let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
@@ -1297,7 +1301,6 @@ class ShapeCollectionView {
             view.subscribe(this);
             this._currentViews.push(view);
             this._currentModels.push(model);
-            this._labelsContent.find(`.labelContentElement[label_id="${model.label}"]`).removeClass('hidden');
         }
     }
 
@@ -1327,18 +1330,37 @@ class ShapeCollectionView {
     }
 
     onShapeViewUpdate(view) {
-        if (view.dragging) {
-            window.cvat.mode = 'drag';
+        switch (view.updateReason) {
+        case 'drag':
+            if (view.dragging) {
+                window.cvat.mode = 'drag';
+            }
+            else if (window.cvat.mode === 'drag') {
+                window.cvat.mode = null;
+            }
+            break;
+        case 'resize':
+            if (view.resize) {
+                window.cvat.mode = 'resize';
+            }
+            else if (window.cvat.mode === 'resize') {
+                window.cvat.mode = null;
+            }
+            break;
+        case 'remove': {
+            let idx = this._currentViews.indexOf(view);
+            view.unsubscribe(this);
+            view.controller().model().unsubscribe(view);
+            view.erase();
+            this._currentViews.splice(idx, 1);
+            this._currentModels.splice(idx, 1);
+            this._updateLabelUIs();
+            break;
         }
-        else if (window.cvat.mode === 'drag') {
-            window.cvat.mode = null;
+        case 'changelabel': {
+            this._updateLabelUIs();
+            break;
         }
-
-        if (view.resize) {
-            window.cvat.mode = 'resize';
-        }
-        else if (window.cvat.mode === 'resize') {
-            window.cvat.mode = null;
         }
     }
 
