@@ -988,6 +988,10 @@ class ShapeCollectionController {
     get filterController() {
         return this._filterController;
     }
+
+    get activeShape() {
+        return this._model.activeShape;
+    }
 }
 
 class ShapeCollectionView {
@@ -1117,9 +1121,20 @@ class ShapeCollectionView {
 
         $('#shapeContextMenu li').click((e) => {
             let menu = $('#shapeContextMenu');
-            menu.hide(100);
+            $('.custom-menu').hide(100);
 
             switch($(e.target).attr("action")) {
+            case "object_url": {
+                let active = this._controller.activeShape;
+                if (active) {
+                    window.cvat.search.set('frame', window.cvat.player.frames.current);
+                    window.cvat.search.set('filter', `*[id="${active.id}"]`);
+                    copyToClipboard(window.cvat.search.toString());
+                    window.cvat.search.set('frame', null);
+                    window.cvat.search.set('filter', null);
+                }
+                break;
+            }
             case "change_color":
                 this._controller.switchActiveColor();
                 break;
@@ -1162,7 +1177,7 @@ class ShapeCollectionView {
         $('#pointContextMenu li').click((e) => {
             let menu = $('#pointContextMenu');
             let idx = +menu.attr('point_idx');
-            menu.hide(100);
+            $('.custom-menu').hide(100);
 
             switch($(e.target).attr("action")) {
             case "remove_point":

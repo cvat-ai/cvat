@@ -44,6 +44,7 @@ module.exports = {
         'translateSVGPos': true,
         'blurAllElements': true,
         'drawBoxSize': true,
+        'copyToClipboard': true,
         // from base.js
         'showMessage': true,
         'showOverlay': true,

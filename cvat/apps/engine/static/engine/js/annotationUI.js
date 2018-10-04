@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported callAnnotationUI translateSVGPos blurAllElements drawBoxSize */
+/* exported callAnnotationUI translateSVGPos blurAllElements drawBoxSize copyToClipboard */
 "use strict";
 
 function callAnnotationUI(jid) {
@@ -221,19 +221,17 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
             blurAllElements();
         }
     });
-
-    $('#copyLinkButton').on('click', (e) => {
-        let tempInput = $("<input>");
-        $("body").append(tempInput);
-        tempInput.prop('value', window.cvat.search.toString()).select();
-        document.execCommand("copy");
-        tempInput.remove();
-        e.target.innerText = '\u2714';
-        setTimeout(() => {
-            e.target.innerText = '\u270e';
-        }, 1000);
-    });
 }
+
+
+function copyToClipboard(text) {
+    let tempInput = $("<input>");
+    $("body").append(tempInput);
+    tempInput.prop('value', text).select();
+    document.execCommand("copy");
+    tempInput.remove();
+}
+
 
 function setupFrameFilters() {
     let brightnessRange = $('#playerBrightnessRange');
