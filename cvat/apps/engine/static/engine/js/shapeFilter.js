@@ -113,12 +113,10 @@ class FilterView {
             let value = $.trim(e.target.value);
             if (this._controller.updateFilter(value, false)) {
                 this._filterString.css('color', 'green');
-                window.cvat.search.set('filter', value || null);
             }
             else {
                 this._filterString.css('color', 'red');
                 this._controller.updateFilter('', false);
-                window.cvat.search.set('filter', null);
             }
         });
 
@@ -130,7 +128,6 @@ class FilterView {
         this._resetFilterButton.on('click', () => {
             this._filterString.prop('value', '');
             this._controller.updateFilter('', false);
-            window.cvat.search.set('filter', null);
         });
 
         let initialFilter = window.cvat.search.get('filter');
@@ -140,7 +137,6 @@ class FilterView {
                 this._filterString.css('color', 'green');
             }
             else {
-                window.cvat.search.set('filter', null);
                 this._filterString.prop('value', '');
                 this._filterString.css('color', 'red');
             }
