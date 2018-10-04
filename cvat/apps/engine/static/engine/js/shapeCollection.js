@@ -1161,10 +1161,7 @@ class ShapeCollectionView {
         });
 
         this._frameContent.on('mousemove', function(e) {
-            if (e.ctrlKey || e.shiftKey || e.which === 2 || e.target.classList.contains('svg_select_points')) {
-                if (e.shiftKey) {
-                    this._controller.resetActive();
-                }
+            if (e.ctrlKey || e.which === 2 || e.target.classList.contains('svg_select_points')) {
                 return;
             }
 
