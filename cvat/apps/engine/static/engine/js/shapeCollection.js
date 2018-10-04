@@ -1233,16 +1233,17 @@ class ShapeCollectionView {
         // Check which old models are new models
         for (let oldIdx = 0; oldIdx < oldModels.length; oldIdx ++) {
             let newIdx = newModels.indexOf(oldModels[oldIdx]);
+            let significantUpdate = ['remove', 'keyframe', 'outside'].includes(oldModels[oldIdx].updateReason);
 
             // Changed frame means a changed position in common case. We need redraw it.
             // If shape has been restored after removing, it view already removed. We need redraw it.
-            if (newIdx === -1 || frameChanged || oldModels[oldIdx].updateReason === 'remove') {
+            if (newIdx === -1 || significantUpdate || frameChanged) {
                 let view = oldViews[oldIdx];
                 view.unsubscribe(this);
                 view.controller().model().unsubscribe(view);
                 view.erase();
 
-                if (newIdx != -1 && (frameChanged || oldModels[oldIdx].updateReason === 'remove')) {
+                if (newIdx != -1 && (frameChanged || significantUpdate)) {
                     drawView.call(this, newShapes[newIdx], newModels[newIdx])
                 }
             }
@@ -1255,7 +1256,7 @@ class ShapeCollectionView {
 
         // Now we need draw new models which aren't on previous collection
         for (let newIdx = 0; newIdx < newModels.length; newIdx ++) {
-            if (!oldModels.includes(newModels[newIdx])) {
+            if (!this._currentModels.includes(newModels[newIdx])) {
                 drawView.call(this, newShapes[newIdx], newModels[newIdx])
             }
         }
