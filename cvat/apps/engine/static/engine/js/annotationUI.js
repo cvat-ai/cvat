@@ -366,9 +366,10 @@ function setupShortkeys(shortkeys, models) {
             break;
         case 'groupping':
             models.shapeGrouper.cancel();
-            break
+            break;
         case 'paste':
             models.shapeBuffer.switchPaste();
+            break;
         }
         return false;
     });

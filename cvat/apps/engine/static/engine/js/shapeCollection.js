@@ -1177,7 +1177,6 @@ class ShapeCollectionView {
         }.bind(this));
 
         $('#shapeContextMenu li').click((e) => {
-            let menu = $('#shapeContextMenu');
             $('.custom-menu').hide(100);
 
             switch($(e.target).attr("action")) {
@@ -1324,7 +1323,7 @@ class ShapeCollectionView {
             mainDiv[0].updateState = function() {
                 lockButton[0].updateState();
                 hiddenButton[0].updateState();
-            }
+            };
 
             this._labelsContent.append(mainDiv);
         }
@@ -1399,7 +1398,7 @@ class ShapeCollectionView {
                 view.erase();
 
                 if (newIdx != -1 && (frameChanged || significantUpdate)) {
-                    drawView.call(this, newShapes[newIdx], newModels[newIdx])
+                    drawView.call(this, newShapes[newIdx], newModels[newIdx]);
                 }
             }
             else {
@@ -1411,7 +1410,7 @@ class ShapeCollectionView {
         // Now we need draw new models which aren't on previous collection
         for (let newIdx = 0; newIdx < newModels.length; newIdx ++) {
             if (!this._currentModels.includes(newModels[newIdx])) {
-                drawView.call(this, newShapes[newIdx], newModels[newIdx])
+                drawView.call(this, newShapes[newIdx], newModels[newIdx]);
             }
         }
 
