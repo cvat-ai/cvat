@@ -146,6 +146,22 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
+    // Common code for switchActiveOccluded(), switchActiveKeyframe(), switchActiveLock() and switchActiveOutside()
+    _selectActive() {
+        let shape = null;
+        if (this._activeAAMShape) {
+            shape = this._activeAAMShape;
+        }
+        else {
+            this.selectShape(this._lastPos, false);
+            if (this._activeShape) {
+                shape = this._activeShape;
+            }
+        }
+
+        return shape;
+    }
+
     colorsByGroup(groupId) {
         // If group id of shape is 0 (default value), then shape not contained in a group
         if (!groupId) {
@@ -594,16 +610,7 @@ class ShapeCollectionModel extends Listener {
     }
 
     switchActiveLock() {
-        let shape = null;
-        if (this._activeAAMShape) {
-            shape = this._activeAAMShape;
-        }
-        else {
-            this.selectShape(this._lastPos, false);
-            if (this._activeShape) {
-                shape = this._activeShape;
-            }
-        }
+        let shape = this._selectActive();
 
         if (shape) {
             shape.switchLock();
@@ -637,30 +644,30 @@ class ShapeCollectionModel extends Listener {
     }
 
     switchActiveOccluded() {
-        let shape = null;
-        if (this._activeAAMShape) {
-            shape = this._activeAAMShape;
-        }
-        else {
-            this.selectShape(this._lastPos, false);
-            if (this._activeShape && !this._activeShape.lock) {
-                shape = this._activeShape;
-            }
-        }
-
-        if (shape) {
+        let shape = this._selectActive();
+        if (shape && !shape.lock) {
             shape.switchOccluded(window.cvat.player.frames.current);
         }
     }
 
-    switchActiveHide() {
-        if (this._activeAAMShape) {
-            return;
+    switchActiveKeyframe() {
+        let shape = this._selectActive();
+        if (shape && shape.type === 'interpolation_box' && !shape.lock) {
+            shape.switchKeyFrame(window.cvat.player.frames.current);
         }
+    }
 
-        this.selectShape(this._lastPos, false);
-        if (this._activeShape) {
-            this._activeShape.switchHide();
+    switchActiveOutside() {
+        let shape = this._selectActive();
+        if (shape && shape.type === 'interpolation_box' && !shape.lock) {
+            shape.switchOutside(window.cvat.player.frames.current);
+        }
+    }
+
+    switchActiveHide() {
+        let shape = this._selectActive();
+        if (shape) {
+            shape.switchHide();
         }
     }
 
@@ -822,6 +829,14 @@ class ShapeCollectionController {
                 this.switchActiveOccluded();
             }.bind(this));
 
+            let switchActiveKeyframeHandler = Logger.shortkeyLogDecorator(function() {
+                this.switchActiveKeyframe();
+            }.bind(this));
+
+            let switchActiveOutsideHandler = Logger.shortkeyLogDecorator(function() {
+                this.switchActiveOutside();
+            }.bind(this));
+
             let switchHideHandler = Logger.shortkeyLogDecorator(function() {
                 if (!window.cvat.mode || window.cvat.mode === 'aam') {
                     this._model.switchActiveHide();
@@ -882,6 +897,8 @@ class ShapeCollectionController {
             Mousetrap.bind(shortkeys["switch_lock_property"].value, switchLockHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["switch_all_lock_property"].value, switchAllLockHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["switch_occluded_property"].value, switchOccludedHandler.bind(this), 'keydown');
+            Mousetrap.bind(shortkeys["switch_active_keyframe"].value, switchActiveKeyframeHandler.bind(this), 'keydown');
+            Mousetrap.bind(shortkeys["switch_active_outside"].value, switchActiveOutsideHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["switch_hide_mode"].value, switchHideHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["switch_all_hide_mode"].value, switchAllHideHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["change_default_label"].value, switchDefaultLabelHandler.bind(this), 'keydown');
@@ -899,6 +916,18 @@ class ShapeCollectionController {
     switchActiveOccluded() {
         if (!window.cvat.mode || window.cvat.mode === 'aam') {
             this._model.switchActiveOccluded();
+        }
+    }
+
+    switchActiveKeyframe() {
+        if (!window.cvat.mode) {
+            this._model.switchActiveKeyframe();
+        }
+    }
+
+    switchActiveOutside() {
+        if (!window.cvat.mode) {
+            this._model.switchActiveOutside();
         }
     }
 

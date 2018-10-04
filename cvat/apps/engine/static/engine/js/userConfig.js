@@ -96,6 +96,18 @@ class Config {
                 description: "switch hide mode for active shape"
             },
 
+            switch_active_keyframe: {
+                value: "k",
+                view_value: "K",
+                description: "switch keyframe property for active shape"
+            },
+
+            switch_active_outside: {
+                value: "o",
+                view_value: "O",
+                description: "switch outside property for active shape"
+            },
+
             switch_all_hide_mode: {
                 value: "t h",
                 view_value: "T + H",
