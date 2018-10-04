@@ -26,8 +26,10 @@ from .logging import task_logger, job_logger, global_logger, job_client_logger
 @permission_required('engine.view_task', raise_exception=True)
 def catch_client_exception(request, jid):
     data = json.loads(request.body.decode('utf-8'))
-    for event in json.loads(data['exceptions']):
-        job_client_logger[jid].info(json.dumps(event))
+    for event in data['exceptions']:
+        job_client_logger[jid].error(json.dumps(event))
+
+    return HttpResponse()
 
 @login_required
 def dispatch_request(request):
