@@ -6,16 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- CVAT URL contains frame number and filter string. So, now you can create URL to frames and to objects.
+- Ability to copy Object URL and Frame URL via object context menu and player context menu respectively.
 - Ability to change opacity for selected shape with help "Selected Fill Opacity" slider.
 - Ability to remove polyshapes points by double click.
-- Ability to draw/change polyshapes (except for points) by slip method. Just press ENTER and moving a cursor. 
+- Ability to draw/change polyshapes (except for points) by slip method. Just press ENTER and moving a cursor.
+- Ability to switch lock/hide properties via label UI element (in right menu) for all objects with same label.
+- Shortcuts for outside/keyframe properties
 
 ### Changed
 - Polyshape editing method has been improved. You can redraw part of shape instead of points cloning.
+- Unified shortcut (Esc) for close any mode instead of different shortcuts (Alt+N, Alt+G, Alt+M etc.).
 
 ### Fixed
 - Performance bottleneck has been fixed during you create new objects (draw, copy, merge etc).
+- Label UI elements aren't updated after changelabel.
+- Attribute annotation mode can use invalid shape position after resize or move shapes.
 
 
 ## [0.2.0] - 2018-09-28
