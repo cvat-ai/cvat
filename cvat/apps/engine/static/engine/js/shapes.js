@@ -2473,6 +2473,7 @@ class ShapeView extends Listener {
 
             this._setupLockedUI(locked);
             this._updateButtonsBlock(interpolation.position);
+            this.notify('lock');
             break;
         }
         case 'occluded':
@@ -2482,6 +2483,7 @@ class ShapeView extends Listener {
         case 'hidden':
             setupHidden.call(this, hiddenShape, hiddenText, activeAAM, model.active, interpolation);
             this._updateButtonsBlock(interpolation.position);
+            this.notify('hidden');
             break;
         case 'remove':
             if (model.removed) {
