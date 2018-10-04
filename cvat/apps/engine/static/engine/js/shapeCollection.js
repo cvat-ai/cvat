@@ -621,10 +621,12 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    switchAllLock() {
+    switchObjectsLock(labelId) {
         this.resetActive();
         let value = true;
-        for (let shape of this._currentShapes) {
+
+        let shapes = Number.isInteger(labelId) ? this._currentShapes.filter((el) => el.model.label === labelId) : this._currentShapes;
+        for (let shape of shapes) {
             if (shape.model.removed) continue;
             value = value && shape.model.lock;
             if (!value) break;
@@ -635,7 +637,7 @@ class ShapeCollectionModel extends Listener {
             value: !value,
         });
 
-        for (let shape of this._currentShapes) {
+        for (let shape of shapes) {
             if (shape.model.removed) continue;
             if (shape.model.lock === value) {
                 shape.model.switchLock();
@@ -671,12 +673,13 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    switchAllHide() {
+    switchObjectsHide(labelId) {
         this.resetActive();
         let hiddenShape = true;
         let hiddenText = true;
 
-        for (let shape of this._shapes) {
+        let shapes = Number.isInteger(labelId) ? this._shapes.filter((el) => el.label === labelId) : this._shapes;
+        for (let shape of shapes) {
             if (shape.removed) continue;
             hiddenShape = hiddenShape && shape.hiddenShape;
 
@@ -687,7 +690,7 @@ class ShapeCollectionModel extends Listener {
 
         if (!hiddenShape) {
             // any shape visible
-            for (let shape of this._shapes) {
+            for (let shape of shapes) {
                 if (shape.removed) continue;
                 hiddenText = hiddenText && shape.hiddenText;
 
@@ -698,7 +701,7 @@ class ShapeCollectionModel extends Listener {
 
             if (!hiddenText) {
                 // any shape text visible
-                for (let shape of this._shapes) {
+                for (let shape of shapes) {
                     if (shape.removed) continue;
                     while (shape.hiddenShape || !shape.hiddenText) {
                         shape.switchHide();
@@ -707,7 +710,7 @@ class ShapeCollectionModel extends Listener {
             }
             else {
                 // all shape text invisible
-                for (let shape of this._shapes) {
+                for (let shape of shapes) {
                     if (shape.removed) continue;
                     while (!shape.hiddenShape) {
                         shape.switchHide();
@@ -717,7 +720,7 @@ class ShapeCollectionModel extends Listener {
         }
         else {
             // all shapes invisible
-            for (let shape of this._shapes) {
+            for (let shape of shapes) {
                 if (shape.removed) continue;
                 while (shape.hiddenShape || shape.hiddenText) {
                     shape.switchHide();
@@ -725,6 +728,8 @@ class ShapeCollectionModel extends Listener {
             }
         }
     }
+
+
 
     removePointFromActiveShape(idx) {
         if (this._activeShape && !this._activeShape.lock) {
@@ -838,15 +843,11 @@ class ShapeCollectionController {
             }.bind(this));
 
             let switchHideHandler = Logger.shortkeyLogDecorator(function() {
-                if (!window.cvat.mode || window.cvat.mode === 'aam') {
-                    this._model.switchActiveHide();
-                }
+                this.switchActiveHide();
             }.bind(this));
 
             let switchAllHideHandler = Logger.shortkeyLogDecorator(function() {
-                if (!window.cvat.mode || window.cvat.mode === 'aam') {
-                    this._model.switchAllHide();
-                }
+                this.switchAllHide();
             }.bind(this));
 
             let removeActiveHandler = Logger.shortkeyLogDecorator(function(e) {
@@ -933,13 +934,37 @@ class ShapeCollectionController {
 
     switchAllLock() {
         if (!window.cvat.mode || window.cvat.mode === 'aam') {
-            this._model.switchAllLock();
+            this._model.switchObjectsLock();
+        }
+    }
+
+    switchLabelLock(labelId) {
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
+            this._model.switchObjectsLock(labelId);
         }
     }
 
     switchActiveLock() {
         if (!window.cvat.mode || window.cvat.mode === 'aam') {
             this._model.switchActiveLock();
+        }
+    }
+
+    switchAllHide() {
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
+            this._model.switchObjectsHide();
+        }
+    }
+
+    switchLabelHide(lableId) {
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
+            this._model.switchObjectsHide(lableId);
+        }
+    }
+
+    switchActiveHide() {
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
+            this._model.switchActiveHide();
         }
     }
 
@@ -1220,18 +1245,88 @@ class ShapeCollectionView {
 
         let labels = window.cvat.labelsInfo.labels();
         for (let labelId in labels) {
-            let div = $('<div></div>').addClass('labelContentElement h2 regular hidden').css({
-                'background-color': collectionController.colorsByGroup(+window.cvat.labelsInfo.labelColorIdx(+labelId)),
-            }).attr({
-                'label_id': labelId,
-            }).on('mouseover mouseup', () => {
-                div.addClass('highlightedUI');
-                collectionModel.selectAllWithLabel(+labelId);
-            }).on('mouseout mousedown', () => {
-                div.removeClass('highlightedUI');
-                collectionModel.deselectAll();
-            }).append( $(`<label> ${labels[labelId]} </label>`) );
-            div.appendTo(this._labelsContent);
+            let lockButton = $(`<button> </button>`)
+                .addClass('graphicButton lockButton')
+                .attr('title', 'Switch lock for all object with same label')
+                .on('click', () => {
+                    this._controller.switchLabelLock(+labelId);
+                });
+
+            lockButton[0].updateState = function(button, labelId) {
+                let models = this._currentModels.filter((el) => el.label === labelId);
+                let locked = true;
+                for (let model of models) {
+                    locked = locked && model.lock;
+                    if (!locked) {
+                        break;
+                    }
+                }
+
+                if (!locked) {
+                    button.removeClass('locked');
+                }
+                else {
+                    button.addClass('locked');
+                }
+            }.bind(this, lockButton, +labelId);
+
+            let hiddenButton = $(`<button> </button>`)
+                .addClass('graphicButton hiddenButton')
+                .attr('title', 'Switch hide for all object with same label')
+                .on('click', () => {
+                    this._controller.switchLabelHide(+labelId);
+                });
+
+            hiddenButton[0].updateState = function(button, labelId) {
+                let models = this._currentModels.filter((el) => el.label === labelId);
+                let hiddenShape = true;
+                let hiddenText = true;
+                for (let model of models) {
+                    hiddenShape = hiddenShape && model.hiddenShape;
+                    hiddenText = hiddenText && model.hiddenText;
+                    if (!hiddenShape && !hiddenText) {
+                        break;
+                    }
+                }
+
+                if (hiddenShape) {
+                    button.removeClass('hiddenText');
+                    button.addClass('hiddenShape');
+                }
+                else if (hiddenText) {
+                    button.addClass('hiddenText');
+                    button.removeClass('hiddenShape');
+                }
+                else {
+                    button.removeClass('hiddenText hiddenShape');
+                }
+            }.bind(this, hiddenButton, +labelId);
+
+            let buttonBlock = $('<center> </center>')
+                .append(lockButton).append(hiddenButton)
+                .addClass('buttonBlockOfLabelUI');
+
+            let title = $(`<label> ${labels[labelId]} </label>`);
+
+            let mainDiv = $('<div> </div>').addClass('labelContentElement h2 regular hidden')
+                .css({
+                    'background-color': collectionController.colorsByGroup(+window.cvat.labelsInfo.labelColorIdx(+labelId)),
+                }).attr({
+                    'label_id': labelId,
+                }).on('mouseover mouseup', () => {
+                    mainDiv.addClass('highlightedUI');
+                    collectionModel.selectAllWithLabel(+labelId);
+                }).on('mouseout mousedown', () => {
+                    mainDiv.removeClass('highlightedUI');
+                    collectionModel.deselectAll();
+                }).append(title).append(buttonBlock);
+
+            mainDiv[0].updateState = function() {
+                lockButton[0].updateState();
+                hiddenButton[0].updateState();
+            }
+
+            this._labelsContent.append(mainDiv);
         }
 
         let sidePanelObjectsButton = $('#sidePanelObjectsButton');
@@ -1257,6 +1352,13 @@ class ShapeCollectionView {
         let labels = new Set(this._currentModels.map((el) => el.label));
         for (let label of labels) {
             this._labelsContent.find(`.labelContentElement[label_id="${label}"]`).removeClass('hidden');
+        }
+        this._updateLabelUIsState();
+    }
+
+    _updateLabelUIsState() {
+        for (let labelUI of this._labelsContent.find('.labelContentElement:not(.hidden)')) {
+            labelUI.updateState();
         }
     }
 
@@ -1390,6 +1492,12 @@ class ShapeCollectionView {
             this._updateLabelUIs();
             break;
         }
+        case 'lock':
+            this._updateLabelUIsState();
+            break;
+        case 'hidden':
+            this._updateLabelUIsState();
+            break;
         }
     }
 
