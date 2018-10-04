@@ -783,13 +783,15 @@ class PlayerView {
             }
         });
 
-        this._playerContentUI.on('contextmenu.playerContextMenu', (e) => {
-            $('.custom-menu').hide(100);
-            this._contextMenuUI.finish().show(100).offset({
-                top: e.pageY - 10,
-                left: e.pageX - 10,
-            });
-            e.preventDefault();
+        this._playerUI.on('contextmenu.playerContextMenu', (e) => {
+            if (!window.cvat.mode) {
+                $('.custom-menu').hide(100);
+                this._contextMenuUI.finish().show(100).offset({
+                    top: e.pageY - 10,
+                    left: e.pageX - 10,
+                });
+                e.preventDefault();
+            }
         });
 
         this._playerContentUI.on('mousedown.playerContextMenu', () => {

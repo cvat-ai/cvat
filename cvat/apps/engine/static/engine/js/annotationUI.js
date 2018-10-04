@@ -188,7 +188,8 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
         shapeCreator: shapeCreatorModel,
         shapeMerger: shapeMergerModel,
         shapeGrouper: shapeGrouperModel,
-        shapeBuffer: shapeBufferModel
+        shapeBuffer: shapeBufferModel,
+        shapeEditor: polyshapeEditorModel
     });
 
     $(window).on('click', function(event) {
@@ -366,9 +367,13 @@ function setupShortkeys(shortkeys, models) {
             break;
         case 'groupping':
             models.shapeGrouper.cancel();
-            break
+            break;
         case 'paste':
             models.shapeBuffer.switchPaste();
+            break;
+        case 'poly_editing':
+            models.shapeEditor.finish();
+            break;
         }
         return false;
     });
