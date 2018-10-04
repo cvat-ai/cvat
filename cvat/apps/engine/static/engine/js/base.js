@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported confirm showMessage showOverlay dumpAnnotationRequest getURISearchParameter setURISearchParameter */
+/* exported confirm showMessage showOverlay dumpAnnotationRequest */
 "use strict";
 
 Math.clamp = function(x, min, max) {
@@ -159,45 +159,6 @@ function dumpAnnotationRequest(dumpButton, taskID) {
         throw Error(message);
     }
 }
-
-
-function setURISearchParameter(name, value) {
-    let searchParams = new URLSearchParams(window.location.search);
-    if (typeof value === 'undefined' || value === null) {
-        if (searchParams.has(name)) {
-            searchParams.delete(name);
-        }
-    }
-    else searchParams.set(name, value);
-
-    window.history.replaceState(null, null, `?${searchParams.toString()}`);
-}
-
-
-function resetURISearchParameters() {
-    let searchParams = new URLSearchParams();
-    searchParams.set('id', window.cvat.job.id);
-    window.history.replaceState(null, null, `?${searchParams.toString()}`);
-}
-
-
-function getURISearchParameter(name) {
-    let decodedURI = '';
-    try {
-        decodedURI = decodeURIComponent(window.location.search);
-    }
-    catch (error) {
-        showMessage('Bad URL has been found');
-        resetURISearchParameters();
-    }
-
-    let urlSearchParams = new URLSearchParams(decodedURI);
-    if (urlSearchParams.has(name)) {
-        return urlSearchParams.get(name);
-    }
-    else return null;
-}
-
 
 /* These HTTP methods do not require CSRF protection */
 function csrfSafeMethod(method) {

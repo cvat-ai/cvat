@@ -44,13 +44,12 @@ module.exports = {
         'translateSVGPos': true,
         'blurAllElements': true,
         'drawBoxSize': true,
+        'copyToClipboard': true,
         // from base.js
         'showMessage': true,
         'showOverlay': true,
         'confirm': true,
         'dumpAnnotationRequest': true,
-        'getURISearchParameter': true,
-        'setURISearchParameter': true,
         // from shapeCollection.js
         'ShapeCollectionModel': true,
         'ShapeCollectionController': true,

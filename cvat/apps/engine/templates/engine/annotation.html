@@ -77,13 +77,20 @@
                 </defs>
                 <rect width="100%" height="100%" fill="url(#playerGridPattern)" />
             </svg>
+
             <ul id="shapeContextMenu" class='custom-menu' oncontextmenu="return false;">
+                <li action="object_url"> Copy Object URL </li>
                 <li action="change_color"> Change Color </li>
                 <li action="remove_shape"> Remove Shape </li>
                 <li action="switch_occluded"> Switch Occluded </li>
                 <li action="switch_lock"> Switch Lock </li>
                 <li class="interpolationItem" action="split_track"> Split </li>
                 <li class="polygonItem" action="drag_polygon"> Enable Dragging </li>
+            </ul>
+
+            <ul id="playerContextMenu" class='custom-menu' oncontextmenu="return false;">
+                <li action="job_url"> Copy Job URL </li>
+                <li action="frame_url"> Copy Frame URL </li>
             </ul>
 
             <ul id="pointContextMenu" class='custom-menu' oncontextmenu="return false;">

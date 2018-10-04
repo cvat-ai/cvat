@@ -1492,8 +1492,7 @@ class ShapeView extends Listener {
             // Setup context menu
             this._uis.shape.on('mousedown.contextMenu', (e) => {
                 if (e.which === 1) {
-                    this._shapeContextMenu.hide(100);
-                    this._pointContextMenu.hide(100);
+                    $('.custom-menu').hide(100);
                 }
                 if (e.which === 3) {
                     e.stopPropagation();
@@ -1501,7 +1500,7 @@ class ShapeView extends Listener {
             });
 
             this._uis.shape.on('contextmenu.contextMenu', (e) => {
-                this._pointContextMenu.hide(100);
+                $('.custom-menu').hide(100);
                 let type = this._controller.type.split('_');
                 if (type[0] === 'interpolation') {
                     this._shapeContextMenu.find('.interpolationItem').removeClass('hidden');
@@ -1553,8 +1552,7 @@ class ShapeView extends Listener {
             this._flags.editable = false;
         }
 
-        this._pointContextMenu.hide(100);
-        this._shapeContextMenu.hide(100);
+        $('.custom-menu').hide(100);
     }
 
 
@@ -2829,7 +2827,7 @@ class PolyShapeView extends ShapeView {
                 point = $(point);
 
                 point.on('contextmenu.contextMenu', (e) => {
-                    this._shapeContextMenu.hide(100);
+                    $('.custom-menu').hide(100);
                     this._pointContextMenu.attr('point_idx', point.index());
                     this._pointContextMenu.attr('dom_point_id', point.attr('id'));
 

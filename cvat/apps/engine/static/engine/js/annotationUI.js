@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported callAnnotationUI translateSVGPos blurAllElements drawBoxSize */
+/* exported callAnnotationUI translateSVGPos blurAllElements drawBoxSize copyToClipboard */
 "use strict";
 
 function callAnnotationUI(jid) {
@@ -55,7 +55,45 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
             z_order: job.z_order,
             id: job.jobid
         },
+        search: {
+            value: window.location.search,
+
+            set: function(name, value) {
+                let searchParams = new URLSearchParams(this.value);
+
+                if (typeof value === 'undefined' || value === null) {
+                    if (searchParams.has(name)) {
+                        searchParams.delete(name);
+                    }
+                }
+                else searchParams.set(name, value);
+                this.value = `${searchParams.toString()}`;
+            },
+
+            get: function(name) {
+                try {
+                    let decodedURI = decodeURIComponent(this.value);
+                    let urlSearchParams = new URLSearchParams(decodedURI);
+                    if (urlSearchParams.has(name)) {
+                        return urlSearchParams.get(name);
+                    }
+                    else return null;
+                }
+                catch (error) {
+                    showMessage('Bad URL has been found');
+                    this.value = window.location.href;
+                    return null;
+                }
+            },
+
+            toString: function() {
+                return `${window.location.origin}/?${this.value}`;
+            }
+        }
     };
+
+    // Remove external search parameters from url
+    window.history.replaceState(null, null, `${window.location.origin}/?id=${job.jobid}`);
 
     window.cvat.config = new Config();
 
@@ -137,7 +175,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     playerModel.subscribe(shapeBufferView);
     playerModel.subscribe(shapeGrouperView);
     playerModel.subscribe(polyshapeEditorView);
-    playerModel.shift(getURISearchParameter('frame') || 0, true);
+    playerModel.shift(window.cvat.search.get('frame') || 0, true);
 
     let shortkeys = window.cvat.config.shortkeys;
 
@@ -184,6 +222,16 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
         }
     });
 }
+
+
+function copyToClipboard(text) {
+    let tempInput = $("<input>");
+    $("body").append(tempInput);
+    tempInput.prop('value', text).select();
+    document.execCommand("copy");
+    tempInput.remove();
+}
+
 
 function setupFrameFilters() {
     let brightnessRange = $('#playerBrightnessRange');
