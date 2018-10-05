@@ -379,6 +379,11 @@ class ShapeCollectionModel extends Listener {
 
     updateHash() {
         this._initialShapes = {};
+
+        if (this._erased) {
+            return this;
+        }
+
         for (const shape of this._shapes) {
             if (!shape.removed) {
                 this._initialShapes[shape.id] = shape.export();
@@ -400,7 +405,7 @@ class ShapeCollectionModel extends Listener {
     add(data, type) {
         let id = null;
 
-        if (!('client_id' in data) || data.client_id < 0) {
+        if (!('client_id' in data)) {
             id = this._nextIdx();
         }
         else if (data.client_id === -1 ) {
