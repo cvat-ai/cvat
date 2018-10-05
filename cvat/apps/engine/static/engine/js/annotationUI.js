@@ -614,16 +614,15 @@ function saveAnnotation(shapeCollectionModel, job) {
     const annotationLogs = Logger.getLogs();
 
     const data = {
-        annotation: exportedData,
+        annotation: JSON.stringify(exportedData),
         logs: JSON.stringify(annotationLogs.export()),
     };
 
     saveButton.prop('disabled', true);
     saveButton.text('Saving..');
 
-    saveJobRequest(job.jobid, data, (response) => {
+    saveJobRequest(job.jobid, data, () => {
         // success
-        shapeCollectionModel.syncWithDB(response, true);
         shapeCollectionModel.updateHash();
         saveButton.text('Success!');
         setTimeout(() => {
@@ -632,7 +631,6 @@ function saveAnnotation(shapeCollectionModel, job) {
         }, 3000);
     }, (response) => {
         // error
-        shapeCollectionModel.syncWithDB(response, false);
         saveButton.prop('disabled', false);
         saveButton.text('Save Work');
         let message = `Impossible to save job. Errors was occured. Status: ${response.status}`;

@@ -51,8 +51,8 @@ class ShapeCollectionModel extends Listener {
         this._colorIdx = 0;
         this._filter = new FilterModel(() => this.update());
         this._splitter = new ShapeSplitter();
-        this._saved_state = {};
         this._erased = false;
+        this._initialShapes = [];
     }
 
     _nextIdx() {
@@ -186,37 +186,37 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    import(data, initialState = ShapeState.nothing) {
+    import(data) {
         for (let box of data.boxes) {
-            this.add(box, 'annotation_box', initialState);
+            this.add(box, 'annotation_box');
         }
 
         for (let box_path of data.box_paths) {
-            this.add(box_path, 'interpolation_box', initialState);
+            this.add(box_path, 'interpolation_box');
         }
 
         for (let points of data.points) {
-            this.add(points, 'annotation_points', initialState);
+            this.add(points, 'annotation_points');
         }
 
         for (let points_path of data.points_paths) {
-            this.add(points_path, 'interpolation_points', initialState);
+            this.add(points_path, 'interpolation_points');
         }
 
         for (let polygon of data.polygons) {
-            this.add(polygon, 'annotation_polygon', initialState);
+            this.add(polygon, 'annotation_polygon');
         }
 
         for (let polygon_path of data.polygon_paths) {
-            this.add(polygon_path, 'interpolation_polygon', initialState);
+            this.add(polygon_path, 'interpolation_polygon');
         }
 
         for (let polyline of data.polylines) {
-            this.add(polyline, 'annotation_polyline', initialState);
+            this.add(polyline, 'annotation_polyline');
         }
 
         for (let polyline_path of data.polyline_paths) {
-            this.add(polyline_path, 'interpolation_polyline', initialState);
+            this.add(polyline_path, 'interpolation_polyline');
         }
 
         this.notify();
@@ -271,134 +271,36 @@ class ShapeCollectionModel extends Listener {
         return shape_container_target;
     }
 
-    _updateShapeDbIds(response) {
-        /*
-        Function updates db ids for successfully saved objects and makes simple sanity checks.
-        */
-        for (const shape_type in response['create']) {
-            const shapes = response['create'][shape_type];
-            const saved_states = this._saved_state['create'][shape_type];
-            for (const shape_client_id in shapes) {
-                //check saved state
-                if (!saved_states.includes(+shape_client_id)) {
-                    throw Error('Unexpected behaviour: cretaed object has unexpected client id');
-                }
-                // current state cannot be created
-                if (this._shapes[shape_client_id] === ShapeState.create) {
-                    throw Error('Unexpected behaviour: unexpected current state for created object');
-                }
-                this._shapes[shape_client_id]._dbId = shapes[shape_client_id];
-            }
-        }
-
-        for (const shape_type in response['update']) {
-            const shapes = response['update'][shape_type];
-            const saved_states = this._saved_state['update'][shape_type];
-            for (const shape_client_id of shapes) {
-                //check saved state
-                if (!saved_states.includes(+shape_client_id)) {
-                    throw Error('Unexpected behaviour: updated object has unexpected client id');
-                }
-                // current state cannot be created
-                if (this._shapes[shape_client_id] === ShapeState.create) {
-                    throw Error('Unexpected behaviour: unexpected current state for updated object');
-                }
-            }
-        }
-
-        for (const shape_type in response['delete']) {
-            const shapes = response['delete'][shape_type];
-            const saved_states = this._saved_state['delete'][shape_type];
-            for (const shape_client_id of shapes) {
-                //check saved state
-                if (!saved_states.includes(+shape_client_id)) {
-                    throw Error('Unexpected behaviour: deleted object has unexpected client id');
-                }
-
-                if (this._shapes[shape_client_id] === ShapeState.created) {
-                    throw Error('Unexpected behaviour: unexpected current state for deleted object');
-                }
-                // TODO: check need of this condition
-                if (this._shapes[shape_client_id] === ShapeState.delete) {
-                    this._shapes[shape_client_id].state = ShapeState.nothing;
-                }
-                // object was deleted and has no db id
-                this._shapes[shape_client_id]._dbId = null;
-            }
-        }
-    }
-
-    _revertUnsavedStates() {
-        /*
-        Function reverts shape export states in case of failed save request
-        */
-        for (const shape_type in this._saved_state['create']) {
-            for (const shape_client_id of this._saved_state['create'][shape_type]) {
-                const currentState = this._shapes[shape_client_id].state;
-                if (currentState === ShapeState.delete) {
-                    this._shapes[shape_client_id].state = ShapeState.nothing;
-                } else {
-                    this._shapes[shape_client_id].state = ShapeState.create;
-                }
-            }
-        }
-
-        for (const shape_type in this._saved_state['update']) {
-            for (const shape_client_id of this._saved_state['update'][shape_type]) {
-                const currentState = this._shapes[shape_client_id].state;
-                if (currentState === ShapeState.create) {
-                    throw Error('Unexpected behaviour: unexpected current state for object that should be updated');
-                } else if (currentState === ShapeState.nothing) {
-                    this._shapes[shape_client_id].state = ShapeState.update;
-                }
-            }
-        }
-
-        for (const shape_type in this._saved_state['delete']) {
-            for (const shape_client_id of this._saved_state['delete'][shape_type]) {
-                const currentState = this._shapes[shape_client_id].state;
-                if (currentState === ShapeState.create) {
-                    throw Error('Unexpected behaviour: unexpected current state for object that should be deleted');
-                } else if (currentState === ShapeState.nothing) {
-                    this._shapes[shape_client_id].state = ShapeState.delete;
-                }
-            }
-        }
-    }
-
-    syncWithDB(response, isSuccess) {
-        if (isSuccess) {
-            this._updateShapeDbIds(response);
-        } else {
-            this._revertUnsavedStates();
-        }
-    }
-
     reset_state() {
-        for (const shape of this._shapes) {
-            shape.state = ShapeState.nothing;
-        }
         this._erased = false;
     }
 
     export() {
         const response = createExportContainer();
-        this._saved_state = createExportContainer();
         response.pre_erase = this._erased;
 
         for (const shape of this._shapes) {
-            if (shape.state === ShapeState.nothing) {
+            let target_export_container = undefined;
+            if (!shape._removed) {
+                if (!(shape.id in this._initialShapes)) {
+                    target_export_container = this._getExportTargetContainer(ShapeState.create, shape.type, response);
+                } else if (JSON.stringify(this._initialShapes[shape.id]) !== JSON.stringify(shape.export())) {
+                    target_export_container = this._getExportTargetContainer(ShapeState.update, shape.type, response);
+                } else {
+                    continue;
+                }
+            }
+            else if (shape.id in this._initialShapes) {
+                // TODO in this case need push only id
+                target_export_container = this._getExportTargetContainer(ShapeState.delete, shape.type, response);
+            }
+            else {
                 continue;
             }
 
-            const target_export_container = this._getExportTargetContainer(shape.state, shape.type, response);
             target_export_container.push(shape.export());
-
-            const saved_state_container_target = this._getExportTargetContainer(shape.state, shape.type, this._saved_state);
-            saved_state_container_target.push(shape.id);
         }
-
-        return JSON.stringify(response);
+        return response;
     }
 
     find(direction) {
@@ -457,11 +359,25 @@ class ShapeCollectionModel extends Listener {
     }
 
     hasUnsavedChanges() {
-        return md5(this.export()) !== this._hash;
+        const exportData = this.export();
+        for (const action of ['create', 'update', 'delete']) {
+            for (const shapes of Object.values(exportData[action])) {
+                if (shapes.length) {
+                    return true;
+                }
+            }
+        }
+
+        return exportData.pre_erase;
     }
 
     updateHash() {
-        this._hash = md5(this.export());
+        this._initialShapes = {};
+        for (const shape of this._shapes) {
+            if (!shape.removed) {
+                this._initialShapes[shape.id] = shape.export();
+            }
+        }
         return this;
     }
 
@@ -475,8 +391,22 @@ class ShapeCollectionModel extends Listener {
         this._interpolate();
     }
 
-    add(data, type, initialState=ShapeState.create) {
-        let model = buildShapeModel(data, type, this._nextIdx(), this.nextColor(), initialState);
+    add(data, type) {
+        let id = null;
+
+        if (!('client_id' in data) || data.client_id < 0) {
+            id = this._nextIdx();
+        }
+        else if (data.client_id === -1 ) {
+            this._erased = true;
+            id = this._nextIdx();
+        }
+        else {
+            id = data.client_id;
+            this._idx = Math.max(this._idx, id) + 1;
+        }
+
+        let model = buildShapeModel(data, type, id, this.nextColor());
         if (type.startsWith('interpolation')) {
             this._interpolationShapes.push(model);
         }

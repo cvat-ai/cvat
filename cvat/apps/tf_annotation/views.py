@@ -126,7 +126,7 @@ def convert_to_cvat_format(data):
     }
     for label in data:
         boxes = data[label]
-        for box in boxes:
+        for i, box in enumerate(boxes):
             result['create']['boxes'].append({
                 "label_id": label,
                 "frame": box[0],
@@ -137,7 +137,8 @@ def convert_to_cvat_format(data):
                 "z_order": 0,
                 "group_id": 0,
                 "occluded": False,
-                "attributes": []
+                "attributes": [],
+                "client_id": i,
             })
 
     return result

@@ -52,7 +52,8 @@ class AnnotationParser {
 
         let occluded = +box.getAttribute('occluded');
         let z_order = box.getAttribute('z_order') || '0';
-        return [xtl, ytl, xbr, ybr, occluded, +z_order];
+        let client_id = box.getAttribute('client_id') || '-1'
+        return [xtl, ytl, xbr, ybr, occluded, +z_order, +client_id];
     }
 
     _getPolyPosition(shape, frame) {
@@ -78,7 +79,8 @@ class AnnotationParser {
 
         let occluded = +shape.getAttribute('occluded');
         let z_order = shape.getAttribute('z_order') || '0';
-        return [points, occluded, +z_order];
+        let client_id = box.getAttribute('client_id') || '-1'
+        return [points, occluded, +z_order, +client_id];
     }
 
     _getAttribute(labelId, attrTag) {
@@ -213,7 +215,7 @@ class AnnotationParser {
                 let attributeList = this._getAttributeList(shape, labelId);
 
                 if (shape_type === 'boxes') {
-                    let [xtl, ytl, xbr, ybr, occluded, z_order] = this._getBoxPosition(shape, frame);
+                    let [xtl, ytl, xbr, ybr, occluded, z_order, client_id] = this._getBoxPosition(shape, frame);
                     data.boxes.push({
                         label_id: labelId,
                         group_id: +groupId,
@@ -225,7 +227,7 @@ class AnnotationParser {
                         ybr: ybr,
                         z_order: z_order,
                         attributes: attributeList,
-                        client_id: this.counter++,
+                        client_id: client_id !== -1 ? client_id : this.counter++,
                     });
                 }
                 else {
@@ -238,7 +240,7 @@ class AnnotationParser {
                         occluded: occluded,
                         z_order: z_order,
                         attributes: attributeList,
-                        client_id: this.counter++,
+                        client_id: client_id !== -1 ? client_id : this.counter++,
                     });
                 }
             }
@@ -258,7 +260,8 @@ class AnnotationParser {
         let tracks = xml.getElementsByTagName('track');
         for (let track of tracks) {
             let labelId = this._labelsInfo.labelIdOf(track.getAttribute('label'));
-            let groupId = track.getAttribute('group_id') || "0";
+            let groupId = track.getAttribute('group_id') || '0';
+            let client_id = track.getAttribute('client_id') || '-1';
             if (labelId === null) {
                 throw Error('An unknown label found in the annotation file: ' + name);
             }
@@ -311,7 +314,7 @@ class AnnotationParser {
                 frame: +parsed[type][0].getAttribute('frame'),
                 attributes: [],
                 shapes: [],
-                client_id: this.counter++,
+                client_id: client_id !== -1 ? client_id : this.counter++,
             };
 
             for (let shape of parsed[type]) {
