@@ -83,8 +83,6 @@ module.exports = {
         'SELECT_POINT_STROKE_WIDTH': true,
         // from mousetrap.js
         'Mousetrap': true,
-        // from md5.js
-        'md5': true,
         // from platform.js
         'platform': true,
         // from player.js

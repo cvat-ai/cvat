@@ -571,7 +571,7 @@ function uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, 
                     try {
                         historyModel.empty();
                         shapeCollectionModel.empty();
-                        shapeCollectionModel.import(data, ShapeState.create);
+                        shapeCollectionModel.import(data);
                         shapeCollectionModel.update();
                     }
                     finally {

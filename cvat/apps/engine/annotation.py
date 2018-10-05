@@ -519,62 +519,60 @@ class _AnnotationForJob(_Annotation):
 
         return ' '.join(verified)
 
-    @staticmethod
-    def _get_values(shape_type):
-        if shape_type == 'polygons':
-            return [
-                ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
-                'labeledpolygonattributeval__value', 'labeledpolygonattributeval__spec_id',
-                'labeledpolygonattributeval__id'), {
-                    'attributes': [
-                        'labeledpolygonattributeval__value',
-                        'labeledpolygonattributeval__spec_id',
-                        'labeledpolygonattributeval__id'
-                    ]
-                }, 'labeledpolygonattributeval_set'
-            ]
-        elif shape_type == 'polylines':
-            return [
-                ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
-                'labeledpolylineattributeval__value', 'labeledpolylineattributeval__spec_id',
-                'labeledpolylineattributeval__id'), {
-                    'attributes': [
-                        'labeledpolylineattributeval__value',
-                        'labeledpolylineattributeval__spec_id',
-                        'labeledpolylineattributeval__id'
-                    ]
-                }, 'labeledpolylineattributeval_set'
-            ]
-        elif shape_type == 'boxes':
-            return [
-                ('id', 'frame', 'xtl', 'ytl', 'xbr', 'ybr', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
-                'labeledboxattributeval__value', 'labeledboxattributeval__spec_id',
-                'labeledboxattributeval__id'), {
-                    'attributes': [
-                        'labeledboxattributeval__value',
-                        'labeledboxattributeval__spec_id',
-                        'labeledboxattributeval__id'
-                    ]
-                }, 'labeledboxattributeval_set'
-            ]
-        elif shape_type == 'points':
-            return [
-                ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
-                'labeledpointsattributeval__value', 'labeledpointsattributeval__spec_id',
-                'labeledpointsattributeval__id'), {
-                    'attributes': [
-                        'labeledpointsattributeval__value',
-                        'labeledpointsattributeval__spec_id',
-                        'labeledpointsattributeval__id'
-                    ]
-                }, 'labeledpointsattributeval_set'
-            ]
-
-
     def init_from_db(self):
+        def get_values(shape_type):
+            if shape_type == 'polygons':
+                return [
+                    ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
+                    'labeledpolygonattributeval__value', 'labeledpolygonattributeval__spec_id',
+                    'labeledpolygonattributeval__id'), {
+                        'attributes': [
+                            'labeledpolygonattributeval__value',
+                            'labeledpolygonattributeval__spec_id',
+                            'labeledpolygonattributeval__id'
+                        ]
+                    }, 'labeledpolygonattributeval_set'
+                ]
+            elif shape_type == 'polylines':
+                return [
+                    ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
+                    'labeledpolylineattributeval__value', 'labeledpolylineattributeval__spec_id',
+                    'labeledpolylineattributeval__id'), {
+                        'attributes': [
+                            'labeledpolylineattributeval__value',
+                            'labeledpolylineattributeval__spec_id',
+                            'labeledpolylineattributeval__id'
+                        ]
+                    }, 'labeledpolylineattributeval_set'
+                ]
+            elif shape_type == 'boxes':
+                return [
+                    ('id', 'frame', 'xtl', 'ytl', 'xbr', 'ybr', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
+                    'labeledboxattributeval__value', 'labeledboxattributeval__spec_id',
+                    'labeledboxattributeval__id'), {
+                        'attributes': [
+                            'labeledboxattributeval__value',
+                            'labeledboxattributeval__spec_id',
+                            'labeledboxattributeval__id'
+                        ]
+                    }, 'labeledboxattributeval_set'
+                ]
+            elif shape_type == 'points':
+                return [
+                    ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
+                    'labeledpointsattributeval__value', 'labeledpointsattributeval__spec_id',
+                    'labeledpointsattributeval__id'), {
+                        'attributes': [
+                            'labeledpointsattributeval__value',
+                            'labeledpointsattributeval__spec_id',
+                            'labeledpointsattributeval__id'
+                        ]
+                    }, 'labeledpointsattributeval_set'
+                ]
+
         self.reset()
         for shape_type in ['boxes', 'points', 'polygons', 'polylines']:
-            (values, merge_keys, prefetch) = self._get_values(shape_type)
+            (values, merge_keys, prefetch) = get_values(shape_type)
             db_shapes = list(self._get_shape_set(shape_type).prefetch_related(prefetch).
                 values(*values).order_by('frame'))
             db_shapes = self._merge_table_rows(db_shapes, merge_keys, 'id')
@@ -605,8 +603,6 @@ class _AnnotationForJob(_Annotation):
                         attr = _Attribute(spec, db_attr.value)
                         shape.add_attribute(attr)
                 getattr(self, shape_type).append(shape)
-
-
 
         db_paths = self.db_job.objectpath_set
         for shape in ['trackedpoints_set', 'trackedbox_set', 'trackedpolyline_set', 'trackedpolygon_set']:
@@ -1599,7 +1595,7 @@ class _AnnotationWriter:
 
 class _XmlAnnotationWriter(_AnnotationWriter):
     def __init__(self, file):
-        super().__init__(file, "1.1")
+        super().__init__(file, "1.0")
         self.xmlgen = XMLGenerator(self.file, 'utf-8')
         self._level = 0
 
