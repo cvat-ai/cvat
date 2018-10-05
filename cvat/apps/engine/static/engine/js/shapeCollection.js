@@ -7,6 +7,12 @@
 /* exported ShapeCollectionModel ShapeCollectionController ShapeCollectionView */
 "use strict";
 
+const ExportType = Object.freeze({
+    'create': 0,
+    'update': 1,
+    'delete': 2,
+});
+
 class ShapeCollectionModel extends Listener {
     constructor() {
         super('onCollectionUpdate', () => this);
@@ -227,11 +233,11 @@ class ShapeCollectionModel extends Listener {
         let shape_container_target = undefined;
         let export_action_container = undefined;
 
-        if (export_type === ShapeState.create) {
+        if (export_type === ExportType.create) {
             export_action_container = container.create;
-        } else if (export_type === ShapeState.update) {
+        } else if (export_type === ExportType.update) {
             export_action_container = container.update;
-        } else if (export_type === ShapeState.delete) {
+        } else if (export_type === ExportType.delete) {
             export_action_container = container.delete;
         }
 
@@ -283,16 +289,16 @@ class ShapeCollectionModel extends Listener {
             let target_export_container = undefined;
             if (!shape._removed) {
                 if (!(shape.id in this._initialShapes)) {
-                    target_export_container = this._getExportTargetContainer(ShapeState.create, shape.type, response);
+                    target_export_container = this._getExportTargetContainer(ExportType.create, shape.type, response);
                 } else if (JSON.stringify(this._initialShapes[shape.id]) !== JSON.stringify(shape.export())) {
-                    target_export_container = this._getExportTargetContainer(ShapeState.update, shape.type, response);
+                    target_export_container = this._getExportTargetContainer(ExportType.update, shape.type, response);
                 } else {
                     continue;
                 }
             }
             else if (shape.id in this._initialShapes) {
                 // TODO in this case need push only id
-                target_export_container = this._getExportTargetContainer(ShapeState.delete, shape.type, response);
+                target_export_container = this._getExportTargetContainer(ExportType.delete, shape.type, response);
             }
             else {
                 continue;
@@ -360,8 +366,8 @@ class ShapeCollectionModel extends Listener {
 
     hasUnsavedChanges() {
         const exportData = this.export();
-        for (const action of ['create', 'update', 'delete']) {
-            for (const shapes of Object.values(exportData[action])) {
+        for (const actionType in ExportType) {
+            for (const shapes of Object.values(exportData[actionType])) {
                 if (shapes.length) {
                     return true;
                 }

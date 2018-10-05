@@ -1296,23 +1296,23 @@ class _AnnotationForJob(_Annotation):
                     db_path_attrvals.append(db_attrval)
 
                 path_shapes = shape_to_update.boxes if hasattr(shape_to_update, 'boxes') else shape_to_update.shapes
-                for shape in path_shapes:
+                for path_shape in path_shapes:
                     db_shape = shape_class()
                     db_shape.track_id = shape.id
                     if shape_type == 'box_paths':
-                        db_shape.xtl = shape.xtl
-                        db_shape.ytl = shape.ytl
-                        db_shape.xbr = shape.xbr
-                        db_shape.ybr = shape.ybr
+                        db_shape.xtl = path_shape.xtl
+                        db_shape.ytl = path_shape.ytl
+                        db_shape.xbr = path_shape.xbr
+                        db_shape.ybr = path_shape.ybr
                     else:
-                        db_shape.points = shape.points
+                        db_shape.points = path_shape.points
 
-                    db_shape.frame = shape.frame
-                    db_shape.occluded = shape.occluded
-                    db_shape.z_order = shape.z_order
-                    db_shape.outside = shape.outside
+                    db_shape.frame = path_shape.frame
+                    db_shape.occluded = path_shape.occluded
+                    db_shape.z_order = path_shape.z_order
+                    db_shape.outside = path_shape.outside
 
-                    for attr in shape.attributes:
+                    for attr in path_shape.attributes:
                         db_attrspec = self.db_attributes[attr.id]
                         db_attrval = self._get_shape_attr_class(shape_type)()
                         if shape_type == 'polygon_paths':

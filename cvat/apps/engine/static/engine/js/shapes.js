@@ -15,13 +15,6 @@ const TEXT_MARGIN = 10;
 
 /******************************** SHAPE MODELS  ********************************/
 
-const ShapeState = Object.freeze({
-    'nothing': 0,
-    'create': 1,
-    'update': 2,
-    'delete': 3
-});
-
 class ShapeModel extends Listener {
     constructor(data, positions, type, id, color) {
         super('onShapeUpdate', () => this );
@@ -3156,7 +3149,7 @@ class PointsView extends PolyShapeView {
 
 function createExportContainer() {
     const container = {};
-    ['create', 'update', 'delete'].forEach( action => {
+    Object.keys(ExportType).forEach( action => {
         container[action] = {
             "boxes": [],
             "box_paths": [],
