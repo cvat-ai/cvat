@@ -50,6 +50,14 @@ ENV HOME /home/${USER}
 WORKDIR ${HOME}
 RUN adduser --shell /bin/bash --disabled-password --gecos "" ${USER}
 
+# Install openvino toolkit
+ARG OPENVINO_TOOLKIT
+ENV OPENVINO_TOOLKIT=${OPENVINO_TOOLKIT}
+COPY openvino /tmp/openvino
+RUN if [ "$OPENVINO_TOOLKIT" = "yes" ]; then \
+        /tmp/openvino/install.sh; \
+    fi
+
 # Install tf annotation if need
 COPY cvat/apps/tf_annotation/docker_setup_tf_annotation.sh /tmp/tf_annotation/
 COPY cvat/apps/tf_annotation/requirements.txt /tmp/tf_annotation/
