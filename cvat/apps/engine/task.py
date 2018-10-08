@@ -30,9 +30,7 @@ from pyunpack import Archive
 from distutils.dir_util import copy_tree
 
 from . import models
-from .logging import task_logger, job_logger
-
-global_logger = logging.getLogger(__name__)
+from .logging import task_logger, job_logger, global_logger
 
 ############################# Low Level server API
 

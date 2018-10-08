@@ -109,18 +109,12 @@ services:
 ```
 ### Annotation logs
 
-It is possible to proxy annotation logs from client to another server over http. For examlpe you can use Logstash.
-To do that set DJANGO_LOG_SERVER_URL environment variable in cvat section of docker-compose.yml
-file (or add this variable to docker-compose.override.yml).
+It is possible to proxy annotation logs from client to ELK. To do that run the following command below:
 
-```yml
-version: "2.3"
-
-services:
-cvat:
-    environment:
-      DJANGO_LOG_SERVER_URL: https://annotation.example.com:5000
+```bash
+docker-compose -f docker-compose.yml -f analytics/docker-compose.yml up -d --build
 ```
+
 
 ### Share path
 

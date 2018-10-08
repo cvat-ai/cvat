@@ -22,3 +22,4 @@ scipy==1.0.1
 sqlparse==0.2.4
 django-sendfile==0.3.11
 dj-pagination==2.3.2
+python-logstash==0.4.6
