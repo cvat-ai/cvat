@@ -50,8 +50,6 @@ services:
         WITH_TESTS: "no"
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
-      DJANGO_LOG_SERVER_HOST: ""
-      DJANGO_LOG_SERVER_PORT: ""
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys

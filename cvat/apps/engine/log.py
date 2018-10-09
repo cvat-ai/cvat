@@ -49,7 +49,7 @@ class JobLoggerStorage:
 
     def _get_task_logger(self, jid):
         job = _get_job(jid)
-        return task_logger[job.segment.task.id]
+        return slogger.task[job.segment.task.id]
 
 class TaskClientLoggerStorage:
     def __init__(self):
@@ -79,10 +79,21 @@ class JobClientLoggerStorage:
 
     def _get_task_logger(self, jid):
         job = _get_job(jid)
-        return task_client_logger[job.segment.task.id]
+        return clogger.task[job.segment.task.id]
 
-task_logger = TaskLoggerStorage()
-job_logger = JobLoggerStorage()
-global_logger = logging.getLogger('cvat.server')
-job_client_logger = JobClientLoggerStorage()
-task_client_logger = TaskClientLoggerStorage()
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+clogger = dotdict({
+    'task': TaskClientLoggerStorage(),
+    'job': JobClientLoggerStorage()
+})
+
+slogger = dotdict({
+    'task': TaskLoggerStorage(),
+    'job': JobLoggerStorage(),
+    'glob': logging.getLogger('cvat.server'),
+})

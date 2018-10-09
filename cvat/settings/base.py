@@ -54,10 +54,14 @@ INSTALLED_APPS = [
     'cacheops',
     'sendfile',
     'dj_pagination',
+    'revproxy'
 ]
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
     INSTALLED_APPS += ['cvat.apps.tf_annotation']
+
+if os.getenv('DJANGO_LOG_VIEWER_HOST'):
+    INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
