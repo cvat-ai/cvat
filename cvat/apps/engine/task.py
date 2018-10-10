@@ -3,16 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-import csv
 import os
-import re
-import rq
 import sys
+import rq
 import shlex
-import logging
 import shutil
 import tempfile
-from io import StringIO
 from PIL import Image
 from traceback import print_exception
 from ast import literal_eval

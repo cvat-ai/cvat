@@ -4,9 +4,8 @@
 
 import os
 import logging
-from . import models
 from cvat.settings.base import LOGGING
-from cvat.apps.engine.models import Job, Task
+from .models import Job, Task
 
 def _get_task(tid):
     try:
@@ -16,7 +15,7 @@ def _get_task(tid):
 
 def _get_job(jid):
     try:
-        return models.Job.objects.select_related("segment__task").get(id=jid)
+        return Job.objects.select_related("segment__task").get(id=jid)
     except Exception:
         raise Exception('{} key must be a job identifier'.format(jid))
 
@@ -34,6 +33,8 @@ class TaskLoggerStorage:
 
         logger = logging.getLogger('cvat.server.task_{}'.format(tid))
         server_file = logging.FileHandler(filename=task.get_log_path())
+        formatter = logging.Formatter(LOGGING['formatters']['standard']['format'])
+        server_file.setFormatter(formatter)
         logger.addHandler(server_file)
 
         return logger
