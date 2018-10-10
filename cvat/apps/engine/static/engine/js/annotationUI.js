@@ -610,7 +610,6 @@ function saveAnnotation(shapeCollectionModel, job) {
     });
 
     const exportedData = shapeCollectionModel.export();
-    shapeCollectionModel.reset_state();
     const annotationLogs = Logger.getLogs();
 
     const data = {
@@ -623,6 +622,7 @@ function saveAnnotation(shapeCollectionModel, job) {
 
     saveJobRequest(job.jobid, data, () => {
         // success
+        shapeCollectionModel.reset_state();
         shapeCollectionModel.updateHash();
         saveButton.text('Success!');
         setTimeout(() => {

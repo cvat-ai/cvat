@@ -7,12 +7,6 @@
 /* exported ShapeCollectionModel ShapeCollectionController ShapeCollectionView */
 "use strict";
 
-const ExportType = Object.freeze({
-    'create': 0,
-    'update': 1,
-    'delete': 2,
-});
-
 class ShapeCollectionModel extends Listener {
     constructor() {
         super('onCollectionUpdate', () => this);
@@ -58,7 +52,7 @@ class ShapeCollectionModel extends Listener {
         this._filter = new FilterModel(() => this.update());
         this._splitter = new ShapeSplitter();
         this._erased = false;
-        this._initialShapes = [];
+        this._initialShapes = {};
     }
 
     _nextIdx() {
@@ -229,54 +223,6 @@ class ShapeCollectionModel extends Listener {
         return this;
     }
 
-    _getExportTargetContainer(export_type, shape_type, container) {
-        let shape_container_target = undefined;
-        let export_action_container = undefined;
-
-        if (export_type === ExportType.create) {
-            export_action_container = container.create;
-        } else if (export_type === ExportType.update) {
-            export_action_container = container.update;
-        } else if (export_type === ExportType.delete) {
-            export_action_container = container.delete;
-        }
-
-        if (!export_action_container) {
-            throw Error('Undefined action of shape');
-        }
-
-        switch (shape_type) {
-        case 'annotation_box':
-            shape_container_target = export_action_container.boxes;
-            break;
-        case 'interpolation_box':
-            shape_container_target = export_action_container.box_paths;
-            break;
-        case 'annotation_points':
-            shape_container_target = export_action_container.points;
-            break;
-        case 'interpolation_points':
-            shape_container_target = export_action_container.points_paths;
-            break;
-        case 'annotation_polygon':
-            shape_container_target = export_action_container.polygons;
-            break;
-        case 'interpolation_polygon':
-            shape_container_target = export_action_container.polygon_paths;
-            break;
-        case 'annotation_polyline':
-            shape_container_target = export_action_container.polylines;
-            break;
-        case 'interpolation_polyline':
-            shape_container_target = export_action_container.polyline_paths;
-        }
-
-        if (!shape_container_target) {
-            throw Error('Undefined shape type');
-        }
-        return shape_container_target;
-    }
-
     reset_state() {
         this._erased = false;
     }
@@ -288,17 +234,17 @@ class ShapeCollectionModel extends Listener {
         for (const shape of this._shapes) {
             let target_export_container = undefined;
             if (!shape._removed) {
-                if (!(shape.id in this._initialShapes)) {
-                    target_export_container = this._getExportTargetContainer(ExportType.create, shape.type, response);
+                if (!(shape.id in this._initialShapes) || this._erased) {
+                    target_export_container = getExportTargetContainer(ExportType.create, shape.type, response);
                 } else if (JSON.stringify(this._initialShapes[shape.id]) !== JSON.stringify(shape.export())) {
-                    target_export_container = this._getExportTargetContainer(ExportType.update, shape.type, response);
+                    target_export_container = getExportTargetContainer(ExportType.update, shape.type, response);
                 } else {
                     continue;
                 }
             }
-            else if (shape.id in this._initialShapes) {
+            else if (shape.id in this._initialShapes && !this._erased) {
                 // TODO in this case need push only id
-                target_export_container = this._getExportTargetContainer(ExportType.delete, shape.type, response);
+                target_export_container = getExportTargetContainer(ExportType.delete, shape.type, response);
             }
             else {
                 continue;
@@ -877,10 +823,6 @@ class ShapeCollectionModel extends Listener {
 
     get shapes() {
         return this._shapes;
-    }
-
-    get erased() {
-        return this._erased;
     }
 }
 

@@ -78,6 +78,7 @@ def save_job(jid, data):
     db_job = models.Job.objects.select_for_update().get(id=jid)
 
     annotation = _AnnotationForJob(db_job)
+    annotation.validate_data_from_client(data)
     if data['pre_erase']:
         annotation.delete_objs_from_db()
 
@@ -359,7 +360,7 @@ class _Annotation:
                         group_id=path.group_id,
                         occluded=box.occluded,
                         z_order=box.z_order,
-                        client_id=box.client_id,
+                        client_id=path.client_id,
                         attributes=box.attributes + path.attributes,
                     )
                     boxes.append(box)
@@ -378,7 +379,7 @@ class _Annotation:
                         group_id=path.group_id,
                         occluded=shape.occluded,
                         z_order=shape.z_order,
-                        client_id=shape.client_id,
+                        client_id=path.client_id,
                         attributes=shape.attributes + path.attributes,
                     )
                     shapes.append(shape)
@@ -1016,6 +1017,13 @@ class _AnnotationForJob(_Annotation):
             return models.TrackedPointsAttributeVal
 
     def _save_paths_to_db(self):
+        saved_path_ids = list(self.db_job.objectpath_set.values_list('id', 'client_id'))
+        saved_db_ids = []
+        saved_client_ids = []
+        for db_id, client_id in saved_path_ids:
+            saved_db_ids.append(db_id)
+            saved_client_ids.append(client_id)
+
         for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
             db_paths = []
             db_path_attrvals = []
@@ -1024,6 +1032,9 @@ class _AnnotationForJob(_Annotation):
 
             shapes = getattr(self, shape_type)
             for path in shapes:
+                if path.client_id in saved_client_ids:
+                    raise Exception('Trying to create new shape with existing client_id {}'.format(path.client_id))
+
                 db_path = models.ObjectPath()
                 db_path.job = self.db_job
                 db_path.label = self.db_labels[path.label.id]
@@ -1080,8 +1091,7 @@ class _AnnotationForJob(_Annotation):
 
                     db_shapes.append(db_shape)
                 db_paths.append(db_path)
-            # in case of sqlite have to store exists ids
-            db_paths_ids = list(self.db_job.objectpath_set.values_list('id', flat=True))
+
             db_paths = models.ObjectPath.objects.bulk_create(db_paths)
 
             if db_paths and db_paths[0].id == None:
@@ -1090,13 +1100,13 @@ class _AnnotationForJob(_Annotation):
                 # for Postgres bulk_create will return objects with ids even ids
                 # are auto incremented. Thus we will not be inside the 'if'.
                 if shape_type == 'polygon_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=db_paths_ids).filter(shapes="polygons"))
+                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=saved_db_ids))
                 elif shape_type == 'polyline_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=db_paths_ids).filter(shapes="polylines"))
+                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=saved_db_ids))
                 elif shape_type == 'box_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=db_paths_ids).filter(shapes="boxes"))
+                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=saved_db_ids))
                 elif shape_type == 'points_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=db_paths_ids).filter(shapes="points"))
+                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=saved_db_ids))
 
             for db_attrval in db_path_attrvals:
                 db_attrval.track_id = db_paths[db_attrval.track_id].id
@@ -1145,8 +1155,19 @@ class _AnnotationForJob(_Annotation):
             db_shapes = []
             db_attrvals = []
 
+            saved_shapes_ids = list(self._get_shape_class(shape_type).objects.filter(job_id=self.db_job.id).values_list('id', 'client_id'))
+            saved_client_ids = []
+            saved_db_ids = []
+
+            for db_id, client_id in saved_shapes_ids:
+                saved_db_ids.append(db_id)
+                saved_client_ids.append(client_id)
+
             shapes = getattr(self, shape_type)
             for shape in shapes:
+                if shape.client_id in saved_client_ids:
+                    raise Exception('Trying to create new shape with existing client_id {}'.format(shape.client_id))
+
                 db_shape = self._get_shape_class(shape_type)()
                 db_shape.job = self.db_job
                 db_shape.label = self.db_labels[shape.label.id]
@@ -1180,7 +1201,6 @@ class _AnnotationForJob(_Annotation):
 
                 db_shapes.append(db_shape)
 
-            db_shapes_ids = list(self._get_shape_class(shape_type).objects.filter(job_id=self.db_job.id).values_list('id', flat=True))
             db_shapes = self._get_shape_class(shape_type).objects.bulk_create(db_shapes)
 
             if db_shapes and db_shapes[0].id == None:
@@ -1188,7 +1208,7 @@ class _AnnotationForJob(_Annotation):
                 # but it definetely doesn't work for Postgres. Need to say that
                 # for Postgres bulk_create will return objects with ids even ids
                 # are auto incremented. Thus we will not be inside the 'if'.
-                db_shapes = list(self._get_shape_set(shape_type).exclude(id__in=db_shapes_ids))
+                db_shapes = list(self._get_shape_set(shape_type).exclude(id__in=saved_db_ids))
 
 
             for db_attrval in db_attrvals:
@@ -1203,8 +1223,7 @@ class _AnnotationForJob(_Annotation):
 
             self._get_shape_attr_class(shape_type).objects.bulk_create(db_attrvals)
 
-    def _get_relaited_obj_field_name(self, shape_type):
-        'polygon_paths', 'polyline_paths', 'points_paths', 'box_paths'
+    def _get_related_obj_field_name(self, shape_type):
         if shape_type == 'boxes' or shape_type == 'box_paths':
             return 'box'
         elif shape_type == 'points' or shape_type == 'points_paths':
@@ -1223,7 +1242,7 @@ class _AnnotationForJob(_Annotation):
 
             client_ids_to_update = list(shapes_to_update.keys())
 
-            attr_filter = {'{}__client_id__in'.format(self._get_relaited_obj_field_name(shape_type)):client_ids_to_update}
+            attr_filter = {'{}__client_id__in'.format(self._get_related_obj_field_name(shape_type)):client_ids_to_update}
             self._get_shape_attr_class(shape_type).objects.filter(**attr_filter).delete()
 
             for shape_id_to_update, shape_to_update in shapes_to_update.items():
@@ -1265,11 +1284,11 @@ class _AnnotationForJob(_Annotation):
             db_shapes = []
             db_shape_attrvals = []
 
-            shapes_to_update = {shape.client_id: shape for shape in getattr(self, shape_type)}
-            if not shapes_to_update:
+            paths_for_update = {shape.client_id: shape for shape in getattr(self, shape_type)}
+            if not paths_for_update:
                 continue
 
-            client_ids_to_update = list(shapes_to_update.keys())
+            client_ids_to_update = list(paths_for_update.keys())
 
             if None in client_ids_to_update:
                 raise Exception('Trying to update None id')
@@ -1280,7 +1299,7 @@ class _AnnotationForJob(_Annotation):
             shape_class.objects.filter(track__job__id=self.db_job.id, track__client_id__in=client_ids_to_update).delete()
 
             # update shape props
-            for shape_id_to_update, shape_to_update in shapes_to_update.items():
+            for shape_id_to_update, shape_to_update in paths_for_update.items():
                 shape = models.ObjectPath.objects.get(job_id=self.db_job.id, client_id=shape_id_to_update)
                 shape.label = self.db_labels[shape_to_update.label.id]
                 shape.frame = shape_to_update.frame
@@ -1476,6 +1495,32 @@ class _AnnotationForJob(_Annotation):
 
         return data
 
+    def validate_data_from_client(self, data):
+        # check unique id for each object
+        client_ids = set()
+        def extract_and_check_clinet_id(obj):
+            if 'client_id' not in box:
+                    raise Exception('No client_id field in received data')
+            client_id = obj['client_id']
+            if obj['client_id'] in client_ids:
+                raise Exception('More than one object has the same client_id {}'.format(client_id))
+            client_ids.add(client_id)
+            return client_id
+
+        for action in ['create', 'update', 'delete']:
+            for box in data[action]['boxes']:
+                extract_and_check_clinet_id(box)
+
+            for poly_shape_type in ['points', 'polygons', 'polylines']:
+                for poly_shape in data[action][poly_shape_type]:
+                    extract_and_check_clinet_id(box)
+
+            for path in data[action]['box_paths']:
+                extract_and_check_clinet_id(path)
+
+            for poly_path_type in ['points_paths', 'polygon_paths', 'polyline_paths']:
+                for path in data[action][poly_path_type]:
+                    extract_and_check_clinet_id(path)
 
 class _AnnotationForSegment(_Annotation):
     def __init__(self, db_segment):

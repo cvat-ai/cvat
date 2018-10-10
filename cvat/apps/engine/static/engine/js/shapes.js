@@ -3147,27 +3147,6 @@ class PointsView extends PolyShapeView {
     }
 }
 
-function createExportContainer() {
-    const container = {};
-    Object.keys(ExportType).forEach( action => {
-        container[action] = {
-            "boxes": [],
-            "box_paths": [],
-            "points": [],
-            "points_paths": [],
-            "polygons": [],
-            "polygon_paths": [],
-            "polylines": [],
-            "polyline_paths": [],
-        };
-    });
-    container.pre_erase = false;
-
-    return container;
-}
-
-
-
 function buildShapeModel(data, type, idx, color) {
     switch (type) {
     case 'interpolation_box':

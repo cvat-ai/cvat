@@ -49,6 +49,9 @@ module.exports = {
         'showOverlay': true,
         'confirm': true,
         'dumpAnnotationRequest': true,
+        'createExportContainer': true,
+        'ExportType': true,
+        'getExportTargetContainer': true,
         // from shapeCollection.js
         'ShapeCollectionModel': true,
         'ShapeCollectionController': true,

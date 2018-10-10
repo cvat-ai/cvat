@@ -139,13 +139,13 @@ class Annotation(models.Model):
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     group_id = models.PositiveIntegerField(default=0)
+    client_id = models.IntegerField(default=-1)
     class Meta:
         abstract = True
 
 class Shape(models.Model):
     occluded = models.BooleanField(default=False)
     z_order = models.IntegerField(default=0)
-    client_id = models.IntegerField(default=-1)
     class Meta:
         abstract = True
 
@@ -190,7 +190,6 @@ class LabeledPointsAttributeVal(AttributeVal):
 
 class ObjectPath(Annotation):
     id = models.BigAutoField(primary_key=True)
-    client_id = models.IntegerField(default=-1)
     shapes = models.CharField(max_length=10, default='boxes')
 
 class ObjectPathAttributeVal(AttributeVal):
