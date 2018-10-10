@@ -5,7 +5,6 @@
 
 import os
 import json
-import logging
 import traceback
 
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
@@ -18,13 +17,20 @@ from sendfile import sendfile
 from . import annotation, task, models
 from cvat.settings.base import JS_3RDPARTY
 from cvat.apps.authentication.decorators import login_required
-from cvat.apps.log_proxy.proxy_logger import client_log_proxy
 from requests.exceptions import RequestException
-from .logging import task_logger, job_logger
-
-global_logger = logging.getLogger(__name__)
+import logging
+from .logging import task_logger, job_logger, global_logger, job_client_logger
 
 ############################# High Level server API
+@login_required
+@permission_required('engine.view_task', raise_exception=True)
+def catch_client_exception(request, jid):
+    data = json.loads(request.body.decode('utf-8'))
+    for event in data['exceptions']:
+        job_client_logger[jid].error(json.dumps(event))
+
+    return HttpResponse()
+
 @login_required
 def dispatch_request(request):
     """An entry point to dispatch legacy requests"""
@@ -243,7 +249,8 @@ def save_annotation_for_job(request, jid):
         if 'annotation' in data:
             annotation.save_job(jid, json.loads(data['annotation']))
         if 'logs' in data:
-            client_log_proxy.push_logs(jid, json.loads(data['logs']))
+            for event in json.loads(data['logs']):
+                job_client_logger[jid].info(json.dumps(event))
     except RequestException as e:
         job_logger[jid].error("cannot send annotation logs for job {}".format(jid), exc_info=True)
         return HttpResponseBadRequest(str(e))

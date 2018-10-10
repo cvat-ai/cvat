@@ -549,7 +549,7 @@ class PlayerController {
 
             let frames = this._model.frames;
             let progressWidth = e.target.clientWidth;
-            let x = e.clientX - e.target.offsetLeft;
+            let x = e.clientX + window.pageXOffset - e.target.offsetLeft;
             let percent = x / progressWidth;
             let targetFrame = Math.round((frames.stop - frames.start) * percent);
             this._model.pause();
@@ -647,6 +647,7 @@ class PlayerView {
         this._frameNumber = $('#frameNumber');
         this._playerGridPattern = $('#playerGridPattern');
         this._playerGridPath = $('#playerGridPath');
+        this._contextMenuUI = $('#playerContextMenu');
 
         $('*').on('mouseup', () => this._controller.frameMouseUp());
         this._playerUI.on('wheel', (e) => this._controller.zoom(e));
@@ -763,6 +764,40 @@ class PlayerView {
         this._multiplePrevButtonUI.find('polygon').append($(document.createElementNS('http://www.w3.org/2000/svg', 'title'))
             .html(`${shortkeys['backward_frame'].view_value} - ${shortkeys['backward_frame'].description}`));
 
+
+        this._contextMenuUI.click((e) => {
+            $('.custom-menu').hide(100);
+            switch($(e.target).attr("action")) {
+            case "job_url": {
+                window.cvat.search.set('frame', null);
+                window.cvat.search.set('filter', null);
+                copyToClipboard(window.cvat.search.toString());
+                break;
+            }
+            case "frame_url":
+                window.cvat.search.set('frame', window.cvat.player.frames.current);
+                window.cvat.search.set('filter', null);
+                copyToClipboard(window.cvat.search.toString());
+                window.cvat.search.set('frame', null);
+                break;
+            }
+        });
+
+        this._playerUI.on('contextmenu.playerContextMenu', (e) => {
+            if (!window.cvat.mode) {
+                $('.custom-menu').hide(100);
+                this._contextMenuUI.finish().show(100).offset({
+                    top: e.pageY - 10,
+                    left: e.pageX - 10,
+                });
+                e.preventDefault();
+            }
+        });
+
+        this._playerContentUI.on('mousedown.playerContextMenu', () => {
+            $('.custom-menu').hide(100);
+        });
+
         playerModel.subscribe(this);
     }
 
@@ -778,7 +813,9 @@ class PlayerView {
         }
 
         this._loadingUI.addClass('hidden');
-        this._playerBackgroundUI.css('background-image', 'url(' + '"' + image.src + '"' + ')');
+        if (this._playerBackgroundUI.css('background-image').slice(5,-2) != image.src) {
+            this._playerBackgroundUI.css('background-image', 'url(' + '"' + image.src + '"' + ')');
+        }
 
         if (model.playing) {
             this._playButtonUI.addClass('hidden');

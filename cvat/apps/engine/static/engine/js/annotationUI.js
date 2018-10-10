@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported callAnnotationUI translateSVGPos blurAllElements drawBoxSize */
+/* exported callAnnotationUI translateSVGPos blurAllElements drawBoxSize copyToClipboard */
 "use strict";
 
 function callAnnotationUI(jid) {
@@ -55,7 +55,45 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
             z_order: job.z_order,
             id: job.jobid
         },
+        search: {
+            value: window.location.search,
+
+            set: function(name, value) {
+                let searchParams = new URLSearchParams(this.value);
+
+                if (typeof value === 'undefined' || value === null) {
+                    if (searchParams.has(name)) {
+                        searchParams.delete(name);
+                    }
+                }
+                else searchParams.set(name, value);
+                this.value = `${searchParams.toString()}`;
+            },
+
+            get: function(name) {
+                try {
+                    let decodedURI = decodeURIComponent(this.value);
+                    let urlSearchParams = new URLSearchParams(decodedURI);
+                    if (urlSearchParams.has(name)) {
+                        return urlSearchParams.get(name);
+                    }
+                    else return null;
+                }
+                catch (error) {
+                    showMessage('Bad URL has been found');
+                    this.value = window.location.href;
+                    return null;
+                }
+            },
+
+            toString: function() {
+                return `${window.location.origin}/?${this.value}`;
+            }
+        }
     };
+
+    // Remove external search parameters from url
+    window.history.replaceState(null, null, `${window.location.origin}/?id=${job.jobid}`);
 
     window.cvat.config = new Config();
 
@@ -137,7 +175,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     playerModel.subscribe(shapeBufferView);
     playerModel.subscribe(shapeGrouperView);
     playerModel.subscribe(polyshapeEditorView);
-    playerModel.shift(0);
+    playerModel.shift(window.cvat.search.get('frame') || 0, true);
 
     let shortkeys = window.cvat.config.shortkeys;
 
@@ -145,7 +183,14 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     setupSettingsWindow();
     setupMenu(job, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel);
     setupFrameFilters();
-    setupShortkeys(shortkeys);
+    setupShortkeys(shortkeys, {
+        aam: aamModel,
+        shapeCreator: shapeCreatorModel,
+        shapeMerger: shapeMergerModel,
+        shapeGrouper: shapeGrouperModel,
+        shapeBuffer: shapeBufferModel,
+        shapeEditor: polyshapeEditorModel
+    });
 
     $(window).on('click', function(event) {
         Logger.updateUserActivityTimer();
@@ -184,6 +229,16 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
         }
     });
 }
+
+
+function copyToClipboard(text) {
+    let tempInput = $("<input>");
+    $("body").append(tempInput);
+    tempInput.prop('value', text).select();
+    document.execCommand("copy");
+    tempInput.remove();
+}
+
 
 function setupFrameFilters() {
     let brightnessRange = $('#playerBrightnessRange');
@@ -256,7 +311,7 @@ function setupFrameFilters() {
 }
 
 
-function setupShortkeys(shortkeys) {
+function setupShortkeys(shortkeys, models) {
     let annotationMenu = $('#annotationMenu');
     let settingsWindow = $('#settingsWindow');
     let helpWindow = $('#helpWindow');
@@ -299,9 +354,34 @@ function setupShortkeys(shortkeys) {
         return false;
     });
 
+    let cancelModeHandler = Logger.shortkeyLogDecorator(function() {
+        switch (window.cvat.mode) {
+        case 'aam':
+            models.aam.switchAAMMode();
+            break;
+        case 'creation':
+            models.shapeCreator.switchCreateMode(true);
+            break;
+        case 'merge':
+            models.shapeMerger.cancel();
+            break;
+        case 'groupping':
+            models.shapeGrouper.cancel();
+            break;
+        case 'paste':
+            models.shapeBuffer.switchPaste();
+            break;
+        case 'poly_editing':
+            models.shapeEditor.finish();
+            break;
+        }
+        return false;
+    });
+
     Mousetrap.bind(shortkeys["open_help"].value, openHelpHandler, 'keydown');
     Mousetrap.bind(shortkeys["open_settings"].value, openSettingsHandler, 'keydown');
     Mousetrap.bind(shortkeys["save_work"].value, saveHandler, 'keydown');
+    Mousetrap.bind(shortkeys["cancel_mode"].value, cancelModeHandler, 'keydown');
 }
 
 

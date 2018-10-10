@@ -80,7 +80,7 @@ var LoggerHandler = function(applicationName, jobId)
 
         return new Promise( (resolve, reject) => {
             let xhr = new XMLHttpRequest();
-            xhr.open('POST', '/logs/exception/' + this._jobId);
+            xhr.open('POST', '/save/exception/' + this._jobId);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
 
@@ -202,25 +202,31 @@ var LoggerHandler = function(applicationName, jobId)
 
 
 /*
-Log message has simple json format - each message is set of "key" : "value" pairs inside curly braces - {"key1" : "string_value", "key2" : number_value, ...}
-Value may be string or number (see json spec)
-required fields for all event types:
+Log message has simple json format - each message is set of "key" : "value"
+pairs inside curly braces - {"key1" : "string_value", "key2" : number_value,
+...} Value may be string or number (see json spec) required fields for all event
+types:
 
     NAME         TYPE           DESCRIPTION
 "event"         string          see EventType enum description of possible values.
-"timestamp"     number          timestamp in UNIX format - the number of seconds or milliseconds that have elapsed since 00:00:00 Thursday, 1 January 1970
+"timestamp"     number          timestamp in UNIX format - the number of seconds
+                                or milliseconds that have elapsed since 00:00:00
+                                Thursday, 1 January 1970
 "application"   string          application name
 "userid"        string          Unique userid
 "task"          string          Unique task id. (Is expected corresponding Jira task id)
 
-"count" is requiered field for "Add object", "Delete object", "Copy track", "Propagate object", "Merge objecrs", "Undo action" and "Redo action"
-events with number value.
+"count" is requiered field for "Add object", "Delete object", "Copy track",
+"Propagate object", "Merge objecrs", "Undo action" and "Redo action" events with
+number value.
 
-Example : { "event" : "Add object", "timestamp" : 1486040342867, "application" : "CVAT", "duration" : 4200, "userid" : "ESAZON1X-MOBL", "count" : 1, "type" : "bounding box" }
+Example : { "event" : "Add object", "timestamp" : 1486040342867, "application" :
+"CVAT", "duration" : 4200, "userid" : "ESAZON1X-MOBL", "count" : 1, "type" :
+"bounding box" }
 
-Types of supported events.
-Minimum subset of events to generate simple report are Logger.EventType.addObject, Logger.EventType.deleteObject and Logger.EventType.sendTaskInfo.
-Value of "count" property should be a number.
+Types of supported events. Minimum subset of events to generate simple report
+are Logger.EventType.addObject, Logger.EventType.deleteObject and
+Logger.EventType.sendTaskInfo. Value of "count" property should be a number.
 */
 
 var Logger = {
@@ -276,50 +282,67 @@ var Logger = {
     EventType: {
         // dumped as "Paste object". There are no additional required fields.
         pasteObject: 0,
-        // dumped as "Change attribute". There are no additional required fields.
+        // dumped as "Change attribute". There are no additional required
+        // fields.
         changeAttribute: 1,
         // dumped as "Drag object". There are no additional required fields.
         dragObject: 2,
-        // dumped as "Delete object". "count" is required field, value of deleted objects should be positive number.
+        // dumped as "Delete object". "count" is required field, value of
+        // deleted objects should be positive number.
         deleteObject: 3,
         // dumped as "Press shortcut". There are no additional required fields.
         pressShortcut: 4,
         // dumped as "Resize object". There are no additional required fields.
         resizeObject: 5,
-        // dumped as "Send logs". It's expected that event has "duration" field, but it isn't necessary.
+        // dumped as "Send logs". It's expected that event has "duration" field,
+        // but it isn't necessary.
         sendLogs: 6,
-        // dumped as "Save job". It's expected that event has "duration" field, but it isn't necessary.
+        // dumped as "Save job". It's expected that event has "duration" field,
+        // but it isn't necessary.
         saveJob: 7,
         // dumped as "Jump frame". There are no additional required fields.
         jumpFrame: 8,
-        // dumped as "Draw object". It's expected that event has "duration" field, but it isn't necessary.
+        // dumped as "Draw object". It's expected that event has "duration"
+        // field, but it isn't necessary.
         drawObject: 9,
         // dumped as "Change label".
         changeLabel: 10,
-        // dumped as "Send task info". "track count", "frame count", "object count" are required fields. It's expected that event has "current_frame" field.
+        // dumped as "Send task info". "track count", "frame count", "object
+        // count" are required fields. It's expected that event has
+        // "current_frame" field.
         sendTaskInfo: 11,
-        // dumped as "Load job". "track count", "frame count", "object count" are required fields. It's expected that event has "duration" field, but it isn't necessary.
+        // dumped as "Load job". "track count", "frame count", "object count"
+        // are required fields. It's expected that event has "duration" field,
+        // but it isn't necessary.
         loadJob: 12,
-        // dumped as "Move image". It's expected that event has "duration" field, but it isn't necessary.
+        // dumped as "Move image". It's expected that event has "duration"
+        // field, but it isn't necessary.
         moveImage: 13,
-        // dumped as "Zoom image". It's expected that event has "duration" field, but it isn't necessary.
+        // dumped as "Zoom image". It's expected that event has "duration"
+        // field, but it isn't necessary.
         zoomImage: 14,
         // dumped as "Lock object". There are no additional required fields.
         lockObject: 15,
-        // dumped as "Merge objects". "count" is required field with positive or negative number value.
+        // dumped as "Merge objects". "count" is required field with positive or
+        // negative number value.
         mergeObjects: 16,
         // dumped as "Copy object". "count" is required field with number value.
         copyObject: 17,
-        // dumped as "Propagate object". "count" is required field with number value.
+        // dumped as "Propagate object". "count" is required field with number
+        // value.
         propagateObject: 18,
-        // dumped as "Undo action". "count" is required field with positive or negative number value.
+        // dumped as "Undo action". "count" is required field with positive or
+        // negative number value.
         undoAction: 19,
-        // dumped as "Redo action". "count" is required field with positive or negative number value.
+        // dumped as "Redo action". "count" is required field with positive or
+        // negative number value.
         redoAction: 20,
-        // dumped as "Send user activity". "working_time" is required field with positive number value.
+        // dumped as "Send user activity". "working_time" is required field with
+        // positive number value.
         sendUserActivity: 21,
-        // dumped as "Send exception". Use to send any exception events to the server.
-        // "message", "filename", "line" are mandatory fields. "stack" and "column" are optional.
+        // dumped as "Send exception". Use to send any exception events to the
+        // server. "message", "filename", "line" are mandatory fields. "stack"
+        // and "column" are optional.
         sendException: 22,
         // dumped as "Change frame". There are no additional required fields.
         changeFrame: 23,
@@ -356,10 +379,12 @@ var Logger = {
 
     /**
      * Logger.addContinuedEvent Use to add log event with duration field.
-     * Duration will be calculated automatically when LogEvent.close() method of returned Object will be called.
-     * Note: in case of LogEvent.close() method will not be callsed event will not be sended to server
+     * Duration will be calculated automatically when LogEvent.close() method of
+     * returned Object will be called. Note: in case of LogEvent.close() method
+     * will not be callsed event will not be sent to server
      * @param {Logger.EventType} type Event Type
-     * @param {Object} values Any event values, for example {count: 1, label: 'vehicle'}
+     * @param {Object} values Any event values, for example {count: 1, label:
+     * 'vehicle'}
      * @return {LogEvent} instance of LogEvent
      * @static
      */
@@ -370,7 +395,8 @@ var Logger = {
 
     /**
      * Logger.shortkeyLogDecorator use for decorating the shortkey handlers.
-     * This decorator just create appropriate log event and close it when decored function will performed.
+     * This decorator just create appropriate log event and close it when
+     * decored function will performed.
      * @param {Function} decoredFunc is function for decorating
      * @return {Function} is decorated decoredFunc
      * @static
@@ -387,7 +413,7 @@ var Logger = {
     },
 
     /**
-     * Logger.sendLogs Try to send exception logs to the server immediatly.
+     * Logger.sendLogs Try to send exception logs to the server immediately.
      * @return {Promise}
      * @param {LogEvent} exceptionEvent
      * @static
@@ -414,7 +440,8 @@ var Logger = {
     },
 
     /**
-     * Logger.setUsername just set username property which will be added to all log messages
+     * Logger.setUsername just set username property which will be added to all
+     * log messages
      * @param {String} username
      * @static
      */
@@ -423,7 +450,8 @@ var Logger = {
         this._logger.setUsername(username);
     },
 
-    /** Logger.updateUserActivityTimer method updates internal timer for working time calculation logic
+    /** Logger.updateUserActivityTimer method updates internal timer for working
+     * time calculation logic
      * @static
      */
     updateUserActivityTimer: function()
@@ -431,11 +459,12 @@ var Logger = {
         this._logger.updateTimer();
     },
 
-    /** Logger.setTimeThreshold set time threshold in ms for EventType.
-     * If time interval betwwen incoming log events less than threshold events will be collapsed.
-     * Note that result event will have timestamp of first event,
-     * In case of time threshold used for continued event duration will be difference between
-     * first and last event timestamps and other fields from last event.
+    /** Logger.setTimeThreshold set time threshold in ms for EventType. If time
+     * interval betwwen incoming log events less than threshold events will be
+     * collapsed. Note that result event will have timestamp of first event, In
+     * case of time threshold used for continued event duration will be
+     * difference between first and last event timestamps and other fields from
+     * last event.
      * @static
      * @param {Logger.EventType} eventType
      * @param {Number} threshold
@@ -445,7 +474,8 @@ var Logger = {
         this._logger.setTimeThreshold(eventType, threshold);
     },
 
-    /** Logger._eventTypeToString private method to transform Logger.EventType to string
+    /** Logger._eventTypeToString private method to transform Logger.EventType
+     * to string
      * @param {Logger.EventType} type Event Type
      * @return {String} string reppresentation of Logger.EventType
      * @static

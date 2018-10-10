@@ -187,22 +187,39 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'standard',
         },
-        'file': {
+        'server_file': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-            'filename': os.path.join(BASE_DIR, 'logs', 'cvat.log'),
+            'level': 'DEBUG',
+            'filename': os.path.join(BASE_DIR, 'logs', 'cvat_server.log'),
             'formatter': 'standard',
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
+        },
+        'logstash': {
+            'level': 'INFO',
+            'class': 'logstash.TCPLogstashHandler',
+            'host': os.getenv('DJANGO_LOG_SERVER_HOST', 'localhost'),
+            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 5000),
+            'version': 1,
+            'message_type': 'django',
         }
     },
     'loggers': {
-        'cvat': {
-            'handlers': ['console', 'file'],
+        'cvat.server': {
+            'handlers': ['console', 'server_file'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+
+        'cvat.client': {
+            'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         }
     },
 }
+
+if os.getenv('DJANGO_LOG_SERVER_HOST'):
+    LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
+    LOGGING['loggers']['cvat.client']['handlers'] += ['logstash']
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/

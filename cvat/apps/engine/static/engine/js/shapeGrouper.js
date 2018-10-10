@@ -109,12 +109,6 @@ class ShapeGrouperController {
                 this.switch();
             }.bind(this));
 
-            let cancelGrouperHandler = Logger.shortkeyLogDecorator(function() {
-                if (this._model.active) {
-                    this._model.cancel();
-                }
-            }.bind(this));
-
             let resetGroupHandler = Logger.shortkeyLogDecorator(function() {
                 if (this._model.active) {
                     this._model.reset();
@@ -124,7 +118,6 @@ class ShapeGrouperController {
             }.bind(this));
 
             Mousetrap.bind(shortkeys["switch_group_mode"].value, switchGrouperHandler.bind(this), 'keydown');
-            Mousetrap.bind(shortkeys["cancel_group_mode"].value, cancelGrouperHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["reset_group"].value, resetGroupHandler.bind(this), 'keydown');
         }
     }
@@ -160,7 +153,6 @@ class ShapeGrouperView {
 
         this._groupShapesButton.attr('title', `
             ${shortkeys['switch_group_mode'].view_value} - ${shortkeys['switch_group_mode'].description}` + `\n` +
-            `${shortkeys['cancel_group_mode'].view_value} - ${shortkeys['cancel_group_mode'].description}` + `\n` +
             `${shortkeys['reset_group'].view_value} - ${shortkeys['reset_group'].description}`);
 
         grouperModel.subscribe(this);

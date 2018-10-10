@@ -340,6 +340,13 @@
     padding: 0;
 }
 
+.buttonBlockOfLabelUI {
+    margin: 5px;
+    padding: 5px;
+    border: 1px solid black;
+    border-radius: 2px;
+}
+
 /* Each of the items in the list */
 .custom-menu li {
     padding: 8px 12px;
