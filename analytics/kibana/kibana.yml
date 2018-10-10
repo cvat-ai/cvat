@@ -3,3 +3,5 @@ elasticsearch.url: http://elasticsearch:9200
 elasticsearch.requestHeadersWhitelist: [ cookie, authorization, x-forwarded-user ]
 kibana.defaultAppId: "discover"
 server.basePath: /analytics
+elasticsearch.username: kibana
+elasticsearch.password: kibana
