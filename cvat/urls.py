@@ -31,7 +31,7 @@ urlpatterns = [
     path('django-rq/', include('django_rq.urls')),
     path('auth/', include('cvat.apps.authentication.urls')),
     path('documentation/', include('cvat.apps.documentation.urls')),
-    path('', include('cvat.apps.log_viewer.urls'))
+    path('analytics/', include('cvat.apps.log_viewer.urls'))
 ]
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
