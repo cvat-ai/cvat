@@ -1498,29 +1498,22 @@ class _AnnotationForJob(_Annotation):
     def validate_data_from_client(self, data):
         # check unique id for each object
         client_ids = set()
-        def extract_and_check_clinet_id(obj):
-            if 'client_id' not in box:
-                    raise Exception('No client_id field in received data')
-            client_id = obj['client_id']
-            if obj['client_id'] in client_ids:
+        def extract_and_check_clinet_id(shape):
+            if 'client_id' not in shape:
+                raise Exception('No client_id field in received data')
+            client_id = shape['client_id']
+            if client_id in client_ids:
                 raise Exception('More than one object has the same client_id {}'.format(client_id))
             client_ids.add(client_id)
             return client_id
 
+        shape_types = ['boxes', 'points', 'polygons', 'polylines', 'box_paths',
+            'points_paths', 'polygon_paths', 'polyline_paths']
+
         for action in ['create', 'update', 'delete']:
-            for box in data[action]['boxes']:
-                extract_and_check_clinet_id(box)
-
-            for poly_shape_type in ['points', 'polygons', 'polylines']:
-                for poly_shape in data[action][poly_shape_type]:
-                    extract_and_check_clinet_id(box)
-
-            for path in data[action]['box_paths']:
-                extract_and_check_clinet_id(path)
-
-            for poly_path_type in ['points_paths', 'polygon_paths', 'polyline_paths']:
-                for path in data[action][poly_path_type]:
-                    extract_and_check_clinet_id(path)
+            for shape_type in shape_types:
+                for shape in data[action][shape_type]:
+                    extract_and_check_clinet_id(shape)
 
 class _AnnotationForSegment(_Annotation):
     def __init__(self, db_segment):
@@ -2066,7 +2059,7 @@ class _AnnotationForTask(_Annotation):
                                         ("xbr", "{:.2f}".format(shape.xbr)),
                                         ("ybr", "{:.2f}".format(shape.ybr)),
                                         ("occluded", str(int(shape.occluded))),
-                                        ("client_id", "{}".format(shape.client_id)),
+                                        ("client_id", str(shape.client_id)),
                                     ])
                                     if db_task.z_order:
                                         dump_dict['z_order'] = str(shape.z_order)
@@ -2086,7 +2079,7 @@ class _AnnotationForTask(_Annotation):
                                             )) for p in shape.points.split(' '))
                                         )),
                                         ("occluded", str(int(shape.occluded))),
-                                        ("client_id", "{}".format(shape.client_id)),
+                                        ("client_id", str(shape.client_id)),
                                     ])
 
                                     if db_task.z_order:
@@ -2134,7 +2127,7 @@ class _AnnotationForTask(_Annotation):
                         dump_dict = OrderedDict([
                             ("id", str(path_idx)),
                             ("label", path.label.name),
-                            ("client_id", "{}".format(path.client_id)),
+                            ("client_id", str(path.client_id)),
                         ])
                         if path.group_id:
                             dump_dict['group_id'] = str(path.group_id)
