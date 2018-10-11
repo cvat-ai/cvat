@@ -7,7 +7,7 @@ readonlyrest:
     proxy_auth: "*"
     hosts: ["kibana"]
     kibana_access: ro
-    kibana_hide_apps: ["readonlyrest_kbn", "timelion", "kibana:dev_tools", "kibana:management"]
+    kibana_hide_apps: ["timelion", "kibana:dev_tools", "kibana:management"]
 
   - name: "::KIBANA-SRV::"
     type: allow
@@ -23,3 +23,4 @@ readonlyrest:
     auth_key: admin:dev
     kibana_access: admin
     hosts: ["elasticsearch"]
+
