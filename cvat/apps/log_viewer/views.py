@@ -8,3 +8,9 @@ class LogViewerProxy(ProxyView):
     upstream = 'http://{}:{}'.format(os.getenv('DJANGO_LOG_VIEWER_HOST'),
         os.getenv('DJANGO_LOG_VIEWER_PORT'))
     add_remote_user = True
+
+    def get_request_headers(self):
+        headers = super().get_request_headers()
+        headers['X-Forwarded-User'] = headers['REMOTE_USER']
+
+        return headers

@@ -217,6 +217,11 @@ LOGGING = {
         'cvat.client': {
             'handlers': [],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+
+        'revproxy': {
+            'handlers': ['console', 'server_file'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG')
         }
     },
 }
