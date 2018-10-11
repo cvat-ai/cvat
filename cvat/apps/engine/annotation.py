@@ -201,8 +201,8 @@ class _LabeledPolyShape(_PolyShape):
         self.group_id = group_id
 
 class _TrackedPolyShape(_PolyShape):
-    def __init__(self, points, frame, occluded, z_order, outside, client_id=None, attributes=None):
-        super().__init__(points, frame, occluded, z_order, client_id, attributes)
+    def __init__(self, points, frame, occluded, z_order, outside, attributes=None):
+        super().__init__(points, frame, occluded, z_order, None, attributes)
         self.outside = outside
 
 class _InterpolatedPolyShape(_TrackedPolyShape):
@@ -347,8 +347,33 @@ class _Annotation:
         self.points = []
         self.points_paths = []
 
+    def get_max_client_id(self):
+        max_client_id = -1
+
+        def extract_client_id(shape):
+            return shape.client_id
+
+        if self.boxes:
+            max_client_id = max(max_client_id, (max(self.boxes, key=extract_client_id)).client_id)
+        if self.box_paths:
+            max_client_id = max(max_client_id, (max(self.box_paths, key=extract_client_id)).client_id)
+        if self.polygons:
+            max_client_id = max(max_client_id, (max(self.polygons, key=extract_client_id)).client_id)
+        if self.polygon_paths:
+            max_client_id = max(max_client_id, (max(self.polygon_paths, key=extract_client_id)).client_id)
+        if self.polylines:
+            max_client_id = max(max_client_id, (max(self.polylines, key=extract_client_id)).client_id)
+        if self.polyline_paths:
+            max_client_id = max(max_client_id, (max(self.polyline_paths, key=extract_client_id)).client_id)
+        if self.points:
+            max_client_id = max(max_client_id, (max(self.points, key=extract_client_id)).client_id)
+        if self.points_paths:
+            max_client_id = max(max_client_id, (max(self.points_paths, key=extract_client_id)).client_id)
+
+        return max_client_id
+
     # Functions below used by dump functionality
-    def to_boxes(self):
+    def to_boxes(self, start_client_id):
         boxes = []
         for path in self.box_paths:
             for box in path.get_interpolated_boxes():
@@ -360,14 +385,15 @@ class _Annotation:
                         group_id=path.group_id,
                         occluded=box.occluded,
                         z_order=box.z_order,
-                        client_id=path.client_id,
+                        client_id=start_client_id,
                         attributes=box.attributes + path.attributes,
                     )
                     boxes.append(box)
+                    start_client_id += 1
 
-        return self.boxes + boxes
+        return self.boxes + boxes, start_client_id
 
-    def _to_poly_shapes(self, iter_attr_name):
+    def _to_poly_shapes(self, iter_attr_name, start_client_id):
         shapes = []
         for path in getattr(self, iter_attr_name):
             for shape in path.get_interpolated_shapes():
@@ -379,20 +405,24 @@ class _Annotation:
                         group_id=path.group_id,
                         occluded=shape.occluded,
                         z_order=shape.z_order,
-                        client_id=path.client_id,
+                        client_id=start_client_id,
                         attributes=shape.attributes + path.attributes,
                     )
                     shapes.append(shape)
-        return shapes
+                    start_client_id += 1
+        return shapes, start_client_id
 
-    def to_polygons(self):
-        return self._to_poly_shapes('polygon_paths') + self.polygons
+    def to_polygons(self, start_client_id):
+        polygons, client_id = self._to_poly_shapes('polygon_paths', start_client_id)
+        return polygons + self.polygons, client_id
 
-    def to_polylines(self):
-        return self._to_poly_shapes('polyline_paths') + self.polylines
+    def to_polylines(self, start_client_id):
+        polylines, client_id = self._to_poly_shapes('polyline_paths', start_client_id)
+        return polylines + self.polylines, client_id
 
-    def to_points(self):
-        return self._to_poly_shapes('points_paths') + self.points
+    def to_points(self, start_client_id):
+        points, client_id = self._to_poly_shapes('points_paths', start_client_id)
+        return points + self.points, client_id
 
     def to_box_paths(self):
         paths = []
@@ -769,7 +799,13 @@ class _AnnotationForJob(_Annotation):
                 for db_shape in db_path.shapes:
                     db_shape.attributes = list(set(db_shape.attributes))
                 label = _Label(self.db_labels[db_path.label_id])
-                path = _PolyPath(label, db_path.frame, self.stop_frame, db_path.group_id, db_path.id)
+                path = _PolyPath(
+                    label=label,
+                    start_frame=db_path.frame,
+                    stop_frame= self.stop_frame,
+                    group_id=db_path.group_id,
+                    client_id=db_path.id,
+                )
                 for db_attr in db_path.attributes:
                     spec = self.db_attributes[db_attr.spec_id]
                     attr = _Attribute(spec, db_attr.value)
@@ -783,7 +819,6 @@ class _AnnotationForJob(_Annotation):
                         occluded=db_shape.occluded,
                         z_order=db_shape.z_order,
                         outside=db_shape.outside,
-                        client_id=db_shape.client_id,
                     )
                     assert shape.frame > frame
                     frame = shape.frame
@@ -1861,23 +1896,26 @@ class _AnnotationForTask(_Annotation):
                 shapes["polygons"] = {}
                 shapes["polylines"] = {}
                 shapes["points"] = {}
-
-                for box in self.to_boxes():
+                boxes, max_client_id = self.to_boxes(self.get_max_client_id() + 1)
+                for box in boxes:
                     if box.frame not in shapes["boxes"]:
                         shapes["boxes"][box.frame] = []
                     shapes["boxes"][box.frame].append(box)
 
-                for polygon in self.to_polygons():
+                polygons, max_client_id = self.to_polygons(max_client_id)
+                for polygon in polygons:
                     if polygon.frame not in shapes["polygons"]:
                         shapes["polygons"][polygon.frame] = []
                     shapes["polygons"][polygon.frame].append(polygon)
 
-                for polyline in self.to_polylines():
+                polylines, max_client_id = self.to_polylines(max_client_id)
+                for polyline in polylines:
                     if polyline.frame not in shapes["polylines"]:
                         shapes["polylines"][polyline.frame] = []
                     shapes["polylines"][polyline.frame].append(polyline)
 
-                for points in self.to_points():
+                points, max_client_id = self.to_points(max_client_id)
+                for points in points:
                     if points.frame not in shapes["points"]:
                         shapes["points"][points.frame] = []
                     shapes["points"][points.frame].append(points)
