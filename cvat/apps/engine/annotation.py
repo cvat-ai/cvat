@@ -1223,170 +1223,29 @@ class _AnnotationForJob(_Annotation):
 
             self._get_shape_attr_class(shape_type).objects.bulk_create(db_attrvals)
 
-    def _get_related_obj_field_name(self, shape_type):
-        if shape_type == 'boxes' or shape_type == 'box_paths':
-            return 'box'
-        elif shape_type == 'points' or shape_type == 'points_paths':
-            return 'points'
-        elif shape_type == 'polygons' or shape_type == 'polygon_paths':
-            return 'polygon'
-        elif shape_type == 'polylines' or shape_type == 'polyline_paths':
-            return 'polyline'
+    def _update_shapes_in_db(self):
+        self._delete_paths_from_db()
+        self._save_paths_to_db()
 
-    def _update_shapes_to_db(self):
-        for shape_type in ['boxes', 'points', 'polygons', 'polylines']:
-            db_attrvals = []
-            shapes_to_update = {shape.client_id: shape for shape in getattr(self, shape_type)}
-            if not shapes_to_update:
-                continue
-
-            client_ids_to_update = list(shapes_to_update.keys())
-
-            attr_filter = {'{}__client_id__in'.format(self._get_related_obj_field_name(shape_type)):client_ids_to_update}
-            self._get_shape_attr_class(shape_type).objects.filter(**attr_filter).delete()
-
-            for shape_id_to_update, shape_to_update in shapes_to_update.items():
-                shape = self._get_shape_class(shape_type).objects.get(job_id=self.db_job.id, client_id=shape_id_to_update)
-                shape.label = self.db_labels[shape_to_update.label.id]
-                shape.group_id = shape_to_update.group_id
-                shape.frame = shape_to_update.frame
-                shape.occluded = shape_to_update.occluded
-                shape.z_order = shape_to_update.z_order
-                if shape_type == 'boxes':
-                    shape.xtl = shape_to_update.xtl
-                    shape.ytl = shape_to_update.ytl
-                    shape.xbr = shape_to_update.xbr
-                    shape.ybr = shape_to_update.ybr
-                else:
-                    shape.points = shape_to_update.points
-                shape.save()
-
-                for attr in shape_to_update.attributes:
-                    db_attrval = self._get_shape_attr_class(shape_type)()
-                    if shape_type == 'polygons':
-                        db_attrval.polygon_id = shape.id
-                    elif shape_type == 'polylines':
-                        db_attrval.polyline_id = shape.id
-                    elif shape_type == 'boxes':
-                        db_attrval.box_id = shape.id
-                    else:
-                        db_attrval.points_id = shape.id
-
-                    db_attrval.spec = self.db_attributes[attr.id]
-                    db_attrval.value = attr.value
-                    db_attrvals.append(db_attrval)
-
-            self._get_shape_attr_class(shape_type).objects.bulk_create(db_attrvals)
-
-    def _update_paths_to_db(self):
-        for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
-            db_path_attrvals = []
-            db_shapes = []
-            db_shape_attrvals = []
-
-            paths_for_update = {shape.client_id: shape for shape in getattr(self, shape_type)}
-            if not paths_for_update:
-                continue
-
-            client_ids_to_update = list(paths_for_update.keys())
-
-            if None in client_ids_to_update:
-                raise Exception('Trying to update None id')
-
-            models.ObjectPathAttributeVal.objects.filter(track__job__id=self.db_job.id, track__client_id__in=client_ids_to_update).delete()
-
-            shape_class = self._get_shape_class(shape_type)
-            shape_class.objects.filter(track__job__id=self.db_job.id, track__client_id__in=client_ids_to_update).delete()
-
-            # update shape props
-            for shape_id_to_update, shape_to_update in paths_for_update.items():
-                shape = models.ObjectPath.objects.get(job_id=self.db_job.id, client_id=shape_id_to_update)
-                shape.label = self.db_labels[shape_to_update.label.id]
-                shape.frame = shape_to_update.frame
-                shape.group_id = shape_to_update.group_id
-                shape.save()
-
-                for attr in shape_to_update.attributes:
-                    db_attrspec = self.db_attributes[attr.id]
-                    db_attrval = models.ObjectPathAttributeVal()
-                    db_attrval.track_id = shape.id
-                    db_attrval.spec = db_attrspec
-                    db_attrval.value = attr.value
-                    db_path_attrvals.append(db_attrval)
-
-                path_shapes = shape_to_update.boxes if hasattr(shape_to_update, 'boxes') else shape_to_update.shapes
-                for path_shape in path_shapes:
-                    db_shape = shape_class()
-                    db_shape.track_id = shape.id
-                    if shape_type == 'box_paths':
-                        db_shape.xtl = path_shape.xtl
-                        db_shape.ytl = path_shape.ytl
-                        db_shape.xbr = path_shape.xbr
-                        db_shape.ybr = path_shape.ybr
-                    else:
-                        db_shape.points = path_shape.points
-
-                    db_shape.frame = path_shape.frame
-                    db_shape.occluded = path_shape.occluded
-                    db_shape.z_order = path_shape.z_order
-                    db_shape.outside = path_shape.outside
-
-                    for attr in path_shape.attributes:
-                        db_attrspec = self.db_attributes[attr.id]
-                        db_attrval = self._get_shape_attr_class(shape_type)()
-                        if shape_type == 'polygon_paths':
-                            db_attrval.polygon_id = len(db_shapes)
-                        elif shape_type == 'polyline_paths':
-                            db_attrval.polyline_id = len(db_shapes)
-                        elif shape_type == 'box_paths':
-                            db_attrval.box_id = len(db_shapes)
-                        elif shape_type == 'points_paths':
-                            db_attrval.points_id = len(db_shapes)
-                        db_attrval.spec = db_attrspec
-                        db_attrval.value = attr.value
-                        db_shape_attrvals.append(db_attrval)
-
-                    db_shapes.append(db_shape)
-
-            models.ObjectPathAttributeVal.objects.bulk_create(db_path_attrvals)
-
-            db_shapes_ids = list(self._get_shape_class(shape_type).objects.filter(track__job_id=self.db_job.id).values_list('id', flat=True))
-            db_shapes = self._get_shape_class(shape_type).objects.bulk_create(db_shapes)
-
-            if db_shapes and db_shapes[0].id == None:
-                # Try to get primary keys. Probably the code will work for sqlite
-                # but it definetely doesn't work for Postgres. Need to say that
-                # for Postgres bulk_create will return objects with ids even ids
-                # are auto incremented. Thus we will not be inside the 'if'.
-                db_shapes = list(self._get_shape_class(shape_type).objects.filter(track__job_id=self.db_job.id).exclude(id__in=db_shapes_ids))
-
-            for db_attrval in db_shape_attrvals:
-                if shape_type == 'polygon_paths':
-                    db_attrval.polygon_id = db_shapes[db_attrval.polygon_id].id
-                elif shape_type == 'polyline_paths':
-                    db_attrval.polyline_id = db_shapes[db_attrval.polyline_id].id
-                elif shape_type == 'box_paths':
-                    db_attrval.box_id = db_shapes[db_attrval.box_id].id
-                elif shape_type == 'points_paths':
-                    db_attrval.points_id = db_shapes[db_attrval.points_id].id
-
-            self._get_shape_attr_class(shape_type).objects.bulk_create(db_shape_attrvals)
+    def _update_paths_in_db(self):
+        self._delete_shapes_from_db()
+        self._save_shapes_to_db()
 
     def _delete_shapes_from_db(self):
         for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
-            db_ids_to_delete = list(shape.client_id for shape in getattr(self, shape_type))
-            deleted = self._get_shape_set(shape_type).filter(client_id__in=db_ids_to_delete).delete()
+            client_ids_to_delete = list(shape.client_id for shape in getattr(self, shape_type))
+            deleted = self._get_shape_set(shape_type).filter(client_id__in=client_ids_to_delete).delete()
             class_name = 'engine.{}'.format(self._get_shape_class(shape_type).__name__)
-            if not (deleted[0] == 0 and len(db_ids_to_delete) == 0) and (class_name in deleted[1] and deleted[1][class_name] != len(db_ids_to_delete)):
+            if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and (class_name in deleted[1] and deleted[1][class_name] != len(client_ids_to_delete)):
                 raise Exception('Number of deleted object doesn\'t match with requested number')
 
     def _delete_paths_from_db(self):
         for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
-            db_ids_to_delete = list(shape.client_id for shape in getattr(self, shape_type))
-            deleted = self.db_job.objectpath_set.filter(client_id__in=db_ids_to_delete).delete()
+            client_ids_to_delete = list(shape.client_id for shape in getattr(self, shape_type))
+            deleted = self.db_job.objectpath_set.filter(client_id__in=client_ids_to_delete).delete()
             class_name = 'engine.ObjectPath'
-            if not (deleted[0] == 0 and len(db_ids_to_delete) == 0) and \
-               (class_name in deleted[1] and deleted[1][class_name] != len(db_ids_to_delete)):
+            if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and \
+               (class_name in deleted[1] and deleted[1][class_name] != len(client_ids_to_delete)):
                raise Exception('Number of deleted object doesn\'t match with requested number')
 
     def _delete_all_shapes_from_db(self):
@@ -1401,8 +1260,8 @@ class _AnnotationForJob(_Annotation):
             self._save_shapes_to_db()
             self._save_paths_to_db()
         elif action == 'update':
-            self._update_shapes_to_db()
-            self._update_paths_to_db()
+            self._update_shapes_in_db()
+            self._update_paths_in_db()
         elif action == 'delete':
             self._delete_shapes_from_db()
             self._delete_paths_from_db()
