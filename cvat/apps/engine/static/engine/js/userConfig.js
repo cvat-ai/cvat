@@ -192,6 +192,12 @@ class Config {
                 description: "open settings window "
             },
 
+            open_analytics: {
+                value: "f3",
+                view_value: "F3",
+                description: "open analytics window"
+            },
+
             save_work: {
                 value: "ctrl+s",
                 view_value: "Ctrl + S",
