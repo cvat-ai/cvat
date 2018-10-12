@@ -1,7 +1,8 @@
 server.host: 0.0.0.0
 elasticsearch.url: http://elasticsearch:9200
-elasticsearch.requestHeadersWhitelist: [ cookie, authorization, x-forwarded-user ]
+elasticsearch.requestHeadersWhitelist: [ "cookie", "authorization", "x-proxy-user", "x-proxy-roles" ]
 kibana.defaultAppId: "discover"
 server.basePath: /analytics
 elasticsearch.username: kibana
 elasticsearch.password: kibana
+searchguard.readonly_mode.roles: ["sg_read_only"]

@@ -1,0 +1,19 @@
+searchguard:
+  dynamic:
+    http:
+      xff:
+        enabled: true
+        internalProxies: 'kibana'
+    authc:
+      proxy_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 0
+        http_authenticator:
+          type: proxy
+          challenge: false
+          config:
+            user_header: "x-proxy-user"
+            roles_header: "x-proxy-roles"
+        authentication_backend:
+          type: noop

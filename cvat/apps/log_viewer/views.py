@@ -11,6 +11,7 @@ class LogViewerProxy(ProxyView):
 
     def get_request_headers(self):
         headers = super().get_request_headers()
-        headers['X-Forwarded-User'] = headers['REMOTE_USER']
+        headers['X-Proxy-User'] = headers['REMOTE_USER']
+        headers['X-Proxy-Roles'] = "sg_read_only"
 
         return headers

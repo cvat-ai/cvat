@@ -13,6 +13,7 @@ services:
         ELK_VERSION: 6.4.0
     volumes:
       - cvat_events:/usr/share/elasticsearch/data
+      - certificates:/usr/share/elasticsearch/config/certificates
     restart: always
 
   cvat_kibana:
@@ -27,6 +28,8 @@ services:
       args:
         ELK_VERSION: 6.4.0
     depends_on: ['cvat_elasticsearch']
+    volumes:
+      - certificates:/usr/share/kibana/certificates
     restart: always
 
   cvat_kibana_setup:
@@ -55,6 +58,8 @@ services:
         http_proxy:  ${http_proxy}
         https_proxy: ${https_proxy}
     depends_on: ['cvat_elasticsearch']
+    volumes:
+      - certificates:/usr/share/logstash/certificates
     restart: always
 
   cvat:
@@ -67,3 +72,9 @@ services:
 
 volumes:
   cvat_events:
+  certificates:
+    driver_opts:
+      type: none
+      device: $PWD/analytics/certificates
+      o: bind
+
