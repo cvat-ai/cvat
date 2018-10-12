@@ -19,7 +19,7 @@ from cvat.settings.base import JS_3RDPARTY
 from cvat.apps.authentication.decorators import login_required
 from requests.exceptions import RequestException
 import logging
-from .logging import task_logger, job_logger, global_logger, job_client_logger
+from .log import slogger, clogger
 
 ############################# High Level server API
 @login_required
@@ -27,7 +27,7 @@ from .logging import task_logger, job_logger, global_logger, job_client_logger
 def catch_client_exception(request, jid):
     data = json.loads(request.body.decode('utf-8'))
     for event in data['exceptions']:
-        job_client_logger[jid].error(json.dumps(event))
+        clogger.job[jid].error(json.dumps(event))
 
     return HttpResponse()
 
@@ -49,7 +49,7 @@ def create_task(request):
     db_task = None
     params = request.POST.dict()
     params['owner'] = request.user
-    global_logger.info("create task with params = {}".format(params))
+    slogger.glob.info("create task with params = {}".format(params))
     try:
         db_task = task.create_empty(params)
         target_paths = []
@@ -94,7 +94,7 @@ def create_task(request):
 
         return JsonResponse({'tid': db_task.id})
     except Exception as exc:
-        global_logger.error("cannot create task {}".format(params['task_name']), exc_info=True)
+        slogger.glob.error("cannot create task {}".format(params['task_name']), exc_info=True)
         db_task.delete()
         return HttpResponseBadRequest(str(exc))
 
@@ -106,10 +106,10 @@ def check_task(request, tid):
     """Check the status of a task"""
 
     try:
-        global_logger.info("check task #{}".format(tid))
+        slogger.glob.info("check task #{}".format(tid))
         response = task.check(tid)
     except Exception as e:
-        global_logger.error("cannot check task #{}".format(tid), exc_info=True)
+        slogger.glob.error("cannot check task #{}".format(tid), exc_info=True)
         return HttpResponseBadRequest(str(e))
 
     return JsonResponse(response)
@@ -125,7 +125,7 @@ def get_frame(request, tid, frame):
         path = os.path.realpath(task.get_frame_path(tid, frame))
         return sendfile(request, path)
     except Exception as e:
-        task_logger[tid].error("cannot get frame #{}".format(frame), exc_info=True)
+        slogger.task[tid].error("cannot get frame #{}".format(frame), exc_info=True)
         return HttpResponseBadRequest(str(e))
 
 @login_required
@@ -133,13 +133,13 @@ def get_frame(request, tid, frame):
 def delete_task(request, tid):
     """Delete the task"""
     try:
-        global_logger.info("delete task #{}".format(tid))
+        slogger.glob.info("delete task #{}".format(tid))
         if not task.is_task_owner(request.user, tid):
             return HttpResponseBadRequest("You don't have permissions to delete the task.")
 
         task.delete(tid)
     except Exception as e:
-        global_logger.error("cannot delete task #{}".format(tid), exc_info=True)
+        slogger.glob.error("cannot delete task #{}".format(tid), exc_info=True)
         return HttpResponseBadRequest(str(e))
 
     return HttpResponse()
@@ -149,14 +149,14 @@ def delete_task(request, tid):
 def update_task(request, tid):
     """Update labels for the task"""
     try:
-        task_logger[tid].info("update task request")
+        slogger.task[tid].info("update task request")
         if not task.is_task_owner(request.user, tid):
             return HttpResponseBadRequest("You don't have permissions to change the task.")
 
         labels = request.POST['labels']
         task.update(tid, labels)
     except Exception as e:
-        task_logger[tid].error("cannot update task", exc_info=True)
+        slogger.task[tid].error("cannot update task", exc_info=True)
         return HttpResponseBadRequest(str(e))
 
     return HttpResponse()
@@ -165,10 +165,10 @@ def update_task(request, tid):
 @permission_required(perm='engine.view_task', raise_exception=True)
 def get_task(request, tid):
     try:
-        task_logger[tid].info("get task request")
+        slogger.task[tid].info("get task request")
         response = task.get(tid)
     except Exception as e:
-        task_logger[tid].error("cannot get task", exc_info=True)
+        slogger.task[tid].error("cannot get task", exc_info=True)
         return HttpResponseBadRequest(str(e))
 
     return JsonResponse(response, safe=False)
@@ -177,10 +177,10 @@ def get_task(request, tid):
 @permission_required(perm=['engine.view_task', 'engine.view_annotation'], raise_exception=True)
 def get_job(request, jid):
     try:
-        job_logger[jid].info("get job #{} request".format(jid))
+        slogger.job[jid].info("get job #{} request".format(jid))
         response = task.get_job(jid)
     except Exception as e:
-        job_logger[jid].error("cannot get job #{}".format(jid), exc_info=True)
+        slogger.job[jid].error("cannot get job #{}".format(jid), exc_info=True)
         return HttpResponseBadRequest(str(e))
 
     return JsonResponse(response, safe=False)
@@ -189,10 +189,10 @@ def get_job(request, jid):
 @permission_required(perm=['engine.view_task', 'engine.view_annotation'], raise_exception=True)
 def dump_annotation(request, tid):
     try:
-        task_logger[tid].info("dump annotation request")
+        slogger.task[tid].info("dump annotation request")
         annotation.dump(tid, annotation.FORMAT_XML, request.scheme, request.get_host())
     except Exception as e:
-        task_logger[tid].error("cannot dump annotation", exc_info=True)
+        slogger.task[tid].error("cannot dump annotation", exc_info=True)
         return HttpResponseBadRequest(str(e))
 
     return HttpResponse()
@@ -202,10 +202,10 @@ def dump_annotation(request, tid):
 @permission_required(perm=['engine.view_task', 'engine.view_annotation'], raise_exception=True)
 def check_annotation(request, tid):
     try:
-        task_logger[tid].info("check annotation")
+        slogger.task[tid].info("check annotation")
         response = annotation.check(tid)
     except Exception as e:
-        task_logger[tid].error("cannot check annotation", exc_info=True)
+        slogger.task[tid].error("cannot check annotation", exc_info=True)
         return HttpResponseBadRequest(str(e))
 
     return JsonResponse(response)
@@ -216,12 +216,12 @@ def check_annotation(request, tid):
 @permission_required(perm=['engine.view_task', 'engine.view_annotation'], raise_exception=True)
 def download_annotation(request, tid):
     try:
-        task_logger[tid].info("get dumped annotation")
+        slogger.task[tid].info("get dumped annotation")
         db_task = models.Task.objects.get(pk=tid)
         response = sendfile(request, db_task.get_dump_path(), attachment=True,
             attachment_filename='{}_{}.xml'.format(db_task.id, db_task.name))
     except Exception as e:
-        task_logger[tid].error("cannot get dumped annotation", exc_info=True)
+        slogger.task[tid].error("cannot get dumped annotation", exc_info=True)
         return HttpResponseBadRequest(str(e))
 
     return response
@@ -232,10 +232,10 @@ def download_annotation(request, tid):
 @permission_required(perm=['engine.view_task', 'engine.view_annotation'], raise_exception=True)
 def get_annotation(request, jid):
     try:
-        job_logger[jid].info("get annotation for {} job".format(jid))
+        slogger.job[jid].info("get annotation for {} job".format(jid))
         response = annotation.get(jid)
     except Exception as e:
-        job_logger[jid].error("cannot get annotation for job {}".format(jid), exc_info=True)
+        slogger.job[jid].error("cannot get annotation for job {}".format(jid), exc_info=True)
         return HttpResponseBadRequest(str(e))
 
     return JsonResponse(response, safe=False)
@@ -244,18 +244,18 @@ def get_annotation(request, jid):
 @permission_required(perm=['engine.view_task', 'engine.change_annotation'], raise_exception=True)
 def save_annotation_for_job(request, jid):
     try:
-        job_logger[jid].info("save annotation for {} job".format(jid))
+        slogger.job[jid].info("save annotation for {} job".format(jid))
         data = json.loads(request.body.decode('utf-8'))
         if 'annotation' in data:
             annotation.save_job(jid, json.loads(data['annotation']))
         if 'logs' in data:
             for event in json.loads(data['logs']):
-                job_client_logger[jid].info(json.dumps(event))
+                clogger.job[jid].info(json.dumps(event))
     except RequestException as e:
-        job_logger[jid].error("cannot send annotation logs for job {}".format(jid), exc_info=True)
+        slogger.job[jid].error("cannot send annotation logs for job {}".format(jid), exc_info=True)
         return HttpResponseBadRequest(str(e))
     except Exception as e:
-        job_logger[jid].error("cannot save annotation for job {}".format(jid), exc_info=True)
+        slogger.job[jid].error("cannot save annotation for job {}".format(jid), exc_info=True)
         return HttpResponseBadRequest(str(e))
 
     return HttpResponse()
@@ -265,11 +265,11 @@ def save_annotation_for_job(request, jid):
 @permission_required(perm=['engine.view_task', 'engine.change_annotation'], raise_exception=True)
 def save_annotation_for_task(request, tid):
     try:
-        task_logger[tid].info("save annotation request")
+        slogger.task[tid].info("save annotation request")
         data = json.loads(request.body.decode('utf-8'))
         annotation.save_task(tid, data)
     except Exception as e:
-        task_logger[tid].error("cannot save annotation", exc_info=True)
+        slogger.task[tid].error("cannot save annotation", exc_info=True)
         return HttpResponseBadRequest(str(e))
 
     return HttpResponse()

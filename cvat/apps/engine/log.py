@@ -4,9 +4,8 @@
 
 import os
 import logging
-from . import models
 from cvat.settings.base import LOGGING
-from cvat.apps.engine.models import Job, Task
+from .models import Job, Task
 
 def _get_task(tid):
     try:
@@ -16,7 +15,7 @@ def _get_task(tid):
 
 def _get_job(jid):
     try:
-        return models.Job.objects.select_related("segment__task").get(id=jid)
+        return Job.objects.select_related("segment__task").get(id=jid)
     except Exception:
         raise Exception('{} key must be a job identifier'.format(jid))
 
@@ -34,6 +33,8 @@ class TaskLoggerStorage:
 
         logger = logging.getLogger('cvat.server.task_{}'.format(tid))
         server_file = logging.FileHandler(filename=task.get_log_path())
+        formatter = logging.Formatter(LOGGING['formatters']['standard']['format'])
+        server_file.setFormatter(formatter)
         logger.addHandler(server_file)
 
         return logger
@@ -49,7 +50,7 @@ class JobLoggerStorage:
 
     def _get_task_logger(self, jid):
         job = _get_job(jid)
-        return task_logger[job.segment.task.id]
+        return slogger.task[job.segment.task.id]
 
 class TaskClientLoggerStorage:
     def __init__(self):
@@ -79,10 +80,21 @@ class JobClientLoggerStorage:
 
     def _get_task_logger(self, jid):
         job = _get_job(jid)
-        return task_client_logger[job.segment.task.id]
+        return clogger.task[job.segment.task.id]
 
-task_logger = TaskLoggerStorage()
-job_logger = JobLoggerStorage()
-global_logger = logging.getLogger('cvat.server')
-job_client_logger = JobClientLoggerStorage()
-task_client_logger = TaskClientLoggerStorage()
+class dotdict(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+clogger = dotdict({
+    'task': TaskClientLoggerStorage(),
+    'job': JobClientLoggerStorage()
+})
+
+slogger = dotdict({
+    'task': TaskLoggerStorage(),
+    'job': JobLoggerStorage(),
+    'glob': logging.getLogger('cvat.server'),
+})

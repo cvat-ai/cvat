@@ -3,16 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-import csv
 import os
-import re
-import rq
 import sys
+import rq
 import shlex
-import logging
 import shutil
 import tempfile
-from io import StringIO
 from PIL import Image
 from traceback import print_exception
 from ast import literal_eval
@@ -30,7 +26,7 @@ from pyunpack import Archive
 from distutils.dir_util import copy_tree
 
 from . import models
-from .logging import task_logger, job_logger, global_logger
+from .log import slogger
 
 ############################# Low Level server API
 
@@ -579,7 +575,8 @@ def _save_task_to_db(db_task, task_params):
     for x in range(0, db_task.size, segment_step):
         start_frame = x
         stop_frame = min(x + task_params['segment'] - 1, db_task.size - 1)
-        global_logger.info("New segment for task #{}: start_frame = {}, stop_frame = {}".format(db_task.id, start_frame, stop_frame))
+        slogger.glob.info("New segment for task #{}: start_frame = {}, \
+            stop_frame = {}".format(db_task.id, start_frame, stop_frame))
 
         db_segment = models.Segment()
         db_segment.task = db_task
@@ -613,7 +610,7 @@ def _create_thread(tid, params):
         raise Exception('Only one archive, one video or many images can be dowloaded simultaneously. \
             {} image(s), {} dir(s), {} video(s), {} archive(s) found'.format(images, dirs, videos, archives))
 
-    global_logger.info("create task #{}".format(tid))
+    slogger.glob.info("create task #{}".format(tid))
     job = rq.get_current_job()
 
     db_task = models.Task.objects.select_for_update().get(pk=tid)
@@ -657,13 +654,13 @@ def _create_thread(tid, params):
     }
     task_params['overlap'] = int(params.get('overlap_size', 5 if task_params['mode'] == 'interpolation' else 0))
     task_params['overlap'] = min(task_params['overlap'], task_params['segment'] - 1)
-    global_logger.info("Task #{} parameters: {}".format(tid, task_params))
+    slogger.glob.info("Task #{} parameters: {}".format(tid, task_params))
 
     if task_params['mode'] == 'interpolation':
         _find_and_extract_video(upload_dir, output_dir, db_task, task_params['compress'], task_params['flip'], job)
     else:
         _find_and_compress_images(upload_dir, output_dir, db_task, task_params['compress'], task_params['flip'], job)
-    global_logger.info("Founded frames {} for task #{}".format(db_task.size, tid))
+    slogger.glob.info("Founded frames {} for task #{}".format(db_task.size, tid))
 
     job.meta['status'] = 'Task is being saved in database'
     job.save_meta()

@@ -21,8 +21,7 @@ import rq
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-
-_logger = logging.getLogger(__name__)
+from .log import slogger
 
 def load_image_into_numpy(image):
     (im_width, im_height) = image.size
@@ -153,7 +152,7 @@ def create_thread(id, labels_mapping):
         # Run auto annotation by tf
         result = run_annotation(image_list, labels_mapping, TRESHOLD)
         if result is None:
-            _logger.info('tf annotation for task {} canceled by user'.format(id))
+            slogger.glob.info('tf annotation for task {} canceled by user'.format(id))
             return
 
         # Modify data format and save
@@ -161,30 +160,30 @@ def create_thread(id, labels_mapping):
         annotation.save_task(id, result)
         db_task.status = "Annotation"
         db_task.save()
-        _logger.info('tf annotation for task {} done'.format(id))
+        slogger.glob.info('tf annotation for task {} done'.format(id))
     except Exception:
-        _logger.exception('exception was occured during tf annotation of the task {}'.format(id))
+        slogger.glob.exception('exception was occured during tf annotation of the task {}'.format(id))
         db_task.status = "TF Annotation Fault"
         db_task.save()
 
 @login_required
 @permission_required(perm=['engine.view_task', 'engine.change_annotation'], raise_exception=True)
 def create(request, tid):
-    _logger.info('tf annotation create request for task {}'.format(tid))
+    slogger.glob.info('tf annotation create request for task {}'.format(tid))
     try:
         db_task = TaskModel.objects.get(pk=tid)
     except ObjectDoesNotExist:
-        _logger.exception('task with id {} not found'.format(tid))
+        slogger.glob.exception('task with id {} not found'.format(tid))
         return HttpResponseBadRequest("A task with this ID was not found")
 
     if not task.is_task_owner(request.user, tid):
-        _logger.error('not enought of permissions for tf annotation of the task {}'.format(tid))
+        slogger.glob.error('not enought of permissions for tf annotation of the task {}'.format(tid))
         return HttpResponseBadRequest("You don't have permissions to tf annotation of the task.")
 
     queue = django_rq.get_queue('low')
     job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
     if job is not None and (job.is_started or job.is_queued):
-        _logger.error('tf annotation for task {} already running'.format(tid))
+        slogger.glob.error('tf annotation for task {} already running'.format(tid))
         return HttpResponseBadRequest("The process is already running")
     db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
     db_labels = {db_label.id:db_label.name for db_label in db_labels}
@@ -214,7 +213,7 @@ def create(request, tid):
             labels_mapping[tf_annotation_labels[labels]] = key
 
     if not len(labels_mapping.values()):
-        _logger.error('no labels found for task {} tf annotation'.format(tid))
+        slogger.glob.error('no labels found for task {} tf annotation'.format(tid))
         return HttpResponseBadRequest("No labels found for tf annotation")
 
     db_task.status = "TF Annotation"
@@ -225,7 +224,7 @@ def create(request, tid):
         args=(tid, labels_mapping),
         job_id='tf_annotation.create/{}'.format(tid),
         timeout=604800)     # 7 days
-    _logger.info('tf annotation job enqueued for task {} with labels {}'.format(tid, labels_mapping))
+    slogger.glob.info('tf annotation job enqueued for task {} with labels {}'.format(tid, labels_mapping))
 
     return HttpResponse()
 

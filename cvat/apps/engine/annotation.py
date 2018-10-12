@@ -22,7 +22,7 @@ from django.db import transaction
 
 from . import models
 from .task import get_frame_path, get_image_meta_cache
-from .logging import task_logger, job_logger
+from .log import slogger
 
 ############################# Low Level server API
 
@@ -114,7 +114,7 @@ def save_task(tid, data):
 # pylint: disable=unused-argument
 def rq_handler(job, exc_type, exc_value, traceback):
     tid = job.id.split('/')[1]
-    task_logger[tid].error("dump annotation error was occured", exc_info=True)
+    slogger.task[tid].error("dump annotation error was occured", exc_info=True)
 
 ##################################################
 
@@ -407,7 +407,7 @@ class _AnnotationForJob(_Annotation):
 
         # pylint: disable=bad-continuation
         self.db_job = db_job
-        self.logger = job_logger[db_job.id]
+        self.logger = slogger.job[db_job.id]
         self.db_labels = {db_label.id:db_label
             for db_label in db_job.segment.task.label_set.all()}
         self.db_attributes = {db_attr.id:db_attr
