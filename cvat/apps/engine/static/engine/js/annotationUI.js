@@ -105,7 +105,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
 
     window.cvat.data = {
-        get: () => shapeCollectionModel.export(),
+        get: () => shapeCollectionModel.exportAll(),
         set: (data) => {
             shapeCollectionModel.empty();
             shapeCollectionModel.import(data);

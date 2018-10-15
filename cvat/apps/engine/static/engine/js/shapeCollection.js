@@ -271,6 +271,16 @@ class ShapeCollectionModel extends Listener {
         return response;
     }
 
+    exportAll() {
+        const response = createExportContainer();
+        for (const shape of this._shapes) {
+            if (!shape._removed) {
+                getExportTargetContainer(ExportType.create, shape.type, response).push(shape.export());
+            }
+        }
+        return response.create;
+    }
+
     find(direction) {
         if (Math.sign(direction) > 0) {
             let frame = this._frame + 1;
