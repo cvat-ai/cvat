@@ -18,8 +18,8 @@ CUDA_VERSION=9.0.176
 NCCL_VERSION=2.1.15
 CUDNN_VERSION=7.0.5.15
 CUDA_PKG_VERSION="9-0=${CUDA_VERSION}-1"
-echo "export PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}" >> ${HOME}/.bashrc
-echo "export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}" >> ${HOME}/.bashrc
+echo 'export PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}' >> ${HOME}/.bashrc
+echo 'export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}' >> ${HOME}/.bashrc
 
 apt-get update && apt-get install -y --no-install-recommends --allow-unauthenticated \
     libprotobuf-dev \
