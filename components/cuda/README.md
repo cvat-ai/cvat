@@ -1,4 +1,5 @@
 ## NVidia Cuda Component
+Support of cuda technology in you CVAT container. It may be useful for accelerated running of various models.
 
 ### Requirements
 
@@ -30,20 +31,17 @@ docker info | grep 'Runtimes'   # output should contains 'nvidia'
 
 ### Build docker image
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.nvidia.yml build
+docker-compose -f docker-compose.yml -f docker-compose.cuda.yml build
 ```
 
 ### Run container
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.nvidia.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
 ```
 
-
-### Run containers with tf_annotation app
-
-If you would like to enable tf_annotation app first of all be sure that nvidia-driver, nvidia-docker and docker-compose>=1.19.0 are installed properly (see instructions above) and `docker info | grep 'Runtimes'` output contains `nvidia`.
+### Run containers with CUDA component
 
 Run following command:
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.nvidia.yml up -d --build
+docker-compose -f docker-compose.yml -f docker-compose.cuda.yml up -d --build
 ```
