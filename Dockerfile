@@ -69,7 +69,7 @@ ARG TF_ANNOTATION
 ENV TF_ANNOTATION=${TF_ANNOTATION}
 ENV TF_ANNOTATION_MODEL_PATH=${HOME}/rcnn/inference_graph
 RUN if [ "$TF_ANNOTATION" = "yes" ]; then \
-        /tmp/components/tf_annotation/install.sh; \
+        bash -i /tmp/components/tf_annotation/install.sh; \
     fi
 
 ARG WITH_TESTS
