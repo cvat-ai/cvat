@@ -67,7 +67,7 @@ RUN if [ "$CUDA_SUPPORT" = "yes" ]; then \
 # Tensorflow annotation support
 ARG TF_ANNOTATION
 ENV TF_ANNOTATION=${TF_ANNOTATION}
-ENV TF_ANNOTATION_MODEL_PATH=${HOME}/cvat/apps/tf_annotation/inference_graph
+ENV TF_ANNOTATION_MODEL_PATH=${HOME}/rcnn/inference_graph
 RUN if [ "$TF_ANNOTATION" = "yes" ]; then \
         /tmp/components/tf_annotation/install.sh; \
     fi

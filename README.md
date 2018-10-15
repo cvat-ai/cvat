@@ -60,7 +60,7 @@ docker-compose -f docker-compose.yml -f docker-compose.cuda.yml -f docker-compos
 You can [register a user](http://localhost:8080/auth/register) but by default it will not have rights even to view list of tasks. Thus you should create a superuser. The superuser can use admin panel to assign correct groups to the user. Please use the command below:
 
 ```bash
-docker exec -it cvat sh -c '/usr/bin/python3 ~/manage.py createsuperuser'
+docker exec -it cvat bash -ic '/usr/bin/python3 ~/manage.py createsuperuser'
 ```
 
 Type your login/password for the superuser [on the login page](http://localhost:8080/auth/login) and press **Login** button. Now you should be able to create a new annotation task. Please read documentation for more details.
