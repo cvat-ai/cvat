@@ -1,10 +1,9 @@
-## NVidia Cuda Component
-Support of cuda technology in you CVAT container. It may be useful for accelerated running of various models.
+## [NVIDIA CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit)
 
 ### Requirements
 
-* NVidia GPU with a compute capability [3.0 - 7.2]
-* Latest GPU drivers
+* NVIDIA GPU with a compute capability [3.0 - 7.2]
+* Latest GPU driver
 
 ### Installation
 
