@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import permission_required
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine import annotation, task
+from cvat.apps.engine.logging import task_logger
 
 import django_rq
 import subprocess
@@ -233,7 +234,7 @@ def create_thread(id, labels_mapping):
         job.meta['progress'] = 0
         job.save_meta()
         # Get job indexes and segment length
-        db_task = TaskModel.objects.get(pk=id)
+        db_task = TaskModel.objects.get(pk=tid)
         db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
         segment_length = max(db_segments[0].stop_frame - db_segments[0].start_frame + 1, 1)
         job_indexes = [segment.job_set.first().id for segment in db_segments]
@@ -243,8 +244,10 @@ def create_thread(id, labels_mapping):
         # Run auto annotation by tf
         result = None
         if os.environ.get('CUDA_SUPPORT') == 'yes' or os.environ.get('OPENVINO_TOOLKIT') != 'yes':
+            task_logger[tid].info("tf annotation with tensorflow framework")
             result = run_tensorflow_annotation(image_list, labels_mapping, TRESHOLD)
         else:
+            task_logger[tid].info("tf annotation with openvino toolkit")
             result = run_inference_engine_annotation(image_list, labels_mapping, TRESHOLD)
 
         if result is None:
@@ -253,12 +256,12 @@ def create_thread(id, labels_mapping):
 
         # Modify data format and save
         result = convert_to_cvat_format(result)
-        annotation.save_task(id, result)
+        annotation.save_task(tid, result)
         db_task.status = "Annotation"
         db_task.save()
         slogger.glob.info('tf annotation for task {} done'.format(id))
-    except Exception:
-        slogger.glob.exception('exception was occured during tf annotation of the task {}'.format(id))
+    except Exception as ex:
+        slogger.glob.exception('exception was occured during tf annotation of the task {}: {}'.format(id, ex))
         db_task.status = "TF Annotation Fault"
         db_task.save()
 
@@ -271,6 +274,8 @@ def create(request, tid):
     except ObjectDoesNotExist:
         slogger.glob.exception('task with id {} not found'.format(tid))
         return HttpResponseBadRequest("A task with this ID was not found")
+
+    task_logger[tid].info("tf annotation create request")
 
     if not task.is_task_owner(request.user, tid):
         slogger.glob.error('not enought of permissions for tf annotation of the task {}'.format(tid))

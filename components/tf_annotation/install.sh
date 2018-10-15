@@ -27,6 +27,6 @@ else
         --tensorflow_object_detection_api_pipeline_config pipeline.config --input_model inference_graph.pb && \
         rm inference_graph.pb
     else
-        pip3 install --no-cache-dir tensorflow-cpu==1.7.0
+        pip3 install --no-cache-dir tensorflow==1.7.0
     fi
 fi
