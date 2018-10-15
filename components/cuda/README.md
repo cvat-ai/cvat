@@ -34,14 +34,7 @@ docker info | grep 'Runtimes'   # output should contains 'nvidia'
 docker-compose -f docker-compose.yml -f docker-compose.cuda.yml build
 ```
 
-### Run container
+### Run docker container
 ```bash
 docker-compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
-```
-
-### Run containers with CUDA component
-
-Run following command:
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.cuda.yml up -d --build
 ```
