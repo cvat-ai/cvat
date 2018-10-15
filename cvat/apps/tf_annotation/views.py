@@ -123,9 +123,11 @@ def convert_to_cvat_format(data):
         'delete': create_anno_container(),
         'pre_erase': True,
     }
+
+    client_idx = 0
     for label in data:
         boxes = data[label]
-        for i, box in enumerate(boxes):
+        for box in boxes:
             result['create']['boxes'].append({
                 "label_id": label,
                 "frame": box[0],
@@ -137,8 +139,10 @@ def convert_to_cvat_format(data):
                 "group_id": 0,
                 "occluded": False,
                 "attributes": [],
-                "client_id": i,
+                "client_id": client_idx,
             })
+
+            client_idx += 1
 
     return result
 
