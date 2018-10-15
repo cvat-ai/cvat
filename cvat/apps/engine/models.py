@@ -139,6 +139,7 @@ class Annotation(models.Model):
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     group_id = models.PositiveIntegerField(default=0)
+    client_id = models.BigIntegerField(default=-1)
     class Meta:
         abstract = True
 

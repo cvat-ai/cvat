@@ -260,7 +260,6 @@ def save_annotation_for_job(request, jid):
 
     return HttpResponse()
 
-
 @login_required
 @permission_required(perm=['engine.view_task', 'engine.change_annotation'], raise_exception=True)
 def save_annotation_for_task(request, tid):

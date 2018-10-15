@@ -15,6 +15,7 @@ class AnnotationParser {
         this._flipped = job.flipped;
         this._im_meta = job.image_meta_data;
         this._labelsInfo = labelsInfo;
+        this._client_id_set = new Set();
     }
 
     _xmlParseError(parsedXML) {
@@ -131,7 +132,8 @@ class AnnotationParser {
         let result = [];
         for (let track of tracks) {
             let label = track.getAttribute('label');
-            let group_id = track.getAttribute('group_id') || "0";
+            let group_id = track.getAttribute('group_id') || '0';
+            let client_id = track.getAttribute('client_id') || '-1';
             let labelId = this._labelsInfo.labelIdOf(label);
             if (labelId === null) {
                 throw Error(`An unknown label found in the annotation file: ${label}`);
@@ -149,12 +151,24 @@ class AnnotationParser {
                     !+shapes[0].getAttribute('outside') && +shapes[1].getAttribute('outside')) {
                     shapes[0].setAttribute('label', label);
                     shapes[0].setAttribute('group_id', group_id);
+                    shapes[0].setAttribute('client_id', client_id);
                     result.push(shapes[0]);
                 }
             }
         }
 
         return result;
+    }
+
+    _updateClientIds(data) {
+        let maxId = Math.max(-1, ...Array.from(this._client_id_set));
+        for (const shape_type in data) {
+            for (const shape of data[shape_type]) {
+                if (shape.client_id === -1) {
+                    shape.client_id = ++maxId;
+                }
+            }
+        }
     }
 
     _parseAnnotationData(xml) {
@@ -209,6 +223,15 @@ class AnnotationParser {
                     throw Error('An unknown label found in the annotation file: ' + shape.getAttribute('label'));
                 }
 
+                let client_id = parseInt(shape.getAttribute('client_id') || '-1');
+                if (client_id !== -1) {
+                    if (this._client_id_set.has(client_id)) {
+                        throw Error('More than one shape has the same client_id attribute');
+                    }
+
+                    this._client_id_set.add(client_id);
+                }
+
                 let attributeList = this._getAttributeList(shape, labelId);
 
                 if (shape_type === 'boxes') {
@@ -224,6 +247,7 @@ class AnnotationParser {
                         ybr: ybr,
                         z_order: z_order,
                         attributes: attributeList,
+                        client_id: client_id,
                     });
                 }
                 else {
@@ -236,6 +260,7 @@ class AnnotationParser {
                         occluded: occluded,
                         z_order: z_order,
                         attributes: attributeList,
+                        client_id: client_id,
                     });
                 }
             }
@@ -255,7 +280,8 @@ class AnnotationParser {
         let tracks = xml.getElementsByTagName('track');
         for (let track of tracks) {
             let labelId = this._labelsInfo.labelIdOf(track.getAttribute('label'));
-            let groupId = track.getAttribute('group_id') || "0";
+            let groupId = track.getAttribute('group_id') || '0';
+            let client_id = parseInt(track.getAttribute('client_id') || '-1');
             if (labelId === null) {
                 throw Error('An unknown label found in the annotation file: ' + name);
             }
@@ -307,8 +333,17 @@ class AnnotationParser {
                 group_id: +groupId,
                 frame: +parsed[type][0].getAttribute('frame'),
                 attributes: [],
-                shapes: []
+                shapes: [],
+                client_id: client_id,
             };
+
+            if (client_id !== -1) {
+                if (this._client_id_set.has(client_id)) {
+                    throw Error('More than one shape has the same client_id attribute');
+                }
+
+                this._client_id_set.add(client_id);
+            }
 
             for (let shape of parsed[type]) {
                 let keyFrame = +shape.getAttribute('keyframe');
@@ -381,7 +416,12 @@ class AnnotationParser {
         return data;
     }
 
+    _reset() {
+        this._client_id_set.clear();
+    }
+
     parse(text) {
+        this._reset();
         let xml = this._parser.parseFromString(text, 'text/xml');
         let parseerror = this._xmlParseError(xml);
         if (parseerror.length) {
@@ -390,6 +430,8 @@ class AnnotationParser {
 
         let interpolationData = this._parseInterpolationData(xml);
         let annotationData = this._parseAnnotationData(xml);
-        return Object.assign({}, annotationData, interpolationData);
+        let data = Object.assign({}, annotationData, interpolationData);
+        this._updateClientIds(data);
+        return data;
     }
 }

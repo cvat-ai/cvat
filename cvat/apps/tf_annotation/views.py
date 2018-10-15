@@ -105,20 +105,28 @@ def make_image_list(path_to_data):
 
 
 def convert_to_cvat_format(data):
+    def create_anno_container():
+        return {
+            "boxes": [],
+            "polygons": [],
+            "polylines": [],
+            "points": [],
+            "box_paths": [],
+            "polygon_paths": [],
+            "polyline_paths": [],
+            "points_paths": [],
+        }
+
     result = {
-        "boxes": [],
-        "polygons": [],
-        "polylines": [],
-        "points": [],
-        "box_paths": [],
-        "polygon_paths": [],
-        "polyline_paths": [],
-        "points_paths": [],
+        'create': create_anno_container(),
+        'update': create_anno_container(),
+        'delete': create_anno_container(),
+        'pre_erase': True,
     }
     for label in data:
         boxes = data[label]
-        for box in boxes:
-            result['boxes'].append({
+        for i, box in enumerate(boxes):
+            result['create']['boxes'].append({
                 "label_id": label,
                 "frame": box[0],
                 "xtl": box[1],
@@ -128,11 +136,11 @@ def convert_to_cvat_format(data):
                 "z_order": 0,
                 "group_id": 0,
                 "occluded": False,
-                "attributes": []
+                "attributes": [],
+                "client_id": i,
             })
 
     return result
-
 
 def create_thread(id, labels_mapping):
     try:

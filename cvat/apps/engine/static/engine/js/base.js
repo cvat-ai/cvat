@@ -4,7 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported confirm showMessage showOverlay dumpAnnotationRequest */
+/* exported confirm showMessage showOverlay dumpAnnotationRequest ExportType
+   createExportContainer  getExportTargetContainer
+*/
+
 "use strict";
 
 Math.clamp = function(x, min, max) {
@@ -158,6 +161,81 @@ function dumpAnnotationRequest(dumpButton, taskID) {
         showMessage(message);
         throw Error(message);
     }
+}
+
+const ExportType = Object.freeze({
+    'create': 0,
+    'update': 1,
+    'delete': 2,
+});
+
+function createExportContainer() {
+    const container = {};
+    Object.keys(ExportType).forEach( action => {
+        container[action] = {
+            "boxes": [],
+            "box_paths": [],
+            "points": [],
+            "points_paths": [],
+            "polygons": [],
+            "polygon_paths": [],
+            "polylines": [],
+            "polyline_paths": [],
+        };
+    });
+    container.pre_erase = false;
+
+    return container;
+}
+
+function getExportTargetContainer(export_type, shape_type, container) {
+    let shape_container_target = undefined;
+    let export_action_container = undefined;
+
+    switch (export_type) {
+    case ExportType.create:
+        export_action_container = container.create;
+        break;
+    case ExportType.update:
+        export_action_container = container.update;
+        break;
+    case ExportType.delete:
+        export_action_container = container.delete;
+        break;
+    default:
+        throw Error('Unexpected export type');
+    }
+
+    switch (shape_type) {
+    case 'annotation_box':
+        shape_container_target = export_action_container.boxes;
+        break;
+    case 'interpolation_box':
+        shape_container_target = export_action_container.box_paths;
+        break;
+    case 'annotation_points':
+        shape_container_target = export_action_container.points;
+        break;
+    case 'interpolation_points':
+        shape_container_target = export_action_container.points_paths;
+        break;
+    case 'annotation_polygon':
+        shape_container_target = export_action_container.polygons;
+        break;
+    case 'interpolation_polygon':
+        shape_container_target = export_action_container.polygon_paths;
+        break;
+    case 'annotation_polyline':
+        shape_container_target = export_action_container.polylines;
+        break;
+    case 'interpolation_polyline':
+        shape_container_target = export_action_container.polyline_paths;
+        break;
+    default:
+        throw Error('Undefined shape type');
+    }
+
+    return shape_container_target;
 }
 
 /* These HTTP methods do not require CSRF protection */

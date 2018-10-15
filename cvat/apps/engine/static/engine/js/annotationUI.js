@@ -105,7 +105,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
 
     window.cvat.data = {
-        get: () => shapeCollectionModel.export(),
+        get: () => shapeCollectionModel.exportAll(),
         set: (data) => {
             shapeCollectionModel.empty();
             shapeCollectionModel.import(data);
@@ -689,11 +689,11 @@ function saveAnnotation(shapeCollectionModel, job) {
         'points count': totalStat.points.annotation + totalStat.points.interpolation,
     });
 
-    let exportedData = shapeCollectionModel.export();
-    let annotationLogs = Logger.getLogs();
+    const exportedData = shapeCollectionModel.export();
+    const annotationLogs = Logger.getLogs();
 
     const data = {
-        annotation: exportedData,
+        annotation: JSON.stringify(exportedData),
         logs: JSON.stringify(annotationLogs.export()),
     };
 
@@ -702,6 +702,7 @@ function saveAnnotation(shapeCollectionModel, job) {
 
     saveJobRequest(job.jobid, data, () => {
         // success
+        shapeCollectionModel.reset_state();
         shapeCollectionModel.updateHash();
         saveButton.text('Success!');
         setTimeout(() => {

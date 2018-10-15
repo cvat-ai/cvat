@@ -14,6 +14,7 @@ const AREA_TRESHOLD = 9;
 const TEXT_MARGIN = 10;
 
 /******************************** SHAPE MODELS  ********************************/
+
 class ShapeModel extends Listener {
     constructor(data, positions, type, id, color) {
         super('onShapeUpdate', () => this );
@@ -472,6 +473,7 @@ class ShapeModel extends Listener {
             this.removed = false;
         }, () => {
             this.removed = true;
+
         }, window.cvat.player.frames.current);
         // End of undo/redo code
     }
@@ -490,6 +492,7 @@ class ShapeModel extends Listener {
         if (value) {
             this._active = false;
         }
+
         this._removed = value;
         this.notify('remove');
     }
@@ -757,6 +760,7 @@ class BoxModel extends ShapeModel {
             }
 
             return Object.assign({}, this._positions[this._frame], {
+                client_id: this._id,
                 attributes: immutableAttributes,
                 label_id: this._label,
                 group_id: this._groupId,
@@ -765,6 +769,7 @@ class BoxModel extends ShapeModel {
         }
         else {
             let boxPath = {
+                client_id: this._id,
                 label_id: this._label,
                 group_id: this._groupId,
                 frame: this._frame,
@@ -862,7 +867,6 @@ class PolyShapeModel extends ShapeModel {
         this._setupKeyFrames();
     }
 
-
     _interpolatePosition(frame) {
         if (frame in this._positions) {
             return Object.assign({}, this._positions[frame], {
@@ -951,6 +955,7 @@ class PolyShapeModel extends ShapeModel {
             }
 
             return Object.assign({}, this._positions[this._frame], {
+                client_id: this._id,
                 attributes: immutableAttributes,
                 label_id: this._label,
                 group_id: this._groupId,
@@ -959,6 +964,7 @@ class PolyShapeModel extends ShapeModel {
         }
         else {
             let polyPath = {
+                client_id: this._id,
                 label_id: this._label,
                 group_id: this._groupId,
                 frame: this._frame,
@@ -1012,16 +1018,7 @@ class PolyShapeModel extends ShapeModel {
     }
 
     static convertNumberArrayToString(arrayPoints) {
-        let serializedPoints = '';
-        for (let point of arrayPoints) {
-            serializedPoints += `${point.x},${point.y} `;
-        }
-        let len = serializedPoints.length;
-        if (len) {
-            serializedPoints = serializedPoints.substring(0, len - 1);
-        }
-
-        return serializedPoints;
+        return arrayPoints.map(point => `${point.x},${point.y}`).join(' ');
     }
 
     static importPositions(positions) {
@@ -3172,8 +3169,6 @@ class PointsView extends PolyShapeView {
         }
     }
 }
-
-
 
 function buildShapeModel(data, type, idx, color) {
     switch (type) {
