@@ -189,6 +189,7 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'filters': [],
             'formatter': 'standard',
         },
         'server_file': {
@@ -222,6 +223,11 @@ LOGGING = {
         'revproxy': {
             'handlers': ['console', 'server_file'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG')
+        },
+        'django': {
+            'handlers': ['console', 'server_file'],
+            'level': 'INFO',
+            'propagate': True
         }
     },
 }

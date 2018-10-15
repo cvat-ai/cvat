@@ -21,7 +21,7 @@ import rq
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-from .log import slogger
+from cvat.apps.engine.log import slogger
 
 def load_image_into_numpy(image):
     (im_width, im_height) = image.size
