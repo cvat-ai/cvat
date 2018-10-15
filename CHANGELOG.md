@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to draw/change polyshapes (except for points) by slip method. Just press ENTER and moving a cursor.
 - Ability to switch lock/hide properties via label UI element (in right menu) for all objects with same label.
 - Shortcuts for outside/keyframe properties
+- OpenVINO for accelerated model inference
+- Tensorflow annotation now works without CUDA. It can use CPU only. OpenVINO and CUDA are supported optionally.
 
 ### Changed
 - Polyshape editing method has been improved. You can redraw part of shape instead of points cloning.
