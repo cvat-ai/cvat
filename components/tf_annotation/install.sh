@@ -21,7 +21,7 @@ else
         pip3 install -r ${INTEL_CVSDK_DIR}/deployment_tools/model_optimizer/requirements.txt && \
         cd ${HOME}/rcnn/ && \
         ${INTEL_CVSDK_DIR}/deployment_tools/model_optimizer/mo.py --framework tf \
-        --data_type FP32 --reverse_input_channels --input_shape [1,600,600,3] \
+        --data_type FP32 --input_shape [1,600,600,3] \
         --input image_tensor --output detection_scores,detection_boxes,num_detections \
         --tensorflow_use_custom_operations_config ${INTEL_CVSDK_DIR}/deployment_tools/model_optimizer/extensions/front/tf/faster_rcnn_support.json \
         --tensorflow_object_detection_api_pipeline_config pipeline.config --input_model inference_graph.pb && \

@@ -41,11 +41,11 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
             ).decode('utf-8')
         )
 
-    def _normalize_box(box, w, h):
-        xmin = int(box[0] * w)
-        ymin = int(box[1] * h)
-        xmax = int(box[2] * w)
-        ymax = int(box[3] * h)
+    def _normalize_box(box, w, h, dw, dh):
+        xmin = max(int(box[0] * dw * w), w)
+        ymin = max(int(box[1] * dh * h), h)
+        xmax = max(int(box[2] * dw * w), w)
+        ymax = max(int(box[3] * dh * h), h)
         return xmin, ymin, xmax, ymax
 
     result = {}
@@ -86,7 +86,9 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
 
             image = Image.open(im_name)
             width, height = image.size
-            image = image.resize((600, 600), Image.ANTIALIAS)
+            image.thumbnail((600, 600), Image.ANTIALIAS)
+            dwidth, dheight = 600 / image.size[0], 600 / image.size[1]
+            image = image.crop((0, 0, 600, 600))
             image_np = load_image_into_numpy(image)
             image_np = np.transpose(image_np, (2, 0, 1))
             prediction = executable_network.infer(inputs={input_blob_name: image_np[np.newaxis, ...]})[output_blob_name][0][0]
@@ -97,7 +99,7 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
                     label = labels_mapping[obj_class]
                     if label not in result:
                         result[label] = []
-                    xmin, ymin, xmax, ymax = _normalize_box(obj[3:7], width, height)
+                    xmin, ymin, xmax, ymax = _normalize_box(obj[3:7], width, height, dwidth, dheight)
                     result[label].append([image_num, xmin, ymin, xmax, ymax])
     finally:
         del executable_network
