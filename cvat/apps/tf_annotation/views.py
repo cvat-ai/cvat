@@ -42,10 +42,10 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
         )
 
     def _normalize_box(box, w, h, dw, dh):
-        xmin = max(int(box[0] * dw * w), w)
-        ymin = max(int(box[1] * dh * h), h)
-        xmax = max(int(box[2] * dw * w), w)
-        ymax = max(int(box[3] * dh * h), h)
+        xmin = min(int(box[0] * dw * w), w)
+        ymin = min(int(box[1] * dh * h), h)
+        xmax = min(int(box[2] * dw * w), w)
+        ymax = min(int(box[3] * dh * h), h)
         return xmin, ymin, xmax, ymax
 
     result = {}
