@@ -108,7 +108,7 @@ RQ_QUEUES = {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '1h'
+        'DEFAULT_TIMEOUT': '4h'
     },
     'low': {
         'HOST': 'localhost',
