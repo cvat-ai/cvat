@@ -10,7 +10,7 @@ services:
     build:
       context: .
       args:
-        TF_ANNOTATION: "yes"
+        CUDA_SUPPORT: "yes"
     runtime: "nvidia"
     environment:
       NVIDIA_VISIBLE_DEVICES: all

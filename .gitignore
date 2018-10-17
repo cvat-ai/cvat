@@ -6,6 +6,7 @@
 /.env
 /keys
 /logs
+/components/openvino/*.tgz
 
 # Ignore temporary files
 docker-compose.override.yml

@@ -12,6 +12,7 @@ from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine import annotation, task
 
 import django_rq
+import subprocess
 import fnmatch
 import logging
 import json
@@ -20,33 +21,111 @@ import rq
 
 import tensorflow as tf
 import numpy as np
+
 from PIL import Image
 from cvat.apps.engine.log import slogger
+
+if os.environ.get('OPENVINO_TOOLKIT') == 'yes':
+    from openvino.inference_engine import IENetwork, IEPlugin
 
 def load_image_into_numpy(image):
     (im_width, im_height) = image.size
     return np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
 
 
-def normalize_box(box, w, h):
-    xmin = int(box[1] * w)
-    ymin = int(box[0] * h)
-    xmax = int(box[3] * w)
-    ymax = int(box[2] * h)
-    return xmin, ymin, xmax, ymax
+def run_inference_engine_annotation(image_list, labels_mapping, treshold):
+    def _check_instruction(instruction):
+        return instruction == str.strip(
+            subprocess.check_output(
+                'lscpu | grep -o "{}" | head -1'.format(instruction), shell=True
+            ).decode('utf-8')
+        )
+
+    def _normalize_box(box, w, h, dw, dh):
+        xmin = min(int(box[0] * dw * w), w)
+        ymin = min(int(box[1] * dh * h), h)
+        xmax = min(int(box[2] * dw * w), w)
+        ymax = min(int(box[3] * dh * h), h)
+        return xmin, ymin, xmax, ymax
+
+    result = {}
+    MODEL_PATH = os.environ.get('TF_ANNOTATION_MODEL_PATH')
+    if MODEL_PATH is None:
+        raise OSError('Model path env not found in the system.')
+
+    IE_PLUGINS_PATH = os.getenv('IE_PLUGINS_PATH')
+    if IE_PLUGINS_PATH is None:
+        raise OSError('Inference engine plugin path env not found in the system.')
+
+    plugin = IEPlugin(device='CPU', plugin_dirs=[IE_PLUGINS_PATH])
+    if (_check_instruction('avx2')):
+        plugin.add_cpu_extension(os.path.join(IE_PLUGINS_PATH, 'libcpu_extension_avx2.so'))
+    elif (_check_instruction('sse4')):
+        plugin.add_cpu_extension(os.path.join(IE_PLUGINS_PATH, 'libcpu_extension_sse4.so'))
+    else:
+        raise Exception('Inference engine requires a support of avx2 or sse4.')
+
+    network = IENetwork.from_ir(model = MODEL_PATH + '.xml', weights = MODEL_PATH + '.bin')
+    input_blob_name = next(iter(network.inputs))
+    output_blob_name = next(iter(network.outputs))
+    executable_network = plugin.load(network=network)
+    job = rq.get_current_job()
+
+    del network
+
+    try:
+        for image_num, im_name in enumerate(image_list):
+
+            job.refresh()
+            if 'cancel' in job.meta:
+                del job.meta['cancel']
+                job.save()
+                return None
+            job.meta['progress'] = image_num * 100 / len(image_list)
+            job.save_meta()
+
+            image = Image.open(im_name)
+            width, height = image.size
+            image.thumbnail((600, 600), Image.ANTIALIAS)
+            dwidth, dheight = 600 / image.size[0], 600 / image.size[1]
+            image = image.crop((0, 0, 600, 600))
+            image_np = load_image_into_numpy(image)
+            image_np = np.transpose(image_np, (2, 0, 1))
+            prediction = executable_network.infer(inputs={input_blob_name: image_np[np.newaxis, ...]})[output_blob_name][0][0]
+            for obj in prediction:
+                obj_class = int(obj[1])
+                obj_value = obj[2]
+                if obj_class and obj_class in labels_mapping and obj_value >= treshold:
+                    label = labels_mapping[obj_class]
+                    if label not in result:
+                        result[label] = []
+                    xmin, ymin, xmax, ymax = _normalize_box(obj[3:7], width, height, dwidth, dheight)
+                    result[label].append([image_num, xmin, ymin, xmax, ymax])
+    finally:
+        del executable_network
+        del plugin
+
+    return result
 
 
-def run_annotation(image_list, labels_mapping, treshold):
+def run_tensorflow_annotation(image_list, labels_mapping, treshold):
+    def _normalize_box(box, w, h):
+        xmin = int(box[1] * w)
+        ymin = int(box[0] * h)
+        xmax = int(box[3] * w)
+        ymax = int(box[2] * h)
+        return xmin, ymin, xmax, ymax
+
     result = {}
     model_path = os.environ.get('TF_ANNOTATION_MODEL_PATH')
     if model_path is None:
-        raise OSError('Model path env not found in the system. Please check the installation manual.')
+        raise OSError('Model path env not found in the system.')
     job = rq.get_current_job()
 
     detection_graph = tf.Graph()
     with detection_graph.as_default():
         od_graph_def = tf.GraphDef()
-        with tf.gfile.GFile(model_path, 'rb') as fid:
+        with tf.gfile.GFile(model_path + '.pb', 'rb') as fid:
             serialized_graph = fid.read()
             od_graph_def.ParseFromString(serialized_graph)
             tf.import_graph_def(od_graph_def, name='')
@@ -54,8 +133,9 @@ def run_annotation(image_list, labels_mapping, treshold):
         try:
             config = tf.ConfigProto()
             config.gpu_options.allow_growth=True
-            sess = tf.Session(graph=detection_graph,config=config)
+            sess = tf.Session(graph=detection_graph, config=config)
             for image_num, image_path in enumerate(image_list):
+
                 job.refresh()
                 if 'cancel' in job.meta:
                     del job.meta['cancel']
@@ -63,6 +143,7 @@ def run_annotation(image_list, labels_mapping, treshold):
                     return None
                 job.meta['progress'] = image_num * 100 / len(image_list)
                 job.save_meta()
+
                 image = Image.open(image_path)
                 width, height = image.size
                 if width > 1920 or height > 1080:
@@ -80,7 +161,7 @@ def run_annotation(image_list, labels_mapping, treshold):
                 for i in range(len(classes[0])):
                     if classes[0][i] in labels_mapping.keys():
                         if scores[0][i] >= treshold:
-                            xmin, ymin, xmax, ymax = normalize_box(boxes[0][i], width, height)
+                            xmin, ymin, xmax, ymax = _normalize_box(boxes[0][i], width, height)
                             label = labels_mapping[classes[0][i]]
                             if label not in result:
                                 result[label] = []
@@ -146,7 +227,7 @@ def convert_to_cvat_format(data):
 
     return result
 
-def create_thread(id, labels_mapping):
+def create_thread(tid, labels_mapping):
     try:
         TRESHOLD = 0.5
         # Init rq job
@@ -154,7 +235,7 @@ def create_thread(id, labels_mapping):
         job.meta['progress'] = 0
         job.save_meta()
         # Get job indexes and segment length
-        db_task = TaskModel.objects.get(pk=id)
+        db_task = TaskModel.objects.get(pk=tid)
         db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
         segment_length = max(db_segments[0].stop_frame - db_segments[0].start_frame + 1, 1)
         job_indexes = [segment.job_set.first().id for segment in db_segments]
@@ -162,19 +243,26 @@ def create_thread(id, labels_mapping):
         image_list = make_image_list(db_task.get_data_dirname())
 
         # Run auto annotation by tf
-        result = run_annotation(image_list, labels_mapping, TRESHOLD)
+        result = None
+        if os.environ.get('CUDA_SUPPORT') == 'yes' or os.environ.get('OPENVINO_TOOLKIT') != 'yes':
+            slogger.glob.info("tf annotation with tensorflow framework for task {}".format(tid))
+            result = run_tensorflow_annotation(image_list, labels_mapping, TRESHOLD)
+        else:
+            slogger.glob.info('tf annotation with openvino toolkit for task {}'.format(tid))
+            result = run_inference_engine_annotation(image_list, labels_mapping, TRESHOLD)
+
         if result is None:
-            slogger.glob.info('tf annotation for task {} canceled by user'.format(id))
+            slogger.glob.info('tf annotation for task {} canceled by user'.format(tid))
             return
 
         # Modify data format and save
         result = convert_to_cvat_format(result)
-        annotation.save_task(id, result)
+        annotation.save_task(tid, result)
         db_task.status = "Annotation"
         db_task.save()
-        slogger.glob.info('tf annotation for task {} done'.format(id))
-    except Exception:
-        slogger.glob.exception('exception was occured during tf annotation of the task {}'.format(id))
+        slogger.glob.info('tf annotation for task {} done'.format(tid))
+    except Exception as ex:
+        slogger.glob.exception('exception was occured during tf annotation of the task {}: {}'.format(tid, ex))
         db_task.status = "TF Annotation Fault"
         db_task.save()
 

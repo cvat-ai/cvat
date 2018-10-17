@@ -1,4 +1,18 @@
-# Analytics for Computer Vision Annotation Tool (CVAT)
+## Analytics for Computer Vision Annotation Tool (CVAT)
+
+It is possible to proxy annotation logs from client to ELK. To do that run the following command below:
+
+### Build docker image
+```bash
+# From project root directory
+docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml build
+```
+
+### Run docker container
+```bash
+# From project root directory
+docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d
+```
 
 At the moment it is not possible to save advanced settings. Below values should be specified manually.
 

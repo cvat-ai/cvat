@@ -18,8 +18,8 @@ CUDA_VERSION=9.0.176
 NCCL_VERSION=2.1.15
 CUDNN_VERSION=7.0.5.15
 CUDA_PKG_VERSION="9-0=${CUDA_VERSION}-1"
-echo "export PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}" >> ${HOME}/.bashrc
-echo "export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}" >> ${HOME}/.bashrc
+echo 'export PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}' >> ${HOME}/.bashrc
+echo 'export LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:${LD_LIBRARY_PATH}' >> ${HOME}/.bashrc
 
 apt-get update && apt-get install -y --no-install-recommends --allow-unauthenticated \
     libprotobuf-dev \
@@ -32,11 +32,3 @@ apt-get update && apt-get install -y --no-install-recommends --allow-unauthentic
     ln -s cuda-9.0 /usr/local/cuda && \
 rm -rf /var/lib/apt/lists/* \
     /etc/apt/sources.list.d/nvidia-ml.list /etc/apt/sources.list.d/cuda.list
-
-pip3 install --no-cache-dir -r "$(cd `dirname $0` && pwd)/requirements.txt"
-
-cd ${HOME}
-wget -O model.tar.gz http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_resnet_v2_atrous_coco_11_06_2017.tar.gz
-tar -xzf model.tar.gz
-rm model.tar.gz
-mv faster_rcnn_inception_resnet_v2_atrous_coco_11_06_2017 rcnn
