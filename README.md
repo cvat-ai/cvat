@@ -49,11 +49,13 @@ To start default container run `docker-compose up -d` command. Go to [localhost:
 
 ```bash
 # Build image with CUDA and OpenVINO support
-docker-compose -f docker-compose.yml -f docker-compose.cuda.yml -f docker-compose.openvino.yml build
+docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml -f components/openvino/docker-compose.openvino.yml build
 
 # Run containers with CUDA and OpenVINO support
-docker-compose -f docker-compose.yml -f docker-compose.cuda.yml -f docker-compose.openvino.yml up -d
+docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml -f components/openvino/docker-compose.openvino.yml up -d
 ```
+
+For details please see [components section](components/README.md).
 
 ### Create superuser account
 
@@ -93,7 +95,7 @@ services:
 It is possible to proxy annotation logs from client to ELK. To do that run the following command below:
 
 ```bash
-docker-compose -f docker-compose.yml -f analytics/docker-compose.yml up -d --build
+docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d --build
 ```
 
 
