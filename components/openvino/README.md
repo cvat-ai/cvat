@@ -12,10 +12,12 @@
 
 ### Build docker image
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.openvino.yml build
+# From project root directory
+docker-compose -f docker-compose.yml -f components/openvino/docker-compose.openvino.yml build
 ```
 
 ### Run docker container
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.openvino.yml up -d
+# From project root directory
+docker-compose -f docker-compose.yml -f components/openvino/docker-compose.openvino.yml up -d
 ```

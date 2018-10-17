@@ -8,7 +8,7 @@ services:
         aliases:
           - elasticsearch
     build:
-      context: ./analytics/elasticsearch
+      context: ./components/analytics/elasticsearch
       args:
         ELK_VERSION: 6.4.0
     volumes:
@@ -23,7 +23,7 @@ services:
         aliases:
           - kibana
     build:
-      context: ./analytics/kibana
+      context: ./components/analytics/kibana
       args:
         ELK_VERSION: 6.4.0
     depends_on: ['cvat_elasticsearch']
@@ -32,7 +32,7 @@ services:
   cvat_kibana_setup:
     container_name: cvat_kibana_setup
     image: cvat
-    volumes: ['./analytics/kibana:/home/django/kibana:ro']
+    volumes: ['./components/analytics/kibana:/home/django/kibana:ro']
     depends_on: ['cvat']
     working_dir: '/home/django'
     entrypoint: ['bash', 'wait-for-it.sh', 'elasticsearch:9200', '-t', '0', '--',
@@ -49,7 +49,7 @@ services:
         aliases:
           - logstash
     build:
-      context: ./analytics/logstash
+      context: ./components/analytics/logstash
       args:
         ELK_VERSION: 6.4.0
         http_proxy:  ${http_proxy}

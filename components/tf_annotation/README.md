@@ -30,10 +30,12 @@
 
 ### Build docker image
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.tf_annotation.yml build
+# From project root directory
+docker-compose -f docker-compose.yml -f components/tf_annotation/docker-compose.tf_annotation.yml build
 ```
 
 ### Run docker container
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.tf_annotation.yml up -d
+# From project root directory
+docker-compose -f docker-compose.yml -f components/tf_annotation/docker-compose.tf_annotation.yml up -d
 ```

@@ -30,10 +30,12 @@ docker info | grep 'Runtimes'   # output should contains 'nvidia'
 
 ### Build docker image
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.cuda.yml build
+# From project root directory
+docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml build
 ```
 
 ### Run docker container
 ```bash
-docker-compose -f docker-compose.yml -f docker-compose.cuda.yml up -d
+# From project root directory
+docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml up -d
 ```
