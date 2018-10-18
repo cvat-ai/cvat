@@ -111,7 +111,7 @@ services:
     environment:
       CVAT_SHARE_URL: "Mounted from /mnt/share host directory"
     volumes:
-      cvat_share:/home/django/share:ro
+      - cvat_share:/home/django/share:ro
 
 volumes:
   cvat_share:
