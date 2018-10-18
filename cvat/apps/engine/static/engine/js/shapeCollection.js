@@ -53,6 +53,7 @@ class ShapeCollectionModel extends Listener {
         this._splitter = new ShapeSplitter();
         this._erased = false;
         this._initialShapes = {};
+        this._exportedShapes = {};
     }
 
     _nextIdx() {
@@ -239,8 +240,9 @@ class ShapeCollectionModel extends Listener {
         return this;
     }
 
-    reset_state() {
+    confirmExportedState() {
         this._erased = false;
+        this._initialShapes = this._exportedShapes;
     }
 
     export() {
@@ -349,8 +351,8 @@ class ShapeCollectionModel extends Listener {
         return exportData.pre_erase;
     }
 
-    updateHash() {
-        this._initialShapes = {};
+    updateExportedState() {
+        this._exportedShapes = {};
 
         if (this._erased) {
             return this;
@@ -358,7 +360,7 @@ class ShapeCollectionModel extends Listener {
 
         for (const shape of this._shapes) {
             if (!shape.removed) {
-                this._initialShapes[shape.id] = shape.export();
+                this._exportedShapes[shape.id] = shape.export();
             }
         }
         return this;
