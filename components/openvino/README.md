@@ -6,9 +6,9 @@
 
 ### Preparation
 
-* Download latest OpenVINO toolkit for Ubuntu 16.04 platform. It should be .tgz archive. Minimum required version is 2018.3.*
-* Put downloaded file into components/openvino
-* Accept EULA in the eula.cfg file
+* Download latest [OpenVINO toolkit](https://software.intel.com/en-us/openvino-toolkit) installer (offline or online) for Linux platform. It should be .tgz archive. Minimum required version is 2018 R3.
+* Put downloaded file into ```components/openvino```.
+* Accept EULA in the eula.cfg file.
 
 ### Build docker image
 ```bash
