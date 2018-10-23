@@ -22,7 +22,7 @@ cd /tmp/components/openvino
 tar -xzf `ls | grep "openvino_toolkit"`
 cd `ls -d */ | grep "openvino_toolkit"`
 
-apt-get update && apt-get install -y sudo cpio libavcodec-ffmpeg56 libavformat-ffmpeg56 libswscale-ffmpeg3 && \
+apt-get update && apt-get install -y sudo cpio && \
  ./install_cv_sdk_dependencies.sh && SUDO_FORCE_REMOVE=yes apt-get remove -y sudo
 
 cat ../eula.cfg >> silent.cfg
