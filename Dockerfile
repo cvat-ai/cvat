@@ -40,6 +40,8 @@ RUN apt-get update && \
         unrar \
         p7zip-full \
         vim && \
+    add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \
+    add-apt-repository --remove ppa:mc3man/xerus-media -y && \
     rm -rf /var/lib/apt/lists/*
 
 # Add a non-root user

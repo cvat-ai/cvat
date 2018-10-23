@@ -16,18 +16,14 @@ if [[ `lscpu | grep -o "sse4" | head -1` != "sse4" ]] && [[ `lscpu | grep -o "av
     exit 1
 fi
 
-apt update && apt install -y libpng12-dev libcairo2-dev \
-    libpango1.0-dev libglib2.0-dev libgtk2.0-dev \
-    libgstreamer0.10-dev libswscale-dev \
-    libavcodec-dev libavformat-dev cmake libusb-1.0-0-dev cpio
-
-# OpenCV which included into OpenVino toolkit was compiled with other version ffmpeg
-# Need to install these packages for it works
-apt install -y libavcodec-ffmpeg56 libavformat-ffmpeg56 libswscale-ffmpeg3
 
 cd /tmp/components/openvino
+
 tar -xzf `ls | grep "openvino_toolkit"`
 cd `ls -d */ | grep "openvino_toolkit"`
+
+apt-get update && apt-get install -y sudo cpio && \
+ ./install_cv_sdk_dependencies.sh && SUDO_FORCE_REMOVE=yes apt-get remove -y sudo
 
 cat ../eula.cfg >> silent.cfg
 ./install.sh -s silent.cfg
