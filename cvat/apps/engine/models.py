@@ -66,6 +66,11 @@ class Task(models.Model):
     def __str__(self):
         return self.name
 
+class Data(models.Model):
+    task = models.OneToOneField(Task, on_delete=models.CASCADE, null=True)
+    # Original path for the images/archive/video
+    path = models.CharField(max_length=256)
+
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     start_frame = models.IntegerField()

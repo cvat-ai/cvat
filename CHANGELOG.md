@@ -14,10 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shortcuts for outside/keyframe properties
 - OpenVINO for accelerated model inference
 - Tensorflow annotation now works without CUDA. It can use CPU only. OpenVINO and CUDA are supported optionally.
+- Incremental saving, client ID field for all annotated objects.
 
 ### Changed
 - Polyshape editing method has been improved. You can redraw part of shape instead of points cloning.
 - Unified shortcut (Esc) for close any mode instead of different shortcuts (Alt+N, Alt+G, Alt+M etc.).
+- Dump file contains information about data source (e.g. video name, archive name, ...)
 
 ### Fixed
 - Performance bottleneck has been fixed during you create new objects (draw, copy, merge etc).
