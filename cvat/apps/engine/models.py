@@ -14,9 +14,15 @@ from io import StringIO
 import re
 import os
 
+class SafeCharField(models.CharField):
+    def get_prep_value(self, value):
+        value = super().get_prep_value(value)
+        if value:
+            return value[:self.max_length]
+        return value
 
 class Task(models.Model):
-    name = models.CharField(max_length=256)
+    name = SafeCharField(max_length=256)
     size = models.PositiveIntegerField()
     path = models.CharField(max_length=256)
     mode = models.CharField(max_length=32)
@@ -28,6 +34,7 @@ class Task(models.Model):
     overlap = models.PositiveIntegerField(default=0)
     z_order = models.BooleanField(default=False)
     flipped = models.BooleanField(default=False)
+    source = SafeCharField(max_length=256, default="unknown")
 
     # Extend default permission model
     class Meta:
@@ -78,7 +85,7 @@ class Job(models.Model):
 
 class Label(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    name = models.CharField(max_length=64)
+    name = SafeCharField(max_length=64)
 
     def __str__(self):
         return self.name
@@ -130,7 +137,7 @@ class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
     id = models.BigAutoField(primary_key=True)
     spec = models.ForeignKey(AttributeSpec, on_delete=models.CASCADE)
-    value = models.CharField(max_length=64)
+    value = SafeCharField(max_length=64)
     class Meta:
         abstract = True
 

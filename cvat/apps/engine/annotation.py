@@ -1437,7 +1437,7 @@ def _dump(tid, data_format, scheme, host):
     db_task = models.Task.objects.select_for_update().get(id=tid)
     annotation = _AnnotationForTask(db_task)
     annotation.init_from_db()
-    annotation.dump(data_format, db_task, scheme, host)
+    annotation.dump(data_format, scheme, host)
 
 def _calc_box_area(box):
     return (box.xbr - box.xtl) * (box.ybr - box.ytl)
@@ -1816,7 +1816,7 @@ class _AnnotationForTask(_Annotation):
                 # We don't have old boxes on the frame. Let's add all new ones.
                 self.boxes.extend(int_boxes_by_frame[frame])
 
-    def dump(self, data_format, db_task, scheme, host):
+    def dump(self, data_format, scheme, host):
         def _flip_box(box, im_w, im_h):
             box.xbr, box.xtl = im_w - box.xtl, im_w - box.xbr
             box.ybr, box.ytl = im_h - box.ytl, im_h - box.ybr
@@ -1836,6 +1836,7 @@ class _AnnotationForTask(_Annotation):
 
             shape.points = ' '.join(['{},{}'.format(point['x'], point['y']) for point in points])
 
+        db_task = self.db_task
         db_segments = db_task.segment_set.all().prefetch_related('job_set')
         db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
         im_meta_data = get_image_meta_cache(db_task)
@@ -1851,6 +1852,7 @@ class _AnnotationForTask(_Annotation):
                 ("flipped", str(db_task.flipped)),
                 ("created", str(timezone.localtime(db_task.created_date))),
                 ("updated", str(timezone.localtime(db_task.updated_date))),
+                ("source", db_task.source),
 
                 ("labels", [
                     ("label", OrderedDict([
@@ -1878,19 +1880,19 @@ class _AnnotationForTask(_Annotation):
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
 
-        if self.db_task.mode == "interpolation":
+        if db_task.mode == "interpolation":
             meta["task"]["original_size"] = OrderedDict([
                 ("width", str(im_meta_data["original_size"][0]["width"])),
                 ("height", str(im_meta_data["original_size"][0]["height"]))
             ])
 
-        dump_path = self.db_task.get_dump_path()
+        dump_path = db_task.get_dump_path()
         with open(dump_path, "w") as dump_file:
             dumper = _XmlAnnotationWriter(dump_file)
             dumper.open_root()
             dumper.add_meta(meta)
 
-            if self.db_task.mode == "annotation":
+            if db_task.mode == "annotation":
                 shapes = {}
                 shapes["boxes"] = {}
                 shapes["polygons"] = {}
@@ -1925,7 +1927,7 @@ class _AnnotationForTask(_Annotation):
                     list(shapes["polylines"].keys()) +
                     list(shapes["points"].keys()))):
 
-                    link = get_frame_path(self.db_task.id, frame)
+                    link = get_frame_path(db_task.id, frame)
                     path = os.readlink(link)
 
                     rpath = path.split(os.path.sep)

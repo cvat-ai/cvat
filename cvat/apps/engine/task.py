@@ -498,6 +498,8 @@ def _find_and_unpack_archive(upload_dir):
     else:
         raise Exception('Type defined as archive, but archives were not found.')
 
+    return archive
+
 
 '''
     Search a video in upload dir and split it by frames. Copy frames to target dirs
@@ -524,6 +526,8 @@ def _find_and_extract_video(upload_dir, output_dir, db_task, compress_quality, f
             shutil.copyfile(image_orig_path, image_dest_path)
     else:
         raise Exception("Video files were not found")
+
+    return video
 
 
 '''
@@ -565,11 +569,14 @@ def _find_and_compress_images(upload_dir, output_dir, db_task, compress_quality,
     else:
         raise Exception("Image files were not found")
 
+    return filenames
+
 def _save_task_to_db(db_task, task_params):
     db_task.overlap = min(db_task.size, task_params['overlap'])
     db_task.mode = task_params['mode']
     db_task.z_order = task_params['z_order']
     db_task.flipped = task_params['flip']
+    db_task.source = task_params['data']
 
     segment_step = task_params['segment'] - db_task.overlap
     for x in range(0, db_task.size, segment_step):
@@ -638,10 +645,11 @@ def _create_thread(tid, params):
         job.save_meta()
         _copy_data_from_share(share_files_mapping, share_dirs_mapping)
 
+    archive = None
     if counters['archive']:
         job.meta['status'] = 'Archive is being unpacked..'
         job.save_meta()
-        _find_and_unpack_archive(upload_dir)
+        archive = _find_and_unpack_archive(upload_dir)
 
     # Define task mode and other parameters
     task_params = {
@@ -657,9 +665,18 @@ def _create_thread(tid, params):
     slogger.glob.info("Task #{} parameters: {}".format(tid, task_params))
 
     if task_params['mode'] == 'interpolation':
-        _find_and_extract_video(upload_dir, output_dir, db_task, task_params['compress'], task_params['flip'], job)
+        video = _find_and_extract_video(upload_dir, output_dir, db_task,
+            task_params['compress'], task_params['flip'], job)
+        task_params['data'] = os.path.relpath(video, upload_dir)
     else:
-        _find_and_compress_images(upload_dir, output_dir, db_task, task_params['compress'], task_params['flip'], job)
+        files =_find_and_compress_images(upload_dir, output_dir, db_task,
+            task_params['compress'], task_params['flip'], job)
+        if archive:
+            task_params['data'] = os.path.relpath(archive, upload_dir)
+        else:
+            task_params['data'] = '{} images: {}, ...'.format(len(files),
+                ", ".join([os.path.relpath(x, upload_dir) for x in files[0:2]]))
+
     slogger.glob.info("Founded frames {} for task #{}".format(db_task.size, tid))
 
     job.meta['status'] = 'Task is being saved in database'
