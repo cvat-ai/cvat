@@ -17,7 +17,9 @@ import os
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
         value = super().get_prep_value(value)
-        return value[:self.max_length]
+        if value:
+            return value[:self.max_length]
+        return value
 
 class Task(models.Model):
     name = SafeCharField(max_length=256)
