@@ -329,9 +329,9 @@
                 <label id="statTaskName" class="semiBold h2"> </label>  <br>
                 <center>
                     <select id="statTaskStatus" class="regular h2" style="outline: none; border-radius: 10px; background:#B0C4DE; border: 1px solid black;">
-                        <option value="annotation"> annotation </option>
-                        <option value="validation"> validation </option>
-                        <option value="completed"> completed </option>
+                        {% for status in status_list %}
+                            <option value="{{status}}"> {{status}} </option>
+                        {% endfor %}
                     </select>
                 </center>
             </center>

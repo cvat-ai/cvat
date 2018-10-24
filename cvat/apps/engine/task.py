@@ -18,6 +18,8 @@ _SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 _MEDIA_MIMETYPES_FILE = os.path.join(_SCRIPT_DIR, "media.mimetypes")
 mimetypes.init(files=[_MEDIA_MIMETYPES_FILE])
 
+from cvat.apps.engine.models import StatusChoice
+
 import django_rq
 from django.conf import settings
 from django.db import transaction
@@ -188,20 +190,21 @@ def get(tid):
 def save_job_status(jid, status, user):
     db_job = models.Job.objects.select_related("segment__task").select_for_update().get(pk = jid)
     db_task = db_job.segment.task
-    if status not in ["annotation", "validation", "completed"]:
-        raise Exception("Got unknown job status")
+    status = StatusChoice(status)
+
     slogger.job[jid].info('changing job status from {} to {} by an user {}'.format(db_job.status, status, user))
-    db_job.status = status
+
+    db_job.status = status.value
     db_job.save()
     db_segments = list(db_task.segment_set.prefetch_related('job_set').select_for_update().all())
     db_jobs = [db_segment.job_set.first() for db_segment in db_segments]
 
-    if len(list(filter(lambda x: x.status == "annotation", db_jobs))) > 0:
-        db_task.status = "annotation"
-    elif len(list(filter(lambda x: x.status == "validation", db_jobs))) > 0:
-        db_task.status = "validation"
+    if len(list(filter(lambda x: StatusChoice(x.status) == StatusChoice.ANNOTATION, db_jobs))) > 0:
+        db_task.status = StatusChoice.ANNOTATION.value
+    elif len(list(filter(lambda x: StatusChoice(x.status) == StatusChoice.VALIDATION, db_jobs))) > 0:
+        db_task.status = StatusChoice.VALIDATION.value
     else:
-        db_task.status = "completed"
+        db_task.status = StatusChoice.COMPLETED.value
 
     db_task.save()
 

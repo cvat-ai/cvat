@@ -20,6 +20,7 @@ from cvat.apps.authentication.decorators import login_required
 from requests.exceptions import RequestException
 import logging
 from .log import slogger, clogger
+from cvat.apps.engine.models import StatusChoice
 
 ############################# High Level server API
 @login_required
@@ -36,7 +37,8 @@ def dispatch_request(request):
     """An entry point to dispatch legacy requests"""
     if request.method == 'GET' and 'id' in request.GET:
         return render(request, 'engine/annotation.html', {
-            'js_3rdparty': JS_3RDPARTY.get('engine', [])
+            'js_3rdparty': JS_3RDPARTY.get('engine', []),
+            'status_list': [i.value for i in StatusChoice]
         })
     else:
         return redirect('/dashboard/')
