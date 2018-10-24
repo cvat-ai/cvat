@@ -30,7 +30,7 @@ class Task(models.Model):
     bug_tracker = models.CharField(max_length=2000, default="")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=32, default="annotate")
+    status = SafeCharField(max_length=32, default="annotation")
     overlap = models.PositiveIntegerField(default=0)
     z_order = models.BooleanField(default=False)
     flipped = models.BooleanField(default=False)
@@ -81,6 +81,7 @@ class Segment(models.Model):
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     annotator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    status = SafeCharField(max_length=32, default="annotation")
     # TODO: add sub-issue number for the task
 
 class Label(models.Model):

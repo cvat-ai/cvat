@@ -274,6 +274,23 @@ def save_annotation_for_task(request, tid):
     return HttpResponse()
 
 @login_required
+@permission_required(perm=['engine.view_task', 'engine.change_task'], raise_exception=True)
+def save_job_status(request):
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        jid = data['jid']
+        status = data['status']
+        slogger.job[jid].info("changing job status request")
+        task.save_job_status(jid, status, request.user.username)
+    except Exception as e:
+        if jid:
+            slogger.job[jid].error("cannot change status", exc_info=True)
+        else:
+            slogger.glob.error("cannot change status", exc_info=True)
+        return HttpResponseBadRequest(str(e))
+    return HttpResponse()
+
+@login_required
 def get_username(request):
     response = {'username': request.user.username}
     return JsonResponse(response, safe=False)

@@ -164,7 +164,7 @@ def get(tid):
         job_indexes = [segment.job_set.first().id for segment in db_segments]
 
         response = {
-            "status": db_task.status.capitalize(),
+            "status": db_task.status,
             "spec": {
                 "labels": { db_label.id:db_label.name for db_label in db_labels },
                 "attributes": attributes
@@ -184,6 +184,26 @@ def get(tid):
         raise Exception("Cannot find the task: {}".format(tid))
 
     return response
+
+def save_job_status(jid, status, user):
+    db_job = models.Job.objects.select_related("segment__task").select_for_update().get(pk = jid)
+    db_task = db_job.segment.task
+    if status not in ["annotation", "validation", "completed"]:
+        raise Exception("Got unknown job status")
+    slogger.job[jid].info('changing job status from {} to {} by an user {}'.format(db_job.status, status, user))
+    db_job.status = status
+    db_job.save()
+    db_segments = list(db_task.segment_set.prefetch_related('job_set').select_for_update().all())
+    db_jobs = [db_segment.job_set.first() for db_segment in db_segments]
+
+    if len(list(filter(lambda x: x.status == "annotation", db_jobs))) > 0:
+        db_task.status = "annotation"
+    elif len(list(filter(lambda x: x.status == "validation", db_jobs))) > 0:
+        db_task.status = "validation"
+    else:
+        db_task.status = "completed"
+
+    db_task.save()
 
 def get_job(jid):
     """Get the job as dictionary of attributes"""
@@ -205,7 +225,7 @@ def get_job(jid):
                 attributes[db_label.id][db_attrspec.id] = db_attrspec.text
 
         response = {
-            "status": db_task.status.capitalize(),
+            "status": db_job.status,
             "labels": { db_label.id:db_label.name for db_label in db_labels },
             "stop": db_segment.stop_frame,
             "taskid": db_task.id,
