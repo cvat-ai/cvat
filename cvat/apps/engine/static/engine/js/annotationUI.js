@@ -516,9 +516,7 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
     $('#statOverlap').text(job.overlap);
     $('#statZOrder').text(job.z_order);
     $('#statFlipped').text(job.flipped);
-    $('#statTaskStatus').prop("value", job.status === "completed" ? "completed" : (
-        job.status === "validation" ? "validation" : "annotation"
-    )).on('change', (e) => {
+    $('#statTaskStatus').prop("value", job.status).on('change', (e) => {
         $.ajax({
             type: 'POST',
             url: 'save/job/status',
