@@ -200,11 +200,11 @@ def save_job_status(jid, status, user):
     db_jobs = [db_segment.job_set.first() for db_segment in db_segments]
 
     if len(list(filter(lambda x: StatusChoice(x.status) == StatusChoice.ANNOTATION, db_jobs))) > 0:
-        db_task.status = StatusChoice.ANNOTATION.value
+        db_task.status = StatusChoice.ANNOTATION
     elif len(list(filter(lambda x: StatusChoice(x.status) == StatusChoice.VALIDATION, db_jobs))) > 0:
-        db_task.status = StatusChoice.VALIDATION.value
+        db_task.status = StatusChoice.VALIDATION
     else:
-        db_task.status = StatusChoice.COMPLETED.value
+        db_task.status = StatusChoice.COMPLETED
 
     db_task.save()
 

@@ -25,6 +25,9 @@ class StatusChoice(Enum):
     def choices(self):
         return tuple((x.name, x.value) for x in self)
 
+    def __str__(self):
+        return self.value
+
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
         value = super().get_prep_value(value)
@@ -45,7 +48,7 @@ class Task(models.Model):
     z_order = models.BooleanField(default=False)
     flipped = models.BooleanField(default=False)
     source = SafeCharField(max_length=256, default="unknown")
-    status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION.value)
+    status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION)
 
     # Extend default permission model
     class Meta:
@@ -92,7 +95,7 @@ class Segment(models.Model):
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     annotator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
-    status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION.value)
+    status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION)
     # TODO: add sub-issue number for the task
 
 class Label(models.Model):

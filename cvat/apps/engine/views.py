@@ -38,7 +38,7 @@ def dispatch_request(request):
     if request.method == 'GET' and 'id' in request.GET:
         return render(request, 'engine/annotation.html', {
             'js_3rdparty': JS_3RDPARTY.get('engine', []),
-            'status_list': [i.value for i in StatusChoice]
+            'status_list': [str(i) for i in StatusChoice]
         })
     else:
         return redirect('/dashboard/')
