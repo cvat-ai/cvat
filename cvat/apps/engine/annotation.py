@@ -1852,6 +1852,7 @@ class _AnnotationForTask(_Annotation):
                 ("flipped", str(db_task.flipped)),
                 ("created", str(timezone.localtime(db_task.created_date))),
                 ("updated", str(timezone.localtime(db_task.updated_date))),
+                ("source", db_task.source),
 
                 ("labels", [
                     ("label", OrderedDict([
@@ -1884,10 +1885,6 @@ class _AnnotationForTask(_Annotation):
                 ("width", str(im_meta_data["original_size"][0]["width"])),
                 ("height", str(im_meta_data["original_size"][0]["height"]))
             ])
-
-        # Old tasks don't have such field
-        if db_task.data:
-            meta["task"]["data"] = db_task.data.path
 
         dump_path = db_task.get_dump_path()
         with open(dump_path, "w") as dump_file:

@@ -576,11 +576,7 @@ def _save_task_to_db(db_task, task_params):
     db_task.mode = task_params['mode']
     db_task.z_order = task_params['z_order']
     db_task.flipped = task_params['flip']
-
-    db_data = models.Data()
-    db_data.task = db_task
-    db_data.path = task_params['data']
-    db_data.save()
+    db_task.source = task_params['data']
 
     segment_step = task_params['segment'] - db_task.overlap
     for x in range(0, db_task.size, segment_step):

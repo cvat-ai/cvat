@@ -28,6 +28,7 @@ class Task(models.Model):
     overlap = models.PositiveIntegerField(default=0)
     z_order = models.BooleanField(default=False)
     flipped = models.BooleanField(default=False)
+    source = models.CharField(max_length=256, default="unknown")
 
     # Extend default permission model
     class Meta:
@@ -65,11 +66,6 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
-
-class Data(models.Model):
-    task = models.OneToOneField(Task, on_delete=models.CASCADE, null=True)
-    # Original path for the images/archive/video
-    path = models.CharField(max_length=256)
 
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
