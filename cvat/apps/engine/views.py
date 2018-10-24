@@ -20,6 +20,7 @@ from cvat.apps.authentication.decorators import login_required
 from requests.exceptions import RequestException
 import logging
 from .log import slogger, clogger
+from cvat.apps.engine.models import StatusChoice
 
 ############################# High Level server API
 @login_required
@@ -36,7 +37,8 @@ def dispatch_request(request):
     """An entry point to dispatch legacy requests"""
     if request.method == 'GET' and 'id' in request.GET:
         return render(request, 'engine/annotation.html', {
-            'js_3rdparty': JS_3RDPARTY.get('engine', [])
+            'js_3rdparty': JS_3RDPARTY.get('engine', []),
+            'status_list': [str(i) for i in StatusChoice]
         })
     else:
         return redirect('/dashboard/')
@@ -271,6 +273,23 @@ def save_annotation_for_task(request, tid):
         slogger.task[tid].error("cannot save annotation", exc_info=True)
         return HttpResponseBadRequest(str(e))
 
+    return HttpResponse()
+
+@login_required
+@permission_required(perm=['engine.view_task', 'engine.change_task'], raise_exception=True)
+def save_job_status(request):
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        jid = data['jid']
+        status = data['status']
+        slogger.job[jid].info("changing job status request")
+        task.save_job_status(jid, status, request.user.username)
+    except Exception as e:
+        if jid:
+            slogger.job[jid].error("cannot change status", exc_info=True)
+        else:
+            slogger.glob.error("cannot change status", exc_info=True)
+        return HttpResponseBadRequest(str(e))
     return HttpResponse()
 
 @login_required

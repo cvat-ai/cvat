@@ -18,6 +18,8 @@ _SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 _MEDIA_MIMETYPES_FILE = os.path.join(_SCRIPT_DIR, "media.mimetypes")
 mimetypes.init(files=[_MEDIA_MIMETYPES_FILE])
 
+from cvat.apps.engine.models import StatusChoice
+
 import django_rq
 from django.conf import settings
 from django.db import transaction
@@ -164,7 +166,7 @@ def get(tid):
         job_indexes = [segment.job_set.first().id for segment in db_segments]
 
         response = {
-            "status": db_task.status.capitalize(),
+            "status": db_task.status,
             "spec": {
                 "labels": { db_label.id:db_label.name for db_label in db_labels },
                 "attributes": attributes
@@ -184,6 +186,27 @@ def get(tid):
         raise Exception("Cannot find the task: {}".format(tid))
 
     return response
+
+def save_job_status(jid, status, user):
+    db_job = models.Job.objects.select_related("segment__task").select_for_update().get(pk = jid)
+    db_task = db_job.segment.task
+    status = StatusChoice(status)
+
+    slogger.job[jid].info('changing job status from {} to {} by an user {}'.format(db_job.status, status, user))
+
+    db_job.status = status.value
+    db_job.save()
+    db_segments = list(db_task.segment_set.prefetch_related('job_set').select_for_update().all())
+    db_jobs = [db_segment.job_set.first() for db_segment in db_segments]
+
+    if len(list(filter(lambda x: StatusChoice(x.status) == StatusChoice.ANNOTATION, db_jobs))) > 0:
+        db_task.status = StatusChoice.ANNOTATION
+    elif len(list(filter(lambda x: StatusChoice(x.status) == StatusChoice.VALIDATION, db_jobs))) > 0:
+        db_task.status = StatusChoice.VALIDATION
+    else:
+        db_task.status = StatusChoice.COMPLETED
+
+    db_task.save()
 
 def get_job(jid):
     """Get the job as dictionary of attributes"""
@@ -205,7 +228,7 @@ def get_job(jid):
                 attributes[db_label.id][db_attrspec.id] = db_attrspec.text
 
         response = {
-            "status": db_task.status.capitalize(),
+            "status": db_job.status,
             "labels": { db_label.id:db_label.name for db_label in db_labels },
             "stop": db_segment.stop_frame,
             "taskid": db_task.id,

@@ -512,12 +512,24 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
     })();
 
     $('#statTaskName').text(job.slug);
-    $('#statTaskStatus').text(job.status);
     $('#statFrames').text(`[${job.start}-${job.stop}]`);
     $('#statOverlap').text(job.overlap);
     $('#statZOrder').text(job.z_order);
     $('#statFlipped').text(job.flipped);
-
+    $('#statTaskStatus').prop("value", job.status).on('change', (e) => {
+        $.ajax({
+            type: 'POST',
+            url: 'save/job/status',
+            data: JSON.stringify({
+                jid: window.cvat.job.id,
+                status: e.target.value
+            }),
+            contentType: "application/json; charset=utf-8",
+            error: (data) => {
+                showMessage(`Can not change job status. Code: ${data.status}. Message: ${data.responeText || data.statusText}`);
+            }
+        });
+    });
 
     let shortkeys = window.cvat.config.shortkeys;
     $('#helpButton').on('click', () => {

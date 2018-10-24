@@ -8,11 +8,25 @@ from django.conf import settings
 
 from django.contrib.auth.models import User
 
+from io import StringIO
+from enum import Enum
+
 import shlex
 import csv
-from io import StringIO
 import re
 import os
+
+class StatusChoice(Enum):
+    ANNOTATION = 'annotation'
+    VALIDATION = 'validation'
+    COMPLETED = 'completed'
+
+    @classmethod
+    def choices(self):
+        return tuple((x.name, x.value) for x in self)
+
+    def __str__(self):
+        return self.value
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -30,11 +44,11 @@ class Task(models.Model):
     bug_tracker = models.CharField(max_length=2000, default="")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=32, default="annotate")
     overlap = models.PositiveIntegerField(default=0)
     z_order = models.BooleanField(default=False)
     flipped = models.BooleanField(default=False)
     source = SafeCharField(max_length=256, default="unknown")
+    status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION)
 
     # Extend default permission model
     class Meta:
@@ -81,6 +95,7 @@ class Segment(models.Model):
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     annotator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION)
     # TODO: add sub-issue number for the task
 
 class Label(models.Model):
