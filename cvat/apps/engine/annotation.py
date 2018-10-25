@@ -1272,7 +1272,7 @@ class _AnnotationForJob(_Annotation):
 
     def _delete_shapes_from_db(self, data):
         for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
-            client_ids_to_delete = data[shape_type] # list(shape.client_id for shape in getattr(self, shape_type))
+            client_ids_to_delete = data[shape_type]
             deleted = self._get_shape_set(shape_type).filter(client_id__in=client_ids_to_delete).delete()
             class_name = 'engine.{}'.format(self._get_shape_class(shape_type).__name__)
             if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and (class_name in deleted[1] and deleted[1][class_name] != len(client_ids_to_delete)):
@@ -1280,7 +1280,7 @@ class _AnnotationForJob(_Annotation):
 
     def _delete_paths_from_db(self, data):
         for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
-            client_ids_to_delete = data[shape_type] # list(shape.client_id for shape in getattr(self, shape_type))
+            client_ids_to_delete = data[shape_type]
             deleted = self.db_job.objectpath_set.filter(client_id__in=client_ids_to_delete).delete()
             class_name = 'engine.ObjectPath'
             if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and \
