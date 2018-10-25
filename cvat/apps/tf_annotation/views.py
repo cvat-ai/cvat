@@ -258,13 +258,32 @@ def create_thread(tid, labels_mapping):
         # Modify data format and save
         result = convert_to_cvat_format(result)
         annotation.save_task(tid, result)
-        db_task.status = "Annotation"
-        db_task.save()
         slogger.glob.info('tf annotation for task {} done'.format(tid))
+    except:
+        try:
+            slogger.task[tid].exception('exception was occured during tf annotation of the task', exc_info=True)
+        except:
+            slogger.glob.exception('exception was occured during tf annotation of the task {}'.format(tid), exc_into=True)
+
+@login_required
+def get_meta_info(request):
+    try:
+        queue = django_rq.get_queue('low')
+        tids = json.loads(request.body.decode('utf-8'))
+        result = {}
+        for tid in tids:
+            job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
+            if job is not None:
+                result[tid] = {
+                    "active": job.is_queued or job.is_started,
+                    "success": not job.is_failed
+                }
+
+        return JsonResponse(result)
     except Exception as ex:
-        slogger.glob.exception('exception was occured during tf annotation of the task {}: {}'.format(tid, ex))
-        db_task.status = "TF Annotation Fault"
-        db_task.save()
+        slogger.glob.exception('exception was occured during tf meta request', exc_into=True)
+        return HttpResponseBadRequest(str(ex))
+
 
 @login_required
 @permission_required(perm=['engine.view_task', 'engine.change_annotation'], raise_exception=True)
@@ -272,71 +291,70 @@ def create(request, tid):
     slogger.glob.info('tf annotation create request for task {}'.format(tid))
     try:
         db_task = TaskModel.objects.get(pk=tid)
-    except ObjectDoesNotExist:
-        slogger.glob.exception('task with id {} not found'.format(tid))
-        return HttpResponseBadRequest("A task with this ID was not found")
+        if not task.is_task_owner(request.user, tid):
+            raise Exception('Not enought of permissions for tf annotation')
 
-    if not task.is_task_owner(request.user, tid):
-        slogger.glob.error('not enought of permissions for tf annotation of the task {}'.format(tid))
-        return HttpResponseBadRequest("You don't have permissions to tf annotation of the task.")
+        queue = django_rq.get_queue('low')
+        job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
+        if job is not None and (job.is_started or job.is_queued):
+            raise Exception("The process is already running")
 
-    queue = django_rq.get_queue('low')
-    job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
-    if job is not None and (job.is_started or job.is_queued):
-        slogger.glob.error('tf annotation for task {} already running'.format(tid))
-        return HttpResponseBadRequest("The process is already running")
-    db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
-    db_labels = {db_label.id:db_label.name for db_label in db_labels}
+        db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
+        db_labels = {db_label.id:db_label.name for db_label in db_labels}
 
-    tf_annotation_labels = {
-        "person": 1, "bicycle": 2, "car": 3, "motorcycle": 4, "airplane": 5,
-        "bus": 6, "train": 7, "truck": 8, "boat": 9, "traffic_light": 10,
-        "fire_hydrant": 11, "stop_sign": 13, "parking_meter": 14, "bench": 15,
-        "bird": 16, "cat": 17, "dog": 18, "horse": 19, "sheep": 20, "cow": 21,
-        "elephant": 22, "bear": 23, "zebra": 24, "giraffe": 25, "backpack": 27,
-        "umbrella": 28, "handbag": 31, "tie": 32, "suitcase": 33, "frisbee": 34,
-        "skis": 35, "snowboard": 36, "sports_ball": 37, "kite": 38, "baseball_bat": 39,
-        "baseball_glove": 40, "skateboard": 41, "surfboard": 42, "tennis_racket": 43,
-        "bottle": 44, "wine_glass": 46, "cup": 47, "fork": 48, "knife": 49, "spoon": 50,
-        "bowl": 51, "banana": 52, "apple": 53, "sandwich": 54, "orange": 55, "broccoli": 56,
-        "carrot": 57, "hot_dog": 58, "pizza": 59, "donut": 60, "cake": 61, "chair": 62,
-        "couch": 63, "potted_plant": 64, "bed": 65, "dining_table": 67, "toilet": 70,
-        "tv": 72, "laptop": 73, "mouse": 74, "remote": 75, "keyboard": 76, "cell_phone": 77,
-        "microwave": 78, "oven": 79, "toaster": 80, "sink": 81, "refrigerator": 83,
-        "book": 84, "clock": 85, "vase": 86, "scissors": 87, "teddy_bear": 88, "hair_drier": 89,
-        "toothbrush": 90
-        }
+        tf_annotation_labels = {
+            "person": 1, "bicycle": 2, "car": 3, "motorcycle": 4, "airplane": 5,
+            "bus": 6, "train": 7, "truck": 8, "boat": 9, "traffic_light": 10,
+            "fire_hydrant": 11, "stop_sign": 13, "parking_meter": 14, "bench": 15,
+            "bird": 16, "cat": 17, "dog": 18, "horse": 19, "sheep": 20, "cow": 21,
+            "elephant": 22, "bear": 23, "zebra": 24, "giraffe": 25, "backpack": 27,
+            "umbrella": 28, "handbag": 31, "tie": 32, "suitcase": 33, "frisbee": 34,
+            "skis": 35, "snowboard": 36, "sports_ball": 37, "kite": 38, "baseball_bat": 39,
+            "baseball_glove": 40, "skateboard": 41, "surfboard": 42, "tennis_racket": 43,
+            "bottle": 44, "wine_glass": 46, "cup": 47, "fork": 48, "knife": 49, "spoon": 50,
+            "bowl": 51, "banana": 52, "apple": 53, "sandwich": 54, "orange": 55, "broccoli": 56,
+            "carrot": 57, "hot_dog": 58, "pizza": 59, "donut": 60, "cake": 61, "chair": 62,
+            "couch": 63, "potted_plant": 64, "bed": 65, "dining_table": 67, "toilet": 70,
+            "tv": 72, "laptop": 73, "mouse": 74, "remote": 75, "keyboard": 76, "cell_phone": 77,
+            "microwave": 78, "oven": 79, "toaster": 80, "sink": 81, "refrigerator": 83,
+            "book": 84, "clock": 85, "vase": 86, "scissors": 87, "teddy_bear": 88, "hair_drier": 89,
+            "toothbrush": 90
+            }
 
-    labels_mapping = {}
-    for key, labels in db_labels.items():
-        if labels in tf_annotation_labels.keys():
-            labels_mapping[tf_annotation_labels[labels]] = key
+        labels_mapping = {}
+        for key, labels in db_labels.items():
+            if labels in tf_annotation_labels.keys():
+                labels_mapping[tf_annotation_labels[labels]] = key
 
-    if not len(labels_mapping.values()):
-        slogger.glob.error('no labels found for task {} tf annotation'.format(tid))
-        return HttpResponseBadRequest("No labels found for tf annotation")
+        if not len(labels_mapping.values()):
+            raise Exception('No labels found for tf annotation')
 
-    db_task.status = "TF Annotation"
-    db_task.save()
+        # Run tf annotation job
+        queue.enqueue_call(func=create_thread,
+            args=(tid, labels_mapping),
+            job_id='tf_annotation.create/{}'.format(tid),
+            timeout=604800)     # 7 days
 
-    # Run tf annotation job
-    queue.enqueue_call(func=create_thread,
-        args=(tid, labels_mapping),
-        job_id='tf_annotation.create/{}'.format(tid),
-        timeout=604800)     # 7 days
-    slogger.glob.info('tf annotation job enqueued for task {} with labels {}'.format(tid, labels_mapping))
+        slogger.task[tid].info('tensorflow annotation job enqueued with labels {}'.format(labels_mapping))
+
+    except Exception as ex:
+        try:
+            slogger.task[tid].exception("exception was occured during tensorflow annotation request", exc_info=True)
+        except:
+            pass
+        return HttpResponseBadRequest(str(ex))
 
     return HttpResponse()
 
 @login_required
 @permission_required(perm='engine.view_task', raise_exception=True)
 def check(request, tid):
-    queue = django_rq.get_queue('low')
-    job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
-    if job is not None and 'cancel' in job.meta:
-        return JsonResponse({'status': 'finished'})
-    data = {}
     try:
+        queue = django_rq.get_queue('low')
+        job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
+        if job is not None and 'cancel' in job.meta:
+            return JsonResponse({'status': 'finished'})
+        data = {}
         if job is None:
             data['status'] = 'unknown'
         elif job.is_queued:
@@ -350,6 +368,7 @@ def check(request, tid):
         else:
             data['status'] = 'failed'
             job.delete()
+
     except Exception:
         data['status'] = 'unknown'
 
@@ -363,14 +382,16 @@ def cancel(request, tid):
         queue = django_rq.get_queue('low')
         job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
         if job is None or job.is_finished or job.is_failed:
-            raise Exception('Task is not in tf annotation process')
+            raise Exception('Task is not being annotated currently')
         elif 'cancel' not in job.meta:
             job.meta['cancel'] = True
             job.save()
-            db_task = TaskModel.objects.get(pk=tid)
-            db_task.status = "Annotation"
-            db_task.save()
 
     except Exception as ex:
-        return HttpResponseBadRequest("TF annotation cancel error: {}".format(str(ex)))
+        try:
+            slogger.task[tid].exception("cannot cancel tensorflow annotation for task #{}".format(tid), exc_info=True)
+        except:
+            pass
+        return HttpResponseBadRequest(str(ex))
+
     return HttpResponse()
