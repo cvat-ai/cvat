@@ -51,9 +51,9 @@ class ShapeCollectionModel extends Listener {
         this._colorIdx = 0;
         this._filter = new FilterModel(() => this.update());
         this._splitter = new ShapeSplitter();
-        this._erased = false;
         this._initialShapes = {};
         this._exportedShapes = {};
+        this._exportContainer = createExportContainer();
     }
 
     _nextIdx() {
@@ -203,7 +203,7 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    import(data) {
+    import(data, udpateExportState=false) {
         for (let box of data.boxes) {
             this.add(box, 'annotation_box');
         }
@@ -236,39 +236,63 @@ class ShapeCollectionModel extends Listener {
             this.add(polyline_path, 'interpolation_polyline');
         }
 
+        if (udpateExportState) {
+            for (const shape of this._shapes) {
+                if (shape.id === -1) {
+                    const to_delete_target = getExportTargetContainer(ExportType.delete, shape.type, this._exportContainer);
+                    to_delete_target.push(shape.id);
+                }
+                else {
+                    this._initialShapes[shape.id] = {
+                        type: shape.type,
+                        exportedString: shape.export(),
+                    };
+                }
+            }
+        }
+
+        this._updateClientIds();
+
         this.notify();
         return this;
     }
 
+    _updateClientIds() {
+        this._idx = Math.max(-1, ...(this._shapes.map( shape => shape.id ))) + 1;
+        for (const shape of this._shapes) {
+            if (shape.id === -1) {
+                shape._id = this._nextIdx();
+            }
+        }
+    }
+
     confirmExportedState() {
-        this._erased = false;
         this._initialShapes = this._exportedShapes;
+        this._exportContainer = createExportContainer();
     }
 
     export() {
-        const response = createExportContainer();
-        response.pre_erase = this._erased;
+        const response = this._exportContainer;
 
         for (const shape of this._shapes) {
             let target_export_container = undefined;
             if (!shape._removed) {
-                if (!(shape.id in this._initialShapes) || this._erased) {
+                if (!(shape.id in this._initialShapes)) {
                     target_export_container = getExportTargetContainer(ExportType.create, shape.type, response);
-                } else if (JSON.stringify(this._initialShapes[shape.id]) !== JSON.stringify(shape.export())) {
+                } else if (JSON.stringify(this._initialShapes[shape.id].exportedString) !== JSON.stringify(shape.export())) {
                     target_export_container = getExportTargetContainer(ExportType.update, shape.type, response);
                 } else {
                     continue;
                 }
+                target_export_container.push(shape.export());
             }
-            else if (shape.id in this._initialShapes && !this._erased) {
-                // TODO in this case need push only id
+            else if (shape.id in this._initialShapes) {
                 target_export_container = getExportTargetContainer(ExportType.delete, shape.type, response);
+                target_export_container.push(shape.id);
             }
             else {
                 continue;
             }
-
-            target_export_container.push(shape.export());
         }
         return response;
     }
@@ -348,31 +372,35 @@ class ShapeCollectionModel extends Listener {
             }
         }
 
-        return exportData.pre_erase;
+        return false;
     }
 
     updateExportedState() {
         this._exportedShapes = {};
 
-        if (this._erased) {
-            return this;
-        }
-
         for (const shape of this._shapes) {
             if (!shape.removed) {
-                this._exportedShapes[shape.id] = shape.export();
+                this._exportedShapes[shape.id] = {
+                    type: shape.type,
+                    exportedString: shape.export(),
+                };
             }
         }
         return this;
     }
 
     empty() {
+        for (const shapeId in this._initialShapes) {
+            const exportTarget = getExportTargetContainer(ExportType.delete, this._initialShapes[shapeId].type, this._exportContainer);
+            exportTarget.push(shapeId);
+        }
+
+        this._initialShapes = {};
         this._annotationShapes = {};
         this._interpolationShapes = [];
         this._shapes = [];
         this._idx = 0;
         this._colorIdx = 0;
-        this._erased = true;
         this._interpolate();
     }
 
@@ -382,10 +410,9 @@ class ShapeCollectionModel extends Listener {
         if (!('client_id' in data)) {
             id = this._nextIdx();
         }
-        else if (data.client_id === -1 ) {
-            this._erased = true;
-            id = this._nextIdx();
-        }
+        // else if (data.client_id === -1) {
+        //     id = data.client_id;
+        // }
         else {
             id = data.client_id;
             this._idx = Math.max(this._idx, id) + 1;

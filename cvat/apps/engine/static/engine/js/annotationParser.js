@@ -160,17 +160,6 @@ class AnnotationParser {
         return result;
     }
 
-    _updateClientIds(data) {
-        let maxId = Math.max(-1, ...Array.from(this._client_id_set));
-        for (const shape_type in data) {
-            for (const shape of data[shape_type]) {
-                if (shape.client_id === -1) {
-                    shape.client_id = ++maxId;
-                }
-            }
-        }
-    }
-
     _parseAnnotationData(xml) {
         let data = {
             boxes: [],
@@ -430,8 +419,6 @@ class AnnotationParser {
 
         let interpolationData = this._parseInterpolationData(xml);
         let annotationData = this._parseAnnotationData(xml);
-        let data = Object.assign({}, annotationData, interpolationData);
-        this._updateClientIds(data);
-        return data;
+        return Object.assign({}, annotationData, interpolationData);
     }
 }

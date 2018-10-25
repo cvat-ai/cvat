@@ -79,10 +79,10 @@ def save_job(jid, data):
 
     annotation = _AnnotationForJob(db_job)
     annotation.validate_data_from_client(data)
-    if data['pre_erase']:
-        annotation.delete_objs_from_db()
 
-    for action in ['create', 'update', 'delete']:
+    annotation.delete_from_db(data['delete'])
+
+    for action in ['create', 'update']:
         annotation.init_from_client(data[action])
         annotation.save_to_db(action)
 
@@ -1259,24 +1259,30 @@ class _AnnotationForJob(_Annotation):
             self._get_shape_attr_class(shape_type).objects.bulk_create(db_attrvals)
 
     def _update_shapes_in_db(self):
-        self._delete_paths_from_db()
-        self._save_paths_to_db()
-
-    def _update_paths_in_db(self):
-        self._delete_shapes_from_db()
+        client_ids_to_delete = {}
+        for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
+            client_ids_to_delete[shape_type] = list(shape.client_id for shape in getattr(self, shape_type))
+        self._delete_shapes_from_db(client_ids_to_delete)
         self._save_shapes_to_db()
 
-    def _delete_shapes_from_db(self):
+    def _update_paths_in_db(self):
+        client_ids_to_delete = {}
+        for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
+            client_ids_to_delete[shape_type] = list(shape.client_id for shape in getattr(self, shape_type))
+        self._delete_paths_from_db(client_ids_to_delete)
+        self._save_paths_to_db()
+
+    def _delete_shapes_from_db(self, data):
         for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
-            client_ids_to_delete = list(shape.client_id for shape in getattr(self, shape_type))
+            client_ids_to_delete = data[shape_type] # list(shape.client_id for shape in getattr(self, shape_type))
             deleted = self._get_shape_set(shape_type).filter(client_id__in=client_ids_to_delete).delete()
             class_name = 'engine.{}'.format(self._get_shape_class(shape_type).__name__)
             if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and (class_name in deleted[1] and deleted[1][class_name] != len(client_ids_to_delete)):
                 raise Exception('Number of deleted object doesn\'t match with requested number')
 
-    def _delete_paths_from_db(self):
+    def _delete_paths_from_db(self, data):
         for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
-            client_ids_to_delete = list(shape.client_id for shape in getattr(self, shape_type))
+            client_ids_to_delete = data[shape_type] # list(shape.client_id for shape in getattr(self, shape_type))
             deleted = self.db_job.objectpath_set.filter(client_id__in=client_ids_to_delete).delete()
             class_name = 'engine.ObjectPath'
             if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and \
@@ -1290,6 +1296,10 @@ class _AnnotationForJob(_Annotation):
     def _delete_all_paths_from_db(self):
         self.db_job.objectpath_set.all().delete()
 
+    def delete_from_db(self, data):
+        self._delete_shapes_from_db(data)
+        self._delete_paths_from_db(data)
+
     def save_to_db(self, action):
         if action == 'create':
             self._save_shapes_to_db()
@@ -1297,9 +1307,9 @@ class _AnnotationForJob(_Annotation):
         elif action == 'update':
             self._update_shapes_in_db()
             self._update_paths_in_db()
-        elif action == 'delete':
-            self._delete_shapes_from_db()
-            self._delete_paths_from_db()
+        # elif action == 'delete':
+        #     self._delete_shapes_from_db()
+        #     self._delete_paths_from_db()
 
     def delete_objs_from_db(self):
         self._delete_all_shapes_from_db()
@@ -1404,7 +1414,8 @@ class _AnnotationForJob(_Annotation):
         shape_types = ['boxes', 'points', 'polygons', 'polylines', 'box_paths',
             'points_paths', 'polygon_paths', 'polyline_paths']
 
-        for action in ['create', 'update', 'delete']:
+        # todo add checks for delete action
+        for action in ['create', 'update']:
             for shape_type in shape_types:
                 for shape in data[action][shape_type]:
                     extract_and_check_clinet_id(shape)
