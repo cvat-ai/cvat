@@ -203,44 +203,44 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    import(data, udpateExportState=false) {
+    import(data, udpateInitialState=false) {
         for (let box of data.boxes) {
             this.add(box, 'annotation_box');
         }
 
-        for (let box_path of data.box_paths) {
-            this.add(box_path, 'interpolation_box');
+        for (let boxPath of data.box_paths) {
+            this.add(boxPath, 'interpolation_box');
         }
 
         for (let points of data.points) {
             this.add(points, 'annotation_points');
         }
 
-        for (let points_path of data.points_paths) {
-            this.add(points_path, 'interpolation_points');
+        for (let pointsPath of data.points_paths) {
+            this.add(pointsPath, 'interpolation_points');
         }
 
         for (let polygon of data.polygons) {
             this.add(polygon, 'annotation_polygon');
         }
 
-        for (let polygon_path of data.polygon_paths) {
-            this.add(polygon_path, 'interpolation_polygon');
+        for (let polygonPath of data.polygon_paths) {
+            this.add(polygonPath, 'interpolation_polygon');
         }
 
         for (let polyline of data.polylines) {
             this.add(polyline, 'annotation_polyline');
         }
 
-        for (let polyline_path of data.polyline_paths) {
-            this.add(polyline_path, 'interpolation_polyline');
+        for (let polylinePath of data.polyline_paths) {
+            this.add(polylinePath, 'interpolation_polyline');
         }
 
-        if (udpateExportState) {
+        if (udpateInitialState) {
             for (const shape of this._shapes) {
                 if (shape.id === -1) {
-                    const to_delete_target = getExportTargetContainer(ExportType.delete, shape.type, this._shapesToDelete);
-                    to_delete_target.push(shape.id);
+                    const toDelete = getExportTargetContainer(ExportType.delete, shape.type, this._shapesToDelete);
+                    toDelete.push(shape.id);
                 }
                 else {
                     this._initialShapes[shape.id] = {
@@ -275,20 +275,20 @@ class ShapeCollectionModel extends Listener {
         const response = createExportContainer();
 
         for (const shape of this._shapes) {
-            let target_export_container = undefined;
+            let targetExportContainer = undefined;
             if (!shape._removed) {
                 if (!(shape.id in this._initialShapes)) {
-                    target_export_container = getExportTargetContainer(ExportType.create, shape.type, response);
+                    targetExportContainer = getExportTargetContainer(ExportType.create, shape.type, response);
                 } else if (JSON.stringify(this._initialShapes[shape.id].exportedString) !== JSON.stringify(shape.export())) {
-                    target_export_container = getExportTargetContainer(ExportType.update, shape.type, response);
+                    targetExportContainer = getExportTargetContainer(ExportType.update, shape.type, response);
                 } else {
                     continue;
                 }
-                target_export_container.push(shape.export());
+                targetExportContainer.push(shape.export());
             }
             else if (shape.id in this._initialShapes) {
-                target_export_container = getExportTargetContainer(ExportType.delete, shape.type, response);
-                target_export_container.push(shape.id);
+                targetExportContainer = getExportTargetContainer(ExportType.delete, shape.type, response);
+                targetExportContainer.push(shape.id);
             }
             else {
                 continue;
