@@ -61,7 +61,6 @@ def JsTreeView(request):
 def DashboardView(request):
     query_name = request.GET['search'] if 'search' in request.GET else None
     query_job = int(request.GET['jid']) if 'jid' in request.GET and request.GET['jid'].isdigit() else None
-    elements_per_page = 20
     task_list = None
 
     if query_job is not None and JobModel.objects.filter(pk = query_job).exists():
@@ -75,7 +74,6 @@ def DashboardView(request):
         'data': task_list,
         'max_upload_size': settings.LOCAL_LOAD_MAX_FILES_SIZE,
         'max_upload_count': settings.LOCAL_LOAD_MAX_FILES_COUNT,
-        'tasks_per_page': elements_per_page,
         'base_url': "{0}://{1}/".format(request.scheme, request.get_host()),
         'share_path': os.getenv('CVAT_SHARE_URL', default=r'${cvat_root}/share'),
         'js_3rdparty': JS_3RDPARTY.get('dashboard', []),

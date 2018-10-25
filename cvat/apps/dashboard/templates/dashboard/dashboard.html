@@ -55,7 +55,7 @@
             </table>
         </center>
 
-        {% autopaginate data tasks_per_page %}
+        {% autopaginate data %}
         <div style="float: left; width: 100%">
             {% for item in data %}
                 {% include "dashboard/task.html" %}
