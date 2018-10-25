@@ -100,8 +100,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     // Setup components
     let annotationParser = new AnnotationParser(job, window.cvat.labelsInfo);
 
-    let shapeCollectionModel = new ShapeCollectionModel().import(shapeData).updateExportedState();
-    shapeCollectionModel.confirmExportedState();
+    let shapeCollectionModel = new ShapeCollectionModel().import(shapeData, true);
     let shapeCollectionController = new ShapeCollectionController(shapeCollectionModel);
     let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
 
@@ -109,7 +108,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
         get: () => shapeCollectionModel.exportAll(),
         set: (data) => {
             shapeCollectionModel.empty();
-            shapeCollectionModel.import(data);
+            shapeCollectionModel.import(data, false);
             shapeCollectionModel.update();
         },
         clear: () => shapeCollectionModel.empty(),
@@ -664,7 +663,7 @@ function uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, 
                     try {
                         historyModel.empty();
                         shapeCollectionModel.empty();
-                        shapeCollectionModel.import(data);
+                        shapeCollectionModel.import(data, false);
                         shapeCollectionModel.update();
                     }
                     finally {

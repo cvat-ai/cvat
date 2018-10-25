@@ -183,7 +183,6 @@ function createExportContainer() {
             "polyline_paths": [],
         };
     });
-    container.pre_erase = false;
 
     return container;
 }

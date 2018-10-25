@@ -51,9 +51,9 @@ class ShapeCollectionModel extends Listener {
         this._colorIdx = 0;
         this._filter = new FilterModel(() => this.update());
         this._splitter = new ShapeSplitter();
-        this._erased = false;
         this._initialShapes = {};
         this._exportedShapes = {};
+        this._shapesToDelete = createExportContainer();
     }
 
     _nextIdx() {
@@ -203,73 +203,102 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    import(data) {
+    import(data, udpateInitialState=false) {
         for (let box of data.boxes) {
             this.add(box, 'annotation_box');
         }
 
-        for (let box_path of data.box_paths) {
-            this.add(box_path, 'interpolation_box');
+        for (let boxPath of data.box_paths) {
+            this.add(boxPath, 'interpolation_box');
         }
 
         for (let points of data.points) {
             this.add(points, 'annotation_points');
         }
 
-        for (let points_path of data.points_paths) {
-            this.add(points_path, 'interpolation_points');
+        for (let pointsPath of data.points_paths) {
+            this.add(pointsPath, 'interpolation_points');
         }
 
         for (let polygon of data.polygons) {
             this.add(polygon, 'annotation_polygon');
         }
 
-        for (let polygon_path of data.polygon_paths) {
-            this.add(polygon_path, 'interpolation_polygon');
+        for (let polygonPath of data.polygon_paths) {
+            this.add(polygonPath, 'interpolation_polygon');
         }
 
         for (let polyline of data.polylines) {
             this.add(polyline, 'annotation_polyline');
         }
 
-        for (let polyline_path of data.polyline_paths) {
-            this.add(polyline_path, 'interpolation_polyline');
+        for (let polylinePath of data.polyline_paths) {
+            this.add(polylinePath, 'interpolation_polyline');
         }
+
+        if (udpateInitialState) {
+            for (const shape of this._shapes) {
+                if (shape.id === -1) {
+                    const toDelete = getExportTargetContainer(ExportType.delete, shape.type, this._shapesToDelete);
+                    toDelete.push(shape.id);
+                }
+                else {
+                    this._initialShapes[shape.id] = {
+                        type: shape.type,
+                        exportedString: shape.export(),
+                    };
+                }
+            }
+        }
+
+        this._updateClientIds();
 
         this.notify();
         return this;
     }
 
+    _updateClientIds() {
+        this._idx = Math.max(-1, ...(this._shapes.map( shape => shape.id ))) + 1;
+        for (const shape of this._shapes) {
+            if (shape.id === -1) {
+                shape._id = this._nextIdx();
+            }
+        }
+    }
+
     confirmExportedState() {
-        this._erased = false;
         this._initialShapes = this._exportedShapes;
+        this._shapesToDelete = createExportContainer();
     }
 
     export() {
         const response = createExportContainer();
-        response.pre_erase = this._erased;
 
         for (const shape of this._shapes) {
-            let target_export_container = undefined;
+            let targetExportContainer = undefined;
             if (!shape._removed) {
-                if (!(shape.id in this._initialShapes) || this._erased) {
-                    target_export_container = getExportTargetContainer(ExportType.create, shape.type, response);
-                } else if (JSON.stringify(this._initialShapes[shape.id]) !== JSON.stringify(shape.export())) {
-                    target_export_container = getExportTargetContainer(ExportType.update, shape.type, response);
+                if (!(shape.id in this._initialShapes)) {
+                    targetExportContainer = getExportTargetContainer(ExportType.create, shape.type, response);
+                } else if (JSON.stringify(this._initialShapes[shape.id].exportedString) !== JSON.stringify(shape.export())) {
+                    targetExportContainer = getExportTargetContainer(ExportType.update, shape.type, response);
                 } else {
                     continue;
                 }
+                targetExportContainer.push(shape.export());
             }
-            else if (shape.id in this._initialShapes && !this._erased) {
-                // TODO in this case need push only id
-                target_export_container = getExportTargetContainer(ExportType.delete, shape.type, response);
+            else if (shape.id in this._initialShapes) {
+                targetExportContainer = getExportTargetContainer(ExportType.delete, shape.type, response);
+                targetExportContainer.push(shape.id);
             }
             else {
                 continue;
             }
-
-            target_export_container.push(shape.export());
         }
+        for (const shapeType in this._shapesToDelete.delete) {
+            const shapes = this._shapesToDelete.delete[shapeType];
+            response.delete[shapeType].push.apply(response.delete[shapeType], shapes);
+        }
+
         return response;
     }
 
@@ -348,46 +377,46 @@ class ShapeCollectionModel extends Listener {
             }
         }
 
-        return exportData.pre_erase;
+        return false;
     }
 
     updateExportedState() {
         this._exportedShapes = {};
 
-        if (this._erased) {
-            return this;
-        }
-
         for (const shape of this._shapes) {
             if (!shape.removed) {
-                this._exportedShapes[shape.id] = shape.export();
+                this._exportedShapes[shape.id] = {
+                    type: shape.type,
+                    exportedString: shape.export(),
+                };
             }
         }
         return this;
     }
 
     empty() {
+        for (const shapeId in this._initialShapes) {
+            const exportTarget = getExportTargetContainer(ExportType.delete, this._initialShapes[shapeId].type, this._shapesToDelete);
+            exportTarget.push(shapeId);
+        }
+
+        this._initialShapes = {};
         this._annotationShapes = {};
         this._interpolationShapes = [];
         this._shapes = [];
         this._idx = 0;
         this._colorIdx = 0;
-        this._erased = true;
         this._interpolate();
     }
 
     add(data, type) {
         let id = null;
 
-        if (!('client_id' in data)) {
-            id = this._nextIdx();
-        }
-        else if (data.client_id === -1 ) {
-            this._erased = true;
+        if (!('id' in data)) {
             id = this._nextIdx();
         }
         else {
-            id = data.client_id;
+            id = data.id;
             this._idx = Math.max(this._idx, id) + 1;
         }
 
