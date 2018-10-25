@@ -9,7 +9,7 @@ function CheckTFAnnotationRequest(taskId, tfAnnotationButton) {
     let errorCount = 0;
     let interval = setInterval(function() {
         $.ajax ({
-            url: '/tf_annotation/check/task/' + taskId,
+            url: '/tensorflow/annotation/check/task/' + taskId,
             success: function(jsonData) {
                 let status = jsonData["status"];
                 if (status == "started" || status == "queued") {
@@ -40,7 +40,7 @@ function RunTFAnnotationRequest() {
     let tfAnnotationButton = this;
     let taskID = window.cvat.dashboard.taskID;
     $.ajax ({
-        url: '/tf_annotation/create/task/' + taskID,
+        url: '/tensorflow/annotation/create/task/' + taskID,
         success: function() {
             showMessage('Process started.');
             tfAnnotationButton.text(`Cancel TF Annotation (0%)`);
@@ -57,7 +57,7 @@ function RunTFAnnotationRequest() {
 function CancelTFAnnotationRequest() {
     let tfAnnotationButton = this;
     $.ajax ({
-        url: '/tf_annotation/cancel/task/' + window.cvat.dashboard.taskID,
+        url: '/tensorflow/annotation/cancel/task/' + window.cvat.dashboard.taskID,
         success: function() {
             tfAnnotationButton.prop("disabled", true);
         },
@@ -90,20 +90,38 @@ window.cvat.dashboard = window.cvat.dashboard || {};
 window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
 
 window.cvat.dashboard.uiCallbacks.push(function(newElements) {
-    newElements.each(function(idx) {
-        let elem = $(newElements[idx]);
-        let taskId = +elem.attr('id').split('_')[1];
-        let status = $.trim($(elem.find('label.dashboardStatusLabel')[0]).text());
-        let buttonsUI = elem.find('div.dashboardButtonsUI')[0];
-        let tfAnnotationButton = $('<button> Run TF Annotation </button>');
-        tfAnnotationButton.on('click', onTFAnnotationClick.bind(tfAnnotationButton));
-        tfAnnotationButton.addClass('dashboardTFAnnotationButton semiBold dashboardButtonUI');
-        tfAnnotationButton.appendTo(buttonsUI);
+    tids = [];
+    for (let el of newElements) {
+        tids.push(el.id.split('_')[1])
+    }
 
-        if (status == "TF Annotation") {
-            tfAnnotationButton.text("Cancel TF Annotation");
-            tfAnnotationButton.addClass("tfAnnotationProcess");
-            CheckTFAnnotationRequest(taskId, tfAnnotationButton);
+    $.ajax({
+        type: 'POST',
+        url: '/tensorflow/annotation/meta/get',
+        data: JSON.stringify(tids),
+        contentType: "application/json; charset=utf-8",
+        success: (data) => {
+            newElements.each(function(idx) {
+                let elem = $(newElements[idx]);
+                let tid = +elem.attr('id').split('_')[1];
+                let buttonsUI = elem.find('div.dashboardButtonsUI')[0];
+                let tfAnnotationButton = $('<button> Run TF Annotation </button>');
+
+                tfAnnotationButton.on('click', onTFAnnotationClick.bind(tfAnnotationButton));
+                tfAnnotationButton.addClass('dashboardTFAnnotationButton semiBold dashboardButtonUI');
+                tfAnnotationButton.appendTo(buttonsUI);
+
+                if ((tid in data) && (data[tid].active)) {
+                    tfAnnotationButton.text("Cancel TF Annotation");
+                    tfAnnotationButton.addClass("tfAnnotationProcess");
+                    CheckTFAnnotationRequest(tid, tfAnnotationButton);
+                }
+            });
+        },
+        error: (data) => {
+            let message = `Can not get tf annotation meta info. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+            showMessage(message);
+            throw Error(message);
         }
     });
 });

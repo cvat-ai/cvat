@@ -35,7 +35,7 @@ urlpatterns = [
 ]
 
 if apps.is_installed('cvat.apps.tf_annotation'):
-    urlpatterns.append(path('tf_annotation/', include('cvat.apps.tf_annotation.urls')))
+    urlpatterns.append(path('tensorflow/annotation/', include('cvat.apps.tf_annotation.urls')))
 
 if apps.is_installed('cvat.apps.log_viewer'):
     urlpatterns.append(path('analytics/', include('cvat.apps.log_viewer.urls')))

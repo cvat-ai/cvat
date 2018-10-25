@@ -192,7 +192,7 @@ def save_job_status(jid, status, user):
     db_task = db_job.segment.task
     status = StatusChoice(status)
 
-    slogger.job[jid].info('changing job status from {} to {} by an user {}'.format(db_job.status, status, user))
+    slogger.job[jid].info('changing job status from {} to {} by an user {}'.format(db_job.status, str(status), user))
 
     db_job.status = status.value
     db_job.save()
