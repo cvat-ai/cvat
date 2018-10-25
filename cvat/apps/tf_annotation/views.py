@@ -266,7 +266,6 @@ def create_thread(tid, labels_mapping):
             slogger.glob.exception('exception was occured during tf annotation of the task {}'.format(tid), exc_into=True)
 
 @login_required
-@permission_required(perm=['engine.view_task', 'engine.change_annotation'], raise_exception=True)
 def get_meta_info(request):
     try:
         queue = django_rq.get_queue('low')
