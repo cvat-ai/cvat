@@ -445,7 +445,7 @@ function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, on
                 done = true;
                 clearInterval(requestInterval);
                 onComplete();
-                onSuccessCreate();
+                onSuccessCreate(tid);
             }
             else if (data['state'] == 'error') {
                 done = true;

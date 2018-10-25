@@ -60,6 +60,9 @@ INSTALLED_APPS = [
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
     INSTALLED_APPS += ['cvat.apps.tf_annotation']
 
+if 'yes' == os.environ.get('GIT_SUPPORT', 'no'):
+    INSTALLED_APPS += ['cvat.apps.git']
+
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
