@@ -53,7 +53,7 @@ class ShapeCollectionModel extends Listener {
         this._splitter = new ShapeSplitter();
         this._initialShapes = {};
         this._exportedShapes = {};
-        this._exportContainer = createExportContainer();
+        this._shapesToDelete = createExportContainer();
     }
 
     _nextIdx() {
@@ -239,7 +239,7 @@ class ShapeCollectionModel extends Listener {
         if (udpateExportState) {
             for (const shape of this._shapes) {
                 if (shape.id === -1) {
-                    const to_delete_target = getExportTargetContainer(ExportType.delete, shape.type, this._exportContainer);
+                    const to_delete_target = getExportTargetContainer(ExportType.delete, shape.type, this._shapesToDelete);
                     to_delete_target.push(shape.id);
                 }
                 else {
@@ -268,11 +268,11 @@ class ShapeCollectionModel extends Listener {
 
     confirmExportedState() {
         this._initialShapes = this._exportedShapes;
-        this._exportContainer = createExportContainer();
+        this._shapesToDelete = createExportContainer();
     }
 
     export() {
-        const response = this._exportContainer;
+        const response = createExportContainer();
 
         for (const shape of this._shapes) {
             let target_export_container = undefined;
@@ -294,6 +294,11 @@ class ShapeCollectionModel extends Listener {
                 continue;
             }
         }
+        for (const shapeType in this._shapesToDelete.delete) {
+            const shapes = this._shapesToDelete.delete[shapeType];
+            response.delete[shapeType].push.apply(response.delete[shapeType], shapes);
+        }
+
         return response;
     }
 
@@ -391,7 +396,7 @@ class ShapeCollectionModel extends Listener {
 
     empty() {
         for (const shapeId in this._initialShapes) {
-            const exportTarget = getExportTargetContainer(ExportType.delete, this._initialShapes[shapeId].type, this._exportContainer);
+            const exportTarget = getExportTargetContainer(ExportType.delete, this._initialShapes[shapeId].type, this._shapesToDelete);
             exportTarget.push(shapeId);
         }
 
@@ -407,14 +412,11 @@ class ShapeCollectionModel extends Listener {
     add(data, type) {
         let id = null;
 
-        if (!('client_id' in data)) {
+        if (!('id' in data)) {
             id = this._nextIdx();
         }
-        // else if (data.client_id === -1) {
-        //     id = data.client_id;
-        // }
         else {
-            id = data.client_id;
+            id = data.id;
             this._idx = Math.max(this._idx, id) + 1;
         }
 

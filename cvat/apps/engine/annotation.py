@@ -81,10 +81,8 @@ def save_job(jid, data):
     annotation.validate_data_from_client(data)
 
     annotation.delete_from_db(data['delete'])
-
-    for action in ['create', 'update']:
-        annotation.init_from_client(data[action])
-        annotation.save_to_db(action)
+    annotation.save_to_db(data['create'])
+    annotation.update_in_db(data['update'])
 
     db_job.segment.task.updated_date = timezone.now()
     db_job.segment.task.save()
@@ -855,7 +853,7 @@ class _AnnotationForJob(_Annotation):
                 group_id=int(box['group_id']),
                 occluded=strtobool(str(box['occluded'])),
                 z_order=int(box['z_order']),
-                client_id=int(box['client_id']),
+                client_id=int(box['id']),
             )
 
             for attr in box['attributes']:
@@ -878,7 +876,7 @@ class _AnnotationForJob(_Annotation):
                     group_id=int(poly_shape['group_id']),
                     occluded=poly_shape['occluded'],
                     z_order=int(poly_shape['z_order']),
-                    client_id=int(poly_shape['client_id']),
+                    client_id=int(poly_shape['id']),
                 )
 
                 for attr in poly_shape['attributes']:
@@ -946,7 +944,7 @@ class _AnnotationForJob(_Annotation):
                 stop_frame=self.stop_frame,
                 group_id=int(path['group_id']),
                 boxes=boxes,
-                client_id=int(path['client_id']),
+                client_id=int(path['id']),
                 attributes=attributes,
             )
             self.box_paths.append(box_path)
@@ -1009,7 +1007,7 @@ class _AnnotationForJob(_Annotation):
                     stop_frame=self.stop_frame + 1,
                     group_id=int(path['group_id']),
                     shapes=poly_shapes,
-                    client_id=int(path['client_id']),
+                    client_id=int(path['id']),
                     attributes=attributes,
                 )
 
@@ -1289,31 +1287,19 @@ class _AnnotationForJob(_Annotation):
                (class_name in deleted[1] and deleted[1][class_name] != len(client_ids_to_delete)):
                raise Exception('Number of deleted object doesn\'t match with requested number')
 
-    def _delete_all_shapes_from_db(self):
-        for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
-            self._get_shape_set(shape_type).all().delete()
-
-    def _delete_all_paths_from_db(self):
-        self.db_job.objectpath_set.all().delete()
-
     def delete_from_db(self, data):
         self._delete_shapes_from_db(data)
         self._delete_paths_from_db(data)
 
-    def save_to_db(self, action):
-        if action == 'create':
-            self._save_shapes_to_db()
-            self._save_paths_to_db()
-        elif action == 'update':
-            self._update_shapes_in_db()
-            self._update_paths_in_db()
-        # elif action == 'delete':
-        #     self._delete_shapes_from_db()
-        #     self._delete_paths_from_db()
+    def update_in_db(self, data):
+        self.init_from_client(data)
+        self._update_shapes_in_db()
+        self._update_paths_in_db()
 
-    def delete_objs_from_db(self):
-        self._delete_all_shapes_from_db()
-        self._delete_all_paths_from_db()
+    def save_to_db(self, data):
+        self.init_from_client(data)
+        self._save_shapes_to_db()
+        self._save_paths_to_db()
 
     def to_client(self):
         data = {
@@ -1329,7 +1315,7 @@ class _AnnotationForJob(_Annotation):
 
         for box in self.boxes:
             data["boxes"].append({
-                "client_id": box.client_id,
+                "id": box.client_id,
                 "label_id": box.label.id,
                 "group_id": box.group_id,
                 "xtl": box.xtl,
@@ -1345,7 +1331,7 @@ class _AnnotationForJob(_Annotation):
         for poly_type in ['polygons', 'polylines', 'points']:
             for poly in getattr(self, poly_type):
                 data[poly_type].append({
-                    "client_id": poly.client_id,
+                    "id": poly.client_id,
                     "label_id": poly.label.id,
                     "group_id": poly.group_id,
                     "points": poly.points,
@@ -1357,7 +1343,7 @@ class _AnnotationForJob(_Annotation):
 
         for box_path in self.box_paths:
             data["box_paths"].append({
-                "client_id": box_path.client_id,
+                "id": box_path.client_id,
                 "label_id": box_path.label.id,
                 "group_id": box_path.group_id,
                 "frame": box_path.frame,
@@ -1380,7 +1366,7 @@ class _AnnotationForJob(_Annotation):
         for poly_path_type in ['polygon_paths', 'polyline_paths', 'points_paths']:
             for poly_path in getattr(self, poly_path_type):
                 data[poly_path_type].append({
-                    "client_id": poly_path.client_id,
+                    "id": poly_path.client_id,
                     "label_id": poly_path.label.id,
                     "group_id": poly_path.group_id,
                     "frame": poly_path.frame,
@@ -1403,18 +1389,17 @@ class _AnnotationForJob(_Annotation):
         # check unique id for each object
         client_ids = set()
         def extract_and_check_clinet_id(shape):
-            if 'client_id' not in shape:
-                raise Exception('No client_id field in received data')
-            client_id = shape['client_id']
+            if 'id' not in shape:
+                raise Exception('No id field in received data')
+            client_id = shape['id']
             if client_id in client_ids:
-                raise Exception('More than one object has the same client_id {}'.format(client_id))
+                raise Exception('More than one object has the same id {}'.format(client_id))
             client_ids.add(client_id)
             return client_id
 
         shape_types = ['boxes', 'points', 'polygons', 'polylines', 'box_paths',
             'points_paths', 'polygon_paths', 'polyline_paths']
 
-        # todo add checks for delete action
         for action in ['create', 'update']:
             for shape_type in shape_types:
                 for shape in data[action][shape_type]:
@@ -1967,7 +1952,7 @@ class _AnnotationForTask(_Annotation):
                                         ("xbr", "{:.2f}".format(shape.xbr)),
                                         ("ybr", "{:.2f}".format(shape.ybr)),
                                         ("occluded", str(int(shape.occluded))),
-                                        ("client_id", str(shape.client_id)),
+                                        ("id", str(shape.client_id)),
                                     ])
                                     if db_task.z_order:
                                         dump_dict['z_order'] = str(shape.z_order)
@@ -1987,7 +1972,7 @@ class _AnnotationForTask(_Annotation):
                                             )) for p in shape.points.split(' '))
                                         )),
                                         ("occluded", str(int(shape.occluded))),
-                                        ("client_id", str(shape.client_id)),
+                                        ("id", str(shape.client_id)),
                                     ])
 
                                     if db_task.z_order:
@@ -2028,14 +2013,12 @@ class _AnnotationForTask(_Annotation):
                 im_w = im_meta_data['original_size'][0]['width']
                 im_h = im_meta_data['original_size'][0]['height']
 
-                path_idx = 0
                 for shape_type in ["boxes", "polygons", "polylines", "points"]:
                     path_list = paths[shape_type]
                     for path in path_list:
                         dump_dict = OrderedDict([
-                            ("id", str(path_idx)),
+                            ("id", str(path.client_id)),
                             ("label", path.label.name),
-                            ("client_id", str(path.client_id)),
                         ])
                         if path.group_id:
                             dump_dict['group_id'] = str(path.group_id)
@@ -2104,6 +2087,5 @@ class _AnnotationForTask(_Annotation):
                                     dumper.close_polyline()
                                 else:
                                     dumper.close_points()
-                        path_idx += 1
                         dumper.close_track()
             dumper.close_root()

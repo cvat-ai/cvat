@@ -760,7 +760,7 @@ class BoxModel extends ShapeModel {
             }
 
             return Object.assign({}, this._positions[this._frame], {
-                client_id: this._id,
+                id: this._id,
                 attributes: immutableAttributes,
                 label_id: this._label,
                 group_id: this._groupId,
@@ -769,7 +769,7 @@ class BoxModel extends ShapeModel {
         }
         else {
             let boxPath = {
-                client_id: this._id,
+                id: this._id,
                 label_id: this._label,
                 group_id: this._groupId,
                 frame: this._frame,
@@ -955,7 +955,7 @@ class PolyShapeModel extends ShapeModel {
             }
 
             return Object.assign({}, this._positions[this._frame], {
-                client_id: this._id,
+                id: this._id,
                 attributes: immutableAttributes,
                 label_id: this._label,
                 group_id: this._groupId,
@@ -964,7 +964,7 @@ class PolyShapeModel extends ShapeModel {
         }
         else {
             let polyPath = {
-                client_id: this._id,
+                id: this._id,
                 label_id: this._label,
                 group_id: this._groupId,
                 frame: this._frame,

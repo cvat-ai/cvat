@@ -220,7 +220,7 @@ def convert_to_cvat_format(data):
                 "group_id": 0,
                 "occluded": False,
                 "attributes": [],
-                "client_id": client_idx,
+                "id": client_idx,
             })
 
             client_idx += 1
