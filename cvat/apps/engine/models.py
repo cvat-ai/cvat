@@ -57,6 +57,18 @@ class Task(models.Model):
             ("change_annotation", "Can modify annotation for the task"),
         )
 
+    @property
+    def has_bug_tracker(self):
+        return len(self.bug_tracker) > 0
+
+    @property
+    def jid_set(self):
+        segments = self.segment_set.all()
+        jids = []
+        for segm in segments:
+            jids.extend(list(map(lambda job: job.id, segm.job_set.all())))
+        return jids
+
     def get_upload_dirname(self):
         return os.path.join(self.path, ".upload")
 
