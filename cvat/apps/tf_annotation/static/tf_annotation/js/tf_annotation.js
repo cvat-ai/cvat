@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+"use strict";
+
 function CheckTFAnnotationRequest(taskId, tfAnnotationButton) {
     let frequence = 5000;
     let errorCount = 0;
@@ -90,9 +92,9 @@ window.cvat.dashboard = window.cvat.dashboard || {};
 window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
 
 window.cvat.dashboard.uiCallbacks.push(function(newElements) {
-    tids = [];
+    let tids = [];
     for (let el of newElements) {
-        tids.push(el.id.split('_')[1])
+        tids.push(el.id.split('_')[1]);
     }
 
     $.ajax({
