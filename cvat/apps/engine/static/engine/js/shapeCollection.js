@@ -397,7 +397,7 @@ class ShapeCollectionModel extends Listener {
     empty() {
         for (const shapeId in this._initialShapes) {
             const exportTarget = getExportTargetContainer(ExportType.delete, this._initialShapes[shapeId].type, this._shapesToDelete);
-            exportTarget.push(shapeId);
+            exportTarget.push(+shapeId);
         }
 
         this._initialShapes = {};
