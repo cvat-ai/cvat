@@ -187,6 +187,8 @@ def get(tid):
 
     return response
 
+
+@transaction.atomic
 def save_job_status(jid, status, user):
     db_job = models.Job.objects.select_related("segment__task").select_for_update().get(pk = jid)
     db_task = db_job.segment.task
@@ -196,7 +198,7 @@ def save_job_status(jid, status, user):
 
     db_job.status = status.value
     db_job.save()
-    db_segments = list(db_task.segment_set.prefetch_related('job_set').select_for_update().all())
+    db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
     db_jobs = [db_segment.job_set.first() for db_segment in db_segments]
 
     if len(list(filter(lambda x: StatusChoice(x.status) == StatusChoice.ANNOTATION, db_jobs))) > 0:
