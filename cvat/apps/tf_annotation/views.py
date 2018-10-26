@@ -202,7 +202,6 @@ def convert_to_cvat_format(data):
         'create': create_anno_container(),
         'update': create_anno_container(),
         'delete': create_anno_container(),
-        'pre_erase': True,
     }
 
     client_idx = 0

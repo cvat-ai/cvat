@@ -544,7 +544,6 @@ function uploadAnnotationRequest() {
 
                     const exportData = createExportContainer();
                     exportData.create = parsed;
-                    exportData.pre_erase = true;
 
                     let asyncSave = function() {
                         $.ajax({
