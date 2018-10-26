@@ -41,24 +41,12 @@ class TaskAdmin(admin.ModelAdmin):
     readonly_fields = ('size', 'path', 'created_date', 'updated_date',
         'overlap', 'flipped')
     list_display = ('name', 'mode', 'owner', 'created_date', 'updated_date')
-    search_fields = ('name', 'mode', 'owner_username', 'owner_first_name',
-        'owner_last_name', 'owner_email')
+    search_fields = ('name', 'mode', 'owner__username', 'owner__first_name',
+        'owner__last_name', 'owner__email')
     inlines = [
         SegmentInline,
         LabelInline
     ]
-
-    # A callable object to use inside search_fields
-    def owner_first_name(self, obj):
-        return obj.owner.first_name
-
-    # A callable object to use inside search_fields
-    def owner_last_name(self, obj):
-        return obj.owner.last_name
-
-    # A callable object to use inside search_fields
-    def owner_email(self, obj):
-        return obj.owner.email
 
     # Don't allow to add a task because it isn't trivial operation
     def has_add_permission(self, request):
