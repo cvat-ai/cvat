@@ -10,6 +10,6 @@ from . import views
 urlpatterns = [
     path('create', views.create_repository),
     path('update', views.update_repository),
-    path('get/<int:jid>', views.get_repository),
-    path('delete/<int:jid>', views.delete_repository),
+    path('get/<int:tid>', views.get_repository),
+    path('delete/<int:tid>', views.delete_repository),
 ]
