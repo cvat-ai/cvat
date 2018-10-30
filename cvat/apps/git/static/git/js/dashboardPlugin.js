@@ -10,14 +10,13 @@ window.cvat = window.cvat || {};
 window.cvat.dashboard = window.cvat.dashboard || {};
 window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
 window.cvat.dashboard.uiCallbacks.push(function(newElements) {
-    let gitDialogWindow = $(`#${window.cvat.git.reposWindowId}`);
-
     newElements.each(function(idx) {
         let elem = $(newElements[idx]);
         let tid = +elem.attr('id').split('_')[1];
 
         $('<button> Git Repository Sync </button>').addClass('semiBold dashboardButtonUI')
             .on('click', () => {
+                let gitDialogWindow = $(`#${window.cvat.git.reposWindowId}`);
                 gitDialogWindow.attr('current_tid', tid);
                 gitDialogWindow.removeClass('hidden');
                 window.cvat.git.updateState();
@@ -52,10 +51,11 @@ window.cvat.git = {
         window.cvat.git.getGitURL((data) => {
             if (!data.url.value) {
                 gitLabelMessage.css('color', 'black').text('Repository is not attached');
-                reposURLInput.prop('value', 'Repository is not attached');
+                reposURLInput.attr('placeholder', 'Repository is not attached');
                 return;
             }
 
+            reposURLInput.attr('placeholder', '');
             reposURLInput.prop('value', data.url.value);
 
             if (!data.status.value) {
