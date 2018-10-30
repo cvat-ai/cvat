@@ -68,10 +68,9 @@ function buildDashboard() {
     setupTaskUpdater();
     setupSearch();
 
-    $(window).on('click', function(e) {
-        let target = $(e.target);
-        if ( target.hasClass('modal') ) {
-            target.addClass('hidden');
+    $(window).on('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.classList.add('hidden');
         }
     });
 

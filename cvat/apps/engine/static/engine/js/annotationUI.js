@@ -57,9 +57,6 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
             id: job.jobid,
             images: job.image_meta_data,
         },
-        task: {
-            id: job.taskid
-        },
         search: {
             value: window.location.search,
 

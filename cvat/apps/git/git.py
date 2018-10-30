@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-#!/bin/bash
-
 import datetime
 import shutil
 import json
