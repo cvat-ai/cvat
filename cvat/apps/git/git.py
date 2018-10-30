@@ -17,11 +17,11 @@ CVAT_EMAIL = "cvat@example.com"
 
 
 class Git:
-    self.__url = None
-    self.__tid = None
-    self.__user = None
-    self.__cwd = None
-    self.__rep = None
+    __url = None
+    __tid = None
+    __user = None
+    __cwd = None
+    __rep = None
 
 
     def __init__(self, url, tid, user):
@@ -67,14 +67,25 @@ class Git:
         else:
             raise Exception("Couldn't parse URL")
 
+    def _create_master(self):
+        if not len(self.__rep.heads):
+            readme_md_name = os.path.join(self.__cwd, "README.md")
+            with open(readme_md_name, "w"):
+                pass
+            self.__rep.index.add([readme_md_name])
+            self.__rep.head.reference = self.__rep.create_head("master")
+            self.__rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user, datetime.datetime.now()))
+
 
     def ssh_url(self):
-        scheme, user, host, repos = self._parse_url()
+        user, host, repos = self._parse_url()[1:]
         return "{}@{}:{}".format(user, host, repos)
 
 
     def http_url(self):
-        scheme, user, host, repos = self._parse_url()
+        data = self._parse_url()
+        scheme = data[0]
+        host, repos = data[2:]
         return "{}://{}/{}".format(scheme, host, repos)
 
 
@@ -90,18 +101,11 @@ class Git:
             cw.set("user", "email", CVAT_EMAIL)
             cw.release()
 
-        if not len(rep.heads):
-            readme_md_name = os.path.join(self.__cwd, "README.md")
-            with open(readme_md_name, "w"):
-                pass
-            rep.index.add([readme_md_name])
-            rep.create_head("master")
-            rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user, datetime.datetime.now()))
-            rep.git.push("origin", branch_name)
-            try:
-                rep.git.push("origin", "master")
-            except git.exc.GitError:
-                print("Master branch wasn't found, but script couldn't create it")
+        self._create_master()
+        try:
+            self.__rep.git.push("origin", "master")
+        except git.exc.GitError:
+            print("Remote master branch wasn't found, but script couldn't push it")
 
         os.makedirs(os.path.join(self.__cwd, DIFF_DIR))
         gitignore = os.path.join(self.__cwd, ".gitignore")
@@ -154,11 +158,36 @@ class Git:
 
 
     def pull(self):
-        pass
+        if "master" not in self.__rep.heads:
+            self._create_master()
+
+        remote_branches = []
+        for remote_branch in self.__rep.git.branch("-r").split("\n")[1:]:
+            remote_branches.append(remote_branch.split("/")[-1])
+
+        if "master" in remote_branches:
+            try:
+                self.__rep.git.pull("origin", "master")
+            except git.exc.GitError:
+                self.reclone()
 
 
     def push(self):
-        pass
+        self.pull()
+        if CVAT_USER in list(map(lambda x: x.name, self.__rep.heads)):
+            git.Head.delete(self.__rep.heads[CVAT_USER].repo, self.__rep.heads[CVAT_USER])
+        self.__rep.create_head(CVAT_USER)
+
+        os.makedirs(os.path.join(self.__cwd, 'annotation'), exist_ok = True)
+        with open(os.path.join(self.__cwd, 'annotation', 'SomeTask.dump'), 'w'):
+            # create fake dump file
+            pass
+
+        self.__rep.index.add([os.path.join(self.__cwd, 'annotation', '*.dump')])
+        self.__rep.git.push("origin", CVAT_USER, '--force')
+
+        # merge all diffs and push it into README.md or any other place
+        # notification
 
 
     def remote_status(self):
