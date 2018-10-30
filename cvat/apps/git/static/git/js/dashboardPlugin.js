@@ -14,7 +14,7 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
         let elem = $(newElements[idx]);
         let tid = +elem.attr('id').split('_')[1];
 
-        $('<button> Git Repository Sync </button>').addClass('semiBold dashboardButtonUI')
+        $('<button> Git Repository Sync </button>').addClass('regular dashboardButtonUI')
             .on('click', () => {
                 let gitDialogWindow = $(`#${window.cvat.git.reposWindowId}`);
                 gitDialogWindow.attr('current_tid', tid);
