@@ -207,10 +207,11 @@ class Git:
 
         # Remove user branch from local repository if it exists
         if self.__user.username in list(map(lambda x: x.name, self.__rep.heads)):
-            git.Head.delete(self.__rep.heads[self.__user.username].repo, self.__rep.heads[self.__user.username])
+            self.__rep.delete_head(self.__user.username, force=True)
 
         # Create new user branch from master
         self.__rep.create_head(self.__user.username)
+        self.__rep.head.reference = self.__rep.heads[self.__user.username]
 
         # Dump and zip
         dump(self.__tid, format, scheme, host)
