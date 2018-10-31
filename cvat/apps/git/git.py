@@ -6,8 +6,10 @@ from django.db import transaction
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task
+from cvat.apps.engine.annotation import _dump as dump, FORMAT_XML
 from cvat.apps.git.models import GitData
 
+import subprocess
 import datetime
 import shutil
 import json
@@ -199,7 +201,7 @@ class Git:
                 self.reclone()
 
 
-    def push(self):
+    def push(self, scheme, host, format):
         # Update local repository
         self.pull()
 
@@ -210,13 +212,25 @@ class Git:
         # Create new user branch from master
         self.__rep.create_head(self.__user.username)
 
-        # Dump annotation and zip it
-        os.makedirs(os.path.join(self.__cwd, 'annotation'), exist_ok = True)
-        with open(os.path.join(self.__cwd, 'annotation', 'SomeTask.dump'), 'w'):
-            pass
+        # Dump and zip
+        dump(self.__tid, format, scheme, host)
+        db_task = Task.objects.get(pk = self.__tid)
+        dump_name = db_task.get_dump_path()
 
-        # Add to index
-        self.__rep.index.add([os.path.join(self.__cwd, 'annotation', '*.dump')])
+        if not os.path.isfile(dump_name):
+            raise Exception("Dump completed but file isn't found")
+        base_path = os.path.join(self.__cwd, "annotation")
+        shutil.rmtree(base_path, True)
+        os.makedirs(base_path, exist_ok = True)
+        new_dump_name = os.path.join(base_path, os.path.basename(dump_name))
+        os.rename(dump_name, new_dump_name)
+        archive_name = os.path.join(base_path, "annotation.zip")
+        subprocess.call('zip -r "{}" "{}"'.format(archive_name, new_dump_name), shell=True)
+        os.remove(new_dump_name)
+
+        # Commit and push
+        self.__rep.index.add([archive_name])
+        self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user.username, datetime.datetime.now()))
         self.__rep.git.push("origin", self.__user.username, '--force')
 
 
@@ -264,6 +278,13 @@ def update(url, tid, user):
 
     db_git.url = url
     db_git.save()
+
+
+@transaction.atomic
+def push(tid, user, scheme, host):
+    db_task = Task.objects.get(pk = tid)
+    db_git = GitData.objects.select_for_update().get(pk = db_task)
+    Git(db_git.url, tid, user).init_repos().push(scheme, host, FORMAT_XML)
 
 
 @transaction.atomic
