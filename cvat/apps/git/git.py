@@ -220,22 +220,6 @@ class Git:
         self.__rep.git.push("origin", self.__user.username, '--force')
 
 
-        # TODO:
-        # 1) Dump real file
-        # 2) ZIP real file
-        # 3) Merge diffs into one file with name summary.diff. This file contains diffs by date
-        # 4) LFS
-        # 5) Using workers
-        # Notification
-        #
-        #
-        # Setup it in the container
-        # 1) Register CVAT user. Create SSH keys for it.
-        # 2)
-        #
-        # Future:
-        # 1) Checkout from other branches (not only master
-
     def delete(self):
         if os.path.isdir(self.__cwd):
             shutil.rmtree(self.__cwd)
@@ -307,8 +291,3 @@ def delete(tid, user):
         db_git = GitData.objects.select_for_update().get(pk = db_task)
         Git(db_git.url, tid, user).delete()
         db_git.delete()
-
-
-
-
-
