@@ -2,7 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.db import transaction
+
 from cvat.apps.engine.log import slogger
+from cvat.apps.engine.models import Task
+from cvat.apps.git.models import GitData
 
 import datetime
 import shutil
@@ -14,6 +18,7 @@ import os
 DIFF_DIR = "cvat_diffs"
 CVAT_USER = "cvat"
 CVAT_EMAIL = "cvat@example.com"
+
 
 class Git:
     __url = None
@@ -216,12 +221,20 @@ class Git:
 
 
         # TODO:
-        # 1) Checkout from other branches (not only master)
-        # 2) Dump real file
-        # 3) ZIP real file
-        # 4) Merge diffs into one file with name summary.diffs
-        # This file contains diffs by date
+        # 1) Dump real file
+        # 2) ZIP real file
+        # 3) Merge diffs into one file with name summary.diff. This file contains diffs by date
+        # 4) LFS
+        # 5) Using workers
         # Notification
+        #
+        #
+        # Setup it in the container
+        # 1) Register CVAT user. Create SSH keys for it.
+        # 2)
+        #
+        # Future:
+        # 1) Checkout from other branches (not only master
 
     def delete(self):
         if os.path.isdir(self.__cwd):
@@ -236,3 +249,66 @@ class Git:
             return "actual" if not len(diffs) else "obsolete"
         else:
             raise Exception("Local repository isn't found")
+
+
+@transaction.atomic
+def create(url, tid, user):
+    try:
+        db_task = Task.objects.get(pk = tid)
+        if GitData.objects.filter(pk = db_task).exists():
+            raise Exception('git repository for task already exists')
+
+        db_git = GitData()
+        db_git.url = url
+        db_git.task = db_task
+        db_git.save()
+
+        db_git = GitData.objects.select_for_update().get(pk = db_task)
+        Git(url, tid, user).init_repos()
+    except Exception as ex:
+        if isinstance(db_git, GitData):
+            db_git.delete()
+        raise ex
+
+
+@transaction.atomic
+def update(url, tid, user):
+    db_task = Task.objects.get(pk = tid)
+    db_git = GitData.objects.select_for_update().get(pk = db_task)
+
+    Git(url, tid, user).init_repos()
+
+    db_git.url = url
+    db_git.save()
+
+
+@transaction.atomic
+def get(tid, user):
+    response = {}
+    response["url"] = {"value": None}
+    response["status"] = {"value": None, "error": None}
+
+    db_task = Task.objects.get(pk = tid)
+    if GitData.objects.filter(pk = db_task).exists():
+        db_git = GitData.objects.select_for_update().get(pk = db_task)
+        response['url']['value'] = db_git.url
+        try:
+            response['status']['value'] = Git(db_git.url, tid, user).remote_status()
+        except Exception as ex:
+            response['status']['error'] = str(ex)
+    return response
+
+
+@transaction.atomic
+def delete(tid, user):
+    db_task = Task.objects.get(pk = tid)
+
+    if GitData.objects.filter(pk = db_task).exists():
+        db_git = GitData.objects.select_for_update().get(pk = db_task)
+        Git(db_git.url, tid, user).delete()
+        db_git.delete()
+
+
+
+
+
