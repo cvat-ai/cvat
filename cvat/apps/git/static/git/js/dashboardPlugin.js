@@ -47,8 +47,17 @@ window.cvat.git = {
         let gitLabelMessage = $(`#${window.cvat.git.labelMessageId}`);
         let gitLabelStatus = $(`#${window.cvat.git.labelStatusId}`);
         let reposURLInput = $(`#${window.cvat.git.reposURLInputTextId}`);
+        let updateButton = $(`#${window.cvat.git.reposURLUpdateButtonId}`);
+        let pushButton = $(`#${window.cvat.git.reposPushButtonId}`);
+
+        gitLabelMessage.css('color', '#cccc00').text('Getting an info..');
+        gitLabelStatus.css('color', '#cccc00').text('\u25cc');
+        updateButton.attr("disabled", true);
+        pushButton.attr("disabled", true);
 
         window.cvat.git.getGitURL((data) => {
+            updateButton.attr("disabled", false);
+
             if (!data.url.value) {
                 gitLabelMessage.css('color', 'black').text('Repository is not attached');
                 reposURLInput.attr('placeholder', 'Repository is not attached');
@@ -71,6 +80,7 @@ window.cvat.git = {
             else if (data.status.value == "obsolete") {
                 gitLabelStatus.css('color', 'darkgreen').text('\u2606');
                 gitLabelMessage.css('color', 'black').text('Repository contains obsolete data');
+                pushButton.attr("disabled", false);
             }
             else {
                 let message = `Got unknown repository status: ${data.status.value}`;
@@ -79,6 +89,7 @@ window.cvat.git = {
                 throw Error(message);
             }
         }, (data) => {
+            updateButton.attr("disabled", false);
             gitWindow.addClass('hidden');
             let message = `Error was occured during get an repos URL. ` +
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
@@ -166,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             let originalOnSuccessCreate = onSuccessCreate;
             onSuccessCreate = (tid) => {
-                let gitURL = $(`#${window.cvat.git.createURLInputTextId}`).prop('value');
+                let gitURL = $(`#${window.cvat.git.createURLInputTextId}`).prop('value').replace(/\s/g,'');
 
                 if (gitURL.length) {
                     $.ajax({
@@ -178,13 +189,16 @@ document.addEventListener("DOMContentLoaded", () => {
                         }),
                         contentType: 'application/json;charset=utf-8',
                         error: (data) => {
-                            throw Error(`Warning: Can't create git record for task ${tid}. ` +
+                            console.log(`Warning: Can't create git record for task ${tid}. ` +
                                 `Status: ${data.status}. Message: ${data.responseText || data.statusText}`);
                         },
                         complete: () => {
                             originalOnSuccessCreate();
                         }
                     });
+                }
+                else {
+                    originalOnSuccessCreate();
                 }
             }
         }
@@ -236,23 +250,35 @@ document.addEventListener("DOMContentLoaded", () => {
     let repositoryURLInput = $(`#${window.cvat.git.reposURLInputTextId}`);
     let repositoryUpdateButton = $(`#${window.cvat.git.reposURLUpdateButtonId}`);
     let repositoryPushButton = $(`#${window.cvat.git.reposPushButtonId}`);
+    let gitLabelMessage = $(`#${window.cvat.git.labelMessageId}`);
+    let gitLabelStatus = $(`#${window.cvat.git.labelStatusId}`);
 
     closeRepositoryWindowButton.on('click', () => {
         gitWindow.addClass('hidden');
     });
 
     repositoryUpdateButton.on('click', () => {
+        gitLabelMessage.css('color', '#cccc00').text('Updating..');
+        gitLabelStatus.css('color', '#cccc00').text('\u25cc');
+        repositoryUpdateButton.attr("disabled", true);
+        repositoryPushButton.attr("disabled", true);
+
         let gitURL = repositoryURLInput.prop('value').replace(/\s/g,'');
         if (!gitURL) {
             window.cvat.git.removeGitURL();
         }
         else {
             window.cvat.git.getGitURL((data) => {
-                if (!data.url.value) {
-                    window.cvat.git.createGitURL(gitURL);
+                try {
+                    if (!data.url.value) {
+                        window.cvat.git.createGitURL(gitURL);
+                    }
+                    else {
+                        window.cvat.git.updateGitURL(gitURL);
+                    }
                 }
-                else {
-                    window.cvat.git.updateGitURL(gitURL);
+                finally {
+                    window.cvat.git.updateState();
                 }
             }, () => {
                 let message = `Error was occured during getting an git URL. ` +

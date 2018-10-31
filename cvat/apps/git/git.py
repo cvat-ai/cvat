@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from cvat.apps.engine.log import slogger
+
 import datetime
 import shutil
 import json
@@ -12,7 +14,6 @@ import os
 DIFF_DIR = "cvat_diffs"
 CVAT_USER = "cvat"
 CVAT_EMAIL = "cvat@example.com"
-
 
 class Git:
     __url = None
@@ -28,14 +29,6 @@ class Git:
         self.__user = user
         self.__cwd = os.path.join(os.getcwd(), "data", str(tid), "repository")
 
-        try:
-            self.__rep = git.Repo(self.__cwd)
-        except git.exc.InvalidGitRepositoryError:
-            shutil.rmtree(self.__cwd, True)
-            self.reclone()
-        except git.exc.NoSuchPathError:
-            self.clone()
-
 
     def _parse_url(self):
         http_pattern = "([https|http]+)*[://]*([a-zA-Z0-9._-]+.[a-zA-Z]+)/([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+)"
@@ -45,7 +38,6 @@ class Git:
         ssh_match = re.match(ssh_pattern, self.__url)
 
         if http_match:
-            print("{} is http URL".format(self.__url))
             user = "git"
             scheme = http_match.group(1) if http_match.group(1) else "https"
             host = http_match.group(2)
@@ -54,7 +46,6 @@ class Git:
                 repos += ".git"
             return scheme, user, host, repos
         elif ssh_match:
-            print("{} is ssh URL".format(self.__url))
             scheme = "https"
             user = ssh_match.group(1)
             host = ssh_match.group(2)
@@ -65,14 +56,32 @@ class Git:
         else:
             raise Exception("Couldn't parse URL")
 
+
     def _create_master(self):
-        if not len(self.__rep.heads):
-            readme_md_name = os.path.join(self.__cwd, "README.md")
-            with open(readme_md_name, "w"):
-                pass
-            self.__rep.index.add([readme_md_name])
-            self.__rep.head.reference = self.__rep.create_head("master")
-            self.__rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user, datetime.datetime.now()))
+        assert not len(self.__rep.heads)
+        readme_md_name = os.path.join(self.__cwd, "README.md")
+        with open(readme_md_name, "w"):
+            pass
+        self.__rep.index.add([readme_md_name])
+        self.__rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user.username, datetime.datetime.now()))
+
+
+    def init_repos(self):
+        try:
+            # Try to use a local repos. It can throw GitError exception
+            self.__rep = git.Repo(self.__cwd)
+
+            # Check if remote URL is actual
+            if self.ssh_url() != self.__rep.git.remote('get-url', '--all', 'origin'):
+                slogger.task[self.__tid].info("Local repository URL is obsolete.")
+                # We need reinitialize repository if it's false
+                raise git.exc.GitError
+        except git.exc.GitError:
+            slogger.task[self.__tid].info("Local repository reinitialization..")
+            shutil.rmtree(self.__cwd, True)
+            self.clone()
+
+        return self
 
 
     def ssh_url(self):
@@ -90,8 +99,13 @@ class Git:
     def clone(self):
         os.makedirs(self.__cwd)
         ssh_url = self.ssh_url()
+
+        # Clone repository
+        slogger.task[self.__tid].info("Cloning remote repository from {}..".format(ssh_url))
         self.__rep = git.Repo.clone_from(ssh_url, self.__cwd)
 
+        # Setup config file for CVAT user
+        slogger.task[self.__tid].info("User config initialization..")
         with self.__rep.config_writer() as cw:
             if not cw.has_section("user"):
                 cw.add_section("user")
@@ -99,12 +113,16 @@ class Git:
             cw.set("user", "email", CVAT_EMAIL)
             cw.release()
 
-        self._create_master()
-        try:
-            self.__rep.git.push("origin", "master")
-        except git.exc.GitError:
-            print("Remote master branch wasn't found, but script couldn't push it")
+        # Create master branch if it doesn't exist and push it into server for remote repository initialization
+        if not len(self.__rep.heads):
+            self._create_master()
+            try:
+                self.__rep.git.push("origin", "master")
+            except git.exc.GitError:
+                slogger.task[self.__tid].warning("Remote repository doesn't contain any " +
+                    "heads but master push process is fault", exc_info = True)
 
+        # Create dir for diffs and add it into .gitignore
         os.makedirs(os.path.join(self.__cwd, DIFF_DIR))
         gitignore = os.path.join(self.__cwd, ".gitignore")
         file_mode = "a" if os.path.isfile(os.path.join(self.__cwd, ".gitignore")) else "w"
@@ -112,26 +130,32 @@ class Git:
             gitignore.writelines(["\n", "{}/".format(DIFF_DIR), "\n"])
 
 
+    # Reclone method instead of clone try to save all accumulated diffs
     def reclone(self):
         if os.path.exists(self.__cwd):
             if not os.path.isdir(self.__cwd):
                 os.remove(self.__cwd)
             else:
-                tmp_repo = os.path.join(os.path.split(self.__cwd)[:-1], "tmp_repo".format(self.__user))
+                # Rename current repository dir
+                tmp_repo = os.path.join(self.__cwd, "..", "tmp_repo")
                 os.rename(self.__cwd, tmp_repo)
                 successful_cloning = False
 
                 try:
                     self.clone()
                     successful_cloning = True
-                except git.exc.GitError:
+                except Exception as ex:
+                    # Restore state if any error has been occured
+                    if os.path.isdir(self.__cwd):
+                        shutil.rmtree(self.__cwd, True)
                     os.rename(tmp_repo, self.__cwd)
-                    raise Exception("Couldn't clone repository")
+                    raise ex
 
+                # If clone process is successful, push all diffs into new local repository
                 if successful_cloning:
                     if os.path.exists(os.path.join(tmp_repo, DIFF_DIR)):
                         diffs_to_move = list(map(lambda x: os.path.join(DIFF_DIR, x), os.listdir(os.path.join(tmp_repo, DIFF_DIR))))
-                        diffs_to_move = list(filter(lambda x: len(os.path.splitext(x)) > 1 and os.path.splitext(x)[1] == "diff"), diffs_to_move)
+                        diffs_to_move = list(filter(lambda x: len(os.path.splitext(x)) > 1 and os.path.splitext(x)[1] == "diff", diffs_to_move))
 
                         for diff in diffs_to_move:
                             os.rename(os.path.join(tmp_repo, diff), os.path.join(self.__cwd, diff))
@@ -143,54 +167,72 @@ class Git:
 
     def onsave(self, changes_dict):
         diff_dir = os.path.join(self.__cwd, DIFF_DIR)
-        os.makedirs(diff_dir, exist_ok=True)
-        diff_files = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
-        last_num = 0
-        for f in diff_files:
-            number = f.split("_")[0]
-            number = int(number) if number.isdigit() else last_num
-            last_num = number
+        if os.path.isdir(diff_dir):
+            diff_files = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
+            last_num = 0
+            for f in diff_files:
+                number = f.split("_")[0]
+                number = int(number) if number.isdigit() else last_num
+                last_num = number
 
-        with open("{}_{}.diff".format(last_num + 1, self.__user), 'w') as f:
-            f.write(json.dumps(changes_dict))
+            with open("{}_{}.diff".format(last_num + 1, self.__user.username), 'w') as f:
+                f.write(json.dumps(changes_dict))
+        else:
+            raise Exception("Local repository isn't found")
 
 
     def pull(self):
-        if "master" not in self.__rep.heads:
-            self._create_master()
-
+        self.__rep.head.reference = self.__rep.heads["master"]
         remote_branches = []
         for remote_branch in self.__rep.git.branch("-r").split("\n")[1:]:
             remote_branches.append(remote_branch.split("/")[-1])
-
         if "master" in remote_branches:
             try:
                 self.__rep.git.pull("origin", "master")
             except git.exc.GitError:
+                # Merge conflicts
                 self.reclone()
 
 
     def push(self):
+        # Update local repository
         self.pull()
-        if CVAT_USER in list(map(lambda x: x.name, self.__rep.heads)):
-            git.Head.delete(self.__rep.heads[CVAT_USER].repo, self.__rep.heads[CVAT_USER])
-        self.__rep.create_head(CVAT_USER)
 
+        # Remove user branch from local repository if it exists
+        if self.__user.username in list(map(lambda x: x.name, self.__rep.heads)):
+            git.Head.delete(self.__rep.heads[self.__user.username].repo, self.__rep.heads[self.__user.username])
+
+        # Create new user branch from master
+        self.__rep.create_head(self.__user.username)
+
+        # Dump annotation and zip it
         os.makedirs(os.path.join(self.__cwd, 'annotation'), exist_ok = True)
         with open(os.path.join(self.__cwd, 'annotation', 'SomeTask.dump'), 'w'):
-            # create fake dump file
             pass
 
+        # Add to index
         self.__rep.index.add([os.path.join(self.__cwd, 'annotation', '*.dump')])
-        self.__rep.git.push("origin", CVAT_USER, '--force')
+        self.__rep.git.push("origin", self.__user.username, '--force')
 
-        # merge all diffs and push it into README.md or any other place
-        # notification
+
+        # TODO:
+        # 1) Checkout from other branches (not only master)
+        # 2) Dump real file
+        # 3) ZIP real file
+        # 4) Merge diffs into one file with name summary.diffs
+        # This file contains diffs by date
+        # Notification
+
+    def delete(self):
+        if os.path.isdir(self.__cwd):
+            shutil.rmtree(self.__cwd)
 
 
     def remote_status(self):
         diff_dir = os.path.join(self.__cwd, DIFF_DIR)
-        os.makedirs(diff_dir, exist_ok=True)
-        diffs = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
-        diffs = list(filter(lambda x: len(os.path.splitext(x)) > 1 and os.path.splitext(x)[1] == "diff", diffs))
-        return "actual" if not len(diffs) else "obsolete"
+        if os.path.isdir(diff_dir):
+            diffs = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
+            diffs = list(filter(lambda x: len(os.path.splitext(x)) > 1 and os.path.splitext(x)[1] == "diff", diffs))
+            return "actual" if not len(diffs) else "obsolete"
+        else:
+            raise Exception("Local repository isn't found")
