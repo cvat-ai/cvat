@@ -7,7 +7,6 @@ from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.conf import settings
-from django.contrib.auth.decorators import permission_required
 from cvat.apps.authentication.decorators import login_required
 
 from cvat.apps.engine.models import Task as TaskModel, Job as JobModel
@@ -40,7 +39,6 @@ def ScanNode(directory):
     return result
 
 @login_required
-@permission_required('engine.add_task', raise_exception=True)
 def JsTreeView(request):
     node_id = None
     if 'id' in request.GET:
@@ -57,7 +55,6 @@ def JsTreeView(request):
 
 
 @login_required
-@permission_required('engine.view_task', raise_exception=True)
 def DashboardView(request):
     query_name = request.GET['search'] if 'search' in request.GET else None
     query_job = int(request.GET['jid']) if 'jid' in request.GET and request.GET['jid'].isdigit() else None
@@ -69,6 +66,9 @@ def DashboardView(request):
         task_list = list(TaskModel.objects.prefetch_related('segment_set__job_set').order_by('-created_date').all())
         if query_name is not None:
             task_list = list(filter(lambda x: query_name.lower() in x.name.lower(), task_list))
+
+    task_list = list(filter(lambda task: request.user.has_perm(
+        'engine.task.access', task), task_list))
 
     return render(request, 'dashboard/dashboard.html', {
         'data': task_list,

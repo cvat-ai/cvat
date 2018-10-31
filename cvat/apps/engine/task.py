@@ -249,13 +249,6 @@ def get_job(jid):
 
     return response
 
-def is_task_owner(user, tid):
-    try:
-        return user == models.Task.objects.get(pk=tid).owner or \
-            user.groups.filter(name='admin').exists()
-    except:
-        return False
-
 @transaction.atomic
 def rq_handler(job, exc_type, exc_value, traceback):
     tid = job.id.split('/')[1]

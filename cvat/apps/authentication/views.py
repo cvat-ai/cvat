@@ -6,6 +6,7 @@
 from django.shortcuts import render
 from django.contrib.auth.views import LoginView
 from django.http import HttpResponseRedirect
+from django.conf import settings
 from . import forms
 
 from django.contrib.auth import login, authenticate
@@ -20,7 +21,7 @@ def register_user(request):
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             login(request, user)
-            return redirect('/')
+            return redirect(settings.LOGIN_REDIRECT_URL)
     else:
         form = forms.NewUserForm()
     return render(request, 'register.html', {'form': form})

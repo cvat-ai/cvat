@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     'cacheops',
     'sendfile',
     'dj_pagination',
-    'revproxy'
+    'revproxy',
+    'rules'
 ]
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
