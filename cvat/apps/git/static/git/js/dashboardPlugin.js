@@ -132,7 +132,7 @@ window.cvat.git = {
                 'tid': +gitWindow.attr('current_tid'),
                 'url': url,
             }),
-            success: window.cvat.git.updateState,
+            complete: window.cvat.git.updateState,
             error: (data) => {
                 let message = `Error was occured during updating an repos entry. ` +
                     `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
@@ -151,7 +151,7 @@ window.cvat.git = {
                 'tid': +gitWindow.attr('current_tid'),
                 'url': url,
             }),
-            success: window.cvat.git.updateState,
+            complete: window.cvat.git.updateState,
             error: (data) => {
                 let message = `Error was occured during creating an repos entry. ` +
                     `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
@@ -269,16 +269,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         else {
             window.cvat.git.getGitURL((data) => {
-                try {
-                    if (!data.url.value) {
-                        window.cvat.git.createGitURL(gitURL);
-                    }
-                    else {
-                        window.cvat.git.updateGitURL(gitURL);
-                    }
+                if (!data.url.value) {
+                    window.cvat.git.createGitURL(gitURL);
                 }
-                finally {
-                    window.cvat.git.updateState();
+                else {
+                    window.cvat.git.updateGitURL(gitURL);
                 }
             }, () => {
                 let message = `Error was occured during getting an git URL. ` +
