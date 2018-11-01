@@ -35,14 +35,6 @@ window.cvat.git = {
     createURLInputTextId: 'gitCreateURLInputText',
 
     updateState: () => {
-         /* Used unicode characters:
-            updating: &#9202;
-            pushed: &#10003;
-            actual: &#9733;
-            obsolete: &#9734;
-            error: &#9888;
-        */
-
         let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
         let gitLabelMessage = $(`#${window.cvat.git.labelMessageId}`);
         let gitLabelStatus = $(`#${window.cvat.git.labelStatusId}`);
@@ -295,6 +287,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     repositoryPushButton.on('click', () => {
-        // to do
+        gitLabelMessage.css('color', '#cccc00').text('Pushing..');
+        gitLabelStatus.css('color', '#cccc00').text('\u25cc');
+        repositoryUpdateButton.attr("disabled", true);
+        repositoryPushButton.attr("disabled", true);
+
+        $.ajax({
+            url: '/git/repository/push/' + gitWindow.attr('current_tid'),
+            success: window.cvat.git.updateState,
+            error: () => {
+                try {
+                    let message = `Error was occured during pushing an repos entry. ` +
+                        `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+                    showMessage(message);
+                    throw Error(message);
+                }
+                finally {
+                    window.cvat.git.updateState();
+                }
+            }
+        })
     });
 });

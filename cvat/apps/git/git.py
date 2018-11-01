@@ -5,8 +5,9 @@
 from django.db import transaction
 
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.models import Task
-from cvat.apps.engine.annotation import _dump as dump, FORMAT_XML
+from cvat.apps.engine.models import Task, Job
+from cvat.apps.engine.annotation import _dump as dump, FORMAT_XML, save_job
+from cvat.apps.engine.plugins import add_plugin
 from cvat.apps.git.models import GitData
 
 import subprocess
@@ -172,22 +173,6 @@ class Git:
         self.clone()
 
 
-    def onsave(self, changes_dict):
-        diff_dir = os.path.join(self.__cwd, DIFF_DIR)
-        if os.path.isdir(diff_dir):
-            diff_files = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
-            last_num = 0
-            for f in diff_files:
-                number = f.split("_")[0]
-                number = int(number) if number.isdigit() else last_num
-                last_num = number
-
-            with open("{}_{}.diff".format(last_num + 1, self.__user.username), 'w') as f:
-                f.write(json.dumps(changes_dict))
-        else:
-            raise Exception("Local repository isn't found")
-
-
     def pull(self):
         self.__rep.head.reference = self.__rep.heads["master"]
         remote_branches = []
@@ -226,13 +211,16 @@ class Git:
         new_dump_name = os.path.join(base_path, os.path.basename(dump_name))
         os.rename(dump_name, new_dump_name)
         archive_name = os.path.join(base_path, "annotation.zip")
-        subprocess.call('zip -r "{}" "{}"'.format(archive_name, new_dump_name), shell=True)
+        subprocess.call('zip -j -r "{}" "{}"'.format(archive_name, new_dump_name), shell=True)
         os.remove(new_dump_name)
 
         # Commit and push
         self.__rep.index.add([archive_name])
         self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user.username, datetime.datetime.now()))
         self.__rep.git.push("origin", self.__user.username, '--force')
+
+        shutil.rmtree(os.path.join(self.__cwd, DIFF_DIR), True)
+        os.makedirs(os.path.join(self.__cwd, DIFF_DIR))
 
 
     def delete(self):
@@ -244,7 +232,7 @@ class Git:
         diff_dir = os.path.join(self.__cwd, DIFF_DIR)
         if os.path.isdir(diff_dir):
             diffs = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
-            diffs = list(filter(lambda x: len(os.path.splitext(x)) > 1 and os.path.splitext(x)[1] == "diff", diffs))
+            diffs = list(filter(lambda x: len(os.path.splitext(x)) > 1 and os.path.splitext(x)[1] == ".diff", diffs))
             return "actual" if not len(diffs) else "obsolete"
         else:
             raise Exception("Local repository isn't found")
@@ -306,6 +294,38 @@ def get(tid, user):
 
 
 @transaction.atomic
+def onsave(jid, data):
+    db_task = Job.objects.select_related('segment__task').get(pk = jid).segment.task
+    try:
+        db_git = GitData.objects.select_for_update().get(pk = db_task.id)
+        diff_dir = os.path.join(os.getcwd(), "data", str(db_task.id), "repository", DIFF_DIR)
+        if os.path.isdir(diff_dir):
+            updated = sum([  len(data["update"][key]) for key in data["update"] ])
+            deleted = sum([  len(data["delete"][key]) for key in data["delete"] ])
+            created = sum([  len(data["create"][key]) for key in data["create"] ])
+
+            if updated or deleted or created:
+                diff = {
+                    "time": str(datetime.datetime.now()),
+                    "update": {key: len(data["update"][key]) for key in data["update"].keys()},
+                    "delete": {key: len(data["delete"][key]) for key in data["delete"].keys()},
+                    "create": {key: len(data["create"][key]) for key in data["create"].keys()}
+                }
+
+                diff_files = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
+                last_num = 0
+                for f in diff_files:
+                    number = f.split("_")[0]
+                    number = int(number) if number.isdigit() else last_num
+                    last_num = number
+
+                with open(os.path.join(diff_dir, "{}.diff".format(last_num + 1)), 'w') as f:
+                    f.write(json.dumps(diff))
+    except GitData.ObjectDoesNotExist:
+        pass
+
+
+@transaction.atomic
 def delete(tid, user):
     db_task = Task.objects.get(pk = tid)
 
@@ -313,3 +333,6 @@ def delete(tid, user):
         db_git = GitData.objects.select_for_update().get(pk = db_task)
         Git(db_git.url, tid, user).delete()
         db_git.delete()
+
+
+add_plugin("save_job", onsave, "after")

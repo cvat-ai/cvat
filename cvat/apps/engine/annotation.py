@@ -20,6 +20,7 @@ from django.conf import settings
 from django.db import transaction
 
 from cvat.apps.profiler import silk_profile
+from cvat.apps.engine.plugins import plugin_decorator
 from . import models
 from .task import get_frame_path, get_image_meta_cache
 from .log import slogger
@@ -72,6 +73,7 @@ def get(jid):
     return annotation.to_client()
 
 @silk_profile(name="Save job")
+@plugin_decorator
 @transaction.atomic
 def save_job(jid, data):
     """
