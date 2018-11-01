@@ -34,7 +34,7 @@ class Git:
     def __init__(self, url, tid, user):
         self.__url = url
         self.__tid = tid
-        self.__user = user
+        self.__user = '_{}'.format(user.username)
         self.__cwd = os.path.join(os.getcwd(), "data", str(tid), "repository")
 
 
@@ -71,7 +71,7 @@ class Git:
         with open(readme_md_name, "w"):
             pass
         self.__rep.index.add([readme_md_name])
-        self.__rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user.username, datetime.datetime.now()))
+        self.__rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user, datetime.datetime.now()))
 
 
     def init_repos(self):
@@ -187,16 +187,37 @@ class Git:
 
 
     def push(self, scheme, host, format):
+        def _accumulate(source, target, target_key):
+            if isinstance(source, dict):
+                if target_key is not None and target_key not in target:
+                    target[target_key] = {}
+
+                for key in source:
+                    if target_key is not None:
+                        _accumulate(source[key], target[target_key], key)
+                    else:
+                        _accumulate(source[key], target, key)
+            elif isinstance(source, int):
+                if source:
+                    if target_key is not None and target_key not in target:
+                        target[target_key] = 0
+                    target[target_key] += source
+            else:
+                raise Exception("Unhandled accumulate type: {}".format(type(source)))
+
         # Update local repository
         self.pull()
 
         # Remove user branch from local repository if it exists
-        if self.__user.username in list(map(lambda x: x.name, self.__rep.heads)):
-            self.__rep.delete_head(self.__user.username, force=True)
+        if self.__user in list(map(lambda x: x.name, self.__rep.heads)):
+            self.__rep.delete_head(self.__user, force=True)
+            self.__rep.head.reference = self.__rep.heads["master"]
+            self.__rep.head.reset('HEAD', index=True, working_tree=True)
 
         # Create new user branch from master
-        self.__rep.create_head(self.__user.username)
-        self.__rep.head.reference = self.__rep.heads[self.__user.username]
+
+        self.__rep.create_head(self.__user)
+        self.__rep.head.reference = self.__rep.heads[self.__user]
 
         # Dump and zip
         dump(self.__tid, format, scheme, host)
@@ -214,14 +235,27 @@ class Git:
         subprocess.call('zip -j -r "{}" "{}"'.format(archive_name, new_dump_name), shell=True)
         os.remove(new_dump_name)
 
+        diff_path = os.path.join(self.__cwd, DIFF_DIR)
+        summary_diff = {}
+        for diff_name in list(map(lambda x: os.path.join(diff_path, x), os.listdir(diff_path))):
+            with open(diff_name, 'r') as f:
+                diff = json.loads(f.read())
+                _accumulate(diff, summary_diff, None)
+
+        diff_name = os.path.join(self.__cwd, "changelog.diff")
+        mode = 'a' if os.path.isfile(diff_name) else 'w'
+        with open(diff_name, mode) as f:
+            f.write('\n{}\n'.format(datetime.datetime.now()))
+            f.write(json.dumps(summary_diff))
+
         # Commit and push
+        self.__rep.index.add([diff_name])
         self.__rep.index.add([archive_name])
-        self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user.username, datetime.datetime.now()))
-        self.__rep.git.push("origin", self.__user.username, '--force')
+        self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user, datetime.datetime.now()))
+        self.__rep.git.push("origin", self.__user, '--force')
 
         shutil.rmtree(os.path.join(self.__cwd, DIFF_DIR), True)
         os.makedirs(os.path.join(self.__cwd, DIFF_DIR))
-
 
     def delete(self):
         if os.path.isdir(self.__cwd):
@@ -299,28 +333,28 @@ def onsave(jid, data):
     try:
         db_git = GitData.objects.select_for_update().get(pk = db_task.id)
         diff_dir = os.path.join(os.getcwd(), "data", str(db_task.id), "repository", DIFF_DIR)
-        if os.path.isdir(diff_dir):
-            updated = sum([  len(data["update"][key]) for key in data["update"] ])
-            deleted = sum([  len(data["delete"][key]) for key in data["delete"] ])
-            created = sum([  len(data["create"][key]) for key in data["create"] ])
+        os.makedirs(diff_dir, exist_ok = True)
 
-            if updated or deleted or created:
-                diff = {
-                    "time": str(datetime.datetime.now()),
-                    "update": {key: len(data["update"][key]) for key in data["update"].keys()},
-                    "delete": {key: len(data["delete"][key]) for key in data["delete"].keys()},
-                    "create": {key: len(data["create"][key]) for key in data["create"].keys()}
-                }
+        updated = sum([  len(data["update"][key]) for key in data["update"] ])
+        deleted = sum([  len(data["delete"][key]) for key in data["delete"] ])
+        created = sum([  len(data["create"][key]) for key in data["create"] ])
 
-                diff_files = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
-                last_num = 0
-                for f in diff_files:
-                    number = f.split("_")[0]
-                    number = int(number) if number.isdigit() else last_num
-                    last_num = number
+        if updated or deleted or created:
+            diff = {
+                "update": {key: len(data["update"][key]) for key in data["update"].keys()},
+                "delete": {key: len(data["delete"][key]) for key in data["delete"].keys()},
+                "create": {key: len(data["create"][key]) for key in data["create"].keys()}
+            }
 
-                with open(os.path.join(diff_dir, "{}.diff".format(last_num + 1)), 'w') as f:
-                    f.write(json.dumps(diff))
+            diff_files = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
+            last_num = 0
+            for f in diff_files:
+                number = os.path.splitext(os.path.basename(f))[0]
+                number = int(number) if number.isdigit() else last_num
+                last_num = max(last_num, number)
+
+            with open(os.path.join(diff_dir, "{}.diff".format(last_num + 1)), 'w') as f:
+                f.write(json.dumps(diff))
     except GitData.ObjectDoesNotExist:
         pass
 
