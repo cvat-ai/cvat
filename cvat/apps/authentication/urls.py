@@ -9,9 +9,9 @@ import os
 from django.contrib.auth import views as auth_views
 from . import forms
 from . import views
-from .settings.authentication import DJANGO_AUTH_TYPE
+from django.conf import settings
 
-login_page = 'login{}.html'.format('_ldap' if DJANGO_AUTH_TYPE == 'LDAP' else '')
+login_page = 'login{}.html'.format('_ldap' if settings.DJANGO_AUTH_TYPE == 'LDAP' else '')
 
 urlpatterns = [
     path('login', auth_views.LoginView.as_view(form_class=forms.AuthForm, template_name=login_page), name='login'),

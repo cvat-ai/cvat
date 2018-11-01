@@ -64,6 +64,8 @@ if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
+DJANGO_AUTH_TYPE = os.environ.get('DJANGO_AUTH_TYPE', 'BASIC')
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
