@@ -39,9 +39,11 @@ class Task(models.Model):
     size = models.PositiveIntegerField()
     path = models.CharField(max_length=256)
     mode = models.CharField(max_length=32)
-    owner = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, related_name="owners")
-    assignee = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, related_name="assignees")
-    bug_tracker = models.CharField(max_length=2000, default="")
+    owner = models.ForeignKey(User, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="owners")
+    assignee = models.ForeignKey(User, null=True,  blank=True,
+        on_delete=models.SET_NULL, related_name="assignees")
+    bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)
     overlap = models.PositiveIntegerField(default=0)
@@ -93,7 +95,7 @@ class Segment(models.Model):
 
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
-    assignee = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION)
 
     class Meta:
