@@ -24,12 +24,12 @@ def register_signals():
             db_group, _ = Group.objects.get_or_create(name=role)
             db_group.save()
 
-    post_migrate.connect(create_groups)
+    post_migrate.connect(create_groups, weak=False)
 
     if settings.DJANGO_AUTH_TYPE == 'BASIC':
         from .auth_basic import create_user
 
-        post_save.connect(create_user, sender=User, dispatch_uid="create_user")
+        post_save.connect(create_user, sender=User)
     elif settings.DJANGO_AUTH_TYPE == 'LDAP':
         import django_auth_ldap.backend
         from .auth_ldap import create_user
