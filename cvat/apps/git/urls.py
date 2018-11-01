@@ -13,4 +13,5 @@ urlpatterns = [
     path('get/<int:tid>', views.get_repository),
     path('delete/<int:tid>', views.delete_repository),
     path('push/<int:tid>', views.push_repository),
+    path('check/<str:rq_id>', views.check_process),
 ]

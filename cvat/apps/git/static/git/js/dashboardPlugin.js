@@ -92,75 +92,98 @@ window.cvat.git = {
 
     getGitURL: (success, error) => {
         let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
-        $.ajax({
-            url: '/git/repository/get/' + gitWindow.attr('current_tid'),
-            type: 'GET',
-            success: success,
-            error: error
-        });
+        $.get(`/git/repository/get/${gitWindow.attr('current_tid')}`).done(
+            success
+        ).fail(error);
     },
 
     removeGitURL: () => {
         let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
-        $.ajax({
-            url: '/git/repository/delete/' + gitWindow.attr('current_tid'),
-            type: 'DELETE',
-            success: window.cvat.git.updateState,
-            error: (data) => {
-                let message = `Error was occured during deleting an repos entry. ` +
-                    `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-                showMessage(message);
-                throw Error(message);
-            }
+        $.get(`/git/repository/delete/${gitWindow.attr('current_tid')}`).done(
+            window.cvat.git.updateState
+        ).fail(() => {
+            let message = `Error was occured during deleting an repos entry. ` +
+                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+            window.cvat.git.badSituation(message);
         });
     },
 
     updateGitURL: (url) => {
         let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
-        $.ajax({
+        $.post({
             url: '/git/repository/update',
-            type: 'POST',
             data: JSON.stringify({
                 'tid': +gitWindow.attr('current_tid'),
                 'url': url,
             }),
-            success: window.cvat.git.updateState,
-            error: (data) => {
-                try {
-                    let message = `Error was occured during updating an repos entry. ` +
-                        `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-                    showMessage(message);
-                    throw Error(message);
-                }
-                finally {
-                    window.cvat.git.updateState();
-                }
-            }
+            contentType: 'application/json;charset=utf-8',
+        }).done((data) => {
+            let checkInterval = setInterval(() => {
+                $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
+                    if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
+                        clearInterval(checkInterval);
+                        if (data.status == "failed" || data.status == "unknown") {
+                            let message = `Check request for git repostory returned "${data.status}" status`;
+                            window.cvat.git.badSituation(message);
+                        }
+                        window.cvat.git.updateState();
+                    }
+                }).fail((data) => {
+                    let message = `Check request for git repository failed. ` +
+                        `Status: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                    clearInterval(checkInterval);
+                    window.cvat.git.badSituation(message);
+                });
+            }, 1000);
+        }).fail((data) => {
+            let message = `Error was occured during updating an repos entry. ` +
+                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+            window.cvat.git.badSituation(message);
         });
     },
 
     createGitURL: (url) => {
         let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
-        $.ajax({
+        $.post({
             url: '/git/repository/create',
-            type: 'POST',
             data: JSON.stringify({
                 'tid': +gitWindow.attr('current_tid'),
                 'url': url,
             }),
-            success: window.cvat.git.updateState,
-            error: (data) => {
-                try {
-                    let message = `Error was occured during creating an repos entry. ` +
-                        `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-                    showMessage(message);
-                    throw Error(message);
-                }
-                finally {
-                    window.cvat.git.updateState();
-                }
-            }
+            contentType: 'application/json;charset=utf-8',
+        }).done((data) => {
+            let checkInterval = setInterval(() => {
+                $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
+                    if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
+                        clearInterval(checkInterval);
+                        if (data.status == "failed" || data.status == "unknown") {
+                            let message = `Check request for git repostory returned "${data.status}" status`;
+                            window.cvat.git.badSituation(message);
+                        }
+                        window.cvat.git.updateState();
+                    }
+                }).fail((data) => {
+                    let message = `Check request for git repository failed. ` +
+                        `Status: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                    clearInterval(checkInterval);
+                    window.cvat.git.badSituation(message);
+                });
+            }, 1000);
+        }).fail((data) => {
+            let message = `Error was occured during creating an repos entry. ` +
+                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+            window.cvat.git.badSituation(message);
         });
+    },
+
+    badSituation: (message) => {
+        try {
+            showMessage(message);
+            throw Error(message);
+        }
+        finally {
+            window.cvat.git.updateState();
+        }
     }
 }
 
@@ -182,21 +205,34 @@ document.addEventListener("DOMContentLoaded", () => {
                 let gitURL = $(`#${window.cvat.git.createURLInputTextId}`).prop('value').replace(/\s/g,'');
 
                 if (gitURL.length) {
-                    $.ajax({
-                        type: 'POST',
+                    $.post({
                         url: '/git/repository/create',
                         data: JSON.stringify({
                             'tid': tid,
                             'url': gitURL,
                         }),
                         contentType: 'application/json;charset=utf-8',
-                        error: (data) => {
-                            console.log(`Warning: Can't create git record for task ${tid}. ` +
-                                `Status: ${data.status}. Message: ${data.responseText || data.statusText}`);
-                        },
-                        complete: () => {
-                            originalOnSuccessCreate();
-                        }
+                    }).done((data) => {
+                        let checkInterval = setInterval(() => {
+                            $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
+                                if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
+                                    clearInterval(checkInterval);
+                                    if (data.status == "failed" || data.status == "unknown") {
+                                        console.log(`Warning: Checking request for git repository returned status "${data.status}"`);
+                                    }
+                                    originalOnSuccessCreate();
+                                }
+                            }).fail((data) => {
+                                console.log(`Warning: Checking request for git repository failed. ` +
+                                    `Status: ${data.status}. Message: ${data.responseText || data.statusText}`);
+                                clearInterval(checkInterval);
+                                originalOnSuccessCreate();
+                            });
+                        }, 1000);
+                    }).fail((data) => {
+                        console.log(`Warning: Creation request for git repository failed. ` +
+                            `Status: ${data.status}. Message: ${data.responseText || data.statusText}`);
+                        originalOnSuccessCreate();
                     });
                 }
                 else {
@@ -292,20 +328,40 @@ document.addEventListener("DOMContentLoaded", () => {
         repositoryUpdateButton.attr("disabled", true);
         repositoryPushButton.attr("disabled", true);
 
-        $.ajax({
-            url: '/git/repository/push/' + gitWindow.attr('current_tid'),
-            success: window.cvat.git.updateState,
-            error: () => {
-                try {
+
+        $.get(`/git/repository/push/${gitWindow.attr('current_tid')}`)
+        .done((data) => {
+            let checkInterval = setInterval(() => {
+                $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
+                    if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
+                        clearInterval(checkInterval);
+                        if (data.status == "failed" || data.status == "unknown") {
+                            let message = `Pushing process returned "${data.status}" status`;
+                            badSituation(message);
+                        }
+                        window.cvat.git.updateState();
+                    }
+                }).fail((data) => {
+                    clearInterval(checkInterval);
                     let message = `Error was occured during pushing an repos entry. ` +
-                        `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-                    showMessage(message);
-                    throw Error(message);
-                }
-                finally {
-                    window.cvat.git.updateState();
-                }
+                    `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+                    badSituation(message);
+                });
+            }, 1000);
+        }).fail((data) => {
+            let message = `Error was occured during pushing an repos entry. ` +
+                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+            badSituation(message);
+        });
+
+        function badSituation(message) {
+            try {
+                showMessage(message);
+                throw Error(message);
             }
-        })
+            finally {
+                window.cvat.git.updateState();
+            }
+        }
     });
 });
