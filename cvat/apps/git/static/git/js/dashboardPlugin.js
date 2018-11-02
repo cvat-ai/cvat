@@ -106,7 +106,7 @@ window.cvat.git = {
         let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
         $.get(`/git/repository/delete/${gitWindow.attr('current_tid')}`).done(
             window.cvat.git.updateState
-        ).fail(() => {
+        ).fail((data) => {
             let message = `Error was occured during deleting an repos entry. ` +
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
             window.cvat.git.badSituation(message);
@@ -190,7 +190,7 @@ window.cvat.git = {
             window.cvat.git.updateState();
         }
     }
-}
+};
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -211,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
         finally {
             originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
         }
-    }
+    };
 
     /* GIT MODAL WINDOW PLUGIN PART */
     $(`<div id="${window.cvat.git.reposWindowId}" class="modal hidden">
@@ -281,7 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 else {
                     window.cvat.git.updateGitURL(gitURL);
                 }
-            }, () => {
+            }, (data) => {
                 let message = `Error was occured during getting an git URL. ` +
                     `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
                 showMessage(message);
@@ -297,8 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
         repositoryPushButton.attr("disabled", true);
 
 
-        $.get(`/git/repository/push/${gitWindow.attr('current_tid')}`)
-        .done((data) => {
+        $.get(`/git/repository/push/${gitWindow.attr('current_tid')}`).done((data) => {
             let checkInterval = setInterval(() => {
                 $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
                     if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
