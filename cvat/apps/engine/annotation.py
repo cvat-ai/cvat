@@ -91,7 +91,13 @@ def save_job(jid, data):
     annotation.save_to_db(data['create'])
     annotation.update_in_db(data['update'])
 
-    db_job.segment.task.updated_date = timezone.now()
+    updated = sum([  len(data["update"][key]) for key in data["update"] ])
+    deleted = sum([  len(data["delete"][key]) for key in data["delete"] ])
+    created = sum([  len(data["create"][key]) for key in data["create"] ])
+
+    if updated or deleted or created or delete_old_data:
+        db_job.segment.task.updated_date = timezone.now()
+
     db_job.segment.task.save()
 
     db_job.max_shape_id = max(db_job.max_shape_id, max(client_ids['create']) if client_ids['create'] else -1)

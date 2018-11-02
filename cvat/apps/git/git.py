@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from django.db import transaction
+from django.utils import timezone
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task, Job
@@ -239,12 +240,22 @@ class Git:
                 diff = json.loads(f.read())
                 _accumulate(diff, summary_diff, None)
 
+        summary_diff["timestamp"] = timezone.now()
+
         # Save merged diffs file
         diff_name = os.path.join(self.__cwd, "changelog.diff")
-        mode = 'a' if os.path.isfile(diff_name) else 'w'
-        with open(diff_name, mode) as f:
-            f.write('\n{}\n'.format(datetime.datetime.now()))
-            f.write(json.dumps(summary_diff, sort_keys = True, indent = 4))
+        old_changes = []
+
+        if os.path.isfile(diff_name):
+            with open(diff_name, 'r') as f:
+                try:
+                    old_changes = json.loads(f.read())
+                except json.decoder.JSONDecodeError:
+                    pass
+
+        old_changes.append(summary_diff)
+        with open(diff_name, 'w') as f:
+            f.write(json.dumps(old_changes), sort_keys = True, indent = 4)
 
         # Commit and push
         self.__rep.index.add([diff_name])
@@ -263,7 +274,7 @@ class Git:
 
     # Method checks status of repository annotation
     def remote_status(self):
-        os.makedirs(self.__diffs_dir)
+        os.makedirs(self.__diffs_dir, exist_ok = True)
         diffs = list(map(lambda x: os.path.join(self.__diffs_dir, x), os.listdir(self.__diffs_dir)))
         diffs = list(filter(lambda x: len(os.path.splitext(x)) > 1 and os.path.splitext(x)[1] == ".diff", diffs))
         return "actual" if not len(diffs) else "obsolete"
