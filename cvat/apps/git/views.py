@@ -10,6 +10,7 @@ from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.log import slogger
 
 import cvat.apps.git.git as CVATGit
+
 import django_rq
 import json
 import git

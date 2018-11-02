@@ -4,3 +4,4 @@
 * [OpenVINO](openvino/README.md)
 * [Tensorflow Object Detector](tf_annotation/README.md)
 * [Analytics](analytics/README.md)
+* [SSH](analytics/README.md)
