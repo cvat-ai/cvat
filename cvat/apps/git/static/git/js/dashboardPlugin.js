@@ -304,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         clearInterval(checkInterval);
                         if (data.status == "failed" || data.status == "unknown") {
                             let message = `Pushing process returned "${data.status}" status`;
-                            badSituation(message);
+                            window.cvat.git.badSituation(message);
                         }
                         window.cvat.git.updateState();
                     }
@@ -312,23 +312,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     clearInterval(checkInterval);
                     let message = `Error was occured during pushing an repos entry. ` +
                     `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-                    badSituation(message);
+                    window.cvat.git.badSituation(message);
                 });
             }, 1000);
         }).fail((data) => {
             let message = `Error was occured during pushing an repos entry. ` +
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-            badSituation(message);
+                window.cvat.git.badSituation(message);
         });
-
-        function badSituation(message) {
-            try {
-                showMessage(message);
-                throw Error(message);
-            }
-            finally {
-                window.cvat.git.updateState();
-            }
-        }
     });
 });
