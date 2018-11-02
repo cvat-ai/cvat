@@ -7,14 +7,6 @@ from django.conf import settings
 import rules
 from . import AUTH_ROLE
 
-settings.LOGIN_URL = 'login'
-settings.LOGIN_REDIRECT_URL = '/'
-
-settings.AUTHENTICATION_BACKENDS.extend([
-    'rules.permissions.ObjectPermissionBackend',
-    'django.contrib.auth.backends.ModelBackend'
-])
-
 def register_signals():
     from django.db.models.signals import post_migrate, post_save
     from django.contrib.auth.models import User, Group

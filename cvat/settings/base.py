@@ -64,8 +64,6 @@ if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
-DJANGO_AUTH_TYPE = os.environ.get('DJANGO_AUTH_TYPE', 'BASIC')
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -102,6 +100,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'cvat.wsgi.application'
+
+# Django Auth
+DJANGO_AUTH_TYPE = 'BASIC'
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = '/'
+
+AUTHENTICATION_BACKENDS = [
+    'rules.permissions.ObjectPermissionBackend',
+    'django.contrib.auth.backends.ModelBackend'
+]
+
 
 # Django-RQ
 # https://github.com/rq/django-rq

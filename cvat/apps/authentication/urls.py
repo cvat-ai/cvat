@@ -4,12 +4,12 @@
 # SPDX-License-Identifier: MIT
 
 from django.urls import path
-import os
-
 from django.contrib.auth import views as auth_views
+from django.conf import settings
+
 from . import forms
 from . import views
-from django.conf import settings
+
 
 login_page = 'login{}.html'.format('_ldap' if settings.DJANGO_AUTH_TYPE == 'LDAP' else '')
 

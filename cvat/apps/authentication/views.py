@@ -3,14 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.shortcuts import render
-from django.contrib.auth.views import LoginView
-from django.http import HttpResponseRedirect
+from django.shortcuts import render, redirect
 from django.conf import settings
+from django.contrib.auth import login, authenticate
+
 from . import forms
 
-from django.contrib.auth import login, authenticate
-from django.shortcuts import render, redirect
 
 def register_user(request):
     if request.method == 'POST':
