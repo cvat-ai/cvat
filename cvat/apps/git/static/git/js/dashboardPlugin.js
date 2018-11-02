@@ -200,45 +200,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let originalCreateTaskRequest = window.createTaskRequest;
     window.createTaskRequest = function(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {
         try {
-            let originalOnSuccessCreate = onSuccessCreate;
-            onSuccessCreate = (tid) => {
-                let gitURL = $(`#${window.cvat.git.createURLInputTextId}`).prop('value').replace(/\s/g,'');
-
-                if (gitURL.length) {
-                    $.post({
-                        url: '/git/repository/create',
-                        data: JSON.stringify({
-                            'tid': tid,
-                            'url': gitURL,
-                        }),
-                        contentType: 'application/json;charset=utf-8',
-                    }).done((data) => {
-                        let checkInterval = setInterval(() => {
-                            $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
-                                if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
-                                    clearInterval(checkInterval);
-                                    if (data.status == "failed" || data.status == "unknown") {
-                                        console.log(`Warning: Checking request for git repository returned status "${data.status}"`);
-                                    }
-                                    originalOnSuccessCreate();
-                                }
-                            }).fail((data) => {
-                                console.log(`Warning: Checking request for git repository failed. ` +
-                                    `Status: ${data.status}. Message: ${data.responseText || data.statusText}`);
-                                clearInterval(checkInterval);
-                                originalOnSuccessCreate();
-                            });
-                        }, 1000);
-                    }).fail((data) => {
-                        console.log(`Warning: Creation request for git repository failed. ` +
-                            `Status: ${data.status}. Message: ${data.responseText || data.statusText}`);
-                        originalOnSuccessCreate();
-                    });
-                }
-                else {
-                    originalOnSuccessCreate();
-                }
-            }
+            let gitURL = $(`#${window.cvat.git.createURLInputTextId}`).prop('value').replace(/\s/g,'');
+            oData.append('git_url', gitURL);
         }
         finally {
             originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);

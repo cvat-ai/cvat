@@ -331,7 +331,7 @@ def get(tid, user):
 def onsave(jid, data):
     db_task = Job.objects.select_related('segment__task').get(pk = jid).segment.task
     try:
-        db_git = GitData.objects.select_for_update().get(pk = db_task.id)
+        GitData.objects.select_for_update().get(pk = db_task.id)
         diff_dir = os.path.join(os.getcwd(), "data", str(db_task.id), "repository", DIFF_DIR)
         os.makedirs(diff_dir, exist_ok = True)
 
@@ -369,4 +369,12 @@ def delete(tid, user):
         db_git.delete()
 
 
-add_plugin("save_job", onsave, "after")
+def _initial_create(tid, params):
+    url = params['git_url']
+    user = params['owner']
+    if len(url):
+        create(url, tid, user)
+
+
+add_plugin("save_job", onsave, "after", exc_ok = False)
+add_plugin("_create_thread", _initial_create, "after", exc_ok = True)
