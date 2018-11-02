@@ -4,6 +4,7 @@
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task, Job
@@ -240,7 +241,7 @@ class Git:
                 diff = json.loads(f.read())
                 _accumulate(diff, summary_diff, None)
 
-        summary_diff["timestamp"] = timezone.now()
+        summary_diff["timestamp"] = str(timezone.now())
 
         # Save merged diffs file
         diff_name = os.path.join(self.__cwd, "changelog.diff")
@@ -255,7 +256,7 @@ class Git:
 
         old_changes.append(summary_diff)
         with open(diff_name, 'w') as f:
-            f.write(json.dumps(old_changes), sort_keys = True, indent = 4)
+            f.write(json.dumps(old_changes, sort_keys = True, indent = 4))
 
         # Commit and push
         self.__rep.index.add([diff_name])
@@ -273,7 +274,27 @@ class Git:
 
 
     # Method checks status of repository annotation
-    def remote_status(self):
+    def remote_status(self, last_save):
+        anno_archive_name = os.path.join(self.__cwd, "annotation", "annotation.zip")
+        changelog_name = os.path.join(self.__cwd, "changelog.diff")
+
+        # Check repository exists and archive exists
+        if not os.path.isfile(anno_archive_name) or not os.path.isfile(changelog_name):
+            return "empty"
+        else:
+            with open(changelog_name, 'r') as f:
+                try:
+                    data = json.loads(f.read())
+                    last_push = data[-1]["timestamp"]
+                    last_push = parse_datetime(last_push)
+                    if last_save > last_push:
+                        return "obsolete"
+                    else:
+                        return "actual"
+                except json.decoder.JSONDecodeError:
+                    raise Exception("Bad local repository.")
+
+        # Check accumulated diffs
         os.makedirs(self.__diffs_dir, exist_ok = True)
         diffs = list(map(lambda x: os.path.join(self.__diffs_dir, x), os.listdir(self.__diffs_dir)))
         diffs = list(filter(lambda x: len(os.path.splitext(x)) > 1 and os.path.splitext(x)[1] == ".diff", diffs))
@@ -336,7 +357,7 @@ def get(tid, user):
         db_git = GitData.objects.select_for_update().get(pk = db_task)
         response['url']['value'] = db_git.url
         try:
-            response['status']['value'] = Git(db_git.url, tid, user).remote_status()
+            response['status']['value'] = Git(db_git.url, tid, user).remote_status(db_task.updated_date)
         except Exception as ex:
             response['status']['error'] = str(ex)
     return response

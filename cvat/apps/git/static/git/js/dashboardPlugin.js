@@ -74,6 +74,11 @@ window.cvat.git = {
                 gitLabelMessage.css('color', 'black').text('Repository contains obsolete data');
                 pushButton.attr("disabled", false);
             }
+            else if (data.status.value == "empty") {
+                gitLabelStatus.css('color', 'red').text('\u2606');
+                gitLabelMessage.css('color', 'red').text('Empty local repository');
+                pushButton.attr("disabled", false);
+            }
             else {
                 let message = `Got unknown repository status: ${data.status.value}`;
                 gitLabelStatus.css('color', 'red').text('\u26a0');
