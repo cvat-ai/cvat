@@ -81,6 +81,13 @@ RUN if [ "$CUSTOM_SSH" = "yes" ]; then \
         bash -i /tmp/components/ssh/install.sh; \
     fi
 
+# GIT integration support
+ARG GIT_SUPPORT
+ENV GIT_SUPPORT=${GIT_SUPPORT}
+RUN if [ "$GIT_SUPPORT" = "yes" ]; then \
+        bash -i /tmp/components/git/install.sh; \
+    fi
+
 ARG WITH_TESTS
 RUN if [ "$WITH_TESTS" = "yes" ]; then \
         wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \

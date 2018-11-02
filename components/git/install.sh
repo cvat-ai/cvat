@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: MIT
 #
 
-pip3 install GitPython
-# Set env variables to bash:
-# CVAT_HEADLESS_USERNAME
-# CVAT_HEADLESS_EMAIL
+set -e
+
+pip3 install --no-cache-dir GitPython==2.1.11
+apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*

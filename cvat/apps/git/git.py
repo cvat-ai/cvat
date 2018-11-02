@@ -80,6 +80,15 @@ class Git:
         self.__rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user, datetime.datetime.now()))
 
 
+    def _init_host(self):
+        user, host = self._parse_url()[1:-1]
+        check_command = 'ssh-keygen -F {} | grep "Host {} found"'.format(host, host)
+        add_command = 'ssh -o StrictHostKeyChecking=no {}@{}'.format(user, host)
+        if not len(subprocess.run([check_command], shell = True, stdout=subprocess.PIPE).stdout):
+            subprocess.run([add_command], shell = True)
+            slogger.task[self.__tid].info('Host {} has been added to known_hosts.'.format(host))
+
+
     # Method connects local report if it exists
     # Otherwise it clones it before
     def init_repos(self):
@@ -120,6 +129,7 @@ class Git:
 
         # Clone repository
         slogger.task[self.__tid].info("Cloning remote repository from {}..".format(ssh_url))
+        self._init_host()
         self.__rep = git.Repo.clone_from(ssh_url, self.__cwd)
 
         # Setup config file for CVAT_HEADLESS user
@@ -179,6 +189,7 @@ class Git:
             remote_branches.append(remote_branch.split("/")[-1])
         if "master" in remote_branches:
             try:
+                self._init_host()
                 self.__rep.git.pull("origin", "master")
             except git.exc.GitError:
                 # Merge conflicts
@@ -262,7 +273,9 @@ class Git:
         self.__rep.index.add([diff_name])
         self.__rep.index.add([archive_name])
         self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user, datetime.datetime.now()))
-        self.__rep.git.push("origin", self.__user, '--force')
+
+        self._init_host()
+        self.__rep.git.push("origin", self.__user, "--force")
 
         shutil.rmtree(self.__diffs_dir, True)
 
