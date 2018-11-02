@@ -105,6 +105,7 @@ WSGI_APPLICATION = 'cvat.wsgi.application'
 DJANGO_AUTH_TYPE = 'BASIC'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
+AUTH_LOGIN_NOTE = '<p>Have not registered yet? <a href="/auth/register">Register here</a>.</p>'
 
 AUTHENTICATION_BACKENDS = [
     'rules.permissions.ObjectPermissionBackend',

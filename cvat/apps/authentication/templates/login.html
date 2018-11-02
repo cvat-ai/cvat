@@ -23,5 +23,7 @@
 {% endblock %}
 
 {% block note%}
-	<p>Have not registered yet? <a href="{% url 'register' %}">Register here</a>.</p>
+    {% autoescape off %}
+	{{ note }}
+    {% endautoescape %}
 {% endblock %}
