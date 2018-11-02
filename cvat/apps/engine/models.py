@@ -197,7 +197,6 @@ class BoundingBox(Shape):
     class Meta:
         abstract = True
         default_permissions = ()
-        default_permissions = ()
 
 class PolyShape(Shape):
     id = models.BigAutoField(primary_key=True)
