@@ -58,6 +58,8 @@ class ShapeSplitter {
                 attributes: curAttributes,
             }));
 
+            // don't clone id of splitted object
+            delete exported.id;
             let prevExported = Object.assign({}, exported);
             let curExported = Object.assign({}, exported);
             prevExported.shapes = prevPositionList;
