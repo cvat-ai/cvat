@@ -6,7 +6,7 @@
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, QueryDict
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
-from django.contrib.auth.decorators import permission_required
+from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine import annotation, task
@@ -285,14 +285,12 @@ def get_meta_info(request):
 
 
 @login_required
-@permission_required(perm=['engine.view_task', 'engine.change_annotation'], raise_exception=True)
+@permission_required(perm=['engine.task.change'],
+    fn=objectgetter(TaskModel, 'tid'), raise_exception=True)
 def create(request, tid):
     slogger.glob.info('tf annotation create request for task {}'.format(tid))
     try:
         db_task = TaskModel.objects.get(pk=tid)
-        if not task.is_task_owner(request.user, tid):
-            raise Exception('Not enought of permissions for tf annotation')
-
         queue = django_rq.get_queue('low')
         job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
         if job is not None and (job.is_started or job.is_queued):
@@ -346,7 +344,8 @@ def create(request, tid):
     return HttpResponse()
 
 @login_required
-@permission_required(perm='engine.view_task', raise_exception=True)
+@permission_required(perm=['engine.task.access'],
+    fn=objectgetter(TaskModel, 'tid'), raise_exception=True)
 def check(request, tid):
     try:
         queue = django_rq.get_queue('low')
@@ -375,7 +374,8 @@ def check(request, tid):
 
 
 @login_required
-@permission_required(perm='engine.view_task', raise_exception=True)
+@permission_required(perm=['engine.task.change'],
+    fn=objectgetter(TaskModel, 'tid'), raise_exception=True)
 def cancel(request, tid):
     try:
         queue = django_rq.get_queue('low')

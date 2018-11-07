@@ -39,8 +39,11 @@ class Task(models.Model):
     size = models.PositiveIntegerField()
     path = models.CharField(max_length=256)
     mode = models.CharField(max_length=32)
-    owner = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
-    bug_tracker = models.CharField(max_length=2000, default="")
+    owner = models.ForeignKey(User, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="owners")
+    assignee = models.ForeignKey(User, null=True,  blank=True,
+        on_delete=models.SET_NULL, related_name="assignees")
+    bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)
     overlap = models.PositiveIntegerField(default=0)
@@ -51,11 +54,7 @@ class Task(models.Model):
 
     # Extend default permission model
     class Meta:
-        permissions = (
-            ("view_task", "Can see available tasks"),
-            ("view_annotation", "Can see annotation for the task"),
-            ("change_annotation", "Can modify annotation for the task"),
-        )
+        default_permissions = ()
 
     def get_upload_dirname(self):
         return os.path.join(self.path, ".upload")
@@ -91,11 +90,16 @@ class Segment(models.Model):
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
 
+    class Meta:
+        default_permissions = ()
+
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
-    annotator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION)
-    # TODO: add sub-issue number for the task
+
+    class Meta:
+        default_permissions = ()
 
 class Label(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
@@ -103,6 +107,10 @@ class Label(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        default_permissions = ()
+
 
 def parse_attribute(text):
     match = re.match(r'^([~@])(\w+)=(\w+):(.+)?$', text)
@@ -119,6 +127,9 @@ def parse_attribute(text):
 class AttributeSpec(models.Model):
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     text  = models.CharField(max_length=1024)
+
+    class Meta:
+        default_permissions = ()
 
     def get_attribute(self):
         return parse_attribute(self.text)
@@ -143,17 +154,20 @@ class AttributeSpec(models.Model):
         attr = self.get_attribute()
         return attr['values']
 
-
     def __str__(self):
         return self.get_attribute()['name']
+
 
 class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
     id = models.BigAutoField(primary_key=True)
     spec = models.ForeignKey(AttributeSpec, on_delete=models.CASCADE)
     value = SafeCharField(max_length=64)
+
     class Meta:
         abstract = True
+        default_permissions = ()
+
 
 class Annotation(models.Model):
     job   = models.ForeignKey(Job, on_delete=models.CASCADE)
@@ -161,14 +175,17 @@ class Annotation(models.Model):
     frame = models.PositiveIntegerField()
     group_id = models.PositiveIntegerField(default=0)
     client_id = models.BigIntegerField(default=-1)
+
     class Meta:
         abstract = True
 
 class Shape(models.Model):
     occluded = models.BooleanField(default=False)
     z_order = models.IntegerField(default=0)
+
     class Meta:
         abstract = True
+        default_permissions = ()
 
 class BoundingBox(Shape):
     id = models.BigAutoField(primary_key=True)
@@ -176,14 +193,18 @@ class BoundingBox(Shape):
     ytl = models.FloatField()
     xbr = models.FloatField()
     ybr = models.FloatField()
+
     class Meta:
         abstract = True
+        default_permissions = ()
 
 class PolyShape(Shape):
     id = models.BigAutoField(primary_key=True)
     points = models.TextField()
+
     class Meta:
         abstract = True
+        default_permissions = ()
 
 class LabeledBox(Annotation, BoundingBox):
     pass
@@ -222,6 +243,7 @@ class TrackedObject(models.Model):
     outside = models.BooleanField(default=False)
     class Meta:
         abstract = True
+        default_permissions = ()
 
 class TrackedBox(TrackedObject, BoundingBox):
     pass

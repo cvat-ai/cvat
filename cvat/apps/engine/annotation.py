@@ -38,7 +38,7 @@ def dump(tid, data_format, scheme, host):
 
 def check(tid):
     """
-    Check that potentialy long operation 'dump' is completed.
+    Check that potentially long operation 'dump' is completed.
     Return the status as json/dictionary object.
     """
     queue = django_rq.get_queue('default')
