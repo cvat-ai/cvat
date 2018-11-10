@@ -542,29 +542,40 @@ function uploadAnnotationRequest() {
                         return;
                     }
 
-                    const exportData = createExportContainer();
-                    exportData.create = parsed;
+                    let asyncSave = function(i) {
+                        let j = i + 10000;
+                        var parsedi = {};
+                        var next = false;
+                        for (var prop in parsed) {
+                            if (parsed.hasOwnProperty(prop)) {
+                                parsedi[prop] = parsed[prop].slice(i, j);
+                                next |= parsedi[prop].length > 0;
+                            }
+                        }
 
-                    let asyncSave = function() {
-                        $.ajax({
-                            url: '/save/annotation/task/' + window.cvat.dashboard.taskID,
-                            type: 'POST',
-                            data: JSON.stringify(exportData),
-                            contentType: 'application/json',
-                            success: function() {
-                                let message = 'Annotation successfully uploaded';
-                                showMessage(message);
-                            },
-                            error: function(response) {
-                                let message = 'Annotation uploading errors was occured. ' + response.responseText;
-                                showMessage(message);
-                            },
-                            complete: () => overlay.remove()
-                        });
+                        if (next) {
+                            const exportData = createExportContainer();
+                            exportData.create = parsedi;
+
+                            $.ajax({
+                                url: '/save/annotation/task/' + window.cvat.dashboard.taskID,
+                                type: 'POST',
+                                data: JSON.stringify(exportData),
+                                contentType: 'application/json',
+                                error: function(response) {
+                                    let message = 'Annotation uploading errors was occured. ' + response.responseText;
+                                    showMessage(message);
+                                },
+                            }).always(asyncSave(j));
+                        } else {
+                            let message = 'Annotation successfully uploaded';
+                            showMessage(message);
+                            overlay.remove();
+                        }
                     };
 
                     overlay.setMessage('Annotation is being saved..');
-                    setTimeout(asyncSave);
+                    setTimeout(asyncSave(0));
                 };
 
                 overlay.setMessage('File is being parsed..');
