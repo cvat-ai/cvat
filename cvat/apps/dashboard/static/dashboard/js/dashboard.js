@@ -566,7 +566,7 @@ function uploadAnnotationRequest() {
                                     let message = 'Annotation uploading errors was occured. ' + response.responseText;
                                     showMessage(message);
                                 },
-                            }).always(asyncSave(j));
+                            }).always(function() { asyncSave(j); });
                         } else {
                             let message = 'Annotation successfully uploaded';
                             showMessage(message);

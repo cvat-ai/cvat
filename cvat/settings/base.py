@@ -55,7 +55,8 @@ INSTALLED_APPS = [
     'sendfile',
     'dj_pagination',
     'revproxy',
-    'rules'
+    'rules',
+    'silk'
 ]
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
@@ -70,6 +71,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'silk.middleware.SilkyMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
@@ -244,6 +246,17 @@ LOGGING = {
         }
     },
 }
+
+# Django profiler
+# https://github.com/jazzband/django-silk
+SILKY_PYTHON_PROFILER = True
+SILKY_PYTHON_PROFILER_BINARY = True
+SILKY_PYTHON_PROFILER_RESULT_PATH = os.path.join(BASE_DIR, 'profilers/')
+os.makedirs(SILKY_PYTHON_PROFILER_RESULT_PATH, exist_ok=True)
+SILKY_AUTHENTICATION = True
+SILKY_AUTHORISATION = True
+SILKY_MAX_REQUEST_BODY_SIZE = 1024
+SILKY_MAX_RESPONSE_BODY_SIZE = 1024
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
