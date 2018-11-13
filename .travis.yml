@@ -13,5 +13,5 @@ before_script:
   - docker-compose up -d
 
 script:
-  - docker exec -it cvat /bin/bash -c 'tests/node_modules/.bin/karma start tests/karma.conf.js
+  - docker exec -it cvat /bin/bash -c 'tests/node_modules/.bin/karma start tests/karma.conf.js'
   
