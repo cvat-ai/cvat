@@ -8,10 +8,6 @@ python:
 services:
   - docker
 
- install:
-  - pip install -r requirements.txt
-  - pip install .
-
 before_script:
   - docker-compose -f docker-compose.yml -f docker-compose-ci.yml build
   - docker-compose up -d
