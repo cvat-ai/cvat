@@ -1,0 +1,21 @@
+sudo: required
+
+language: python
+
+python:
+  - "3.5"
+
+services:
+  - docker
+
+ install:
+  - pip install -r requirements.txt
+  - pip install .
+
+before_script:
+  - docker-compose -f docker-compose.yml -f docker-compose-ci.yml build
+  - docker-compose up -d
+
+script:
+  - docker exec -it cvat /bin/bash -c 'tests/node_modules/.bin/karma start tests/karma.conf.js
+  
