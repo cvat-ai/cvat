@@ -75,6 +75,7 @@ def save_job(jid, data, delete_old_data=False):
     """
     Save new annotations for the job.
     """
+    slogger.job[jid].info("Enter save_job API: jid = {}".format(jid))
     db_job = models.Job.objects.select_for_update().get(id=jid)
 
     annotation = _AnnotationForJob(db_job)
@@ -88,12 +89,14 @@ def save_job(jid, data, delete_old_data=False):
 
     db_job.segment.task.updated_date = timezone.now()
     db_job.segment.task.save()
+    slogger.job[jid].info("Leave save_job API: jid = {}".format(jid))
 
 # pylint: disable=unused-argument
 def save_task(tid, data):
     """
     Save new annotations for the task.
     """
+    slogger.task[tid].info("Enter save_task API: tid = {}".format(tid))
     db_task = models.Task.objects.get(id=tid)
     db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
 
@@ -117,7 +120,18 @@ def save_task(tid, data):
             }
 
     for jid, _data in splitted_data.items():
-        save_job(jid, _data, True)
+        # if an item inside _data isn't empty need to call save_job
+        isNonEmpty = False
+        for action in ['create', 'update', 'delete']:
+            for objects in _data[action].values():
+                if objects:
+                    isNonEmpty = True
+                    break
+
+        if isNonEmpty:
+            save_job(jid, _data, True)
+
+    slogger.task[tid].info("Leave save_task API: tid = {}".format(tid))
 
 # pylint: disable=unused-argument
 def rq_handler(job, exc_type, exc_value, traceback):
