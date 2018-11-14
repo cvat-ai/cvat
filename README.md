@@ -1,4 +1,4 @@
-# Computer Vision Annotation Tool (CVAT)
+# Computer Vision Annotation Tool (CVAT) 
 
 [![Build Status](https://travis-ci.org/DimaSilenko/cvat.svg?branch=develop)](https://travis-ci.org/DimaSilenko/cvat)
 [![Gitter chat](https://badges.gitter.im/opencv-cvat/gitter.png)](https://gitter.im/opencv-cvat)
