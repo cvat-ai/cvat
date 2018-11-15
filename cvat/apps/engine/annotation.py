@@ -18,6 +18,7 @@ from PIL import Image
 import django_rq
 from django.conf import settings
 from django.db import transaction
+from silk.profiling.profiler import silk_profile
 
 from . import models
 from .task import get_frame_path, get_image_meta_cache
@@ -70,6 +71,7 @@ def get(jid):
 
     return annotation.to_client()
 
+@silk_profile(name="Save job")
 @transaction.atomic
 def save_job(jid, data, delete_old_data=False):
     """
@@ -92,6 +94,7 @@ def save_job(jid, data, delete_old_data=False):
     slogger.job[jid].info("Leave save_job API: jid = {}".format(jid))
 
 # pylint: disable=unused-argument
+@silk_profile(name="Save task")
 def save_task(tid, data):
     """
     Save new annotations for the task.

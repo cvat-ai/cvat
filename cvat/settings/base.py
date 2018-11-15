@@ -176,6 +176,10 @@ CACHEOPS = {
     # Automatically cache any Task.objects.get() calls for 15 minutes
     # This also includes .first() and .last() calls.
     'engine.task': {'ops': 'get', 'timeout': 60*15},
+
+    # Automatically cache any Job.objects.get() calls for 15 minutes
+    # This also includes .first() and .last() calls.
+    'engine.job': {'ops': 'get', 'timeout': 60*15},
 }
 
 CACHEOPS_DEGRADE_ON_FAILURE = True
@@ -251,12 +255,20 @@ LOGGING = {
 # https://github.com/jazzband/django-silk
 SILKY_PYTHON_PROFILER = True
 SILKY_PYTHON_PROFILER_BINARY = True
-SILKY_PYTHON_PROFILER_RESULT_PATH = os.path.join(BASE_DIR, 'profilers/')
+SILKY_PYTHON_PROFILER_RESULT_PATH = os.path.join(BASE_DIR, 'profiles/')
 os.makedirs(SILKY_PYTHON_PROFILER_RESULT_PATH, exist_ok=True)
 SILKY_AUTHENTICATION = True
 SILKY_AUTHORISATION = True
 SILKY_MAX_REQUEST_BODY_SIZE = 1024
 SILKY_MAX_RESPONSE_BODY_SIZE = 1024
+SILKY_IGNORE_PATHS = ['/admin', '/documentation', '/django-rq', '/auth']
+SILKY_MAX_RECORDED_REQUESTS = 10**4
+def SILKY_INTERCEPT_FUNC(request):
+    # Ignore all requests which try to get a frame (too many of them)
+    if request.method == 'GET' and '/frame/' in request.path:
+        return False
+
+    return True
 
 if os.getenv('DJANGO_LOG_SERVER_HOST'):
     LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
