@@ -1208,8 +1208,6 @@ class _AnnotationForJob(_Annotation):
             return self.db_job.labeledpoints_set
 
     def _save_shapes_to_db(self):
-        # Need to be sure saved_db_ids is actual.
-        self._collect_saved_ids()
         for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
             db_shapes = []
             db_attrvals = []
@@ -1250,13 +1248,13 @@ class _AnnotationForJob(_Annotation):
                 db_shapes.append(db_shape)
 
             db_shapes = self._get_shape_class(shape_type).objects.bulk_create(db_shapes)
-
             if db_shapes and db_shapes[0].id == None:
                 # Try to get primary keys. Probably the code will work for sqlite
                 # but it definetely doesn't work for Postgres. Need to say that
                 # for Postgres bulk_create will return objects with ids even ids
                 # are auto incremented. Thus we will not be inside the 'if'.
                 db_shapes = list(self._get_shape_set(shape_type).exclude(id__in=self.saved_db_ids[shape_type]))
+                self.saved_db_ids[shape_type].extend([db_shape.id for db_shape in db_shapes])
 
             for db_attrval in db_attrvals:
                 if shape_type == 'polygons':
