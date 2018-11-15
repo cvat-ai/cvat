@@ -18,8 +18,8 @@ from PIL import Image
 import django_rq
 from django.conf import settings
 from django.db import transaction
-from silk.profiling.profiler import silk_profile
 
+from cvat.apps.profiler import silk_profile
 from . import models
 from .task import get_frame_path, get_image_meta_cache
 from .log import slogger
