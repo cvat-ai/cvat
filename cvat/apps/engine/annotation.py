@@ -78,11 +78,13 @@ def save_job(jid, data, delete_old_data=False):
     Save new annotations for the job.
     """
     slogger.job[jid].info("Enter save_job API: jid = {}".format(jid))
-    db_job = models.Job.objects.select_for_update().get(id=jid)
+    db_job = models.Job.objects.select_related('segment__task') \
+        .select_for_update().get(id=jid)
 
     annotation = _AnnotationForJob(db_job)
     if delete_old_data:
         annotation.delete_all_shapes_from_db()
+        annotation.delete_all_paths_from_db()
     annotation.validate_data_from_client(data)
 
     annotation.delete_from_db(data['delete'])
@@ -504,8 +506,6 @@ class _AnnotationForJob(_Annotation):
         self.db_attributes = {db_attr.id:db_attr
             for db_attr in models.AttributeSpec.objects.filter(
                 label__task__id=db_job.segment.task.id)}
-        self.saved_db_ids = {}
-        self.saved_client_ids = set()
 
     def _collect_saved_ids(self):
         self.saved_db_ids = {}
@@ -515,7 +515,8 @@ class _AnnotationForJob(_Annotation):
                 self.saved_db_ids[shape_type].append(db_id)
                 self.saved_client_ids.add(client_id)
 
-        for shape_type in ['polygons', 'polylines', 'points', 'boxes', 'paths']:
+        for shape_type in ['polygons', 'polylines', 'points', 'boxes', 'paths',
+            'polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
             self.saved_db_ids[shape_type] = []
 
         saved_path_ids = list(self.db_job.objectpath_set.values_list('id', 'client_id'))
@@ -524,6 +525,11 @@ class _AnnotationForJob(_Annotation):
         for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
             saved_shapes_ids = list(self._get_shape_class(shape_type).objects.filter(job_id=self.db_job.id).values_list('id', 'client_id'))
             append_ids(shape_type, saved_shapes_ids)
+
+        for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
+            saved_shapes_ids = list(self._get_shape_class(shape_type).objects.filter(track__job_id=self.db_job.id).values_list('id', flat=True))
+            for db_id in saved_shapes_ids:
+                self.saved_db_ids[shape_type].append(db_id)
 
     def _merge_table_rows(self, rows, keys_for_merge, field_id):
         """dot.notation access to dictionary attributes"""
@@ -1092,8 +1098,6 @@ class _AnnotationForJob(_Annotation):
             db_path_attrvals = []
             db_shapes = []
             db_shape_attrvals = []
-            # Need to be sure saved_db_ids is actual.
-            self._collect_saved_ids()
 
             shapes = getattr(self, shape_type)
             for path in shapes:
@@ -1161,14 +1165,8 @@ class _AnnotationForJob(_Annotation):
                 # but it definetely doesn't work for Postgres. Need to say that
                 # for Postgres bulk_create will return objects with ids even ids
                 # are auto incremented. Thus we will not be inside the 'if'.
-                if shape_type == 'polygon_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=self.saved_db_ids['paths']))
-                elif shape_type == 'polyline_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=self.saved_db_ids['paths']))
-                elif shape_type == 'box_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=self.saved_db_ids['paths']))
-                elif shape_type == 'points_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=self.saved_db_ids['paths']))
+                db_paths = list(self.db_job.objectpath_set.exclude(id__in=self.saved_db_ids['paths']))
+                self.saved_db_ids['paths'].extend([db_path.id for db_path in db_paths])
 
             for db_attrval in db_path_attrvals:
                 db_attrval.track_id = db_paths[db_attrval.track_id].id
@@ -1177,7 +1175,6 @@ class _AnnotationForJob(_Annotation):
             for db_shape in db_shapes:
                 db_shape.track_id = db_paths[db_shape.track_id].id
 
-            db_shapes_ids = list(self._get_shape_class(shape_type).objects.filter(track__job_id=self.db_job.id).values_list('id', flat=True))
             db_shapes = self._get_shape_class(shape_type).objects.bulk_create(db_shapes)
 
             if db_shapes and db_shapes[0].id == None:
@@ -1185,7 +1182,8 @@ class _AnnotationForJob(_Annotation):
                 # but it definetely doesn't work for Postgres. Need to say that
                 # for Postgres bulk_create will return objects with ids even ids
                 # are auto incremented. Thus we will not be inside the 'if'.
-                db_shapes = list(self._get_shape_class(shape_type).objects.exclude(id__in=db_shapes_ids).filter(track__job_id=self.db_job.id))
+                db_shapes = list(self._get_shape_class(shape_type).objects.exclude(id__in=self.saved_db_ids[shape_type]))
+                self.saved_db_ids[shape_type].extend([db_shape.id for db_shape in db_shapes])
 
             for db_attrval in db_shape_attrvals:
                 if shape_type == 'polygon_paths':
@@ -1295,24 +1293,21 @@ class _AnnotationForJob(_Annotation):
                 raise Exception('Number of deleted object doesn\'t match with requested number')
 
     def _delete_paths_from_db(self, data):
+        client_ids_to_delete = []
         for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
-            client_ids_to_delete = data[shape_type]
-            deleted = self.db_job.objectpath_set.filter(client_id__in=client_ids_to_delete).delete()
-            class_name = 'engine.ObjectPath'
-            if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and \
-               (class_name in deleted[1] and deleted[1][class_name] != len(client_ids_to_delete)):
-               raise Exception('Number of deleted object doesn\'t match with requested number')
+            client_ids_to_delete.extend(data[shape_type])
+        deleted = self.db_job.objectpath_set.filter(client_id__in=client_ids_to_delete).delete()
+        class_name = 'engine.ObjectPath'
+        if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and \
+            (class_name in deleted[1] and deleted[1][class_name] != len(client_ids_to_delete)):
+            raise Exception('Number of deleted object doesn\'t match with requested number')
 
-    def _delete_all_shapes_from_db(self):
+    def delete_all_shapes_from_db(self):
         for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
             self._get_shape_set(shape_type).all().delete()
 
-    def _delete_all_paths_from_db(self):
+    def delete_all_paths_from_db(self):
         self.db_job.objectpath_set.all().delete()
-
-    def delete_all_shapes_from_db(self):
-        self._delete_all_shapes_from_db()
-        self._delete_all_paths_from_db()
 
     def delete_from_db(self, data):
         self._delete_shapes_from_db(data)
