@@ -737,8 +737,8 @@ function translateSVGPos(svgCanvas, clientX, clientY) {
     pt = pt.matrixTransform(svgCanvas.getScreenCTM().inverse());
 
     let pos = {
-        x: pt.x,
-        y: pt.y
+        x: pt.x - PLAYER_FRAME_OFFSET,
+        y: pt.y - PLAYER_FRAME_OFFSET
     };
 
     if (platform.name.toLowerCase() == 'firefox') {

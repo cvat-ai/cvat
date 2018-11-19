@@ -187,10 +187,15 @@ class ShapeGrouperView {
     _enableEvents() {
         this._frameContent.on('mousedown.grouper', (e) => {
             this._initPoint = translateSVGPos(this._frameContent[0], e.clientX, e.clientY);
+            this._initPoint.x += PLAYER_FRAME_OFFSET;
+            this._initPoint.y += PLAYER_FRAME_OFFSET;
         });
 
         this._frameContent.on('mousemove.grouper', (e) => {
             let currentPoint = translateSVGPos(this._frameContent[0], e.clientX, e.clientY);
+            currentPoint.x += PLAYER_FRAME_OFFSET;
+            currentPoint.y += PLAYER_FRAME_OFFSET;
+
             if (this._initPoint) {
                 if (!this._rectSelector) {
                     this._rectSelector = $(document.createElementNS('http://www.w3.org/2000/svg', 'rect'));

@@ -2415,25 +2415,12 @@ class ShapeView extends Listener {
                 this._uis.shape.attr('stroke-width', STROKE_WIDTH / scale);
             }
 
-
             if (this._uis.text && this._uis.text.node.parentElement) {
                 let revscale = 1 / scale;
                 let shapeBBox = this._uis.shape.node.getBBox();
-                let textBBox = this._uis.text.node.getBBox();
 
                 let x = shapeBBox.x + shapeBBox.width + TEXT_MARGIN;
                 let y = shapeBBox.y;
-
-                if (x + textBBox.width * revscale > window.cvat.player.geometry.frameWidth) {
-                    x = shapeBBox.x - TEXT_MARGIN - textBBox.width * revscale;
-                    if (x < 0) {
-                        x = shapeBBox.x + TEXT_MARGIN;
-                    }
-                }
-
-                if (y + textBBox.height * revscale > window.cvat.player.geometry.frameHeight) {
-                    y = Math.max(0, window.cvat.player.geometry.frameHeight - textBBox.height * revscale);
-                }
 
                 this._uis.text.move(x / revscale, y / revscale);
                 this._uis.text.attr('transform', `scale(${revscale})`);
@@ -2753,10 +2740,10 @@ class BoxView extends ShapeView {
     _buildPosition() {
         let shape = this._uis.shape.node;
         return {
-            xtl: +shape.getAttribute('x'),
-            ytl: +shape.getAttribute('y'),
-            xbr: +shape.getAttribute('x') + +shape.getAttribute('width'),
-            ybr: +shape.getAttribute('y') + +shape.getAttribute('height'),
+            xtl: +shape.getAttribute('x') - PLAYER_FRAME_OFFSET,
+            ytl: +shape.getAttribute('y') - PLAYER_FRAME_OFFSET,
+            xbr: +shape.getAttribute('x') + +shape.getAttribute('width') - PLAYER_FRAME_OFFSET,
+            ybr: +shape.getAttribute('y') + +shape.getAttribute('height') - PLAYER_FRAME_OFFSET,
             occluded: this._uis.shape.hasClass('occludedShape'),
             outside: false,    // if drag or resize possible, track is not outside
             z_order: +shape.getAttribute('z_order'),
@@ -2765,8 +2752,8 @@ class BoxView extends ShapeView {
 
 
     _drawShapeUI(position) {
-        let xtl = position.xtl;
-        let ytl = position.ytl;
+        let xtl = position.xtl + PLAYER_FRAME_OFFSET;
+        let ytl = position.ytl + PLAYER_FRAME_OFFSET;
         let width = position.xbr - position.xtl;
         let height = position.ybr - position.ytl;
 
@@ -2792,14 +2779,14 @@ class BoxView extends ShapeView {
             }
 
             let size = {
-                x: 0,
-                y: 0,
+                x: PLAYER_FRAME_OFFSET,
+                y: PLAYER_FRAME_OFFSET,
                 width: window.cvat.player.geometry.frameWidth,
                 height: window.cvat.player.geometry.frameHeight
             };
 
             let excludeField = this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).fill('#666');
-            let includeField = this._scenes.svg.rect(pos.xbr - pos.xtl, pos.ybr - pos.ytl).move(pos.xtl, pos.ytl);
+            let includeField = this._scenes.svg.rect(pos.xbr - pos.xtl, pos.ybr - pos.ytl).move(pos.xtl + PLAYER_FRAME_OFFSET, pos.ytl + PLAYER_FRAME_OFFSET);
             this._scenes.svg.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
             this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).attr({
                 mask: 'url(#outsideMask)',
@@ -2822,7 +2809,8 @@ class PolyShapeView extends ShapeView {
 
     _buildPosition() {
         return {
-            points: this._uis.shape.node.getAttribute('points'),
+            points: this._uis.shape.node.getAttribute('points')
+                .split(' ').map((coord) => coord.split(',').map((x) => +x - PLAYER_FRAME_OFFSET).join(',')).join(' '),
             occluded: this._uis.shape.hasClass('occludedShape'),
             outside: false,
             z_order: +this._uis.shape.node.getAttribute('z_order'),
@@ -2841,14 +2829,15 @@ class PolyShapeView extends ShapeView {
             }
 
             let size = {
-                x: 0,
-                y: 0,
+                x: PLAYER_FRAME_OFFSET,
+                y: PLAYER_FRAME_OFFSET,
                 width: window.cvat.player.geometry.frameWidth,
                 height: window.cvat.player.geometry.frameHeight
             };
 
             let excludeField = this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).fill('#666');
-            let includeField = this._scenes.svg.polygon(pos.points);
+            let includeField = this._scenes.svg.polygon(pos.points.split(' ')
+                .map((coord) => coord.split(',').map((x) => +x + PLAYER_FRAME_OFFSET).join(',')).join(' '));
             this._scenes.svg.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
             this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).attr({
                 mask: 'url(#outsideMask)',
@@ -2941,6 +2930,8 @@ class PolygonView extends PolyShapeView {
     }
 
     _drawShapeUI(position) {
+        position.points = position.points.split(' ')
+            .map((coord) => coord.split(',').map((x) => +x + PLAYER_FRAME_OFFSET).join(',')).join(' ');
         this._uis.shape = this._scenes.svg.polygon(position.points).fill(this._appearance.colors.shape).attr({
             'fill': this._appearance.fill || this._appearance.colors.shape,
             'stroke': this._appearance.stroke || this._appearance.colors.shape,
@@ -2981,6 +2972,8 @@ class PolylineView extends PolyShapeView {
 
 
     _drawShapeUI(position) {
+        position.points = position.points.split(' ')
+            .map((coord) => coord.split(',').map((x) => +x + PLAYER_FRAME_OFFSET).join(',')).join(' ');
         this._uis.shape = this._scenes.svg.polyline(position.points).fill(this._appearance.colors.shape).attr({
             'stroke': this._appearance.stroke || this._appearance.colors.shape,
             'stroke-width': STROKE_WIDTH / window.cvat.player.geometry.scale,
@@ -3123,6 +3116,8 @@ class PointsView extends PolyShapeView {
         if (!this._controller.hiddenShape) {
             let interpolation = this._controller.interpolate(window.cvat.player.frames.current);
             if (interpolation.position.points) {
+                interpolation.position.points = interpolation.position.points.split(' ')
+                    .map((coord) => coord.split(',').map((x) => +x + PLAYER_FRAME_OFFSET).join(',')).join(' ');
                 this._drawPointMarkers(interpolation.position);
             }
         }
@@ -3130,6 +3125,8 @@ class PointsView extends PolyShapeView {
 
 
     _drawShapeUI(position) {
+        position.points = position.points.split(' ')
+            .map((coord) => coord.split(',').map((x) => +x + PLAYER_FRAME_OFFSET).join(',')).join(' ');
         this._uis.shape = this._scenes.svg.polyline(position.points).addClass('shape points').attr({
             'z_order': position.z_order,
         });

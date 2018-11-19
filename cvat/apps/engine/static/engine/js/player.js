@@ -123,6 +123,7 @@ class FrameProvider extends Listener {
 
 const MAX_PLAYER_SCALE = 10;
 const MIN_PLAYER_SCALE = 0.1;
+const PLAYER_FRAME_OFFSET = 500;
 
 class PlayerModel extends Listener {
     constructor(job, playerSize) {
@@ -852,13 +853,19 @@ class PlayerView {
 
         this._progressUI['0'].value = frames.current - frames.start;
 
-        for (let obj of [this._playerBackgroundUI, this._playerContentUI, this._playerGridUI]) {
+        for (let obj of [this._playerBackgroundUI, this._playerGridUI]) {
             obj.css('width', image.width);
             obj.css('height', image.height);
             obj.css('top', geometry.top);
             obj.css('left', geometry.left);
             obj.css('transform', 'scale(' + geometry.scale + ')');
         }
+
+        this._playerContentUI.css('width', image.width + PLAYER_FRAME_OFFSET * 2);
+        this._playerContentUI.css('height', image.height + PLAYER_FRAME_OFFSET * 2);
+        this._playerContentUI.css('top', geometry.top - PLAYER_FRAME_OFFSET * geometry.scale);
+        this._playerContentUI.css('left', geometry.left - PLAYER_FRAME_OFFSET * geometry.scale);
+        this._playerContentUI.css('transform', 'scale(' + geometry.scale + ')');
 
         this._playerGridPath.attr('stroke-width', 2 / geometry.scale);
         this._frameNumber.prop('value', frames.current);
