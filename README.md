@@ -1,6 +1,6 @@
-# Computer Vision Annotation Tool (CVAT)
+# Computer Vision Annotation Tool (CVAT) 
 
-[![Build Status](https://travis-ci.org/DimaSilenko/cvat.svg?branch=develop)](https://travis-ci.org/DimaSilenko/cvat)
+[![Build Status](https://travis-ci.org/itlab-vision/cvat.svg?branch=develop)](https://travis-ci.org/itlab-vision/cvat)
 [![Gitter chat](https://badges.gitter.im/opencv-cvat/gitter.png)](https://gitter.im/opencv-cvat)
 
 CVAT is completely re-designed and re-implemented version of [Video Annotation Tool from Irvine, California](http://carlvondrick.com/vatic/) tool. It is free, online, interactive video and image annotation tool for computer vision. It is being used by our team to annotate million of objects with different properties. Many UI and UX decisions are based on feedbacks from professional data annotation team.
@@ -139,3 +139,4 @@ volumes:
       o: bind
 ```
 You can change the share device path to your actual share. For user convenience we have defined the enviroment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser.
+
