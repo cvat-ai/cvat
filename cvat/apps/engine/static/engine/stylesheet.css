@@ -263,6 +263,7 @@
     fill: white;
     text-shadow: 0px 0px 3px black;
     cursor: default;
+    pointer-events: none;
 }
 
 .highlightedShape {
