@@ -2879,6 +2879,7 @@ class PolyShapeView extends ShapeView {
                     });
 
                     e.preventDefault();
+                    e.stopPropagation();
                 });
 
                 point.on('dblclick.polyshapeEditor', (e) => {
