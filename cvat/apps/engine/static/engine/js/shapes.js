@@ -1540,6 +1540,16 @@ class ShapeView extends Listener {
                 deepSelect: true,
             }).resize(false);
 
+            if (this._flags.resizing) {
+                this._flags.resizing = false;
+                this.notify('resize');
+            }
+
+            if (this._flags.dragging) {
+                this._flags.dragging = false;
+                this.notify('drag');
+            }
+
             this._uis.shape.off('dragstart')
                 .off('dragend')
                 .off('resizestart')
@@ -1547,6 +1557,7 @@ class ShapeView extends Listener {
                 .off('resizedone')
                 .off('contextmenu.contextMenu')
                 .off('mousedown.contextMenu');
+
             this._flags.editable = false;
         }
 
@@ -2705,23 +2716,37 @@ ShapeView.labels = function() {
 class BoxView extends ShapeView {
     constructor(boxModel, boxController, svgScene, menusScene) {
         super(boxModel, boxController, svgScene, menusScene);
+
+        this._uis.boxSize = null;
     }
 
 
     _makeEditable() {
         if (this._uis.shape && this._uis.shape.node.parentElement && !this._flags.editable) {
             if (!this._controller.lock) {
-                let sizeObject = null;
                 this._uis.shape.on('resizestart', (e) => {
-                    sizeObject = drawBoxSize(this._scenes.svg, e.target);
+                    if (this._uis.boxSize) {
+                        this._uis.boxSize.rm();
+                        this._uis.boxSize = null;
+                    }
+
+                    this._uis.boxSize = drawBoxSize(this._scenes.svg, e.target);
                 }).on('resizing', (e) => {
-                    sizeObject = drawBoxSize.call(sizeObject, this._scenes.svg, e.target);
+                    this._uis.boxSize = drawBoxSize.call(this._uis.boxSize, this._scenes.svg, e.target);
                 }).on('resizedone', () => {
-                    sizeObject.rm();
+                    this._uis.boxSize.rm();
                 });
             }
             ShapeView.prototype._makeEditable.call(this);
         }
+    }
+
+    _makeNotEditable() {
+        if (this._uis.boxSize) {
+            this._uis.boxSize.rm();
+            this._uis.boxSize = null;
+        }
+        ShapeView.prototype._makeNotEditable.call(this);
     }
 
 
@@ -2755,7 +2780,6 @@ class BoxView extends ShapeView {
 
         ShapeView.prototype._drawShapeUI.call(this);
     }
-
 
     _setupAAMView(active, pos) {
         let oldRect = $('#outsideRect');
