@@ -95,6 +95,24 @@ def save_job(jid, data, delete_old_data=False):
     db_job.segment.task.save()
     slogger.job[jid].info("Leave save_job API: jid = {}".format(jid))
 
+@silk_profile(name="Clear job")
+@transaction.atomic
+def clear_job(jid):
+    """
+    Clear annotations for the job.
+    """
+    slogger.job[jid].info("Enter clear_job API: jid = {}".format(jid))
+    db_job = models.Job.objects.select_related('segment__task') \
+        .select_for_update().get(id=jid)
+
+    annotation = _AnnotationForJob(db_job)
+    annotation.delete_all_shapes_from_db()
+    annotation.delete_all_paths_from_db()
+
+    db_job.segment.task.updated_date = timezone.now()
+    db_job.segment.task.save()
+    slogger.job[jid].info("Leave clear_job API: jid = {}".format(jid))
+
 # pylint: disable=unused-argument
 @silk_profile(name="Save task")
 def save_task(tid, data):
@@ -137,6 +155,23 @@ def save_task(tid, data):
             save_job(jid, _data, True)
 
     slogger.task[tid].info("Leave save_task API: tid = {}".format(tid))
+
+
+# pylint: disable=unused-argument
+@silk_profile(name="Clear task")
+def clear_task(tid):
+    """
+    Clear annotations for the task.
+    """
+    slogger.task[tid].info("Enter clear_task API: tid = {}".format(tid))
+    db_task = models.Task.objects.get(id=tid)
+    db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
+
+    for db_segment in db_segments:
+        for db_job in list(db_segment.job_set.all()):
+            clear_job(db_job.id)
+
+    slogger.task[tid].info("Leave clear_task API: tid = {}".format(tid))
 
 # pylint: disable=unused-argument
 def rq_handler(job, exc_type, exc_value, traceback):

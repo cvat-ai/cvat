@@ -538,35 +538,57 @@ function uploadAnnotationRequest() {
                     }
                     catch(error) {
                         overlay.remove();
-                        showMessage("Parsing errors was occured. " + error);
+                        showMessage("Parsing errors was occurred. " + error);
                         return;
                     }
 
-                    let asyncSave = function(i) {
-                        let j = i + 100000;
-                        var parsedi = {};
+                    let asyncSave = function() {
+                        $.ajax({
+                            url: '/delete/annotation/task/' + window.cvat.dashboard.taskID,
+                            type: 'POST',
+                            success: function() {
+                                asyncSaveChunk(0);
+                            },
+                            error: function(response) {
+                                let message = 'Annotation uploading errors was occurred: ' +
+                                    response.responseText;
+                                showMessage(message);
+                                overlay.remove();
+                            },
+                        });
+                    }
+
+                    let asyncSaveChunk = function(start) {
+                        let CHUNK_SIZE = 100000;
+                        let end = start + CHUNK_SIZE;
+                        var chunk = {};
                         var next = false;
                         for (var prop in parsed) {
                             if (parsed.hasOwnProperty(prop)) {
-                                parsedi[prop] = parsed[prop].slice(i, j);
-                                next |= parsedi[prop].length > 0;
+                                chunk[prop] = parsed[prop].slice(start, end);
+                                next |= chunk[prop].length > 0;
                             }
                         }
 
                         if (next) {
                             const exportData = createExportContainer();
-                            exportData.create = parsedi;
+                            exportData.create = chunk;
 
                             $.ajax({
                                 url: '/save/annotation/task/' + window.cvat.dashboard.taskID,
                                 type: 'POST',
                                 data: JSON.stringify(exportData),
                                 contentType: 'application/json',
-                                error: function(response) {
-                                    let message = 'Annotation uploading errors was occured. ' + response.responseText;
-                                    showMessage(message);
+                                success: function() {
+                                    asyncSaveChunk(end);
                                 },
-                            }).always(function() { asyncSave(j); });
+                                error: function(response) {
+                                    let message = 'Annotation uploading errors were occurred: ' +
+                                        response.responseText;
+                                    showMessage(message);
+                                    overlay.remove();
+                                },
+                            });
                         } else {
                             let message = 'Annotation successfully uploaded';
                             showMessage(message);
@@ -575,7 +597,7 @@ function uploadAnnotationRequest() {
                     };
 
                     overlay.setMessage('Annotation is being saved..');
-                    setTimeout(asyncSave(0));
+                    setTimeout(asyncSave());
                 };
 
                 overlay.setMessage('File is being parsed..');

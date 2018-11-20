@@ -282,6 +282,20 @@ def save_annotation_for_task(request, tid):
     return HttpResponse()
 
 @login_required
+@permission_required(perm=['engine.task.change'],
+    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
+def delete_annotation_for_task(request, tid):
+    try:
+        slogger.task[tid].info("delete annotation request")
+        annotation.clear_task(tid)
+    except Exception as e:
+        slogger.task[tid].error("cannot delete annotation", exc_info=True)
+        return HttpResponseBadRequest(str(e))
+
+    return HttpResponse()
+
+
+@login_required
 @permission_required(perm=['engine.job.change'],
     fn=objectgetter(models.Job, 'jid'), raise_exception=True)
 def save_job_status(request, jid):
