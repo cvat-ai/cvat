@@ -93,6 +93,7 @@ module.exports = {
         'PlayerController': true,
         'PlayerModel': true,
         'PlayerView': true,
+        'PLAYER_FRAME_OFFSET': true,
         // from server.js
         'serverRequest': true,
         'saveJobRequest': true,

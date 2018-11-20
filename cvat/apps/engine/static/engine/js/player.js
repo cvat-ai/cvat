@@ -123,7 +123,7 @@ class FrameProvider extends Listener {
 
 const MAX_PLAYER_SCALE = 10;
 const MIN_PLAYER_SCALE = 0.1;
-const PLAYER_FRAME_OFFSET = 500;
+const PLAYER_FRAME_OFFSET = 1000;
 
 class PlayerModel extends Listener {
     constructor(job, playerSize) {
