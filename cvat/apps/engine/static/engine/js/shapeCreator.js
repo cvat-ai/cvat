@@ -334,8 +334,10 @@ class ShapeCreatorView {
         this._drawInstance.on('drawdone', function(e) {
             let points = PolyShapeModel.convertStringToNumberArray(e.target.getAttribute('points'));
             for (let point of points) {
-                point.x = Math.clamp(point.x, PLAYER_FRAME_OFFSET, PLAYER_FRAME_OFFSET + window.cvat.player.geometry.frameWidth);
-                point.y = Math.clamp(point.y, PLAYER_FRAME_OFFSET, PLAYER_FRAME_OFFSET + window.cvat.player.geometry.frameHeight);
+                point.x = Math.clamp(point.x, PLAYER_FRAME_OFFSET,
+                    PLAYER_FRAME_OFFSET + window.cvat.player.geometry.frameWidth);
+                point.y = Math.clamp(point.y, PLAYER_FRAME_OFFSET,
+                    PLAYER_FRAME_OFFSET + window.cvat.player.geometry.frameHeight);
             }
 
             // Min 2 points for polyline and 3 points for polygon
@@ -347,18 +349,21 @@ class ShapeCreatorView {
                     showMessage("Min 3 points must be for polygon drawing.");
                 }
                 else {
-                    // Update points in view in order to get updated box
+                    // Update points in a view in order to get an updated box
                     e.target.setAttribute('points', PolyShapeModel.convertNumberArrayToString(points));
+                    let polybox = e.target.getBBox();
+                    let w = polybox.width;
+                    let h = polybox.height;
+                    let area = w * h;
+                    let type = this.type;
 
-                    for (let point of points) {
-                        point.x -= PLAYER_FRAME_OFFSET;
-                        point.y -= PLAYER_FRAME_OFFSET;
-                    }
-
-                    let box = e.target.getBBox();
-                    if (box.width * box.height >= AREA_TRESHOLD || this._type === 'points' ||
-                        this._type === 'polyline' && (box.width >= AREA_TRESHOLD || box.height >= AREA_TRESHOLD)) {
-                        this._controller.finish({points: PolyShapeModel.convertNumberArrayToString(points)}, this._type);
+                    if (area >= AREA_TRESHOLD || type === 'points' || type === 'polyline' && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
+                        for (let point of points) {
+                            point.x -= PLAYER_FRAME_OFFSET;
+                            point.y -= PLAYER_FRAME_OFFSET;
+                        }
+                        points = PolyShapeModel.convertNumberArrayToString(points);
+                        this._controller.finish({points: points}, type);
                     }
                 }
             }
@@ -380,11 +385,19 @@ class ShapeCreatorView {
                     sizeUI.rm();
                     sizeUI = null;
                 }
+
+                let x = +e.target.getAttribute('x');
+                let y = +e.target.getAttribute('y');
+                let w = +e.target.getAttribute('width');
+                let h = +e.target.getAttribute('height');
+                let frameWidth = window.cvat.player.geometry.frameWidth;
+                let frameHeight = window.cvat.player.geometry.frameHeight;
+
                 let result = {
-                    xtl: Math.max(PLAYER_FRAME_OFFSET,  +e.target.getAttribute('x')) - PLAYER_FRAME_OFFSET,
-                    ytl: Math.max(PLAYER_FRAME_OFFSET, +e.target.getAttribute('y')) - PLAYER_FRAME_OFFSET,
-                    xbr: Math.min(window.cvat.player.geometry.frameWidth + PLAYER_FRAME_OFFSET, +e.target.getAttribute('x') + +e.target.getAttribute('width')) - PLAYER_FRAME_OFFSET,
-                    ybr: Math.min(window.cvat.player.geometry.frameHeight  + PLAYER_FRAME_OFFSET, +e.target.getAttribute('y') + +e.target.getAttribute('height')) - PLAYER_FRAME_OFFSET,
+                    xtl: Math.max(PLAYER_FRAME_OFFSET,  x) - PLAYER_FRAME_OFFSET,
+                    ytl: Math.max(PLAYER_FRAME_OFFSET, y) - PLAYER_FRAME_OFFSET,
+                    xbr: Math.min(frameWidth + PLAYER_FRAME_OFFSET, x + w) - PLAYER_FRAME_OFFSET,
+                    ybr: Math.min(frameHeight  + PLAYER_FRAME_OFFSET, y + h) - PLAYER_FRAME_OFFSET,
                 };
 
                 if (this._mode === 'interpolation') {
@@ -455,14 +468,16 @@ class ShapeCreatorView {
 
     _drawAim() {
         if (!(this._aim)) {
+            let frameWidth = window.cvat.player.geometry.frameWidth;
+            let frameHeight = window.cvat.player.geometry.frameHeight;
             this._aim = {
-                x: this._frameContent.line(0, this._aimCoord.y, window.cvat.player.geometry.frameWidth + PLAYER_FRAME_OFFSET * 2, this._aimCoord.y)
+                x: this._frameContent.line(0, this._aimCoord.y, frameWidth + PLAYER_FRAME_OFFSET * 2, this._aimCoord.y)
                     .attr({
                         'stroke-width': STROKE_WIDTH / this._scale,
                         'stroke': 'red',
                         'z_order': Number.MAX_SAFE_INTEGER,
                     }).addClass('aim'),
-                y: this._frameContent.line(this._aimCoord.x, 0, this._aimCoord.x, window.cvat.player.geometry.frameHeight + PLAYER_FRAME_OFFSET * 2)
+                y: this._frameContent.line(this._aimCoord.x, 0, this._aimCoord.x, frameHeight + PLAYER_FRAME_OFFSET * 2)
                     .attr({
                         'stroke-width': STROKE_WIDTH / this._scale,
                         'stroke': 'red',

@@ -50,7 +50,7 @@ class ShapeBufferModel extends Listener  {
         }
     }
 
-    _makeObject(bbRect, polyPoints, trackedObj) {
+    _makeObject(box, points, trackedObj) {
         if (!this._shape.type) {
             return null;
         }
@@ -71,20 +71,6 @@ class ShapeBufferModel extends Listener  {
         object.attributes = attributes;
 
         if (this._shape.type === 'box') {
-            if (!bbRect) {
-                return null;
-            }
-
-            let box = {};
-            box.xtl = Math.max(bbRect.x, 0);
-            box.ytl = Math.max(bbRect.y, 0);
-            box.xbr = Math.min(bbRect.x + bbRect.width, window.cvat.player.geometry.frameWidth);
-            box.ybr = Math.min(bbRect.y + bbRect.height, window.cvat.player.geometry.frameHeight);
-
-            if ((box.xbr - box.xtl) * (box.ybr - box.ytl) < AREA_TRESHOLD) {
-                return null;
-            }
-
             box.occluded = this._shape.position.occluded;
             box.frame = window.cvat.player.frames.current;
             box.z_order = this._collection.zOrder(box.frame).max;
@@ -101,13 +87,8 @@ class ShapeBufferModel extends Listener  {
             }
         }
         else {
-            if (!polyPoints) {
-                return null;
-            }
-
             let position = {};
-
-            position.points = polyPoints;
+            position.points = points;
             position.occluded = this._shape.position.occluded;
             position.frame = window.cvat.player.frames.current;
             position.z_order = this._collection.zOrder(position.frame).max;
@@ -146,15 +127,11 @@ class ShapeBufferModel extends Listener  {
         return false;
     }
 
-    pasteToFrame(bbRect, polyPoints) {
-        if (!this._shape.type) {
-            return;
-        }
-
-        Logger.addEvent(Logger.EventType.pasteObject);
-        let object = this._makeObject(bbRect, polyPoints, this._shape.mode === 'interpolation');
+    pasteToFrame(box, polyPoints) {
+        let object = this._makeObject(box, polyPoints, this._shape.mode === 'interpolation');
 
         if (object) {
+            Logger.addEvent(Logger.EventType.pasteObject);
             if (this._shape.type === 'box') {
                 this._collection.add(object, `${this._shape.mode}_${this._shape.type}`);
             }
@@ -180,47 +157,48 @@ class ShapeBufferModel extends Listener  {
     propagateToFrames() {
         let numOfFrames = this._propagateFrames;
         if (this._shape.type && Number.isInteger(numOfFrames)) {
-            let bbRect = null;
-            let polyPoints = null;
+            let object = null;
             if (this._shape.type === 'box') {
-                bbRect = {
-                    x: this._shape.position.xtl,
-                    y: this._shape.position.ytl,
-                    height: this._shape.position.ybr - this._shape.position.ytl,
-                    width: this._shape.position.xbr - this._shape.position.xtl,
+                let box = {
+                    xtl: this._shape.position.xtl,
+                    ytl: this._shape.position.ytl,
+                    xbr: this._shape.position.xbr,
+                    ybr: this._shape.position.ybr,
                 };
+                object = this._makeObject(box, null, false);
             }
             else {
-                polyPoints = this._shape.position.points;
+                object = this._makeObject(null, this._shape.position.points, false);
             }
 
-            let object = this._makeObject(bbRect, polyPoints, false);
-            Logger.addEvent(Logger.EventType.propagateObject, {
-                count: numOfFrames,
-            });
+            if (object) {
+                Logger.addEvent(Logger.EventType.propagateObject, {
+                    count: numOfFrames,
+                });
 
-            let addedObjects = [];
-            while (numOfFrames > 0 && (object.frame + 1 <= window.cvat.player.frames.stop)) {
-                object.frame ++;
-                object.z_order = this._collection.zOrder(object.frame).max;
-                this._collection.add(object, `annotation_${this._shape.type}`);
-                addedObjects.push(this._collection.shapes.slice(-1)[0]);
-                numOfFrames --;
+                let addedObjects = [];
+                while (numOfFrames > 0 && (object.frame + 1 <= window.cvat.player.frames.stop)) {
+                    object.frame ++;
+                    object.z_order = this._collection.zOrder(object.frame).max;
+                    this._collection.add(object, `annotation_${this._shape.type}`);
+                    addedObjects.push(this._collection.shapes.slice(-1)[0]);
+                    numOfFrames --;
+                }
+
+                // Undo/redo code
+                window.cvat.addAction('Propagate Object', () => {
+                    for (let object of addedObjects) {
+                        object.removed = true;
+                        object.unsubscribe(this._collection);
+                    }
+                }, () => {
+                    for (let object of addedObjects) {
+                        object.removed = false;
+                        object.subscribe(this._collection);
+                    }
+                }, window.cvat.player.frames.current);
+                // End of undo/redo code
             }
-
-            // Undo/redo code
-            window.cvat.addAction('Propagate Object', () => {
-                for (let object of addedObjects) {
-                    object.removed = true;
-                    object.unsubscribe(this._collection);
-                }
-            }, () => {
-                for (let object of addedObjects) {
-                    object.removed = false;
-                    object.subscribe(this._collection);
-                }
-            }, window.cvat.player.frames.current);
-            // End of undo/redo code
         }
     }
 
@@ -278,7 +256,10 @@ class ShapeBufferController {
 
     pasteToFrame(e, bbRect, polyPoints) {
         if (this._model.pasteMode) {
-            this._model.pasteToFrame(bbRect, polyPoints);
+            if (bbRect || polyPoints) {
+                this._model.pasteToFrame(bbRect, polyPoints);
+            }
+
             if (!e.ctrlKey) {
                 this._model.switchPaste();
             }
@@ -360,10 +341,13 @@ class ShapeBufferView {
 
     _moveShapeView(pos) {
         let rect = this._shapeView.node.getBBox();
-        this._shapeView.move(pos.x - rect.width / 2, pos.y - rect.height / 2);
+        let x = pos.x + PLAYER_FRAME_OFFSET;
+        let y = pos.y + PLAYER_FRAME_OFFSET;
+
+        this._shapeView.move(x - rect.width / 2, y - rect.height / 2);
         if (this._shapeViewGroup) {
             let rect = this._shapeViewGroup.node.getBBox();
-            this._shapeViewGroup.move(pos.x - rect.x - rect.width / 2, pos.y - rect.y - rect.height / 2);
+            this._shapeViewGroup.move(x - rect.x - rect.width / 2, y - rect.y - rect.height / 2);
         }
     }
 
@@ -379,42 +363,60 @@ class ShapeBufferView {
     _enableEvents() {
         this._frameContent.on('mousemove.buffer', (e) => {
             let pos = translateSVGPos(this._frameContent.node, e.clientX, e.clientY);
-            pos.x += PLAYER_FRAME_OFFSET;
-            pos.y += PLAYER_FRAME_OFFSET;
-
             this._shapeView.style('visibility', '');
             this._moveShapeView(pos);
         });
 
         this._frameContent.on('mousedown.buffer', (e) => {
             if (e.which != 1) return;
-            let rect = this._shapeView.node.getBBox();
-            rect.x -= PLAYER_FRAME_OFFSET;
-            rect.y -= PLAYER_FRAME_OFFSET;
-
             if (this._shape.type != 'box') {
                 let points = PolyShapeModel.convertStringToNumberArray(this._shapeView.attr('points'));
                 for (let point of points) {
-                    point.x = Math.clamp(point.x, PLAYER_FRAME_OFFSET, window.cvat.player.geometry.frameWidth + PLAYER_FRAME_OFFSET);
-                    point.y = Math.clamp(point.y, PLAYER_FRAME_OFFSET, window.cvat.player.geometry.frameHeight + PLAYER_FRAME_OFFSET);
+                    point.x = Math.clamp(point.x, PLAYER_FRAME_OFFSET,
+                        PLAYER_FRAME_OFFSET + window.cvat.player.geometry.frameWidth);
+                    point.y = Math.clamp(point.y, PLAYER_FRAME_OFFSET,
+                        PLAYER_FRAME_OFFSET + window.cvat.player.geometry.frameHeight);
                 }
+
+                // Set clamped points to a view in order to get an updated bounding box for a poly shape
                 this._shapeView.attr('points', PolyShapeModel.convertNumberArrayToString(points));
 
-                for (let point of points) {
-                    point.x -= PLAYER_FRAME_OFFSET;
-                    point.y -= PLAYER_FRAME_OFFSET;
-                }
+                // Get an updated bounding box for check it area
                 let polybox = this._shapeView.node.getBBox();
-                if (polybox.width * polybox.height >= AREA_TRESHOLD || this._shape.type === 'points' ||
-                    this._shape.type === 'polyline' && (polybox.width >= AREA_TRESHOLD || polybox.height >= AREA_TRESHOLD)) {
-                    this._controller.pasteToFrame(e, rect, PolyShapeModel.convertNumberArrayToString(points));
+                let w = polybox.width;
+                let h = polybox.height;
+                let area = w * h;
+                let type = this._shape.type;
+
+                if (area > AREA_TRESHOLD || type === 'points' || type === 'polyline' && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
+                    for (let point of points) {
+                        point.x -= PLAYER_FRAME_OFFSET;
+                        point.y -= PLAYER_FRAME_OFFSET;
+                    }
+                    points = PolyShapeModel.convertNumberArrayToString(points);
+                    this._controller.pasteToFrame(e, null, points);
                 }
                 else {
                     this._controller.pasteToFrame(e, null, null);
                 }
             }
             else {
-                this._controller.pasteToFrame(e, rect);
+                let rect = this._shapeView.node.getBBox();
+                rect.x -= PLAYER_FRAME_OFFSET;
+                rect.y -= PLAYER_FRAME_OFFSET;
+
+                let box = {};
+                box.xtl = Math.max(rect.x, 0);
+                box.ytl = Math.max(rect.y, 0);
+                box.xbr = Math.min(rect.x + rect.width, window.cvat.player.geometry.frameWidth);
+                box.ybr = Math.min(rect.y + rect.height, window.cvat.player.geometry.frameHeight);
+
+                if ((box.xbr - box.xtl) * (box.ybr - box.ytl) >= AREA_TRESHOLD) {
+                    this._controller.pasteToFrame(e, box, null);
+                }
+                else {
+                    this._controller.pasteToFrame(e, null, null);
+                }
             }
         });
 
