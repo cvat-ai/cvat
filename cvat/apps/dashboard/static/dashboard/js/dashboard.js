@@ -597,7 +597,7 @@ function uploadAnnotationRequest() {
                     };
 
                     overlay.setMessage('Annotation is being saved..');
-                    setTimeout(asyncSave());
+                    setTimeout(asyncSave);
                 };
 
                 overlay.setMessage('File is being parsed..');

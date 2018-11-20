@@ -25,4 +25,3 @@ dj-pagination==2.4.0
 python-logstash==0.4.6
 django-revproxy==0.9.15
 rules==2.0
-django-silk==3.0.1
