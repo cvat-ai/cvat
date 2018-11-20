@@ -123,7 +123,7 @@ class FrameProvider extends Listener {
 
 const MAX_PLAYER_SCALE = 10;
 const MIN_PLAYER_SCALE = 0.1;
-const PLAYER_FRAME_OFFSET = 1000;
+let PLAYER_FRAME_OFFSET = 0;
 
 class PlayerModel extends Listener {
     constructor(job, playerSize) {
@@ -154,6 +154,11 @@ class PlayerModel extends Listener {
             width: playerSize.width,
             height: playerSize.height,
         };
+
+        PLAYER_FRAME_OFFSET = Math.floor(Math.max(
+            (playerSize.height - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE,
+            (playerSize.width - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE
+        ));
 
         this._frameProvider.subscribe(this);
     }
@@ -499,7 +504,6 @@ class PlayerController {
             this._moving = true;
             this._lastClickX = e.clientX;
             this._lastClickY = e.clientY;
-            e.preventDefault();
         }
     }
 
@@ -521,6 +525,7 @@ class PlayerController {
             let leftOffset = e.clientX - this._lastClickX;
             this._lastClickX = e.clientX;
             this._lastClickY = e.clientY;
+
             this._model.move(topOffset, leftOffset);
         }
     }
@@ -653,7 +658,19 @@ class PlayerView {
         $('*').on('mouseup', () => this._controller.frameMouseUp());
         this._playerUI.on('wheel', (e) => this._controller.zoom(e));
         this._playerUI.on('dblclick', () => this._controller.fit());
-        this._playerContentUI.on('mousedown', (e) => this._controller.frameMouseDown(e));
+        this._playerUI.on('mousedown', (e) => {
+            let pos = translateSVGPos(this._playerBackgroundUI[0], e.clientX, e.clientY);
+            pos.x += PLAYER_FRAME_OFFSET;
+            pos.y += PLAYER_FRAME_OFFSET;
+
+            // Check if cursor on a background image
+            if (pos.x >= 0 && pos.y >= 0 && pos.x <= window.cvat.player.geometry.frameWidth
+                && pos.y <= window.cvat.player.geometry.frameHeight) {
+                this._controller.frameMouseDown(e);
+            }
+
+            e.preventDefault();
+        });
         this._playerUI.on('mousemove', (e) => this._controller.frameMouseMove(e));
         this._progressUI.on('mousedown', (e) => this._controller.progressMouseDown(e));
         this._progressUI.on('mouseup', () => this._controller.progressMouseUp());

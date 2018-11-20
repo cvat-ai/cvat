@@ -406,10 +406,10 @@ class ShapeBufferView {
                 rect.y -= PLAYER_FRAME_OFFSET;
 
                 let box = {};
-                box.xtl = Math.max(rect.x, 0);
-                box.ytl = Math.max(rect.y, 0);
-                box.xbr = Math.min(rect.x + rect.width, window.cvat.player.geometry.frameWidth);
-                box.ybr = Math.min(rect.y + rect.height, window.cvat.player.geometry.frameHeight);
+                box.xtl = Math.clamp(rect.x, 0, window.cvat.player.geometry.frameWidth);
+                box.ytl = Math.clamp(rect.y, 0, window.cvat.player.geometry.frameHeight);
+                box.xbr = Math.clamp(rect.x + rect.width, 0, window.cvat.player.geometry.frameWidth);
+                box.ybr = Math.clamp(rect.y + rect.height, 0, window.cvat.player.geometry.frameHeight);
 
                 if ((box.xbr - box.xtl) * (box.ybr - box.ytl) >= AREA_TRESHOLD) {
                     this._controller.pasteToFrame(e, box, null);

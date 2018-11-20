@@ -461,6 +461,7 @@
 #frameContent {
     position: absolute;
     z-index: 1;
+    outline: 10px solid black;
     -moz-transform-origin: top left;
     -webkit-transform-origin: top left;
 }

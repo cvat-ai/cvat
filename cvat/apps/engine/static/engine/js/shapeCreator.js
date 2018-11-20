@@ -394,10 +394,10 @@ class ShapeCreatorView {
                 let frameHeight = window.cvat.player.geometry.frameHeight;
 
                 let result = {
-                    xtl: Math.max(PLAYER_FRAME_OFFSET,  x) - PLAYER_FRAME_OFFSET,
-                    ytl: Math.max(PLAYER_FRAME_OFFSET, y) - PLAYER_FRAME_OFFSET,
-                    xbr: Math.min(frameWidth + PLAYER_FRAME_OFFSET, x + w) - PLAYER_FRAME_OFFSET,
-                    ybr: Math.min(frameHeight  + PLAYER_FRAME_OFFSET, y + h) - PLAYER_FRAME_OFFSET,
+                    xtl: Math.clamp(x, PLAYER_FRAME_OFFSET, frameWidth + PLAYER_FRAME_OFFSET) - PLAYER_FRAME_OFFSET,
+                    ytl: Math.clamp(y, PLAYER_FRAME_OFFSET, frameHeight + PLAYER_FRAME_OFFSET) - PLAYER_FRAME_OFFSET,
+                    xbr: Math.clamp(x + w, PLAYER_FRAME_OFFSET, frameWidth + PLAYER_FRAME_OFFSET) - PLAYER_FRAME_OFFSET,
+                    ybr: Math.clamp(y + h, PLAYER_FRAME_OFFSET, frameHeight + PLAYER_FRAME_OFFSET) - PLAYER_FRAME_OFFSET
                 };
 
                 if (this._mode === 'interpolation') {
