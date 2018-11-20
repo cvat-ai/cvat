@@ -140,6 +140,8 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
 
     let aamModel = new AAMModel(shapeCollectionModel, (xtl, xbr, ytl, ybr) => {
         playerModel.focus(xtl, xbr, ytl, ybr);
+    }, () => {
+        playerModel.fit();
     });
     let aamController = new AAMController(aamModel);
     new AAMView(aamModel, aamController);
