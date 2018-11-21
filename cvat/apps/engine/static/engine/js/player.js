@@ -123,7 +123,6 @@ class FrameProvider extends Listener {
 
 const MAX_PLAYER_SCALE = 10;
 const MIN_PLAYER_SCALE = 0.1;
-let PLAYER_FRAME_OFFSET = 0;
 
 class PlayerModel extends Listener {
     constructor(job, playerSize) {
@@ -153,12 +152,14 @@ class PlayerModel extends Listener {
             top: 0,
             width: playerSize.width,
             height: playerSize.height,
+            frameOffset: 0,
         };
 
-        PLAYER_FRAME_OFFSET = Math.floor(Math.max(
+        this._geometry.frameOffset = Math.floor(Math.max(
             (playerSize.height - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE,
             (playerSize.width - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE
         ));
+        window.cvat.translate.playerOffset = this._geometry.frameOffset;
 
         this._frameProvider.subscribe(this);
     }
@@ -659,10 +660,7 @@ class PlayerView {
         this._playerUI.on('wheel', (e) => this._controller.zoom(e));
         this._playerUI.on('dblclick', () => this._controller.fit());
         this._playerUI.on('mousedown', (e) => {
-            let pos = translateSVGPos(this._playerBackgroundUI[0], e.clientX, e.clientY);
-            pos.x += PLAYER_FRAME_OFFSET;
-            pos.y += PLAYER_FRAME_OFFSET;
-
+            let pos = window.cvat.translate.point.clientToCanvas(this._playerBackgroundUI[0], e.clientX, e.clientY);
             // Check if cursor on a background image
             if (pos.x >= 0 && pos.y >= 0 && pos.x <= window.cvat.player.geometry.frameWidth
                 && pos.y <= window.cvat.player.geometry.frameHeight) {
@@ -878,10 +876,10 @@ class PlayerView {
             obj.css('transform', 'scale(' + geometry.scale + ')');
         }
 
-        this._playerContentUI.css('width', image.width + PLAYER_FRAME_OFFSET * 2);
-        this._playerContentUI.css('height', image.height + PLAYER_FRAME_OFFSET * 2);
-        this._playerContentUI.css('top', geometry.top - PLAYER_FRAME_OFFSET * geometry.scale);
-        this._playerContentUI.css('left', geometry.left - PLAYER_FRAME_OFFSET * geometry.scale);
+        this._playerContentUI.css('width', image.width + geometry.frameOffset * 2);
+        this._playerContentUI.css('height', image.height + geometry.frameOffset * 2);
+        this._playerContentUI.css('top', geometry.top - geometry.frameOffset * geometry.scale);
+        this._playerContentUI.css('left', geometry.left - geometry.frameOffset * geometry.scale);
         this._playerContentUI.css('transform', 'scale(' + geometry.scale + ')');
 
         this._playerGridPath.attr('stroke-width', 2 / geometry.scale);

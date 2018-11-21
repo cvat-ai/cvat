@@ -2739,21 +2739,20 @@ class BoxView extends ShapeView {
 
     _buildPosition() {
         let shape = this._uis.shape.node;
-        return {
-            xtl: +shape.getAttribute('x') - PLAYER_FRAME_OFFSET,
-            ytl: +shape.getAttribute('y') - PLAYER_FRAME_OFFSET,
-            xbr: +shape.getAttribute('x') + +shape.getAttribute('width') - PLAYER_FRAME_OFFSET,
-            ybr: +shape.getAttribute('y') + +shape.getAttribute('height') - PLAYER_FRAME_OFFSET,
+        return window.cvat.translate.box.canvasToActual({
+            xtl: +shape.getAttribute('x'),
+            ytl: +shape.getAttribute('y'),
+            xbr: +shape.getAttribute('x') + +shape.getAttribute('width'),
+            ybr: +shape.getAttribute('y') + +shape.getAttribute('height'),
             occluded: this._uis.shape.hasClass('occludedShape'),
             outside: false,    // if drag or resize possible, track is not outside
             z_order: +shape.getAttribute('z_order'),
-        };
+        });
     }
 
 
     _drawShapeUI(position) {
-        let xtl = position.xtl + PLAYER_FRAME_OFFSET;
-        let ytl = position.ytl + PLAYER_FRAME_OFFSET;
+        position = window.cvat.translate.box.actualToCanvas(position);
         let width = position.xbr - position.xtl;
         let height = position.ybr - position.ytl;
 
@@ -2763,7 +2762,7 @@ class BoxView extends ShapeView {
             'stroke-width': STROKE_WIDTH /  window.cvat.player.geometry.scale,
             'z_order': position.z_order,
             'fill-opacity': this._appearance.fillOpacity
-        }).move(xtl, ytl).addClass('shape');
+        }).move(position.xtl, position.ytl).addClass('shape');
 
         ShapeView.prototype._drawShapeUI.call(this);
     }
@@ -2778,15 +2777,17 @@ class BoxView extends ShapeView {
                 oldMask.remove();
             }
 
-            let size = {
-                x: PLAYER_FRAME_OFFSET,
-                y: PLAYER_FRAME_OFFSET,
+            let size = window.cvat.translate.box.actualToCanvas({
+                x: 0,
+                y: 0,
                 width: window.cvat.player.geometry.frameWidth,
                 height: window.cvat.player.geometry.frameHeight
-            };
+            });
+
+            pos = window.cvat.translate.box.actualToCanvas(pos);
 
             let excludeField = this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).fill('#666');
-            let includeField = this._scenes.svg.rect(pos.xbr - pos.xtl, pos.ybr - pos.ytl).move(pos.xtl + PLAYER_FRAME_OFFSET, pos.ytl + PLAYER_FRAME_OFFSET);
+            let includeField = this._scenes.svg.rect(pos.xbr - pos.xtl, pos.ybr - pos.ytl).move(pos.xtl, pos.ytl);
             this._scenes.svg.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
             this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).attr({
                 mask: 'url(#outsideMask)',
@@ -2809,8 +2810,7 @@ class PolyShapeView extends ShapeView {
 
     _buildPosition() {
         return {
-            points: this._uis.shape.node.getAttribute('points')
-                .split(' ').map((coord) => coord.split(',').map((x) => +x - PLAYER_FRAME_OFFSET).join(',')).join(' '),
+            points: window.cvat.translate.points.canvasToActual(this._uis.shape.node.getAttribute('points')),
             occluded: this._uis.shape.hasClass('occludedShape'),
             outside: false,
             z_order: +this._uis.shape.node.getAttribute('z_order'),
@@ -2828,16 +2828,17 @@ class PolyShapeView extends ShapeView {
                 oldMask.remove();
             }
 
-            let size = {
+            let size = window.cvat.translate.box.actualToCanvas({
                 x: PLAYER_FRAME_OFFSET,
                 y: PLAYER_FRAME_OFFSET,
                 width: window.cvat.player.geometry.frameWidth,
                 height: window.cvat.player.geometry.frameHeight
-            };
+            });
+
+            pos.points = window.cvat.translate.points.actualToCanvas(pos.points);
 
             let excludeField = this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).fill('#666');
-            let includeField = this._scenes.svg.polygon(pos.points.split(' ')
-                .map((coord) => coord.split(',').map((x) => +x + PLAYER_FRAME_OFFSET).join(',')).join(' '));
+            let includeField = this._scenes.svg.polygon(pos.points);
             this._scenes.svg.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
             this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).attr({
                 mask: 'url(#outsideMask)',
@@ -2930,8 +2931,7 @@ class PolygonView extends PolyShapeView {
     }
 
     _drawShapeUI(position) {
-        position.points = position.points.split(' ')
-            .map((coord) => coord.split(',').map((x) => +x + PLAYER_FRAME_OFFSET).join(',')).join(' ');
+        position.points = window.cvat.translate.points.actualToCanvas(position.points);
         this._uis.shape = this._scenes.svg.polygon(position.points).fill(this._appearance.colors.shape).attr({
             'fill': this._appearance.fill || this._appearance.colors.shape,
             'stroke': this._appearance.stroke || this._appearance.colors.shape,
@@ -2972,8 +2972,7 @@ class PolylineView extends PolyShapeView {
 
 
     _drawShapeUI(position) {
-        position.points = position.points.split(' ')
-            .map((coord) => coord.split(',').map((x) => +x + PLAYER_FRAME_OFFSET).join(',')).join(' ');
+        position.points = window.cvat.translate.points.actualToCanvas(position.points);
         this._uis.shape = this._scenes.svg.polyline(position.points).fill(this._appearance.colors.shape).attr({
             'stroke': this._appearance.stroke || this._appearance.colors.shape,
             'stroke-width': STROKE_WIDTH / window.cvat.player.geometry.scale,
@@ -3115,18 +3114,17 @@ class PointsView extends PolyShapeView {
         PolyShapeView.prototype._makeNotEditable.call(this);
         if (!this._controller.hiddenShape) {
             let interpolation = this._controller.interpolate(window.cvat.player.frames.current);
-            if (interpolation.position.points) {
-                interpolation.position.points = interpolation.position.points.split(' ')
-                    .map((coord) => coord.split(',').map((x) => +x + PLAYER_FRAME_OFFSET).join(',')).join(' ');
-                this._drawPointMarkers(interpolation.position);
+            let pos = interpolation.position;
+            if (pos.points) {
+                pos.points = window.cvat.translate.points.actualToCanvas(points);
+                this._drawPointMarkers(pos);
             }
         }
     }
 
 
     _drawShapeUI(position) {
-        position.points = position.points.split(' ')
-            .map((coord) => coord.split(',').map((x) => +x + PLAYER_FRAME_OFFSET).join(',')).join(' ');
+        position.points = window.cvat.translate.points.actualToCanvas(position.points);
         this._uis.shape = this._scenes.svg.polyline(position.points).addClass('shape points').attr({
             'z_order': position.z_order,
         });

@@ -1116,6 +1116,7 @@ class ShapeCollectionView {
     constructor(collectionModel, collectionController) {
         collectionModel.subscribe(this);
         this._controller = collectionController;
+        this._frameBackground = $('#frameBackground');
         this._frameContent = SVG.adopt($('#frameContent')[0]);
         this._UIContent = $('#uiContent');
         this._labelsContent = $('#labelsContent');
@@ -1229,12 +1230,16 @@ class ShapeCollectionView {
                 return;
             }
 
-            let pos = translateSVGPos(this._frameContent.node, e.clientX, e.clientY);
-            if (!window.cvat.mode) {
-                this._controller.selectShape(pos, false);
-            }
+            let frameHeight = window.cvat.player.geometry.frameHeight;
+            let frameWidth = window.cvat.player.geometry.frameWidth;
+            let pos = window.cvat.translate.point.clientToCanvas(this._frameBackground[0], e.clientX, e.clientY);
+            if (pos.x >= 0 && pos.y >= 0 && pos.x <= frameWidth && pos.y <= frameHeight) {
+                if (!window.cvat.mode) {
+                    this._controller.selectShape(pos, false);
+                }
 
-            this._controller.setLastPosition(pos);
+                this._controller.setLastPosition(pos);
+            }
         }.bind(this));
 
         $('#shapeContextMenu li').click((e) => {

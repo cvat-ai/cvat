@@ -293,16 +293,16 @@ class ShapeBufferView {
 
     _drawShapeView() {
         let scale = window.cvat.player.geometry.scale;
-        let points = this._shape.position.points ? this._shape.position.points.split(' ')
-            .map((coord) => coord.split(',').map((x) => +x + PLAYER_FRAME_OFFSET)).join(' ') : null;
+        let points = this._shape.position.points ?
+            window.cvat.translate.point.actualToCanvas(this._shape.position.points) : null;
 
         switch (this._shape.type) {
         case 'box': {
             let width = this._shape.position.xbr - this._shape.position.xtl;
             let height = this._shape.position.ybr - this._shape.position.ytl;
+            this._shape.position = window.cvat.translate.box.actualToCanvas(this._shape.position);
             this._shapeView = this._frameContent.rect(width, height)
-                .move(this._shape.position.xtl + PLAYER_FRAME_OFFSET, this._shape.position.ytl + PLAYER_FRAME_OFFSET)
-                .addClass('shapeCreation').attr({
+                .move(this._shape.position.xtl, this._shape.position.ytl).addClass('shapeCreation').attr({
                     'stroke-width': STROKE_WIDTH / scale,
                 });
             break;
@@ -341,13 +341,11 @@ class ShapeBufferView {
 
     _moveShapeView(pos) {
         let rect = this._shapeView.node.getBBox();
-        let x = pos.x + PLAYER_FRAME_OFFSET;
-        let y = pos.y + PLAYER_FRAME_OFFSET;
 
-        this._shapeView.move(x - rect.width / 2, y - rect.height / 2);
+        this._shapeView.move(pos.x - rect.width / 2, pos.y - rect.height / 2);
         if (this._shapeViewGroup) {
             let rect = this._shapeViewGroup.node.getBBox();
-            this._shapeViewGroup.move(x - rect.x - rect.width / 2, y - rect.y - rect.height / 2);
+            this._shapeViewGroup.move(pos.x - rect.x - rect.width / 2, pos.y - rect.y - rect.height / 2);
         }
     }
 
@@ -362,7 +360,7 @@ class ShapeBufferView {
 
     _enableEvents() {
         this._frameContent.on('mousemove.buffer', (e) => {
-            let pos = translateSVGPos(this._frameContent.node, e.clientX, e.clientY);
+            let pos = window.cvat.translate.point.clientToCanvas(this._frameContent.node, e.clientX, e.clientY);
             this._shapeView.style('visibility', '');
             this._moveShapeView(pos);
         });
@@ -370,16 +368,19 @@ class ShapeBufferView {
         this._frameContent.on('mousedown.buffer', (e) => {
             if (e.which != 1) return;
             if (this._shape.type != 'box') {
-                let points = PolyShapeModel.convertStringToNumberArray(this._shapeView.attr('points'));
-                for (let point of points) {
-                    point.x = Math.clamp(point.x, PLAYER_FRAME_OFFSET,
-                        PLAYER_FRAME_OFFSET + window.cvat.player.geometry.frameWidth);
-                    point.y = Math.clamp(point.y, PLAYER_FRAME_OFFSET,
-                        PLAYER_FRAME_OFFSET + window.cvat.player.geometry.frameHeight);
+                let actualPoints = window.cvat.translate.points.canvasToActual(this._shapeView.attr('points'));
+                let frameWidth = window.cvat.player.geometry.frameWidth;
+                let frameHeight = window.cvat.player.geometry.frameHeight;
+
+                actualPoints = PolyShapeModel.convertStringToNumberArray(actualPoints);
+                for (let point of actualPoints) {
+                    point.x = Math.clamp(point.x, 0, frameWidth);
+                    point.y = Math.clamp(point.y, 0, frameHeight);
                 }
+                actualPoints = PolyShapeModel.convertNumberArrayToString(actualPoints);
 
                 // Set clamped points to a view in order to get an updated bounding box for a poly shape
-                this._shapeView.attr('points', PolyShapeModel.convertNumberArrayToString(points));
+                this._shapeView.attr('points', window.cvat.translate.points.actualToCanvas(actualPoints));
 
                 // Get an updated bounding box for check it area
                 let polybox = this._shapeView.node.getBBox();
@@ -389,27 +390,21 @@ class ShapeBufferView {
                 let type = this._shape.type;
 
                 if (area > AREA_TRESHOLD || type === 'points' || type === 'polyline' && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
-                    for (let point of points) {
-                        point.x -= PLAYER_FRAME_OFFSET;
-                        point.y -= PLAYER_FRAME_OFFSET;
-                    }
-                    points = PolyShapeModel.convertNumberArrayToString(points);
-                    this._controller.pasteToFrame(e, null, points);
+                    this._controller.pasteToFrame(e, null, actualPoints);
                 }
                 else {
                     this._controller.pasteToFrame(e, null, null);
                 }
             }
             else {
-                let rect = this._shapeView.node.getBBox();
-                rect.x -= PLAYER_FRAME_OFFSET;
-                rect.y -= PLAYER_FRAME_OFFSET;
-
+                let frameWidth = window.cvat.player.geometry.frameWidth;
+                let frameHeight = window.cvat.player.geometry.frameHeight;
+                let rect = window.cvat.translate.box.canvasToActual(this._shapeView.node.getBBox());
                 let box = {};
-                box.xtl = Math.clamp(rect.x, 0, window.cvat.player.geometry.frameWidth);
-                box.ytl = Math.clamp(rect.y, 0, window.cvat.player.geometry.frameHeight);
-                box.xbr = Math.clamp(rect.x + rect.width, 0, window.cvat.player.geometry.frameWidth);
-                box.ybr = Math.clamp(rect.y + rect.height, 0, window.cvat.player.geometry.frameHeight);
+                box.xtl = Math.clamp(rect.x, 0, frameWidth);
+                box.ytl = Math.clamp(rect.y, 0, frameHeight);
+                box.xbr = Math.clamp(rect.x + rect.width, 0, frameWidth);
+                box.ybr = Math.clamp(rect.y + rect.height, 0, frameHeight);
 
                 if ((box.xbr - box.xtl) * (box.ybr - box.ytl) >= AREA_TRESHOLD) {
                     this._controller.pasteToFrame(e, box, null);
