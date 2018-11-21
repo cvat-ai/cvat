@@ -1431,6 +1431,8 @@ class ShapeView extends Listener {
         this._shapeContextMenu = $('#shapeContextMenu');
         this._pointContextMenu = $('#pointContextMenu');
 
+        this._rightBorderFrame = $('#playerFrame')[0].offsetWidth;
+
         shapeModel.subscribe(this);
     }
 
@@ -2444,9 +2446,16 @@ class ShapeView extends Listener {
             if (this._uis.text && this._uis.text.node.parentElement) {
                 let revscale = 1 / scale;
                 let shapeBBox = this._uis.shape.node.getBBox();
+                let textBBox = this._uis.text.node.getBBox()
 
-                let x = shapeBBox.x + shapeBBox.width + TEXT_MARGIN;
+                let x = shapeBBox.x + shapeBBox.width + TEXT_MARGIN * revscale;
                 let y = shapeBBox.y;
+
+                let transl = window.cvat.translate.point;
+                let canvas = this._scenes.svg.node;
+                if (transl.canvasToClient(canvas, x + textBBox.width * revscale, 0).x > this._rightBorderFrame) {
+                    x = shapeBBox.x + TEXT_MARGIN * revscale;
+                }
 
                 this._uis.text.move(x / revscale, y / revscale);
                 this._uis.text.attr('transform', `scale(${revscale})`);

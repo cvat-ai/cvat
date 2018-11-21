@@ -76,6 +76,13 @@ class CoordinateTranslator {
                 pt.y = clientY;
                 pt = pt.matrixTransform(targetCanvas.getScreenCTM().inverse());
                 return pt;
+            },
+            canvasToClient: function(sourceCanvas, canvasX, canvasY) {
+                let pt = sourceCanvas.createSVGPoint();
+                pt.x = canvasX;
+                pt.y = canvasY;
+                pt = pt.matrixTransform(sourceCanvas.getScreenCTM());
+                return pt;
             }
         };
     }
