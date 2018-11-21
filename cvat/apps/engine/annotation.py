@@ -822,7 +822,7 @@ class _AnnotationForJob(_Annotation):
                     start_frame=db_path.frame,
                     stop_frame= self.stop_frame,
                     group_id=db_path.group_id,
-                    client_id=db_path.id,
+                    client_id=db_path.client_id,
                 )
                 for db_attr in db_path.attributes:
                     spec = self.db_attributes[db_attr.spec_id]

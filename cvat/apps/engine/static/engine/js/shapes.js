@@ -877,7 +877,6 @@ class PolyShapeModel extends ShapeModel {
             );
         }
 
-
         let [leftFrame, rightFrame] = this._neighboringFrames(frame);
         if (frame in this._positions) {
             leftFrame = frame;
