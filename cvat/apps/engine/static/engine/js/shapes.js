@@ -609,7 +609,7 @@ class BoxModel extends ShapeModel {
             return Object.assign({},
                 this._positions[this._frame],
                 {
-                    outside: false
+                    outside: this._frame != frame
                 }
             );
         }
@@ -868,16 +868,43 @@ class PolyShapeModel extends ShapeModel {
     }
 
     _interpolatePosition(frame) {
+        if (this._type.startsWith('annotation')) {
+            return Object.assign({},
+                this._positions[this._frame],
+                {
+                    outside: this._frame != frame
+                }
+            );
+        }
+
+
+        let [leftFrame, rightFrame] = this._neighboringFrames(frame);
         if (frame in this._positions) {
-            return Object.assign({}, this._positions[frame], {
-                outside: false
-            });
+            leftFrame = frame;
         }
-        else {
-            return {
-                outside: true
-            };
+
+        let leftPos = null;
+        let rightPos = null;
+
+        if (leftFrame != null) leftPos = this._positions[leftFrame];
+        if (rightFrame != null) rightPos = this._positions[rightFrame];
+
+        if (!leftPos) {
+            if (rightPos) {
+                return Object.assign({}, rightPos, {
+                    outside: true,
+                });
+            }
+            else {
+                return {
+                    outside: true
+                };
+            }
         }
+
+        return Object.assign({}, leftPos, {
+            outside: leftFrame != frame,
+        });
     }
 
     updatePosition(frame, position, silent) {
@@ -2829,16 +2856,16 @@ class PolyShapeView extends ShapeView {
             }
 
             let size = window.cvat.translate.box.actualToCanvas({
-                x: PLAYER_FRAME_OFFSET,
-                y: PLAYER_FRAME_OFFSET,
+                x: 0,
+                y: 0,
                 width: window.cvat.player.geometry.frameWidth,
                 height: window.cvat.player.geometry.frameHeight
             });
 
-            pos.points = window.cvat.translate.points.actualToCanvas(pos.points);
+            let points = window.cvat.translate.points.actualToCanvas(pos.points);
 
             let excludeField = this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).fill('#666');
-            let includeField = this._scenes.svg.polygon(pos.points);
+            let includeField = this._scenes.svg.polygon(points);
             this._scenes.svg.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
             this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).attr({
                 mask: 'url(#outsideMask)',
@@ -2931,8 +2958,8 @@ class PolygonView extends PolyShapeView {
     }
 
     _drawShapeUI(position) {
-        position.points = window.cvat.translate.points.actualToCanvas(position.points);
-        this._uis.shape = this._scenes.svg.polygon(position.points).fill(this._appearance.colors.shape).attr({
+        let points = window.cvat.translate.points.actualToCanvas(position.points);
+        this._uis.shape = this._scenes.svg.polygon(points).fill(this._appearance.colors.shape).attr({
             'fill': this._appearance.fill || this._appearance.colors.shape,
             'stroke': this._appearance.stroke || this._appearance.colors.shape,
             'stroke-width': STROKE_WIDTH / window.cvat.player.geometry.scale,
@@ -2972,8 +2999,8 @@ class PolylineView extends PolyShapeView {
 
 
     _drawShapeUI(position) {
-        position.points = window.cvat.translate.points.actualToCanvas(position.points);
-        this._uis.shape = this._scenes.svg.polyline(position.points).fill(this._appearance.colors.shape).attr({
+        let points = window.cvat.translate.points.actualToCanvas(position.points);
+        this._uis.shape = this._scenes.svg.polyline(points).fill(this._appearance.colors.shape).attr({
             'stroke': this._appearance.stroke || this._appearance.colors.shape,
             'stroke-width': STROKE_WIDTH / window.cvat.player.geometry.scale,
             'z_order': position.z_order,
@@ -3114,21 +3141,20 @@ class PointsView extends PolyShapeView {
         PolyShapeView.prototype._makeNotEditable.call(this);
         if (!this._controller.hiddenShape) {
             let interpolation = this._controller.interpolate(window.cvat.player.frames.current);
-            let pos = interpolation.position;
-            if (pos.points) {
-                pos.points = window.cvat.translate.points.actualToCanvas(points);
-                this._drawPointMarkers(pos);
+            if (interpolation.position.points) {
+                let points = window.cvat.translate.points.actualToCanvas(interpolation.position.points);
+                this._drawPointMarkers(Object.assign(interpolation.position.points, {points: points}));
             }
         }
     }
 
 
     _drawShapeUI(position) {
-        position.points = window.cvat.translate.points.actualToCanvas(position.points);
-        this._uis.shape = this._scenes.svg.polyline(position.points).addClass('shape points').attr({
+        let points = window.cvat.translate.points.actualToCanvas(position.points);
+        this._uis.shape = this._scenes.svg.polyline(points).addClass('shape points').attr({
             'z_order': position.z_order,
         });
-        this._drawPointMarkers(position);
+        this._drawPointMarkers(Object.assign(position, {points: points}));
         ShapeView.prototype._drawShapeUI.call(this);
     }
 

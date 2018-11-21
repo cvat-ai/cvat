@@ -174,11 +174,7 @@ class PlayerModel extends Listener {
     }
 
     get geometry() {
-        return {
-            scale: this._geometry.scale,
-            top: this._geometry.top,
-            left: this._geometry.left
-        };
+        return Object.assign({}, this._geometry);
     }
 
     get playing() {
@@ -656,19 +652,19 @@ class PlayerView {
         this._playerGridPath = $('#playerGridPath');
         this._contextMenuUI = $('#playerContextMenu');
 
-        $('*').on('mouseup', () => this._controller.frameMouseUp());
-        this._playerUI.on('wheel', (e) => this._controller.zoom(e));
-        this._playerUI.on('dblclick', () => this._controller.fit());
-        this._playerUI.on('mousedown', (e) => {
+        $('*').on('mouseup.player', () => this._controller.frameMouseUp());
+        this._playerContentUI.on('mousedown', (e) => {
             let pos = window.cvat.translate.point.clientToCanvas(this._playerBackgroundUI[0], e.clientX, e.clientY);
-            // Check if cursor on a background image
-            if (pos.x >= 0 && pos.y >= 0 && pos.x <= window.cvat.player.geometry.frameWidth
-                && pos.y <= window.cvat.player.geometry.frameHeight) {
+            let frameWidth = window.cvat.player.geometry.frameWidth;
+            let frameHeight = window.cvat.player.geometry.frameHeight;
+            if (pos.x >= 0 && pos.y >= 0 && pos.x <= frameWidth && pos.y <= frameHeight) {
                 this._controller.frameMouseDown(e);
             }
-
             e.preventDefault();
         });
+
+        this._playerUI.on('wheel', (e) => this._controller.zoom(e));
+        this._playerUI.on('dblclick', () => this._controller.fit());
         this._playerUI.on('mousemove', (e) => this._controller.frameMouseMove(e));
         this._progressUI.on('mousedown', (e) => this._controller.progressMouseDown(e));
         this._progressUI.on('mouseup', () => this._controller.progressMouseUp());

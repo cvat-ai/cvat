@@ -294,7 +294,7 @@ class ShapeBufferView {
     _drawShapeView() {
         let scale = window.cvat.player.geometry.scale;
         let points = this._shape.position.points ?
-            window.cvat.translate.point.actualToCanvas(this._shape.position.points) : null;
+            window.cvat.translate.points.actualToCanvas(this._shape.position.points) : null;
 
         switch (this._shape.type) {
         case 'box': {

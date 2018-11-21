@@ -122,7 +122,6 @@ class CoordinateTranslator {
         },
 
         this._pointTranslator = {
-            _playerOffset: 0,
             clientToCanvas: function(targetCanvas, clientX, clientY) {
                 let pt = targetCanvas.createSVGPoint();
                 pt.x = clientX;
