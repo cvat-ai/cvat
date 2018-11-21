@@ -54,7 +54,8 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
         mode: null,
         job: {
             z_order: job.z_order,
-            id: job.jobid
+            id: job.jobid,
+            images: job.image_meta_data,
         },
         search: {
             value: window.location.search,

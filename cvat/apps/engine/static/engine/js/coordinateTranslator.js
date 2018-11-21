@@ -76,7 +76,7 @@ class CoordinateTranslator {
 
                 return actualBox;
             },
-        }
+        };
 
         this._pointsTranslator = {
             _playerOffset: 0,
@@ -129,7 +129,7 @@ class CoordinateTranslator {
                 pt = pt.matrixTransform(targetCanvas.getScreenCTM().inverse());
                 return pt;
             }
-        }
+        };
     }
 
     get box() {

@@ -176,28 +176,49 @@ class ShapeBufferModel extends Listener  {
                     count: numOfFrames,
                 });
 
+                let originalSizes = window.cvat.job.images.original_size;
+                let startFrame = window.cvat.player.frames.start;
                 let addedObjects = [];
                 while (numOfFrames > 0 && (object.frame + 1 <= window.cvat.player.frames.stop)) {
                     object.frame ++;
+                    let im_size = originalSizes[object.frame - startFrame] || originalSizes[0];
+                    if (this._shape.type === 'box') {
+                        if (object.xtl > im_size.width || object.xbr > im_size.width) continue;
+                        if (object.ytl > im_size.height || object.ybr > im_size.height) continue;
+                    }
+                    else {
+                        let points = PolyShapeModel.convertStringToNumberArray(object.points);
+                        let badFrame = false;
+                        for (let point of points) {
+                            if ((point.x > im_size.width) || (point.y > im_size.height)) {
+                                badFrame = true;
+                                break;
+                            }
+                        }
+                        if (badFrame) continue;
+                    }
+
                     object.z_order = this._collection.zOrder(object.frame).max;
                     this._collection.add(object, `annotation_${this._shape.type}`);
                     addedObjects.push(this._collection.shapes.slice(-1)[0]);
                     numOfFrames --;
                 }
 
-                // Undo/redo code
-                window.cvat.addAction('Propagate Object', () => {
-                    for (let object of addedObjects) {
-                        object.removed = true;
-                        object.unsubscribe(this._collection);
-                    }
-                }, () => {
-                    for (let object of addedObjects) {
-                        object.removed = false;
-                        object.subscribe(this._collection);
-                    }
-                }, window.cvat.player.frames.current);
-                // End of undo/redo code
+                if (addedObjects.length) {
+                    // Undo/redo code
+                    window.cvat.addAction('Propagate Object', () => {
+                        for (let object of addedObjects) {
+                            object.removed = true;
+                            object.unsubscribe(this._collection);
+                        }
+                    }, () => {
+                        for (let object of addedObjects) {
+                            object.removed = false;
+                            object.subscribe(this._collection);
+                        }
+                    }, window.cvat.player.frames.current);
+                    // End of undo/redo code
+                }
             }
         }
     }
@@ -309,18 +330,18 @@ class ShapeBufferView {
         }
         case 'polygon':
             this._shapeView = this._frameContent.polygon(points).addClass('shapeCreation').attr({
-                    'stroke-width': STROKE_WIDTH / scale,
-                });
+                'stroke-width': STROKE_WIDTH / scale,
+            });
             break;
         case 'polyline':
             this._shapeView = this._frameContent.polyline(points).addClass('shapeCreation').attr({
-                    'stroke-width': STROKE_WIDTH / scale,
-                });
+                'stroke-width': STROKE_WIDTH / scale,
+            });
             break;
         case 'points':
             this._shapeView = this._frameContent.polyline(points).addClass('shapeCreation').attr({
-                    'stroke-width': 0,
-                });
+                'stroke-width': 0,
+            });
 
             this._shapeViewGroup = this._frameContent.group();
             for (let point of PolyShapeModel.convertStringToNumberArray(points)) {
