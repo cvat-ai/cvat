@@ -176,32 +176,24 @@ class ShapeBufferModel extends Listener  {
                     count: numOfFrames,
                 });
 
-                let originalSizes = window.cvat.job.images.original_size;
+                let imageSizes = window.cvat.job.images.original_size;
                 let startFrame = window.cvat.player.frames.start;
+                let originalImageSize = imageSizes[object.frame - startFrame] || imageSizes[0];
+
                 let addedObjects = [];
                 while (numOfFrames > 0 && (object.frame + 1 <= window.cvat.player.frames.stop)) {
                     object.frame ++;
-                    let im_size = originalSizes[object.frame - startFrame] || originalSizes[0];
-                    if (this._shape.type === 'box') {
-                        if (object.xtl > im_size.width || object.xbr > im_size.width) continue;
-                        if (object.ytl > im_size.height || object.ybr > im_size.height) continue;
-                    }
-                    else {
-                        let points = PolyShapeModel.convertStringToNumberArray(object.points);
-                        let badFrame = false;
-                        for (let point of points) {
-                            if ((point.x > im_size.width) || (point.y > im_size.height)) {
-                                badFrame = true;
-                                break;
-                            }
-                        }
-                        if (badFrame) continue;
+                    numOfFrames --;
+
+                    // Propagate only for frames with same size
+                    let imageSize = imageSizes[object.frame - startFrame] || imageSizes[0];
+                    if ((imageSize.width != originalImageSize.width) || (imageSize.height != originalImageSize.height)) {
+                        continue;
                     }
 
                     object.z_order = this._collection.zOrder(object.frame).max;
                     this._collection.add(object, `annotation_${this._shape.type}`);
                     addedObjects.push(this._collection.shapes.slice(-1)[0]);
-                    numOfFrames --;
                 }
 
                 if (addedObjects.length) {
