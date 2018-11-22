@@ -45,7 +45,7 @@ class Git:
     # HTTP/HTTPS: [http://]github.com/proj/repos[.git]
     def _parse_url(self):
         http_pattern = "([https|http]+)*[://]*([a-zA-Z0-9._-]+.[a-zA-Z]+)/([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+)"
-        ssh_pattern = "([a-zA-Z0-9._-]+)@([a-zA-Z0-9._-]+):([a-zA-Z.-]+)/([a-zA-Z.-]+)"
+        ssh_pattern = "([a-zA-Z0-9._-]+)@([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+)"
 
         http_match = re.match(http_pattern, self.__url)
         ssh_match = re.match(ssh_pattern, self.__url)
