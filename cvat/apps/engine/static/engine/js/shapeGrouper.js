@@ -186,11 +186,12 @@ class ShapeGrouperView {
 
     _enableEvents() {
         this._frameContent.on('mousedown.grouper', (e) => {
-            this._initPoint = translateSVGPos(this._frameContent[0], e.clientX, e.clientY);
+            this._initPoint = window.cvat.translate.point.clientToCanvas(this._frameContent[0], e.clientX, e.clientY);
         });
 
         this._frameContent.on('mousemove.grouper', (e) => {
-            let currentPoint = translateSVGPos(this._frameContent[0], e.clientX, e.clientY);
+            let currentPoint = window.cvat.translate.point.clientToCanvas(this._frameContent[0], e.clientX, e.clientY);
+
             if (this._initPoint) {
                 if (!this._rectSelector) {
                     this._rectSelector = $(document.createElementNS('http://www.w3.org/2000/svg', 'rect'));

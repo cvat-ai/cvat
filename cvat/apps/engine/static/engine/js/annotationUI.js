@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported callAnnotationUI translateSVGPos blurAllElements drawBoxSize copyToClipboard */
+/* exported callAnnotationUI blurAllElements drawBoxSize copyToClipboard */
 "use strict";
 
 function callAnnotationUI(jid) {
@@ -40,6 +40,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     // Setup some API
     window.cvat = {
         labelsInfo: new LabelsInfo(job),
+        translate: new CoordinateTranslator(),
         player: {
             geometry: {
                 scale: 1,
@@ -53,7 +54,8 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
         mode: null,
         job: {
             z_order: job.z_order,
-            id: job.jobid
+            id: job.jobid,
+            images: job.image_meta_data,
         },
         search: {
             value: window.location.search,
@@ -140,6 +142,8 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
 
     let aamModel = new AAMModel(shapeCollectionModel, (xtl, xbr, ytl, ybr) => {
         playerModel.focus(xtl, xbr, ytl, ybr);
+    }, () => {
+        playerModel.fit();
     });
     let aamController = new AAMController(aamModel);
     new AAMView(aamModel, aamController);
@@ -728,25 +732,6 @@ function saveAnnotation(shapeCollectionModel, job) {
         showMessage(message + ' ' + 'Please immediately report the problem to support team');
         throw Error(message);
     });
-}
-
-function translateSVGPos(svgCanvas, clientX, clientY) {
-    let pt = svgCanvas.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
-    pt = pt.matrixTransform(svgCanvas.getScreenCTM().inverse());
-
-    let pos = {
-        x: pt.x,
-        y: pt.y
-    };
-
-    if (platform.name.toLowerCase() == 'firefox') {
-        pos.x /= window.cvat.player.geometry.scale;
-        pos.y /= window.cvat.player.geometry.scale;
-    }
-
-    return pos;
 }
 
 

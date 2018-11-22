@@ -41,7 +41,6 @@ module.exports = {
         'AnnotationParser': true,
         // from annotationUI.js
         'callAnnotationUI': true,
-        'translateSVGPos': true,
         'blurAllElements': true,
         'drawBoxSize': true,
         'copyToClipboard': true,
@@ -123,5 +122,7 @@ module.exports = {
         'PolyshapeEditorModel': true,
         'PolyshapeEditorController': true,
         'PolyshapeEditorView': true,
+        // from coordinateTranslator
+        'CoordinateTranslator': true,
     },
 };

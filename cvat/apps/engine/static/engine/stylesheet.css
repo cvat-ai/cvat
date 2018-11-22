@@ -263,6 +263,7 @@
     fill: white;
     text-shadow: 0px 0px 3px black;
     cursor: default;
+    pointer-events: none;
 }
 
 .highlightedShape {
@@ -460,6 +461,7 @@
 #frameContent {
     position: absolute;
     z-index: 1;
+    outline: 10px solid black;
     -moz-transform-origin: top left;
     -webkit-transform-origin: top left;
 }
