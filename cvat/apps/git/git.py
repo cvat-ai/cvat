@@ -83,9 +83,12 @@ class Git:
     def _init_host(self):
         user, host = self._parse_url()[1:-1]
         check_command = 'ssh-keygen -F {} | grep "Host {} found"'.format(host, host)
-        add_command = 'ssh -o StrictHostKeyChecking=no {}@{}'.format(user, host)
-        if not len(subprocess.run([check_command], shell = True, stdout=subprocess.PIPE).stdout):
-            subprocess.run([add_command], shell = True)
+        add_command = 'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -q {}@{} && echo $?'.format(user, host)
+        if not len(subprocess.run([check_command], shell = True, stdout = subprocess.PIPE).stdout):
+            proc = subprocess.run([add_command], shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            stderr = proc.stderr.decode('utf-8')[:-2]
+            if proc.returncode > 1:
+                raise Exception('Failed ssh connection: {}'.format(stderr))
             slogger.task[self.__tid].info('Host {} has been added to known_hosts.'.format(host))
 
 
