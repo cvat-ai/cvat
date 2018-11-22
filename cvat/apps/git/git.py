@@ -274,12 +274,12 @@ class Git:
 
         # Setup LFS for *.zip files
         self.__rep.git.lfs("track", "*.zip")
+        self.__rep.git.add(archive_name)
 
         # Commit and push
         self.__rep.index.add([
             '.gitattributes',
-            diff_name,
-            archive_name
+            diff_name
         ])
         self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user, datetime.datetime.now()))
 
