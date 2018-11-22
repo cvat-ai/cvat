@@ -248,6 +248,10 @@ class Git:
         subprocess.call('zip -j -r "{}" "{}"'.format(archive_name, dump_name), shell=True)
         os.remove(dump_name)
 
+        # Setup LFS for *.zip files
+        self.__rep.git.lfs("track", "*.zip")
+        self.__rep.git.add(archive_name)
+
         # Merge diffs
         summary_diff = {}
         for diff_name in list(map(lambda x: os.path.join(self.__diffs_dir, x), os.listdir(self.__diffs_dir))):
@@ -271,10 +275,6 @@ class Git:
         old_changes.append(summary_diff)
         with open(diff_name, 'w') as f:
             f.write(json.dumps(old_changes, sort_keys = True, indent = 4))
-
-        # Setup LFS for *.zip files
-        self.__rep.git.lfs("track", "*.zip")
-        self.__rep.git.add(archive_name)
 
         # Commit and push
         self.__rep.index.add([
