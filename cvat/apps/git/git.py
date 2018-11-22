@@ -337,10 +337,11 @@ def create(url, tid, user):
 
         db_git = GitData.objects.select_for_update().get(pk = db_task)
         Git(url, tid, user).init_repos()
-    except Exception:
+    except Exception as ex:
         if isinstance(db_git, GitData):
             db_git.delete()
         slogger.task[tid].exception('repository create errors occured', exc_info = True)
+        raise ex
 
 
 def _initial_create(tid, params):
@@ -360,8 +361,9 @@ def update(url, tid, user):
 
         db_git.url = url
         db_git.save()
-    except Exception:
+    except Exception as ex:
         slogger.task[tid].exception('repository update errors occured', exc_info = True)
+        raise ex
 
 
 @transaction.atomic
@@ -370,8 +372,9 @@ def push(tid, user, scheme, host):
         db_task = Task.objects.get(pk = tid)
         db_git = GitData.objects.select_for_update().get(pk = db_task)
         Git(db_git.url, tid, user).init_repos().push(scheme, host, FORMAT_XML)
-    except Exception:
+    except Exception as ex:
         slogger.task[tid].exception('push to remote repository errors occured', exc_info = True)
+        raise ex
 
 
 @transaction.atomic
