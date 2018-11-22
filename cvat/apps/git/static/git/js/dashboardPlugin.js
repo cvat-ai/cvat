@@ -42,6 +42,7 @@ window.cvat.git = {
         let updateButton = $(`#${window.cvat.git.reposURLUpdateButtonId}`);
         let pushButton = $(`#${window.cvat.git.reposPushButtonId}`);
 
+        reposURLInput.prop('value', '');
         gitLabelMessage.css('color', '#cccc00').text('Getting an info..');
         gitLabelStatus.css('color', '#cccc00').text('\u25cc');
         updateButton.attr("disabled", true);
