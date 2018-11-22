@@ -83,7 +83,7 @@ class Git:
     def _init_host(self):
         user, host = self._parse_url()[1:-1]
         check_command = 'ssh-keygen -F {} | grep "Host {} found"'.format(host, host)
-        add_command = 'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -q {}@{} && echo $?'.format(user, host)
+        add_command = 'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -q {}@{}'.format(user, host)
         if not len(subprocess.run([check_command], shell = True, stdout = subprocess.PIPE).stdout):
             proc = subprocess.run([add_command], shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             stderr = proc.stderr.decode('utf-8')[:-2]
@@ -337,10 +337,10 @@ def create(url, tid, user):
 
         db_git = GitData.objects.select_for_update().get(pk = db_task)
         Git(url, tid, user).init_repos()
-    except Exception as ex:
+    except Exception:
         if isinstance(db_git, GitData):
             db_git.delete()
-        raise ex
+        slogger.task[tid].exception('repository create errors occured', exc_info = True)
 
 
 def _initial_create(tid, params):
@@ -352,20 +352,26 @@ def _initial_create(tid, params):
 
 @transaction.atomic
 def update(url, tid, user):
-    db_task = Task.objects.get(pk = tid)
-    db_git = GitData.objects.select_for_update().get(pk = db_task)
+    try:
+        db_task = Task.objects.get(pk = tid)
+        db_git = GitData.objects.select_for_update().get(pk = db_task)
 
-    Git(url, tid, user).init_repos()
+        Git(url, tid, user).init_repos()
 
-    db_git.url = url
-    db_git.save()
+        db_git.url = url
+        db_git.save()
+    except Exception:
+        slogger.task[tid].exception('repository update errors occured', exc_info = True)
 
 
 @transaction.atomic
 def push(tid, user, scheme, host):
-    db_task = Task.objects.get(pk = tid)
-    db_git = GitData.objects.select_for_update().get(pk = db_task)
-    Git(db_git.url, tid, user).init_repos().push(scheme, host, FORMAT_XML)
+    try:
+        db_task = Task.objects.get(pk = tid)
+        db_git = GitData.objects.select_for_update().get(pk = db_task)
+        Git(db_git.url, tid, user).init_repos().push(scheme, host, FORMAT_XML)
+    except Exception:
+        slogger.task[tid].exception('push to remote repository errors occured', exc_info = True)
 
 
 @transaction.atomic
