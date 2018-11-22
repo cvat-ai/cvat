@@ -269,9 +269,15 @@ class Git:
         with open(diff_name, 'w') as f:
             f.write(json.dumps(old_changes, sort_keys = True, indent = 4))
 
+        # Setup LFS for *.zip files
+        self.__rep.git.lfs("track", "*.zip")
+
         # Commit and push
-        self.__rep.index.add([diff_name])
-        self.__rep.index.add([archive_name])
+        self.__rep.index.add([
+            '.gitattributes',
+            diff_name,
+            archive_name
+        ])
         self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user, datetime.datetime.now()))
 
         self._init_host()
