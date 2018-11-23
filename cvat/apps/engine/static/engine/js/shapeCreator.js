@@ -245,6 +245,8 @@ class ShapeCreatorView {
             y: null,
         };
 
+        let numberOfPoints = 0;
+
         if (this._polyShapeSize) {
             let size = this._polyShapeSize;
             let sizeDecrement = function() {
@@ -272,6 +274,7 @@ class ShapeCreatorView {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY,
             };
+            numberOfPoints ++;
         });
 
         this._drawInstance.on('drawpoint', (e) => {
@@ -279,17 +282,23 @@ class ShapeCreatorView {
                 x: e.detail.event.clientX,
                 y: e.detail.event.clientY,
             };
+            numberOfPoints ++;
         });
 
         this._frameContent.on('mousedown.shapeCreator', (e) => {
             if (e.which === 3) {
+                let lenBefore = this._drawInstance.array().value.length;
                 this._drawInstance.draw('undo');
+                let lenAfter = this._drawInstance.array().value.length;
+                if (lenBefore != lenAfter) {
+                    numberOfPoints --;
+                }
             }
         });
 
 
         this._frameContent.on('mousemove.shapeCreator', (e) => {
-            if (e.shiftKey && this._type != 'points') {
+            if (e.shiftKey && ['polygon', 'polyline'].includes(this._type)) {
                 if (lastPoint.x === null || lastPoint.y === null) {
                     this._drawInstance.draw('point', e);
                 }
@@ -339,9 +348,9 @@ class ShapeCreatorView {
                     let w = polybox.width;
                     let h = polybox.height;
                     let area = w * h;
-                    let type = this.type;
+                    let type = this._type;
 
-                    if (area >= AREA_TRESHOLD || type === 'points' || type === 'polyline' && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
+                    if (area >= AREA_TRESHOLD || type === 'points' && numberOfPoints || type === 'polyline' && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
                         this._controller.finish({points: actualPoints}, type);
                     }
                 }
