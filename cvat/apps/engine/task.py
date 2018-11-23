@@ -163,7 +163,13 @@ def get(tid):
                 attributes[db_label.id][db_attrspec.id] = db_attrspec.text
         db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
         segment_length = max(db_segments[0].stop_frame - db_segments[0].start_frame + 1, 1)
-        job_indexes = [segment.job_set.first().id for segment in db_segments]
+        job_indexes = []
+        for segment in db_segments:
+            db_job = segment.job_set.first()
+            job_indexes.append({
+                "job_id": db_job.id,
+                "max_shape_id": db_job.max_shape_id,
+            })
 
         response = {
             "status": db_task.status,
@@ -242,7 +248,8 @@ def get_job(jid):
             "attributes": attributes,
             "z_order": db_task.z_order,
             "flipped": db_task.flipped,
-            "image_meta_data": im_meta_data
+            "image_meta_data": im_meta_data,
+            "max_shape_id": db_job.max_shape_id,
         }
     else:
         raise Exception("Cannot find the job: {}".format(jid))

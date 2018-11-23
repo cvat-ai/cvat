@@ -524,12 +524,21 @@ function uploadAnnotationRequest() {
         $.ajax({
             url: '/get/task/' + window.cvat.dashboard.taskID,
             success: function(data) {
+                let maxId = -1;
+
+                for (const job of data.jobs) {
+                    maxId = Math.max(maxId, job.max_shape_id);
+                }
+
                 let annotationParser = new AnnotationParser({
-                    start: 0,
-                    stop: data.size,
-                    image_meta_data: data.image_meta_data,
-                    flipped: data.flipped
-                }, new LabelsInfo(data.spec));
+                        start: 0,
+                        stop: data.size,
+                        image_meta_data: data.image_meta_data,
+                        flipped: data.flipped
+                    },
+                    new LabelsInfo(data.spec),
+                    new IdGenerator(maxId + 1),
+                );
 
                 let asyncParse = function() {
                     let parsed = null;
