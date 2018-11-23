@@ -525,6 +525,7 @@ class ShapeCollectionModel extends Listener {
             }
             this._frame = frame;
             this._interpolate();
+            this.selectShape(this._lastPos, false);
         }
         else {
             this._clear();
