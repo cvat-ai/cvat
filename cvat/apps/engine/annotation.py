@@ -19,6 +19,7 @@ import django_rq
 from django.conf import settings
 from django.db import transaction
 
+from cvat.apps.profiler import silk_profile
 from . import models
 from .task import get_frame_path, get_image_meta_cache
 from .log import slogger
@@ -70,16 +71,17 @@ def get(jid):
 
     return annotation.to_client()
 
+@silk_profile(name="Save job")
 @transaction.atomic
-def save_job(jid, data, delete_old_data=False):
+def save_job(jid, data):
     """
     Save new annotations for the job.
     """
-    db_job = models.Job.objects.select_for_update().get(id=jid)
+    slogger.job[jid].info("Enter save_job API: jid = {}".format(jid))
+    db_job = models.Job.objects.select_related('segment__task') \
+        .select_for_update().get(id=jid)
 
     annotation = _AnnotationForJob(db_job)
-    if delete_old_data:
-        annotation.delete_all_shapes_from_db()
     annotation.validate_data_from_client(data)
 
     annotation.delete_from_db(data['delete'])
@@ -88,12 +90,33 @@ def save_job(jid, data, delete_old_data=False):
 
     db_job.segment.task.updated_date = timezone.now()
     db_job.segment.task.save()
+    slogger.job[jid].info("Leave save_job API: jid = {}".format(jid))
+
+@silk_profile(name="Clear job")
+@transaction.atomic
+def clear_job(jid):
+    """
+    Clear annotations for the job.
+    """
+    slogger.job[jid].info("Enter clear_job API: jid = {}".format(jid))
+    db_job = models.Job.objects.select_related('segment__task') \
+        .select_for_update().get(id=jid)
+
+    annotation = _AnnotationForJob(db_job)
+    annotation.delete_all_shapes_from_db()
+    annotation.delete_all_paths_from_db()
+
+    db_job.segment.task.updated_date = timezone.now()
+    db_job.segment.task.save()
+    slogger.job[jid].info("Leave clear_job API: jid = {}".format(jid))
 
 # pylint: disable=unused-argument
+@silk_profile(name="Save task")
 def save_task(tid, data):
     """
     Save new annotations for the task.
     """
+    slogger.task[tid].info("Enter save_task API: tid = {}".format(tid))
     db_task = models.Task.objects.get(id=tid)
     db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
 
@@ -117,7 +140,35 @@ def save_task(tid, data):
             }
 
     for jid, _data in splitted_data.items():
-        save_job(jid, _data, True)
+        # if an item inside _data isn't empty need to call save_job
+        isNonEmpty = False
+        for action in ['create', 'update', 'delete']:
+            for objects in _data[action].values():
+                if objects:
+                    isNonEmpty = True
+                    break
+
+        if isNonEmpty:
+            save_job(jid, _data)
+
+    slogger.task[tid].info("Leave save_task API: tid = {}".format(tid))
+
+
+# pylint: disable=unused-argument
+@silk_profile(name="Clear task")
+def clear_task(tid):
+    """
+    Clear annotations for the task.
+    """
+    slogger.task[tid].info("Enter clear_task API: tid = {}".format(tid))
+    db_task = models.Task.objects.get(id=tid)
+    db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
+
+    for db_segment in db_segments:
+        for db_job in list(db_segment.job_set.all()):
+            clear_job(db_job.id)
+
+    slogger.task[tid].info("Leave clear_task API: tid = {}".format(tid))
 
 # pylint: disable=unused-argument
 def rq_handler(job, exc_type, exc_value, traceback):
@@ -345,6 +396,14 @@ class _Annotation:
         self.points = []
         self.points_paths = []
 
+    def has_data(self):
+        non_empty = False
+        for attr in ['boxes', 'box_paths', 'polygons', 'polygon_paths',
+            'polylines', 'polyline_paths', 'points', 'points_paths']:
+            non_empty |= bool(getattr(self, attr))
+
+        return non_empty
+
     def get_max_client_id(self):
         max_client_id = -1
 
@@ -473,6 +532,18 @@ class _Annotation:
     def to_points_paths(self):
         return self._to_poly_paths('points') + self.points_paths
 
+def bulk_create(db_model, objects, flt_param = {}):
+    if objects:
+        if flt_param:
+            if 'postgresql' in settings.DATABASES["default"]["ENGINE"]:
+                return db_model.objects.bulk_create(objects)
+            else:
+                ids = list(db_model.objects.filter(**flt_param).values_list('id', flat=True))
+                db_model.objects.bulk_create(objects)
+
+                return list(db_model.objects.exclude(id__in=ids).filter(**flt_param))
+        else:
+            return db_model.objects.bulk_create(objects)
 
 class _AnnotationForJob(_Annotation):
     def __init__(self, db_job):
@@ -487,26 +558,19 @@ class _AnnotationForJob(_Annotation):
         self.db_attributes = {db_attr.id:db_attr
             for db_attr in models.AttributeSpec.objects.filter(
                 label__task__id=db_job.segment.task.id)}
-        self.saved_db_ids = {}
-        self.saved_client_ids = set()
 
-    def _collect_saved_ids(self):
-        self.saved_db_ids = {}
-        self.saved_client_ids = set()
-        def append_ids(shape_type, shape_ids):
-            for db_id, client_id in shape_ids:
-                self.saved_db_ids[shape_type].append(db_id)
-                self.saved_client_ids.add(client_id)
+    def _get_client_ids_from_db(self):
+        client_ids = set()
 
-        for shape_type in ['polygons', 'polylines', 'points', 'boxes', 'paths']:
-            self.saved_db_ids[shape_type] = []
-
-        saved_path_ids = list(self.db_job.objectpath_set.values_list('id', 'client_id'))
-        append_ids('paths', saved_path_ids)
+        ids = list(self.db_job.objectpath_set.values_list('client_id', flat=True))
+        client_ids.update(ids)
 
         for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
-            saved_shapes_ids = list(self._get_shape_class(shape_type).objects.filter(job_id=self.db_job.id).values_list('id', 'client_id'))
-            append_ids(shape_type, saved_shapes_ids)
+            ids = list(self._get_shape_class(shape_type).objects.filter(
+                job_id=self.db_job.id).values_list('client_id', flat=True))
+            client_ids.update(ids)
+
+        return client_ids
 
     def _merge_table_rows(self, rows, keys_for_merge, field_id):
         """dot.notation access to dictionary attributes"""
@@ -1033,6 +1097,8 @@ class _AnnotationForJob(_Annotation):
 
                 getattr(self, poly_path_type).append(poly_path)
 
+        return self.has_data()
+
     def _get_shape_class(self, shape_type):
         if shape_type == 'polygons':
             return models.LabeledPolygon
@@ -1075,8 +1141,6 @@ class _AnnotationForJob(_Annotation):
             db_path_attrvals = []
             db_shapes = []
             db_shape_attrvals = []
-            # Need to be sure saved_db_ids is actual.
-            self._collect_saved_ids()
 
             shapes = getattr(self, shape_type)
             for path in shapes:
@@ -1137,38 +1201,18 @@ class _AnnotationForJob(_Annotation):
                     db_shapes.append(db_shape)
                 db_paths.append(db_path)
 
-            db_paths = models.ObjectPath.objects.bulk_create(db_paths)
-
-            if db_paths and db_paths[0].id == None:
-                # Try to get primary keys. Probably the code will work for sqlite
-                # but it definetely doesn't work for Postgres. Need to say that
-                # for Postgres bulk_create will return objects with ids even ids
-                # are auto incremented. Thus we will not be inside the 'if'.
-                if shape_type == 'polygon_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=self.saved_db_ids['paths']))
-                elif shape_type == 'polyline_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=self.saved_db_ids['paths']))
-                elif shape_type == 'box_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=self.saved_db_ids['paths']))
-                elif shape_type == 'points_paths':
-                    db_paths = list(self.db_job.objectpath_set.exclude(id__in=self.saved_db_ids['paths']))
+            db_paths = bulk_create(models.ObjectPath, db_paths,
+                {"job_id": self.db_job.id})
 
             for db_attrval in db_path_attrvals:
                 db_attrval.track_id = db_paths[db_attrval.track_id].id
-            models.ObjectPathAttributeVal.objects.bulk_create(db_path_attrvals)
+            bulk_create(models.ObjectPathAttributeVal, db_path_attrvals)
 
             for db_shape in db_shapes:
                 db_shape.track_id = db_paths[db_shape.track_id].id
 
-            db_shapes_ids = list(self._get_shape_class(shape_type).objects.filter(track__job_id=self.db_job.id).values_list('id', flat=True))
-            db_shapes = self._get_shape_class(shape_type).objects.bulk_create(db_shapes)
-
-            if db_shapes and db_shapes[0].id == None:
-                # Try to get primary keys. Probably the code will work for sqlite
-                # but it definetely doesn't work for Postgres. Need to say that
-                # for Postgres bulk_create will return objects with ids even ids
-                # are auto incremented. Thus we will not be inside the 'if'.
-                db_shapes = list(self._get_shape_class(shape_type).objects.exclude(id__in=db_shapes_ids).filter(track__job_id=self.db_job.id))
+            db_shapes = bulk_create(self._get_shape_class(shape_type), db_shapes,
+                {"track__job_id": self.db_job.id})
 
             for db_attrval in db_shape_attrvals:
                 if shape_type == 'polygon_paths':
@@ -1180,7 +1224,7 @@ class _AnnotationForJob(_Annotation):
                 elif shape_type == 'points_paths':
                     db_attrval.points_id = db_shapes[db_attrval.points_id].id
 
-            self._get_shape_attr_class(shape_type).objects.bulk_create(db_shape_attrvals)
+            bulk_create(self._get_shape_attr_class(shape_type), db_shape_attrvals)
 
     def _get_shape_set(self, shape_type):
         if shape_type == 'polygons':
@@ -1193,8 +1237,6 @@ class _AnnotationForJob(_Annotation):
             return self.db_job.labeledpoints_set
 
     def _save_shapes_to_db(self):
-        # Need to be sure saved_db_ids is actual.
-        self._collect_saved_ids()
         for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
             db_shapes = []
             db_attrvals = []
@@ -1234,14 +1276,8 @@ class _AnnotationForJob(_Annotation):
 
                 db_shapes.append(db_shape)
 
-            db_shapes = self._get_shape_class(shape_type).objects.bulk_create(db_shapes)
-
-            if db_shapes and db_shapes[0].id == None:
-                # Try to get primary keys. Probably the code will work for sqlite
-                # but it definetely doesn't work for Postgres. Need to say that
-                # for Postgres bulk_create will return objects with ids even ids
-                # are auto incremented. Thus we will not be inside the 'if'.
-                db_shapes = list(self._get_shape_set(shape_type).exclude(id__in=self.saved_db_ids[shape_type]))
+            db_shapes = bulk_create(self._get_shape_class(shape_type), db_shapes,
+                {"job_id": self.db_job.id})
 
             for db_attrval in db_attrvals:
                 if shape_type == 'polygons':
@@ -1253,7 +1289,7 @@ class _AnnotationForJob(_Annotation):
                 else:
                     db_attrval.points_id = db_shapes[db_attrval.points_id].id
 
-            self._get_shape_attr_class(shape_type).objects.bulk_create(db_attrvals)
+            bulk_create(self._get_shape_attr_class(shape_type), db_attrvals)
 
     def _update_shapes_in_db(self):
         client_ids_to_delete = {}
@@ -1278,38 +1314,35 @@ class _AnnotationForJob(_Annotation):
                 raise Exception('Number of deleted object doesn\'t match with requested number')
 
     def _delete_paths_from_db(self, data):
+        client_ids_to_delete = []
         for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
-            client_ids_to_delete = data[shape_type]
-            deleted = self.db_job.objectpath_set.filter(client_id__in=client_ids_to_delete).delete()
-            class_name = 'engine.ObjectPath'
-            if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and \
-               (class_name in deleted[1] and deleted[1][class_name] != len(client_ids_to_delete)):
-               raise Exception('Number of deleted object doesn\'t match with requested number')
+            client_ids_to_delete.extend(data[shape_type])
+        deleted = self.db_job.objectpath_set.filter(client_id__in=client_ids_to_delete).delete()
+        class_name = 'engine.ObjectPath'
+        if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and \
+            (class_name in deleted[1] and deleted[1][class_name] != len(client_ids_to_delete)):
+            raise Exception('Number of deleted object doesn\'t match with requested number')
 
-    def _delete_all_shapes_from_db(self):
+    def delete_all_shapes_from_db(self):
         for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
             self._get_shape_set(shape_type).all().delete()
 
-    def _delete_all_paths_from_db(self):
+    def delete_all_paths_from_db(self):
         self.db_job.objectpath_set.all().delete()
-
-    def delete_all_shapes_from_db(self):
-        self._delete_all_shapes_from_db()
-        self._delete_all_paths_from_db()
 
     def delete_from_db(self, data):
         self._delete_shapes_from_db(data)
         self._delete_paths_from_db(data)
 
     def update_in_db(self, data):
-        self.init_from_client(data)
-        self._update_shapes_in_db()
-        self._update_paths_in_db()
+        if self.init_from_client(data):
+            self._update_shapes_in_db()
+            self._update_paths_in_db()
 
     def save_to_db(self, data):
-        self.init_from_client(data)
-        self._save_shapes_to_db()
-        self._save_paths_to_db()
+        if self.init_from_client(data):
+            self._save_shapes_to_db()
+            self._save_paths_to_db()
 
     def to_client(self):
         data = {
@@ -1396,7 +1429,7 @@ class _AnnotationForJob(_Annotation):
         return data
 
     def validate_data_from_client(self, data):
-        self._collect_saved_ids()
+        db_client_ids = self._get_client_ids_from_db()
         client_ids = {
             'create': set(),
             'update': set(),
@@ -1428,15 +1461,15 @@ class _AnnotationForJob(_Annotation):
         if tmp_res:
             raise Exception('More than one action for shape(s) with id={}'.format(tmp_res))
 
-        tmp_res = (self.saved_client_ids - client_ids['delete']) & client_ids['create']
+        tmp_res = (db_client_ids - client_ids['delete']) & client_ids['create']
         if tmp_res:
             raise Exception('Trying to create new shape(s) with existing client id {}'.format(tmp_res))
 
-        tmp_res = client_ids['delete'] - self.saved_client_ids
+        tmp_res = client_ids['delete'] - db_client_ids
         if tmp_res:
             raise Exception('Trying to delete shape(s) with nonexistent client id {}'.format(tmp_res))
 
-        tmp_res = client_ids['update'] - (self.saved_client_ids - client_ids['delete'])
+        tmp_res = client_ids['update'] - (db_client_ids - client_ids['delete'])
         if tmp_res:
             raise Exception('Trying to update shape(s) with nonexistent client id {}'.format(tmp_res))
 
