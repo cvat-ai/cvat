@@ -73,7 +73,7 @@ def get(jid):
 
 @silk_profile(name="Save job")
 @transaction.atomic
-def save_job(jid, data, delete_old_data=False):
+def save_job(jid, data):
     """
     Save new annotations for the job.
     """
@@ -82,9 +82,6 @@ def save_job(jid, data, delete_old_data=False):
         .select_for_update().get(id=jid)
 
     annotation = _AnnotationForJob(db_job)
-    if delete_old_data:
-        annotation.delete_all_shapes_from_db()
-        annotation.delete_all_paths_from_db()
     annotation.validate_data_from_client(data)
 
     annotation.delete_from_db(data['delete'])
@@ -152,7 +149,7 @@ def save_task(tid, data):
                     break
 
         if isNonEmpty:
-            save_job(jid, _data, True)
+            save_job(jid, _data)
 
     slogger.task[tid].info("Leave save_task API: tid = {}".format(tid))
 

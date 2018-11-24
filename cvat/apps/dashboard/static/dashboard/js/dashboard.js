@@ -545,12 +545,12 @@ function uploadAnnotationRequest() {
                     let asyncSave = function() {
                         $.ajax({
                             url: '/delete/annotation/task/' + window.cvat.dashboard.taskID,
-                            type: 'POST',
+                            type: 'DELETE',
                             success: function() {
                                 asyncSaveChunk(0);
                             },
                             error: function(response) {
-                                let message = 'Annotation uploading errors was occurred: ' +
+                                let message = 'Previous annotations cannot be deleted: ' +
                                     response.responseText;
                                 showMessage(message);
                                 overlay.remove();
@@ -559,11 +559,11 @@ function uploadAnnotationRequest() {
                     }
 
                     let asyncSaveChunk = function(start) {
-                        let CHUNK_SIZE = 100000;
+                        const CHUNK_SIZE = 100000;
                         let end = start + CHUNK_SIZE;
-                        var chunk = {};
-                        var next = false;
-                        for (var prop in parsed) {
+                        let chunk = {};
+                        let next = false;
+                        for (let prop in parsed) {
                             if (parsed.hasOwnProperty(prop)) {
                                 chunk[prop] = parsed[prop].slice(start, end);
                                 next |= chunk[prop].length > 0;
@@ -571,7 +571,7 @@ function uploadAnnotationRequest() {
                         }
 
                         if (next) {
-                            const exportData = createExportContainer();
+                            let exportData = createExportContainer();
                             exportData.create = chunk;
 
                             $.ajax({
@@ -583,14 +583,14 @@ function uploadAnnotationRequest() {
                                     asyncSaveChunk(end);
                                 },
                                 error: function(response) {
-                                    let message = 'Annotation uploading errors were occurred: ' +
+                                    let message = 'Annotations uploading errors were occurred: ' +
                                         response.responseText;
                                     showMessage(message);
                                     overlay.remove();
                                 },
                             });
                         } else {
-                            let message = 'Annotation successfully uploaded';
+                            let message = 'Annotations were uploaded successfully';
                             showMessage(message);
                             overlay.remove();
                         }
