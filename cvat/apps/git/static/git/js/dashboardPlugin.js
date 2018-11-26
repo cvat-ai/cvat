@@ -199,13 +199,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let originalCreateTaskRequest = window.createTaskRequest;
     window.createTaskRequest = function(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {
-        try {
-            let gitURL = $(`#${window.cvat.git.createURLInputTextId}`).prop('value').replace(/\s/g,'');
-            oData.append('git_url', gitURL);
-        }
-        finally {
-            originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
-        }
+        $('#dashboardCreateTaskMessage').prop('value', "Cloning repository..");
+        $.post({
+            url: '/git/repository/create',
+            data: JSON.stringify({
+                'url': url,
+            }),
+            contentType: 'application/json;charset=utf-8',
+        }).done((create_data) => {
+            let checkInterval = setInterval(() => {
+                $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
+                    if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
+                        clearInterval(checkInterval);
+                        if (data.status == "failed" || data.status == "unknown") {
+                            let message = `Check request for git repostory returned "${data.status}" status`;
+                            $('#dashboardCreateTaskMessage').prop('value', `Git error. ${message}`);
+                            return;
+                        }
+                        oData.append('git_url', gitURL);
+                        oData.append('repos_path', create_data['repos_path']);
+                        originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
+                    }
+                }).fail((data) => {
+                    let message = `Check request for git repository failed. ` +
+                        `Status: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                    $('#dashboardCreateTaskMessage').prop('value', `Git error. ${message}`);
+                    clearInterval(checkInterval);
+                    return;
+                });
+            }, 1000);
+        }).fail((data) => {
+            let message = `Error was occured during updating an repos entry. ` +
+                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+            $('#dashboardCreateTaskMessage').prop('value', `Git error. ${message}`);
+            return;
+        });
     };
 
     /* GIT MODAL WINDOW PLUGIN PART */

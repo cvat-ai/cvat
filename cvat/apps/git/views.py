@@ -12,8 +12,11 @@ from cvat.apps.engine.log import slogger
 import cvat.apps.git.git as CVATGit
 
 import django_rq
+import random
 import json
 import git
+import sys
+import os
 
 
 @login_required
@@ -40,20 +43,29 @@ def check_process(request, rq_id):
 @permission_required('engine.add_task', raise_exception=True)
 def create_repository(request):
     try:
-        tid = None
         data = json.loads(request.body.decode('utf-8'))
-        tid = data['tid']
         url = data['url']
 
-        slogger.glob.info("create repository request for task #{}".format(tid))
+        if not len(url):
+            raise Exception("Repository URL isn't specified")
 
-        rq_id = "git.create.{}".format(tid)
+        random_id = str(random.randint(0, sys.maxsize))
+        random_path = os.path.join("tmp", random_id)
+        while os.path.exists(random_path):
+            random_id = str(random.randint(0, sys.maxsize))
+            random_path = os.path.join("tmp", random_id)
+
+        os.makedirs(random_path)
+
+        rq_id = "git.create.{}".format(random_id)
+        slogger.glob.info("create repository request with url {}. Cloning it to path {}".format(url, random_path))
+
         queue = django_rq.get_queue('default')
-        queue.enqueue_call(func = CVATGit.create, args = (url, tid, request.user), job_id=  rq_id)
+        queue.enqueue_call(func = CVATGit.create, args = (url, random_path, request.user), job_id=rq_id)
 
-        return JsonResponse({ "rq_id": rq_id })
+        return JsonResponse({ "rq_id": rq_id, "repos_path": random_path })
     except Exception as ex:
-        slogger.glob.error("error has been occured during creating repository request for the task #{}".format(tid), exc_info=True)
+        slogger.glob.error("error occured during create repository request", exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
 

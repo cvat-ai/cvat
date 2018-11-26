@@ -80,7 +80,7 @@ class Git:
         self.__rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user, datetime.datetime.now()))
 
 
-    def _init_host(self):
+    def init_host(self):
         user, host = self._parse_url()[1:-1]
         check_command = 'ssh-keygen -F {} | grep "Host {} found"'.format(host, host)
         add_command = 'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -q {}@{}'.format(user, host)
@@ -90,6 +90,8 @@ class Git:
             if proc.returncode > 1:
                 raise Exception('Failed ssh connection: {}'.format(stderr))
             slogger.task[self.__tid].info('Host {} has been added to known_hosts.'.format(host))
+
+        return self
 
 
     # Method connects local report if it exists
@@ -124,17 +126,7 @@ class Git:
         return "{}://{}/{}".format(scheme, host, repos)
 
 
-    # Method clones a remote repos to the local storage using SSH
-    # Method also initializes a repos after it has been cloned
-    def clone(self):
-        os.makedirs(self.__cwd)
-        ssh_url = self.ssh_url()
-
-        # Clone repository
-        slogger.task[self.__tid].info("Cloning remote repository from {}..".format(ssh_url))
-        self._init_host()
-        self.__rep = git.Repo.clone_from(ssh_url, self.__cwd)
-
+    def configurate(self):
         # Setup config file for CVAT_HEADLESS user
         slogger.task[self.__tid].info("User config initialization..")
         with self.__rep.config_writer() as cw:
@@ -155,6 +147,20 @@ class Git:
                     "heads but 'master' branch push process has been failed", exc_info = True)
 
         os.makedirs(self.__diffs_dir, exist_ok = True)
+
+
+    # Method clones a remote repos to the local storage using SSH
+    # Method also initializes a repos after it has been cloned
+    def clone(self):
+        os.makedirs(self.__cwd)
+        ssh_url = self.ssh_url()
+
+        # Clone repository
+        slogger.task[self.__tid].info("Cloning remote repository from {}..".format(ssh_url))
+        self.init_host()
+        self.__rep = git.Repo.clone_from(ssh_url, self.__cwd)
+
+        self.configurate()
 
 
     # Method is some wrapper for clone
@@ -192,7 +198,7 @@ class Git:
             remote_branches.append(remote_branch.split("/")[-1])
         if "master" in remote_branches:
             try:
-                self._init_host()
+                self.init_host()
                 self.__rep.git.pull("origin", "master")
             except git.exc.GitError:
                 # Merge conflicts
@@ -283,7 +289,7 @@ class Git:
         ])
         self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user, datetime.datetime.now()))
 
-        self._init_host()
+        self.init_host()
         self.__rep.git.push("origin", self.__user, "--force")
 
         shutil.rmtree(self.__diffs_dir, True)
@@ -324,31 +330,22 @@ class Git:
 
 
 @transaction.atomic
-def create(url, tid, user):
+def create(url, path, user):
     try:
-        db_task = Task.objects.get(pk = tid)
-        if GitData.objects.filter(pk = db_task).exists():
-            raise Exception('git repository for task already exists')
-
-        db_git = GitData()
-        db_git.url = url
-        db_git.task = db_task
-        db_git.save()
-
-        db_git = GitData.objects.select_for_update().get(pk = db_task)
-        Git(url, tid, user).init_repos()
+        fake_tid = -1
+        ssh_url = Git(url, fake_tid, user).init_host().ssh_url()
+        git.Repo.clone_from(ssh_url, path)
     except Exception as ex:
-        if isinstance(db_git, GitData):
-            db_git.delete()
-        slogger.task[tid].exception('repository create errors occured', exc_info = True)
+        slogger.glob.exception('repository cloning errors occured', exc_info = True)
         raise ex
 
 
 def _initial_create(tid, params):
-    url = params['git_url']
     user = params['owner']
-    if len(url):
-        create(url, tid, user)
+    url = params['git_url']
+    cloned_repos_path = params['repos_path']
+    os.rename(cloned_repos_path, os.path.join(os.getcwd(), "data", tid))
+    Git(url, tid, user).init_repos().configurate()
 
 
 @transaction.atomic
