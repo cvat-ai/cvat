@@ -303,12 +303,6 @@ class Git:
         shutil.rmtree(self.__diffs_dir, True)
 
 
-    # Method deletes a local repos
-    def delete(self):
-        if os.path.isdir(self.__cwd):
-            shutil.rmtree(self.__cwd)
-
-
     # Method checks status of repository annotation
     def remote_status(self, last_save):
         anno_archive_name = os.path.join(self.__cwd, "annotation", "annotation.zip")
@@ -338,17 +332,6 @@ class Git:
                     raise Exception("Bad local repository.")
 
 
-@transaction.atomic
-def create(url, path, user):
-    try:
-        fake_tid = -1
-        ssh_url = Git(url, fake_tid, user).init_host().ssh_url()
-        git.Repo.clone_from(ssh_url, path)
-    except Exception as ex:
-        slogger.glob.exception('repository cloning errors occured', exc_info = True)
-        raise ex
-
-
 def _initial_create(tid, params):
     if 'git_url' in params:
         user = params['owner']
@@ -363,18 +346,13 @@ def _initial_create(tid, params):
         db_git.save()
 
 
-@transaction.atomic
-def update(url, tid, user):
+def create(url, path, user):
     try:
-        db_task = Task.objects.get(pk = tid)
-        db_git = GitData.objects.select_for_update().get(pk = db_task)
-
-        Git(url, tid, user).init_repos()
-
-        db_git.url = url
-        db_git.save()
+        fake_tid = -1
+        ssh_url = Git(url, fake_tid, user).init_host().ssh_url()
+        git.Repo.clone_from(ssh_url, path)
     except Exception as ex:
-        slogger.task[tid].exception('repository update errors occured', exc_info = True)
+        slogger.glob.exception('repository cloning errors occured', exc_info = True)
         raise ex
 
 
@@ -436,16 +414,6 @@ def onsave(jid, data):
                 f.write(json.dumps(diff))
     except GitData.ObjectDoesNotExist:
         pass
-
-
-@transaction.atomic
-def delete(tid, user):
-    db_task = Task.objects.get(pk = tid)
-
-    if GitData.objects.filter(pk = db_task).exists():
-        db_git = GitData.objects.select_for_update().get(pk = db_task)
-        Git(db_git.url, tid, user).delete()
-        db_git.delete()
 
 
 add_plugin("save_job", onsave, "after", exc_ok = False)

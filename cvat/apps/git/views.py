@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
-from django.contrib.auth.decorators import permission_required
 from django.db import transaction
 
 from cvat.apps.authentication.decorators import login_required
@@ -40,7 +39,6 @@ def check_process(request, rq_id):
 
 
 @login_required
-@permission_required('engine.add_task', raise_exception=True)
 def create_repository(request):
     try:
         data = json.loads(request.body.decode('utf-8'))
@@ -71,7 +69,6 @@ def create_repository(request):
 
 
 @login_required
-@permission_required(perm=['engine.view_task'], raise_exception=True)
 def push_repository(request, tid):
     try:
         slogger.task[tid].info("push repository request")
@@ -90,7 +87,6 @@ def push_repository(request, tid):
 
 
 @login_required
-@permission_required(perm=['engine.view_task'], raise_exception=True)
 def get_repository(request, tid):
     try:
         slogger.task[tid].info("get repository request")
@@ -98,45 +94,6 @@ def get_repository(request, tid):
     except Exception as ex:
         try:
             slogger.task[tid].error("error has been occured during getting repository info request", exc_info=True)
-        except:
-            pass
-        return HttpResponseBadRequest(str(ex))
-
-
-@login_required
-@permission_required(perm=['engine.view_task', 'engine.change_task'], raise_exception=True)
-def update_repository(request):
-    try:
-        tid = None
-        data = json.loads(request.body.decode('utf-8'))
-        tid = data['tid']
-        url = data['url']
-
-        slogger.task[tid].info("update repository request")
-
-        rq_id = "git.update.{}".format(tid)
-        queue = django_rq.get_queue('default')
-        queue.enqueue_call(func = CVATGit.update, args = (url, tid, request.user), job_id = rq_id)
-
-        return JsonResponse({ "rq_id": rq_id })
-    except Exception as ex:
-        try:
-            slogger.task[tid].error("error has been occured during updating repository request", exc_info=True)
-        except:
-            pass
-        return HttpResponseBadRequest(str(ex))
-
-
-@login_required
-@permission_required(perm=['engine.view_task', 'engine.change_task'], raise_exception=True)
-def delete_repository(request, tid):
-    try:
-        slogger.task[tid].info("delete repository request")
-        CVATGit.delete(tid, request.user)
-        return HttpResponse()
-    except Exception as ex:
-        try:
-            slogger.task[tid].error("error has been occured during deleting repository request", exc_info=True)
         except:
             pass
         return HttpResponseBadRequest(str(ex))

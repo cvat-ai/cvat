@@ -28,7 +28,7 @@ window.cvat.git = {
     reposWindowId: 'gitReposWindow',
     closeReposWindowButtonId: 'closeGitReposButton',
     reposURLTextId: 'gitReposURLText',
-    reposPushButtonId: 'gitReposPushButton',
+    reposSyncButtonId: 'gitReposSyncButton',
     labelStatusId: 'gitReposLabelStatus',
     labelMessageId: 'gitReposLabelMessage',
     createURLInputTextId: 'gitCreateURLInputText',
@@ -38,12 +38,12 @@ window.cvat.git = {
         let gitLabelMessage = $(`#${window.cvat.git.labelMessageId}`);
         let gitLabelStatus = $(`#${window.cvat.git.labelStatusId}`);
         let reposURLText = $(`#${window.cvat.git.reposURLTextId}`);
-        let pushButton = $(`#${window.cvat.git.reposPushButtonId}`);
+        let syncButton = $(`#${window.cvat.git.reposSyncButtonId}`);
 
-        reposURLText.prop('value', '');
+        reposURLText.prop('value', 'Getting an info..');
         gitLabelMessage.css('color', '#cccc00').text('Getting an info..');
         gitLabelStatus.css('color', '#cccc00').text('\u25cc');
-        pushButton.attr("disabled", true);
+        syncButton.attr("disabled", true);
 
         window.cvat.git.getGitURL((data) => {
             if (!data.url.value) {
@@ -64,7 +64,7 @@ window.cvat.git = {
             if (["empty", "!sync"].includes(data.status.value)) {
                 gitLabelStatus.css('color', 'red').text('\u2606');
                 gitLabelMessage.css('color', 'red').text('Repository is not synchronized');
-                pushButton.attr("disabled", false);
+                syncButton.attr("disabled", false);
             }
             else if (data.status.value == "sync") {
                 gitLabelStatus.css('color', '#cccc00').text('\u2605');
@@ -94,85 +94,6 @@ window.cvat.git = {
         $.get(`/git/repository/get/${gitWindow.attr('current_tid')}`).done(
             success
         ).fail(error);
-    },
-
-    removeGitURL: () => {
-        let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
-        $.get(`/git/repository/delete/${gitWindow.attr('current_tid')}`).done(
-            window.cvat.git.updateState
-        ).fail((data) => {
-            let message = `Error was occured during deleting an repos entry. ` +
-                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-            window.cvat.git.badSituation(message);
-        });
-    },
-
-    updateGitURL: (url) => {
-        let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
-        $.post({
-            url: '/git/repository/update',
-            data: JSON.stringify({
-                'tid': +gitWindow.attr('current_tid'),
-                'url': url,
-            }),
-            contentType: 'application/json;charset=utf-8',
-        }).done((data) => {
-            let checkInterval = setInterval(() => {
-                $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
-                    if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
-                        clearInterval(checkInterval);
-                        if (data.status == "failed" || data.status == "unknown") {
-                            let message = `Check request for git repostory returned "${data.status}" status`;
-                            window.cvat.git.badSituation(message);
-                        }
-                        window.cvat.git.updateState();
-                    }
-                }).fail((data) => {
-                    let message = `Check request for git repository failed. ` +
-                        `Status: ${data.status}. Message: ${data.responseText || data.statusText}`;
-                    clearInterval(checkInterval);
-                    window.cvat.git.badSituation(message);
-                });
-            }, 1000);
-        }).fail((data) => {
-            let message = `Error was occured during updating an repos entry. ` +
-                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-            window.cvat.git.badSituation(message);
-        });
-    },
-
-    createGitURL: (url) => {
-        let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
-        $.post({
-            url: '/git/repository/create',
-            data: JSON.stringify({
-                'tid': +gitWindow.attr('current_tid'),
-                'url': url,
-            }),
-            contentType: 'application/json;charset=utf-8',
-        }).done((data) => {
-            let checkInterval = setInterval(() => {
-                $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
-                    if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
-                        clearInterval(checkInterval);
-                        if (data.status == "failed" || data.status == "unknown") {
-                            let message = `Check request for git repostory returned "${data.status}" status`;
-                            window.cvat.git.badSituation(message);
-                        }
-                        window.cvat.git.updateState();
-                    }
-                }).fail((data) => {
-                    let message = `Check request for git repository failed. ` +
-                        `Status: ${data.status}. Message: ${data.responseText || data.statusText}`;
-                    clearInterval(checkInterval);
-                    window.cvat.git.badSituation(message);
-                });
-            }, 1000);
-        }).fail((data) => {
-            let message = `Error was occured during creating an repos entry. ` +
-                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-            window.cvat.git.badSituation(message);
-        });
     },
 
     badSituation: (message) => {
@@ -270,7 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             </div>
                         </td>
                         <td style="width: 20%;">
-                            <button style="width: 70%;" id="${window.cvat.git.reposPushButtonId}" class="regular h2"> Push </button>
+                            <button style="width: 70%;" id="${window.cvat.git.reposSyncButtonId}" class="regular h2"> Sync </button>
                         </td>
                     </tr>
                 </table>
@@ -283,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
     let closeRepositoryWindowButton = $(`#${window.cvat.git.closeReposWindowButtonId}`);
-    let repositoryPushButton = $(`#${window.cvat.git.reposPushButtonId}`);
+    let repositorySyncButton = $(`#${window.cvat.git.reposSyncButtonId}`);
     let gitLabelMessage = $(`#${window.cvat.git.labelMessageId}`);
     let gitLabelStatus = $(`#${window.cvat.git.labelStatusId}`);
 
@@ -291,10 +212,10 @@ document.addEventListener("DOMContentLoaded", () => {
         gitWindow.addClass('hidden');
     });
 
-    repositoryPushButton.on('click', () => {
+    repositorySyncButton.on('click', () => {
         gitLabelMessage.css('color', '#cccc00').text('Pushing..');
         gitLabelStatus.css('color', '#cccc00').text('\u25cc');
-        repositoryPushButton.attr("disabled", true);
+        repositorySyncButton.attr("disabled", true);
 
         $.get(`/git/repository/push/${gitWindow.attr('current_tid')}`).done((data) => {
             let checkInterval = setInterval(() => {
