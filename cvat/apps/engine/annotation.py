@@ -1457,18 +1457,20 @@ class _AnnotationForJob(_Annotation):
         shape_types = ['boxes', 'points', 'polygons', 'polylines', 'box_paths',
             'points_paths', 'polygon_paths', 'polyline_paths']
 
-        is_need_set_id = False
+        max_id = self.db_job.max_shape_id
         for shape_type in shape_types:
-            if any('id' not in shape or shape['id'] == -1 for shape in data[shape_type]):
-                is_need_set_id = True
-                break
+            if not data[shape_type]:
+                continue
+            for shape in data[shape_type]:
+                if 'id' in shape:
+                    max_id = max(max_id, shape['id'])
 
-        if is_need_set_id:
-            start_id = self.db_job.max_shape_id + 1
-            for shape_type in shape_types:
-                for shape in data[shape_type]:
-                    shape['id'] = start_id
-                    start_id += 1
+        max_id += 1
+        for shape_type in shape_types:
+            for shape in data[shape_type]:
+                if 'id' not in shape or shape['id'] == -1:
+                    shape['id'] = max_id
+                    max_id += 1
 
 class _AnnotationForSegment(_Annotation):
     def __init__(self, db_segment):
