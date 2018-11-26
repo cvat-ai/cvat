@@ -61,19 +61,18 @@ window.cvat.git = {
                 return;
             }
 
-            if (data.status.value == "actual") {
-                gitLabelStatus.css('color', 'darkgreen').text('\u2605');
-                gitLabelMessage.css('color', 'darkgreen').text('Repository contains actual data');
-            }
-            else if (data.status.value == "obsolete") {
-                gitLabelStatus.css('color', 'darkgreen').text('\u2606');
-                gitLabelMessage.css('color', 'black').text('Repository contains obsolete data');
-                pushButton.attr("disabled", false);
-            }
-            else if (data.status.value == "empty") {
+            if (["empty", "!sync"].includes(data.status.value)) {
                 gitLabelStatus.css('color', 'red').text('\u2606');
-                gitLabelMessage.css('color', 'red').text('Empty local repository');
+                gitLabelMessage.css('color', 'red').text('Repository is not synchronized');
                 pushButton.attr("disabled", false);
+            }
+            else if (data.status.value == "sync") {
+                gitLabelStatus.css('color', '#cccc00').text('\u2605');
+                gitLabelMessage.css('color', 'black').text('Synchronized (merge required)');
+            }
+            else if (data.status.value == "merged") {
+                gitLabelStatus.css('color', 'darkgreen').text('\u2605');
+                gitLabelMessage.css('color', 'darkgreen').text('Synchronized');
             }
             else {
                 let message = `Got unknown repository status: ${data.status.value}`;
@@ -199,41 +198,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let originalCreateTaskRequest = window.createTaskRequest;
     window.createTaskRequest = function(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {
-        $('#dashboardCreateTaskMessage').prop('value', "Cloning repository..");
-        $.post({
-            url: '/git/repository/create',
-            data: JSON.stringify({
-                'url': url,
-            }),
-            contentType: 'application/json;charset=utf-8',
-        }).done((create_data) => {
-            let checkInterval = setInterval(() => {
-                $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
-                    if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
-                        clearInterval(checkInterval);
-                        if (data.status == "failed" || data.status == "unknown") {
-                            let message = `Check request for git repostory returned "${data.status}" status`;
-                            $('#dashboardCreateTaskMessage').prop('value', `Git error. ${message}`);
-                            return;
+        let gitURL = $(`#${window.cvat.git.createURLInputTextId}`).prop('value').replace(/\s/g,'');
+        if (gitURL.length) {
+            let taskMessage = $('#dashboardCreateTaskMessage');
+            taskMessage.css('color', 'green');
+            taskMessage.text('Cloning a repository..');
+            $.post({
+                url: '/git/repository/create',
+                data: JSON.stringify({
+                    'url': gitURL,
+                }),
+                contentType: 'application/json;charset=utf-8',
+            }).done((create_data) => {
+                let checkInterval = setInterval(() => {
+                    $.get(`/git/repository/check/${create_data.rq_id}`).done((data) => {
+                        if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
+                            clearInterval(checkInterval);
+                            if (data.status == "failed" || data.status == "unknown") {
+                                let message = `Check request for git repostory returned "${data.status}" status`;
+                                onError(`Git error. ${message}`);
+                                onComplete();
+                                return;
+                            }
+                            oData.append('git_url', gitURL);
+                            oData.append('repos_path', create_data['repos_path']);
+                            originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
                         }
-                        oData.append('git_url', gitURL);
-                        oData.append('repos_path', create_data['repos_path']);
-                        originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
-                    }
-                }).fail((data) => {
-                    let message = `Check request for git repository failed. ` +
-                        `Status: ${data.status}. Message: ${data.responseText || data.statusText}`;
-                    $('#dashboardCreateTaskMessage').prop('value', `Git error. ${message}`);
-                    clearInterval(checkInterval);
-                    return;
-                });
-            }, 1000);
-        }).fail((data) => {
-            let message = `Error was occured during updating an repos entry. ` +
-                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-            $('#dashboardCreateTaskMessage').prop('value', `Git error. ${message}`);
-            return;
-        });
+                    }).fail((data) => {
+                        let message = `Check request for git repository failed. ` +
+                            `Status: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                        onError(`Git error. ${message}`);
+                        onComplete();
+                        clearInterval(checkInterval);
+                        return;
+                    });
+                }, 1000);
+            }).fail((data) => {
+                let message = `Error was occured during updating an repos entry. ` +
+                    `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+                onError(`Git error. ${message}`);
+                onComplete();
+                return;
+            });
+        }
+        else {
+            originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
+        }
     };
 
     /* GIT MODAL WINDOW PLUGIN PART */
