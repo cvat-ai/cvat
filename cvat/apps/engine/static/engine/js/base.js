@@ -245,12 +245,13 @@ function getExportTargetContainer(export_type, shape_type, container) {
 }
 
 class IdGenerator {
-    constructor(startId=0) {
+    constructor(startId=0, autoIncrement=true) {
         this._startId = startId;
+        this._autoIncrement = autoIncrement;
     }
 
     next() {
-        return this._startId++;
+        return this._autoIncrement ? this._startId++ : this._startId;
     }
 
     reset(startId=0) {

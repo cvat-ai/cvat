@@ -524,12 +524,6 @@ function uploadAnnotationRequest() {
         $.ajax({
             url: '/get/task/' + window.cvat.dashboard.taskID,
             success: function(data) {
-                let maxId = -1;
-
-                for (const job of data.jobs) {
-                    maxId = Math.max(maxId, job.max_shape_id);
-                }
-
                 let annotationParser = new AnnotationParser({
                         start: 0,
                         stop: data.size,
@@ -537,7 +531,7 @@ function uploadAnnotationRequest() {
                         flipped: data.flipped
                     },
                     new LabelsInfo(data.spec),
-                    new IdGenerator(maxId + 1),
+                    new IdGenerator(-1, false),
                 );
 
                 let asyncParse = function() {

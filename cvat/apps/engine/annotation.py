@@ -73,7 +73,7 @@ def get(jid):
 
 @silk_profile(name="Save job")
 @transaction.atomic
-def save_job(jid, data):
+def save_job(jid, data, force_set_ids=False):
     """
     Save new annotations for the job.
     """
@@ -82,6 +82,8 @@ def save_job(jid, data):
         .select_for_update().get(id=jid)
 
     annotation = _AnnotationForJob(db_job)
+    if force_set_ids:
+        annotation.force_set_client_id(data['create'])
     client_ids = annotation.validate_data_from_client(data)
 
     annotation.delete_from_db(data['delete'])
@@ -153,7 +155,7 @@ def save_task(tid, data):
                     break
 
         if isNonEmpty:
-            save_job(jid, _data)
+            save_job(jid, _data, True)
 
     slogger.task[tid].info("Leave save_task API: tid = {}".format(tid))
 
@@ -1451,6 +1453,16 @@ class _AnnotationForJob(_Annotation):
             raise Exception('Trying to create shape(s) with client id {} less than allowed value {}'.format(tmp_res, max_id))
 
         return client_ids
+
+    def force_set_client_id(self, data):
+        shape_types = ['boxes', 'points', 'polygons', 'polylines', 'box_paths',
+            'points_paths', 'polygon_paths', 'polyline_paths']
+
+        start_id = self.db_job.max_shape_id + 1
+        for shape_type in shape_types:
+            for shape in data[shape_type]:
+                shape['id'] = start_id
+                start_id += 1
 
 class _AnnotationForSegment(_Annotation):
     def __init__(self, db_segment):
