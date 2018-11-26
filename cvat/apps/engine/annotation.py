@@ -82,7 +82,7 @@ def save_job(jid, data):
         .select_for_update().get(id=jid)
 
     annotation = _AnnotationForJob(db_job)
-    annotation.validate_data_from_client(data)
+    client_ids = annotation.validate_data_from_client(data)
 
     annotation.delete_from_db(data['delete'])
     annotation.save_to_db(data['create'])
@@ -90,6 +90,10 @@ def save_job(jid, data):
 
     db_job.segment.task.updated_date = timezone.now()
     db_job.segment.task.save()
+
+    db_job.max_shape_id = max(db_job.max_shape_id, max(client_ids['create']) if client_ids['create'] else -1)
+    db_job.save()
+
     slogger.job[jid].info("Leave save_job API: jid = {}".format(jid))
 
 @silk_profile(name="Clear job")
@@ -109,9 +113,6 @@ def clear_job(jid):
     db_job.segment.task.updated_date = timezone.now()
     db_job.segment.task.save()
     slogger.job[jid].info("Leave clear_job API: jid = {}".format(jid))
-
-    db_job.max_shape_id = max(db_job.max_shape_id, annotation.get_max_saved_id())
-    db_job.save()
 
 # pylint: disable=unused-argument
 @silk_profile(name="Save task")
@@ -1401,8 +1402,8 @@ class _AnnotationForJob(_Annotation):
         return data
 
     def validate_data_from_client(self, data):
-        db_client_ids = self._get_client_ids_from_db()
         client_ids = {
+            'saved': self._get_client_ids_from_db(),
             'create': set(),
             'update': set(),
             'delete': set(),
@@ -1433,20 +1434,23 @@ class _AnnotationForJob(_Annotation):
         if tmp_res:
             raise Exception('More than one action for shape(s) with id={}'.format(tmp_res))
 
-        tmp_res = (db_client_ids - client_ids['delete']) & client_ids['create']
+        tmp_res = (client_ids['saved'] - client_ids['delete']) & client_ids['create']
         if tmp_res:
             raise Exception('Trying to create new shape(s) with existing client id {}'.format(tmp_res))
 
-        tmp_res = client_ids['delete'] - db_client_ids
+        tmp_res = client_ids['delete'] - client_ids['saved']
         if tmp_res:
             raise Exception('Trying to delete shape(s) with nonexistent client id {}'.format(tmp_res))
 
-        tmp_res = client_ids['update'] - (db_client_ids - client_ids['delete'])
+        tmp_res = client_ids['update'] - (client_ids['saved'] - client_ids['delete'])
         if tmp_res:
             raise Exception('Trying to update shape(s) with nonexistent client id {}'.format(tmp_res))
 
-    def get_max_saved_id(self):
-        return max(self.saved_client_ids) if self.saved_client_ids else -1
+        max_id = self.db_job.max_shape_id
+        if any(new_client_id <= max_id for new_client_id in client_ids['create']):
+            raise Exception('Trying to cretae shape(s) with client id {} less than allowed value {}'.format(tmp_res, max_id))
+
+        return client_ids
 
 class _AnnotationForSegment(_Annotation):
     def __init__(self, db_segment):
