@@ -1047,8 +1047,6 @@ class _AnnotationForJob(_Annotation):
             db_path_attrvals = []
             db_shapes = []
             db_shape_attrvals = []
-            # Need to be sure saved_db_ids is actual.
-            self._collect_saved_ids()
 
             shapes = getattr(self, shape_type)
             for path in shapes:
@@ -1153,6 +1151,7 @@ class _AnnotationForJob(_Annotation):
                     db_attrval.points_id = db_shapes[db_attrval.points_id].id
 
             self._get_shape_attr_class(shape_type).objects.bulk_create(db_shape_attrvals)
+            self._collect_saved_ids()
 
     def _get_shape_set(self, shape_type):
         if shape_type == 'polygons':
@@ -1165,8 +1164,6 @@ class _AnnotationForJob(_Annotation):
             return self.db_job.labeledpoints_set
 
     def _save_shapes_to_db(self):
-        # Need to be sure saved_db_ids is actual.
-        self._collect_saved_ids()
         for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
             db_shapes = []
             db_attrvals = []
@@ -1226,6 +1223,7 @@ class _AnnotationForJob(_Annotation):
                     db_attrval.points_id = db_shapes[db_attrval.points_id].id
 
             self._get_shape_attr_class(shape_type).objects.bulk_create(db_attrvals)
+        self._collect_saved_ids()
 
     def _update_shapes_in_db(self):
         client_ids_to_delete = {}
