@@ -6,7 +6,8 @@
 
 /* exported
     ExportType
-    IdGenerator
+    IncrementIdGenerator
+    ConstIdGenerator
     confirm
     createExportContainer
     dumpAnnotationRequest
@@ -244,7 +245,7 @@ function getExportTargetContainer(export_type, shape_type, container) {
     return shape_container_target;
 }
 
-class IdGenerator {
+class IncrementIdGenerator {
     constructor(startId=0, autoIncrement=true) {
         this._startId = startId;
         this._autoIncrement = autoIncrement;
@@ -256,6 +257,16 @@ class IdGenerator {
 
     reset(startId=0) {
         this._startId = startId;
+    }
+}
+
+class ConstIdGenerator {
+    constructor(startId=-1) {
+        this._startId = startId;
+    }
+
+    next() {
+        return this._startId;
     }
 }
 

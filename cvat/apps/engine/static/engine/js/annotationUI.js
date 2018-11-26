@@ -100,7 +100,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     window.cvat.config = new Config();
 
     // Setup components
-    let idGenerator = new IdGenerator(job.max_shape_id + 1); // todo add initial value
+    let idGenerator = new IncrementIdGenerator(job.max_shape_id + 1);
     let annotationParser = new AnnotationParser(job, window.cvat.labelsInfo, idGenerator);
 
     let shapeCollectionModel = new ShapeCollectionModel(idGenerator).import(shapeData, true);

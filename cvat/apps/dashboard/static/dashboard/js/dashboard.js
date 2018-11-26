@@ -531,7 +531,7 @@ function uploadAnnotationRequest() {
                         flipped: data.flipped
                     },
                     new LabelsInfo(data.spec),
-                    new IdGenerator(-1, false),
+                    new ConstIdGenerator(-1),
                 );
 
                 let asyncParse = function() {
