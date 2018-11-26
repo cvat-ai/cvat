@@ -27,8 +27,7 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
 window.cvat.git = {
     reposWindowId: 'gitReposWindow',
     closeReposWindowButtonId: 'closeGitReposButton',
-    reposURLInputTextId: 'gitReposInputText',
-    reposURLUpdateButtonId: 'gitReposUpdateButton',
+    reposURLTextId: 'gitReposURLText',
     reposPushButtonId: 'gitReposPushButton',
     labelStatusId: 'gitReposLabelStatus',
     labelMessageId: 'gitReposLabelMessage',
@@ -38,27 +37,23 @@ window.cvat.git = {
         let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
         let gitLabelMessage = $(`#${window.cvat.git.labelMessageId}`);
         let gitLabelStatus = $(`#${window.cvat.git.labelStatusId}`);
-        let reposURLInput = $(`#${window.cvat.git.reposURLInputTextId}`);
-        let updateButton = $(`#${window.cvat.git.reposURLUpdateButtonId}`);
+        let reposURLText = $(`#${window.cvat.git.reposURLTextId}`);
         let pushButton = $(`#${window.cvat.git.reposPushButtonId}`);
 
-        reposURLInput.prop('value', '');
+        reposURLText.prop('value', '');
         gitLabelMessage.css('color', '#cccc00').text('Getting an info..');
         gitLabelStatus.css('color', '#cccc00').text('\u25cc');
-        updateButton.attr("disabled", true);
         pushButton.attr("disabled", true);
 
         window.cvat.git.getGitURL((data) => {
-            updateButton.attr("disabled", false);
-
             if (!data.url.value) {
                 gitLabelMessage.css('color', 'black').text('Repository is not attached');
-                reposURLInput.attr('placeholder', 'Repository is not attached');
+                reposURLText.attr('placeholder', 'Repository is not attached');
                 return;
             }
 
-            reposURLInput.attr('placeholder', '');
-            reposURLInput.prop('value', data.url.value);
+            reposURLText.attr('placeholder', '');
+            reposURLText.prop('value', data.url.value);
 
             if (!data.status.value) {
                 gitLabelStatus.css('color', 'red').text('\u26a0');
@@ -87,7 +82,6 @@ window.cvat.git = {
                 throw Error(message);
             }
         }, (data) => {
-            updateButton.attr("disabled", false);
             gitWindow.addClass('hidden');
             let message = `Error was occured during get an repos URL. ` +
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
@@ -223,24 +217,21 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td style="width: 20%;">
                             <label class="regular h2"> Repository URL: </label>
                         </td>
-                        <td style="width: 60%;">
-                            <input class="regular h2" type="text" style="width: 90%;" id="${window.cvat.git.reposURLInputTextId}"/>
-                        </td>
-                        <td style="width: 15%;">
-                            <button style="width: 70%;" id="${window.cvat.git.reposURLUpdateButtonId}" class="regular h2"> Update </button>
+                        <td style="width: 80%;" colspan="2">
+                            <input class="regular h2" type="text" style="width: 90%;" id="${window.cvat.git.reposURLTextId}" readonly/>
                         </td>
                     </td>
                     <tr>
-                        <td>
+                        <td style="width: 20%;">
                             <label class="regular h2"> Status: </label>
                         </td>
-                        <td>
+                        <td style="width: 60%;">
                             <div>
                                 <label class="regular h2" id="${window.cvat.git.labelStatusId}"> </label>
                                 <label class="regular h2" id="${window.cvat.git.labelMessageId}"> </label>
                             </div>
                         </td>
-                        <td>
+                        <td style="width: 20%;">
                             <button style="width: 70%;" id="${window.cvat.git.reposPushButtonId}" class="regular h2"> Push </button>
                         </td>
                     </tr>
@@ -254,8 +245,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
     let closeRepositoryWindowButton = $(`#${window.cvat.git.closeReposWindowButtonId}`);
-    let repositoryURLInput = $(`#${window.cvat.git.reposURLInputTextId}`);
-    let repositoryUpdateButton = $(`#${window.cvat.git.reposURLUpdateButtonId}`);
     let repositoryPushButton = $(`#${window.cvat.git.reposPushButtonId}`);
     let gitLabelMessage = $(`#${window.cvat.git.labelMessageId}`);
     let gitLabelStatus = $(`#${window.cvat.git.labelStatusId}`);
@@ -264,39 +253,10 @@ document.addEventListener("DOMContentLoaded", () => {
         gitWindow.addClass('hidden');
     });
 
-    repositoryUpdateButton.on('click', () => {
-        gitLabelMessage.css('color', '#cccc00').text('Updating..');
-        gitLabelStatus.css('color', '#cccc00').text('\u25cc');
-        repositoryUpdateButton.attr("disabled", true);
-        repositoryPushButton.attr("disabled", true);
-
-        let gitURL = repositoryURLInput.prop('value').replace(/\s/g,'');
-        if (!gitURL) {
-            window.cvat.git.removeGitURL();
-        }
-        else {
-            window.cvat.git.getGitURL((data) => {
-                if (!data.url.value) {
-                    window.cvat.git.createGitURL(gitURL);
-                }
-                else {
-                    window.cvat.git.updateGitURL(gitURL);
-                }
-            }, (data) => {
-                let message = `Error was occured during getting an git URL. ` +
-                    `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-                showMessage(message);
-                throw Error(message);
-            });
-        }
-    });
-
     repositoryPushButton.on('click', () => {
         gitLabelMessage.css('color', '#cccc00').text('Pushing..');
         gitLabelStatus.css('color', '#cccc00').text('\u25cc');
-        repositoryUpdateButton.attr("disabled", true);
         repositoryPushButton.attr("disabled", true);
-
 
         $.get(`/git/repository/push/${gitWindow.attr('current_tid')}`).done((data) => {
             let checkInterval = setInterval(() => {

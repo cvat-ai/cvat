@@ -95,7 +95,7 @@ def save_job(jid, data):
     deleted = sum([  len(data["delete"][key]) for key in data["delete"] ])
     created = sum([  len(data["create"][key]) for key in data["create"] ])
 
-    if updated or deleted or created or delete_old_data:
+    if updated or deleted or created:
         db_job.segment.task.updated_date = timezone.now()
 
     db_job.segment.task.save()
