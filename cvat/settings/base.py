@@ -1,4 +1,3 @@
-
 # Copyright (C) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -55,7 +54,7 @@ INSTALLED_APPS = [
     'sendfile',
     'dj_pagination',
     'revproxy',
-    'rules'
+    'rules',
 ]
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
@@ -174,6 +173,10 @@ CACHEOPS = {
     # Automatically cache any Task.objects.get() calls for 15 minutes
     # This also includes .first() and .last() calls.
     'engine.task': {'ops': 'get', 'timeout': 60*15},
+
+    # Automatically cache any Job.objects.get() calls for 15 minutes
+    # This also includes .first() and .last() calls.
+    'engine.job': {'ops': 'get', 'timeout': 60*15},
 }
 
 CACHEOPS_DEGRADE_ON_FAILURE = True

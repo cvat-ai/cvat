@@ -10,10 +10,11 @@
 const AAMUndefinedKeyword = '__undefined__';
 
 class AAMModel extends Listener {
-    constructor(shapeCollection, focus) {
+    constructor(shapeCollection, focus, fit) {
         super('onAAMUpdate', () => this);
         this._shapeCollection = shapeCollection;
         this._focus = focus;
+        this._fit = fit;
         this._activeAAM = false;
         this._activeIdx = null;
         this._active = null;
@@ -167,6 +168,7 @@ class AAMModel extends Listener {
 
             // Notify for remove aam UI
             this.notify();
+            this._fit();
         }
     }
 

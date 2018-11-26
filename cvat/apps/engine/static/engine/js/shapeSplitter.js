@@ -28,7 +28,7 @@ class ShapeSplitter {
     split(track, frame) {
         let keyFrames = track.keyframes.sort((a,b) => a - b);
         let exported = track.export();
-        if (frame > keyFrames[0]) {
+        if (frame > +keyFrames[0]) {
             let curInterpolation = track.interpolate(frame);
             let prevInterpolation = track.interpolate(frame - 1);
             let curAttributes = this._convertMutableAttributes(curInterpolation.attributes);
@@ -45,12 +45,19 @@ class ShapeSplitter {
                 }
             }
 
-            if (!prevInterpolation.position.outside && track.type.split('_')[1] === 'box') {
-                prevPositionList.push(Object.assign(prevInterpolation.position, {
-                    outside: true,
-                    frame: frame,
+            if (track.type.split('_')[1] === 'box') {
+                prevPositionList.push(Object.assign({}, prevInterpolation.position, {
+                    frame: frame - 1,
                     attributes: prevAttrributes,
                 }));
+
+                if (!prevInterpolation.position.outside) {
+                    prevPositionList.push(Object.assign({}, prevInterpolation.position, {
+                        outside: true,
+                        frame: frame,
+                        attributes: [],
+                    }));
+                }
             }
 
             curPositionList.push(Object.assign(curInterpolation.position, {
