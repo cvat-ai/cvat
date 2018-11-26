@@ -525,11 +525,14 @@ function uploadAnnotationRequest() {
             url: '/get/task/' + window.cvat.dashboard.taskID,
             success: function(data) {
                 let annotationParser = new AnnotationParser({
-                    start: 0,
-                    stop: data.size,
-                    image_meta_data: data.image_meta_data,
-                    flipped: data.flipped
-                }, new LabelsInfo(data.spec));
+                        start: 0,
+                        stop: data.size,
+                        image_meta_data: data.image_meta_data,
+                        flipped: data.flipped
+                    },
+                    new LabelsInfo(data.spec),
+                    new ConstIdGenerator(-1),
+                );
 
                 let asyncParse = function() {
                     let parsed = null;

@@ -8,14 +8,14 @@
 "use strict";
 
 class AnnotationParser {
-    constructor(job, labelsInfo) {
+    constructor(job, labelsInfo, idGenerator) {
         this._parser = new DOMParser();
         this._startFrame = job.start;
         this._stopFrame = job.stop;
         this._flipped = job.flipped;
         this._im_meta = job.image_meta_data;
         this._labelsInfo = labelsInfo;
-        this._id_set = new Set();
+        this._idGen = idGenerator;
     }
 
     _xmlParseError(parsedXML) {
@@ -133,7 +133,6 @@ class AnnotationParser {
         for (let track of tracks) {
             let label = track.getAttribute('label');
             let group_id = track.getAttribute('group_id') || '0';
-            let id = track.getAttribute('id') || '-1';
             let labelId = this._labelsInfo.labelIdOf(label);
             if (labelId === null) {
                 throw Error(`An unknown label found in the annotation file: ${label}`);
@@ -151,7 +150,6 @@ class AnnotationParser {
                     !+shapes[0].getAttribute('outside') && +shapes[1].getAttribute('outside')) {
                     shapes[0].setAttribute('label', label);
                     shapes[0].setAttribute('group_id', group_id);
-                    shapes[0].setAttribute('id', id);
                     result.push(shapes[0]);
                 }
             }
@@ -212,15 +210,6 @@ class AnnotationParser {
                     throw Error('An unknown label found in the annotation file: ' + shape.getAttribute('label'));
                 }
 
-                let id = parseInt(shape.getAttribute('id') || '-1');
-                if (id !== -1) {
-                    if (this._id_set.has(id)) {
-                        throw Error('More than one shape has the same id attribute');
-                    }
-
-                    this._id_set.add(id);
-                }
-
                 let attributeList = this._getAttributeList(shape, labelId);
 
                 if (shape_type === 'boxes') {
@@ -236,7 +225,7 @@ class AnnotationParser {
                         ybr: ybr,
                         z_order: z_order,
                         attributes: attributeList,
-                        id: id,
+                        id: this._idGen.next(),
                     });
                 }
                 else {
@@ -249,7 +238,7 @@ class AnnotationParser {
                         occluded: occluded,
                         z_order: z_order,
                         attributes: attributeList,
-                        id: id,
+                        id: this._idGen.next(),
                     });
                 }
             }
@@ -270,7 +259,6 @@ class AnnotationParser {
         for (let track of tracks) {
             let labelId = this._labelsInfo.labelIdOf(track.getAttribute('label'));
             let groupId = track.getAttribute('group_id') || '0';
-            let id = parseInt(track.getAttribute('id') || '-1');
             if (labelId === null) {
                 throw Error('An unknown label found in the annotation file: ' + name);
             }
@@ -323,16 +311,8 @@ class AnnotationParser {
                 frame: +parsed[type][0].getAttribute('frame'),
                 attributes: [],
                 shapes: [],
-                id: id,
+                id: this._idGen.next(),
             };
-
-            if (id !== -1) {
-                if (this._id_set.has(id)) {
-                    throw Error('More than one shape has the same id attribute');
-                }
-
-                this._id_set.add(id);
-            }
 
             for (let shape of parsed[type]) {
                 let keyFrame = +shape.getAttribute('keyframe');
@@ -405,12 +385,7 @@ class AnnotationParser {
         return data;
     }
 
-    _reset() {
-        this._id_set.clear();
-    }
-
     parse(text) {
-        this._reset();
         let xml = this._parser.parseFromString(text, 'text/xml');
         let parseerror = this._xmlParseError(xml);
         if (parseerror.length) {

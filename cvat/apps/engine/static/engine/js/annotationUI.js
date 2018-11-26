@@ -100,11 +100,17 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     window.cvat.config = new Config();
 
     // Setup components
-    let annotationParser = new AnnotationParser(job, window.cvat.labelsInfo);
+    let idGenerator = new IncrementIdGenerator(job.max_shape_id + 1);
+    let annotationParser = new AnnotationParser(job, window.cvat.labelsInfo, idGenerator);
 
-    let shapeCollectionModel = new ShapeCollectionModel().import(shapeData, true);
+    let shapeCollectionModel = new ShapeCollectionModel(idGenerator).import(shapeData, true);
     let shapeCollectionController = new ShapeCollectionController(shapeCollectionModel);
     let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
+
+    // In case of old tasks that dont provide max saved shape id properly
+    if (job.max_shape_id === -1) {
+        idGenerator.reset(shapeCollectionModel.maxId + 1);
+    }
 
     window.cvat.data = {
         get: () => shapeCollectionModel.exportAll(),

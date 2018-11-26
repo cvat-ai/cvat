@@ -204,7 +204,6 @@ def convert_to_cvat_format(data):
         'delete': create_anno_container(),
     }
 
-    client_idx = 0
     for label in data:
         boxes = data[label]
         for box in boxes:
@@ -219,10 +218,8 @@ def convert_to_cvat_format(data):
                 "group_id": 0,
                 "occluded": False,
                 "attributes": [],
-                "id": client_idx,
+                "id": -1,
             })
-
-            client_idx += 1
 
     return result
 
@@ -235,9 +232,6 @@ def create_thread(tid, labels_mapping):
         job.save_meta()
         # Get job indexes and segment length
         db_task = TaskModel.objects.get(pk=tid)
-        db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
-        segment_length = max(db_segments[0].stop_frame - db_segments[0].start_frame + 1, 1)
-        job_indexes = [segment.job_set.first().id for segment in db_segments]
         # Get image list
         image_list = make_image_list(db_task.get_data_dirname())
 
@@ -256,6 +250,7 @@ def create_thread(tid, labels_mapping):
 
         # Modify data format and save
         result = convert_to_cvat_format(result)
+        annotation.clear_task(tid)
         annotation.save_task(tid, result)
         slogger.glob.info('tf annotation for task {} done'.format(tid))
     except:

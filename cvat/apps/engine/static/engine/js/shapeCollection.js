@@ -8,7 +8,7 @@
 "use strict";
 
 class ShapeCollectionModel extends Listener {
-    constructor() {
+    constructor(idGenereator) {
         super('onCollectionUpdate', () => this);
         this._annotationShapes = {};
         this._groups = {};
@@ -54,10 +54,7 @@ class ShapeCollectionModel extends Listener {
         this._initialShapes = {};
         this._exportedShapes = {};
         this._shapesToDelete = createExportContainer();
-    }
-
-    _nextIdx() {
-        return this._idx++;
+        this._idGen = idGenereator;
     }
 
     _nextGroupIdx() {
@@ -251,19 +248,8 @@ class ShapeCollectionModel extends Listener {
             }
         }
 
-        this._updateClientIds();
-
         this.notify();
         return this;
-    }
-
-    _updateClientIds() {
-        this._idx = Math.max(-1, ...(this._shapes.map( shape => shape.id ))) + 1;
-        for (const shape of this._shapes) {
-            if (shape.id === -1) {
-                shape._id = this._nextIdx();
-            }
-        }
     }
 
     confirmExportedState() {
@@ -412,12 +398,11 @@ class ShapeCollectionModel extends Listener {
     add(data, type) {
         let id = null;
 
-        if (!('id' in data)) {
-            id = this._nextIdx();
+        if (!('id' in data) || data.id === -1) {
+            id = this._idGen.next();
         }
         else {
             id = data.id;
-            this._idx = Math.max(this._idx, id) + 1;
         }
 
         let model = buildShapeModel(data, type, id, this.nextColor());
@@ -879,6 +864,10 @@ class ShapeCollectionModel extends Listener {
 
     get shapes() {
         return this._shapes;
+    }
+
+    get maxId() {
+        return Math.max(-1, ...this._shapes.map( shape => shape.id ));
     }
 }
 

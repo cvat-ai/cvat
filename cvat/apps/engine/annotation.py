@@ -82,7 +82,8 @@ def save_job(jid, data):
         .select_for_update().get(id=jid)
 
     annotation = _AnnotationForJob(db_job)
-    annotation.validate_data_from_client(data)
+    annotation.force_set_client_id(data['create'])
+    client_ids = annotation.validate_data_from_client(data)
 
     annotation.delete_from_db(data['delete'])
     annotation.save_to_db(data['create'])
@@ -90,6 +91,10 @@ def save_job(jid, data):
 
     db_job.segment.task.updated_date = timezone.now()
     db_job.segment.task.save()
+
+    db_job.max_shape_id = max(db_job.max_shape_id, max(client_ids['create']) if client_ids['create'] else -1)
+    db_job.save()
+
     slogger.job[jid].info("Leave save_job API: jid = {}".format(jid))
 
 @silk_profile(name="Clear job")
@@ -404,33 +409,8 @@ class _Annotation:
 
         return non_empty
 
-    def get_max_client_id(self):
-        max_client_id = -1
-
-        def extract_client_id(shape):
-            return shape.client_id
-
-        if self.boxes:
-            max_client_id = max(max_client_id, (max(self.boxes, key=extract_client_id)).client_id)
-        if self.box_paths:
-            max_client_id = max(max_client_id, (max(self.box_paths, key=extract_client_id)).client_id)
-        if self.polygons:
-            max_client_id = max(max_client_id, (max(self.polygons, key=extract_client_id)).client_id)
-        if self.polygon_paths:
-            max_client_id = max(max_client_id, (max(self.polygon_paths, key=extract_client_id)).client_id)
-        if self.polylines:
-            max_client_id = max(max_client_id, (max(self.polylines, key=extract_client_id)).client_id)
-        if self.polyline_paths:
-            max_client_id = max(max_client_id, (max(self.polyline_paths, key=extract_client_id)).client_id)
-        if self.points:
-            max_client_id = max(max_client_id, (max(self.points, key=extract_client_id)).client_id)
-        if self.points_paths:
-            max_client_id = max(max_client_id, (max(self.points_paths, key=extract_client_id)).client_id)
-
-        return max_client_id
-
     # Functions below used by dump functionality
-    def to_boxes(self, start_client_id):
+    def to_boxes(self):
         boxes = []
         for path in self.box_paths:
             for box in path.get_interpolated_boxes():
@@ -442,15 +422,13 @@ class _Annotation:
                         group_id=path.group_id,
                         occluded=box.occluded,
                         z_order=box.z_order,
-                        client_id=start_client_id,
                         attributes=box.attributes + path.attributes,
                     )
                     boxes.append(box)
-                    start_client_id += 1
 
-        return self.boxes + boxes, start_client_id
+        return self.boxes + boxes
 
-    def _to_poly_shapes(self, iter_attr_name, start_client_id):
+    def _to_poly_shapes(self, iter_attr_name):
         shapes = []
         for path in getattr(self, iter_attr_name):
             for shape in path.get_interpolated_shapes():
@@ -462,24 +440,22 @@ class _Annotation:
                         group_id=path.group_id,
                         occluded=shape.occluded,
                         z_order=shape.z_order,
-                        client_id=start_client_id,
                         attributes=shape.attributes + path.attributes,
                     )
                     shapes.append(shape)
-                    start_client_id += 1
-        return shapes, start_client_id
+        return shapes
 
-    def to_polygons(self, start_client_id):
-        polygons, client_id = self._to_poly_shapes('polygon_paths', start_client_id)
-        return polygons + self.polygons, client_id
+    def to_polygons(self):
+        polygons = self._to_poly_shapes('polygon_paths')
+        return polygons + self.polygons
 
-    def to_polylines(self, start_client_id):
-        polylines, client_id = self._to_poly_shapes('polyline_paths', start_client_id)
-        return polylines + self.polylines, client_id
+    def to_polylines(self):
+        polylines = self._to_poly_shapes('polyline_paths')
+        return polylines + self.polylines
 
-    def to_points(self, start_client_id):
-        points, client_id = self._to_poly_shapes('points_paths', start_client_id)
-        return points + self.points, client_id
+    def to_points(self):
+        points = self._to_poly_shapes('points_paths')
+        return points + self.points
 
     def to_box_paths(self):
         paths = []
@@ -496,7 +472,6 @@ class _Annotation:
                 group_id=box.group_id,
                 boxes=[box0, box1],
                 attributes=box.attributes,
-                client_id=box.client_id,
             )
             paths.append(path)
 
@@ -516,7 +491,6 @@ class _Annotation:
                 stop_frame=shape.frame + 1,
                 group_id=shape.group_id,
                 shapes=[shape0, shape1],
-                client_id=shape.client_id,
                 attributes=shape.attributes,
             )
             paths.append(path)
@@ -1353,7 +1327,7 @@ class _AnnotationForJob(_Annotation):
             "polylines": [],
             "polyline_paths": [],
             "points": [],
-            "points_paths": []
+            "points_paths": [],
         }
 
         for box in self.boxes:
@@ -1429,8 +1403,8 @@ class _AnnotationForJob(_Annotation):
         return data
 
     def validate_data_from_client(self, data):
-        db_client_ids = self._get_client_ids_from_db()
         client_ids = {
+            'saved': self._get_client_ids_from_db(),
             'create': set(),
             'update': set(),
             'delete': set(),
@@ -1461,17 +1435,42 @@ class _AnnotationForJob(_Annotation):
         if tmp_res:
             raise Exception('More than one action for shape(s) with id={}'.format(tmp_res))
 
-        tmp_res = (db_client_ids - client_ids['delete']) & client_ids['create']
+        tmp_res = (client_ids['saved'] - client_ids['delete']) & client_ids['create']
         if tmp_res:
             raise Exception('Trying to create new shape(s) with existing client id {}'.format(tmp_res))
 
-        tmp_res = client_ids['delete'] - db_client_ids
+        tmp_res = client_ids['delete'] - client_ids['saved']
         if tmp_res:
             raise Exception('Trying to delete shape(s) with nonexistent client id {}'.format(tmp_res))
 
-        tmp_res = client_ids['update'] - (db_client_ids - client_ids['delete'])
+        tmp_res = client_ids['update'] - (client_ids['saved'] - client_ids['delete'])
         if tmp_res:
             raise Exception('Trying to update shape(s) with nonexistent client id {}'.format(tmp_res))
+
+        max_id = self.db_job.max_shape_id
+        if any(new_client_id <= max_id for new_client_id in client_ids['create']):
+            raise Exception('Trying to create shape(s) with client id {} less than allowed value {}'.format(client_ids['create'], max_id))
+
+        return client_ids
+
+    def force_set_client_id(self, data):
+        shape_types = ['boxes', 'points', 'polygons', 'polylines', 'box_paths',
+            'points_paths', 'polygon_paths', 'polyline_paths']
+
+        max_id = self.db_job.max_shape_id
+        for shape_type in shape_types:
+            if not data[shape_type]:
+                continue
+            for shape in data[shape_type]:
+                if 'id' in shape:
+                    max_id = max(max_id, shape['id'])
+
+        max_id += 1
+        for shape_type in shape_types:
+            for shape in data[shape_type]:
+                if 'id' not in shape or shape['id'] == -1:
+                    shape['id'] = max_id
+                    max_id += 1
 
 class _AnnotationForSegment(_Annotation):
     def __init__(self, db_segment):
@@ -1962,25 +1961,25 @@ class _AnnotationForTask(_Annotation):
                 shapes["polygons"] = {}
                 shapes["polylines"] = {}
                 shapes["points"] = {}
-                boxes, max_client_id = self.to_boxes(self.get_max_client_id() + 1)
+                boxes = self.to_boxes()
                 for box in boxes:
                     if box.frame not in shapes["boxes"]:
                         shapes["boxes"][box.frame] = []
                     shapes["boxes"][box.frame].append(box)
 
-                polygons, max_client_id = self.to_polygons(max_client_id)
+                polygons = self.to_polygons()
                 for polygon in polygons:
                     if polygon.frame not in shapes["polygons"]:
                         shapes["polygons"][polygon.frame] = []
                     shapes["polygons"][polygon.frame].append(polygon)
 
-                polylines, max_client_id = self.to_polylines(max_client_id)
+                polylines = self.to_polylines()
                 for polyline in polylines:
                     if polyline.frame not in shapes["polylines"]:
                         shapes["polylines"][polyline.frame] = []
                     shapes["polylines"][polyline.frame].append(polyline)
 
-                points, max_client_id = self.to_points(max_client_id)
+                points = self.to_points()
                 for points in points:
                     if points.frame not in shapes["points"]:
                         shapes["points"][points.frame] = []
@@ -2022,7 +2021,6 @@ class _AnnotationForTask(_Annotation):
                                         ("xbr", "{:.2f}".format(shape.xbr)),
                                         ("ybr", "{:.2f}".format(shape.ybr)),
                                         ("occluded", str(int(shape.occluded))),
-                                        ("id", str(shape.client_id)),
                                     ])
                                     if db_task.z_order:
                                         dump_dict['z_order'] = str(shape.z_order)
@@ -2042,7 +2040,6 @@ class _AnnotationForTask(_Annotation):
                                             )) for p in shape.points.split(' '))
                                         )),
                                         ("occluded", str(int(shape.occluded))),
-                                        ("id", str(shape.client_id)),
                                     ])
 
                                     if db_task.z_order:
@@ -2087,7 +2084,6 @@ class _AnnotationForTask(_Annotation):
                     path_list = paths[shape_type]
                     for path in path_list:
                         dump_dict = OrderedDict([
-                            ("id", str(path.client_id)),
                             ("label", path.label.name),
                         ])
                         if path.group_id:

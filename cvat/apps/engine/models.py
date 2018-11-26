@@ -97,6 +97,7 @@ class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION)
+    max_shape_id = models.BigIntegerField(default=-1)
 
     class Meta:
         default_permissions = ()
