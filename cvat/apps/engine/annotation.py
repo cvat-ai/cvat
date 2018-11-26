@@ -1448,7 +1448,7 @@ class _AnnotationForJob(_Annotation):
 
         max_id = self.db_job.max_shape_id
         if any(new_client_id <= max_id for new_client_id in client_ids['create']):
-            raise Exception('Trying to cretae shape(s) with client id {} less than allowed value {}'.format(tmp_res, max_id))
+            raise Exception('Trying to create shape(s) with client id {} less than allowed value {}'.format(tmp_res, max_id))
 
         return client_ids
 
