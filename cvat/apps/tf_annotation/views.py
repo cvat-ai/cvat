@@ -255,6 +255,7 @@ def create_thread(tid, labels_mapping):
 
         # Modify data format and save
         result = convert_to_cvat_format(result, max_shape_id + 1)
+        annotation.clear_task(tid)
         annotation.save_task(tid, result)
         slogger.glob.info('tf annotation for task {} done'.format(tid))
     except:
