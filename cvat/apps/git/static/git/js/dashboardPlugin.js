@@ -218,7 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <label class="regular h2"> Repository URL: </label>
                         </td>
                         <td style="width: 80%;" colspan="2">
-                            <input class="regular h2" type="text" style="width: 90%;" id="${window.cvat.git.reposURLTextId}" readonly/>
+                            <input class="regular h2" type="text" style="width: 92%;" id="${window.cvat.git.reposURLTextId}" readonly/>
                         </td>
                     </td>
                     <tr>
