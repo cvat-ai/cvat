@@ -14,13 +14,12 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
         let elem = $(newElements[idx]);
         let tid = +elem.attr('id').split('_')[1];
 
-        $('<button> Git Repository Sync </button>').addClass('regular dashboardButtonUI')
-            .on('click', () => {
-                let gitDialogWindow = $(`#${window.cvat.git.reposWindowId}`);
-                gitDialogWindow.attr('current_tid', tid);
-                gitDialogWindow.removeClass('hidden');
-                window.cvat.git.updateState();
-            }).appendTo(elem.find('div.dashboardButtonsUI')[0]);
+        $('<button> Git Repository Sync </button>').addClass('regular dashboardButtonUI').on('click', () => {
+            let gitDialogWindow = $(`#${window.cvat.git.reposWindowId}`);
+            gitDialogWindow.attr('current_tid', tid);
+            gitDialogWindow.removeClass('hidden');
+            window.cvat.git.updateState();
+        }).appendTo(elem.find('div.dashboardButtonsUI')[0]);
     });
 });
 
@@ -40,12 +39,14 @@ window.cvat.git = {
         let reposURLText = $(`#${window.cvat.git.reposURLTextId}`);
         let syncButton = $(`#${window.cvat.git.reposSyncButtonId}`);
 
-        reposURLText.prop('value', 'Getting an info..');
-        gitLabelMessage.css('color', '#cccc00').text('Getting an info..');
+        reposURLText.prop('value', 'Waiting for server response..');
+        gitLabelMessage.css('color', '#cccc00').text('Waiting for server response..');
         gitLabelStatus.css('color', '#cccc00').text('\u25cc');
         syncButton.attr("disabled", true);
 
-        window.cvat.git.getGitURL((data) => {
+        let tid = gitWindow.attr('current_tid');
+
+        $.get(`/git/repository/get/${tid}`).done((data) => {
             if (!data.url.value) {
                 gitLabelMessage.css('color', 'black').text('Repository is not attached');
                 reposURLText.attr('placeholder', 'Repository is not attached');
@@ -58,6 +59,7 @@ window.cvat.git = {
             if (!data.status.value) {
                 gitLabelStatus.css('color', 'red').text('\u26a0');
                 gitLabelMessage.css('color', 'red').text(data.status.error);
+                syncButton.attr("disabled", false);
                 return;
             }
 
@@ -80,82 +82,77 @@ window.cvat.git = {
                 gitLabelMessage.css('color', 'red').text(message);
                 throw Error(message);
             }
-        }, (data) => {
+        }).fail(() => {
             gitWindow.addClass('hidden');
-            let message = `Error was occured during get an repos URL. ` +
+            let message = `Error was occured during get an repos status. ` +
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
             showMessage(message);
             throw Error(message);
         });
     },
-
-    getGitURL: (success, error) => {
-        let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
-        $.get(`/git/repository/get/${gitWindow.attr('current_tid')}`).done(
-            success
-        ).fail(error);
-    },
-
-    badSituation: (message) => {
-        try {
-            showMessage(message);
-            throw Error(message);
-        }
-        finally {
-            window.cvat.git.updateState();
-        }
-    }
 };
 
 
 document.addEventListener("DOMContentLoaded", () => {
-    /* CREATE TASK PLUGIN PART */
     $(`
         <tr>
             <td> <label class="regular h2"> Git Repos: </label> </td>
-            <td> <input type="text" id="${window.cvat.git.createURLInputTextId}" class="regular" style="width: 90%", placeholder="github.com/user/repos"/> </td>
+            <td> <input type="text" id="${window.cvat.git.createURLInputTextId}" class="regular"` +
+                `style="width: 90%", placeholder="github.com/user/repos"/> </td>
         </tr>
     `).insertAfter($("#dashboardBugTrackerInput").parent().parent());
 
+    // Wrap create task request function
     let originalCreateTaskRequest = window.createTaskRequest;
     window.createTaskRequest = function(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {
+        // First we check if git URL specified
         let gitURL = $(`#${window.cvat.git.createURLInputTextId}`).prop('value').replace(/\s/g,'');
         if (gitURL.length) {
+            // If it specified, we try clone repository on a server side
             let taskMessage = $('#dashboardCreateTaskMessage');
             taskMessage.css('color', 'green');
             taskMessage.text('Cloning a repository..');
+
             $.post({
                 url: '/git/repository/create',
                 data: JSON.stringify({
                     'url': gitURL,
                 }),
                 contentType: 'application/json;charset=utf-8',
-            }).done((create_data) => {
-                let checkInterval = setInterval(() => {
-                    $.get(`/git/repository/check/${create_data.rq_id}`).done((data) => {
+            }).done((createData) => {
+                setTimeout(timeoutCallback, 1000);
+
+                function timeoutCallback() {
+                    $.get(`/git/repository/check/${createData.rq_id}`).done((data) => {
                         if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
-                            clearInterval(checkInterval);
                             if (data.status == "failed" || data.status == "unknown") {
-                                let message = `Check request for git repostory returned "${data.status}" status`;
+                                let message = `Request for verification of creation returned status "${data.status}"`;
                                 onError(`Git error. ${message}`);
                                 onComplete();
-                                return;
                             }
-                            oData.append('git_url', gitURL);
-                            oData.append('repos_path', create_data['repos_path']);
-                            originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
+                            else {
+                                // Append some data for create task request if repository is successfully cloned
+                                oData.append('git_url', gitURL);
+                                oData.append('repos_path', createData['repos_path']);
+
+                                // And we perform original request function
+                                originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
+                            }
+                        }
+                        else {
+                            setTimeout(timeoutCallback, 1000);
                         }
                     }).fail((data) => {
-                        let message = `Check request for git repository failed. ` +
+                        let message = `Request for verification of creation failed. ` +
                             `Status: ${data.status}. Message: ${data.responseText || data.statusText}`;
                         onError(`Git error. ${message}`);
                         onComplete();
                         clearInterval(checkInterval);
                         return;
                     });
-                }, 1000);
+                }
             }).fail((data) => {
-                let message = `Error was occured during updating an repos entry. ` +
+                let message = `Error occured during a request for verification of creation. ` +
                     `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
                 onError(`Git error. ${message}`);
                 onComplete();
@@ -169,7 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* GIT MODAL WINDOW PLUGIN PART */
     $(`<div id="${window.cvat.git.reposWindowId}" class="modal hidden">
-        <div style="width: 700px; height: 120px;" class="modal-content">
+        <div style="width: 700px; height: auto;" class="modal-content">
             <div style="width: 100%; height: 60%; overflow-y: auto;">
                 <table style="width: 100%;">
                     <tr>
@@ -213,32 +210,49 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     repositorySyncButton.on('click', () => {
-        gitLabelMessage.css('color', '#cccc00').text('Pushing..');
+        gitLabelMessage.css('color', '#cccc00').text('Synchronization..');
         gitLabelStatus.css('color', '#cccc00').text('\u25cc');
         repositorySyncButton.attr("disabled", true);
 
-        $.get(`/git/repository/push/${gitWindow.attr('current_tid')}`).done((data) => {
-            let checkInterval = setInterval(() => {
+        let tid = gitWindow.attr('current_tid');
+        $.get(`/git/repository/push/${tid}`).done((data) => {
+            setTimeout(timeoutCallback, 1000);
+
+            function timeoutCallback() {
                 $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
                     if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
-                        clearInterval(checkInterval);
                         if (data.status == "failed" || data.status == "unknown") {
-                            let message = `Pushing process returned "${data.status}" status`;
-                            window.cvat.git.badSituation(message);
+                            let message = `Request for verification of pushing returned status "${data.status}"`;
+                            badResponse(message);
                         }
-                        window.cvat.git.updateState();
+                        else {
+                            window.cvat.git.updateState();
+                        }
+                    }
+                    else {
+                        setTimeout(timeoutCallback, 1000);
                     }
                 }).fail((data) => {
-                    clearInterval(checkInterval);
                     let message = `Error was occured during pushing an repos entry. ` +
                     `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-                    window.cvat.git.badSituation(message);
+                    badResponse(message);
                 });
-            }, 1000);
+            }
         }).fail((data) => {
             let message = `Error was occured during pushing an repos entry. ` +
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-                window.cvat.git.badSituation(message);
+            badResponse(message);
         });
     });
+
+
+    function badResponse(message) {
+        try {
+            showMessage(message);
+            throw Error(message);
+        }
+        finally {
+            window.cvat.git.updateState();
+        }
+    }
 });
