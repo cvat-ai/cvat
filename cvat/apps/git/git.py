@@ -91,7 +91,7 @@ class Git:
             stderr = proc.stderr.decode('utf-8')[:-2]
             if proc.returncode > 1:
                 raise Exception('Failed ssh connection: {}'.format(stderr))
-            slogger.task[self.__tid].info('Host {} has been added to known_hosts.'.format(host))
+            slogger.glob.info('Host {} has been added to known_hosts.'.format(host))
 
         return self
 
@@ -334,16 +334,23 @@ class Git:
 
 def _initial_create(tid, params):
     if 'git_url' in params:
-        user = params['owner']
-        url = params['git_url']
-        cloned_repos_path = params['repos_path']
-        os.rename(cloned_repos_path, os.path.join(os.getcwd(), "data", str(tid), "repos"))
-        Git(url, tid, user).init_repos().configurate()
+        try:
+            user = params['owner']
+            url = params['git_url']
+            cloned_repos_path = params['repos_path']
 
-        db_git = GitData()
-        db_git.url = url
-        db_git.task = Task.objects.get(pk = tid)
-        db_git.save()
+            db_task = Task.objects.get(pk = tid)
+
+            shutil.move(cloned_repos_path, os.path.join(db_task.get_task_dirname(), "repos"))
+            Git(url, tid, user).init_repos().configurate()
+
+            db_git = GitData()
+            db_git.url = url
+            db_git.task = db_task
+            db_git.save()
+        except Exception as ex:
+            slogger.task[tid].exception('exception occured during git _initial_create', exc_info = True)
+            raise ex
 
 
 def create(url, path, user):

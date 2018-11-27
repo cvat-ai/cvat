@@ -39,7 +39,7 @@ window.cvat.git = {
         let reposURLText = $(`#${window.cvat.git.reposURLTextId}`);
         let syncButton = $(`#${window.cvat.git.reposSyncButtonId}`);
 
-        reposURLText.prop('value', 'Waiting for server response..');
+        reposURLText.attr('placeholder', 'Waiting for server response..');
         gitLabelMessage.css('color', '#cccc00').text('Waiting for server response..');
         gitLabelStatus.css('color', '#cccc00').text('\u25cc');
         syncButton.attr("disabled", true);
@@ -82,7 +82,7 @@ window.cvat.git = {
                 gitLabelMessage.css('color', 'red').text(message);
                 throw Error(message);
             }
-        }).fail(() => {
+        }).fail((data) => {
             gitWindow.addClass('hidden');
             let message = `Error was occured during get an repos status. ` +
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
