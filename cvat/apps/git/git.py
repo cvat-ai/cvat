@@ -20,8 +20,8 @@ import datetime
 import shutil
 import json
 import git
-import re
 import os
+import rq
 
 
 class Git:
@@ -78,7 +78,7 @@ class Git:
             proc = subprocess.run([add_command], shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             stderr = proc.stderr.decode('utf-8')[:-2]
             if proc.returncode > 1:
-                raise Exception('Failed ssh connection: {}'.format(stderr))
+                raise Exception('Failed ssh connection. {}'.format(stderr))
             slogger.glob.info('Host {} has been added to known_hosts.'.format(host))
 
         return self
@@ -316,32 +316,22 @@ class Git:
 def _initial_create(tid, params):
     if 'git_url' in params:
         try:
+            job = rq.get_current_job()
+            job.meta['status'] = 'Cloning a repository..'
+            job.save_meta()
+
             user = params['owner']
             url = params['git_url']
-            cloned_repos_path = params['repos_path']
 
-            db_task = Task.objects.get(pk = tid)
-
-            shutil.move(cloned_repos_path, os.path.join(db_task.get_task_dirname(), "repos"))
-            Git(url, tid, user).init_repos().configurate()
+            Git(url, tid, user).init_repos()
 
             db_git = GitData()
             db_git.url = url
-            db_git.task = db_task
+            db_git.task = Task.objects.get(pk = tid)
             db_git.save()
         except Exception as ex:
             slogger.task[tid].exception('exception occured during git _initial_create', exc_info = True)
             raise ex
-
-
-def create(url, path, user):
-    try:
-        fake_tid = -1
-        ssh_url = Git(url, fake_tid, user).init_host().ssh_url()
-        git.Repo.clone_from(ssh_url, path)
-    except Exception as ex:
-        slogger.glob.exception('repository cloning errors occured', exc_info = True)
-        raise ex
 
 
 @transaction.atomic
@@ -405,4 +395,4 @@ def onsave(jid, data):
 
 
 add_plugin("save_job", onsave, "after", exc_ok = False)
-add_plugin("_create_thread", _initial_create, "after", exc_ok = True)
+add_plugin("_create_thread", _initial_create, "before", exc_ok = False)

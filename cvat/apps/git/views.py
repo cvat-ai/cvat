@@ -39,36 +39,6 @@ def check_process(request, rq_id):
 
 
 @login_required
-def create_repository(request):
-    try:
-        data = json.loads(request.body.decode('utf-8'))
-        url = data['url']
-
-        if not len(url):
-            raise Exception("Repository URL isn't specified")
-
-        random_id = str(random.randint(0, sys.maxsize))
-        random_path = os.path.join("/", "tmp", random_id)
-        while os.path.exists(random_path):
-            random_id = str(random.randint(0, sys.maxsize))
-            random_path = os.path.join("/", "tmp", random_id)
-
-        os.makedirs(random_path)
-        random_path = os.path.join(random_path, 'repos')
-
-        rq_id = "git.create.{}".format(random_id)
-        slogger.glob.info("create repository request with url {}. Cloning it to path {}".format(url, random_path))
-
-        queue = django_rq.get_queue('default')
-        queue.enqueue_call(func = CVATGit.create, args = (url, random_path, request.user), job_id=rq_id)
-
-        return JsonResponse({ "rq_id": rq_id, "repos_path": random_path })
-    except Exception as ex:
-        slogger.glob.error("error occured during create repository request", exc_info=True)
-        return HttpResponseBadRequest(str(ex))
-
-
-@login_required
 def push_repository(request, tid):
     try:
         slogger.task[tid].info("push repository request")

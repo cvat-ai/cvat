@@ -105,63 +105,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Wrap create task request function
     let originalCreateTaskRequest = window.createTaskRequest;
     window.createTaskRequest = function(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {
-        // First we check if git URL specified
         let gitURL = $(`#${window.cvat.git.createURLInputTextId}`).prop('value').replace(/\s/g,'');
         if (gitURL.length) {
-            // If it specified, we try clone repository on a server side
-            let taskMessage = $('#dashboardCreateTaskMessage');
-            taskMessage.css('color', 'green');
-            taskMessage.text('Cloning a repository..');
-
-            $.post({
-                url: '/git/repository/create',
-                data: JSON.stringify({
-                    'url': gitURL,
-                }),
-                contentType: 'application/json;charset=utf-8',
-            }).done((createData) => {
-                setTimeout(timeoutCallback, 1000);
-
-                function timeoutCallback() {
-                    $.get(`/git/repository/check/${createData.rq_id}`).done((data) => {
-                        if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
-                            if (data.status == "failed" || data.status == "unknown") {
-                                let message = `Request for verification of creation returned status "${data.status}"`;
-                                onError(`Git error. ${message}`);
-                                onComplete();
-                            }
-                            else {
-                                // Append some data for create task request if repository is successfully cloned
-                                oData.append('git_url', gitURL);
-                                oData.append('repos_path', createData['repos_path']);
-
-                                // And we perform original request function
-                                originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
-                            }
-                        }
-                        else {
-                            setTimeout(timeoutCallback, 1000);
-                        }
-                    }).fail((data) => {
-                        let message = `Request for verification of creation failed. ` +
-                            `Status: ${data.status}. Message: ${data.responseText || data.statusText}`;
-                        onError(`Git error. ${message}`);
-                        onComplete();
-                        clearInterval(checkInterval);
-                        return;
-                    });
-                }
-            }).fail((data) => {
-                let message = `Error occured during a request for verification of creation. ` +
-                    `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-                onError(`Git error. ${message}`);
-                onComplete();
-                return;
-            });
+            oData.append('git_url', gitURL);
         }
-        else {
-            originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
-        }
+        originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
     };
 
     /* GIT MODAL WINDOW PLUGIN PART */

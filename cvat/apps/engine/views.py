@@ -106,8 +106,6 @@ def create_task(request):
     return JsonResponse({'tid': db_task.id})
 
 @login_required
-@permission_required(perm=['engine.task.access'],
-    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def check_task(request, tid):
     """Check the status of a task"""
     try:
