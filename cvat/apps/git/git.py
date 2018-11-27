@@ -14,6 +14,7 @@ from cvat.apps.engine.plugins import add_plugin
 from cvat.apps.git.models import GitData
 from cvat.apps.git.settings import *
 
+import giturlparse
 import subprocess
 import datetime
 import shutil
@@ -42,33 +43,20 @@ class Git:
 
 
     # Method parses an got URL.
-    # SSH: git@github.com/proj/repos[.git]
-    # HTTP/HTTPS: [http://]github.com/proj/repos[.git]
     def _parse_url(self):
-        http_pattern = "([https|http]+)*[://]*([a-zA-Z0-9._-]+.[a-zA-Z]+)/([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+)"
-        ssh_pattern = "([a-zA-Z0-9._-]+)@([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+)"
+        try:
+            parse_result = giturlparse.parse(self.__url)
 
-        http_match = re.match(http_pattern, self.__url)
-        ssh_match = re.match(ssh_pattern, self.__url)
-
-        if http_match:
-            user = "git"
-            scheme = http_match.group(1) if http_match.group(1) else "https"
-            host = http_match.group(2)
-            repos = "{}/{}".format(http_match.group(3), http_match.group(4))
+            user = parse_result.user or "git"
+            host = parse_result.resource
+            repos = parse_result.pathname
             if not repos.endswith(".git"):
                 repos += ".git"
-            return scheme, user, host, repos
-        elif ssh_match:
-            scheme = "https"
-            user = ssh_match.group(1)
-            host = ssh_match.group(2)
-            repos = "{}/{}".format(ssh_match.group(3), ssh_match.group(4))
-            if not repos.endswith(".git"):
-                repos += ".git"
-            return scheme, user, host, repos
-        else:
-            raise Exception("Got URL doesn't sutisfy for regular expression")
+
+            return user, host, repos
+        except giturlparse.parser.ParserError as ex:
+            slogger.glob.exception('invalid git url', exc_info = True)
+            raise ex
 
 
     # Method creates the main branch if repostory don't have any branches
@@ -83,7 +71,7 @@ class Git:
 
     # Method configurates and checks SSH for remote repository
     def init_host(self):
-        user, host = self._parse_url()[1:-1]
+        user, host = self._parse_url()[:-1]
         check_command = 'ssh-keygen -F {} | grep "Host {} found"'.format(host, host)
         add_command = 'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -q {}@{}'.format(user, host)
         if not len(subprocess.run([check_command], shell = True, stdout = subprocess.PIPE).stdout):
@@ -119,15 +107,8 @@ class Git:
 
 
     def ssh_url(self):
-        user, host, repos = self._parse_url()[1:]
+        user, host, repos = self._parse_url()
         return "{}@{}:{}".format(user, host, repos)
-
-
-    def http_url(self):
-        data = self._parse_url()
-        scheme = data[0]
-        host, repos = data[2:]
-        return "{}://{}/{}".format(scheme, host, repos)
 
 
     # Method creates task branch for repository from current master
