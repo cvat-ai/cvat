@@ -11,6 +11,4 @@ services:
       context: .
       args:
         GIT_SUPPORT: "yes"
-    environment:
-      CVAT_HEADLESS_USERNAME: "cvat"
-      CVAT_HEADLESS_EMAIL: "cvat@example.com"
+

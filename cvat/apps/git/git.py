@@ -12,15 +12,14 @@ from cvat.apps.engine.annotation import _dump as dump, FORMAT_XML, save_job
 from cvat.apps.engine.plugins import add_plugin
 
 from cvat.apps.git.models import GitData
-from cvat.apps.git.settings import *
 
-import giturlparse
 import subprocess
 import datetime
 import shutil
 import json
 import git
 import os
+import re
 import rq
 
 
@@ -36,41 +35,90 @@ class Git:
     def __init__(self, url, tid, user):
         self.__url = url
         self.__tid = tid
-        self.__branch_name = '{}_tid_{}'.format(CVAT_BRANCH_PREFIX, self.__tid)
-        self.__user = user.username
+        self.__branch_name = 'cvat_tid_{}'.format(self.__tid)
+        self.__user = {
+            "name": user.username,
+            "email": user.email or "dummy@email.com"
+        }
         self.__cwd = os.path.join(os.getcwd(), "data", str(tid), "repos")
         self.__diffs_dir = os.path.join(os.getcwd(), "data", str(tid), "repos_diffs")
 
 
     # Method parses an got URL.
+    # SSH: git@github.com/proj/repos[.git]
+    # HTTP/HTTPS: [http://]github.com/proj/repos[.git]
     def _parse_url(self):
         try:
-            parse_result = giturlparse.parse(self.__url)
+            http_pattern = "([https|http]+)*[://]*([a-zA-Z0-9._-]+.[a-zA-Z]+)/([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+)"
+            ssh_pattern = "([a-zA-Z0-9._-]+)@([a-zA-Z0-9._-]+):([a-zA-Z0-9._-]+)/([a-zA-Z0-9._-]+)"
 
-            user = parse_result.user or "git"
-            host = parse_result.resource
-            repos = parse_result.pathname
+            http_match = re.match(http_pattern, self.__url)
+            ssh_match = re.match(ssh_pattern, self.__url)
+
+            user = "git"
+            host = None
+            repos = None
+
+            if http_match:
+                host = http_match.group(2)
+                repos = "{}/{}".format(http_match.group(3), http_match.group(4))
+            elif ssh_match:
+                user = ssh_match.group(1)
+                host = ssh_match.group(2)
+                repos = "{}/{}".format(ssh_match.group(3), ssh_match.group(4))
+            else:
+                raise Exception("Got URL doesn't sutisfy for regular expression")
+
             if not repos.endswith(".git"):
                 repos += ".git"
 
             return user, host, repos
-        except giturlparse.parser.ParserError as ex:
-            slogger.glob.exception('invalid git url', exc_info = True)
+        except Exception as ex:
+            slogger.glob.exception('URL parsing errors occured', exc_info = True)
             raise ex
 
 
-    # Method creates the main branch if repostory don't have any branches
-    def _create_master(self):
+    # Method creates the main branch if repostory doesn't have any branches
+    def _create_master_branch(self):
         assert not len(self.__rep.heads)
         readme_md_name = os.path.join(self.__cwd, "README.md")
         with open(readme_md_name, "w"):
             pass
         self.__rep.index.add([readme_md_name])
-        self.__rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user, datetime.datetime.now()))
+        self.__rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user["name"], datetime.datetime.now()))
+
+        try:
+            self.__rep.git.push("origin", "master")
+        except git.exc.GitError:
+            slogger.task[self.__tid].warning("Remote repository doesn't contain any " +
+                "heads but 'master' branch push process has been failed", exc_info = True)
+
+
+    # Method creates task branch for repository from current master
+    def _create_user_branch(self):
+        # Remove user branch from local repository if it exists
+        if self.__branch_name in list(map(lambda x: x.name, self.__rep.heads)):
+            self.__rep.delete_head(self.__branch_name, force=True)
+            self.__rep.head.reference = self.__rep.heads["master"]
+            self.__rep.head.reset("HEAD", index=True, working_tree=True)
+
+        self.__rep.create_head(self.__branch_name)
+        self.__rep.head.reference = self.__rep.heads[self.__branch_name]
+
+
+    # Method setups a config file for current user
+    def _update_config(self):
+        slogger.task[self.__tid].info("User config initialization..")
+        with self.__rep.config_writer() as cw:
+            if not cw.has_section("user"):
+                cw.add_section("user")
+            cw.set("user", "name", self.__user["name"])
+            cw.set("user", "email", self.__user["email"])
+            cw.release()
 
 
     # Method configurates and checks SSH for remote repository
-    def init_host(self):
+    def _init_host(self):
         user, host = self._parse_url()[:-1]
         check_command = 'ssh-keygen -F {} | grep "Host {} found"'.format(host, host)
         add_command = 'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -q {}@{}'.format(user, host)
@@ -84,88 +132,39 @@ class Git:
         return self
 
 
-    # Method connects local report if it exists
-    # Otherwise it clones it before
-    def init_repos(self, wo_remote = False):
-        try:
-            # Try to use a local repos. It can throw GitError exception
-            self.__rep = git.Repo(self.__cwd)
+    # Method initializes repos. It setup configuration, creates master branch if need and checkouts to task branch
+    def _configurate(self):
+        self._update_config()
+        if not len(self.__rep.heads):
+            self._create_master_branch()
 
-            # Check if remote URL is actual
-            if self.ssh_url() != self.__rep.git.remote('get-url', '--all', 'origin'):
-                slogger.task[self.__tid].info("Local repository URL is obsolete.")
-                # We need reinitialize repository if it's false
-                raise git.exc.GitError("Actual and saved repository URLs aren't match")
-        except git.exc.GitError as ex:
-            if wo_remote:
-                raise ex
-            slogger.task[self.__tid].info("Local repository initialization..")
-            shutil.rmtree(self.__cwd, True)
-            self.clone()
-
-        return self
+        self._create_user_branch()
+        os.makedirs(self.__diffs_dir, exist_ok = True)
 
 
-    def ssh_url(self):
+    def _ssh_url(self):
         user, host, repos = self._parse_url()
         return "{}@{}:{}".format(user, host, repos)
 
 
-    # Method creates task branch for repository from current master
-    def checkout(self):
-        # Remove user branch from local repository if it exists
-        if self.__branch_name in list(map(lambda x: x.name, self.__rep.heads)):
-            self.__rep.delete_head(self.__branch_name, force=True)
-            self.__rep.head.reference = self.__rep.heads["master"]
-            self.__rep.head.reset("HEAD", index=True, working_tree=True)
-
-        self.__rep.create_head(self.__branch_name)
-        self.__rep.head.reference = self.__rep.heads[self.__branch_name]
-
-
-    # Method initializes repos. It setup configuration, creates master branch if need and checkouts to task branch
-    def configurate(self):
-        # Setup config file for CVAT_HEADLESS user
-        slogger.task[self.__tid].info("User config initialization..")
-        with self.__rep.config_writer() as cw:
-            if not cw.has_section("user"):
-                cw.add_section("user")
-            cw.set("user", "name", CVAT_HEADLESS_USERNAME)
-            cw.set("user", "email", CVAT_HEADLESS_EMAIL)
-            cw.release()
-
-        # Create master branch if it doesn't exist
-        # And push it into server for a remote repos initialization
-        if not len(self.__rep.heads):
-            self._create_master()
-            try:
-                self.__rep.git.push("origin", "master")
-            except git.exc.GitError:
-                slogger.task[self.__tid].warning("Remote repository doesn't contain any " +
-                    "heads but 'master' branch push process has been failed", exc_info = True)
-
-        os.makedirs(self.__diffs_dir, exist_ok = True)
-        self.checkout()
-
-
-    # Method clones a remote repos to the local storage using SSH
-    # Method also initializes a repos after it has been cloned
-    def clone(self):
+    # Method clones a remote repos to the local storage using SSH and initializes it
+    def _clone(self):
         os.makedirs(self.__cwd)
-        ssh_url = self.ssh_url()
+        ssh_url = self._ssh_url()
 
-        # Clone repository
+        # Cloning
         slogger.task[self.__tid].info("Cloning remote repository from {}..".format(ssh_url))
-        self.init_host()
+        self._init_host()
         self.__rep = git.Repo.clone_from(ssh_url, self.__cwd)
 
-        self.configurate()
+        # Intitialization
+        self._configurate()
 
 
     # Method is some wrapper for clone
     # It restores state if any errors have occured
     # It useful if merge conflicts have occured during pull
-    def reclone(self):
+    def _reclone(self):
         if os.path.exists(self.__cwd):
             if not os.path.isdir(self.__cwd):
                 os.remove(self.__cwd)
@@ -184,24 +183,44 @@ class Git:
                         shutil.rmtree(self.__cwd, True)
                     os.rename(tmp_repo, self.__cwd)
                     raise ex
-                return
+        else:
+            self._clone()
 
-        self.clone()
 
-
-    # Method checkout to master branch and pull it from remote repos
-    def pull(self):
+    # Method checkouts to master branch and pulls it from remote repos
+    def _pull(self):
         self.__rep.head.reference = self.__rep.heads["master"]
-        remote_branches = []
-        for remote_branch in self.__rep.git.branch("-r").split("\n")[1:]:
-            remote_branches.append(remote_branch.split("/")[-1])
         try:
-            self.init_host()
+            self._init_host()
             self.__rep.git.pull("origin", "master")
-            self.checkout()
+            self._create_user_branch()
         except git.exc.GitError:
             # Merge conflicts
-            self.reclone()
+            self._reclone()
+
+
+    # Method connects a local repository if it exists
+    # Otherwise it clones it before
+    def init_repos(self, wo_remote = False):
+        try:
+            # Try to use a local repos. It can throw GitError exception
+            self.__rep = git.Repo(self.__cwd)
+            self._configurate()
+
+            # Check if remote URL is actual
+            if self._ssh_url() != self.__rep.git.remote('get-url', '--all', 'origin'):
+                slogger.task[self.__tid].info("Local repository URL is obsolete.")
+                # We need reinitialize repository if it's false
+                raise git.exc.GitError("Actual and saved repository URLs aren't match")
+            return self
+        except git.exc.GitError as ex:
+            if wo_remote:
+                raise ex
+
+        slogger.task[self.__tid].info("Local repository initialization..")
+        shutil.rmtree(self.__cwd, True)
+        self._clone()
+        return self
 
 
     # Method prepares an annotation, merges diffs and pushes it to remote repository to user branch
@@ -227,7 +246,7 @@ class Git:
                 raise Exception("Unhandled accumulate type: {}".format(type(source)))
 
         # Update local repository
-        self.pull()
+        self._pull()
 
         # Dump an annotation
         dump(self.__tid, format, scheme, host)
@@ -276,9 +295,9 @@ class Git:
             '.gitattributes',
             diff_name
         ])
-        self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user, datetime.datetime.now()))
+        self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user["name"], datetime.datetime.now()))
 
-        self.init_host()
+        self._init_host()
         self.__rep.git.push("origin", self.__branch_name, "--force")
 
         shutil.rmtree(self.__diffs_dir, True)

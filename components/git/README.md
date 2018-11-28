@@ -8,7 +8,6 @@ Application uses the specified git user for work with remote repositories and SS
 
 ### Installation
 
-* Setup variables ```CVAT_HEADLESS_USERNAME``` and ```CVAT_HEADLESS_EMAIL``` in the docker-compose.git.yml.
 * Put private SSH key for this user into ```components/ssh/keys```. Public key corresponding to this private key should be attached to used github user.
 * Build CVAT image with SSH and GIT application as listed below.
 * Setup your repository URL in create task dialog. You can change a attached repository later.
