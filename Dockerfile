@@ -74,20 +74,6 @@ RUN if [ "$TF_ANNOTATION" = "yes" ]; then \
         bash -i /tmp/components/tf_annotation/install.sh; \
     fi
 
-# Custom SSH keys installation
-ARG CUSTOM_SSH
-ENV CUSTOM_SSH=${CUSTOM_SSH}
-RUN if [ "$CUSTOM_SSH" = "yes" ]; then \
-        bash -i /tmp/components/ssh/install.sh; \
-    fi
-
-# GIT integration support
-ARG GIT_SUPPORT
-ENV GIT_SUPPORT=${GIT_SUPPORT}
-RUN if [ "$GIT_SUPPORT" = "yes" ]; then \
-        bash -i /tmp/components/git/install.sh; \
-    fi
-
 ARG WITH_TESTS
 RUN if [ "$WITH_TESTS" = "yes" ]; then \
         wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
@@ -115,6 +101,10 @@ COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 RUN  pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 COPY cvat/ ${HOME}/cvat
+
+RUN bash -i ${HOME}/cvat/apps/ssh/install.sh;
+RUN bash -i ${HOME}/cvat/apps/git/install.sh;
+
 COPY tests ${HOME}/tests
 RUN patch -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
 RUN  chown -R ${USER}:${USER} .

@@ -9,9 +9,8 @@ set -e
 
 apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
-rm ${HOME}/.ssh -fr
 mkdir ${HOME}/.ssh -p
-mv /tmp/components/ssh/keys/* ${HOME}/.ssh/
+mv ${HOME}/cvat/apps/ssh/keys/* ${HOME}/.ssh/
 
 cd ${HOME}/.ssh/
 ssh-add *
