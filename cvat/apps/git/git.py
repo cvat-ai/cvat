@@ -47,7 +47,7 @@ class Git:
         }
         self.__cwd = os.path.join(os.getcwd(), "data", str(tid), "repos")
         self.__diffs_dir = os.path.join(os.getcwd(), "data", str(tid), "repos_diffs")
-        self.__task_name = re.sub(re.sub(r'[\\/*?:"<>|]', '_', Task.objects.get(pk = tid).name))[:100]
+        self.__task_name = re.sub(r'[\\/*?:"<>|\s]', '_', Task.objects.get(pk = tid).name)[:100]
         self.__branch_name = 'cvat_{}_{}'.format(tid, self.__task_name)
         self.__annotation_file = os.path.join(self.__cwd, self.__path)
         self.__changelog_file = os.path.join(self.__cwd, os.path.dirname(self.__path), 'changelog_{}_{}.diff'.format(tid, self.__task_name))
@@ -260,7 +260,7 @@ class Git:
         # Update local repository
         self._pull()
 
-        os.makedirs(annotation_dir, exist_ok = True)
+        os.makedirs(os.path.join(self.__cwd, os.path.dirname(self.__annotation_file)), exist_ok = True)
         # Remove old annotation file if it exists
         if os.path.exists(self.__annotation_file):
             os.remove(self.__annotation_file)
