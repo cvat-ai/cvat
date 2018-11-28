@@ -97,8 +97,7 @@ def save_job(jid, data):
 
     if updated or deleted or created:
         db_job.segment.task.updated_date = timezone.now()
-
-    db_job.segment.task.save()
+        db_job.segment.task.save()
 
     db_job.max_shape_id = max(db_job.max_shape_id, max(client_ids['create']) if client_ids['create'] else -1)
     db_job.save()

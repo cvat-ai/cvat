@@ -29,7 +29,7 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
             });
         },
         error: (data) => {
-            let message = `Can not get tf annotation meta info. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+            let message = `Can not get git repositories meta info. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
             showMessage(message);
             throw Error(message);
         }
@@ -102,7 +102,7 @@ window.cvat.git = {
             }
         }).fail((data) => {
             gitWindow.addClass('hidden');
-            let message = `Error was occured during get an repos status. ` +
+            let message = `Error occured during get an repos status. ` +
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
             showMessage(message);
             throw Error(message);

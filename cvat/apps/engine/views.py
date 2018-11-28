@@ -22,8 +22,6 @@ import logging
 from .log import slogger, clogger
 from cvat.apps.engine.models import StatusChoice
 
-
-
 ############################# High Level server API
 @login_required
 @permission_required(perm=['engine.job.access'],
