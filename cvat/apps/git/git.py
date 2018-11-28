@@ -430,7 +430,7 @@ def onsave(jid, data):
 
             with open(os.path.join(diff_dir, "{}.diff".format(last_num + 1)), 'w') as f:
                 f.write(json.dumps(diff))
-    except GitData.ObjectDoesNotExist:
+    except GitData.DoesNotExist:
         pass
 
 

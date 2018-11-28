@@ -10,17 +10,32 @@ window.cvat = window.cvat || {};
 window.cvat.dashboard = window.cvat.dashboard || {};
 window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
 window.cvat.dashboard.uiCallbacks.push(function(newElements) {
-    newElements.each(function(idx) {
-        let elem = $(newElements[idx]);
-        let tid = +elem.attr('id').split('_')[1];
+    $.ajax({
+        type: 'GET',
+        url: '/git/repository/meta/get',
+        success: (data) => {
+            newElements.each(function(idx) {
+                let elem = $(newElements[idx]);
+                let tid = +elem.attr('id').split('_')[1];
 
-        $('<button> Git Repository Sync </button>').addClass('regular dashboardButtonUI').on('click', () => {
-            let gitDialogWindow = $(`#${window.cvat.git.reposWindowId}`);
-            gitDialogWindow.attr('current_tid', tid);
-            gitDialogWindow.removeClass('hidden');
-            window.cvat.git.updateState();
-        }).appendTo(elem.find('div.dashboardButtonsUI')[0]);
+                if (data.includes(tid)) {
+                    $('<button> Git Repository Sync </button>').addClass('regular dashboardButtonUI').on('click', () => {
+                        let gitDialogWindow = $(`#${window.cvat.git.reposWindowId}`);
+                        gitDialogWindow.attr('current_tid', tid);
+                        gitDialogWindow.removeClass('hidden');
+                        window.cvat.git.updateState();
+                    }).appendTo(elem.find('div.dashboardButtonsUI')[0]);
+                }
+            });
+        },
+        error: (data) => {
+            let message = `Can not get tf annotation meta info. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+            showMessage(message);
+            throw Error(message);
+        }
     });
+
+
 });
 
 window.cvat.git = {
@@ -41,6 +56,7 @@ window.cvat.git = {
         let syncButton = $(`#${window.cvat.git.reposSyncButtonId}`);
 
         reposURLText.attr('placeholder', 'Waiting for server response..');
+        reposURLText.prop('value', '');
         gitLabelMessage.css('color', '#cccc00').text('Waiting for server response..');
         gitLabelStatus.css('color', '#cccc00').text('\u25cc');
         syncButton.attr("disabled", true);
@@ -50,6 +66,7 @@ window.cvat.git = {
         $.get(`/git/repository/get/${tid}`).done((data) => {
             if (!data.url.value) {
                 gitLabelMessage.css('color', 'black').text('Repository is not attached');
+                reposURLText.prop('value', '');
                 reposURLText.attr('placeholder', 'Repository is not attached');
                 return;
             }

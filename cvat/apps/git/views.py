@@ -9,6 +9,7 @@ from django.db import transaction
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine import models
+from cvat.apps.git.models import GitData
 
 import cvat.apps.git.git as CVATGit
 
@@ -36,7 +37,7 @@ def check_process(request, rq_id):
         else:
             return JsonResponse({"status": "unknown"})
     except Exception as ex:
-        slogger.glob.error("error has been occured during checking repository request with rq id {}".format(rq_id), exc_info=True)
+        slogger.glob.error("error occured during checking repository request with rq id {}".format(rq_id), exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
 
@@ -54,7 +55,7 @@ def push_repository(request, tid):
         return JsonResponse({ "rq_id": rq_id })
     except Exception as ex:
         try:
-            slogger.task[tid].error("error has been occured during pushing repository request", exc_info=True)
+            slogger.task[tid].error("error occured during pushing repository request", exc_info=True)
         except:
             pass
         return HttpResponseBadRequest(str(ex))
@@ -69,7 +70,21 @@ def get_repository(request, tid):
         return JsonResponse(CVATGit.get(tid, request.user))
     except Exception as ex:
         try:
-            slogger.task[tid].error("error has been occured during getting repository info request", exc_info=True)
+            slogger.task[tid].error("error occured during getting repository info request", exc_info=True)
         except:
             pass
+        return HttpResponseBadRequest(str(ex))
+
+
+@login_required
+def get_meta_info(request):
+    try:
+        db_git_records = GitData.objects.all()
+        response = []
+        for db_git in db_git_records:
+            response.append(db_git.task_id)
+
+        return JsonResponse(response, safe = False)
+    except Exception as ex:
+        slogger.glob.exception("error occured during get meta request", exc_info = True)
         return HttpResponseBadRequest(str(ex))
