@@ -3,10 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from rules.contrib.views import permission_required, objectgetter
 from django.db import transaction
 
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.log import slogger
+from cvat.apps.engine import models
 
 import cvat.apps.git.git as CVATGit
 
@@ -39,6 +41,8 @@ def check_process(request, rq_id):
 
 
 @login_required
+@permission_required(perm=['engine.task.delete'],
+    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def push_repository(request, tid):
     try:
         slogger.task[tid].info("push repository request")
@@ -57,6 +61,8 @@ def push_repository(request, tid):
 
 
 @login_required
+@permission_required(perm=['engine.task.access'],
+    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def get_repository(request, tid):
     try:
         slogger.task[tid].info("get repository request")

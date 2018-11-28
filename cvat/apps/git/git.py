@@ -25,6 +25,7 @@ import rq
 
 class Git:
     __url = None
+    __path = None
     __tid = None
     __user = None
     __cwd = None
@@ -32,8 +33,9 @@ class Git:
     __diffs_dir = None
 
 
-    def __init__(self, url, tid, user):
+    def __init__(self, url, path, tid, user):
         self.__url = url
+        self.__path = path
         self.__tid = tid
         self.__branch_name = 'cvat_tid_{}'.format(self.__tid)
         self.__user = {
@@ -95,14 +97,11 @@ class Git:
 
 
     # Method creates task branch for repository from current master
-    def _create_user_branch(self):
+    def _to_task_branch(self):
         # Remove user branch from local repository if it exists
-        if self.__branch_name in list(map(lambda x: x.name, self.__rep.heads)):
-            self.__rep.delete_head(self.__branch_name, force=True)
-            self.__rep.head.reference = self.__rep.heads["master"]
-            self.__rep.head.reset("HEAD", index=True, working_tree=True)
+        if self.__branch_name not in list(map(lambda x: x.name, self.__rep.heads)):
+            self.__rep.create_head(self.__branch_name)
 
-        self.__rep.create_head(self.__branch_name)
         self.__rep.head.reference = self.__rep.heads[self.__branch_name]
 
 
@@ -137,9 +136,9 @@ class Git:
         self._update_config()
         if not len(self.__rep.heads):
             self._create_master_branch()
-
-        self._create_user_branch()
+        self._to_task_branch()
         os.makedirs(self.__diffs_dir, exist_ok = True)
+
 
 
     def _ssh_url(self):
@@ -193,7 +192,13 @@ class Git:
         try:
             self._init_host()
             self.__rep.git.pull("origin", "master")
-            self._create_user_branch()
+
+            if self.__branch_name in list(map(lambda x: x.name, self.__rep.heads)):
+                self.__rep.head.reference = self.__rep.heads["master"]
+                self.__rep.delete_head(self.__branch_name, force=True)
+                self.__rep.head.reset("HEAD", index=True, working_tree=True)
+
+            self._to_task_branch()
         except git.exc.GitError:
             # Merge conflicts
             self._reclone()
@@ -248,23 +253,30 @@ class Git:
         # Update local repository
         self._pull()
 
+        annotation_dir = os.path.join(self.__cwd, os.path.dirname(self.__path))
+        annotation_file = os.path.join(annotation_dir, os.path.basename(self.__path))
+        changelog_file = os.path.join(annotation_dir, 'changelog.diff')
+
+        os.makedirs(annotation_dir, exist_ok = True)
+        # Remove old annotation file if it exists
+        if os.path.exists(annotation_file):
+            os.remove(annotation_file)
+
         # Dump an annotation
         dump(self.__tid, format, scheme, host)
         dump_name = Task.objects.get(pk = self.__tid).get_dump_path()
 
-        # Remove other annotation if it exists
-        base_path = os.path.join(self.__cwd, "annotation")
-        shutil.rmtree(base_path, True)
-        os.makedirs(base_path)
-
-        # Zip an annotation and remove it
-        archive_name = os.path.join(base_path, "annotation.zip")
-        subprocess.call('zip -j -r "{}" "{}"'.format(archive_name, dump_name), shell=True)
-        os.remove(dump_name)
+        ext = os.path.splitext(self.__path)[1]
+        if ext == '.zip':
+            subprocess.call('zip -j -r "{}" "{}"'.format(annotation_file, dump_name), shell=True)
+        elif ext == '.xml':
+            shutil.copyfile(dump_name, annotation_file)
+        else:
+            raise Exception("Got unknown annotation file type")
 
         # Setup LFS for *.zip files
-        self.__rep.git.lfs("track", "*.zip")
-        self.__rep.git.add(archive_name)
+        self.__rep.git.lfs("track", self.__path)
+        self.__rep.git.add(self.__path)
 
         # Merge diffs
         summary_diff = {}
@@ -276,24 +288,23 @@ class Git:
         summary_diff["timestamp"] = str(last_save)
 
         # Save merged diffs file
-        diff_name = os.path.join(self.__cwd, "changelog.diff")
         old_changes = []
 
-        if os.path.isfile(diff_name):
-            with open(diff_name, 'r') as f:
+        if os.path.isfile(changelog_file):
+            with open(changelog_file, 'r') as f:
                 try:
                     old_changes = json.loads(f.read())
                 except json.decoder.JSONDecodeError:
                     pass
 
         old_changes.append(summary_diff)
-        with open(diff_name, 'w') as f:
+        with open(changelog_file, 'w') as f:
             f.write(json.dumps(old_changes, sort_keys = True, indent = 4))
 
         # Commit and push
         self.__rep.index.add([
             '.gitattributes',
-            diff_name
+            changelog_file
         ])
         self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user["name"], datetime.datetime.now()))
 
@@ -305,8 +316,8 @@ class Git:
 
     # Method checks status of repository annotation
     def remote_status(self, last_save):
-        anno_archive_name = os.path.join(self.__cwd, "annotation", "annotation.zip")
-        changelog_name = os.path.join(self.__cwd, "changelog.diff")
+        anno_archive_name = os.path.join(self.__cwd, self.__path)
+        changelog_name = os.path.join(self.__cwd, os.path.dirname(self.__path), "changelog.diff")
 
         # Check repository exists and archive exists
         if not os.path.isfile(anno_archive_name) or not os.path.isfile(changelog_name):
@@ -341,11 +352,21 @@ def _initial_create(tid, params):
 
             user = params['owner']
             url = params['git_url']
+            path = '/annotation/annotation.zip'
+            if 'git_path' in params:
+                path = params['git_path']
+                path = os.path.join('/', path)
 
-            Git(url, tid, user).init_repos()
+            path = path[1:]
+            _split = os.path.splitext(path)
+            if len(_split) < 2 or _split[1] not in [".xml", ".zip"]:
+                raise Exception("Only .xml and .zip formats are supported")
+
+            Git(url, path, tid, user).init_repos()
 
             db_git = GitData()
             db_git.url = url
+            db_git.path = path
             db_git.task = Task.objects.get(pk = tid)
             db_git.save()
         except Exception as ex:
@@ -358,7 +379,7 @@ def push(tid, user, scheme, host):
     try:
         db_task = Task.objects.get(pk = tid)
         db_git = GitData.objects.select_for_update().get(pk = db_task)
-        Git(db_git.url, tid, user).init_repos().push(scheme, host, FORMAT_XML, db_task.updated_date)
+        Git(db_git.url, db_git.path, tid, user).init_repos().push(scheme, host, FORMAT_XML, db_task.updated_date)
     except Exception as ex:
         slogger.task[tid].exception('push to remote repository errors occured', exc_info = True)
         raise ex
@@ -375,7 +396,7 @@ def get(tid, user):
         db_git = GitData.objects.select_for_update().get(pk = db_task)
         response['url']['value'] = db_git.url
         try:
-            response['status']['value'] = Git(db_git.url, tid, user).init_repos(True).remote_status(db_task.updated_date)
+            response['status']['value'] = Git(db_git.url, db_git.path, tid, user).init_repos(True).remote_status(db_task.updated_date)
         except Exception as ex:
             response['status']['error'] = str(ex)
     return response

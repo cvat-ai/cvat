@@ -14,6 +14,7 @@ mkdir ${HOME}/.ssh -p
 mv /tmp/components/ssh/keys/* ${HOME}/.ssh/
 
 cd ${HOME}/.ssh/
+ssh-add *
 if test `ssh-add -l | grep "DSA\|RSA\|ECDSA\|ED25519\|RSA1" | wc -l` -eq 0
 then
     ssh-keygen -b 4096 -t rsa -f `pwd`/id_rsa -q -N ""

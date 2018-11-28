@@ -31,6 +31,7 @@ window.cvat.git = {
     labelStatusId: 'gitReposLabelStatus',
     labelMessageId: 'gitReposLabelMessage',
     createURLInputTextId: 'gitCreateURLInputText',
+    createReposPathInputTextId: 'gitCreateReposPathInputText',
 
     updateState: () => {
         let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
@@ -96,9 +97,14 @@ window.cvat.git = {
 document.addEventListener("DOMContentLoaded", () => {
     $(`
         <tr>
-            <td> <label class="regular h2"> Git Repos: </label> </td>
+            <td> <label class="regular h2"> Git URL: </label> </td>
             <td> <input type="text" id="${window.cvat.git.createURLInputTextId}" class="regular"` +
                 `style="width: 90%", placeholder="github.com/user/repos"/> </td>
+        </tr>
+        <tr>
+            <td> <label class="regular h2"> Git Path: </label> </td>
+            <td> <input type="text" id="${window.cvat.git.createReposPathInputTextId}" class="regular"` +
+                `style="width: 90%", placeholder="annotation/annotation.zip [zip/xml are supported]"/> </td>
         </tr>
     `).insertAfter($("#dashboardBugTrackerInput").parent().parent());
 
@@ -106,8 +112,13 @@ document.addEventListener("DOMContentLoaded", () => {
     let originalCreateTaskRequest = window.createTaskRequest;
     window.createTaskRequest = function(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {
         let gitURL = $(`#${window.cvat.git.createURLInputTextId}`).prop('value').replace(/\s/g,'');
+        let gitPath = $(`#${window.cvat.git.createReposPathInputTextId}`).prop('value').trim();
+
         if (gitURL.length) {
             oData.append('git_url', gitURL);
+            if (gitPath.length) {
+                oData.append('git_path', gitPath);
+            }
         }
         originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
     };
