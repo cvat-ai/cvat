@@ -27,23 +27,30 @@ class Git:
     __url = None
     __path = None
     __tid = None
+    __task_name = None
+    __branch_name = None
     __user = None
     __cwd = None
     __rep = None
     __diffs_dir = None
+    __annotation_file = None
+    __changelog_file = None
 
 
     def __init__(self, url, path, tid, user):
         self.__url = url
         self.__path = path
         self.__tid = tid
-        self.__branch_name = 'cvat_tid_{}'.format(self.__tid)
         self.__user = {
             "name": user.username,
             "email": user.email or "dummy@email.com"
         }
         self.__cwd = os.path.join(os.getcwd(), "data", str(tid), "repos")
         self.__diffs_dir = os.path.join(os.getcwd(), "data", str(tid), "repos_diffs")
+        self.__task_name = re.sub(re.sub(r'[\\/*?:"<>|]', '_', Task.objects.get(pk = tid).name))[:100]
+        self.__branch_name = 'cvat_{}_{}'.format(tid, self.__task_name)
+        self.__annotation_file = os.path.join(self.__cwd, self.__path)
+        self.__changelog_file = os.path.join(self.__cwd, os.path.dirname(self.__path), 'changelog_{}_{}.diff'.format(tid, self.__task_name))
 
 
     # Method parses an got URL.
@@ -253,14 +260,10 @@ class Git:
         # Update local repository
         self._pull()
 
-        annotation_dir = os.path.join(self.__cwd, os.path.dirname(self.__path))
-        annotation_file = os.path.join(annotation_dir, os.path.basename(self.__path))
-        changelog_file = os.path.join(annotation_dir, 'changelog.diff')
-
         os.makedirs(annotation_dir, exist_ok = True)
         # Remove old annotation file if it exists
-        if os.path.exists(annotation_file):
-            os.remove(annotation_file)
+        if os.path.exists(self.__annotation_file):
+            os.remove(self.__annotation_file)
 
         # Dump an annotation
         dump(self.__tid, format, scheme, host)
@@ -268,15 +271,15 @@ class Git:
 
         ext = os.path.splitext(self.__path)[1]
         if ext == '.zip':
-            subprocess.call('zip -j -r "{}" "{}"'.format(annotation_file, dump_name), shell=True)
+            subprocess.call('zip -j -r "{}" "{}"'.format(self.__annotation_file, dump_name), shell=True)
         elif ext == '.xml':
-            shutil.copyfile(dump_name, annotation_file)
+            shutil.copyfile(dump_name, self.__annotation_file)
         else:
             raise Exception("Got unknown annotation file type")
 
         # Setup LFS for *.zip files
         self.__rep.git.lfs("track", self.__path)
-        self.__rep.git.add(self.__path)
+        self.__rep.git.add(self.__annotation_file)
 
         # Merge diffs
         summary_diff = {}
@@ -290,21 +293,21 @@ class Git:
         # Save merged diffs file
         old_changes = []
 
-        if os.path.isfile(changelog_file):
-            with open(changelog_file, 'r') as f:
+        if os.path.isfile(self.__changelog_file):
+            with open(self.__changelog_file, 'r') as f:
                 try:
                     old_changes = json.loads(f.read())
                 except json.decoder.JSONDecodeError:
                     pass
 
         old_changes.append(summary_diff)
-        with open(changelog_file, 'w') as f:
+        with open(self.__changelog_file, 'w') as f:
             f.write(json.dumps(old_changes, sort_keys = True, indent = 4))
 
         # Commit and push
         self.__rep.index.add([
             '.gitattributes',
-            changelog_file
+            self.__changelog_file
         ])
         self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user["name"], datetime.datetime.now()))
 
@@ -316,14 +319,11 @@ class Git:
 
     # Method checks status of repository annotation
     def remote_status(self, last_save):
-        anno_archive_name = os.path.join(self.__cwd, self.__path)
-        changelog_name = os.path.join(self.__cwd, os.path.dirname(self.__path), "changelog.diff")
-
         # Check repository exists and archive exists
-        if not os.path.isfile(anno_archive_name) or not os.path.isfile(changelog_name):
+        if not os.path.isfile(self.__annotation_file) or not os.path.isfile(self.__changelog_file):
             return "empty"
         else:
-            with open(changelog_name, 'r') as f:
+            with open(self.__changelog_file, 'r') as f:
                 try:
                     data = json.loads(f.read())
                     last_push = data[-1]["timestamp"]
