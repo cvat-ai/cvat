@@ -1,2 +1,2 @@
 exclude_paths:
- - '3rdparty/**'
+ - '**/3rdparty/**'
