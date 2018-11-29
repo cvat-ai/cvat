@@ -102,12 +102,30 @@ COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 RUN  pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 COPY cvat/ ${HOME}/cvat
 
-RUN bash -i ${HOME}/cvat/apps/ssh/install.sh;
-RUN bash -i ${HOME}/cvat/apps/git/install.sh;
+RUN apt-get update && \
+    apt-get install -y ssh netcat-openbsd git curl zip  && \
+    curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \
+    apt-get install -y git-lfs && \
+    git lfs install && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir ${HOME}/.ssh ${HOME}/cvat/apps/git/keys -p && \
+    if test `ls ${HOME}/cvat/apps/git/keys -1 | wc -l` -gt 0; then \
+        mv ${HOME}/cvat/apps/git/keys/* ${HOME}/.ssh/ ; \
+    fi && \
+    cd ${HOME}/.ssh/ && \
+    eval `ssh-agent -s` && \
+    for possiblekey in `ls .`; do \
+        if grep -q PRIVATE "$possiblekey"; then \
+            ssh-add "$possiblekey"; \
+        fi \
+    done && \
+    if test `ssh-add -l | grep "DSA\|RSA\|ECDSA\|ED25519\|RSA1" | wc -l` -eq 0; then \
+        ssh-keygen -b 4096 -t rsa -f `pwd`/id_rsa -q -N ""; \
+    fi
 
 COPY tests ${HOME}/tests
 RUN patch -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
-RUN  chown -R ${USER}:${USER} .
+RUN chown -R ${USER}:${USER} .
 
 # RUN all commands below as 'django' user
 USER ${USER}
