@@ -117,21 +117,11 @@ class AAMModel extends Listener {
         if (this._activeAAM && this._active) {
             let label = this._active.label;
             let attrId = +this._attrIdByIdx(label, this._attrNumberByLabel[label].current);
-            let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
 
             let [xtl, ytl, xbr, ybr] = this._bbRect(this._currentShapes[this._activeIdx].interpolation.position);
             this._focus(xtl - this._margin, xbr + this._margin, ytl - this._margin, ybr + this._margin);
-
-            this._active.activeAAM = {
-                shape: true,
-                attribute: attrId,
-            };
-
             this.notify();
-
-            if (attrInfo.type === 'text' || attrInfo.type === 'number') {
-                this._active.aamAttributeFocus();
-            }
+            this._active.activeAttribute = attrId;
         }
         else {
             this.notify();
@@ -140,10 +130,7 @@ class AAMModel extends Listener {
 
     _deactivate() {
         if (this._activeAAM && this._active) {
-            this._active.activeAAM = {
-                shape: false,
-                attribute: null
-            };
+            this._active.activeAttribute = null;
         }
     }
 
@@ -153,7 +140,6 @@ class AAMModel extends Listener {
             this._shapeCollection.resetActive();
             this._activeAAM = true;
             this._updateCollection();
-            this.notify();
             this._activate();
         }
     }
@@ -238,26 +224,22 @@ class AAMModel extends Listener {
         if (!this._activeAAM || !this._active) {
             return;
         }
-
         let label = this._active.label;
         let frame = window.cvat.player.frames.current;
         let attrId = this._attrIdByIdx(label, this._attrNumberByLabel[label].current);
         let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
-
         if (key >= attrInfo.values.length) {
             if (attrInfo.type === 'checkbox' && key < 2) {
                 this._active.updateAttribute(frame, attrId, !attrInfo.values[0]);
             }
             return;
         }
-
         if (attrInfo.values[0] === AAMUndefinedKeyword) {
             if (key >= attrInfo.values.length - 1) {
                 return;
             }
             key ++;
         }
-
         this._active.updateAttribute(frame, attrId, attrInfo.values[key]);
     }
 
@@ -282,6 +264,10 @@ class AAMModel extends Listener {
 
     get activeAAM() {
         return this._activeAAM;
+    }
+
+    get active() {
+        return this._active;
     }
 
     set margin(value) {
@@ -333,7 +319,6 @@ class AAMController {
                 else {
                     return;
                 }
-
                 this._model.setupAttributeValue(key);
             }.bind(this));
 
@@ -361,6 +346,7 @@ class AAMView {
         this._aamCounter = $('#aamCounter');
         this._aamHelpContainer = $('#aamHelpContainer');
         this._zoomMargin = $('#aamZoomMargin');
+        this._frameContent = SVG.adopt($('#frameContent')[0]);
         this._controller = aamController;
 
         this._zoomMargin.on('change', (e) => {
@@ -370,7 +356,58 @@ class AAMView {
         aamModel.subscribe(this);
     }
 
+    _setupAAMView(active, type, pos) {
+        let oldRect = $('#outsideRect');
+        let oldMask = $('#outsideMask');
+
+        if (active) {
+            if (oldRect.length) {
+                oldRect.remove();
+                oldMask.remove();
+            }
+
+            let size = window.cvat.translate.box.actualToCanvas({
+                x: 0,
+                y: 0,
+                width: window.cvat.player.geometry.frameWidth,
+                height: window.cvat.player.geometry.frameHeight
+            });
+
+            let excludeField = this._frameContent.rect(size.width, size.height).move(size.x, size.y).fill('#666');
+            let includeField = null;
+
+            if (type === 'box') {
+                pos = window.cvat.translate.box.actualToCanvas(pos);
+                includeField = this._frameContent.rect(pos.xbr - pos.xtl, pos.ybr - pos.ytl).move(pos.xtl, pos.ytl);
+            }
+            else {
+                pos.points = window.cvat.translate.points.actualToCanvas(pos.points);
+                includeField = this._frameContent.polygon(pos.points);
+            }
+
+            this._frameContent.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
+            this._frameContent.rect(size.width, size.height).move(size.x, size.y).attr({
+                mask: 'url(#outsideMask)',
+                id: 'outsideRect'
+            });
+
+            let content = $(this._frameContent.node);
+            let texts = content.find('.shapeText');
+            for (let text of texts) {
+                content.append(text);
+            }
+        }
+        else {
+            oldRect.remove();
+            oldMask.remove();
+        }
+    }
+
     onAAMUpdate(aam) {
+        this._setupAAMView(aam.active ? true : false,
+            aam.active ? aam.active.type.split('_')[1] : '',
+            aam.active ? aam.active.interpolate(window.cvat.player.frames.current).position : 0);
+
         if (aam.activeAAM) {
             if (this._aamMenu.hasClass('hidden')) {
                 this._trackManagement.addClass('hidden');
@@ -392,7 +429,5 @@ class AAMView {
                 this._trackManagement.removeClass('hidden');
             }
         }
-        // blur on change text attribute to other or on exit from aam
-        blurAllElements();
     }
 }
