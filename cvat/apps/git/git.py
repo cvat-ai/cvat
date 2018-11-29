@@ -331,6 +331,7 @@ class Git:
                     if last_save != last_push:
                         return "!sync"
                     else:
+                        self._init_host()
                         self.__rep.git.remote('-v', 'update')
                         last_hash = self.__rep.git.show_ref('refs/heads/{}'.format(self.__branch_name), '--hash')
                         merge_base_hash = self.__rep.merge_base('refs/remotes/origin/master', self.__branch_name)[0].hexsha
