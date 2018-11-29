@@ -112,15 +112,17 @@ RUN apt-get update && \
     if test `ls ${HOME}/cvat/apps/git/keys -1 | wc -l` -gt 0; then \
         mv ${HOME}/cvat/apps/git/keys/* ${HOME}/.ssh/ ; \
     fi && \
-    cd ${HOME}/.ssh/ && \
-    eval `ssh-agent -s` && \
-    for possiblekey in `ls .`; do \
-        if grep -q PRIVATE "$possiblekey"; then \
-            ssh-add "$possiblekey"; \
-        fi \
-    done && \
+    echo '\neval `ssh-agent -s` && \' >> ${HOME}/.ssh_initialization && \
+    echo 'for possiblekey in `ls -d ${HOME}/.ssh/*`; do \' >> ${HOME}/.ssh_initialization && \
+    echo '  if grep -q PRIVATE "$possiblekey"; then \' >> ${HOME}/.ssh_initialization && \
+    echo '    ssh-add "$possiblekey"; \' >> ${HOME}/.ssh_initialization && \
+    echo '  fi \' >> ${HOME}/.ssh_initialization && \
+    echo 'done\n' >> ${HOME}/.ssh_initialization && \
+    . ${HOME}/.ssh_initialization && \
+    cat ${HOME}/.ssh_initialization >> ${HOME}/.bashrc && \
+    rm ${HOME}/.ssh_initialization && \
     if test `ssh-add -l | grep "DSA\|RSA\|ECDSA\|ED25519\|RSA1" | wc -l` -eq 0; then \
-        ssh-keygen -b 4096 -t rsa -f `pwd`/id_rsa -q -N ""; \
+        ssh-keygen -b 4096 -t rsa -f ${HOME}/.ssh/id_rsa -q -N ""; \
     fi
 
 COPY tests ${HOME}/tests
