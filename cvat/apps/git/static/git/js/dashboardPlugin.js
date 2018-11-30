@@ -94,6 +94,10 @@ window.cvat.git = {
                 gitLabelStatus.css('color', 'darkgreen').text('\u2605');
                 gitLabelMessage.css('color', 'darkgreen').text('Synchronized');
             }
+            else if (data.status.value == "syncing") {
+                gitLabelMessage.css('color', '#cccc00').text('Synchronization..');
+                gitLabelStatus.css('color', '#cccc00').text('\u25cc');
+            }
             else {
                 let message = `Got unknown repository status: ${data.status.value}`;
                 gitLabelStatus.css('color', 'red').text('\u26a0');

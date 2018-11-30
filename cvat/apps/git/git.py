@@ -14,6 +14,7 @@ from cvat.apps.engine.plugins import add_plugin
 from cvat.apps.git.models import GitData
 
 import subprocess
+import django_rq
 import datetime
 import shutil
 import json
@@ -397,7 +398,13 @@ def get(tid, user):
         db_git = GitData.objects.select_for_update().get(pk = db_task)
         response['url']['value'] = db_git.url
         try:
-            response['status']['value'] = Git(db_git.url, db_git.path, tid, user).init_repos(True).remote_status(db_task.updated_date)
+            rq_id = "git.push.{}".format(tid)
+            queue = django_rq.get_queue('default')
+            rq_job = queue.fetch_job(rq_id)
+            if rq_job is not None and (rq_job.is_queued or rq_job.is_started):
+                response['status']['value'] = 'syncing'
+            else:
+                response['status']['value'] = Git(db_git.url, db_git.path, tid, user).init_repos(True).remote_status(db_task.updated_date)
         except Exception as ex:
             response['status']['error'] = str(ex)
     return response
