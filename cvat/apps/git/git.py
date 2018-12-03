@@ -12,6 +12,7 @@ from cvat.apps.engine.annotation import _dump as dump, FORMAT_XML, save_job
 from cvat.apps.engine.plugins import add_plugin
 
 from cvat.apps.git.models import GitData
+from collections import OrderedDict
 
 import subprocess
 import django_rq
@@ -44,7 +45,7 @@ class Git:
         self.__tid = tid
         self.__user = {
             "name": user.username,
-            "email": user.email or "dummy@email.com"
+            "email": user.email or "dummy@cvat.com"
         }
         self.__cwd = os.path.join(os.getcwd(), "data", str(tid), "repos")
         self.__diffs_dir = os.path.join(os.getcwd(), "data", str(tid), "repos_diffs")
@@ -267,7 +268,7 @@ class Git:
             os.remove(self.__annotation_file)
 
         # Dump an annotation
-        dump(self.__tid, format, scheme, host)
+        dump(self.__tid, format, scheme, host, OrderedDict())
         dump_name = Task.objects.get(pk = self.__tid).get_dump_path()
 
         ext = os.path.splitext(self.__path)[1]
@@ -346,30 +347,39 @@ class Git:
 
 
 def _initial_create(tid, params):
-    if 'git_url' in params:
+    if 'git_path' in params:
         try:
             job = rq.get_current_job()
             job.meta['status'] = 'Cloning a repository..'
             job.save_meta()
 
             user = params['owner']
-            url = params['git_url']
-            path = '/annotation/annotation.zip'
-            if 'git_path' in params:
-                path = params['git_path']
-                path = os.path.join('/', path)
+            git_path = params['git_path']
+
+            db_task = Task.objects.get(pk = tid)
+            path_pattern = r"\[(.+)\]"
+            path_search = re.search(path_pattern, git_path)
+            path = None
+
+            if path_search is not None:
+                path = path_search.group(1)
+                git_path = git_path[0:git_path.find(path) - 1].strip()
+                path = os.path.join('/', path.strip())
+            else:
+                anno_file = re.sub(r'[\\/*?:"<>|\s]', '_', db_task.name)[:100]
+                path = '/annotation/{}.zip'.format(anno_file)
 
             path = path[1:]
             _split = os.path.splitext(path)
             if len(_split) < 2 or _split[1] not in [".xml", ".zip"]:
                 raise Exception("Only .xml and .zip formats are supported")
 
-            Git(url, path, tid, user).init_repos()
+            Git(git_path, path, tid, user).init_repos()
 
             db_git = GitData()
-            db_git.url = url
+            db_git.url = git_path
             db_git.path = path
-            db_git.task = Task.objects.get(pk = tid)
+            db_git.task = db_task
             db_git.save()
         except Exception as ex:
             slogger.task[tid].exception('exception occured during git _initial_create', exc_info = True)
@@ -396,7 +406,7 @@ def get(tid, user):
     db_task = Task.objects.get(pk = tid)
     if GitData.objects.filter(pk = db_task).exists():
         db_git = GitData.objects.select_for_update().get(pk = db_task)
-        response['url']['value'] = db_git.url
+        response['url']['value'] = '{} [{}]'.format(db_git.url, db_git.path)
         try:
             rq_id = "git.push.{}".format(tid)
             queue = django_rq.get_queue('default')
@@ -411,7 +421,7 @@ def get(tid, user):
 
 
 @transaction.atomic
-def onsave(jid, data):
+def _onsave(jid, data):
     db_task = Job.objects.select_related('segment__task').get(pk = jid).segment.task
     try:
         GitData.objects.select_for_update().get(pk = db_task.id)
@@ -441,6 +451,17 @@ def onsave(jid, data):
     except GitData.DoesNotExist:
         pass
 
+def _ondump(tid, data_format, scheme, host, plugin_meta_data):
+    db_task = Task.objects.get(pk = tid)
+    try:
+        db_git = GitData.objects.get(pk = db_task)
+        plugin_meta_data['git'] = OrderedDict({
+            "url": db_git.url,
+            "path": db_git.path,
+        })
+    except GitData.DoesNotExist:
+        pass
 
-add_plugin("save_job", onsave, "after", exc_ok = False)
+add_plugin("save_job", _onsave, "after", exc_ok = False)
 add_plugin("_create_thread", _initial_create, "before", exc_ok = False)
+add_plugin("_dump", _ondump, "before", exc_ok = False)

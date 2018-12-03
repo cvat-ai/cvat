@@ -35,7 +35,7 @@ def dump(tid, data_format, scheme, host):
     Dump annotation for the task in specified data format.
     """
     queue = django_rq.get_queue('default')
-    queue.enqueue_call(func=_dump, args=(tid, data_format, scheme, host),
+    queue.enqueue_call(func=_dump, args=(tid, data_format, scheme, host, OrderedDict()),
         job_id="annotation.dump/{}".format(tid))
 
 def check(tid):
@@ -1502,12 +1502,13 @@ class _AnnotationForSegment(_Annotation):
         self.points = annotation.points
         self.points_paths = annotation.points_paths
 
+@plugin_decorator
 @transaction.atomic
-def _dump(tid, data_format, scheme, host):
+def _dump(tid, data_format, scheme, host, plugin_meta_data):
     db_task = models.Task.objects.select_for_update().get(id=tid)
     annotation = _AnnotationForTask(db_task)
     annotation.init_from_db()
-    annotation.dump(data_format, scheme, host)
+    annotation.dump(data_format, scheme, host, plugin_meta_data)
 
 def _calc_box_area(box):
     return (box.xbr - box.xtl) * (box.ybr - box.ytl)
@@ -1886,7 +1887,7 @@ class _AnnotationForTask(_Annotation):
                 # We don't have old boxes on the frame. Let's add all new ones.
                 self.boxes.extend(int_boxes_by_frame[frame])
 
-    def dump(self, data_format, scheme, host):
+    def dump(self, data_format, scheme, host, plugin_meta_data):
         def _flip_box(box, im_w, im_h):
             box.xbr, box.xtl = im_w - box.xtl, im_w - box.xbr
             box.ybr, box.ytl = im_h - box.ytl, im_h - box.ybr
@@ -1949,6 +1950,8 @@ class _AnnotationForTask(_Annotation):
             ])),
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
+
+        meta.update(plugin_meta_data)
 
         if db_task.mode == "interpolation":
             meta["task"]["original_size"] = OrderedDict([
