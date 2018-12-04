@@ -4,7 +4,6 @@
 
 from django.db import transaction
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task, Job
@@ -16,13 +15,43 @@ from collections import OrderedDict
 
 import subprocess
 import django_rq
-import datetime
 import shutil
 import json
 import git
 import os
 import re
 import rq
+
+keys = subprocess.run(['ssh-add -l'], shell = True,
+    stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
+
+if 'has no identities' in keys[0]:
+    keys_dir = '{}/keys'.format(os.getcwd())
+    ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
+    keys = os.listdir(keys_dir)
+    if not ('id_rsa' in keys and 'id_rsa.pub' in keys):
+        subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell = True)
+        shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
+        shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
+    else:
+        shutil.copyfile('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
+        shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
+
+    subprocess.run(['ssh-add', '{}/*'.format(ssh_dir)])
+
+
+def _have_no_access_exception(ex):
+    if 'Permission denied' in ex.stderr or 'Could not read from remote repository' in ex.stderr:
+        keys = subprocess.run(['ssh-add -L'], shell = True,
+            stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
+        keys = list(filter(lambda x: len(x), list(map(lambda x: x.strip(), keys))))
+        raise Exception(
+            'Could not connect to the remote repository. ' +
+            'Please make sure you have the correct access rights and the repository exists. ' +
+            'Available public keys are: ' + str(keys)
+        )
+    else:
+        raise ex
 
 
 class Git:
@@ -36,12 +65,12 @@ class Git:
     __rep = None
     __diffs_dir = None
     __annotation_file = None
-    __changelog_file = None
+    __sync_date = None
 
-
-    def __init__(self, url, path, tid, user):
-        self.__url = url
-        self.__path = path
+    def __init__(self, db_git, tid, user):
+        self.__db_git = db_git
+        self.__url = db_git.url
+        self.__path = db_git.path
         self.__tid = tid
         self.__user = {
             "name": user.username,
@@ -52,7 +81,7 @@ class Git:
         self.__task_name = re.sub(r'[\\/*?:"<>|\s]', '_', Task.objects.get(pk = tid).name)[:100]
         self.__branch_name = 'cvat_{}_{}'.format(tid, self.__task_name)
         self.__annotation_file = os.path.join(self.__cwd, self.__path)
-        self.__changelog_file = os.path.join(self.__cwd, os.path.dirname(self.__path), 'changelog_{}_{}.diff'.format(tid, self.__task_name))
+        self.__sync_date = db_git.sync_date
 
 
     # Method parses an got URL.
@@ -96,13 +125,9 @@ class Git:
         with open(readme_md_name, "w"):
             pass
         self.__rep.index.add([readme_md_name])
-        self.__rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user["name"], datetime.datetime.now()))
+        self.__rep.index.commit("CVAT Annotation. Initial commit by {} at {}".format(self.__user["name"], timezone.now()))
 
-        try:
-            self.__rep.git.push("origin", "master")
-        except git.exc.GitError:
-            slogger.task[self.__tid].warning("Remote repository doesn't contain any " +
-                "heads but 'master' branch push process has been failed", exc_info = True)
+        self.__rep.git.push("origin", "master")
 
 
     # Method creates task branch for repository from current master
@@ -136,8 +161,6 @@ class Git:
             if proc.returncode > 1:
                 raise Exception('Failed ssh connection. {}'.format(stderr))
             slogger.glob.info('Host {} has been added to known_hosts.'.format(host))
-
-        return self
 
 
     # Method initializes repos. It setup configuration, creates master branch if need and checkouts to task branch
@@ -178,12 +201,12 @@ class Git:
                 os.remove(self.__cwd)
             else:
                 # Rename current repository dir
-                tmp_repo = os.path.join(self.__cwd, "..", "tmp_repo")
+                tmp_repo = os.path.abspath(os.path.join(self.__cwd, "..", "tmp_repo"))
                 os.rename(self.__cwd, tmp_repo)
 
                 # Try clone repository
                 try:
-                    self.clone()
+                    self._clone()
                     shutil.rmtree(tmp_repo, True)
                 except Exception as ex:
                     # Restore state if any errors have occured
@@ -226,15 +249,12 @@ class Git:
                 slogger.task[self.__tid].info("Local repository URL is obsolete.")
                 # We need reinitialize repository if it's false
                 raise git.exc.GitError("Actual and saved repository URLs aren't match")
-            return self
-        except git.exc.GitError as ex:
+        except git.exc.GitError:
             if wo_remote:
-                raise ex
-
-        slogger.task[self.__tid].info("Local repository initialization..")
-        shutil.rmtree(self.__cwd, True)
-        self._clone()
-        return self
+                raise Exception('Local repository is failed')
+            slogger.task[self.__tid].info("Local repository initialization..")
+            shutil.rmtree(self.__cwd, True)
+            self._clone()
 
 
     # Method prepares an annotation, merges diffs and pushes it to remote repository to user branch
@@ -290,28 +310,11 @@ class Git:
                 diff = json.loads(f.read())
                 _accumulate(diff, summary_diff, None)
 
-        summary_diff["timestamp"] = str(last_save)
-
-        # Save merged diffs file
-        old_changes = []
-
-        if os.path.isfile(self.__changelog_file):
-            with open(self.__changelog_file, 'r') as f:
-                try:
-                    old_changes = json.loads(f.read())
-                except json.decoder.JSONDecodeError:
-                    pass
-
-        old_changes.append(summary_diff)
-        with open(self.__changelog_file, 'w') as f:
-            f.write(json.dumps(old_changes, sort_keys = True, indent = 4))
-
         # Commit and push
         self.__rep.index.add([
             '.gitattributes',
-            self.__changelog_file
         ])
-        self.__rep.index.commit("CVAT Annotation. Annotation updated by {} at {}".format(self.__user["name"], datetime.datetime.now()))
+        self.__rep.index.commit("CVAT Annotation updated by {}. Summary: {}".format(self.__user["name"], str(summary_diff)))
 
         self._init_host()
         self.__rep.git.push("origin", self.__branch_name, "--force")
@@ -322,28 +325,19 @@ class Git:
     # Method checks status of repository annotation
     def remote_status(self, last_save):
         # Check repository exists and archive exists
-        if not os.path.isfile(self.__annotation_file) or not os.path.isfile(self.__changelog_file):
+        if not os.path.isfile(self.__annotation_file):
             return "empty"
+        elif last_save != self.__sync_date:
+            return "!sync"
         else:
-            with open(self.__changelog_file, 'r') as f:
-                try:
-                    data = json.loads(f.read())
-                    last_push = data[-1]["timestamp"]
-                    last_push = parse_datetime(last_push)
-                    if last_save != last_push:
-                        return "!sync"
-                    else:
-                        self._init_host()
-                        self.__rep.git.remote('-v', 'update')
-                        last_hash = self.__rep.git.show_ref('refs/heads/{}'.format(self.__branch_name), '--hash')
-                        merge_base_hash = self.__rep.merge_base('refs/remotes/origin/master', self.__branch_name)[0].hexsha
-                        if last_hash == merge_base_hash:
-                            return "merged"
-                        else:
-                            return "sync"
-
-                except json.decoder.JSONDecodeError:
-                    raise Exception("Bad local repository.")
+            self._init_host()
+            self.__rep.git.remote('-v', 'update')
+            last_hash = self.__rep.git.show_ref('refs/heads/{}'.format(self.__branch_name), '--hash')
+            merge_base_hash = self.__rep.merge_base('refs/remotes/origin/master', self.__branch_name)[0].hexsha
+            if last_hash == merge_base_hash:
+                return "merged"
+            else:
+                return "sync"
 
 
 def _initial_create(tid, params):
@@ -374,13 +368,17 @@ def _initial_create(tid, params):
             if len(_split) < 2 or _split[1] not in [".xml", ".zip"]:
                 raise Exception("Only .xml and .zip formats are supported")
 
-            Git(git_path, path, tid, user).init_repos()
-
             db_git = GitData()
             db_git.url = git_path
             db_git.path = path
             db_git.task = db_task
-            db_git.save()
+
+            try:
+                _git = Git(db_git, tid, user)
+                _git.init_repos()
+                db_git.save()
+            except git.exc.GitCommandError as ex:
+                _have_no_access_exception(ex)
         except Exception as ex:
             slogger.task[tid].exception('exception occured during git _initial_create', exc_info = True)
             raise ex
@@ -391,7 +389,16 @@ def push(tid, user, scheme, host):
     try:
         db_task = Task.objects.get(pk = tid)
         db_git = GitData.objects.select_for_update().get(pk = db_task)
-        Git(db_git.url, db_git.path, tid, user).init_repos().push(scheme, host, FORMAT_XML, db_task.updated_date)
+        try:
+            _git = Git(db_git, tid, user)
+            _git.init_repos()
+            _git.push(scheme, host, FORMAT_XML, db_task.updated_date)
+
+            # Update timestamp
+            db_git.sync_date = db_task.updated_date
+            db_git.save()
+        except git.exc.GitCommandError as ex:
+            _have_no_access_exception(ex)
     except Exception as ex:
         slogger.task[tid].exception('push to remote repository errors occured', exc_info = True)
         raise ex
@@ -412,11 +419,21 @@ def get(tid, user):
             queue = django_rq.get_queue('default')
             rq_job = queue.fetch_job(rq_id)
             if rq_job is not None and (rq_job.is_queued or rq_job.is_started):
-                response['status']['value'] = 'syncing'
+                db_git.status = 'syncing'
+                response['status']['value'] = db_git.status
             else:
-                response['status']['value'] = Git(db_git.url, db_git.path, tid, user).init_repos(True).remote_status(db_task.updated_date)
+                try:
+                    _git = Git(db_git, tid, user)
+                    _git.init_repos(True)
+                    db_git.status = _git.remote_status(db_task.updated_date)
+                    response['status']['value'] = db_git.status
+                except git.exc.GitCommandError as ex:
+                    _have_no_access_exception(ex)
         except Exception as ex:
             response['status']['error'] = str(ex)
+
+    db_git.check_date = timezone.now()
+    db_git.save()
     return response
 
 

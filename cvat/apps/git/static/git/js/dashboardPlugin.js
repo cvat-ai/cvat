@@ -18,7 +18,18 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
                 let elem = $(newElements[idx]);
                 let tid = +elem.attr('id').split('_')[1];
 
-                if (data.includes(tid)) {
+
+                if (tid in data) {
+                    if (['sync', 'syncing'].includes(data[tid])) {
+                        elem.css('background', 'floralwhite');
+                    }
+                    else if (data[tid] == 'merged') {
+                        elem.css('background', 'azure');
+                    }
+                    else {
+                        elem.css('background', 'mistyrose');
+                    }
+
                     $('<button> Git Repository Sync </button>').addClass('regular dashboardButtonUI').on('click', () => {
                         let gitDialogWindow = $(`#${window.cvat.git.reposWindowId}`);
                         gitDialogWindow.attr('current_tid', tid);
@@ -155,7 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td style="width: 60%;">
                             <div>
                                 <label class="regular h2" id="${window.cvat.git.labelStatusId}"> </label>
-                                <label class="regular h2" id="${window.cvat.git.labelMessageId}"> </label>
+                                <label class="regular h2" id="${window.cvat.git.labelMessageId}" style="word-break: break-word;"> </label>
                             </div>
                         </td>
                         <td style="width: 20%;">
@@ -192,8 +203,12 @@ document.addEventListener("DOMContentLoaded", () => {
             function timeoutCallback() {
                 $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
                     if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
-                        if (data.status == "failed" || data.status == "unknown") {
-                            let message = `Request for verification of pushing returned status "${data.status}"`;
+                        if (data.status == "failed") {
+                            let message = data.error;
+                            badResponse(message);
+                        }
+                        else if (data.status == "unknown") {
+                            let message = `Request for pushing returned status "${data.status}".`;
                             badResponse(message);
                         }
                         else {

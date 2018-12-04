@@ -5,6 +5,7 @@
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from rules.contrib.views import permission_required, objectgetter
 from django.db import transaction
+from django.utils import timezone
 
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.log import slogger
@@ -13,6 +14,7 @@ from cvat.apps.git.models import GitData
 
 import cvat.apps.git.git as CVATGit
 
+import datetime
 import django_rq
 import random
 import json
@@ -33,7 +35,7 @@ def check_process(request, rq_id):
             elif rq_job.is_finished:
                 return JsonResponse({"status": "finished"})
             else:
-                return JsonResponse({"status": "failed"})
+                return JsonResponse({"status": "failed", "error": rq_job.exc_info})
         else:
             return JsonResponse({"status": "unknown"})
     except Exception as ex:
@@ -80,9 +82,13 @@ def get_repository(request, tid):
 def get_meta_info(request):
     try:
         db_git_records = GitData.objects.all()
-        response = []
+        cur_date = timezone.now()
+        response = {}
         for db_git in db_git_records:
-            response.append(db_git.task_id)
+            if (cur_date - db_git.check_date).seconds > 600 or not len(db_git.status):
+                response[db_git.task_id] = CVATGit.get(db_git.task_id, request.user)
+            else:
+                response[db_git.task_id] = db_git.status
 
         return JsonResponse(response, safe = False)
     except Exception as ex:

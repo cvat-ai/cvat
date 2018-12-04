@@ -112,18 +112,13 @@ RUN apt-get update && \
     if test `ls ${HOME}/cvat/apps/git/keys -1 | wc -l` -gt 0; then \
         mv ${HOME}/cvat/apps/git/keys/* ${HOME}/.ssh/ ; \
     fi && \
-    echo '\neval `ssh-agent -s` && \' >> ${HOME}/.ssh_initialization && \
-    echo 'for possiblekey in `ls -d ${HOME}/.ssh/*`; do \' >> ${HOME}/.ssh_initialization && \
-    echo '  if grep -q PRIVATE "$possiblekey"; then \' >> ${HOME}/.ssh_initialization && \
-    echo '    ssh-add "$possiblekey"; \' >> ${HOME}/.ssh_initialization && \
-    echo '  fi \' >> ${HOME}/.ssh_initialization && \
-    echo 'done\n' >> ${HOME}/.ssh_initialization && \
-    . ${HOME}/.ssh_initialization && \
-    cat ${HOME}/.ssh_initialization >> ${HOME}/.bashrc && \
-    rm ${HOME}/.ssh_initialization && \
-    if test `ssh-add -l | grep "DSA\|RSA\|ECDSA\|ED25519\|RSA1" | wc -l` -eq 0; then \
-        ssh-keygen -b 4096 -t rsa -f ${HOME}/.ssh/id_rsa -q -N ""; \
-    fi
+    echo '\neval `ssh-agent -s` && \' >> ${HOME}/.bashrc && \
+    echo 'for possiblekey in `ls -d ${HOME}/.ssh/*`; do \' >> ${HOME}/.bashrc && \
+    echo '  if grep -q PRIVATE "$possiblekey"; then \' >> ${HOME}/.bashrc && \
+    echo '    ssh-add "$possiblekey"; \' >> ${HOME}/.bashrc && \
+    echo '  fi \' >> ${HOME}/.bashrc && \
+    echo 'done\n' >> ${HOME}/.bashrc
+
 
 COPY tests ${HOME}/tests
 RUN patch -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
