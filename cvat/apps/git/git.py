@@ -6,7 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.models import Task, Job
+from cvat.apps.engine.models import Task, Job, User
 from cvat.apps.engine.annotation import _dump as dump, FORMAT_XML, save_job
 from cvat.apps.engine.plugins import add_plugin
 
@@ -412,12 +412,24 @@ def get(tid, user):
                 except git.exc.GitCommandError as ex:
                     _have_no_access_exception(ex)
         except Exception as ex:
+            db_git.status = 'error'
             response['status']['error'] = str(ex)
 
-    db_git.check_date = timezone.now()
     db_git.save()
     return response
 
+def update_states():
+    db_git_records = GitData.objects.all()
+    db_user = User.objects.first()
+    if db_user is None:
+        # User hasn't been created yet
+        return
+
+    for db_git in db_git_records:
+        try:
+            get(db_git.task_id, db_user)
+        except Exception:
+            slogger.glob("Exception occured during a status updating for db_git with tid: {}".format(db_git.task_id))
 
 @transaction.atomic
 def _onsave(jid, data):

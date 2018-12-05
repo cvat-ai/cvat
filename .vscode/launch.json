@@ -84,6 +84,25 @@
             "env": {},
             "envFile": "${workspaceFolder}/.env",
         },
+        {
+            "name": "CVAT git",
+            "type": "python",
+            "request": "launch",
+            "debugStdLib": true,
+            "stopOnEntry": false,
+            "pythonPath": "${config:python.pythonPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "update_git_states"
+            ],
+            "debugOptions": [
+                "RedirectOutput",
+                "DjangoDebugging"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "envFile": "${workspaceFolder}/.env",
+        },
     ],
     "compounds": [
         {
@@ -93,6 +112,7 @@
                 "CVAT Server",
                 "CVAT RQ - default",
                 "CVAT RQ - low",
+                "CVAT git",
             ]
         }
     ]
