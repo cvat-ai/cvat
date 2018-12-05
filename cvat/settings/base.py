@@ -16,7 +16,11 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 import sys
+import shutil
+import subprocess
+
 from pathlib import Path
+from filelock import FileLock
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
@@ -33,6 +37,42 @@ except ImportError:
         chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
         f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
     from keys.secret_key import SECRET_KEY
+
+
+def generate_ssh_keys():
+    keys_dir = '{}/keys'.format(os.getcwd())
+    ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
+    pidfile = os.path.join(ssh_dir, 'ssh.pid')
+
+    try:
+        with FileLock(pidfile):
+            subprocess.run(['ssh-add', '{}/*'.format(ssh_dir)])
+            keys = subprocess.run(['ssh-add -l'], shell = True,
+                stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
+
+            if 'has no identities' in keys[0]:
+                print('SSH keys were not found')
+                keys = os.listdir(keys_dir)
+                if not ('id_rsa' in keys and 'id_rsa.pub' in keys):
+                    print('New pair of keys are being generated')
+                    subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell = True)
+                    shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
+                else:
+                    print('Copying them from keys volume')
+                    shutil.copyfile('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
+                subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)])
+        os.remove(pidfile)
+    except:
+        return
+
+
+generate_ssh_keys()
 
 # Application definition
 JS_3RDPARTY = {}

@@ -22,24 +22,6 @@ import os
 import re
 import rq
 
-keys = subprocess.run(['ssh-add -l'], shell = True,
-    stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
-
-if 'has no identities' in keys[0]:
-    keys_dir = '{}/keys'.format(os.getcwd())
-    ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
-    keys = os.listdir(keys_dir)
-    if not ('id_rsa' in keys and 'id_rsa.pub' in keys):
-        subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell = True)
-        shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
-        shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
-    else:
-        shutil.copyfile('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
-        shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
-
-    subprocess.run(['ssh-add', '{}/*'.format(ssh_dir)])
-
-
 def _have_no_access_exception(ex):
     if 'Permission denied' in ex.stderr or 'Could not read from remote repository' in ex.stderr:
         keys = subprocess.run(['ssh-add -L'], shell = True,
@@ -154,11 +136,11 @@ class Git:
     def _init_host(self):
         user, host = self._parse_url()[:-1]
         check_command = 'ssh-keygen -F {} | grep "Host {} found"'.format(host, host)
-        add_command = 'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -q {}@{}'.format(user, host)
+        add_command = 'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 {}@{}'.format(user, host)
         if not len(subprocess.run([check_command], shell = True, stdout = subprocess.PIPE).stdout):
-            proc = subprocess.run([add_command], shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-            stderr = proc.stderr.decode('utf-8')[:-2]
-            if proc.returncode > 1:
+            proc = subprocess.run([add_command], shell = True, stderr = subprocess.PIPE)
+            stderr = proc.stderr.decode('utf-8')
+            if proc.returncode > 1 and 'Permission denied' not in stderr:
                 raise Exception('Failed ssh connection. {}'.format(stderr))
             slogger.glob.info('Host {} has been added to known_hosts.'.format(host))
 
