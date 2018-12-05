@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand, CommandError
 from cvat.apps.git.git import update_states
 import time
 
-INTERVAL_SEC = 10
+INTERVAL_SEC = 600
 
 class Command(BaseCommand):
     help = 'Run a regular updating for git status'
