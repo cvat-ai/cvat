@@ -46,10 +46,9 @@ def generate_ssh_keys():
 
     try:
         with FileLock(pidfile):
-            subprocess.run(['ssh-add', '{}/*'.format(ssh_dir)])
+            subprocess.run(['ssh-add', '{}/*'.format(ssh_dir)], shell = True, stderr = subprocess.PIPE)
             keys = subprocess.run(['ssh-add -l'], shell = True,
                 stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
-
             if 'has no identities' in keys[0]:
                 print('SSH keys were not found')
                 keys = os.listdir(keys_dir)
@@ -66,7 +65,7 @@ def generate_ssh_keys():
                     shutil.copymode('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
                     shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
                     shutil.copymode('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
-                subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)])
+                subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)], shell = True)
         os.remove(pidfile)
     except:
         return

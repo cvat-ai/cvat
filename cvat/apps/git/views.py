@@ -82,13 +82,9 @@ def get_repository(request, tid):
 def get_meta_info(request):
     try:
         db_git_records = GitData.objects.all()
-        cur_date = timezone.now()
         response = {}
         for db_git in db_git_records:
-            if (cur_date - db_git.check_date).seconds > 600 or not len(db_git.status):
-                response[db_git.task_id] = CVATGit.get(db_git.task_id, request.user)
-            else:
-                response[db_git.task_id] = db_git.status
+            response[db_git.task_id] = db_git.status
 
         return JsonResponse(response, safe = False)
     except Exception as ex:

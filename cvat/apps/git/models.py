@@ -11,5 +11,4 @@ class GitData(models.Model):
     url = models.URLField(max_length = 2000)
     path = models.CharField(max_length=256)
     sync_date = models.DateTimeField(auto_now_add=True)
-    check_date = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, default="!sync")
