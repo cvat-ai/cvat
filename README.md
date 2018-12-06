@@ -11,6 +11,7 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 - [User's guide](cvat/apps/documentation/user_guide.md)
 - [XML annotation format](cvat/apps/documentation/xml_format.md)
 - [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
+- [Questions](#questions)
 
 ## Screencasts
 
@@ -121,3 +122,11 @@ volumes:
       o: bind
 ```
 You can change the share device path to your actual share. For user convenience we have defined the enviroment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser.
+
+## Questions
+
+CVAT usage related questions or unclear concepts can be posted in our [Gitter chat](https://gitter.im/opencv-cvat) for **quick replies** from contributors and other users.
+
+However, if you have a feature request or a bug report that can reproduced, feel free to open an issue (with steps to reproduce the bug if it's a bug report).
+
+If you are not sure or just want to browse other users common questions, [Gitter chat](https://gitter.im/opencv-cvat) is the way to go.
