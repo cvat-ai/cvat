@@ -162,6 +162,22 @@ class ShapeCollectionModel extends Listener {
         return shape;
     }
 
+    _importShape(shape, shapeType, udpateInitialState) {
+        let importedShape = this.add(shape, shapeType);
+        if (udpateInitialState) {
+            if (shape.id === -1) {
+                const toDelete = getExportTargetContainer(ExportType.delete, importedShape.type, this._shapesToDelete);
+                toDelete.push(shape.id);
+            }
+            else {
+                this._initialShapes[shape.id] = {
+                    type: importedShape.type,
+                    exportedString: importedShape.export(),
+                };
+            }
+        }
+    }
+
     colorsByGroup(groupId) {
         // If group id of shape is 0 (default value), then shape not contained in a group
         if (!groupId) {
@@ -202,50 +218,35 @@ class ShapeCollectionModel extends Listener {
 
     import(data, udpateInitialState=false) {
         for (let box of data.boxes) {
-            this.add(box, 'annotation_box');
+            this._importShape(box, 'annotation_box', udpateInitialState);
         }
 
         for (let boxPath of data.box_paths) {
-            this.add(boxPath, 'interpolation_box');
+            this._importShape(boxPath, 'interpolation_box', udpateInitialState);
         }
 
         for (let points of data.points) {
-            this.add(points, 'annotation_points');
+            this._importShape(points, 'annotation_points', udpateInitialState);
         }
 
         for (let pointsPath of data.points_paths) {
-            this.add(pointsPath, 'interpolation_points');
+            this._importShape(pointsPath, 'interpolation_points', udpateInitialState);
         }
 
         for (let polygon of data.polygons) {
-            this.add(polygon, 'annotation_polygon');
+            this._importShape(polygon, 'annotation_polygon', udpateInitialState);
         }
 
         for (let polygonPath of data.polygon_paths) {
-            this.add(polygonPath, 'interpolation_polygon');
+            this._importShape(polygonPath, 'interpolation_polygon', udpateInitialState);
         }
 
         for (let polyline of data.polylines) {
-            this.add(polyline, 'annotation_polyline');
+            this._importShape(polyline, 'annotation_polyline', udpateInitialState);
         }
 
         for (let polylinePath of data.polyline_paths) {
-            this.add(polylinePath, 'interpolation_polyline');
-        }
-
-        if (udpateInitialState) {
-            for (const shape of this._shapes) {
-                if (shape.id === -1) {
-                    const toDelete = getExportTargetContainer(ExportType.delete, shape.type, this._shapesToDelete);
-                    toDelete.push(shape.id);
-                }
-                else {
-                    this._initialShapes[shape.id] = {
-                        type: shape.type,
-                        exportedString: shape.export(),
-                    };
-                }
-            }
+            this._importShape(polylinePath, 'interpolation_polyline', udpateInitialState);
         }
 
         this.notify();
@@ -396,14 +397,7 @@ class ShapeCollectionModel extends Listener {
     }
 
     add(data, type) {
-        let id = null;
-
-        if (!('id' in data) || data.id === -1) {
-            id = this._idGen.next();
-        }
-        else {
-            id = data.id;
-        }
+        let id = 'id' in data && data.id !== -1 ? data.id : this._idGen.next();
 
         let model = buildShapeModel(data, type, id, this.nextColor());
         if (type.startsWith('interpolation')) {
@@ -423,6 +417,7 @@ class ShapeCollectionModel extends Listener {
             this._groups[groupIdx] = this._groups[groupIdx] || [];
             this._groups[groupIdx].push(model);
         }
+        return model;
     }
 
     selectShape(pos, noActivation) {
