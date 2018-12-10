@@ -2,6 +2,7 @@
 
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/171a7953e058455fa2d9d4bfec2897c7)](https://app.codacy.com/app/DanVev/cvat?utm_source=github.com&utm_medium=referral&utm_content=itlab-vision/cvat&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.org/itlab-vision/cvat.svg?branch=develop)](https://travis-ci.org/itlab-vision/cvat)
+[![Coverage Status](https://coveralls.io/repos/github/EvgenyShashkin/cvat/badge.svg?branch=develop)](https://coveralls.io/github/EvgenyShashkin/cvat?branch=develop)
 [![Gitter chat](https://badges.gitter.im/opencv-cvat/gitter.png)](https://gitter.im/opencv-cvat)
 
 CVAT is completely re-designed and re-implemented version of [Video Annotation Tool from Irvine, California](http://carlvondrick.com/vatic/) tool. It is free, online, interactive video and image annotation tool for computer vision. It is being used by our team to annotate million of objects with different properties. Many UI and UX decisions are based on feedbacks from professional data annotation team.
