@@ -276,7 +276,7 @@ class Git:
         ext = os.path.splitext(self.__path)[1]
         if ext == '.zip':
             subprocess.call('zip -j -r "{}" "{}"'.format(self.__annotation_file, dump_name), shell=True)
-        elif ext == '.xml':
+        elif ext == '.dump':
             shutil.copyfile(dump_name, self.__annotation_file)
         else:
             raise Exception("Got unknown annotation file type")
@@ -347,8 +347,8 @@ def _initial_create(tid, params):
 
             path = path[1:]
             _split = os.path.splitext(path)
-            if len(_split) < 2 or _split[1] not in [".xml", ".zip"]:
-                raise Exception("Only .xml and .zip formats are supported")
+            if len(_split) < 2 or _split[1] not in [".dump", ".zip"]:
+                raise Exception("Only .dump and .zip formats are supported")
 
             db_git = GitData()
             db_git.url = git_path

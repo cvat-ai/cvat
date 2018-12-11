@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td> <label class="regular h2"> Dataset Repository: </label> </td>
             <td> <input type="text" id="${window.cvat.git.createURLInputTextId}" class="regular"` +
                 `style="width: 90%", placeholder="github.com/user/repos [annotation/<dump_file_name>.zip]" ` +
-                `title = "Field for a repository URL and a relative path inside the repository. Default repository path is 'annotation/<dump_file_name>.zip'. There are zip or xml extenstions are supported."/>` +
+                `title = "Field for a repository URL and a relative path inside the repository. Default repository path is 'annotation/<dump_file_name>.zip'. There are zip or dump extenstions are supported."/>` +
             `</td>
         </tr>`
     ).insertAfter($("#dashboardBugTrackerInput").parent().parent());
