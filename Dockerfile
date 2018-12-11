@@ -111,13 +111,7 @@ RUN apt-get update && \
     mkdir ${HOME}/.ssh ${HOME}/cvat/apps/git/keys -p && \
     if test `ls ${HOME}/cvat/apps/git/keys -1 | wc -l` -gt 0; then \
         mv ${HOME}/cvat/apps/git/keys/* ${HOME}/.ssh/ ; \
-    fi && \
-    echo '\neval `ssh-agent -s` && \' >> ${HOME}/.bashrc && \
-    echo 'for possiblekey in `ls -d ${HOME}/.ssh/*`; do \' >> ${HOME}/.bashrc && \
-    echo '  if grep -q PRIVATE "$possiblekey"; then \' >> ${HOME}/.bashrc && \
-    echo '    ssh-add "$possiblekey"; \' >> ${HOME}/.bashrc && \
-    echo '  fi \' >> ${HOME}/.bashrc && \
-    echo 'done\n' >> ${HOME}/.bashrc
+    fi
 
 
 COPY tests ${HOME}/tests
@@ -131,4 +125,4 @@ RUN mkdir data share media keys logs /tmp/supervisord
 RUN python3 manage.py collectstatic
 
 EXPOSE 8080 8443
-ENTRYPOINT ["/usr/bin/supervisord"]
+ENTRYPOINT ["bash", "-c", "eval `/usr/bin/ssh-agent -s` && /usr/bin/supervisord"]
