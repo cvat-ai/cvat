@@ -459,6 +459,11 @@ def _onsave(jid, data):
 
             with open(os.path.join(diff_dir, "{}.diff".format(last_num + 1)), 'w') as f:
                 f.write(json.dumps(diff))
+
+            db_git = GitData.objects.select_for_update.get(pk = db_task)
+            db_git.status = "!sync"
+            db_git.save()
+
     except GitData.DoesNotExist:
         pass
 
