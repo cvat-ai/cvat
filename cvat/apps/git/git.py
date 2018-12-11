@@ -313,13 +313,21 @@ class Git:
             return "!sync"
         else:
             self._init_host()
+
+            self.__rep.git.update_ref('-d', 'refs/remotes/origin/{}'.format(self.__branch_name))
             self.__rep.git.remote('-v', 'update')
+
             last_hash = self.__rep.git.show_ref('refs/heads/{}'.format(self.__branch_name), '--hash')
             merge_base_hash = self.__rep.merge_base('refs/remotes/origin/master', self.__branch_name)[0].hexsha
             if last_hash == merge_base_hash:
                 return "merged"
             else:
-                return "sync"
+                try:
+                    self.__rep.git.show_ref('refs/remotes/origin/{}'.format(self.__branch_name), '--hash')
+                    return "sync"
+                except git.exc.GitCommandError:
+                    # Remote branch has been deleted wo merge
+                    return "!sync"
 
 
 def _initial_create(tid, params):
@@ -435,7 +443,7 @@ def update_states():
 def _onsave(jid, data):
     db_task = Job.objects.select_related('segment__task').get(pk = jid).segment.task
     try:
-        GitData.objects.select_for_update().get(pk = db_task.id)
+        db_git = GitData.objects.select_for_update().get(pk = db_task.id)
         diff_dir = os.path.join(os.getcwd(), "data", str(db_task.id), "repos_diffs")
         os.makedirs(diff_dir, exist_ok = True)
 
@@ -460,7 +468,6 @@ def _onsave(jid, data):
             with open(os.path.join(diff_dir, "{}.diff".format(last_num + 1)), 'w') as f:
                 f.write(json.dumps(diff))
 
-            db_git = GitData.objects.select_for_update.get(pk = db_task)
             db_git.status = "!sync"
             db_git.save()
 
