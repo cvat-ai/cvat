@@ -166,7 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td style="width: 60%;">
                             <div>
                                 <label class="regular h2" id="${window.cvat.git.labelStatusId}"> </label>
-                                <label class="regular h2" id="${window.cvat.git.labelMessageId}" style="word-break: break-word;"> </label>
+                                <label class="regular h2" id="${window.cvat.git.labelMessageId}" style="word-break: break-word; user-select: text;"> </label>
                             </div>
                         </td>
                         <td style="width: 20%;">
