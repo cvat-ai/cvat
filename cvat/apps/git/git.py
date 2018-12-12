@@ -386,6 +386,7 @@ def push(tid, user, scheme, host):
 
             # Update timestamp
             db_git.sync_date = db_task.updated_date
+            db_git.status = "sync"
             db_git.save()
         except git.exc.GitCommandError as ex:
             _have_no_access_exception(ex)

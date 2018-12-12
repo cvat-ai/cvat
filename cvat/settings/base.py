@@ -46,7 +46,7 @@ def generate_ssh_keys():
 
     try:
         with FileLock(pidfile):
-            subprocess.run(['ssh-add {}/*'.format(ssh_dir)], shell = True)
+            subprocess.run(['ssh-add {}/*'.format(ssh_dir)], shell = True, stderr = subprocess.PIPE)
             keys = subprocess.run(['ssh-add -l'], shell = True,
                 stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
             if 'has no identities' in keys[0]:
