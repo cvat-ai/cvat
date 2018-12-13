@@ -17,7 +17,8 @@ To annotate task with custom model you need prepare 4 files:
 1. **Model weights** - a binary file contains trained weights. The following file extensions are expected for models from different frameworks:
    * *.caffemodel (Caffe)
    * *.bin (DLDT)
-1. **Preprocessing configureation and label map** - simple json file that describes image dimentions and preprocessing options. For more details please view [OpenCV](https://docs.opencv.org/3.4/d6/d0f/group__dnn.html#ga0b7b7c3c530b747ef738178835e1e70f) documentation.
+1. **Preprocessing configureation and label map** - simple json file that describes image dimentions and preprocessing options. For more details please view [OpenCV](https://docs.opencv.org/3.4/d6/d0f/group__dnn.html#ga0b7b7c3c530b747ef738178835e1e70f) documentation.  
+Label values in label_map should be exactly equal to labels wich task was created, otherwise will be ignored.
   Example:
     ```json
     {
