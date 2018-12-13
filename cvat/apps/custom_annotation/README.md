@@ -55,10 +55,10 @@ To annotate task with custom model you need prepare 4 files:
     }
     ```
 1. **Interpretation script** - python scripts that converts output results from net to CVAT format. File must contain function with following signature: `process_detections(detections):`. There detection is list object of dictionaries that represent detections for each frame of task with folloing keys:
-  * frame_id - frame number
-  * frame_height - frame height
-  * frame_width - frame width
-  * detections - output blob (See [cv::dnn::Net::forward](https://docs.opencv.org/3.4/db/d30/classcv_1_1dnn_1_1Net.html#a98ed94cb6ef7063d3697259566da310b) for details)
+   * frame_id - frame number
+   * frame_height - frame height
+   * frame_width - frame width
+   * detections - output blob (See [cv::dnn::Net::forward](https://docs.opencv.org/3.4/db/d30/classcv_1_1dnn_1_1Net.html#a98ed94cb6ef7063d3697259566da310b) for details).  
     Example for SSD based network
     ```python
     def process_detections(detections):
