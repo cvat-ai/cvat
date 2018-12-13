@@ -148,9 +148,7 @@ def create_thread(tid, db_labels, model_file, weights_file, config_file, convert
         job.save_meta()
         db_task = TaskModel.objects.get(pk=tid)
 
-        # Run auto annotation by tf
         result = None
-
         slogger.glob.info('custom annotation with openvino toolkit for task {}'.format(tid))
         result = run_inference_engine_annotation(
             path_to_data=db_task.get_data_dirname(),
@@ -235,15 +233,12 @@ def create(request, tid):
         db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
         db_labels = {db_label.id:db_label.name for db_label in db_labels}
 
-        # if not label_mapping:
-        #     raise Exception('No labels found ')
-
         queue.enqueue_call(func=create_thread,
             args=(tid, db_labels, model_file_path, weights_file_path, config_file_path, convertation_file_path),
             job_id='custom_annotation.create/{}'.format(tid),
             timeout=604800)     # 7 days
 
-        # slogger.task[tid].info('openVino annotation job enqueued with labels {}'.format(label_mapping))
+        slogger.task[tid].info('custom annotation job enqueued with labels {}'.format(label_mapping))
 
     except Exception as ex:
         try:
@@ -299,7 +294,7 @@ def cancel(request, tid):
 
     except Exception as ex:
         try:
-            slogger.task[tid].exception("cannot cancel OpenVINO annotation for task #{}".format(tid), exc_info=True)
+            slogger.task[tid].exception("cannot cancel custom annotation for task #{}".format(tid), exc_info=True)
         except:
             pass
         return HttpResponseBadRequest(str(ex))
