@@ -3116,13 +3116,14 @@ class PointsView extends PolyShapeView {
             return;
         }
 
-        this._uis.points = this._scenes.svg.group().fill(this._appearance.fill || this._appearance.colors.shape)
+        this._uis.points = this._scenes.svg.group()
+            .fill(this._appearance.fill || this._appearance.colors.shape)
             .on('click', () => {
                 this._positionateMenus();
                 this._controller.click();
-            }).attr({
-                'z_order': position.z_order
             }).addClass('pointTempGroup');
+
+        this._uis.points.node.setAttribute('z_order', position.z_order)
 
         let points = PolyShapeModel.convertStringToNumberArray(position.points);
         for (let point of points) {
@@ -3158,7 +3159,7 @@ class PointsView extends PolyShapeView {
             let interpolation = this._controller.interpolate(window.cvat.player.frames.current);
             if (interpolation.position.points) {
                 let points = window.cvat.translate.points.actualToCanvas(interpolation.position.points);
-                this._drawPointMarkers(Object.assign(interpolation.position.points, {points: points}));
+                this._drawPointMarkers(Object.assign(interpolation.position, {points: points}));
             }
         }
     }
