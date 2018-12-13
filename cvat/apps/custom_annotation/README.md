@@ -14,7 +14,8 @@ To annotate task with custom model you need prepare 4 files:
    * *.xml (DLDT)
 1. **Model weights** - a binary file contains trained weights. The following file extensions are expected for models from different frameworks:
    * *.bin (DLDT)
-1. **Preprocessing configureation and label map** - simple json file that describes image dimentions and preprocessing options. For more details please view [OpenCV](https://docs.opencv.org/3.4/d6/d0f/group__dnn.html#ga0b7b7c3c530b747ef738178835e1e70f) documentation.
+1. **Preprocessing configureation and label map** - simple json file that describes image dimentions and preprocessing options. For more details please view [OpenCV](https://docs.opencv.org/3.4/d6/d0f/group__dnn.html#ga0b7b7c3c530b747ef738178835e1e70f) documentation.  
+Label values in label_map should be exactly equal to labels wich task was created, otherwise will be ignored.
   Example:
     ```json
     {
@@ -52,10 +53,10 @@ To annotate task with custom model you need prepare 4 files:
     }
     ```
 1. **Interpretation script** - python scripts that converts output results from net to CVAT format. File must contain function with following signature: `process_detections(detections):`. There detection is list object of dictionaries that represent detections for each frame of task with folloing keys:
-  * frame_id - frame number
-  * frame_height - frame height
-  * frame_width - frame width
-  * detections - output blob (See [cv::dnn::Net::forward](https://docs.opencv.org/3.4/db/d30/classcv_1_1dnn_1_1Net.html#a98ed94cb6ef7063d3697259566da310b) for details)
+   * frame_id - frame number
+   * frame_height - frame height
+   * frame_width - frame width
+   * detections - output blob (See [cv::dnn::Net::forward](https://docs.opencv.org/3.4/db/d30/classcv_1_1dnn_1_1Net.html#a98ed94cb6ef7063d3697259566da310b) for details).  
     Example for SSD based network
     ```python
     def process_detections(detections):
