@@ -1432,6 +1432,7 @@ class ShapeView extends Listener {
         this._pointContextMenu = $('#pointContextMenu');
 
         this._rightBorderFrame = $('#playerFrame')[0].offsetWidth;
+        this._bottomBorderFrame = $('#playerFrame')[0].offsetHeight;
 
         shapeModel.subscribe(this);
     }
@@ -1550,9 +1551,12 @@ class ShapeView extends Listener {
                     dragPolyItem.addClass('hidden');
                 }
 
-                this._shapeContextMenu.finish().show(100).offset({
-                    top: e.pageY - 10,
-                    left: e.pageX - 10,
+                this._shapeContextMenu.finish().show(100);
+                let x = Math.min(e.pageX, this._rightBorderFrame - this._shapeContextMenu[0].scrollWidth);
+                let y = Math.min(e.pageY, this._bottomBorderFrame - this._shapeContextMenu[0].scrollHeight);
+                this._shapeContextMenu.offset({
+                    left: x,
+                    top: y,
                 });
 
                 e.preventDefault();
@@ -2898,9 +2902,12 @@ class PolyShapeView extends ShapeView {
                     this._pointContextMenu.attr('point_idx', point.index());
                     this._pointContextMenu.attr('dom_point_id', point.attr('id'));
 
-                    this._pointContextMenu.finish().show(100).offset({
-                        top: e.pageY - 20,
-                        left: e.pageX - 20,
+                    this._pointContextMenu.finish().show(100);
+                    let x = Math.min(e.pageX, this._rightBorderFrame - this._pointContextMenu[0].scrollWidth);
+                    let y = Math.min(e.pageY, this._bottomBorderFrame - this._pointContextMenu[0].scrollHeight);
+                    this._pointContextMenu.offset({
+                        left: x,
+                        top: y,
                     });
 
                     e.preventDefault();
