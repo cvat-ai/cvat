@@ -25,7 +25,7 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
                 let elem = $(newElements[idx]);
                 let tid = +elem.attr('id').split('_')[1];
 
-                const customAnnoButton = $('<button> Run Annotation </button>').addClass('semiBold dashboardButtonUI dashboardCustomAnno');
+                const customAnnoButton = $('<button> Run custom annotation </button>').addClass('semiBold dashboardButtonUI dashboardCustomAnno');
                 customAnnoButton.appendTo(elem.find('div.dashboardButtonsUI')[0]);
 
                 if ((tid in data) && (data[tid].active)) {
