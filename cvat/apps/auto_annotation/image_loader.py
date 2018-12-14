@@ -9,15 +9,11 @@ class ImageLoader():
 
     def __iter__(self):
         for imagename in self.image_list:
-            yield imagename, self.load_image(imagename)
+            yield imagename, self._load_image(imagename)
 
     def __len__(self):
         return len(self.image_list)
 
     @staticmethod
-    def load_image(path_to_image):
+    def _load_image(path_to_image):
         return cv2.imread(path_to_image)
-
-    @staticmethod
-    def _resize_image(image, size):
-        return cv2.resize(image, size)
