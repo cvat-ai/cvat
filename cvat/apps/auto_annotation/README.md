@@ -52,43 +52,73 @@ Label values in label_map should be exactly equal to labels wich task was create
       }
     }
     ```
-1. **Interpretation script** - python script that converts output results from net to CVAT format. File must contain function with following signature: `process_detections(detections):`.There is detection is a python's list of dictionaries that represent detections for each frame of task with folloing keys:
+1. **Interpretation script** - python file that used to convert output results from net to CVAT format. This code running inside restricted environment.
+List of builtins functions that available to use:
+* **str**
+* **int**
+* **float**
+* **max**
+* **min**
+* **range**
+
+Also two variables are available in scope:
+* **detections** list with detection results(see description below)
+* **results** dictionary where convertation results shoud be added (see examples below for details)
+
+`detection` is a python's list of dictionaries that represent detections for each frame of task with folloing keys:
    * frame_id - frame number
    * frame_height - frame height
    * frame_width - frame width
    * detections - output blob (See [cv::dnn::Net::forward](https://docs.opencv.org/3.4/db/d30/classcv_1_1dnn_1_1Net.html#a98ed94cb6ef7063d3697259566da310b) for details).
+
+`results` is dictionary with structure:
+```python
+{
+  "boxes": [],
+  "polygons": [],
+  "polylines": [],
+  "points": [],
+  "box_paths": [],
+  "polygon_paths": [],
+  "polyline_paths": [],
+  "points_paths": [],
+}
+```
+
     Example for SSD based network
     ```python
-    def process_detections(detections):
+    def process_results(detections, results):
       def clip(value):
         return max(min(1.0, value), 0.0)
 
-      boxes = []
-      for frame_results in detections:
-        frame_height = frame_results['frame_height']
-        frame_width = frame_results['frame_width']
-        frame_number = frame_results['frame_id']
+    boxes = results['boxes']
 
-        for i in range(frame_results['detections'].shape[2]):
-          confidence = frame_results['detections'][0, 0, i, 2]
-          if confidence < 0.4: continue
+    for frame_results in detections:
+      frame_height = frame_results['frame_height']
+      frame_width = frame_results['frame_width']
+      frame_number = frame_results['frame_id']
 
-          class_id = str(int(frame_results['detections'][0, 0, i, 1]))
-          xtl = '{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 3]) * frame_width)
-          ytl = '{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 4]) * frame_height)
-          xbr = '{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 5]) * frame_width)
-          ybr = '{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 6]) * frame_height)
+      for i in range(frame_results['detections'].shape[2]):
+        confidence = frame_results['detections'][0, 0, i, 2]
+        if confidence < 0.4: continue
+        class_id = str(int(frame_results['detections'][0, 0, i, 1]))
+        xtl = '{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 3]) * frame_width)
+        ytl = '{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 4]) * frame_height)
+        xbr = '{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 5]) * frame_width)
+        ybr = '{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 6]) * frame_height)
 
-          boxes.append({
-            'label': class_id,
-            'frame': frame_number,
-            'xtl': xtl,
-            'ytl': ytl,
-            'xbr': xbr,
-            'ybr': ybr,
-            'attributes': {
-                'confidence': '{:.2f}'.format(confidence),
-            }
-          })
-      return {'boxes': boxes }
+        boxes.append({
+          'label': class_id,
+          'frame': frame_number,
+          'xtl': xtl,
+          'ytl': ytl,
+          'xbr': xbr,
+          'ybr': ybr,
+          'attributes': {
+              'confidence': '{:.2f}'.format(confidence),
+          }
+        })
+
+      process_results(detections, results)
+
     ```
