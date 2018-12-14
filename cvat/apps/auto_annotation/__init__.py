@@ -5,4 +5,4 @@
 
 from cvat.settings.base import JS_3RDPARTY
 
-JS_3RDPARTY['dashboard'] = JS_3RDPARTY.get('dashboard', []) + ['custom_annotation/js/custom_annotation.js']
+JS_3RDPARTY['dashboard'] = JS_3RDPARTY.get('dashboard', []) + ['auto_annotation/js/auto_annotation.js']

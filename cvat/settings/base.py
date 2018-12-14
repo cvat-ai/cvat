@@ -61,7 +61,7 @@ if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
     INSTALLED_APPS += ['cvat.apps.tf_annotation']
 
 if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
-    INSTALLED_APPS += ['cvat.apps.custom_annotation']
+    INSTALLED_APPS += ['cvat.apps.auto_annotation']
 
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']

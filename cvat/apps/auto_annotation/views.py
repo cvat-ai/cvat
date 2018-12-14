@@ -149,7 +149,7 @@ def create_thread(tid, db_labels, model_file, weights_file, config_file, convert
         db_task = TaskModel.objects.get(pk=tid)
 
         result = None
-        slogger.glob.info('custom annotation with openvino toolkit for task {}'.format(tid))
+        slogger.glob.info('auto annotation with openvino toolkit for task {}'.format(tid))
         result = run_inference_engine_annotation(
             path_to_data=db_task.get_data_dirname(),
             model_file=model_file,
@@ -162,17 +162,17 @@ def create_thread(tid, db_labels, model_file, weights_file, config_file, convert
         )
 
         if result is None:
-            slogger.glob.info('custom annotation for task {} canceled by user'.format(tid))
+            slogger.glob.info('auto annotation for task {} canceled by user'.format(tid))
             return
 
         annotation.clear_task(tid)
         annotation.save_task(tid, result)
-        slogger.glob.info('custom annotation for task {} done'.format(tid))
+        slogger.glob.info('auto annotation for task {} done'.format(tid))
     except:
         try:
-            slogger.task[tid].exception('exception was occured during custom annotation of the task', exc_info=True)
+            slogger.task[tid].exception('exception was occured during auto annotation of the task', exc_info=True)
         except:
-            slogger.glob.exception('exception was occured during custom annotation of the task {}'.format(tid), exc_into=True)
+            slogger.glob.exception('exception was occured during auto annotation of the task {}'.format(tid), exc_into=True)
 
 @login_required
 def get_meta_info(request):
@@ -181,7 +181,7 @@ def get_meta_info(request):
         tids = json.loads(request.body.decode('utf-8'))
         result = {}
         for tid in tids:
-            job = queue.fetch_job('custom_annotation.create/{}'.format(tid))
+            job = queue.fetch_job('auto_annotation.create/{}'.format(tid))
             if job is not None:
                 result[tid] = {
                     "active": job.is_queued or job.is_started,
@@ -190,14 +190,14 @@ def get_meta_info(request):
 
         return JsonResponse(result)
     except Exception as ex:
-        slogger.glob.exception('exception was occurred during custom annotation meta request', exc_into=True)
+        slogger.glob.exception('exception was occurred during auto annotation meta request', exc_into=True)
         return HttpResponseBadRequest(str(ex))
 
 @login_required
 @permission_required(perm=['engine.task.change'],
     fn=objectgetter(TaskModel, 'tid'), raise_exception=True)
 def create(request, tid):
-    slogger.glob.info('custom annotation create request for task {}'.format(tid))
+    slogger.glob.info('auto annotation create request for task {}'.format(tid))
 
     def write_file(path, file_obj):
         with open(path, 'wb') as upload_file:
@@ -208,7 +208,7 @@ def create(request, tid):
         db_task = TaskModel.objects.get(pk=tid)
         upload_dir = db_task.get_upload_dirname()
         queue = django_rq.get_queue('low')
-        job = queue.fetch_job('custom_annotation.create/{}'.format(tid))
+        job = queue.fetch_job('auto_annotation.create/{}'.format(tid))
         if job is not None and (job.is_started or job.is_queued):
             raise Exception("The process is already running")
 
@@ -235,10 +235,10 @@ def create(request, tid):
 
         queue.enqueue_call(func=create_thread,
             args=(tid, db_labels, model_file_path, weights_file_path, config_file_path, convertation_file_path),
-            job_id='custom_annotation.create/{}'.format(tid),
+            job_id='auto_annotation.create/{}'.format(tid),
             timeout=604800)     # 7 days
 
-        slogger.task[tid].info('custom annotation job enqueued with labels {}'.format(label_mapping))
+        slogger.task[tid].info('auto annotation job enqueued')
 
     except Exception as ex:
         try:
@@ -255,7 +255,7 @@ def create(request, tid):
 def check(request, tid):
     try:
         queue = django_rq.get_queue('low')
-        job = queue.fetch_job('custom_annotation.create/{}'.format(tid))
+        job = queue.fetch_job('auto_annotation.create/{}'.format(tid))
         if job is not None and 'cancel' in job.meta:
             return JsonResponse({'status': 'finished'})
         data = {}
@@ -285,7 +285,7 @@ def check(request, tid):
 def cancel(request, tid):
     try:
         queue = django_rq.get_queue('low')
-        job = queue.fetch_job('custom_annotation.create/{}'.format(tid))
+        job = queue.fetch_job('auto_annotation.create/{}'.format(tid))
         if job is None or job.is_finished or job.is_failed:
             raise Exception('Task is not being annotated currently')
         elif 'cancel' not in job.meta:
@@ -294,7 +294,7 @@ def cancel(request, tid):
 
     except Exception as ex:
         try:
-            slogger.task[tid].exception("cannot cancel custom annotation for task #{}".format(tid), exc_info=True)
+            slogger.task[tid].exception("cannot cancel auto annotation for task #{}".format(tid), exc_info=True)
         except:
             pass
         return HttpResponseBadRequest(str(ex))

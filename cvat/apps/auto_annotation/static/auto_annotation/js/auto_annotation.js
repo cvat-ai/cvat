@@ -17,7 +17,7 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
 
     $.ajax({
         type: 'POST',
-        url: '/custom_annotation/meta/get',
+        url: '/auto_annotation/meta/get',
         data: JSON.stringify(tids),
         contentType: "application/json; charset=utf-8",
         success: (data) => {
@@ -25,25 +25,25 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
                 let elem = $(newElements[idx]);
                 let tid = +elem.attr('id').split('_')[1];
 
-                const customAnnoButton = $('<button> Run custom annotation </button>').addClass('semiBold dashboardButtonUI dashboardCustomAnno');
-                customAnnoButton.appendTo(elem.find('div.dashboardButtonsUI')[0]);
+                const autoAnnoButton = $('<button> Run auto annotation </button>').addClass('semiBold dashboardButtonUI dashboardAutoAnno');
+                autoAnnoButton.appendTo(elem.find('div.dashboardButtonsUI')[0]);
 
                 if ((tid in data) && (data[tid].active)) {
-                    customAnnoButton.text('Cancel custom annotation');
-                    customAnnoButton.addClass('customAnnotationProcess');
-                    window.cvat.custom_annotation.checkCustomAnnotationRequest(tid, customAnnoButton);
+                    autoAnnoButton.text('Cancel auto annotation');
+                    autoAnnoButton.addClass('autoAnnotationProcess');
+                    window.cvat.auto_annotation.checkAutoAnnotationRequest(tid, autoAnnoButton);
                 }
 
-                customAnnoButton.on('click', () => {
-                    if (customAnnoButton.hasClass('customAnnotationProcess')) {
-                        $.post(`/custom_annotation/cancel/task/${tid}`).fail( (data) => {
-                            let message = `Error during cansel custom annotation request. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                autoAnnoButton.on('click', () => {
+                    if (autoAnnoButton.hasClass('autoAnnotationProcess')) {
+                        $.post(`/auto_annotation/cancel/task/${tid}`).fail( (data) => {
+                            let message = `Error during cansel auto annotation request. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                             showMessage(message);
                             throw Error(message);
                         });
                     }
                     else {
-                        let dialogWindow = $(`#${window.cvat.custom_annotation.modalWindowId}`);
+                        let dialogWindow = $(`#${window.cvat.auto_annotation.modalWindowId}`);
                         dialogWindow.attr('current_tid', tid);
                         dialogWindow.removeClass('hidden');
                     }
@@ -51,35 +51,35 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
             });
         },
         error: (data) => {
-            let message = `Can not get custom annotation meta info. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+            let message = `Can not get auto annotation meta info. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
             showMessage(message);
             throw Error(message);
         }
     });
 });
 
-window.cvat.custom_annotation = {
-    modalWindowId: 'customAnnotationWindow',
-    customAnnoFromId: 'customAnnotationForm',
-    customAnnoModelFieldId: 'customAnnotationModelField',
-    customAnnoWeightsFieldId: 'customAnnotationWeightsField',
-    customAnnoConfigFieldId: 'customAnnotationConfigField',
-    customAnnoConvertFieldId: 'customAnnotationConvertField',
-    customAnnoCloseButtonId: 'customAnnoCloseButton',
-    customAnnoSubmitButtonId: 'customAnnoSubmitButton',
+window.cvat.auto_annotation = {
+    modalWindowId: 'autoAnnotationWindow',
+    autoAnnoFromId: 'autoAnnotationForm',
+    autoAnnoModelFieldId: 'autoAnnotationModelField',
+    autoAnnoWeightsFieldId: 'autoAnnotationWeightsField',
+    autoAnnoConfigFieldId: 'autoAnnotationConfigField',
+    autoAnnoConvertFieldId: 'autoAnnotationConvertField',
+    autoAnnoCloseButtonId: 'autoAnnoCloseButton',
+    autoAnnoSubmitButtonId: 'autoAnnoSubmitButton',
 
-    checkCustomAnnotationRequest: (tid, customAnnoButton) => {
+    checkAutoAnnotationRequest: (tid, autoAnnoButton) => {
         setTimeout(timeoutCallback, 1000);
         function timeoutCallback() {
-            $.get(`/custom_annotation/check/task/${tid}`).done((data) => {
+            $.get(`/auto_annotation/check/task/${tid}`).done((data) => {
                 if (data.status == "started" || data.status == "queued") {
                     let progress = Math.round(data.progress) || 0;
-                    customAnnoButton.text(`Cancel custom annotation (${progress}%)`);
+                    autoAnnoButton.text(`Cancel auto annotation (${progress}%)`);
                     setTimeout(timeoutCallback, 1000);
                 }
                 else {
-                    customAnnoButton.text("Run custom annotation");
-                    customAnnoButton.removeClass("customAnnotationProcess");
+                    autoAnnoButton.text("Run auto annotation");
+                    autoAnnoButton.removeClass("autoAnnotationProcess");
                 }
             }).fail((data) => {
                 let message = `Error was occured during check annotation status. ` +
@@ -91,41 +91,41 @@ window.cvat.custom_annotation = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    $(`<div id="${window.cvat.custom_annotation.modalWindowId}" class="modal hidden">
-        <form id="${window.cvat.custom_annotation.customAnnoFromId}" class="modal-content" autocomplete="on" onsubmit="return false" style="width: 700px;">
+    $(`<div id="${window.cvat.auto_annotation.modalWindowId}" class="modal hidden">
+        <form id="${window.cvat.auto_annotation.autoAnnoFromId}" class="modal-content" autocomplete="on" onsubmit="return false" style="width: 700px;">
             <center>
-                <label class="semiBold h1"> Custom annotation setup </label>
+                <label class="semiBold h1"> Auto annotation setup </label>
             </center>
 
             <table style="width: 100%; text-align: left;">
                 <tr>
                     <td style="width: 25%"> <label class="regular h2"> Model </label> </td>
-                    <td> <input id="${window.cvat.custom_annotation.customAnnoModelFieldId}" type="file" name="model" /> </td>
+                    <td> <input id="${window.cvat.auto_annotation.autoAnnoModelFieldId}" type="file" name="model" /> </td>
                 </tr>
                 <tr>
                     <td style="width: 25%"> <label class="regular h2"> Weights </label> </td>
-                    <td> <input id="${window.cvat.custom_annotation.customAnnoWeightsFieldId}" type="file" name="weights" /> </td>
+                    <td> <input id="${window.cvat.auto_annotation.autoAnnoWeightsFieldId}" type="file" name="weights" /> </td>
                 </tr>
                 <tr>
                     <td style="width: 25%"> <label class="regular h2"> Config </label> </td>
-                    <td> <input id="${window.cvat.custom_annotation.customAnnoConfigFieldId}" type="file" name="config" accept=".json" /> </td>
+                    <td> <input id="${window.cvat.auto_annotation.autoAnnoConfigFieldId}" type="file" name="config" accept=".json" /> </td>
                 </tr>
                 <tr>
                     <td style="width: 25%"> <label class="regular h2"> Convertation script </label> </td>
-                    <td> <input id="${window.cvat.custom_annotation.customAnnoConvertFieldId}" type="file" name="convert" /> </td>
+                    <td> <input id="${window.cvat.auto_annotation.autoAnnoConvertFieldId}" type="file" name="convert" /> </td>
                 </tr>
             </table>
             <div>
-                <button id="${window.cvat.custom_annotation.customAnnoCloseButtonId}" class="regular h2"> Close </button>
-                <button id="${window.cvat.custom_annotation.customAnnoSubmitButtonId}" class="regular h2"> Submit </button>
+                <button id="${window.cvat.auto_annotation.autoAnnoCloseButtonId}" class="regular h2"> Close </button>
+                <button id="${window.cvat.auto_annotation.autoAnnoSubmitButtonId}" class="regular h2"> Submit </button>
             </div>
         </form>
 
     </div>`).appendTo('body');
 
-   let annoWindow = $(`#${window.cvat.custom_annotation.modalWindowId}`);
-   let closeWindowButton = $(`#${window.cvat.custom_annotation.customAnnoCloseButtonId}`);
-   let submitButton = $(`#${window.cvat.custom_annotation.customAnnoSubmitButtonId}`);
+   let annoWindow = $(`#${window.cvat.auto_annotation.modalWindowId}`);
+   let closeWindowButton = $(`#${window.cvat.auto_annotation.autoAnnoCloseButtonId}`);
+   let submitButton = $(`#${window.cvat.auto_annotation.autoAnnoSubmitButtonId}`);
 
    closeWindowButton.on('click', () => {
         annoWindow.addClass('hidden');
@@ -133,10 +133,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     submitButton.on('click', function() {
         const tid = annoWindow.attr('current_tid');
-        const modelInput = $(`#${window.cvat.custom_annotation.customAnnoModelFieldId}`);
-        const weightsInput = $(`#${window.cvat.custom_annotation.customAnnoWeightsFieldId}`);
-        const configInput = $(`#${window.cvat.custom_annotation.customAnnoConfigFieldId}`);
-        const convFileInput = $(`#${window.cvat.custom_annotation.customAnnoConvertFieldId}`);
+        const modelInput = $(`#${window.cvat.auto_annotation.autoAnnoModelFieldId}`);
+        const weightsInput = $(`#${window.cvat.auto_annotation.autoAnnoWeightsFieldId}`);
+        const configInput = $(`#${window.cvat.auto_annotation.autoAnnoConfigFieldId}`);
+        const convFileInput = $(`#${window.cvat.auto_annotation.autoAnnoConvertFieldId}`);
 
         const modelFile = modelInput.prop('files')[0];
         const weightsFile = weightsInput.prop('files')[0];
@@ -155,16 +155,16 @@ document.addEventListener("DOMContentLoaded", () => {
         taskData.append('conv_script', convFile);
 
         $.ajax({
-            url: `/custom_annotation/create/task/${tid}`,
+            url: `/auto_annotation/create/task/${tid}`,
             type: 'POST',
             data: taskData,
             contentType: false,
             processData: false,
         }).done(() => {
                 annoWindow.addClass('hidden');
-                const customAnnoButton = $(`#dashboardTask_${tid} div.dashboardButtonsUI button.dashboardCustomAnno`);
-                customAnnoButton.addClass('customAnnotationProcess');
-                window.cvat.custom_annotation.checkCustomAnnotationRequest(tid, customAnnoButton);
+                const autoAnnoButton = $(`#dashboardTask_${tid} div.dashboardButtonsUI button.dashboardAutoAnno`);
+                autoAnnoButton.addClass('autoAnnotationProcess');
+                window.cvat.auto_annotation.checkAutoAnnotationRequest(tid, autoAnnoButton);
         }).fail((data) => {
             let message = `Error was occured during run annotation request. ` +
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;

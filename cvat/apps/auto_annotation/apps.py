@@ -6,6 +6,6 @@
 from django.apps import AppConfig
 
 
-class CustomAnnotationConfig(AppConfig):
-    name = 'custom_annotation'
+class AutoAnnotationConfig(AppConfig):
+    name = 'auto_annotation'
 
