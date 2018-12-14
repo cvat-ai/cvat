@@ -2,11 +2,11 @@
  * Copyright (C) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: MIT
- */
+*/
 
- "use strict";
+"use strict";
 
- window.cvat = window.cvat || {};
+window.cvat = window.cvat || {};
 window.cvat.dashboard = window.cvat.dashboard || {};
 window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
 window.cvat.dashboard.uiCallbacks.push(function(newElements) {
@@ -123,11 +123,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     </div>`).appendTo('body');
 
-   let annoWindow = $(`#${window.cvat.auto_annotation.modalWindowId}`);
-   let closeWindowButton = $(`#${window.cvat.auto_annotation.autoAnnoCloseButtonId}`);
-   let submitButton = $(`#${window.cvat.auto_annotation.autoAnnoSubmitButtonId}`);
+    let annoWindow = $(`#${window.cvat.auto_annotation.modalWindowId}`);
+    let closeWindowButton = $(`#${window.cvat.auto_annotation.autoAnnoCloseButtonId}`);
+    let submitButton = $(`#${window.cvat.auto_annotation.autoAnnoSubmitButtonId}`);
 
-   closeWindowButton.on('click', () => {
+    closeWindowButton.on('click', () => {
         annoWindow.addClass('hidden');
     });
 
