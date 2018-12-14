@@ -52,8 +52,7 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
         },
         error: (data) => {
             let message = `Can not get auto annotation meta info. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
-            showMessage(message);
-            throw Error(message);
+            window.cvat.auto_annotation.badResponse(message);
         }
     });
 });
@@ -84,9 +83,14 @@ window.cvat.auto_annotation = {
             }).fail((data) => {
                 let message = `Error was occured during check annotation status. ` +
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-                badResponse(message);
+                window.cvat.auto_annotation.badResponse(message);
             });
         }
+    },
+
+    badResponse(message) {
+        showMessage(message);
+        throw Error(message);
     },
 };
 
@@ -168,12 +172,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }).fail((data) => {
             let message = `Error was occured during run annotation request. ` +
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-            badResponse(message);
+            window.cvat.auto_annotation.badResponse(message);
         });
 
-        function badResponse(message) {
-            showMessage(message);
-            throw Error(message);
-        }
+
     });
 });

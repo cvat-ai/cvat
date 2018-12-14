@@ -51,13 +51,6 @@ def load_model(model_file, weights_file, config_file):
 
     return model, class_names
 
-def process_detections(detections, path_to_conv_script):
-    import importlib.util
-    spec = importlib.util.spec_from_file_location('converter', path_to_conv_script)
-    converter = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(converter)
-    return converter.process_detections(detections)
-
 def create_anno_container():
     return {
         "boxes": [],
@@ -69,6 +62,25 @@ def create_anno_container():
         "polyline_paths": [],
         "points_paths": [],
     }
+
+def process_detections(detections, path_to_conv_script):
+    results = create_anno_container()
+    global_vars = {
+        '__builtins__': {
+            'str': str,
+            'int': int,
+            'float': float,
+            'max': max,
+            'min': min,
+            'range': range,
+            },
+        }
+    local_vars = {
+        'detections': detections,
+        'results': results,
+        }
+    exec (open(path_to_conv_script).read(), global_vars, local_vars)
+    return results
 
 def run_inference_engine_annotation(path_to_data, model_file, weights_file, config_file, convertation_file, job, update_progress, db_labels):
     result = {
