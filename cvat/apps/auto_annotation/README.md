@@ -2,15 +2,15 @@
 
 ### Description
 
-This application will be enabled automatically if OpenVINO component was installed and allows to use custom detection models for preannotation.
+This application will be enabled automatically if OpenVINO component is installed. It allows to use custom detection models for preannotation.
 Supported frameworks:
-* DLDT form OpenVINO toolkit
+* DLDT from OpenVINO toolkit
 
-Application uses OpenCV dnn module with DLDT backed for inference.
+Application uses OpenCV dnn module with DLDT backend for inference.
 
 ### Usage
 To annotate task with custom model you need prepare 4 files:
-1. **Model config** - a text file that contains network configuration. It could be a file with the following extension:
+1. **Model config** - a text file that contains network configuration. The following file extension is expected:
    * *.xml (DLDT)
 1. **Model weights** - a binary file that contains trained weights. The following file extension is expected:
    * *.bin (DLDT)
