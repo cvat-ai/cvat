@@ -40,16 +40,11 @@ def get_image_data(path_to_data):
     image_list.sort(key=get_image_key)
     return ImageLoader(image_list)
 
-def load_model(model_file, weights_file, config_file):
-    config = read_model_config(config_file)
-    model = (model_file, weights_file)
-
-    blob_params = get_blob_props(config)
-    class_names = get_model_label_map(config)
-    model =  ModelLoader(path_to_model=model, blob_params=blob_params)
+def load_model(model_file, weights_file, blob_params):
+    model =  ModelLoader(path_to_model=(model_file, weights_file), blob_params=blob_params)
     model.load()
 
-    return model, class_names
+    return model
 
 def create_anno_container():
     return {
@@ -82,7 +77,7 @@ def process_detections(detections, path_to_conv_script):
     exec (open(path_to_conv_script).read(), global_vars, local_vars)
     return results
 
-def run_inference_engine_annotation(path_to_data, model_file, weights_file, config_file, convertation_file, job, update_progress, db_labels):
+def run_inference_engine_annotation(path_to_data, model_file, weights_file, blob_params, labels_mapping, convertation_file, job, update_progress):
     result = {
         'create': create_anno_container(),
         'update': create_anno_container(),
@@ -91,17 +86,9 @@ def run_inference_engine_annotation(path_to_data, model_file, weights_file, conf
 
     data = get_image_data(path_to_data)
     data_len = len(data)
-    model, class_names = load_model(model_file, weights_file, config_file)
+
+    model = load_model(model_file, weights_file, blob_params)
     frame_counter = 0
-
-    labels_mapping = {}
-    for db_key, db_label in db_labels.items():
-        for key, label in class_names.items():
-            if label == db_label:
-                labels_mapping[key] = db_key
-
-    if not len(labels_mapping.values()):
-        raise Exception('No labels found for annotation')
 
     detections = []
     for _, frame in data:
@@ -153,7 +140,7 @@ def update_progress(job, progress):
     job.save_meta()
     return True
 
-def create_thread(tid, db_labels, model_file, weights_file, config_file, convertation_file):
+def create_thread(tid, model_file, weights_file, blob_params, labels_mapping, convertation_file):
     try:
         job = rq.get_current_job()
         job.meta['progress'] = 0
@@ -166,11 +153,11 @@ def create_thread(tid, db_labels, model_file, weights_file, config_file, convert
             path_to_data=db_task.get_data_dirname(),
             model_file=model_file,
             weights_file=weights_file,
-            config_file=config_file,
+            blob_params=blob_params,
+            labels_mapping=labels_mapping,
             convertation_file= convertation_file,
             job=job,
             update_progress=update_progress,
-            db_labels=db_labels,
         )
 
         if result is None:
@@ -241,12 +228,30 @@ def create(request, tid):
         convertation_file_path = os.path.join(upload_dir, convertation_file.name)
         write_file(convertation_file_path, convertation_file)
 
-
         db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
         db_labels = {db_label.id:db_label.name for db_label in db_labels}
 
+        config = read_model_config(config_file_path)
+        blob_params = get_blob_props(config)
+        class_names = get_model_label_map(config)
+
+        labels_mapping = {}
+        for db_key, db_label in db_labels.items():
+            for key, label in class_names.items():
+                if label == db_label:
+                    labels_mapping[key] = db_key
+
+        if not labels_mapping:
+            raise Exception('No labels found for annotation')
+
         queue.enqueue_call(func=create_thread,
-            args=(tid, db_labels, model_file_path, weights_file_path, config_file_path, convertation_file_path),
+            args=(
+                tid,
+                model_file_path,
+                weights_file_path,
+                blob_params,
+                labels_mapping,
+                convertation_file_path),
             job_id='auto_annotation.create/{}'.format(tid),
             timeout=604800)     # 7 days
 
