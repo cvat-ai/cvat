@@ -9,7 +9,7 @@ Supported frameworks:
 Application uses OpenCV dnn module with DLDT backend for inference.
 
 ### Usage
-To annotate task with custom model you need prepare 4 files:
+To annotate task with a custom model you need prepare 4 files:
 1. **Model config** - a text file that contains network configuration. The following file extension is expected:
    * *.xml (DLDT)
 1. **Model weights** - a binary file that contains trained weights. The following file extension is expected:
