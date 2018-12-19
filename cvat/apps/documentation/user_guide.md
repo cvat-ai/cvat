@@ -63,7 +63,7 @@ There you can:
 
     __Flip images__. All selected files will be turned around 180.
 
-    __Z-Order__. Defines the order on drawn polygons. Check the box for enable layered dislaying.
+    __Z-Order__. Defines the order on drawn polygons. Check the box for enable layered displaying.
 
     __Overlap Size__. Use this option to make overlapped segments. The option makes tracks continuous from one segment into another. Use it for interpolation mode. There are several use cases for the parameter:
     - For an interpolation task (video sequence) if an object exists on overlapped segments it will be automatically merged into one track if overlap is greater than zero and annotation is good enough on adjacent segments. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file you will have several tracks, one for each segment, which correspond to the object).
@@ -116,8 +116,8 @@ Usage examples:
     ![](static/documentation/images/image082.jpg) ![](static/documentation/images/image081.jpg)
 
 2. Create a new annotation:
-
-   - Choose right ``Shape`` (e.g. box) and ``Label`` (was specified by you while creating the task) beforehand:
+  
+   - Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
 
     ![](static/documentation/images/image080.jpg) ![](static/documentation/images/image083.jpg)
 
@@ -125,7 +125,7 @@ Usage examples:
 
     ![](static/documentation/images/image011.jpg)
 
-    - It is possible to adjust boundaries and location of the bounding box using mouse. In the top right corner size of the box is shown. You can also undo/redo your actions by using ``Ctrl+Z`` / ``Shift+Ctrl+Z Ctrl+Y``.
+    - It is possible to adjust boundaries and location of the bounding box using mouse. In the top right corner boxes' size is shown, you can check it by clicking one of the boxes' points. You can also undo your actions by using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
 
 3. In the list of objects you can see the labeled car. In the side panel you can perform basic operations under the object.
 
@@ -147,13 +147,12 @@ Usage examples:
 
 2. Create a track for an object (look at the selected car as an example):
     - Annotate a bounding box on first frame for the object.
-
     - In ``Interpolation`` mode the bounding box will be interpolated on next frames automatically.
 
         ![](static/documentation/images/image015.jpg)
 
 3. If the object starts to change its position you need to modify bounding boxes where it happens. Changing of bounding boxes on each frame isn't necessary. It is enough to update several key frames and frames between them will be interpolated automatically. See an example below:
-    - The car starts moving on frame #70. Let's mark the frame as a key frame.
+    - The car starts moving on frame #70. Let's mark the frame as a key frame. You can press ``K`` for that.
 
         ![](static/documentation/images/image016.jpg)
 
@@ -165,7 +164,7 @@ Usage examples:
 
         ![](static/documentation/images/image018.jpg)
 
-4. When the annotated object disappears or becomes too small, you need to finish the track. To do that you need to choose ``Outside Property``.
+4. When the annotated object disappears or becomes too small, you need to finish the track. To do that you need to choose ``Outside Property``, shortcut ``O``.
 
     ![](static/documentation/images/image019.jpg)
 
@@ -203,7 +202,7 @@ Usage examples:
 
     ![](static/documentation/images/image024.jpg) ![](static/documentation/images/image025.jpg)
 
-- Press ``Up Arrow``/``Down Arrow`` keys on your keyboard to go to next attribute. In this case after pressing ``Down Arrow`` you will be able to edit ``Age`` attribute.
+- Press ``Up Arrow``/``Down Arrow`` on your keyboard to go to next/previous attribute. In this case after pressing ``Down Arrow`` you will be able to edit ``Age`` attribute.
 
     ![](static/documentation/images/image026.jpg) ![](static/documentation/images/image027.jpg)
 
@@ -211,19 +210,19 @@ Usage examples:
 
 ### Downloading annotations
 
-1. To download latest annotations save all changes first. Press ``Open Menu`` and then ``Save Work`` button. There is ``Ctrl+s`` shortcut to save annotations quickly.
+1. To download latest annotations save all changes first. Press ``Open Menu`` and then ``Save Work`` button. There is ``Ctrl+S`` shortcut to save annotations quickly.
 
 2. After that press ``Open Menu`` and then ``Dump Annotation`` button.
 
     ![](static/documentation/images/image028.jpg)
 
-3. The annotation will be written into **.xml** file. To find the annotation file go to the directory where your browser saves downloaded files by default. For more information visit [.xml format page](/documentation/xml_format.html).
+3. The annotation will be written into **.xml** file. To find the annotation file go to the directory where your browser saves downloaded files by default. For more information visit [.xml format page](./documentation/xml_format.html).
 
     ![](static/documentation/images/image029.jpg)
 
 ### Vocabulary
 
-**Bounding box** is an area which defines boundaries of an object. To specify it you need to define top left and bottom right points.
+**Bounding box** is an area which defines boundaries of an object. To specify it you need to define two opposite corners.
 
 **Tight bounding box** is a bounding box where margin between the object inside and boundaries of the box is absent. By default the type of bounding box is used in most tasks but precision completely depends on an annotation task.
 
@@ -269,13 +268,35 @@ The tool is composed of:
 
 ![](static/documentation/images/image034.jpg)
 
-There are also:
-- ``Settings`` (F2) — contains different parameters which can be adjusted by the user needs
+There is also:
+- ``Settings`` (F2) — pop-up in the Bottom panel, contains different parameters which can be adjust by the user needs
+
+- ``Context menu`` — available on right mouse button.
+
+---
+### Workspace — Context menu
+
+Context menu opens by right mouse click.
+
+By clicking inside Bounding Box next is available:
+- ``Copy Object URL`` — copying in buffer address of an object on the frame in the task
+- ``Change color``
+- ``Remove Shape``
+- ``Switch Occluded``
+- ``Switch Lock``
+- ``Enable Dragging`` — (only for polygons) allows to adjust polygons position
+- ![](static/documentation/images/image089.jpg) ![](static/documentation/images/image090.jpg)
+
+By clicking on the points of poly-shapes ``Remove`` option is available.
+
+![](static/documentation/images/image092.jpg)
+
+By clicking outside any shapes you can either copy ``Frame URL`` (link to present frame) or ``Job URL`` (link from address bar)
 
 
-- ``Context menu`` — click right mouse button inside of a shape or at a point (only in poly-shapes)
+![](static/documentation/images/image091.jpg) 
 
-![](static/documentation/images/image070.jpg) ![](static/documentation/images/image071.jpg)
+
 
 ---
 ### Settings
@@ -362,7 +383,41 @@ Use shortcuts for undo/redo actions ``Ctrl+Z`` __/__  ``Ctrl+Shift+Z``/``Ctrl+Y`
 
 ![](static/documentation/images/image061.jpg)
 
+---
+__Fill Opacity slider__
 
+Changes opacity of every Bounding Box in the Annotation.
+
+![](static/documentation/images/image086.jpg)
+
+Opacity slides right to left, starting from ``white borders`` and ``100-80-60-40-20% white body`` to ``colored borders`` and ``0-20-40-60-80-100% colored body``.
+If any white option is chosen, Color By won't work.
+
+__Selected Fill Opacity slider__
+
+Changes opacity of Bounding Box under mouse pointer.
+
+![](static/documentation/images/image087.jpg)
+
+Opacity slides from 0% to 100% colored body
+
+__Black Stroke checkbox__
+
+Changes Bounding Box border from white/colored to black.
+
+![](static/documentation/images/image088.jpg)
+
+__Color By options__
+
+Changes color scheme of Annotation:
+- ``Instance`` — every Bounding Box have random color
+- ![](static/documentation/images/image095.jpg)
+- ``Group`` — every group of Boxes have its own random color, ungrouped Boxes are white
+- ![](static/documentation/images/image094.jpg)
+- ``Label`` — every Label (i.e. Vehicle, Pedestrian, Roadmark) have its own random color
+- ![](static/documentation/images/image093.jpg)
+
+---
 ### Side panel
 
 #### Objects
@@ -376,7 +431,6 @@ In the Side Panel you can see the list of available objects on the current frame
 You also can see all labels that used on this frame and highlight them by clicking needed label.
 
 ![](static/documentation/images/image062.jpg)
-
 
 ---
 __Objects' card__
@@ -478,9 +532,7 @@ It is possible to handle many objects on the same frame in the mode.
 
 ![](static/documentation/images/image058.jpg)
 
-It is more convenient to annotate objects of the same type. For the purpose
-it is possible to specify a corresponding filter. For example, the following
-filter will hide all objects except pedestrians: ``pedestrian``.
+It is more convenient to annotate objects of the same type. For the purpose it is possible to specify a corresponding filter. For example, the following filter will hide all objects except pedestrians: ``pedestrian``.
 
 To navigate between objects (pedestrians in the case) use the following shortcuts:
 - ``Tab`` — go to the next object
@@ -501,15 +553,20 @@ Before start need to be sure that ``Polygon`` is selected.
 
 ![](static/documentation/images/image084.jpg)
 
-Click ``N`` for entering drawing mode. Now you can start your polygon.
-You can zoom in/out (on mouse wheel scroll) and move (on mouse wheel press
-and mouse move) while drawing. Click ``N`` again for completing the shape.
-Also you can set fixed number of points in the field "Poly Shape Size", then
-drawing will be stopped automatically. You can drag object after it was drawn
-and fix a position of an individual points after finishing the object. You
-can add/delete points after finishing.
+Click ``N`` for entering drawing mode. There is two ways to draw a polygon — you either create points by clicking or by dragging mouse on the screen, holding ``Shift``.
 
-![](static/documentation/images/gif005.gif)
+|Clicking points|Holding Shift+Dragging|
+|--|--|
+|![](static/documentation/images/gif005.gif)|![](static/documentation/images/gif006.gif)|
+
+
+When ``Shift`` isn't pressed, you can zoom in/out (on mouse wheel scroll) and move (on mouse wheel press and mouse move), you can delete previous point by clicking right mouse button. Click ``N`` again for completing the shape. You can move points or delete them by double-clicking. Double-click with pressed ``Shift`` will open a polygon editor. In it you can create new points (by clicking or dragging) or delete part of a polygon by closing the red line on other point. Press ``Esc`` to cancel editing.
+
+![](static/documentation/images/gif007.gif)
+
+Also you can set fixed number of points in the field "Poly Shape Size", then drawing will be stopped automatically. 
+To enable dragging, right-click inside polygon and chose ``Enable Dragging``.
+
 
 Below you can see results with opacity and black stroke:
 
@@ -525,13 +582,9 @@ Before start need to be sure that ``Polyline`` is selected.
 
 ![](static/documentation/images/image085.jpg)
 
-Click ``N`` for entering drawing mode. Now you can start your polyline.
-You can zoom in/out (on mouse wheel scroll) and move (on mouse wheel press and
-mouse move) while drawing. Click ``N`` again for completing the shape. Also
-you can set fixed number of points in the field "Poly Shape Size", then drawing
- will be stopped automatically. You can drag object after it was drawn and fix
- a position of an individual points after finishing the object. You can
- add/delete points after finishing.
+Click ``N`` for entering drawing mode. There is two ways to draw a polyline — you either create points by clicking or by dragging mouse on the screen, holding ``Shift``.
+When ``Shift`` isn't pressed, you can zoom in/out (on mouse wheel scroll) and move (on mouse wheel press and mouse move), you can delete previous point by clicking right mouse button. Click ``N`` again for completing the shape. You can delete points by doublec-licking them. Double-click with pressed ``Shift`` will open a polyline editor. In it you can create new points (by clicking or dragging) or delete part of a polyline by closing the red line on other point. Press ``Esc`` to cancel editing. Also you can set fixed number of points in the field "Poly Shape Size", then drawing will be stopped automatically.
+You can adjust polyline after it was drawn.
 
 ![](static/documentation/images/image039.jpg)
 
@@ -544,13 +597,7 @@ Before start need to be sure that ``Points`` is selected.
 ![](static/documentation/images/image042.jpg)
 
 Click ``N`` for entering drawing mode. Now you can start marking a needed area.
-Click ``N`` again for finishing marking an area. Also you can set fixed number
-of points in the field "Poly Shape Size", then drawing will be stopped
-automatically. Points are automatically grouped — between individual start
- and finish all points will be considered linked. You can zoom in/out (on mouse
- wheel scroll) and move (on mouse wheel press and mouse move) while drawing.
-You can drag object after it was drawn and fix a position of an individual
-points after finishing the object. You can add/delete points after finishing.
+Click ``N`` again for finishing marking an area. You can delete points by double-clicking them. Double-click with pressed ``Shift`` will open a points shape editor. In it you can create new points into existing shape. Also you can set fixed number of points in the field "Poly Shape Size", then drawing will be stopped automatically. Points are automatically grouped — between individual start and finish all points will be considered linked. You can zoom in/out (on mouse wheel scroll) and move (on mouse wheel press and mouse move) while drawing. You can drag object after it was drawn and fix a position of an individual points after finishing the object. You can add/delete points after finishing.
 
 ![](static/documentation/images/image063.jpg)
 
@@ -589,7 +636,7 @@ To use the functionality it is enough to specify a value inside ``Filter`` text 
 ---
 In a trivial case a correct filter should correspond to the template: ``label[prop operator "value"]``
 
-``label`` is a type of an object (e.g _person, car, face_, etc.). If the type isn't important you can use ``*``.
+``label`` is a type of an object (e.g. _person, car, face_, etc.). If the type isn't important you can use ``*``.
 
 ``prop`` is a property which should be filtered. The following items are available:
 
@@ -643,7 +690,7 @@ Many UI elements have shortcut hints. Put your pointer to an interesting element
 ``L+T``                | lock/unlock all shapes on the current frame
 ``Q`` or ``Num/``      | set occluded property for an active shape
 ``N``                  | start/stop draw mode
-``Alt+N``              | close draw mode without create
+``Esc``                | close draw mode without create
 ``Ctrl+<number>``      | change type of an active shape
 ``Shift+<number>``     | change type of new shape by default
 ``Enter``              | change color of active shape
@@ -669,19 +716,21 @@ Many UI elements have shortcut hints. Put your pointer to an interesting element
 ``+``/``-``            | change relative order of highlighted polygon
 |                      | __Interpolation__             |
 ``M``                  | enter/apply merge mode
-``Alt+M``              | close merge mode without apply the merge
+``Esc``                | close merge mode without apply the merge
 ``R``                  | go to the next key frame of an active shape
 ``E``                  | go to the previous key frame of an active shape
+``O``                  | change attribute of an active shape to "Outside the frame"
+``K``                  | mark current frame as Keyframe on an active shape
 |                      | __Attribute annotation mode__ |
 ``Shift+Enter``        | enter/leave Attribute Annotation mode
 ``Up Arrow``           | go to the next attribute (up)
-``Down Arrown``        | go to the next attribute (down)
+``Down Arrow``         | go to the next attribute (down)
 ``Tab``                | go to the next annotated object
 ``Shift+Tab``          | go to the previous annotated object
 ``<number>``           | assign a corresponding value to the current attribute
 |                      | __Grouping__                  |
 ``G``                  | switch group mode
-``Alt+G``              | close group mode
+``Esc``                | close group mode
 ``Shift+G``            | reset group for selected shapes
 |                      | __Filter__                    |
 ``Left Arrow``         | go to the previous frame which corresponds to the specified filter value
