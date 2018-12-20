@@ -2450,7 +2450,7 @@ class ShapeView extends Listener {
             if (this._uis.text && this._uis.text.node.parentElement) {
                 let revscale = 1 / scale;
                 let shapeBBox = this._uis.shape.node.getBBox();
-                let textBBox = this._uis.text.node.getBBox()
+                let textBBox = this._uis.text.node.getBBox();
 
                 let x = shapeBBox.x + shapeBBox.width + TEXT_MARGIN * revscale;
                 let y = shapeBBox.y;
@@ -3123,7 +3123,7 @@ class PointsView extends PolyShapeView {
                 this._controller.click();
             }).addClass('pointTempGroup');
 
-        this._uis.points.node.setAttribute('z_order', position.z_order)
+        this._uis.points.node.setAttribute('z_order', position.z_order);
 
         let points = PolyShapeModel.convertStringToNumberArray(position.points);
         for (let point of points) {
