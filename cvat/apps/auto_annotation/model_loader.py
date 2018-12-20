@@ -3,54 +3,56 @@
 #
 # SPDX-License-Identifier: MIT
 
-import cv2
 import json
+import cv2
+import os
+import subprocess
 
-class BlobParamaters():
-    def __init__(self, scalefactor, input_size, mean, swapRB, crop):
-        self.scalefactor = scalefactor
-        self.input_size = input_size
-        self.mean = mean
-        self.swapRB = swapRB
-        self.crop = crop
+from openvino.inference_engine import IENetwork, IEPlugin
 
 class ModelLoader():
-    def __init__(self, path_to_model, blob_params):
-        self.path_to_model = path_to_model
-        self.blob_params = blob_params
+    def __init__(self, model, weights):
+        self._model = model
+        self._weights = weights
 
-    def load(self):
-        self.net = cv2.dnn.readNet(*self.path_to_model)
-        self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-        self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_DEFAULT)
+        IE_PLUGINS_PATH = os.getenv('IE_PLUGINS_PATH')
+        if not IE_PLUGINS_PATH:
+            raise OSError('Inference engine plugin path env not found in the system.')
 
-    def setInput(self, images):
-        blob = cv2.dnn.blobFromImages(images,
-            self.blob_params.scalefactor,
-            self.blob_params.input_size,
-            self.blob_params.mean,
-            self.blob_params.swapRB,
-            self.blob_params.crop)
+        plugin = IEPlugin(device='CPU', plugin_dirs=[IE_PLUGINS_PATH])
+        if (self._check_instruction('avx2')):
+            plugin.add_cpu_extension(os.path.join(IE_PLUGINS_PATH, 'libcpu_extension_avx2.so'))
+        elif (self._check_instruction('sse4')):
+            plugin.add_cpu_extension(os.path.join(IE_PLUGINS_PATH, 'libcpu_extension_sse4.so'))
+        else:
+            raise Exception('Inference engine requires a support of avx2 or sse4.')
 
-        self.net.setInput(blob)
+        network = IENetwork.from_ir(model=self._model, weights=self._weights)
+        supported_layers = plugin.get_supported_layers(network)
+        not_supported_layers = [l for l in network.layers.keys() if l not in supported_layers]
+        if len(not_supported_layers) != 0:
+            raise Exception("Following layers are not supported by the plugin for specified device {}:\n {}".
+                      format(plugin.device, ', '.join(not_supported_layers)))
 
-    def forward(self):
-        return self.net.forward()
+        self._input_blob_name = next(iter(network.inputs))
+        self._output_blob_name = next(iter(network.outputs))
 
-def read_model_config(config_path):
-        with open(config_path, 'r') as f:
-            return json.load(f)
+        self._net = plugin.load(network=network, num_requests=2)
+        self._input_layout = network.inputs[self._input_blob_name]
 
-def get_blob_props(config):
-    blob_params = config['blob_params']
-    return BlobParamaters(
-        scalefactor=blob_params['scalefactor'] if 'scalefactor' in blob_params else 1.0,
-        input_size=(blob_params['height'], blob_params['width']) if 'height' in blob_params and 'width' in blob_params else (),
-        mean=tuple(float(v) for v in blob_params['mean'].split(',')) if 'mean' in blob_params else tuple(),
-        swapRB=blob_params['swapRB'] if 'swapRB' in blob_params else False,
-        crop=blob_params['crop'] if 'crop' in blob_params else False,
-    )
+    def infer(self, image):
+        _, c, h, w = self._input_layout
+        in_frame = image if image.shape[:-1] == (h, w) else cv2.resize(image, (w, h))
+        in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
+        return self._net.infer(inputs={self._input_blob_name: in_frame})[self._output_blob_name].copy()
 
-def get_model_label_map(config):
-    return config['label_map']
+    @staticmethod
+    def _check_instruction(instruction):
+        return instruction == str.strip(
+            subprocess.check_output(
+                'lscpu | grep -o "{}" | head -1'.format(instruction), shell=True
+            ).decode('utf-8'))
 
+def load_label_map(labels_path):
+        with open(labels_path, 'r') as f:
+            return json.load(f)['label_map']

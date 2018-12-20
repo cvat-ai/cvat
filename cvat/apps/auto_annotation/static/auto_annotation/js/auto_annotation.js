@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td> <input id="${window.cvat.auto_annotation.autoAnnoWeightsFieldId}" type="file" name="weights" /> </td>
                 </tr>
                 <tr>
-                    <td style="width: 25%"> <label class="regular h2"> Config </label> </td>
+                    <td style="width: 25%"> <label class="regular h2"> Label map </label> </td>
                     <td> <input id="${window.cvat.auto_annotation.autoAnnoConfigFieldId}" type="file" name="config" accept=".json" /> </td>
                 </tr>
                 <tr>

@@ -3,13 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, QueryDict
-from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.models import Task as TaskModel
-from cvat.apps.engine import annotation, task
+from cvat.apps.engine import annotation
 
 import django_rq
 import subprocess
@@ -21,30 +19,21 @@ import rq
 
 from cvat.apps.engine.log import slogger
 
-from .model_loader import ModelLoader, read_model_config, get_blob_props, get_model_label_map
+from .model_loader import ModelLoader, load_label_map
 from .image_loader import ImageLoader
 import os.path as osp
-from os import walk
-import json
-import fnmatch
 
 def get_image_data(path_to_data):
     def get_image_key(item):
         return int(osp.splitext(osp.basename(item))[0])
 
     image_list = []
-    for root, _, filenames in walk(path_to_data):
+    for root, _, filenames in os.walk(path_to_data):
         for filename in fnmatch.filter(filenames, '*.jpg'):
                 image_list.append(osp.join(root, filename))
 
     image_list.sort(key=get_image_key)
     return ImageLoader(image_list)
-
-def load_model(model_file, weights_file, blob_params):
-    model =  ModelLoader(path_to_model=(model_file, weights_file), blob_params=blob_params)
-    model.load()
-
-    return model
 
 def create_anno_container():
     return {
@@ -77,7 +66,7 @@ def process_detections(detections, path_to_conv_script):
     exec (open(path_to_conv_script).read(), global_vars, local_vars)
     return results
 
-def run_inference_engine_annotation(path_to_data, model_file, weights_file, blob_params, labels_mapping, convertation_file, job, update_progress):
+def run_inference_engine_annotation(path_to_data, model_file, weights_file, labels_mapping, convertation_file, job, update_progress):
     result = {
         'create': create_anno_container(),
         'update': create_anno_container(),
@@ -87,19 +76,19 @@ def run_inference_engine_annotation(path_to_data, model_file, weights_file, blob
     data = get_image_data(path_to_data)
     data_len = len(data)
 
-    model = load_model(model_file, weights_file, blob_params)
+    model = ModelLoader(model=model_file, weights=weights_file)
+
     frame_counter = 0
 
     detections = []
     for _, frame in data:
-        model.setInput([frame])
         orig_rows, orig_cols = frame.shape[:2]
 
         detections.append({
             'frame_id': frame_counter,
             'frame_height': orig_rows,
             'frame_width': orig_cols,
-            'detections': model.forward(),
+            'detections': model.infer(frame),
         })
 
         frame_counter += 1
@@ -110,6 +99,9 @@ def run_inference_engine_annotation(path_to_data, model_file, weights_file, blob
 
     if 'boxes' in processed_detections:
         for box_ in processed_detections['boxes']:
+            if box_['label'] not in labels_mapping:
+                 continue
+
             result['create']['boxes'].append({
                 "label_id": labels_mapping[box_['label']],
                 "frame": box_['frame'],
@@ -140,7 +132,7 @@ def update_progress(job, progress):
     job.save_meta()
     return True
 
-def create_thread(tid, model_file, weights_file, blob_params, labels_mapping, convertation_file):
+def create_thread(tid, model_file, weights_file, labels_mapping, convertation_file):
     try:
         job = rq.get_current_job()
         job.meta['progress'] = 0
@@ -153,7 +145,6 @@ def create_thread(tid, model_file, weights_file, blob_params, labels_mapping, co
             path_to_data=db_task.get_data_dirname(),
             model_file=model_file,
             weights_file=weights_file,
-            blob_params=blob_params,
             labels_mapping=labels_mapping,
             convertation_file= convertation_file,
             job=job,
@@ -231,15 +222,13 @@ def create(request, tid):
         db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
         db_labels = {db_label.id:db_label.name for db_label in db_labels}
 
-        config = read_model_config(config_file_path)
-        blob_params = get_blob_props(config)
-        class_names = get_model_label_map(config)
+        class_names = load_label_map(config_file_path)
 
         labels_mapping = {}
         for db_key, db_label in db_labels.items():
             for key, label in class_names.items():
                 if label == db_label:
-                    labels_mapping[key] = db_key
+                    labels_mapping[int(key)] = db_key
 
         if not labels_mapping:
             raise Exception('No labels found for annotation')
@@ -249,7 +238,6 @@ def create(request, tid):
                 tid,
                 model_file_path,
                 weights_file_path,
-                blob_params,
                 labels_mapping,
                 convertation_file_path),
             job_id='auto_annotation.create/{}'.format(tid),
@@ -288,6 +276,7 @@ def check(request, tid):
             job.delete()
         else:
             data['status'] = 'failed'
+            data['stderr'] = job.exc_info
             job.delete()
 
     except Exception:
