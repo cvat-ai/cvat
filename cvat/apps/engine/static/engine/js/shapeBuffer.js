@@ -180,44 +180,50 @@ class ShapeBufferModel extends Listener  {
                 let startFrame = window.cvat.player.frames.start;
                 let originalImageSize = imageSizes[object.frame - startFrame] || imageSizes[0];
 
+                // Getting normalized coordinates [0..1]
+                let normalized = {};
+                if (this._shape.type === 'box') {
+                    normalized.xtl = object.xtl / originalImageSize.width;
+                    normalized.ytl = object.ytl / originalImageSize.height;
+                    normalized.xbr = object.xbr / originalImageSize.width;
+                    normalized.ybr = object.ybr / originalImageSize.height;
+                }
+                else {
+                    normalized.points = [];
+                    for (let point of PolyShapeModel.convertStringToNumberArray(object.points)) {
+                        normalized.points.push({
+                            x: point.x / originalImageSize.width,
+                            y: point.y / originalImageSize.height,
+                        });
+                    }
+                }
+
                 let addedObjects = [];
                 while (numOfFrames > 0 && (object.frame + 1 <= window.cvat.player.frames.stop)) {
                     object.frame ++;
                     numOfFrames --;
 
                     object.z_order = this._collection.zOrder(object.frame).max;
-
                     let imageSize = imageSizes[object.frame - startFrame] || imageSizes[0];
-                    if ((imageSize.width != originalImageSize.width) || (imageSize.height != originalImageSize.height)) {
-                        let oldPosition = Object.assign({}, object);
-                        if (this._shape.type === 'box') {
-                            object.xtl = Math.clamp(object.xtl, 0, imageSize.width);
-                            object.ytl = Math.clamp(object.ytl, 0, imageSize.height);
-                            object.xbr = Math.clamp(object.xbr, object.xtl, imageSize.width);
-                            object.ybr = Math.clamp(object.ybr, object.ytl, imageSize.height);
-                            if ((object.xbr - object.xtl) * (object.ybr - object.ytl) < AREA_TRESHOLD) {
-                                object.xtl = 0;
-                                object.ytl = 0;
-                                object.xbr = imageSize.width;
-                                object.ybr = imageSize.height;
-                            }
-                        }
-                        else {
-                            let points = PolyShapeModel.convertStringToNumberArray(object.points);
-                            for (let point of points) {
-                                point.x = Math.clamp(point.x, 0, imageSize.width);
-                                point.y = Math.clamp(point.y, 0, imageSize.height);
-                            }
-
-                            object.points = PolyShapeModel.convertNumberArrayToString(points);
-                        }
-                        this._collection.add(object, `annotation_${this._shape.type}`);
-                        Object.assign(object, oldPosition);
+                    let position = {};
+                    if (this._shape.type === 'box') {
+                        position.xtl = normalized.xtl * imageSize.width;
+                        position.ytl = normalized.ytl * imageSize.height;
+                        position.xbr = normalized.xbr * imageSize.width;
+                        position.ybr = normalized.ybr * imageSize.height;
                     }
                     else {
-                        this._collection.add(object, `annotation_${this._shape.type}`);
+                        position.points = [];
+                        for (let point of normalized.points) {
+                            position.points.push({
+                                x: point.x * imageSize.width,
+                                y: point.y * imageSize.height,
+                            });
+                        }
+                        position.points = PolyShapeModel.convertNumberArrayToString(position.points);
                     }
-
+                    Object.assign(object, position);
+                    this._collection.add(object, `annotation_${this._shape.type}`);
                     addedObjects.push(this._collection.shapes.slice(-1)[0]);
                 }
 
