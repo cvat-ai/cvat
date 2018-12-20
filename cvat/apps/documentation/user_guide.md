@@ -43,8 +43,8 @@ There you can:
     ``label_name``: for example *vehicle, person, face etc.*
 
     ``<prefix>``:
-      - Use ``@`` for unique attributes which cannot be changed from frame to frame *(e.g. age, gender, color, etc)*
-      - Use ``~`` for temporary attributes which can be changed on any frame *(e.g. quality, pose, truncated, etc)*
+      - Use ``@`` for unique attributes which cannot be changed from frame to frame *(e.g. age, gender, color, etc.)*
+      - Use ``~`` for temporary attributes which can be changed on any frame *(e.g. quality, pose, truncated, etc.)*
 
     ``input_type``: the following input types are available ``select``, ``checkbox``, ``radio``, ``number``, ``text``.
 
@@ -91,7 +91,7 @@ There you can:
 
 2. An image can be zoom in/out using mouse's wheel. The image will be zoomed relatively your current cursor position. Thus if you point on an object it will be under your mouse during zooming process.
 
-3. An image can be moved/shifted by holding left mouse button inside some area without annotated objects. If ``Shift`` key is pressed then all annotated objects are ignored otherwise a highlighted bounding box will be moved instead of the image itself. Usually the functionality is used together with zoom to precisely locate an object of interest.
+3. An image can be moved/shifted by holding left mouse button inside some area without annotated objects. If ``Mouse Wheel`` is pressed then all annotated objects are ignored otherwise a highlighted bounding box will be moved instead of the image itself.
 
 ### Types of Shapes (basic)
 There are four shapes you can annotate your images with:
@@ -127,7 +127,7 @@ Usage examples:
 
     - It is possible to adjust boundaries and location of the bounding box using mouse. In the top right corner boxes' size is shown, you can check it by clicking one of the boxes' points. You can also undo your actions by using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
 
-3. In the list of objects you can see the labeled car. In the side panel you can perform basic operations under the object.
+3. In the list of objects you can see the labeled car. In the side panel you can perform basic operations under the object — Choose Boxes Attributes, Change Label or Delete Box.
 
     ![](static/documentation/images/image012.jpg)
 
@@ -239,7 +239,7 @@ Usage examples:
 
 **Attribute** is a property of an annotated object (e.g. color, model, quality, etc.). There are two types of attributes:
 
-- __Unique__: immutable and isn't changed from frame to frame (e.g age, gender, color, etc.)
+- __Unique__: immutable and isn't changed from frame to frame (e.g. age, gender, color, etc.)
 
     ![](static/documentation/images/image073.jpg)
 
@@ -365,9 +365,15 @@ Go to specified frame. Press ``~`` to highlight element.
 ---
 __Open Menu__ button
 
-It is the main menu for the annotation tool. It can be used to download, upload and remove annotations. As well it shows statistics about the current annotation task.
+It is the main menu for the annotation tool. It can be used to download, upload and remove annotations.
 
 ![](static/documentation/images/image051.jpg)
+
+As well it shows statistics about the current task, such as:
+- Task Name
+- Type of performance on the task: Annotation, Validation or Completed task
+- Technical information about Task
+- Number of created Bounding Boxes, sorted by Labels and type of Annotation (Polygons, Boxes, etc.)
 
 ---
 __Filter__ input box
@@ -583,7 +589,7 @@ Before start need to be sure that ``Polyline`` is selected.
 ![](static/documentation/images/image085.jpg)
 
 Click ``N`` for entering drawing mode. There is two ways to draw a polyline — you either create points by clicking or by dragging mouse on the screen, holding ``Shift``.
-When ``Shift`` isn't pressed, you can zoom in/out (on mouse wheel scroll) and move (on mouse wheel press and mouse move), you can delete previous point by clicking right mouse button. Click ``N`` again for completing the shape. You can delete points by doublec-licking them. Double-click with pressed ``Shift`` will open a polyline editor. In it you can create new points (by clicking or dragging) or delete part of a polyline by closing the red line on other point. Press ``Esc`` to cancel editing. Also you can set fixed number of points in the field "Poly Shape Size", then drawing will be stopped automatically.
+When ``Shift`` isn't pressed, you can zoom in/out (on mouse wheel scroll) and move (on mouse wheel press and mouse move), you can delete previous point by clicking right mouse button. Click ``N`` again for completing the shape. You can delete points by double-clicking them. Double-click with pressed ``Shift`` will open a polyline editor. In it you can create new points (by clicking or dragging) or delete part of a polyline by closing the red line on other point. Press ``Esc`` to cancel editing. Also you can set fixed number of points in the field "Poly Shape Size", then drawing will be stopped automatically.
 You can adjust polyline after it was drawn.
 
 ![](static/documentation/images/image039.jpg)
@@ -674,6 +680,18 @@ Example                                                 | Description
 ``face[attr/glass="sunglass" or attr/glass="no"]``      | faces with sunglasses or without glasses at all.
 ```person[attr/race="asian"] | car[attr/model="bmw" or attr/model="mazda"]``` | asian persons or bmw or mazda cars.
 
+## Analitics
+
+If you press ``F3``, URL like Kibana Analytics App will opens in the next tab.
+
+It allows to see how much Working Time every User spend on each Task and how much they did, over any time range.
+
+![](static/documentation/images/image097.jpg)
+
+It also have Activity Graph, which can be modified with number of users shown, and timeframe.
+
+![](static/documentation/images/image096.jpg)
+
 
 ## Shortcuts
 
@@ -713,7 +731,7 @@ Many UI elements have shortcut hints. Put your pointer to an interesting element
 ``Shift+S``/``Alt+S``  | increase/decrease saturation on an image
 ``Ctrl+S``             | save job
 ``Ctrl+B``             | propagate active shape
-``+``/``-``            | change relative order of highlighted polygon
+``+``/``-``            | change relative order of highlighted Box (if Z-order is enabled)
 |                      | __Interpolation__             |
 ``M``                  | enter/apply merge mode
 ``Esc``                | close merge mode without apply the merge
