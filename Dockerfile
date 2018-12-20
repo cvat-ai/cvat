@@ -89,7 +89,6 @@ RUN if [ "$WITH_TESTS" = "yes" ]; then \
             eslint-detailed-reporter \
             karma \
             karma-chrome-launcher \
-            karma-coveralls \
             karma-coverage \
             karma-junit-reporter \
             karma-qunit \
