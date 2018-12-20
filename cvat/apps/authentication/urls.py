@@ -4,17 +4,20 @@
 # SPDX-License-Identifier: MIT
 
 from django.urls import path
-import os
-
 from django.contrib.auth import views as auth_views
+from django.conf import settings
+
 from . import forms
 from . import views
-from .settings.authentication import DJANGO_AUTH_TYPE
-
-login_page = 'login{}.html'.format('_ldap' if DJANGO_AUTH_TYPE == 'LDAP' else '')
 
 urlpatterns = [
-    path('login', auth_views.LoginView.as_view(form_class=forms.AuthForm, template_name=login_page), name='login'),
+    path('login', auth_views.LoginView.as_view(form_class=forms.AuthForm,
+        template_name='login.html', extra_context={'note': settings.AUTH_LOGIN_NOTE}),
+        name='login'),
     path('logout', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
-    path('register', views.register_user, name='register'),
 ]
+
+if settings.DJANGO_AUTH_TYPE == 'BASIC':
+    urlpatterns += [
+        path('register', views.register_user, name='register'),
+    ]

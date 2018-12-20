@@ -152,7 +152,14 @@ class PlayerModel extends Listener {
             top: 0,
             width: playerSize.width,
             height: playerSize.height,
+            frameOffset: 0,
         };
+
+        this._geometry.frameOffset = Math.floor(Math.max(
+            (playerSize.height - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE,
+            (playerSize.width - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE
+        ));
+        window.cvat.translate.playerOffset = this._geometry.frameOffset;
 
         this._frameProvider.subscribe(this);
     }
@@ -167,11 +174,7 @@ class PlayerModel extends Listener {
     }
 
     get geometry() {
-        return {
-            scale: this._geometry.scale,
-            top: this._geometry.top,
-            left: this._geometry.left
-        };
+        return Object.assign({}, this._geometry);
     }
 
     get playing() {
@@ -498,7 +501,6 @@ class PlayerController {
             this._moving = true;
             this._lastClickX = e.clientX;
             this._lastClickY = e.clientY;
-            e.preventDefault();
         }
     }
 
@@ -520,6 +522,7 @@ class PlayerController {
             let leftOffset = e.clientX - this._lastClickX;
             this._lastClickX = e.clientX;
             this._lastClickY = e.clientY;
+
             this._model.move(topOffset, leftOffset);
         }
     }
@@ -649,10 +652,19 @@ class PlayerView {
         this._playerGridPath = $('#playerGridPath');
         this._contextMenuUI = $('#playerContextMenu');
 
-        $('*').on('mouseup', () => this._controller.frameMouseUp());
+        $('*').on('mouseup.player', () => this._controller.frameMouseUp());
+        this._playerContentUI.on('mousedown', (e) => {
+            let pos = window.cvat.translate.point.clientToCanvas(this._playerBackgroundUI[0], e.clientX, e.clientY);
+            let frameWidth = window.cvat.player.geometry.frameWidth;
+            let frameHeight = window.cvat.player.geometry.frameHeight;
+            if (pos.x >= 0 && pos.y >= 0 && pos.x <= frameWidth && pos.y <= frameHeight) {
+                this._controller.frameMouseDown(e);
+            }
+            e.preventDefault();
+        });
+
         this._playerUI.on('wheel', (e) => this._controller.zoom(e));
         this._playerUI.on('dblclick', () => this._controller.fit());
-        this._playerContentUI.on('mousedown', (e) => this._controller.frameMouseDown(e));
         this._playerUI.on('mousemove', (e) => this._controller.frameMouseMove(e));
         this._progressUI.on('mousedown', (e) => this._controller.progressMouseDown(e));
         this._progressUI.on('mouseup', () => this._controller.progressMouseUp());
@@ -852,13 +864,19 @@ class PlayerView {
 
         this._progressUI['0'].value = frames.current - frames.start;
 
-        for (let obj of [this._playerBackgroundUI, this._playerContentUI, this._playerGridUI]) {
+        for (let obj of [this._playerBackgroundUI, this._playerGridUI]) {
             obj.css('width', image.width);
             obj.css('height', image.height);
             obj.css('top', geometry.top);
             obj.css('left', geometry.left);
             obj.css('transform', 'scale(' + geometry.scale + ')');
         }
+
+        this._playerContentUI.css('width', image.width + geometry.frameOffset * 2);
+        this._playerContentUI.css('height', image.height + geometry.frameOffset * 2);
+        this._playerContentUI.css('top', geometry.top - geometry.frameOffset * geometry.scale);
+        this._playerContentUI.css('left', geometry.left - geometry.frameOffset * geometry.scale);
+        this._playerContentUI.css('transform', 'scale(' + geometry.scale + ')');
 
         this._playerGridPath.attr('stroke-width', 2 / geometry.scale);
         this._frameNumber.prop('value', frames.current);

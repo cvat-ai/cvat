@@ -31,11 +31,14 @@ urlpatterns = [
     path('dashboard/', include('cvat.apps.dashboard.urls')),
     path('django-rq/', include('django_rq.urls')),
     path('auth/', include('cvat.apps.authentication.urls')),
-    path('documentation/', include('cvat.apps.documentation.urls'))
+    path('documentation/', include('cvat.apps.documentation.urls')),
 ]
 
 if apps.is_installed('cvat.apps.tf_annotation'):
-    urlpatterns.append(path('tf_annotation/', include('cvat.apps.tf_annotation.urls')))
+    urlpatterns.append(path('tensorflow/annotation/', include('cvat.apps.tf_annotation.urls')))
 
 if apps.is_installed('cvat.apps.log_viewer'):
     urlpatterns.append(path('analytics/', include('cvat.apps.log_viewer.urls')))
+
+if apps.is_installed('silk'):
+    urlpatterns.append(path('profiler/', include('silk.urls')))

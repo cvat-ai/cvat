@@ -1,4 +1,3 @@
-
 # Copyright (C) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -54,7 +53,8 @@ INSTALLED_APPS = [
     'cacheops',
     'sendfile',
     'dj_pagination',
-    'revproxy'
+    'revproxy',
+    'rules',
 ]
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
@@ -99,6 +99,18 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'cvat.wsgi.application'
+
+# Django Auth
+DJANGO_AUTH_TYPE = 'BASIC'
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = '/'
+AUTH_LOGIN_NOTE = '<p>Have not registered yet? <a href="/auth/register">Register here</a>.</p>'
+
+AUTHENTICATION_BACKENDS = [
+    'rules.permissions.ObjectPermissionBackend',
+    'django.contrib.auth.backends.ModelBackend'
+]
+
 
 # Django-RQ
 # https://github.com/rq/django-rq
@@ -161,6 +173,10 @@ CACHEOPS = {
     # Automatically cache any Task.objects.get() calls for 15 minutes
     # This also includes .first() and .last() calls.
     'engine.task': {'ops': 'get', 'timeout': 60*15},
+
+    # Automatically cache any Job.objects.get() calls for 15 minutes
+    # This also includes .first() and .last() calls.
+    'engine.job': {'ops': 'get', 'timeout': 60*15},
 }
 
 CACHEOPS_DEGRADE_ON_FAILURE = True

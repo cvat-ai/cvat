@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported callAnnotationUI translateSVGPos blurAllElements drawBoxSize copyToClipboard */
+/* exported callAnnotationUI blurAllElements drawBoxSize copyToClipboard */
 "use strict";
 
 function callAnnotationUI(jid) {
@@ -40,6 +40,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     // Setup some API
     window.cvat = {
         labelsInfo: new LabelsInfo(job),
+        translate: new CoordinateTranslator(),
         player: {
             geometry: {
                 scale: 1,
@@ -53,7 +54,8 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
         mode: null,
         job: {
             z_order: job.z_order,
-            id: job.jobid
+            id: job.jobid,
+            images: job.image_meta_data,
         },
         search: {
             value: window.location.search,
@@ -98,17 +100,23 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     window.cvat.config = new Config();
 
     // Setup components
-    let annotationParser = new AnnotationParser(job, window.cvat.labelsInfo);
+    let idGenerator = new IncrementIdGenerator(job.max_shape_id + 1);
+    let annotationParser = new AnnotationParser(job, window.cvat.labelsInfo, idGenerator);
 
-    let shapeCollectionModel = new ShapeCollectionModel().import(shapeData).updateHash();
+    let shapeCollectionModel = new ShapeCollectionModel(idGenerator).import(shapeData, true);
     let shapeCollectionController = new ShapeCollectionController(shapeCollectionModel);
     let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
+
+    // In case of old tasks that dont provide max saved shape id properly
+    if (job.max_shape_id === -1) {
+        idGenerator.reset(shapeCollectionModel.maxId + 1);
+    }
 
     window.cvat.data = {
         get: () => shapeCollectionModel.exportAll(),
         set: (data) => {
             shapeCollectionModel.empty();
-            shapeCollectionModel.import(data);
+            shapeCollectionModel.import(data, false);
             shapeCollectionModel.update();
         },
         clear: () => shapeCollectionModel.empty(),
@@ -140,6 +148,8 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
 
     let aamModel = new AAMModel(shapeCollectionModel, (xtl, xbr, ytl, ybr) => {
         playerModel.focus(xtl, xbr, ytl, ybr);
+    }, () => {
+        playerModel.fit();
     });
     let aamController = new AAMController(aamModel);
     new AAMView(aamModel, aamController);
@@ -511,12 +521,23 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
     })();
 
     $('#statTaskName').text(job.slug);
-    $('#statTaskStatus').text(job.status);
     $('#statFrames').text(`[${job.start}-${job.stop}]`);
     $('#statOverlap').text(job.overlap);
     $('#statZOrder').text(job.z_order);
     $('#statFlipped').text(job.flipped);
-
+    $('#statTaskStatus').prop("value", job.status).on('change', (e) => {
+        $.ajax({
+            type: 'POST',
+            url: 'save/status/job/' + window.cvat.job.id,
+            data: JSON.stringify({
+                status: e.target.value
+            }),
+            contentType: "application/json; charset=utf-8",
+            error: (data) => {
+                showMessage(`Can not change job status. Code: ${data.status}. Message: ${data.responeText || data.statusText}`);
+            }
+        });
+    });
 
     let shortkeys = window.cvat.config.shortkeys;
     $('#helpButton').on('click', () => {
@@ -651,7 +672,7 @@ function uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, 
                     try {
                         historyModel.empty();
                         shapeCollectionModel.empty();
-                        shapeCollectionModel.import(data);
+                        shapeCollectionModel.import(data, false);
                         shapeCollectionModel.update();
                     }
                     finally {
@@ -690,6 +711,7 @@ function saveAnnotation(shapeCollectionModel, job) {
     });
 
     const exportedData = shapeCollectionModel.export();
+    shapeCollectionModel.updateExportedState();
     const annotationLogs = Logger.getLogs();
 
     const data = {
@@ -702,8 +724,7 @@ function saveAnnotation(shapeCollectionModel, job) {
 
     saveJobRequest(job.jobid, data, () => {
         // success
-        shapeCollectionModel.reset_state();
-        shapeCollectionModel.updateHash();
+        shapeCollectionModel.confirmExportedState();
         saveButton.text('Success!');
         setTimeout(() => {
             saveButton.prop('disabled', false);
@@ -717,25 +738,6 @@ function saveAnnotation(shapeCollectionModel, job) {
         showMessage(message + ' ' + 'Please immediately report the problem to support team');
         throw Error(message);
     });
-}
-
-function translateSVGPos(svgCanvas, clientX, clientY) {
-    let pt = svgCanvas.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
-    pt = pt.matrixTransform(svgCanvas.getScreenCTM().inverse());
-
-    let pos = {
-        x: pt.x,
-        y: pt.y
-    };
-
-    if (platform.name.toLowerCase() == 'firefox') {
-        pos.x /= window.cvat.player.geometry.scale;
-        pos.y /= window.cvat.player.geometry.scale;
-    }
-
-    return pos;
 }
 
 

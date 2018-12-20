@@ -3,22 +3,22 @@
 
     SPDX-License-Identifier: MIT
 -->
-<div class="dashboardTaskUI" id="dashboardTask_{{item.task_id}}">
+<div class="dashboardTaskUI" id="dashboardTask_{{item.id}}">
     <center class="dashboardTitleWrapper">
         <label class="semiBold h1 dashboardTaskNameLabel selectable"> {{ item.name }} </label>
     </center>
     <center class="dashboardTitleWrapper">
         <label class="regular dashboardStatusLabel"> {{ item.status }} </label>
     </center>
-    <div class="dashboardTaskIntro" style='background-image: url("/get/task/{{item.task_id}}/frame/0")'>  </div>
+    <div class="dashboardTaskIntro" style='background-image: url("/get/task/{{item.id}}/frame/0")'>  </div>
     <div class="dashboardButtonsUI">
         <button class="dashboardDumpAnnotation semiBold dashboardButtonUI"> Dump Annotation </button>
         <button class="dashboardUploadAnnotation semiBold dashboardButtonUI"> Upload Annotation </button>
         <button class="dashboardUpdateTask semiBold dashboardButtonUI"> Update Task </button>
         <button class="dashboardDeleteTask semiBold dashboardButtonUI"> Delete Task </button>
-         {%if item.has_bug_tracker %}
+         {%if item.bug_tracker %}
             <button class="dashboardOpenTrackerButton semiBold dashboardButtonUI"> Open Bug Tracker </button>
-            <a class="dashboardBugTrackerLink" href='{{item.bug_tracker_link}}' style="display: none;"> </a>
+            <a class="dashboardBugTrackerLink" href='{{item.bug_tracker}}' style="display: none;"> </a>
         {% endif %}
     </div>
     <div class="dashboardJobsUI">
@@ -26,10 +26,12 @@
             <label class="regular h1"> Jobs </label>
         </center>
         <table class="dashboardJobList regular">
-            {% for segment in item.segments %}
-                <tr>
-                    <td> <a href="{{segment.url}}"> {{segment.url}} </a> </td>
-                </tr>
+            {% for segm in item.segment_set.all %}
+                {% for job in segm.job_set.all %}
+                    <tr>
+                        <td> <a href="{{base_url}}?id={{job.id}}"> {{base_url}}?id={{job.id}} </a> </td>
+                    </tr>
+                {% endfor %}
             {% endfor %}
         </table>
     </div>

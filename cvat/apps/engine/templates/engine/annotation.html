@@ -35,6 +35,7 @@
         <script type="text/javascript" src="{% static 'engine/js/server.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/listener.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/history.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/coordinateTranslator.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/labelsInfo.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/annotationParser.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/attributeAnnotationMode.js' %}"></script>
@@ -306,7 +307,9 @@
                 </table>
             </div>
 
-            <center> <button id="closeSettignsButton" class="regular h1" style="margin-top: 15px;"> Close </button> </center>
+            <center>
+                <button id="closeSettignsButton" class="regular h1" style="margin-top: 15px;"> Close </button>
+            </center>
         </div>
     </div>
 
@@ -325,7 +328,13 @@
         <div style="float:left; width: 70%; height: 100%; text-align: left;" class="selectable">
             <center>
                 <label id="statTaskName" class="semiBold h2"> </label>  <br>
-                <label id="statTaskStatus" class="regular h2"> </label>
+                <center>
+                    <select id="statTaskStatus" class="regular h2" style="outline: none; border-radius: 10px; background:#B0C4DE; border: 1px solid black;">
+                        {% for status in status_list %}
+                            <option value="{{status}}"> {{status}} </option>
+                        {% endfor %}
+                    </select>
+                </center>
             </center>
             <center>
                 <table style="width: 100%">

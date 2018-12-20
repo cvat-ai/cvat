@@ -18,6 +18,8 @@ _SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 _MEDIA_MIMETYPES_FILE = os.path.join(_SCRIPT_DIR, "media.mimetypes")
 mimetypes.init(files=[_MEDIA_MIMETYPES_FILE])
 
+from cvat.apps.engine.models import StatusChoice
+
 import django_rq
 from django.conf import settings
 from django.db import transaction
@@ -161,10 +163,16 @@ def get(tid):
                 attributes[db_label.id][db_attrspec.id] = db_attrspec.text
         db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
         segment_length = max(db_segments[0].stop_frame - db_segments[0].start_frame + 1, 1)
-        job_indexes = [segment.job_set.first().id for segment in db_segments]
+        job_indexes = []
+        for segment in db_segments:
+            db_job = segment.job_set.first()
+            job_indexes.append({
+                "job_id": db_job.id,
+                "max_shape_id": db_job.max_shape_id,
+            })
 
         response = {
-            "status": db_task.status.capitalize(),
+            "status": db_task.status,
             "spec": {
                 "labels": { db_label.id:db_label.name for db_label in db_labels },
                 "attributes": attributes
@@ -184,6 +192,29 @@ def get(tid):
         raise Exception("Cannot find the task: {}".format(tid))
 
     return response
+
+
+@transaction.atomic
+def save_job_status(jid, status, user):
+    db_job = models.Job.objects.select_related("segment__task").select_for_update().get(pk = jid)
+    db_task = db_job.segment.task
+    status = StatusChoice(status)
+
+    slogger.job[jid].info('changing job status from {} to {} by an user {}'.format(db_job.status, str(status), user))
+
+    db_job.status = status.value
+    db_job.save()
+    db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
+    db_jobs = [db_segment.job_set.first() for db_segment in db_segments]
+
+    if len(list(filter(lambda x: StatusChoice(x.status) == StatusChoice.ANNOTATION, db_jobs))) > 0:
+        db_task.status = StatusChoice.ANNOTATION
+    elif len(list(filter(lambda x: StatusChoice(x.status) == StatusChoice.VALIDATION, db_jobs))) > 0:
+        db_task.status = StatusChoice.VALIDATION
+    else:
+        db_task.status = StatusChoice.COMPLETED
+
+    db_task.save()
 
 def get_job(jid):
     """Get the job as dictionary of attributes"""
@@ -205,7 +236,7 @@ def get_job(jid):
                 attributes[db_label.id][db_attrspec.id] = db_attrspec.text
 
         response = {
-            "status": db_task.status.capitalize(),
+            "status": db_job.status,
             "labels": { db_label.id:db_label.name for db_label in db_labels },
             "stop": db_segment.stop_frame,
             "taskid": db_task.id,
@@ -217,19 +248,13 @@ def get_job(jid):
             "attributes": attributes,
             "z_order": db_task.z_order,
             "flipped": db_task.flipped,
-            "image_meta_data": im_meta_data
+            "image_meta_data": im_meta_data,
+            "max_shape_id": db_job.max_shape_id,
         }
     else:
         raise Exception("Cannot find the job: {}".format(jid))
 
     return response
-
-def is_task_owner(user, tid):
-    try:
-        return user == models.Task.objects.get(pk=tid).owner or \
-            user.groups.filter(name='admin').exists()
-    except:
-        return False
 
 @transaction.atomic
 def rq_handler(job, exc_type, exc_value, traceback):
@@ -498,6 +523,8 @@ def _find_and_unpack_archive(upload_dir):
     else:
         raise Exception('Type defined as archive, but archives were not found.')
 
+    return archive
+
 
 '''
     Search a video in upload dir and split it by frames. Copy frames to target dirs
@@ -524,6 +551,8 @@ def _find_and_extract_video(upload_dir, output_dir, db_task, compress_quality, f
             shutil.copyfile(image_orig_path, image_dest_path)
     else:
         raise Exception("Video files were not found")
+
+    return video
 
 
 '''
@@ -565,11 +594,14 @@ def _find_and_compress_images(upload_dir, output_dir, db_task, compress_quality,
     else:
         raise Exception("Image files were not found")
 
+    return filenames
+
 def _save_task_to_db(db_task, task_params):
     db_task.overlap = min(db_task.size, task_params['overlap'])
     db_task.mode = task_params['mode']
     db_task.z_order = task_params['z_order']
     db_task.flipped = task_params['flip']
+    db_task.source = task_params['data']
 
     segment_step = task_params['segment'] - db_task.overlap
     for x in range(0, db_task.size, segment_step):
@@ -638,10 +670,11 @@ def _create_thread(tid, params):
         job.save_meta()
         _copy_data_from_share(share_files_mapping, share_dirs_mapping)
 
+    archive = None
     if counters['archive']:
         job.meta['status'] = 'Archive is being unpacked..'
         job.save_meta()
-        _find_and_unpack_archive(upload_dir)
+        archive = _find_and_unpack_archive(upload_dir)
 
     # Define task mode and other parameters
     task_params = {
@@ -657,9 +690,18 @@ def _create_thread(tid, params):
     slogger.glob.info("Task #{} parameters: {}".format(tid, task_params))
 
     if task_params['mode'] == 'interpolation':
-        _find_and_extract_video(upload_dir, output_dir, db_task, task_params['compress'], task_params['flip'], job)
+        video = _find_and_extract_video(upload_dir, output_dir, db_task,
+            task_params['compress'], task_params['flip'], job)
+        task_params['data'] = os.path.relpath(video, upload_dir)
     else:
-        _find_and_compress_images(upload_dir, output_dir, db_task, task_params['compress'], task_params['flip'], job)
+        files =_find_and_compress_images(upload_dir, output_dir, db_task,
+            task_params['compress'], task_params['flip'], job)
+        if archive:
+            task_params['data'] = os.path.relpath(archive, upload_dir)
+        else:
+            task_params['data'] = '{} images: {}, ...'.format(len(files),
+                ", ".join([os.path.relpath(x, upload_dir) for x in files[0:2]]))
+
     slogger.glob.info("Founded frames {} for task #{}".format(db_task.size, tid))
 
     job.meta['status'] = 'Task is being saved in database'
