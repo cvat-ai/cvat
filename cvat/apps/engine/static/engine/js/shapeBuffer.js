@@ -50,7 +50,7 @@ class ShapeBufferModel extends Listener  {
         }
     }
 
-    _makeObject(box, points, trackedObj) {
+    _makeObject(box, points, isTracked) {
         if (!this._shape.type) {
             return null;
         }
@@ -75,7 +75,7 @@ class ShapeBufferModel extends Listener  {
             box.frame = window.cvat.player.frames.current;
             box.z_order = this._collection.zOrder(box.frame).max;
 
-            if (trackedObj) {
+            if (isTracked) {
                 object.shapes = [];
                 object.shapes.push(Object.assign(box, {
                     outside: false,
@@ -185,14 +185,39 @@ class ShapeBufferModel extends Listener  {
                     object.frame ++;
                     numOfFrames --;
 
-                    // Propagate only for frames with same size
+                    object.z_order = this._collection.zOrder(object.frame).max;
+
                     let imageSize = imageSizes[object.frame - startFrame] || imageSizes[0];
                     if ((imageSize.width != originalImageSize.width) || (imageSize.height != originalImageSize.height)) {
-                        continue;
+                        let oldPosition = Object.assign({}, object);
+                        if (this._shape.type === 'box') {
+                            object.xtl = Math.clamp(object.xtl, 0, imageSize.width);
+                            object.ytl = Math.clamp(object.ytl, 0, imageSize.height);
+                            object.xbr = Math.clamp(object.xbr, object.xtl, imageSize.width);
+                            object.ybr = Math.clamp(object.ybr, object.ytl, imageSize.height);
+                            if ((object.xbr - object.xtl) * (object.ybr - object.ytl) < AREA_TRESHOLD) {
+                                object.xtl = 0;
+                                object.ytl = 0;
+                                object.xbr = imageSize.width;
+                                object.ybr = imageSize.height;
+                            }
+                        }
+                        else {
+                            let points = PolyShapeModel.convertStringToNumberArray(object.points);
+                            for (let point of points) {
+                                point.x = Math.clamp(point.x, 0, imageSize.width);
+                                point.y = Math.clamp(point.y, 0, imageSize.height);
+                            }
+
+                            object.points = PolyShapeModel.convertNumberArrayToString(points);
+                        }
+                        this._collection.add(object, `annotation_${this._shape.type}`);
+                        Object.assign(object, oldPosition);
+                    }
+                    else {
+                        this._collection.add(object, `annotation_${this._shape.type}`);
                     }
 
-                    object.z_order = this._collection.zOrder(object.frame).max;
-                    this._collection.add(object, `annotation_${this._shape.type}`);
                     addedObjects.push(this._collection.shapes.slice(-1)[0]);
                 }
 
@@ -251,8 +276,24 @@ class ShapeBufferController {
             let propagateHandler = Logger.shortkeyLogDecorator(function() {
                 if (!propagateDialogShowed) {
                     if (this._model.copyToBuffer()) {
+                        let curFrame = window.cvat.player.frames.current;
+                        let startFrame = window.cvat.player.frames.start;
+                        let endFrame = Math.min(window.cvat.player.frames.stop, curFrame + this._model.propagateFrames);
+                        let imageSizes = window.cvat.job.images.original_size;
+
+                        let message = `Propagate up to ${endFrame} frame. `;
+                        let refSize = imageSizes[curFrame - startFrame] || imageSizes[0];
+                        for (let _frame = curFrame + 1; _frame <= endFrame; _frame ++) {
+                            let size = imageSizes[_frame - startFrame] || imageSizes[0];
+                            if ((size.width != refSize.width) || (size.height != refSize.height) ) {
+                                message += 'Some covered frames have another resolution. Shapes in them can differ from reference. ';
+                                break;
+                            }
+                        }
+                        message += 'Are you sure?';
+
                         propagateDialogShowed = true;
-                        confirm(`Propagate to ${this._model.propagateFrames} frames. Are you sure?`, () => {
+                        confirm(message, () => {
                             this._model.propagateToFrames();
                             propagateDialogShowed = false;
                         }, () => propagateDialogShowed = false);
@@ -402,7 +443,7 @@ class ShapeBufferView {
                 let area = w * h;
                 let type = this._shape.type;
 
-                if (area > AREA_TRESHOLD || type === 'points' || type === 'polyline' && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
+                if (area >= AREA_TRESHOLD || type === 'points' || type === 'polyline' && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
                     this._controller.pasteToFrame(e, null, actualPoints);
                 }
                 else {
