@@ -52,6 +52,8 @@ module.exports = {
         'createExportContainer': true,
         'ExportType': true,
         'getExportTargetContainer': true,
+        'IncrementIdGenerator': true,
+        'ConstIdGenerator': true,
         // from shapeCollection.js
         'ShapeCollectionModel': true,
         'ShapeCollectionController': true,

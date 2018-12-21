@@ -1423,6 +1423,7 @@ class ShapeView extends Listener {
         this._pointContextMenu = $('#pointContextMenu');
 
         this._rightBorderFrame = $('#playerFrame')[0].offsetWidth;
+        this._bottomBorderFrame = $('#playerFrame')[0].offsetHeight;
 
         shapeModel.subscribe(this);
     }
@@ -1541,9 +1542,12 @@ class ShapeView extends Listener {
                     dragPolyItem.addClass('hidden');
                 }
 
-                this._shapeContextMenu.finish().show(100).offset({
-                    top: e.pageY - 10,
-                    left: e.pageX - 10,
+                this._shapeContextMenu.finish().show(100);
+                let x = Math.min(e.pageX, this._rightBorderFrame - this._shapeContextMenu[0].scrollWidth);
+                let y = Math.min(e.pageY, this._bottomBorderFrame - this._shapeContextMenu[0].scrollHeight);
+                this._shapeContextMenu.offset({
+                    left: x,
+                    top: y,
                 });
 
                 e.preventDefault();
@@ -2437,7 +2441,7 @@ class ShapeView extends Listener {
             if (this._uis.text && this._uis.text.node.parentElement) {
                 let revscale = 1 / scale;
                 let shapeBBox = this._uis.shape.node.getBBox();
-                let textBBox = this._uis.text.node.getBBox()
+                let textBBox = this._uis.text.node.getBBox();
 
                 let x = shapeBBox.x + shapeBBox.width + TEXT_MARGIN * revscale;
                 let y = shapeBBox.y;
@@ -2826,9 +2830,12 @@ class PolyShapeView extends ShapeView {
                     this._pointContextMenu.attr('point_idx', point.index());
                     this._pointContextMenu.attr('dom_point_id', point.attr('id'));
 
-                    this._pointContextMenu.finish().show(100).offset({
-                        top: e.pageY - 20,
-                        left: e.pageX - 20,
+                    this._pointContextMenu.finish().show(100);
+                    let x = Math.min(e.pageX, this._rightBorderFrame - this._pointContextMenu[0].scrollWidth);
+                    let y = Math.min(e.pageY, this._bottomBorderFrame - this._pointContextMenu[0].scrollHeight);
+                    this._pointContextMenu.offset({
+                        left: x,
+                        top: y,
                     });
 
                     e.preventDefault();
@@ -3037,13 +3044,14 @@ class PointsView extends PolyShapeView {
             return;
         }
 
-        this._uis.points = this._scenes.svg.group().fill(this._appearance.fill || this._appearance.colors.shape)
+        this._uis.points = this._scenes.svg.group()
+            .fill(this._appearance.fill || this._appearance.colors.shape)
             .on('click', () => {
                 this._positionateMenus();
                 this._controller.click();
-            }).attr({
-                'z_order': position.z_order
             }).addClass('pointTempGroup');
+
+        this._uis.points.node.setAttribute('z_order', position.z_order);
 
         let points = PolyShapeModel.convertStringToNumberArray(position.points);
         for (let point of points) {
@@ -3079,7 +3087,7 @@ class PointsView extends PolyShapeView {
             let interpolation = this._controller.interpolate(window.cvat.player.frames.current);
             if (interpolation.position.points) {
                 let points = window.cvat.translate.points.actualToCanvas(interpolation.position.points);
-                this._drawPointMarkers(Object.assign(interpolation.position.points, {points: points}));
+                this._drawPointMarkers(Object.assign(interpolation.position, {points: points}));
             }
         }
     }

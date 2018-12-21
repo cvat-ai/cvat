@@ -472,6 +472,7 @@ class _Annotation:
                 group_id=box.group_id,
                 boxes=[box0, box1],
                 attributes=box.attributes,
+                client_id=box.client_id,
             )
             paths.append(path)
 
@@ -491,6 +492,7 @@ class _Annotation:
                 stop_frame=shape.frame + 1,
                 group_id=shape.group_id,
                 shapes=[shape0, shape1],
+                client_id=shape.client_id,
                 attributes=shape.attributes,
             )
             paths.append(path)
@@ -2080,10 +2082,14 @@ class _AnnotationForTask(_Annotation):
                 im_w = im_meta_data['original_size'][0]['width']
                 im_h = im_meta_data['original_size'][0]['height']
 
+                counter = 0
                 for shape_type in ["boxes", "polygons", "polylines", "points"]:
                     path_list = paths[shape_type]
                     for path in path_list:
+                        path_id = path.client_id if path.client_id != -1 else counter
+                        counter += 1
                         dump_dict = OrderedDict([
+                            ("id", str(path_id)),
                             ("label", path.label.name),
                         ])
                         if path.group_id:

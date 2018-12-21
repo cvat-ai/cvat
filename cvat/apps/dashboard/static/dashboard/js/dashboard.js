@@ -524,14 +524,15 @@ function uploadAnnotationRequest() {
         $.ajax({
             url: '/get/task/' + window.cvat.dashboard.taskID,
             success: function(data) {
-                let annotationParser = new AnnotationParser({
+                let annotationParser = new AnnotationParser(
+                    {
                         start: 0,
                         stop: data.size,
                         image_meta_data: data.image_meta_data,
                         flipped: data.flipped
                     },
                     new LabelsInfo(data.spec),
-                    new ConstIdGenerator(-1),
+                    new ConstIdGenerator(-1)
                 );
 
                 let asyncParse = function() {
@@ -559,7 +560,7 @@ function uploadAnnotationRequest() {
                                 overlay.remove();
                             },
                         });
-                    }
+                    };
 
                     let asyncSaveChunk = function(start) {
                         const CHUNK_SIZE = 100000;
