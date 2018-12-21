@@ -31,8 +31,7 @@ class ShapeModel extends Listener {
         this._merging = false;
         this._active = false;
         this._selected = false;
-        this._activeAAM = false;
-        this._activeAAMAttributeId = null;
+        this._activeAttributeId = null;
         this._merge = false;
         this._hiddenShape = false;
         this._hiddenText = true;
@@ -442,10 +441,6 @@ class ShapeModel extends Listener {
         return frame in this._positions;
     }
 
-    aamAttributeFocus() {
-        this.notify('attributeFocus');
-    }
-
     select() {
         if (!this._selected) {
             this._selected = true;
@@ -524,17 +519,13 @@ class ShapeModel extends Listener {
         return this._active;
     }
 
-    set activeAAM(active) {
-        this._activeAAM = active.shape;
-        this._activeAAMAttributeId = active.attribute;
-        this.notify('activeAAM');
+    set activeAttribute(value) {
+        this._activeAttributeId = value;
+        this.notify('activeAttribute');
     }
 
-    get activeAAM() {
-        return {
-            shape: this._activeAAM,
-            attributeId: this._activeAAMAttributeId
-        };
+    get activeAttribute() {
+        return this._activeAttributeId;
     }
 
     set merge(value) {
@@ -2260,7 +2251,7 @@ class ShapeView extends Listener {
                 let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
                 if (attrInfo.type === 'radio') {
                     let idx = attrInfo.values.indexOf(attributes[attrId].value);
-                    this._uis.attributes[attrId][idx].click();
+                    this._uis.attributes[attrId][idx].checked = true;
                 }
                 else if (attrInfo.type === 'checkbox') {
                     this._uis.attributes[attrId].checked = attributes[attrId].value;
@@ -2469,13 +2460,13 @@ class ShapeView extends Listener {
 
     onShapeUpdate(model) {
         let interpolation = model.interpolate(window.cvat.player.frames.current);
-        let hiddenText = model.hiddenText;
-        let hiddenShape = model.hiddenShape;
-        let activeAAM = model.activeAAM;
+        let activeAttribute = model.activeAttribute;
+        let hiddenText = model.hiddenText && activeAttribute === null;
+        let hiddenShape = model.hiddenShape && activeAttribute === null;
 
         this._makeNotEditable();
         this._deselect();
-        if (hiddenText && !activeAAM.shape) {
+        if (hiddenText) {
             this._hideShapeText();
         }
 
@@ -2487,7 +2478,8 @@ class ShapeView extends Listener {
             break;
         case 'attributes':
             this._updateMenuContent(interpolation);
-            setupHidden.call(this, hiddenShape, hiddenText, activeAAM, model.active, interpolation);
+            setupHidden.call(this, hiddenShape, hiddenText,
+                activeAttribute, model.active, interpolation);
             break;
         case 'merge':
             this._setupMergeView(model.merge);
@@ -2511,7 +2503,8 @@ class ShapeView extends Listener {
             this._updateButtonsBlock(interpolation.position);
             break;
         case 'hidden':
-            setupHidden.call(this, hiddenShape, hiddenText, activeAAM, model.active, interpolation);
+            setupHidden.call(this, hiddenShape, hiddenText,
+                activeAttribute, model.active, interpolation);
             this._updateButtonsBlock(interpolation.position);
             this.notify('hidden');
             break;
@@ -2543,19 +2536,22 @@ class ShapeView extends Listener {
             this.notify('changelabel');
             break;
         }
-        case 'attributeFocus': {
-            let attrId = model.activeAAM.attributeId;
-            this._uis.attributes[attrId].focus();
-            this._uis.attributes[attrId].select();
-            break;
-        }
-        case 'activeAAM':
-            this._setupAAMView(activeAAM.shape, interpolation.position);
-            setupHidden.call(this, hiddenShape, hiddenText, activeAAM, model.active, interpolation);
+        case 'activeAttribute':
+            setupHidden.call(this, hiddenShape, hiddenText,
+                activeAttribute, model.active, interpolation);
 
-            if (activeAAM.shape && this._uis.shape) {
+            if (activeAttribute != null && this._uis.shape) {
                 this._uis.shape.node.dispatchEvent(new Event('click'));
-                this._highlightAttribute(activeAAM.attributeId);
+                this._highlightAttribute(activeAttribute);
+
+                let attrInfo = window.cvat.labelsInfo.attrInfo(activeAttribute);
+                if (attrInfo.type === 'text' || attrInfo.type === 'number') {
+                    this._uis.attributes[activeAttribute].focus();
+                    this._uis.attributes[activeAttribute].select();
+                }
+                else {
+                    blurAllElements();
+                }
             }
             else {
                 this._highlightAttribute(null);
@@ -2586,9 +2582,9 @@ class ShapeView extends Listener {
         }
         }
 
-        if (model.active || activeAAM.shape) {
+        if (model.active || activeAttribute != null) {
             this._select();
-            if (!activeAAM.shape) {
+            if (activeAttribute === null) {
                 this._makeEditable();
             }
         }
@@ -2597,25 +2593,25 @@ class ShapeView extends Listener {
             this._showShapeText();
         }
 
-        function setupHidden(hiddenShape, hiddenText, activeAAM, active, interpolation) {
+        function setupHidden(hiddenShape, hiddenText, attributeId, active, interpolation) {
             this._makeNotEditable();
             this._removeShapeUI();
             this._removeShapeText();
 
-            if (!hiddenShape || activeAAM.shape) {
+            if (!hiddenShape) {
                 this._drawShapeUI(interpolation.position);
                 this._setupOccludedUI(interpolation.position.occluded);
-                if (!hiddenText || active || activeAAM.shape) {
+                if (!hiddenText || active) {
                     this._showShapeText();
                 }
 
-                if (model.active || activeAAM.shape) {
+                if (active || attributeId != null) {
                     this._select();
-                    if (!activeAAM.shape) {
+                    if (attributeId === null) {
                         this._makeEditable();
                     }
                     else {
-                        this._highlightAttribute(activeAAM.attributeId);
+                        this._highlightAttribute(attributeId);
                     }
                 }
             }
@@ -2801,39 +2797,6 @@ class BoxView extends ShapeView {
 
         ShapeView.prototype._drawShapeUI.call(this);
     }
-
-    _setupAAMView(active, pos) {
-        let oldRect = $('#outsideRect');
-        let oldMask = $('#outsideMask');
-
-        if (active) {
-            if (oldRect.length) {
-                oldRect.remove();
-                oldMask.remove();
-            }
-
-            let size = window.cvat.translate.box.actualToCanvas({
-                x: 0,
-                y: 0,
-                width: window.cvat.player.geometry.frameWidth,
-                height: window.cvat.player.geometry.frameHeight
-            });
-
-            pos = window.cvat.translate.box.actualToCanvas(pos);
-
-            let excludeField = this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).fill('#666');
-            let includeField = this._scenes.svg.rect(pos.xbr - pos.xtl, pos.ybr - pos.ytl).move(pos.xtl, pos.ytl);
-            this._scenes.svg.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
-            this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).attr({
-                mask: 'url(#outsideMask)',
-                id: 'outsideRect'
-            });
-        }
-        else {
-            oldRect.remove();
-            oldMask.remove();
-        }
-    }
 }
 
 
@@ -2851,41 +2814,6 @@ class PolyShapeView extends ShapeView {
             z_order: +this._uis.shape.node.getAttribute('z_order'),
         };
     }
-
-
-    _setupAAMView(active, pos) {
-        let oldRect = $('#outsideRect');
-        let oldMask = $('#outsideMask');
-
-        if (active) {
-            if (oldRect.length) {
-                oldRect.remove();
-                oldMask.remove();
-            }
-
-            let size = window.cvat.translate.box.actualToCanvas({
-                x: 0,
-                y: 0,
-                width: window.cvat.player.geometry.frameWidth,
-                height: window.cvat.player.geometry.frameHeight
-            });
-
-            let points = window.cvat.translate.points.actualToCanvas(pos.points);
-
-            let excludeField = this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).fill('#666');
-            let includeField = this._scenes.svg.polygon(points);
-            this._scenes.svg.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
-            this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).attr({
-                mask: 'url(#outsideMask)',
-                id: 'outsideRect'
-            });
-        }
-        else {
-            oldRect.remove();
-            oldMask.remove();
-        }
-    }
-
 
     _makeEditable() {
         ShapeView.prototype._makeEditable.call(this);
