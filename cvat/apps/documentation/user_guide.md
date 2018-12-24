@@ -575,7 +575,7 @@ When ``Shift`` isn't pressed, you can zoom in/out (on mouse wheel scroll) and mo
 ![](static/documentation/images/gif007.gif)
 
 Also you can set fixed number of points in the field "poly shape size", then drawing will be stopped automatically. 
-To enable dragging, right-click inside polygon and chose ``Enable Dragging``.
+To enable dragging, right-click inside polygon and choose ``Enable Dragging``.
 
 
 Below you can see results with opacity and black stroke:
@@ -607,7 +607,7 @@ Before starting you have to be sure that ``Points`` is selected.
 ![](static/documentation/images/image042.jpg)
 
 Click ``N`` for entering drawing mode. Now you can start marking a needed area.
-Click ``N`` again for finishing marking an area. You can delete points by double-clicking them. Double-click with pressed ``Shift`` will open a points shape editor. In it you can create new points into existing shape. Also you can set fixed number of points in the field "poly shape size", then drawing will be stopped automatically. Points are automatically grouped — between individual start and finish all points will be considered linked. You can zoom in/out (on mouse wheel scroll) and move (on mouse wheel press and mouse move) while drawing. You can drag object after it was drawn and fix a position of an individual points after finishing the object. You can add/delete points after finishing.
+Click ``N`` again for finishing marking an area. You can delete points by double-clicking them. Double-click with pressed ``Shift`` will open a points shape editor. In it you can create new points into existing shape. Also you can set fixed number of points in the field "poly shape size", then drawing will be stopped automatically. Points are automatically grouped — between individual start and finish all points will be considered linked. You can zoom in/out (on mouse wheel scroll) and move (on mouse wheel press and mouse move) while drawing. You can drag object after it was drawn and fix a position of individual points after finishing the object. You can add/delete points after finishing.
 
 ![](static/documentation/images/image063.jpg)
 
@@ -684,15 +684,15 @@ Example                                                 | Description
 ``face[attr/glass="sunglass" or attr/glass="no"]``      | faces with sunglasses or without glasses at all.
 ```person[attr/race="asian"] | car[attr/model="bmw" or attr/model="mazda"]``` | asian persons or bmw or mazda cars.
 
-## Analitics
+## Analytics
 
-If you press F3, a new tab with analytics and logs will be opened.
+If your CVAT instance is built with [analytics](/components/analytics) support you can press F3 in dashboard, a new tab with analytics and logs will be opened.
 
 It allows to see how much working time every user spend on each task and how much they did, over any time range.
 
 ![](static/documentation/images/image097.jpg)
 
-It also have activity graph, which can be modified with number of users shown, and timeframe.
+It also has activity graph, which can be modified with number of users shown, and timeframe.
 
 ![](static/documentation/images/image096.jpg)
 
