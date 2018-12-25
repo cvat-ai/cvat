@@ -1,9 +1,15 @@
-"use strict";
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
 
-/* exported
+ /* exported
     IncrementIdGenerator
     ConstIdGenerator
 */
+
+"use strict";
 
 class IncrementIdGenerator {
     constructor(startId=0) {
