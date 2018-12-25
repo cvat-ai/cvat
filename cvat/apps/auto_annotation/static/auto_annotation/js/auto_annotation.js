@@ -84,7 +84,7 @@ window.cvat.autoAnnotation = {
                 `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
                 window.cvat.autoAnnotation.badResponse(message);
             });
-        };
+        }
         setTimeout(timeoutCallback, 1000);
     },
 
@@ -92,6 +92,48 @@ window.cvat.autoAnnotation = {
         showMessage(message);
         throw Error(message);
     },
+};
+
+function submitButtonOnClick() {
+    const annoWindow = $(`#${window.cvat.autoAnnotation.modalWindowId}`);
+    const tid = annoWindow.attr('current_tid');
+    const modelInput = $(`#${window.cvat.autoAnnotation.autoAnnoModelFieldId}`);
+    const weightsInput = $(`#${window.cvat.autoAnnotation.autoAnnoWeightsFieldId}`);
+    const configInput = $(`#${window.cvat.autoAnnotation.autoAnnoConfigFieldId}`);
+    const convFileInput = $(`#${window.cvat.autoAnnotation.autoAnnoConvertFieldId}`);
+
+    const modelFile = modelInput.prop('files')[0];
+    const weightsFile = weightsInput.prop('files')[0];
+    const configFile = configInput.prop('files')[0];
+    const convFile = convFileInput.prop('files')[0];
+
+    if (!modelFile || !weightsFile || !configFile || !convFile) {
+        showMessage("All files must be selected");
+        return;
+    }
+
+    let taskData = new FormData();
+    taskData.append('model', modelFile);
+    taskData.append('weights', weightsFile);
+    taskData.append('config', configFile);
+    taskData.append('conv_script', convFile);
+
+    $.ajax({
+        url: `/auto_annotation/create/task/${tid}`,
+        type: 'POST',
+        data: taskData,
+        contentType: false,
+        processData: false,
+    }).done(() => {
+            annoWindow.addClass('hidden');
+            const autoAnnoButton = $(`#dashboardTask_${tid} div.dashboardButtonsUI button.dashboardAutoAnno`);
+            autoAnnoButton.addClass('autoAnnotationProcess');
+            window.cvat.autoAnnotation.checkAutoAnnotationRequest(tid, autoAnnoButton);
+    }).fail((data) => {
+        let message = `Error was occured during run annotation request. ` +
+            `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+        window.cvat.autoAnnotation.badResponse(message);
+    });
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -127,54 +169,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     </div>`).appendTo('body');
 
-    let annoWindow = $(`#${window.cvat.autoAnnotation.modalWindowId}`);
-    let closeWindowButton = $(`#${window.cvat.autoAnnotation.autoAnnoCloseButtonId}`);
-    let submitButton = $(`#${window.cvat.autoAnnotation.autoAnnoSubmitButtonId}`);
+    const annoWindow = $(`#${window.cvat.autoAnnotation.modalWindowId}`);
+    const closeWindowButton = $(`#${window.cvat.autoAnnotation.autoAnnoCloseButtonId}`);
+    const submitButton = $(`#${window.cvat.autoAnnotation.autoAnnoSubmitButtonId}`);
+
 
     closeWindowButton.on('click', () => {
         annoWindow.addClass('hidden');
     });
 
-    submitButton.on('click', function() {
-        const tid = annoWindow.attr('current_tid');
-        const modelInput = $(`#${window.cvat.autoAnnotation.autoAnnoModelFieldId}`);
-        const weightsInput = $(`#${window.cvat.autoAnnotation.autoAnnoWeightsFieldId}`);
-        const configInput = $(`#${window.cvat.autoAnnotation.autoAnnoConfigFieldId}`);
-        const convFileInput = $(`#${window.cvat.autoAnnotation.autoAnnoConvertFieldId}`);
-
-        const modelFile = modelInput.prop('files')[0];
-        const weightsFile = weightsInput.prop('files')[0];
-        const configFile = configInput.prop('files')[0];
-        const convFile = convFileInput.prop('files')[0];
-
-        if (!modelFile || !weightsFile || !configFile || !convFile) {
-            showMessage("All files must be selected");
-            return;
-        }
-
-        let taskData = new FormData();
-        taskData.append('model', modelFile);
-        taskData.append('weights', weightsFile);
-        taskData.append('config', configFile);
-        taskData.append('conv_script', convFile);
-
-        $.ajax({
-            url: `/auto_annotation/create/task/${tid}`,
-            type: 'POST',
-            data: taskData,
-            contentType: false,
-            processData: false,
-        }).done(() => {
-                annoWindow.addClass('hidden');
-                const autoAnnoButton = $(`#dashboardTask_${tid} div.dashboardButtonsUI button.dashboardAutoAnno`);
-                autoAnnoButton.addClass('autoAnnotationProcess');
-                window.cvat.autoAnnotation.checkAutoAnnotationRequest(tid, autoAnnoButton);
-        }).fail((data) => {
-            let message = `Error was occured during run annotation request. ` +
-                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-            window.cvat.autoAnnotation.badResponse(message);
-        });
-
-
-    });
+    submitButton.on('click', () => {submitButtonOnClick();});
 });
