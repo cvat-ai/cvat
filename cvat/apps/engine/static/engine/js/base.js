@@ -6,8 +6,6 @@
 
 /* exported
     ExportType
-    IncrementIdGenerator
-    ConstIdGenerator
     confirm
     createExportContainer
     dumpAnnotationRequest
@@ -243,30 +241,6 @@ function getExportTargetContainer(export_type, shape_type, container) {
     }
 
     return shape_container_target;
-}
-
-class IncrementIdGenerator {
-    constructor(startId=0) {
-        this._startId = startId;
-    }
-
-    next() {
-        return this._startId++;
-    }
-
-    reset(startId=0) {
-        this._startId = startId;
-    }
-}
-
-class ConstIdGenerator {
-    constructor(startId=-1) {
-        this._startId = startId;
-    }
-
-    next() {
-        return this._startId;
-    }
 }
 
 /* These HTTP methods do not require CSRF protection */
