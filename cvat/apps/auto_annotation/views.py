@@ -117,6 +117,20 @@ def run_inference_engine_annotation(path_to_data, model_file, weights_file, labe
         # TODO need implement
         pass
 
+    if "points" in processed_detections:
+        for point in processed_detections["points"]:
+            if point["label"] not in labels_mapping:
+                continue
+
+            result["create"]["points"].append({
+                "label_id": labels_mapping[point["label"]],
+                "frame": point["frame"],
+                "points": point["points"],
+                "z_order": 0,
+                "group_id": 0,
+                "occluded": False,
+                "attributes": [],
+            })
 
     return result
 
@@ -159,8 +173,8 @@ def create_thread(tid, model_file, weights_file, labels_mapping, convertation_fi
     except:
         try:
             slogger.task[tid].exception("exception was occured during auto annotation of the task", exc_info=True)
-        except:
-            slogger.glob.exception("exception was occured during auto annotation of the task {}".format(tid), exc_info=True)
+        except Exception as ex:
+            slogger.glob.exception("exception was occured during auto annotation of the task {}: {}".format(tid, str(ex)), exc_info=True)
 
 @login_required
 def get_meta_info(request):
