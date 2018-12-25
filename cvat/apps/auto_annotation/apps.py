@@ -7,5 +7,5 @@ from django.apps import AppConfig
 
 
 class AutoAnnotationConfig(AppConfig):
-    name = 'auto_annotation'
+    name = "auto_annotation"
 

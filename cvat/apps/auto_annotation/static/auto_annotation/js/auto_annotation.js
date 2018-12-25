@@ -12,30 +12,30 @@ window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
 window.cvat.dashboard.uiCallbacks.push(function(newElements) {
     let tids = [];
     for (let el of newElements) {
-        tids.push(el.id.split('_')[1]);
+        tids.push(el.id.split("_")[1]);
     }
 
     $.ajax({
-        type: 'POST',
-        url: '/auto_annotation/meta/get',
+        type: "POST",
+        url: "/auto_annotation/meta/get",
         data: JSON.stringify(tids),
         contentType: "application/json; charset=utf-8",
         success: (data) => {
             newElements.each(function() {
                 let elem = $(this);
-                let tid = +elem.attr('id').split('_')[1];
+                let tid = +elem.attr("id").split("_")[1];
 
-                const autoAnnoButton = $('<button> Run auto annotation </button>').addClass('semiBold dashboardButtonUI dashboardAutoAnno');
-                autoAnnoButton.appendTo(elem.find('div.dashboardButtonsUI')[0]);
+                const autoAnnoButton = $("<button> Run auto annotation </button>").addClass("semiBold dashboardButtonUI dashboardAutoAnno");
+                autoAnnoButton.appendTo(elem.find("div.dashboardButtonsUI")[0]);
 
                 if (tid in data && data[tid].active) {
-                    autoAnnoButton.text('Cancel auto annotation');
-                    autoAnnoButton.addClass('autoAnnotationProcess');
+                    autoAnnoButton.text("Cancel auto annotation");
+                    autoAnnoButton.addClass("autoAnnotationProcess");
                     window.cvat.autoAnnotation.checkAutoAnnotationRequest(tid, autoAnnoButton);
                 }
 
-                autoAnnoButton.on('click', () => {
-                    if (autoAnnoButton.hasClass('autoAnnotationProcess')) {
+                autoAnnoButton.on("click", () => {
+                    if (autoAnnoButton.hasClass("autoAnnotationProcess")) {
                         $.post(`/auto_annotation/cancel/task/${tid}`).fail( (data) => {
                             let message = `Error during cansel auto annotation request. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                             showMessage(message);
@@ -44,8 +44,8 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
                     }
                     else {
                         let dialogWindow = $(`#${window.cvat.autoAnnotation.modalWindowId}`);
-                        dialogWindow.attr('current_tid', tid);
-                        dialogWindow.removeClass('hidden');
+                        dialogWindow.attr("current_tid", tid);
+                        dialogWindow.removeClass("hidden");
                     }
                 });
             });
@@ -58,14 +58,14 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
 });
 
 window.cvat.autoAnnotation = {
-    modalWindowId: 'autoAnnotationWindow',
-    autoAnnoFromId: 'autoAnnotationForm',
-    autoAnnoModelFieldId: 'autoAnnotationModelField',
-    autoAnnoWeightsFieldId: 'autoAnnotationWeightsField',
-    autoAnnoConfigFieldId: 'autoAnnotationConfigField',
-    autoAnnoConvertFieldId: 'autoAnnotationConvertField',
-    autoAnnoCloseButtonId: 'autoAnnoCloseButton',
-    autoAnnoSubmitButtonId: 'autoAnnoSubmitButton',
+    modalWindowId: "autoAnnotationWindow",
+    autoAnnoFromId: "autoAnnotationForm",
+    autoAnnoModelFieldId: "autoAnnotationModelField",
+    autoAnnoWeightsFieldId: "autoAnnotationWeightsField",
+    autoAnnoConfigFieldId: "autoAnnotationConfigField",
+    autoAnnoConvertFieldId: "autoAnnotationConvertField",
+    autoAnnoCloseButtonId: "autoAnnoCloseButton",
+    autoAnnoSubmitButtonId: "autoAnnoSubmitButton",
 
     checkAutoAnnotationRequest: (tid, autoAnnoButton) => {
         function timeoutCallback() {
@@ -96,16 +96,16 @@ window.cvat.autoAnnotation = {
 
 function submitButtonOnClick() {
     const annoWindow = $(`#${window.cvat.autoAnnotation.modalWindowId}`);
-    const tid = annoWindow.attr('current_tid');
+    const tid = annoWindow.attr("current_tid");
     const modelInput = $(`#${window.cvat.autoAnnotation.autoAnnoModelFieldId}`);
     const weightsInput = $(`#${window.cvat.autoAnnotation.autoAnnoWeightsFieldId}`);
     const configInput = $(`#${window.cvat.autoAnnotation.autoAnnoConfigFieldId}`);
     const convFileInput = $(`#${window.cvat.autoAnnotation.autoAnnoConvertFieldId}`);
 
-    const modelFile = modelInput.prop('files')[0];
-    const weightsFile = weightsInput.prop('files')[0];
-    const configFile = configInput.prop('files')[0];
-    const convFile = convFileInput.prop('files')[0];
+    const modelFile = modelInput.prop("files")[0];
+    const weightsFile = weightsInput.prop("files")[0];
+    const configFile = configInput.prop("files")[0];
+    const convFile = convFileInput.prop("files")[0];
 
     if (!modelFile || !weightsFile || !configFile || !convFile) {
         showMessage("All files must be selected");
@@ -113,21 +113,21 @@ function submitButtonOnClick() {
     }
 
     let taskData = new FormData();
-    taskData.append('model', modelFile);
-    taskData.append('weights', weightsFile);
-    taskData.append('config', configFile);
-    taskData.append('conv_script', convFile);
+    taskData.append("model", modelFile);
+    taskData.append("weights", weightsFile);
+    taskData.append("config", configFile);
+    taskData.append("conv_script", convFile);
 
     $.ajax({
         url: `/auto_annotation/create/task/${tid}`,
-        type: 'POST',
+        type: "POST",
         data: taskData,
         contentType: false,
         processData: false,
     }).done(() => {
-            annoWindow.addClass('hidden');
+            annoWindow.addClass("hidden");
             const autoAnnoButton = $(`#dashboardTask_${tid} div.dashboardButtonsUI button.dashboardAutoAnno`);
-            autoAnnoButton.addClass('autoAnnotationProcess');
+            autoAnnoButton.addClass("autoAnnotationProcess");
             window.cvat.autoAnnotation.checkAutoAnnotationRequest(tid, autoAnnoButton);
     }).fail((data) => {
         let message = `Error was occured during run annotation request. ` +
@@ -167,16 +167,18 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
         </form>
 
-    </div>`).appendTo('body');
+    </div>`).appendTo("body");
 
     const annoWindow = $(`#${window.cvat.autoAnnotation.modalWindowId}`);
     const closeWindowButton = $(`#${window.cvat.autoAnnotation.autoAnnoCloseButtonId}`);
     const submitButton = $(`#${window.cvat.autoAnnotation.autoAnnoSubmitButtonId}`);
 
 
-    closeWindowButton.on('click', () => {
-        annoWindow.addClass('hidden');
+    closeWindowButton.on("click", () => {
+        annoWindow.addClass("hidden");
     });
 
-    submitButton.on('click', () => {submitButtonOnClick();});
+    submitButton.on("click", () => {
+        submitButtonOnClick();
+    });
 });
