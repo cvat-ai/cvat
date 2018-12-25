@@ -80,8 +80,8 @@ window.cvat.autoAnnotation = {
                     autoAnnoButton.removeClass("autoAnnotationProcess");
                 }
             }).fail((data) => {
-                let message = `Error was occured during check annotation status. ` +
-                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+                let message = "Error was occured during check annotation status. " +
+                    `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
                 window.cvat.autoAnnotation.badResponse(message);
             });
         }
@@ -130,11 +130,11 @@ function submitButtonOnClick() {
             autoAnnoButton.addClass("autoAnnotationProcess");
             window.cvat.autoAnnotation.checkAutoAnnotationRequest(tid, autoAnnoButton);
     }).fail((data) => {
-        let message = `Error was occured during run annotation request. ` +
+        let message = "Error was occured during run annotation request. " +
             `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
         window.cvat.autoAnnotation.badResponse(message);
     });
-};
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     $(`<div id="${window.cvat.autoAnnotation.modalWindowId}" class="modal hidden">

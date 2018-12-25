@@ -245,8 +245,8 @@ def create(request, tid):
     except Exception as ex:
         try:
             slogger.task[tid].exception("exception was occured during annotation request", exc_info=True)
-        except:
-            pass
+        except Exception as logger_ex:
+            slogger.glob.exception("exception was occured during create auto annotation request for task {}: {}".format(tid, str(logger_ex)), exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
     return HttpResponse()
