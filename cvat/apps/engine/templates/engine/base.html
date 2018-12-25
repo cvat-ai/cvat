@@ -37,6 +37,7 @@
         {% compress js file cvat %}
             {% block head_js_cvat %}
                 <script type="text/javascript" src="{% static 'engine/js/base.js' %}"></script>
+                <script type="text/javascript" src="{% static 'engine/js/idGenerator.js' %}"></script>
                 <script type="text/javascript" src="{% static 'engine/js/userConfig.js' %}"></script>
             {% endblock %}
         {% endcompress %}
