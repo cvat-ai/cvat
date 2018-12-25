@@ -7,14 +7,13 @@ Supported only DLDT framework from OpenVINO&trade; toolkit. If you woold like to
 intermediate representation (IR) format via model optimizer tool.
 See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
 
-
 ### Usage
 To annotate task with a custom model you need prepare 4 files:
-1. **Model config** - a text file that contains network configuration. The following file extension is expected:
-   * *.xml
-1. **Model weights** - a binary file that contains trained weights. The following file extension is expected:
-   * *.bin
-1. **Label map** - simple json file that contains the `label_map` dictionary like object with string values for label numbers.
+1. __Model config__ - a text file that contains network configuration. The following file extension is expected:
+   * __*.xml__
+1. __Model weights__ - a binary file that contains trained weights. The following file extension is expected:
+   * __*.bin__
+1. __Label map__ - simple json file that contains the `label_map` dictionary like object with string values for label numbers.
 Please note values in `label_map` should be exactly equal to the labels wich task was created, otherwise it will be ignored.
   Example:
     ```json
@@ -44,38 +43,38 @@ Please note values in `label_map` should be exactly equal to the labels wich tas
       }
     }
     ```
-1. **Interpretation script** - python file that used to convert output results from net to CVAT format. This code running inside restricted environment.
+1. __Interpretation script__ - python file that used to convert output results from net to CVAT format. This code running inside restricted environment.
 List of builtins functions that available to use:
-* **str**
-* **int**
-* **float**
-* **max**
-* **min**
-* **range**
+   * __str__
+   * __int__
+   * __float__
+   * __max__
+   * __min__
+   * __range__
 
-Also two variables are available in scope:
-* **detections** list with detection results(see description below)
-* **results** dictionary where convertation results shoud be added (see examples below for details)
+   Also two variables are available in scope:
+   * **detections** list with detection results(see description below)
+   * **results** dictionary where convertation results shoud be added (see examples below for details)
 
-`detection` is a python's list of dictionaries that represent detections for each frame of task with folloing keys:
-   * frame_id - frame number
-   * frame_height - frame height
-   * frame_width - frame width
-   * detections - output np.ndarray (See [ExecutableNetwork.infer](https://software.intel.com/en-us/articles/OpenVINO-InferEngine#inpage-nav-11-6-3) for details).
+   `detection` is a python's list of dictionaries that represent detections for each frame of task with folloing keys:
+   * __frame_id__ - frame number
+   * __frame_height__ - frame height
+   * __frame_width__ - frame width
+   * __detections__ - output np.ndarray (See [ExecutableNetwork.infer](https://software.intel.com/en-us/articles/OpenVINO-InferEngine#inpage-nav-11-6-3) for details).
 
-`results` is dictionary with structure:
-```python
-{
-  "boxes": [],
-  "polygons": [],
-  "polylines": [],
-  "points": [],
-  "box_paths": [],
-  "polygon_paths": [],
-  "polyline_paths": [],
-  "points_paths": [],
-}
-```
+   `results` is dictionary with structure:
+   ```python
+    {
+      "boxes": [],
+      "polygons": [],
+      "polylines": [],
+      "points": [],
+      "box_paths": [],
+      "polygon_paths": [],
+      "polyline_paths": [],
+      "points_paths": [],
+    }
+    ```
 
     Example for SSD based network:
     ```python
