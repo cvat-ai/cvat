@@ -10,9 +10,7 @@ from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine import annotation
 
 import django_rq
-import subprocess
 import fnmatch
-import logging
 import json
 import os
 import rq
@@ -116,9 +114,9 @@ def run_inference_engine_annotation(path_to_data, model_file, weights_file, labe
             })
 
     if 'box_path' in processed_detections:
-        for box_path in processed_detections['box_path']:
-            # TODO need implement
-            pass
+        # TODO need implement
+        pass
+
 
     return result
 
@@ -202,7 +200,6 @@ def create(request, tid):
         if job is not None and (job.is_started or job.is_queued):
             raise Exception("The process is already running")
 
-        params = request.POST.dict()
         model_file = request.FILES['model']
         model_file_path = os.path.join(upload_dir, model_file.name)
         write_file(model_file_path, model_file)

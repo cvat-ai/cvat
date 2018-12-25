@@ -41,7 +41,7 @@ class ModelLoader():
         self._input_layout = network.inputs[self._input_blob_name]
 
     def infer(self, image):
-        _, c, h, w = self._input_layout
+        _, _, h, w = self._input_layout
         in_frame = image if image.shape[:-1] == (h, w) else cv2.resize(image, (w, h))
         in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
         return self._net.infer(inputs={self._input_blob_name: in_frame})[self._output_blob_name].copy()
