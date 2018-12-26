@@ -45,8 +45,56 @@ def create_anno_container():
         "points_paths": [],
     }
 
+class Results():
+    def __init__(self):
+        self._results = create_anno_container()
+
+    def add_point(self, x, y, label, frame_number, attributes={}):
+        self.get_points().append({
+          'label': label,
+          'frame': frame_number,
+          'points': "{},{}".format(x, y),
+          "attributes": attributes,
+        })
+
+    def add_box(self, xtl, ytl, xbr, ybr, label, frame_number, attributes={}):
+        self.get_boxes().append({
+            'label': label,
+            'frame': frame_number,
+            'xtl': xtl,
+            'ytl': ytl,
+            'xbr': xbr,
+            'ybr': ybr,
+            'attributes': attributes,
+        })
+
+    def get_boxes(self):
+        return self._results["boxes"]
+
+    def get_polygons(self):
+        return self._results["polygons"]
+
+    def get_polylines(self):
+        return self._results["polylines"]
+
+    def get_points(self):
+        return self._results["points"]
+
+    def get_box_paths(self):
+        return self._results["box_paths"]
+
+    def get_polygon_paths(self):
+        return self._results["polygon_paths"]
+
+    def get_polyline_paths(self):
+        return self._results["polyline_paths"]
+
+    def get_points_paths(self):
+        return self._results["points_paths"]
+
+
 def process_detections(detections, path_to_conv_script):
-    results = create_anno_container()
+    results = Results()
     global_vars = {
         "__builtins__": {
             "str": str,
@@ -95,42 +143,36 @@ def run_inference_engine_annotation(path_to_data, model_file, weights_file, labe
 
     processed_detections = process_detections(detections, convertation_file)
 
-    if "boxes" in processed_detections:
-        for box_ in processed_detections["boxes"]:
-            if box_["label"] not in labels_mapping:
+    for box_ in processed_detections.get_boxes():
+        if box_["label"] not in labels_mapping:
                  continue
 
-            result["create"]["boxes"].append({
-                "label_id": labels_mapping[box_["label"]],
-                "frame": box_["frame"],
-                "xtl": box_["xtl"],
-                "ytl": box_["ytl"],
-                "xbr": box_["xbr"],
-                "ybr": box_["ybr"],
-                "z_order": 0,
-                "group_id": 0,
-                "occluded": False,
-                "attributes": [],
-            })
+        result["create"]["boxes"].append({
+            "label_id": labels_mapping[box_["label"]],
+            "frame": box_["frame"],
+            "xtl": box_["xtl"],
+            "ytl": box_["ytl"],
+            "xbr": box_["xbr"],
+            "ybr": box_["ybr"],
+            "z_order": 0,
+            "group_id": 0,
+            "occluded": False,
+            "attributes": [],
+        })
 
-    if "box_path" in processed_detections:
-        # TODO need implement
-        pass
-
-    if "points" in processed_detections:
-        for point in processed_detections["points"]:
-            if point["label"] not in labels_mapping:
+    for point in processed_detections.get_points():
+        if point["label"] not in labels_mapping:
                 continue
 
-            result["create"]["points"].append({
-                "label_id": labels_mapping[point["label"]],
-                "frame": point["frame"],
-                "points": point["points"],
-                "z_order": 0,
-                "group_id": 0,
-                "occluded": False,
-                "attributes": [],
-            })
+        result["create"]["points"].append({
+            "label_id": labels_mapping[point["label"]],
+            "frame": point["frame"],
+            "points": point["points"],
+            "z_order": 0,
+            "group_id": 0,
+            "occluded": False,
+            "attributes": [],
+        })
 
     return result
 
