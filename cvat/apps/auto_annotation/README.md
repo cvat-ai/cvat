@@ -71,7 +71,7 @@ builtin functions like __str, int, float, max, min, range__.
      # label - expected value is int
      # frame_number - expected value is int
      # attributes - dictionary of attribute_name: attribute_value pairs, for example {"confidence": "0.83"}
-     add_point(self, points, label, frame_number, attributes=None)
+     add_points(self, points, label, frame_number, attributes=None)
      add_polygon(self, points, label, frame_number, attributes=None)
      add_polyline(self, points, label, frame_number, attributes=None)
      ```
@@ -155,7 +155,7 @@ for frame_results in detections:
       x = frame_results["detections"][0, i, 0, 0]
       y = frame_results["detections"][0, i + 1, 0, 0]
 
-      results.add_point(
+      results.add_points(
         points=[(clip(x) * frame_width, clip(y) * frame_height)],
         label=i // 2, # see label map and model output specification,
         frame_number=frame_number,

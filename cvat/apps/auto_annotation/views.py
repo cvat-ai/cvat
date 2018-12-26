@@ -60,7 +60,7 @@ class Results():
             "attributes": attributes or {},
         })
 
-    def add_point(self, points, label, frame_number, attributes=None):
+    def add_points(self, points, label, frame_number, attributes=None):
         self.get_points().append(
             self._create_polyshape(points, label, frame_number, attributes)
         )
