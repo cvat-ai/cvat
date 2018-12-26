@@ -1,0 +1,2 @@
+exclude_paths:
+ - '**/3rdparty/**'

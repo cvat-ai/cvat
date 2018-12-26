@@ -28,3 +28,11 @@
 - **[Sebastián Yonekura](https://github.com/syonekura)**
 
   * [convert_to_voc.py](utils/voc) - an utility for converting CVAT XML to PASCAL VOC data annotation format.
+  
+- **[ITLab Team](https://github.com/itlab-vision/cvat):**
+    **[Vasily Danilin](https://github.com/DanVev)**, 
+    **[Eugene Shashkin](https://github.com/EvgenyShashkin)**,
+    **[Dmitry Silenko](https://github.com/DimaSilenko)**,
+    **[Alina Bykovskaya](https://github.com/alinaut)**,
+    **[Yanina Koltushkina](https://github.com/YaniKolt)**
+  * Integrating CI tools as Travis CI, Codacy and Coveralls.io
