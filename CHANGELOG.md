@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Silk profiler to improve development process
 - Admin panel can be used to edit labels and attributes for annotation tasks
 - Analytics component to manage a data annotation team, monitor exceptions, collect client and server logs
+- Changeable job and task statuses (annotation, validation, completed). A job status are changed manually, a task status are computed automatically depends by job statuses (#153)
+- Back link to task from a job annotation view (#156)
+- Buttons lock/hide for labels. They work for all objects with same label on a current frame (#116)
 
 ### Changed
 - Polyshape editing method has been improved. You can redraw part of shape instead of points cloning.
@@ -27,7 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update requests library due to https://nvd.nist.gov/vuln/detail/CVE-2018-18074
 - Per task/job permissions to create/access/change/delete tasks and annotations
 - Documentation was improved
-- Timeout for creating tasks was increased (from 1h to 4h)
+- Timeout for creating tasks was increased (from 1h to 4h) (#136)
+- Drawing has become more convenience. Now it is possible to draw outside an image. Shapes will automatically truncated after drawing process (#202)
 
 ### Fixed
 - Performance bottleneck has been fixed during you create new objects (draw, copy, merge etc).
@@ -37,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Uploading large XML files (#123)
 - Django vulnerability (#121)
 - Grammatical cleanup of README.md (#107)
+- Dashboard loading has been accelerated due to the database requests optimizations (#156)
+- It was short of space for a text on a frame in some cases (#202)
 
 ## [0.2.0] - 2018-09-28
 ### Added
