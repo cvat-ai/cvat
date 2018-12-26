@@ -61,9 +61,17 @@ builtin functions like __str, int, float, max, min, range__.
    - __results__ a instance of python class with converted results.
      Following methods should be used to add shapes:
      ```python
-     add_box(self, xtl, ytl, xbr, ybr, label, frame_number, attributes={})
+     # xtl, ytl, xbr, ybr - expected value is float or int
+     # label - expected value is int
+     # frame_number - expected value is int
+     # attributes - dictionary of attribute_name: attribute_value pairs, for example {"confidence": "0.83"}
+     add_box(self, xtl, ytl, xbr, ybr, label, frame_number, attributes=None)
 
-     add_point(self, x, y, label, frame_number, attributes={})
+     # points - list of (x, y) pairs of float or int, for example [(57.3, 100), (67, 102.7)]
+     # label - expected value is int
+     # frame_number - expected value is int
+     # attributes - dictionary of attribute_name: attribute_value pairs, for example {"confidence": "0.83"}
+     add_point(self, points, label, frame_number, attributes=None)
      ```
 
 ### Examples
@@ -146,8 +154,7 @@ for frame_results in detections:
       y = frame_results["detections"][0, i + 1, 0, 0]
 
       results.add_point(
-        x=clip(x) * frame_width,
-        y=clip(y) * frame_height,
+        points=[(clip(x) * frame_width, clip(y) * frame_height)],
         label=i // 2, # see label map and model output specification,
         frame_number=frame_number,
       )

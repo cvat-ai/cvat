@@ -49,11 +49,11 @@ class Results():
     def __init__(self):
         self._results = create_anno_container()
 
-    def add_point(self, x, y, label, frame_number, attributes=None):
+    def add_point(self, points, label, frame_number, attributes=None):
         self.get_points().append({
           "label": label,
           "frame": frame_number,
-          "points": "{},{}".format(x, y),
+          "points": " ".join("{},{}".format(pair[0], pair[1]) for pair in points),
           "attributes": attributes or {},
         })
 
