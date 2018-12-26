@@ -170,11 +170,11 @@ def create_thread(tid, model_file, weights_file, labels_mapping, convertation_fi
         annotation.clear_task(tid)
         annotation.save_task(tid, result)
         slogger.glob.info("auto annotation for task {} done".format(tid))
-    except:
+    except Exception:
         try:
-            slogger.task[tid].exception("exception was occured during auto annotation of the task", exc_info=True)
+            slogger.task[tid].exception("exception was occurred during auto annotation of the task", exc_info=True)
         except Exception as ex:
-            slogger.glob.exception("exception was occured during auto annotation of the task {}: {}".format(tid, str(ex)), exc_info=True)
+            slogger.glob.exception("exception was occurred during auto annotation of the task {}: {}".format(tid, str(ex)), exc_info=True)
 
 @login_required
 def get_meta_info(request):
@@ -258,9 +258,9 @@ def create(request, tid):
 
     except Exception as ex:
         try:
-            slogger.task[tid].exception("exception was occured during annotation request", exc_info=True)
+            slogger.task[tid].exception("exception was occurred during annotation request", exc_info=True)
         except Exception as logger_ex:
-            slogger.glob.exception("exception was occured during create auto annotation request for task {}: {}".format(tid, str(logger_ex)), exc_info=True)
+            slogger.glob.exception("exception was occurred during create auto annotation request for task {}: {}".format(tid, str(logger_ex)), exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
     return HttpResponse()

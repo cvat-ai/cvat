@@ -37,7 +37,7 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
                 autoAnnoButton.on("click", () => {
                     if (autoAnnoButton.hasClass("autoAnnotationProcess")) {
                         $.post(`/auto_annotation/cancel/task/${tid}`).fail( (data) => {
-                            let message = `Error during cansel auto annotation request. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                            let message = `Error during cancel auto annotation request. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                             showMessage(message);
                             throw Error(message);
                         });
@@ -80,7 +80,7 @@ window.cvat.autoAnnotation = {
                     autoAnnoButton.removeClass("autoAnnotationProcess");
                 }
             }).fail((data) => {
-                let message = "Error was occured during check annotation status. " +
+                let message = "Error was occurred during check annotation status. " +
                     `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
                 window.cvat.autoAnnotation.badResponse(message);
             });
@@ -130,7 +130,7 @@ function submitButtonOnClick() {
             autoAnnoButton.addClass("autoAnnotationProcess");
             window.cvat.autoAnnotation.checkAutoAnnotationRequest(tid, autoAnnoButton);
     }).fail((data) => {
-        let message = "Error was occured during run annotation request. " +
+        let message = "Error was occurred during run annotation request. " +
             `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
         window.cvat.autoAnnotation.badResponse(message);
     });
