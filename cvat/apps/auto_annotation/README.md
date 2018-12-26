@@ -43,7 +43,7 @@ Please note values in `label_map` should be exactly equal to the labels which ta
     ```
 1. __Interpretation script__ (*.py) - python file that used to convert output results from net to CVAT format. This code running inside restricted environment, but it's possible to use some builtins functions: __str, int, float, max, min, range__.  
    Also two variables are available in scope:
-   * **detections** - a python's list of dictionaries that represent detections for each frame of task with folloing keys:
+   * **detections** - a python's list of dictionaries that represent detections for each frame of task with following keys:
       * __frame_id__ - frame number
       * __frame_height__ - frame height
       * __frame_width__ - frame width
