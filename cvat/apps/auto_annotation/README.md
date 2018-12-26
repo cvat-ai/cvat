@@ -61,7 +61,7 @@ builtin functions like __str, int, float, max, min, range__.
    - __results__ a instance of python class with converted results.
      Following methods should be used to add shapes:
      ```python
-     # xtl, ytl, xbr, ybr - expected value is float or int
+     # xtl, ytl, xbr, ybr - expected values are float or int
      # label - expected value is int
      # frame_number - expected value is int
      # attributes - dictionary of attribute_name: attribute_value pairs, for example {"confidence": "0.83"}
@@ -72,6 +72,8 @@ builtin functions like __str, int, float, max, min, range__.
      # frame_number - expected value is int
      # attributes - dictionary of attribute_name: attribute_value pairs, for example {"confidence": "0.83"}
      add_point(self, points, label, frame_number, attributes=None)
+     add_polygon(self, points, label, frame_number, attributes=None)
+     add_polyline(self, points, label, frame_number, attributes=None)
      ```
 
 ### Examples

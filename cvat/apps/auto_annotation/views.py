@@ -49,14 +49,6 @@ class Results():
     def __init__(self):
         self._results = create_anno_container()
 
-    def add_point(self, points, label, frame_number, attributes=None):
-        self.get_points().append({
-          "label": label,
-          "frame": frame_number,
-          "points": " ".join("{},{}".format(pair[0], pair[1]) for pair in points),
-          "attributes": attributes or {},
-        })
-
     def add_box(self, xtl, ytl, xbr, ybr, label, frame_number, attributes=None):
         self.get_boxes().append({
             "label": label,
@@ -67,6 +59,21 @@ class Results():
             "ybr": ybr,
             "attributes": attributes or {},
         })
+
+    def add_point(self, points, label, frame_number, attributes=None):
+        self.get_points().append(
+            self._create_polyshape(points, label, frame_number, attributes)
+        )
+
+    def add_polygon(self, points, label, frame_number, attributes=None):
+        self.get_polygons().append(
+            self._create_polyshape(points, label, frame_number, attributes)
+        )
+
+    def add_polyline(self, points, label, frame_number, attributes=None):
+        self.get_polylines().append(
+            self._create_polyshape(points, label, frame_number, attributes)
+        )
 
     def get_boxes(self):
         return self._results["boxes"]
@@ -92,6 +99,13 @@ class Results():
     def get_points_paths(self):
         return self._results["points_paths"]
 
+    def _create_polyshape(self, points, label, frame_number, attributes=None):
+        return {
+            "label": label,
+            "frame": frame_number,
+            "points": " ".join("{},{}".format(pair[0], pair[1]) for pair in points),
+            "attributes": attributes or {},
+        }
 
 def process_detections(detections, path_to_conv_script):
     results = Results()
@@ -126,6 +140,41 @@ def run_inference_engine_annotation(path_to_data, model_file, weights_file,
 
         return attributes
 
+    def add_polyshapes(shapes, target_container):
+        for shape in shapes:
+            if shape["label"] not in labels_mapping:
+                    continue
+            db_label = labels_mapping[shape["label"]]
+
+            target_container.append({
+                "label_id": db_label,
+                "frame": shape["frame"],
+                "points": shape["points"],
+                "z_order": 0,
+                "group_id": 0,
+                "occluded": False,
+                "attributes": process_attributes(shape["attributes"], attribute_spec[db_label]),
+            })
+
+    def add_boxes(boxes, target_container):
+        for box in boxes:
+            if box["label"] not in labels_mapping:
+                    continue
+
+            db_label = labels_mapping[box["label"]]
+            target_container.append({
+                "label_id": db_label,
+                "frame": box["frame"],
+                "xtl": box["xtl"],
+                "ytl": box["ytl"],
+                "xbr": box["xbr"],
+                "ybr": box["ybr"],
+                "z_order": 0,
+                "group_id": 0,
+                "occluded": False,
+                "attributes": process_attributes(box["attributes"], attribute_spec[db_label]),
+            })
+
     result = {
         "create": create_anno_container(),
         "update": create_anno_container(),
@@ -156,41 +205,10 @@ def run_inference_engine_annotation(path_to_data, model_file, weights_file,
 
     processed_detections = process_detections(detections, convertation_file)
 
-    for box_ in processed_detections.get_boxes():
-        if box_["label"] not in labels_mapping:
-                 continue
-
-        db_label = labels_mapping[box_["label"]]
-        attributes = process_attributes(box_["attributes"], attribute_spec[db_label])
-
-        result["create"]["boxes"].append({
-            "label_id": db_label,
-            "frame": box_["frame"],
-            "xtl": box_["xtl"],
-            "ytl": box_["ytl"],
-            "xbr": box_["xbr"],
-            "ybr": box_["ybr"],
-            "z_order": 0,
-            "group_id": 0,
-            "occluded": False,
-            "attributes": attributes,
-        })
-
-    for point in processed_detections.get_points():
-        if point["label"] not in labels_mapping:
-                continue
-        db_label = labels_mapping[point["label"]]
-        attributes = process_attributes(point["attributes"], attribute_spec[db_label])
-
-        result["create"]["points"].append({
-            "label_id": db_label,
-            "frame": point["frame"],
-            "points": point["points"],
-            "z_order": 0,
-            "group_id": 0,
-            "occluded": False,
-            "attributes": attributes,
-        })
+    add_boxes(processed_detections.get_boxes(), result["create"]["boxes"])
+    add_polyshapes(processed_detections.get_points(), result["create"]["points"])
+    add_polyshapes(processed_detections.get_polygons(), result["create"]["polygons"])
+    add_polyshapes(processed_detections.get_polylines(), result["create"]["polylines"])
 
     return result
 
