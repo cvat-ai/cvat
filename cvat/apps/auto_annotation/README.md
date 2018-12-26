@@ -58,7 +58,7 @@ builtin functions like __str, int, float, max, min, range__.
       * __frame_width__ - frame width
       * __detections__ - output np.ndarray (See [ExecutableNetwork.infer](https://software.intel.com/en-us/articles/OpenVINO-InferEngine#inpage-nav-11-6-3) for details).
 
-   - __results__ a instance of python class with converted results.
+   - __results__ - an instance of python class with converted results.
      Following methods should be used to add shapes:
      ```python
      # xtl, ytl, xbr, ybr - expected values are float or int
@@ -80,7 +80,7 @@ builtin functions like __str, int, float, max, min, range__.
 
 #### [Person-vehicle-bike-detection-crossroad-0078](https://github.com/opencv/open_model_zoo/blob/2018/intel_models/person-vehicle-bike-detection-crossroad-0078/description/person-vehicle-bike-detection-crossroad-0078.md) (OpenVINO toolkit)
 
-__Note__: Model weights are available in OpenVINO redistributable package.
+__Note__: Model configuration(*.xml) and weights (*.bin) are available in OpenVINO redistributable package.
 
 __Task labels__: person vehicle non-vehicle
 
@@ -110,10 +110,10 @@ for frame_results in detections:
       continue
 
     results.add_box(
-      xtl="{:.2f}".format(clip(frame_results["detections"][0, 0, i, 3]) * frame_width),
-      ytl="{:.2f}".format(clip(frame_results["detections"][0, 0, i, 4]) * frame_height),
-      xbr="{:.2f}".format(clip(frame_results["detections"][0, 0, i, 5]) * frame_width),
-      ybr="{:.2f}".format(clip(frame_results["detections"][0, 0, i, 6]) * frame_height),
+      xtl=clip(frame_results["detections"][0, 0, i, 3]) * frame_width,
+      ytl=clip(frame_results["detections"][0, 0, i, 4]) * frame_height,
+      xbr=clip(frame_results["detections"][0, 0, i, 5]) * frame_width,
+      ybr=clip(frame_results["detections"][0, 0, i, 6]) * frame_height,
       label=int(frame_results["detections"][0, 0, i, 1]),
       frame_number=frame_number,
       attributes={
@@ -125,7 +125,7 @@ for frame_results in detections:
 
 #### [Landmarks-regression-retail-0009](https://github.com/opencv/open_model_zoo/blob/2018/intel_models/landmarks-regression-retail-0009/description/landmarks-regression-retail-0009.md) (OpenVINO toolkit)
 
-__Note__: Model weights are available in OpenVINO redistributable package.
+__Note__: Model configuration (.xml) and weights (.bin) are available in OpenVINO redistributable package.
 
 __Task labels__: left_eye right_eye tip_of_nose left_lip_corner right_lip_corner
 
