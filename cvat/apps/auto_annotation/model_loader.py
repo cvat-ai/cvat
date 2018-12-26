@@ -38,7 +38,8 @@ class ModelLoader():
         self._output_blob_name = next(iter(network.outputs))
 
         self._net = plugin.load(network=network, num_requests=2)
-        self._input_layout = network.inputs[self._input_blob_name]
+        input_type = network.inputs[self._input_blob_name]
+        self._input_layout = input_type if isinstance(input_type, list) else input_type.shape
 
     def infer(self, image):
         _, _, h, w = self._input_layout
