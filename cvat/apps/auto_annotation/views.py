@@ -51,21 +51,21 @@ class Results():
 
     def add_point(self, x, y, label, frame_number, attributes={}):
         self.get_points().append({
-          'label': label,
-          'frame': frame_number,
-          'points': "{},{}".format(x, y),
+          "label": label,
+          "frame": frame_number,
+          "points": "{},{}".format(x, y),
           "attributes": attributes,
         })
 
     def add_box(self, xtl, ytl, xbr, ybr, label, frame_number, attributes={}):
         self.get_boxes().append({
-            'label': label,
-            'frame': frame_number,
-            'xtl': xtl,
-            'ytl': ytl,
-            'xbr': xbr,
-            'ybr': ybr,
-            'attributes': attributes,
+            "label": label,
+            "frame": frame_number,
+            "xtl": xtl,
+            "ytl": ytl,
+            "xbr": xbr,
+            "ybr": ybr,
+            "attributes": attributes,
         })
 
     def get_boxes(self):
@@ -112,7 +112,20 @@ def process_detections(detections, path_to_conv_script):
     exec (open(path_to_conv_script).read(), global_vars, local_vars)
     return results
 
-def run_inference_engine_annotation(path_to_data, model_file, weights_file, labels_mapping, convertation_file, job, update_progress):
+def run_inference_engine_annotation(path_to_data, model_file, weights_file,
+       labels_mapping, attribute_spec, convertation_file, job, update_progress):
+
+    def process_attributes(shape_attributes, label_attr_spec):
+        attributes = []
+        for attr_text, attr_value in shape_attributes.items():
+            if attr_text in label_attr_spec:
+                attributes.append({
+                    "id": label_attr_spec[attr_text],
+                    "value": attr_value,
+                })
+
+        return attributes
+
     result = {
         "create": create_anno_container(),
         "update": create_anno_container(),
@@ -147,8 +160,11 @@ def run_inference_engine_annotation(path_to_data, model_file, weights_file, labe
         if box_["label"] not in labels_mapping:
                  continue
 
+        db_label = labels_mapping[box_["label"]]
+        attributes = process_attributes(box_["attributes"], attribute_spec[db_label])
+
         result["create"]["boxes"].append({
-            "label_id": labels_mapping[box_["label"]],
+            "label_id": db_label,
             "frame": box_["frame"],
             "xtl": box_["xtl"],
             "ytl": box_["ytl"],
@@ -157,21 +173,23 @@ def run_inference_engine_annotation(path_to_data, model_file, weights_file, labe
             "z_order": 0,
             "group_id": 0,
             "occluded": False,
-            "attributes": [],
+            "attributes": attributes,
         })
 
     for point in processed_detections.get_points():
         if point["label"] not in labels_mapping:
                 continue
+        db_label = labels_mapping[point["label"]]
+        attributes = process_attributes(point["attributes"], attribute_spec[db_label])
 
         result["create"]["points"].append({
-            "label_id": labels_mapping[point["label"]],
+            "label_id": db_label,
             "frame": point["frame"],
             "points": point["points"],
             "z_order": 0,
             "group_id": 0,
             "occluded": False,
-            "attributes": [],
+            "attributes": attributes,
         })
 
     return result
@@ -186,7 +204,7 @@ def update_progress(job, progress):
     job.save_meta()
     return True
 
-def create_thread(tid, model_file, weights_file, labels_mapping, convertation_file):
+def create_thread(tid, model_file, weights_file, labels_mapping, attributes, convertation_file):
     try:
         job = rq.get_current_job()
         job.meta["progress"] = 0
@@ -200,6 +218,7 @@ def create_thread(tid, model_file, weights_file, labels_mapping, convertation_fi
             model_file=model_file,
             weights_file=weights_file,
             labels_mapping=labels_mapping,
+            attribute_spec=attributes,
             convertation_file= convertation_file,
             job=job,
             update_progress=update_progress,
@@ -273,6 +292,8 @@ def create(request, tid):
         write_file(convertation_file_path, convertation_file)
 
         db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
+        db_attributes = {db_label.id:
+            {db_attr.get_name(): db_attr.id for db_attr in db_label.attributespec_set.all()} for db_label in db_labels}
         db_labels = {db_label.id:db_label.name for db_label in db_labels}
 
         class_names = load_label_map(config_file_path)
@@ -292,6 +313,7 @@ def create(request, tid):
                 model_file_path,
                 weights_file_path,
                 labels_mapping,
+                db_attributes,
                 convertation_file_path),
             job_id="auto_annotation.create/{}".format(tid),
             timeout=604800)     # 7 days

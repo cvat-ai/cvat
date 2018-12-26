@@ -90,24 +90,24 @@ def clip(value):
   return max(min(1.0, value), 0.0)
 
 for frame_results in detections:
-  frame_height = frame_results['frame_height']
-  frame_width = frame_results['frame_width']
-  frame_number = frame_results['frame_id']
+  frame_height = frame_results["frame_height"]
+  frame_width = frame_results["frame_width"]
+  frame_number = frame_results["frame_id"]
 
-  for i in range(frame_results['detections'].shape[2]):
-    confidence = frame_results['detections'][0, 0, i, 2]
+  for i in range(frame_results["detections"].shape[2]):
+    confidence = frame_results["detections"][0, 0, i, 2]
     if confidence < 0.5:
       continue
 
     results.add_box(
-      xtl='{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 3]) * frame_width),
-      ytl='{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 4]) * frame_height),
-      xbr='{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 5]) * frame_width),
-      ybr='{:.2f}'.format(clip(frame_results['detections'][0, 0, i, 6]) * frame_height),
-      label=int(frame_results['detections'][0, 0, i, 1]),
+      xtl="{:.2f}".format(clip(frame_results["detections"][0, 0, i, 3]) * frame_width),
+      ytl="{:.2f}".format(clip(frame_results["detections"][0, 0, i, 4]) * frame_height),
+      xbr="{:.2f}".format(clip(frame_results["detections"][0, 0, i, 5]) * frame_width),
+      ybr="{:.2f}".format(clip(frame_results["detections"][0, 0, i, 6]) * frame_height),
+      label=int(frame_results["detections"][0, 0, i, 1]),
       frame_number=frame_number,
       attributes={
-        'confidence': '{:.2f}'.format(confidence),
+        "confidence": "{:.2f}".format(confidence),
       },
     )
 ```
@@ -137,13 +137,13 @@ def clip(value):
   return max(min(1.0, value), 0.0)
 
 for frame_results in detections:
-  frame_height = frame_results['frame_height']
-  frame_width = frame_results['frame_width']
-  frame_number = frame_results['frame_id']
+  frame_height = frame_results["frame_height"]
+  frame_width = frame_results["frame_width"]
+  frame_number = frame_results["frame_id"]
 
-  for i in range(0, frame_results['detections'].shape[1], 2):
-      x = frame_results['detections'][0, i, 0, 0]
-      y = frame_results['detections'][0, i + 1, 0, 0]
+  for i in range(0, frame_results["detections"].shape[1], 2):
+      x = frame_results["detections"][0, i, 0, 0]
+      y = frame_results["detections"][0, i + 1, 0, 0]
 
       results.add_point(
         x=clip(x) * frame_width,
