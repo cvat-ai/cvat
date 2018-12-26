@@ -49,15 +49,15 @@ class Results():
     def __init__(self):
         self._results = create_anno_container()
 
-    def add_point(self, x, y, label, frame_number, attributes={}):
+    def add_point(self, x, y, label, frame_number, attributes=None):
         self.get_points().append({
           "label": label,
           "frame": frame_number,
           "points": "{},{}".format(x, y),
-          "attributes": attributes,
+          "attributes": attributes or {},
         })
 
-    def add_box(self, xtl, ytl, xbr, ybr, label, frame_number, attributes={}):
+    def add_box(self, xtl, ytl, xbr, ybr, label, frame_number, attributes=None):
         self.get_boxes().append({
             "label": label,
             "frame": frame_number,
@@ -65,7 +65,7 @@ class Results():
             "ytl": ytl,
             "xbr": xbr,
             "ybr": ybr,
-            "attributes": attributes,
+            "attributes": attributes or {},
         })
 
     def get_boxes(self):
