@@ -2,17 +2,22 @@
 
 ### Description
 
-This application will be enabled automatically if OpenVINO&trade; component is installed. It allows to use custom models for preannotation.
-Supported only DLDT framework from OpenVINO&trade; toolkit. If you would like to annotate task with custom model please convert it to the
-intermediate representation (IR) format via model optimizer tool.
-See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
+The application will be enabled automatically if OpenVINO&trade; component is
+installed. It allows to use custom models for auto annotation. Only models in
+OpenVINO&trade; toolkit format are supported. If you would like to annotate a
+task with a custom model please convert it to the intermediate representation
+(IR) format via the model optimizer tool. See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
 
 ### Usage
-To annotate task with a custom model you need prepare 4 files:
-1. __Model config__ (*.xml) - a text file that contains network configuration.
-1. __Model weights__ (*.bin) - a binary file that contains trained weights.
-1. __Label map__ (*.json) - simple json file that contains the `label_map` dictionary like object with string values for label numbers.
-Please note values in `label_map` should be exactly equal to the labels which task was created, otherwise it will be ignored.
+
+To annotate a task with a custom model you need to prepare 4 files:
+1. __Model config__ (*.xml) - a text file with network configuration.
+1. __Model weights__ (*.bin) - a binary file with trained weights.
+1. __Label map__ (*.json) - a simple json file with `label_map` dictionary like
+object with string values for label numbers.
+
+Values in `label_map` should be exactly equal to labels for the annotation task,
+otherwise objects with mismatched labels will be ignored.
   Example:
     ```json
     {
@@ -41,14 +46,20 @@ Please note values in `label_map` should be exactly equal to the labels which ta
       }
     }
     ```
-1. __Interpretation script__ (*.py) - python file that used to convert output results from net to CVAT format. This code running inside restricted environment, but it's possible to use some builtins functions: __str, int, float, max, min, range__.
-   Also two variables are available in scope:
-   * **detections** - a python's list of dictionaries that represent detections for each frame of task with following keys:
+1. __Interpretation script__ (*.py) - a file used to convert net output layer
+to a predefined structure which can be processed by CVAT. This code will be run
+inside a restricted python's environment, but it's possible to use some
+builtin functions like __str, int, float, max, min, range__.
+
+   Also two variables are available in the scope:
+
+   - **detections** - a list of dictionaries with detections for each frame:
       * __frame_id__ - frame number
       * __frame_height__ - frame height
       * __frame_width__ - frame width
       * __detections__ - output np.ndarray (See [ExecutableNetwork.infer](https://software.intel.com/en-us/articles/OpenVINO-InferEngine#inpage-nav-11-6-3) for details).
-   * **results** dictionary where converted results should be added, it has following structure:
+
+   - **results** a dictionary with converted results, it has the following structure:
      ```python
       {
         "boxes": [],
