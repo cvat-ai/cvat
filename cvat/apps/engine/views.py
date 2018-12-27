@@ -258,6 +258,7 @@ def save_annotation_for_job(request, jid):
         if 'logs' in data:
             for event in json.loads(data['logs']):
                 clogger.job[jid].info(json.dumps(event))
+        slogger.job[jid].info("annotation have been saved for the {} job".format(jid))
     except RequestException as e:
         slogger.job[jid].error("cannot send annotation logs for job {}".format(jid), exc_info=True)
         return HttpResponseBadRequest(str(e))
