@@ -27,6 +27,7 @@ from django.db import transaction
 from ffmpy import FFmpeg
 from pyunpack import Archive
 from distutils.dir_util import copy_tree
+from collections import OrderedDict
 
 from . import models
 from .log import slogger
@@ -155,7 +156,7 @@ def get(tid):
     """Get the task as dictionary of attributes"""
     db_task = models.Task.objects.get(pk=tid)
     if db_task:
-        db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
+        db_labels = db_task.label_set.prefetch_related('attributespec_set').order_by('-pk').all()
         im_meta_data = get_image_meta_cache(db_task)
         attributes = {}
         for db_label in db_labels:
@@ -175,7 +176,7 @@ def get(tid):
         response = {
             "status": db_task.status,
             "spec": {
-                "labels": { db_label.id:db_label.name for db_label in db_labels },
+                "labels": OrderedDict((db_label.id, db_label.name) for db_label in db_labels),
                 "attributes": attributes
             },
             "size": db_task.size,
@@ -229,7 +230,7 @@ def get_job(jid):
         if db_task.mode == 'annotation':
             im_meta_data['original_size'] = im_meta_data['original_size'][db_segment.start_frame:db_segment.stop_frame + 1]
 
-        db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
+        db_labels = db_task.label_set.prefetch_related('attributespec_set').order_by('-pk').all()
         attributes = {}
         for db_label in db_labels:
             attributes[db_label.id] = {}
@@ -238,7 +239,7 @@ def get_job(jid):
 
         response = {
             "status": db_job.status,
-            "labels": { db_label.id:db_label.name for db_label in db_labels },
+            "labels": OrderedDict((db_label.id, db_label.name) for db_label in db_labels),
             "stop": db_segment.stop_frame,
             "taskid": db_task.id,
             "slug": db_task.name,
@@ -376,7 +377,7 @@ def _get_frame_path(frame, base_dir):
     return path
 
 def _parse_labels(labels):
-    parsed_labels = {}
+    parsed_labels = OrderedDict()
 
     last_label = ""
     for token in shlex.split(labels):

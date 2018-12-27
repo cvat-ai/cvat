@@ -16,10 +16,12 @@ var UserActivityHandler = function()
 
     this.updateTimer = function()
     {
-        let now = Date.now();
-        let diff = now - this._prevEventTime;
-        this._prevEventTime = now;
-        this._workingTime += diff < this._TIME_TRESHHOLD ? diff : 0;
+        if (document.hasFocus()) {
+            let now = Date.now();
+            let diff = now - this._prevEventTime;
+            this._prevEventTime = now;
+            this._workingTime += diff < this._TIME_TRESHHOLD ? diff : 0;
+        }
     };
 
     this.resetTimer = function()
@@ -52,6 +54,7 @@ class LogCollection extends Array {
 var LoggerHandler = function(applicationName, jobId)
 {
     this._application = applicationName;
+    this._tabId = Date.now().toString().substr(-6);
     this._jobId = jobId;
     this._username = null;
     this._userActivityHandler = null;
@@ -129,6 +132,8 @@ var LoggerHandler = function(applicationName, jobId)
             application: this._application,
             task: this._jobId,
             userid: this._username,
+            tabid: this._tabId,
+            focus: document.hasFocus()
         });
     };
 
