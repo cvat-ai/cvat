@@ -22,7 +22,7 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
                     if (["sync", "syncing"].includes(data[tid])) {
                         elem.css("background", "floralwhite");
                     }
-                    else if (data[tid] == "merged") {
+                    else if (data[tid] === "merged") {
                         elem.css("background", "azure");
                     }
                     else {
@@ -191,6 +191,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     repositorySyncButton.on("click", () => {
+        function badResponse(message) {
+            try {
+                showMessage(message);
+                throw Error(message);
+            }
+            finally {
+                window.cvat.git.updateState();
+            }
+        }
+
         gitLabelMessage.css("color", "#cccc00").text("Synchronization..");
         gitLabelStatus.css("color", "#cccc00").text("\u25cc");
         repositorySyncButton.attr("disabled", true);
@@ -202,11 +212,11 @@ document.addEventListener("DOMContentLoaded", () => {
             function timeoutCallback() {
                 $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
                     if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
-                        if (data.status == "failed") {
+                        if (data.status === "failed") {
                             let message = data.error;
                             badResponse(message);
                         }
-                        else if (data.status == "unknown") {
+                        else if (data.status === "unknown") {
                             let message = `Request for pushing returned status "${data.status}".`;
                             badResponse(message);
                         }
@@ -229,15 +239,4 @@ document.addEventListener("DOMContentLoaded", () => {
             badResponse(message);
         });
     });
-
-
-    function badResponse(message) {
-        try {
-            showMessage(message);
-            throw Error(message);
-        }
-        finally {
-            window.cvat.git.updateState();
-        }
-    }
 });
