@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task, Job, User
-from cvat.apps.engine.annotation import _dump as dump, FORMAT_XML, save_job
+from cvat.apps.engine.annotation import _dump as dump, FORMAT_XML
 from cvat.apps.engine.plugins import add_plugin
 
 from cvat.apps.git.models import GitData
@@ -26,7 +26,7 @@ def _have_no_access_exception(ex):
     if 'Permission denied' in ex.stderr or 'Could not read from remote repository' in ex.stderr:
         keys = subprocess.run(['ssh-add -L'], shell = True,
             stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
-        keys = list(filter(lambda x: len(x), list(map(lambda x: x.strip(), keys))))
+        keys = list(filter(len, list(map(lambda x: x.strip(), keys))))
         raise Exception(
             'Could not connect to the remote repository. ' +
             'Please make sure you have the correct access rights and the repository exists. ' +
@@ -102,7 +102,8 @@ class Git:
 
     # Method creates the main branch if repostory doesn't have any branches
     def _create_master_branch(self):
-        assert not len(self.__rep.heads)
+        if len(self.__rep.heads):
+            raise Exception("Some heads already exists")
         readme_md_name = os.path.join(self.__cwd, "README.md")
         with open(readme_md_name, "w"):
             pass

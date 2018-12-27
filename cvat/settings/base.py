@@ -67,7 +67,7 @@ def generate_ssh_keys():
                     shutil.copymode('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
                 subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)], shell = True)
         os.remove(pidfile)
-    except:
+    except Exception:
         return
 
 

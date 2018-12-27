@@ -2,10 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.http import HttpResponseBadRequest, JsonResponse
 from rules.contrib.views import permission_required, objectgetter
-from django.db import transaction
-from django.utils import timezone
 
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.log import slogger
@@ -13,15 +11,7 @@ from cvat.apps.engine import models
 from cvat.apps.git.models import GitData
 
 import cvat.apps.git.git as CVATGit
-
-import datetime
 import django_rq
-import random
-import json
-import git
-import sys
-import os
-
 
 @login_required
 def check_process(request, rq_id):
@@ -58,7 +48,7 @@ def push_repository(request, tid):
     except Exception as ex:
         try:
             slogger.task[tid].error("error occured during pushing repository request", exc_info=True)
-        except:
+        except Exception:
             pass
         return HttpResponseBadRequest(str(ex))
 
@@ -73,7 +63,7 @@ def get_repository(request, tid):
     except Exception as ex:
         try:
             slogger.task[tid].error("error occured during getting repository info request", exc_info=True)
-        except:
+        except Exception:
             pass
         return HttpResponseBadRequest(str(ex))
 
