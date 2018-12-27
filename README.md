@@ -59,7 +59,12 @@ docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml 
 docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml -f components/openvino/docker-compose.openvino.yml up -d
 ```
 
-For details please see [components section](components/README.md).
+### Additional optional components
+
+- [Support for Intel OpenVINO: auto annotation](components/openvino/README.md)
+- [Analytics: management and monitoring of data annotation team](components/analytics/README.md)
+- [TF Object Detection API: auto annotation](components/tf_annotation/README.md)
+- [Support for NVIDIA GPUs](components/cuda/README.md)
 
 ### Create superuser account
 
@@ -125,13 +130,6 @@ volumes:
       o: bind
 ```
 You can change the share device path to your actual share. For user convenience we have defined the enviroment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser.
-
-### Additional optional components
-
-- [Support for Intel OpenVINO: auto annotation](components/openvino/README.md)
-- [Analytics: management and monitoring of data annotation team](components/analytics/README.md)
-- [TF Object Detection API: auto annotation](components/tf_annotation/README.md)
-- [Support for NVIDIA GPUs](components/cuda/README.md)
 
 ## Questions
 
