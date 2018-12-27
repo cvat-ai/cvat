@@ -2,16 +2,16 @@
 
 ### Description
 
-Application allows to integrate any git repository with CVAT task for annotation storage.
-It supports github or gitlab repositories (include custom gitlab servers).
-SSH protocol is used for authorization.
+The application allows to integrate any git repository like an annotation storage for a CVAT task.
+It supports github or gitlab repositories.
+The SSH protocol is used for an authorization.
 
 ### Using
 
-  * Put private SSH key for this user into ```cvat/apps/git/keys```. Public key corresponding to this private key should be attached to used github user.
-  * If you didn't put custom keys, they are generated automatically.
-  * Setup your repository URL and path (relative for repository) in create task dialog.
+  * Put a private SSH key into the ```ssh``` directory. The public key corresponding to this private key should be attached to an github user.
+  * If you don't put any custom key, it will generated automatically.
+  * Setup a repository URL and a path (which is relative for a repository) in the create task dialog.
   * Annotate a task.
-  * Press a button "Git Repository Sync" on the dashboard.
-  * In a dialog window press the button "Sync" and waiting some time.
-  * Annotation will be dumped, archived and pushed to remote repository. You can do a pull request manually.
+  * Press the button "Git Repository Sync" on the dashboard.
+  * In the dialog window press the button "Sync" and waiting for some time.
+  * An annotation will be dumped, archived and pushed to the attached remote repository. You can do a pull request manually.

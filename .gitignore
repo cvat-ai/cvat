@@ -8,7 +8,9 @@
 /logs
 /components/openvino/*.tgz
 /profiles
-/cvat/apps/git/keys/*
+/ssh/*
+!/ssh/README.md
+
 
 # Ignore temporary files
 docker-compose.override.yml

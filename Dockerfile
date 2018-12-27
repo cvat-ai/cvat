@@ -102,18 +102,15 @@ COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 RUN  pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 COPY cvat/ ${HOME}/cvat
+COPY ssh ${HOME}/.ssh
 
+# Install git application dependencies
 RUN apt-get update && \
     apt-get install -y ssh netcat-openbsd git curl zip  && \
     curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \
     apt-get install -y git-lfs && \
     git lfs install && \
-    rm -rf /var/lib/apt/lists/* && \
-    mkdir ${HOME}/.ssh ${HOME}/cvat/apps/git/keys -p && \
-    if test `ls ${HOME}/cvat/apps/git/keys -1 | wc -l` -gt 0; then \
-        mv ${HOME}/cvat/apps/git/keys/* ${HOME}/.ssh/ ; \
-    fi
-
+    rm -rf /var/lib/apt/lists/*
 
 COPY tests ${HOME}/tests
 RUN patch -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch

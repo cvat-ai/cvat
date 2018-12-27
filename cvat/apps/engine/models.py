@@ -64,7 +64,7 @@ class Task(models.Model):
 
     def get_dump_path(self):
         name = re.sub(r'[\\/*?:"<>|]', '_', self.name)
-        return os.path.join(self.path, "{}.dump".format(name))
+        return os.path.join(self.path, "{}.xml".format(name))
 
     def get_log_path(self):
         return os.path.join(self.path, "task.log")
