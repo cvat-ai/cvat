@@ -90,7 +90,7 @@ window.cvat.git = {
                 return;
             }
 
-            if (["empty", "!sync"].includes(data.status.value)) {
+            if (data.status.value === "!sync") {
                 gitLabelStatus.css("color", "red").text("\u2606");
                 gitLabelMessage.css("color", "red").text("Repository is not synchronized");
                 syncButton.attr("disabled", false);

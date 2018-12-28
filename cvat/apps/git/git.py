@@ -9,9 +9,11 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task, Job, User
 from cvat.apps.engine.annotation import _dump as dump, FORMAT_XML
 from cvat.apps.engine.plugins import add_plugin
+from cvat.apps.git.models import GitStatusChoice
 
 from cvat.apps.git.models import GitData
 from collections import OrderedDict
+
 
 import subprocess
 import django_rq
@@ -132,20 +134,6 @@ class Git:
             cw.set("user", "email", self.__user["email"])
             cw.release()
 
-
-    # Method configurates and checks SSH for remote repository
-    def _init_host(self):
-        user, host = self._parse_url()[:-1]
-        check_command = 'ssh-keygen -F {} | grep "Host {} found"'.format(host, host)
-        add_command = 'ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 {}@{}'.format(user, host)
-        if not len(subprocess.run([check_command], shell = True, stdout = subprocess.PIPE).stdout):
-            proc = subprocess.run([add_command], shell = True, stderr = subprocess.PIPE)
-            stderr = proc.stderr.decode('utf-8')
-            if proc.returncode > 1 and 'Permission denied' not in stderr:
-                raise Exception('Failed ssh connection. {}'.format(stderr))
-            slogger.glob.info('Host {} has been added to known_hosts.'.format(host))
-
-
     # Method initializes repos. It setup configuration, creates master branch if need and checkouts to task branch
     def _configurate(self):
         self._update_config()
@@ -168,7 +156,6 @@ class Git:
 
         # Cloning
         slogger.task[self.__tid].info("Cloning remote repository from {}..".format(ssh_url))
-        self._init_host()
         self.__rep = git.Repo.clone_from(ssh_url, self.__cwd)
 
         # Intitialization
@@ -205,7 +192,6 @@ class Git:
     def _pull(self):
         self.__rep.head.reference = self.__rep.heads["master"]
         try:
-            self._init_host()
             self.__rep.git.pull("origin", "master")
 
             if self.__branch_name in list(map(lambda x: x.name, self.__rep.heads)):
@@ -299,7 +285,6 @@ class Git:
         ])
         self.__rep.index.commit("CVAT Annotation updated by {}. Summary: {}".format(self.__user["name"], str(summary_diff)))
 
-        self._init_host()
         self.__rep.git.push("origin", self.__branch_name, "--force")
 
         shutil.rmtree(self.__diffs_dir, True)
@@ -308,27 +293,23 @@ class Git:
     # Method checks status of repository annotation
     def remote_status(self, last_save):
         # Check repository exists and archive exists
-        if not os.path.isfile(self.__annotation_file):
-            return "empty"
-        elif last_save != self.__sync_date:
-            return "!sync"
+        if not os.path.isfile(self.__annotation_file) or last_save != self.__sync_date:
+            return GitStatusChoice.NON_SYNCED
         else:
-            self._init_host()
-
             self.__rep.git.update_ref('-d', 'refs/remotes/origin/{}'.format(self.__branch_name))
             self.__rep.git.remote('-v', 'update')
 
             last_hash = self.__rep.git.show_ref('refs/heads/{}'.format(self.__branch_name), '--hash')
             merge_base_hash = self.__rep.merge_base('refs/remotes/origin/master', self.__branch_name)[0].hexsha
             if last_hash == merge_base_hash:
-                return "merged"
+                return GitStatusChoice.MERGED
             else:
                 try:
                     self.__rep.git.show_ref('refs/remotes/origin/{}'.format(self.__branch_name), '--hash')
-                    return "sync"
+                    return GitStatusChoice.SYNCED
                 except git.exc.GitCommandError:
-                    # Remote branch has been deleted wo merge
-                    return "!sync"
+                    # Remote branch has been deleted w/o merge
+                    return GitStatusChoice.NON_SYNCED
 
 
 def _initial_create(tid, params):
@@ -387,7 +368,7 @@ def push(tid, user, scheme, host):
 
             # Update timestamp
             db_git.sync_date = db_task.updated_date
-            db_git.status = "sync"
+            db_git.status = GitStatusChoice.SYNCED
             db_git.save()
         except git.exc.GitCommandError as ex:
             _have_no_access_exception(ex)
@@ -411,18 +392,18 @@ def get(tid, user):
             queue = django_rq.get_queue('default')
             rq_job = queue.fetch_job(rq_id)
             if rq_job is not None and (rq_job.is_queued or rq_job.is_started):
-                db_git.status = 'syncing'
-                response['status']['value'] = db_git.status
+                db_git.status = GitStatusChoice.SYNCING
+                response['status']['value'] = str(db_git.status)
             else:
                 try:
                     _git = Git(db_git, tid, user)
                     _git.init_repos(True)
                     db_git.status = _git.remote_status(db_task.updated_date)
-                    response['status']['value'] = db_git.status
+                    response['status']['value'] = str(db_git.status)
                 except git.exc.GitCommandError as ex:
                     _have_no_access_exception(ex)
         except Exception as ex:
-            db_git.status = 'error'
+            db_git.status = GitStatusChoice.NON_SYNCED
             response['status']['error'] = str(ex)
 
     db_git.save()
@@ -470,7 +451,7 @@ def _onsave(jid, data):
             with open(os.path.join(diff_dir, "{}.diff".format(last_num + 1)), 'w') as f:
                 f.write(json.dumps(diff))
 
-            db_git.status = "!sync"
+            db_git.status = GitStatusChoice.NON_SYNCED
             db_git.save()
 
     except GitData.DoesNotExist:
