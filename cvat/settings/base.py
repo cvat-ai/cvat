@@ -16,6 +16,10 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 import sys
+import fcntl
+import shutil
+import subprocess
+
 from pathlib import Path
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -34,6 +38,43 @@ except ImportError:
         f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
     from keys.secret_key import SECRET_KEY
 
+
+def generate_ssh_keys():
+    keys_dir = '{}/keys'.format(os.getcwd())
+    ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
+    pidfile = os.path.join(ssh_dir, 'ssh.pid')
+
+    with open(pidfile, "w") as pid:
+        fcntl.flock(pid, fcntl.LOCK_EX)
+        try:
+            subprocess.run(['ssh-add {}/*'.format(ssh_dir)], shell = True, stderr = subprocess.PIPE)
+            keys = subprocess.run(['ssh-add -l'], shell = True,
+                stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
+            if 'has no identities' in keys[0]:
+                print('SSH keys were not found')
+                volume_keys = os.listdir(keys_dir)
+                if not ('id_rsa' in volume_keys and 'id_rsa.pub' in volume_keys):
+                    print('New pair of keys are being generated')
+                    subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell = True)
+                    shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
+                else:
+                    print('Copying them from keys volume')
+                    shutil.copyfile('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
+                subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)], shell = True)
+        finally:
+            fcntl.flock(pid, fcntl.LOCK_UN)
+
+try:
+    generate_ssh_keys()
+except Exception:
+    pass
+
 # Application definition
 JS_3RDPARTY = {}
 
@@ -48,6 +89,7 @@ INSTALLED_APPS = [
     'cvat.apps.dashboard',
     'cvat.apps.authentication',
     'cvat.apps.documentation',
+    'cvat.apps.git',
     'django_rq',
     'compressor',
     'cacheops',

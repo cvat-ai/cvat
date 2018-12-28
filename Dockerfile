@@ -3,11 +3,13 @@ FROM ubuntu:16.04
 ARG http_proxy
 ARG https_proxy
 ARG no_proxy
+ARG socks_proxy
 
 ENV TERM=xterm \
     http_proxy=${http_proxy}   \
     https_proxy=${https_proxy} \
-    no_proxy=${no_proxy}
+    no_proxy=${no_proxy} \
+    socks_proxy=${socks_proxy}
 
 ENV LANG='C.UTF-8'  \
     LC_ALL='C.UTF-8'
@@ -102,9 +104,23 @@ COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 RUN  pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 COPY cvat/ ${HOME}/cvat
+
+COPY ssh ${HOME}/.ssh
+
+# Install git application dependencies
+RUN apt-get update && \
+    apt-get install -y ssh netcat-openbsd git curl zip  && \
+    curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \
+    apt-get install -y git-lfs && \
+    git lfs install && \
+    rm -rf /var/lib/apt/lists/* && \
+    if [ -n ${socks_proxy} ]; then \
+        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
+    fi
+
 COPY tests ${HOME}/tests
 RUN patch -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
-RUN  chown -R ${USER}:${USER} .
+RUN chown -R ${USER}:${USER} .
 
 # RUN all commands below as 'django' user
 USER ${USER}

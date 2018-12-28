@@ -110,7 +110,7 @@ window.cvat.dashboard.uiCallbacks.push(function(newElements) {
                 let tfAnnotationButton = $('<button> Run TF Annotation </button>');
 
                 tfAnnotationButton.on('click', onTFAnnotationClick.bind(tfAnnotationButton));
-                tfAnnotationButton.addClass('dashboardTFAnnotationButton semiBold dashboardButtonUI');
+                tfAnnotationButton.addClass('dashboardTFAnnotationButton regular dashboardButtonUI');
                 tfAnnotationButton.appendTo(buttonsUI);
 
                 if ((tid in data) && (data[tid].active)) {

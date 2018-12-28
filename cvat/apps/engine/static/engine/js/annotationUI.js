@@ -204,7 +204,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
 
     $(window).on('click', function(event) {
         Logger.updateUserActivityTimer();
-        if (['helpWindow', 'settingsWindow'].indexOf(event.target.id) != -1) {
+        if (event.target.classList.contains('modal')) {
             event.target.classList.add('hidden');
         }
     });

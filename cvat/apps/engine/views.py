@@ -104,8 +104,10 @@ def create_task(request):
     return JsonResponse({'tid': db_task.id})
 
 @login_required
-@permission_required(perm=['engine.task.access'],
-    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
+#@permission_required(perm=['engine.task.access'],
+#    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
+# We have commented lines above because the objectgetter() will raise 404 error in
+# cases when a task creating ends with an error. So an user don't get an actual reason of an error.
 def check_task(request, tid):
     """Check the status of a task"""
     try:

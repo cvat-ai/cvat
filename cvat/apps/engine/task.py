@@ -19,6 +19,7 @@ _MEDIA_MIMETYPES_FILE = os.path.join(_SCRIPT_DIR, "media.mimetypes")
 mimetypes.init(files=[_MEDIA_MIMETYPES_FILE])
 
 from cvat.apps.engine.models import StatusChoice
+from cvat.apps.engine.plugins import plugin_decorator
 
 import django_rq
 from django.conf import settings
@@ -637,12 +638,9 @@ def _save_task_to_db(db_task, task_params):
     db_task.save()
 
 
+@plugin_decorator
 @transaction.atomic
 def _create_thread(tid, params):
-    def raise_exception(images, dirs, videos, archives):
-        raise Exception('Only one archive, one video or many images can be dowloaded simultaneously. \
-            {} image(s), {} dir(s), {} video(s), {} archive(s) found'.format(images, dirs, videos, archives))
-
     slogger.glob.info("create task #{}".format(tid))
     job = rq.get_current_job()
 
