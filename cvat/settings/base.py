@@ -16,11 +16,11 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 import sys
+import fcntl
 import shutil
 import subprocess
 
 from pathlib import Path
-from filelock import FileLock
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
@@ -44,15 +44,16 @@ def generate_ssh_keys():
     ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
     pidfile = os.path.join(ssh_dir, 'ssh.pid')
 
-    try:
-        with FileLock(pidfile):
+    with open(pidfile, "w") as pid:
+        fcntl.flock(pid, fcntl.LOCK_EX)
+        try:
             subprocess.run(['ssh-add {}/*'.format(ssh_dir)], shell = True, stderr = subprocess.PIPE)
             keys = subprocess.run(['ssh-add -l'], shell = True,
                 stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
             if 'has no identities' in keys[0]:
                 print('SSH keys were not found')
-                keys = os.listdir(keys_dir)
-                if not ('id_rsa' in keys and 'id_rsa.pub' in keys):
+                volume_keys = os.listdir(keys_dir)
+                if not ('id_rsa' in volume_keys and 'id_rsa.pub' in volume_keys):
                     print('New pair of keys are being generated')
                     subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell = True)
                     shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
@@ -66,12 +67,13 @@ def generate_ssh_keys():
                     shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
                     shutil.copymode('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
                 subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)], shell = True)
-        os.remove(pidfile)
-    except Exception:
-        return
+        finally:
+            fcntl.flock(pid, fcntl.LOCK_UN)
 
-
-generate_ssh_keys()
+try:
+    generate_ssh_keys()
+except Exception:
+    pass
 
 # Application definition
 JS_3RDPARTY = {}
