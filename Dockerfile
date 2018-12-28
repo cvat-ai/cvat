@@ -105,7 +105,6 @@ COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 RUN  pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 COPY cvat/ ${HOME}/cvat
 
-RUN ls ${HOME}
 COPY ssh ${HOME}/.ssh
 
 # Install git application dependencies
