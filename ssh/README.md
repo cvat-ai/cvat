@@ -1,7 +1,12 @@
 Put your SSH keys and SSH config here and they will be installed to the CVAT container.
 
 If you have any problems with a git repository cloning inside the CVAT:
-  * Make sure that SSH keys have been added to the CVAT container: echo ```docker exec -it cvat bash -ic 'ls .ssh'```
+  * Make sure that SSH keys have been added to the CVAT container:
+
+```bash
+echo docker exec -it cvat bash -ic 'ls .ssh'
+```
+
   * If you need a proxy for connecting to the Internet, specify the socks_proxy variable before build the container. For example:
 
 ```bash
