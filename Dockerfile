@@ -129,4 +129,4 @@ RUN mkdir data share media keys logs /tmp/supervisord
 RUN python3 manage.py collectstatic
 
 EXPOSE 8080 8443
-ENTRYPOINT ["bash", "-c", "eval `/usr/bin/ssh-agent -s` && /usr/bin/supervisord"]
+ENTRYPOINT ["/usr/bin/supervisord"]
