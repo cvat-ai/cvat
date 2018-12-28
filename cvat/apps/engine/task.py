@@ -401,10 +401,12 @@ def _parse_labels(labels):
                     raise ValueError("labels string is not corect. " +
                         "`{}` attribute has incorrect value.".format(attr['name']))
             elif attr['type'] == 'number': # <prefix>number=name:min,max,step
-                if not (len(values) == 3 and values[0].isdigit() and \
-                    values[1].isdigit() and values[2].isdigit() and \
-                    int(values[0]) < int(values[1])):
-                    raise ValueError("labels string is not corect. " +
+                try:
+                    if len(values) != 3 or float(values[2]) <= 0 or \
+                        float(values[0]) >= float(values[1]):
+                        raise ValueError
+                except ValueError:
+                    raise ValueError("labels string is not correct. " +
                         "`{}` attribute has incorrect format.".format(attr['name']))
 
             if attr['name'] in parsed_labels[last_label]:
