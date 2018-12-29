@@ -38,7 +38,10 @@ var UserActivityHandler = function()
 
 class LogCollection extends Array {
     constructor(logger, items) {
-        super(...items);
+        super(items.length);
+        for (let i = 0; i < items.length; i++) {
+            super[i] = items[i];
+        }
         this._loggerHandler = logger;
     }
 
