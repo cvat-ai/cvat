@@ -263,6 +263,7 @@
     fill: white;
     text-shadow: 0px 0px 3px black;
     cursor: default;
+    pointer-events: none;
 }
 
 .highlightedShape {
@@ -338,6 +339,13 @@
     color: #333;
     border-radius: 5px;
     padding: 0;
+}
+
+.buttonBlockOfLabelUI {
+    margin: 5px;
+    padding: 5px;
+    border: 1px solid black;
+    border-radius: 2px;
 }
 
 /* Each of the items in the list */
@@ -453,6 +461,7 @@
 #frameContent {
     position: absolute;
     z-index: 1;
+    outline: 10px solid black;
     -moz-transform-origin: top left;
     -webkit-transform-origin: top left;
 }

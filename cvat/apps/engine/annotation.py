@@ -11,7 +11,6 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 from collections import OrderedDict
 from distutils.util import strtobool
-from xml.dom import minidom
 from xml.sax.saxutils import XMLGenerator
 from abc import ABCMeta, abstractmethod
 from PIL import Image
@@ -20,9 +19,10 @@ import django_rq
 from django.conf import settings
 from django.db import transaction
 
+from cvat.apps.profiler import silk_profile
 from . import models
 from .task import get_frame_path, get_image_meta_cache
-from .logging import task_logger, job_logger
+from .log import slogger
 
 ############################# Low Level server API
 
@@ -39,7 +39,7 @@ def dump(tid, data_format, scheme, host):
 
 def check(tid):
     """
-    Check that potentialy long operation 'dump' is completed.
+    Check that potentially long operation 'dump' is completed.
     Return the status as json/dictionary object.
     """
     queue = django_rq.get_queue('default')
@@ -71,23 +71,57 @@ def get(jid):
 
     return annotation.to_client()
 
+@silk_profile(name="Save job")
 @transaction.atomic
 def save_job(jid, data):
     """
     Save new annotations for the job.
     """
-    db_job = models.Job.objects.select_for_update().get(id=jid)
+    slogger.job[jid].info("Enter save_job API: jid = {}".format(jid))
+    db_job = models.Job.objects.select_related('segment__task') \
+        .select_for_update().get(id=jid)
+
     annotation = _AnnotationForJob(db_job)
-    annotation.init_from_client(data)
-    annotation.save_to_db()
+    annotation.force_set_client_id(data['create'])
+    client_ids = annotation.validate_data_from_client(data)
+
+    annotation.delete_from_db(data['delete'])
+    annotation.save_to_db(data['create'])
+    annotation.update_in_db(data['update'])
+
     db_job.segment.task.updated_date = timezone.now()
     db_job.segment.task.save()
 
+    db_job.max_shape_id = max(db_job.max_shape_id, max(client_ids['create']) if client_ids['create'] else -1)
+    db_job.save()
+
+    slogger.job[jid].info("Leave save_job API: jid = {}".format(jid))
+
+@silk_profile(name="Clear job")
+@transaction.atomic
+def clear_job(jid):
+    """
+    Clear annotations for the job.
+    """
+    slogger.job[jid].info("Enter clear_job API: jid = {}".format(jid))
+    db_job = models.Job.objects.select_related('segment__task') \
+        .select_for_update().get(id=jid)
+
+    annotation = _AnnotationForJob(db_job)
+    annotation.delete_all_shapes_from_db()
+    annotation.delete_all_paths_from_db()
+
+    db_job.segment.task.updated_date = timezone.now()
+    db_job.segment.task.save()
+    slogger.job[jid].info("Leave clear_job API: jid = {}".format(jid))
+
 # pylint: disable=unused-argument
+@silk_profile(name="Save task")
 def save_task(tid, data):
     """
     Save new annotations for the task.
     """
+    slogger.task[tid].info("Enter save_task API: tid = {}".format(tid))
     db_task = models.Task.objects.get(id=tid)
     db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
 
@@ -97,24 +131,54 @@ def save_task(tid, data):
         jid = segment.job_set.first().id
         start = segment.start_frame
         stop = segment.stop_frame
-        splitted_data[jid] = {
-            "boxes": list(filter(lambda x: start <= int(x['frame']) <= stop, data['boxes'])),
-            "polygons": list(filter(lambda x: start <= int(x['frame']) <= stop, data['polygons'])),
-            "polylines": list(filter(lambda x: start <= int(x['frame']) <= stop, data['polylines'])),
-            "points": list(filter(lambda x: start <= int(x['frame']) <= stop, data['points'])),
-            "box_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data['box_paths'])),
-            "polygon_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data['polygon_paths'])),
-            "polyline_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data['polyline_paths'])),
-            "points_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data['points_paths'])),
-        }
+        splitted_data[jid] = {}
+        for action in ['create', 'update', 'delete']:
+            splitted_data[jid][action] = {
+                "boxes": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['boxes'])),
+                "polygons": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['polygons'])),
+                "polylines": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['polylines'])),
+                "points": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['points'])),
+                "box_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['box_paths'])),
+                "polygon_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['polygon_paths'])),
+                "polyline_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['polyline_paths'])),
+                "points_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['points_paths'])),
+            }
 
     for jid, _data in splitted_data.items():
-        save_job(jid, _data)
+        # if an item inside _data isn't empty need to call save_job
+        isNonEmpty = False
+        for action in ['create', 'update', 'delete']:
+            for objects in _data[action].values():
+                if objects:
+                    isNonEmpty = True
+                    break
+
+        if isNonEmpty:
+            save_job(jid, _data)
+
+    slogger.task[tid].info("Leave save_task API: tid = {}".format(tid))
+
+
+# pylint: disable=unused-argument
+@silk_profile(name="Clear task")
+def clear_task(tid):
+    """
+    Clear annotations for the task.
+    """
+    slogger.task[tid].info("Enter clear_task API: tid = {}".format(tid))
+    db_task = models.Task.objects.get(id=tid)
+    db_segments = list(db_task.segment_set.prefetch_related('job_set').all())
+
+    for db_segment in db_segments:
+        for db_job in list(db_segment.job_set.all()):
+            clear_job(db_job.id)
+
+    slogger.task[tid].info("Leave clear_task API: tid = {}".format(tid))
 
 # pylint: disable=unused-argument
 def rq_handler(job, exc_type, exc_value, traceback):
     tid = job.id.split('/')[1]
-    task_logger[tid].error("dump annotation error was occured", exc_info=True)
+    slogger.task[tid].error("dump annotation error was occured", exc_info=True)
 
 ##################################################
 
@@ -133,13 +197,14 @@ class _Attribute:
             self.value = str(value)
 
 class _BoundingBox:
-    def __init__(self, x0, y0, x1, y1, frame, occluded, z_order, attributes=None):
+    def __init__(self, x0, y0, x1, y1, frame, occluded, z_order, client_id=None, attributes=None):
         self.xtl = x0
         self.ytl = y0
         self.xbr = x1
         self.ybr = y1
         self.occluded = occluded
         self.z_order = z_order
+        self.client_id = client_id
         self.frame = frame
         self.attributes = attributes if attributes else []
 
@@ -156,14 +221,14 @@ class _BoundingBox:
         self.attributes.append(attr)
 
 class _LabeledBox(_BoundingBox):
-    def __init__(self, label, x0, y0, x1, y1, frame, group_id, occluded, z_order, attributes=None):
-        super().__init__(x0, y0, x1, y1, frame, occluded, z_order, attributes)
+    def __init__(self, label, x0, y0, x1, y1, frame, group_id, occluded, z_order, client_id=None, attributes=None):
+        super().__init__(x0, y0, x1, y1, frame, occluded, z_order, client_id, attributes)
         self.label = label
         self.group_id = group_id
 
 class _TrackedBox(_BoundingBox):
     def __init__(self, x0, y0, x1, y1, frame, occluded, z_order, outside, attributes=None):
-        super().__init__(x0, y0, x1, y1, frame, occluded, z_order, attributes)
+        super().__init__(x0, y0, x1, y1, frame, occluded, z_order, None, attributes)
         self.outside = outside
 
 class _InterpolatedBox(_TrackedBox):
@@ -172,25 +237,26 @@ class _InterpolatedBox(_TrackedBox):
         self.keyframe = keyframe
 
 class _PolyShape:
-    def __init__(self, points, frame, occluded, z_order, attributes=None):
+    def __init__(self, points, frame, occluded, z_order, client_id=None, attributes=None):
         self.points = points
+        self.frame = frame
         self.occluded = occluded
         self.z_order = z_order
-        self.frame = frame
+        self.client_id=client_id
         self.attributes = attributes if attributes else []
 
     def add_attribute(self, attr):
         self.attributes.append(attr)
 
 class _LabeledPolyShape(_PolyShape):
-    def __init__(self, label, points, frame, group_id, occluded, z_order, attributes=None):
-        super().__init__(points, frame, occluded, z_order, attributes)
+    def __init__(self, label, points, frame, group_id, occluded, z_order, client_id=None, attributes=None):
+        super().__init__(points, frame, occluded, z_order, client_id, attributes)
         self.label = label
         self.group_id = group_id
 
 class _TrackedPolyShape(_PolyShape):
     def __init__(self, points, frame, occluded, z_order, outside, attributes=None):
-        super().__init__(points, frame, occluded, z_order, attributes)
+        super().__init__(points, frame, occluded, z_order, None, attributes)
         self.outside = outside
 
 class _InterpolatedPolyShape(_TrackedPolyShape):
@@ -199,12 +265,13 @@ class _InterpolatedPolyShape(_TrackedPolyShape):
         self.keyframe = keyframe
 
 class _BoxPath:
-    def __init__(self, label, start_frame, stop_frame, group_id, boxes=None, attributes=None):
+    def __init__(self, label, start_frame, stop_frame, group_id, boxes=None, client_id=None, attributes=None):
         self.label = label
         self.frame = start_frame
-        self.group_id = group_id
         self.stop_frame = stop_frame
+        self.group_id = group_id
         self.boxes = boxes if boxes else []
+        self.client_id = client_id
         self.attributes = attributes if attributes else []
         self._interpolated_boxes = []
         assert not self.boxes or self.boxes[-1].frame <= self.stop_frame
@@ -273,12 +340,13 @@ class _BoxPath:
         self.attributes.append(attr)
 
 class _PolyPath:
-    def __init__(self, label, start_frame, stop_frame, group_id, shapes=None, attributes=None):
+    def __init__(self, label, start_frame, stop_frame, group_id, shapes=None, client_id=None, attributes=None):
         self.label = label
         self.frame = start_frame
-        self.group_id = group_id
         self.stop_frame = stop_frame
+        self.group_id = group_id
         self.shapes = shapes if shapes else []
+        self.client_id = client_id
         self.attributes = attributes if attributes else []
         self._interpolated_shapes = []   # ???
 
@@ -333,14 +401,29 @@ class _Annotation:
         self.points = []
         self.points_paths = []
 
+    def has_data(self):
+        non_empty = False
+        for attr in ['boxes', 'box_paths', 'polygons', 'polygon_paths',
+            'polylines', 'polyline_paths', 'points', 'points_paths']:
+            non_empty |= bool(getattr(self, attr))
+
+        return non_empty
+
     # Functions below used by dump functionality
     def to_boxes(self):
         boxes = []
         for path in self.box_paths:
             for box in path.get_interpolated_boxes():
                 if not box.outside:
-                    box = _LabeledBox(path.label, box.xtl, box.ytl, box.xbr, box.ybr,
-                        box.frame, path.group_id, box.occluded, box.z_order, box.attributes + path.attributes)
+                    box = _LabeledBox(
+                        label=path.label,
+                        x0=box.xtl, y0=box.ytl, x1=box.xbr, y1=box.ybr,
+                        frame=box.frame,
+                        group_id=path.group_id,
+                        occluded=box.occluded,
+                        z_order=box.z_order,
+                        attributes=box.attributes + path.attributes,
+                    )
                     boxes.append(box)
 
         return self.boxes + boxes
@@ -350,19 +433,29 @@ class _Annotation:
         for path in getattr(self, iter_attr_name):
             for shape in path.get_interpolated_shapes():
                 if not shape.outside:
-                    shape = _LabeledPolyShape(path.label, shape.points, shape.frame, path.group_id,
-                        shape.occluded, shape.z_order, shape.attributes + path.attributes)
+                    shape = _LabeledPolyShape(
+                        label=path.label,
+                        points=shape.points,
+                        frame=shape.frame,
+                        group_id=path.group_id,
+                        occluded=shape.occluded,
+                        z_order=shape.z_order,
+                        attributes=shape.attributes + path.attributes,
+                    )
                     shapes.append(shape)
         return shapes
 
     def to_polygons(self):
-        return self._to_poly_shapes('polygon_paths') + self.polygons
+        polygons = self._to_poly_shapes('polygon_paths')
+        return polygons + self.polygons
 
     def to_polylines(self):
-        return self._to_poly_shapes('polyline_paths') + self.polylines
+        polylines = self._to_poly_shapes('polyline_paths')
+        return polylines + self.polylines
 
     def to_points(self):
-        return self._to_poly_shapes('points_paths') + self.points
+        points = self._to_poly_shapes('points_paths')
+        return points + self.points
 
     def to_box_paths(self):
         paths = []
@@ -372,7 +465,15 @@ class _Annotation:
             box1 = copy.copy(box0)
             box1.outside = True
             box1.frame += 1
-            path = _BoxPath(box.label, box.frame, box.frame + 1, box.group_id, [box0, box1], box.attributes)
+            path = _BoxPath(
+                label=box.label,
+                start_frame=box.frame,
+                stop_frame=box.frame + 1,
+                group_id=box.group_id,
+                boxes=[box0, box1],
+                attributes=box.attributes,
+                client_id=box.client_id,
+            )
             paths.append(path)
 
         return self.box_paths + paths
@@ -385,7 +486,15 @@ class _Annotation:
             shape1 = copy.copy(shape0)
             shape1.outside = True
             shape1.frame += 1
-            path = _PolyPath(shape.label, shape.frame, shape.frame + 1, shape.group_id, [shape0, shape1], shape.attributes)
+            path = _PolyPath(
+                label=shape.label,
+                start_frame=shape.frame,
+                stop_frame=shape.frame + 1,
+                group_id=shape.group_id,
+                shapes=[shape0, shape1],
+                client_id=shape.client_id,
+                attributes=shape.attributes,
+            )
             paths.append(path)
 
         return paths
@@ -399,6 +508,18 @@ class _Annotation:
     def to_points_paths(self):
         return self._to_poly_paths('points') + self.points_paths
 
+def bulk_create(db_model, objects, flt_param = {}):
+    if objects:
+        if flt_param:
+            if 'postgresql' in settings.DATABASES["default"]["ENGINE"]:
+                return db_model.objects.bulk_create(objects)
+            else:
+                ids = list(db_model.objects.filter(**flt_param).values_list('id', flat=True))
+                db_model.objects.bulk_create(objects)
+
+                return list(db_model.objects.exclude(id__in=ids).filter(**flt_param))
+        else:
+            return db_model.objects.bulk_create(objects)
 
 class _AnnotationForJob(_Annotation):
     def __init__(self, db_job):
@@ -407,12 +528,25 @@ class _AnnotationForJob(_Annotation):
 
         # pylint: disable=bad-continuation
         self.db_job = db_job
-        self.logger = job_logger[db_job.id]
+        self.logger = slogger.job[db_job.id]
         self.db_labels = {db_label.id:db_label
             for db_label in db_job.segment.task.label_set.all()}
         self.db_attributes = {db_attr.id:db_attr
             for db_attr in models.AttributeSpec.objects.filter(
                 label__task__id=db_job.segment.task.id)}
+
+    def _get_client_ids_from_db(self):
+        client_ids = set()
+
+        ids = list(self.db_job.objectpath_set.values_list('client_id', flat=True))
+        client_ids.update(ids)
+
+        for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
+            ids = list(self._get_shape_class(shape_type).objects.filter(
+                job_id=self.db_job.id).values_list('client_id', flat=True))
+            client_ids.update(ids)
+
+        return client_ids
 
     def _merge_table_rows(self, rows, keys_for_merge, field_id):
         """dot.notation access to dictionary attributes"""
@@ -450,11 +584,16 @@ class _AnnotationForJob(_Annotation):
 
         return list(merged_rows.values())
 
+    @staticmethod
+    def _clamp(value, min_value, max_value):
+        return max(min(value, max_value), min_value)
+
     def _clamp_box(self, xtl, ytl, xbr, ybr, im_size):
-        xtl = max(min(xtl, im_size['width']), 0)
-        ytl = max(min(ytl, im_size['height']), 0)
-        xbr = max(min(xbr, im_size['width']), 0)
-        ybr = max(min(ybr, im_size['height']), 0)
+        xtl = self._clamp(xtl, 0, im_size['width'])
+        xbr = self._clamp(xbr, 0, im_size['width'])
+        ytl = self._clamp(ytl, 0, im_size['height'])
+        ybr = self._clamp(ybr, 0, im_size['height'])
+
         return xtl, ytl, xbr, ybr
 
     def _clamp_poly(self, points, im_size):
@@ -463,16 +602,17 @@ class _AnnotationForJob(_Annotation):
         for p in points:
             p = p.split(',')
             verified.append('{},{}'.format(
-                max(min(float(p[0]), im_size['width']), 0),
-                max(min(float(p[1]), im_size['height']), 0)
+                self._clamp(float(p[0]), 0, im_size['width']),
+                self._clamp(float(p[1]), 0, im_size['height'])
             ))
+
         return ' '.join(verified)
 
     def init_from_db(self):
         def get_values(shape_type):
             if shape_type == 'polygons':
                 return [
-                    ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order',
+                    ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
                     'labeledpolygonattributeval__value', 'labeledpolygonattributeval__spec_id',
                     'labeledpolygonattributeval__id'), {
                         'attributes': [
@@ -484,7 +624,7 @@ class _AnnotationForJob(_Annotation):
                 ]
             elif shape_type == 'polylines':
                 return [
-                    ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order',
+                    ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
                     'labeledpolylineattributeval__value', 'labeledpolylineattributeval__spec_id',
                     'labeledpolylineattributeval__id'), {
                         'attributes': [
@@ -496,7 +636,7 @@ class _AnnotationForJob(_Annotation):
                 ]
             elif shape_type == 'boxes':
                 return [
-                    ('id', 'frame', 'xtl', 'ytl', 'xbr', 'ybr', 'label_id', 'group_id', 'occluded', 'z_order',
+                    ('id', 'frame', 'xtl', 'ytl', 'xbr', 'ybr', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
                     'labeledboxattributeval__value', 'labeledboxattributeval__spec_id',
                     'labeledboxattributeval__id'), {
                         'attributes': [
@@ -508,7 +648,7 @@ class _AnnotationForJob(_Annotation):
                 ]
             elif shape_type == 'points':
                 return [
-                    ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order',
+                    ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
                     'labeledpointsattributeval__value', 'labeledpointsattributeval__spec_id',
                     'labeledpointsattributeval__id'), {
                         'attributes': [
@@ -528,19 +668,30 @@ class _AnnotationForJob(_Annotation):
             for db_shape in db_shapes:
                 label = _Label(self.db_labels[db_shape.label_id])
                 if shape_type == 'boxes':
-                    shape = _LabeledBox(label, db_shape.xtl, db_shape.ytl, db_shape.xbr, db_shape.ybr,
-                        db_shape.frame, db_shape.group_id, db_shape.occluded, db_shape.z_order)
+                    shape = _LabeledBox(label=label,
+                        x0=db_shape.xtl, y0=db_shape.ytl, x1=db_shape.xbr, y1=db_shape.ybr,
+                        frame=db_shape.frame,
+                        group_id=db_shape.group_id,
+                        occluded=db_shape.occluded,
+                        z_order=db_shape.z_order,
+                        client_id=db_shape.client_id,
+                    )
                 else:
-                    shape = _LabeledPolyShape(label, db_shape.points, db_shape.frame,
-                        db_shape.group_id, db_shape.occluded, db_shape.z_order)
+                    shape = _LabeledPolyShape(
+                        label=label,
+                        points=db_shape.points,
+                        frame=db_shape.frame,
+                        group_id=db_shape.group_id,
+                        occluded=db_shape.occluded,
+                        z_order=db_shape.z_order,
+                        client_id=db_shape.client_id,
+                    )
                 for db_attr in db_shape.attributes:
                     if db_attr.id != None:
                         spec = self.db_attributes[db_attr.spec_id]
                         attr = _Attribute(spec, db_attr.value)
                         shape.add_attribute(attr)
                 getattr(self, shape_type).append(shape)
-
-
 
         db_paths = self.db_job.objectpath_set
         for shape in ['trackedpoints_set', 'trackedbox_set', 'trackedpolyline_set', 'trackedpolygon_set']:
@@ -549,7 +700,7 @@ class _AnnotationForJob(_Annotation):
             'trackedpolygon_set__trackedpolygonattributeval_set', 'trackedpolyline_set__trackedpolylineattributeval_set']:
             db_paths.prefetch_related(shape_attr)
         db_paths.prefetch_related('objectpathattributeval_set')
-        db_paths = list (db_paths.values('id', 'frame', 'group_id', 'shapes', 'objectpathattributeval__spec_id',
+        db_paths = list (db_paths.values('id', 'frame', 'group_id', 'shapes', 'client_id', 'objectpathattributeval__spec_id',
             'objectpathattributeval__id', 'objectpathattributeval__value',
             'trackedbox', 'trackedpolygon', 'trackedpolyline', 'trackedpoints',
             'trackedbox__id', 'label_id', 'trackedbox__xtl', 'trackedbox__ytl',
@@ -667,7 +818,13 @@ class _AnnotationForJob(_Annotation):
             for db_shape in db_path.shapes:
                 db_shape.attributes = list(set(db_shape.attributes))
             label = _Label(self.db_labels[db_path.label_id])
-            path = _BoxPath(label, db_path.frame, self.stop_frame, db_path.group_id)
+            path = _BoxPath(
+                label=label,
+                start_frame=db_path.frame,
+                stop_frame=self.stop_frame,
+                group_id=db_path.group_id,
+                client_id=db_path.client_id,
+            )
             for db_attr in db_path.attributes:
                 spec = self.db_attributes[db_attr.spec_id]
                 attr = _Attribute(spec, db_attr.value)
@@ -675,8 +832,13 @@ class _AnnotationForJob(_Annotation):
 
             frame = -1
             for db_shape in db_path.shapes:
-                box = _TrackedBox(db_shape.xtl, db_shape.ytl, db_shape.xbr, db_shape.ybr,
-                    db_shape.frame, db_shape.occluded, db_shape.z_order, db_shape.outside)
+                box = _TrackedBox(
+                    x0=db_shape.xtl, y0=db_shape.ytl, x1=db_shape.xbr, y1=db_shape.ybr,
+                    frame=db_shape.frame,
+                    occluded=db_shape.occluded,
+                    z_order=db_shape.z_order,
+                    outside=db_shape.outside,
+                )
                 assert box.frame > frame
                 frame = box.frame
 
@@ -695,7 +857,13 @@ class _AnnotationForJob(_Annotation):
                 for db_shape in db_path.shapes:
                     db_shape.attributes = list(set(db_shape.attributes))
                 label = _Label(self.db_labels[db_path.label_id])
-                path = _PolyPath(label, db_path.frame, self.stop_frame, db_path.group_id)
+                path = _PolyPath(
+                    label=label,
+                    start_frame=db_path.frame,
+                    stop_frame= self.stop_frame,
+                    group_id=db_path.group_id,
+                    client_id=db_path.client_id,
+                )
                 for db_attr in db_path.attributes:
                     spec = self.db_attributes[db_attr.spec_id]
                     attr = _Attribute(spec, db_attr.value)
@@ -703,7 +871,13 @@ class _AnnotationForJob(_Annotation):
 
                 frame = -1
                 for db_shape in db_path.shapes:
-                    shape = _TrackedPolyShape(db_shape.points, db_shape.frame, db_shape.occluded, db_shape.z_order, db_shape.outside)
+                    shape = _TrackedPolyShape(
+                        points=db_shape.points,
+                        frame=db_shape.frame,
+                        occluded=db_shape.occluded,
+                        z_order=db_shape.z_order,
+                        outside=db_shape.outside,
+                    )
                     assert shape.frame > frame
                     frame = shape.frame
 
@@ -731,8 +905,16 @@ class _AnnotationForJob(_Annotation):
             xtl, ytl, xbr, ybr = self._clamp_box(float(box['xtl']), float(box['ytl']),
                 float(box['xbr']), float(box['ybr']),
                 image_meta['original_size'][frame_idx])
-            labeled_box = _LabeledBox(label, xtl, ytl, xbr, ybr, int(box['frame']),
-                int(box['group_id']), strtobool(str(box['occluded'])), int(box['z_order']))
+
+            labeled_box = _LabeledBox(
+                label=label,
+                x0=xtl, y0=ytl, x1=xbr, y1=ybr,
+                frame=int(box['frame']),
+                group_id=int(box['group_id']),
+                occluded=strtobool(str(box['occluded'])),
+                z_order=int(box['z_order']),
+                client_id=int(box['id']),
+            )
 
             for attr in box['attributes']:
                 spec = self.db_attributes[int(attr['id'])]
@@ -747,8 +929,15 @@ class _AnnotationForJob(_Annotation):
 
                 frame_idx = int(poly_shape['frame']) if db_task.mode == 'annotation' else 0
                 points = self._clamp_poly(poly_shape['points'], image_meta['original_size'][frame_idx])
-                labeled_poly_shape = _LabeledPolyShape(label, points, int(poly_shape['frame']),
-                    int(poly_shape['group_id']), poly_shape['occluded'], int(poly_shape['z_order']))
+                labeled_poly_shape = _LabeledPolyShape(
+                    label=label,
+                    points=points,
+                    frame=int(poly_shape['frame']),
+                    group_id=int(poly_shape['group_id']),
+                    occluded=poly_shape['occluded'],
+                    z_order=int(poly_shape['z_order']),
+                    client_id=int(poly_shape['id']),
+                )
 
                 for attr in poly_shape['attributes']:
                     spec = self.db_attributes[int(attr['id'])]
@@ -781,9 +970,14 @@ class _AnnotationForJob(_Annotation):
                     frame_idx = int(box['frame']) if db_task.mode == 'annotation' else 0
                     xtl, ytl, xbr, ybr = self._clamp_box(float(box['xtl']), float(box['ytl']),
                         float(box['xbr']), float(box['ybr']), image_meta['original_size'][frame_idx])
-                    tracked_box = _TrackedBox(xtl, ytl, xbr, ybr, int(box['frame']), strtobool(str(box['occluded'])),
-                        int(box['z_order']), strtobool(str(box['outside'])))
-                    assert tracked_box.frame > frame
+                    tracked_box = _TrackedBox(
+                        x0=xtl, y0=ytl, x1=xbr, y1=ybr,
+                        frame=int(box['frame']),
+                        occluded=strtobool(str(box['occluded'])),
+                        z_order=int(box['z_order']),
+                        outside=strtobool(str(box['outside'])),
+                    )
+                    assert tracked_box.frame >  frame
                     frame = tracked_box.frame
 
                     for attr in box['attributes']:
@@ -805,8 +999,14 @@ class _AnnotationForJob(_Annotation):
                 attributes.append(attr)
 
             assert frame <= self.stop_frame
-            box_path = _BoxPath(label, min(list(map(lambda box: box.frame, boxes))), self.stop_frame,
-                int(path['group_id']), boxes, attributes)
+            box_path = _BoxPath(label=label,
+                start_frame=min(list(map(lambda box: box.frame, boxes))),
+                stop_frame=self.stop_frame,
+                group_id=int(path['group_id']),
+                boxes=boxes,
+                client_id=int(path['id']),
+                attributes=attributes,
+            )
             self.box_paths.append(box_path)
 
         for poly_path_type in ['points_paths', 'polygon_paths', 'polyline_paths']:
@@ -833,8 +1033,13 @@ class _AnnotationForJob(_Annotation):
                     if int(poly_shape['frame']) <= self.stop_frame and int(poly_shape['frame']) >= self.start_frame:
                         frame_idx = int(poly_shape['frame']) if db_task.mode == 'annotation' else 0
                         points = self._clamp_poly(poly_shape['points'], image_meta['original_size'][frame_idx])
-                        tracked_poly_shape = _TrackedPolyShape(points, int(poly_shape['frame']), strtobool(str(poly_shape['occluded'])),
-                            int(poly_shape['z_order']), strtobool(str(poly_shape['outside'])))
+                        tracked_poly_shape = _TrackedPolyShape(
+                            points=points,
+                            frame=int(poly_shape['frame']),
+                            occluded=strtobool(str(poly_shape['occluded'])),
+                            z_order=int(poly_shape['z_order']),
+                            outside=strtobool(str(poly_shape['outside'])),
+                        )
                         assert tracked_poly_shape.frame >  frame
                         frame = tracked_poly_shape.frame
 
@@ -856,10 +1061,19 @@ class _AnnotationForJob(_Annotation):
                     attr = _Attribute(spec, str(attr['value']))
                     attributes.append(attr)
 
-                poly_path = _PolyPath(label, min(list(map(lambda shape: shape.frame, poly_shapes))), self.stop_frame + 1,
-                    int(path['group_id']), poly_shapes, attributes)
+                poly_path = _PolyPath(
+                    label=label,
+                    start_frame=min(list(map(lambda shape: shape.frame, poly_shapes))),
+                    stop_frame=self.stop_frame + 1,
+                    group_id=int(path['group_id']),
+                    shapes=poly_shapes,
+                    client_id=int(path['id']),
+                    attributes=attributes,
+                )
 
                 getattr(self, poly_path_type).append(poly_path)
+
+        return self.has_data()
 
     def _get_shape_class(self, shape_type):
         if shape_type == 'polygons':
@@ -898,20 +1112,20 @@ class _AnnotationForJob(_Annotation):
             return models.TrackedPointsAttributeVal
 
     def _save_paths_to_db(self):
-        self.db_job.objectpath_set.all().delete()
-
         for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
             db_paths = []
             db_path_attrvals = []
             db_shapes = []
             db_shape_attrvals = []
 
-            for path in getattr(self, shape_type):
+            shapes = getattr(self, shape_type)
+            for path in shapes:
                 db_path = models.ObjectPath()
                 db_path.job = self.db_job
                 db_path.label = self.db_labels[path.label.id]
                 db_path.frame = path.frame
                 db_path.group_id = path.group_id
+                db_path.client_id = path.client_id
                 if shape_type == 'polygon_paths':
                     db_path.shapes = 'polygons'
                 elif shape_type == 'polyline_paths':
@@ -929,8 +1143,8 @@ class _AnnotationForJob(_Annotation):
                     db_attrval.value = attr.value
                     db_path_attrvals.append(db_attrval)
 
-                shapes = path.boxes if hasattr(path, 'boxes') else path.shapes
-                for shape in shapes:
+                path_shapes = path.boxes if hasattr(path, 'boxes') else path.shapes
+                for shape in path_shapes:
                     db_shape = self._get_shape_class(shape_type)()
                     db_shape.track_id = len(db_paths)
                     if shape_type == 'box_paths':
@@ -962,37 +1176,19 @@ class _AnnotationForJob(_Annotation):
 
                     db_shapes.append(db_shape)
                 db_paths.append(db_path)
-            db_paths = models.ObjectPath.objects.bulk_create(db_paths)
 
-            if db_paths and db_paths[0].id == None:
-                # Try to get primary keys. Probably the code will work for sqlite
-                # but it definetely doesn't work for Postgres. Need to say that
-                # for Postgres bulk_create will return objects with ids even ids
-                # are auto incremented. Thus we will not be inside the 'if'.
-                if shape_type == 'polygon_paths':
-                    db_paths = list(self.db_job.objectpath_set.filter(shapes="polygons"))
-                elif shape_type == 'polyline_paths':
-                    db_paths = list(self.db_job.objectpath_set.filter(shapes="polylines"))
-                elif shape_type == 'box_paths':
-                    db_paths = list(self.db_job.objectpath_set.filter(shapes="boxes"))
-                elif shape_type == 'points_paths':
-                    db_paths = list(self.db_job.objectpath_set.filter(shapes="points"))
+            db_paths = bulk_create(models.ObjectPath, db_paths,
+                {"job_id": self.db_job.id})
 
             for db_attrval in db_path_attrvals:
                 db_attrval.track_id = db_paths[db_attrval.track_id].id
-            models.ObjectPathAttributeVal.objects.bulk_create(db_path_attrvals)
+            bulk_create(models.ObjectPathAttributeVal, db_path_attrvals)
 
             for db_shape in db_shapes:
                 db_shape.track_id = db_paths[db_shape.track_id].id
 
-            db_shapes = self._get_shape_class(shape_type).objects.bulk_create(db_shapes)
-
-            if db_shapes and db_shapes[0].id == None:
-                # Try to get primary keys. Probably the code will work for sqlite
-                # but it definetely doesn't work for Postgres. Need to say that
-                # for Postgres bulk_create will return objects with ids even ids
-                # are auto incremented. Thus we will not be inside the 'if'.
-                db_shapes = list(self._get_shape_class(shape_type).objects.filter(track__job_id=self.db_job.id))
+            db_shapes = bulk_create(self._get_shape_class(shape_type), db_shapes,
+                {"track__job_id": self.db_job.id})
 
             for db_attrval in db_shape_attrvals:
                 if shape_type == 'polygon_paths':
@@ -1004,7 +1200,7 @@ class _AnnotationForJob(_Annotation):
                 elif shape_type == 'points_paths':
                     db_attrval.points_id = db_shapes[db_attrval.points_id].id
 
-            self._get_shape_attr_class(shape_type).objects.bulk_create(db_shape_attrvals)
+            bulk_create(self._get_shape_attr_class(shape_type), db_shape_attrvals)
 
     def _get_shape_set(self, shape_type):
         if shape_type == 'polygons':
@@ -1017,19 +1213,17 @@ class _AnnotationForJob(_Annotation):
             return self.db_job.labeledpoints_set
 
     def _save_shapes_to_db(self):
-        db_shapes = []
-        db_attrvals = []
-
         for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
-            self._get_shape_set(shape_type).all().delete()
             db_shapes = []
             db_attrvals = []
 
-            for shape in getattr(self, shape_type):
+            shapes = getattr(self, shape_type)
+            for shape in shapes:
                 db_shape = self._get_shape_class(shape_type)()
                 db_shape.job = self.db_job
                 db_shape.label = self.db_labels[shape.label.id]
                 db_shape.group_id = shape.group_id
+                db_shape.client_id = shape.client_id
                 if shape_type == 'boxes':
                     db_shape.xtl = shape.xtl
                     db_shape.ytl = shape.ytl
@@ -1058,14 +1252,8 @@ class _AnnotationForJob(_Annotation):
 
                 db_shapes.append(db_shape)
 
-            db_shapes = self._get_shape_class(shape_type).objects.bulk_create(db_shapes)
-
-            if db_shapes and db_shapes[0].id == None:
-                # Try to get primary keys. Probably the code will work for sqlite
-                # but it definetely doesn't work for Postgres. Need to say that
-                # for Postgres bulk_create will return objects with ids even ids
-                # are auto incremented. Thus we will not be inside the 'if'.
-                db_shapes = list(self._get_shape_set(shape_type).all())
+            db_shapes = bulk_create(self._get_shape_class(shape_type), db_shapes,
+                {"job_id": self.db_job.id})
 
             for db_attrval in db_attrvals:
                 if shape_type == 'polygons':
@@ -1077,11 +1265,60 @@ class _AnnotationForJob(_Annotation):
                 else:
                     db_attrval.points_id = db_shapes[db_attrval.points_id].id
 
-            self._get_shape_attr_class(shape_type).objects.bulk_create(db_attrvals)
+            bulk_create(self._get_shape_attr_class(shape_type), db_attrvals)
 
-    def save_to_db(self):
+    def _update_shapes_in_db(self):
+        client_ids_to_delete = {}
+        for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
+            client_ids_to_delete[shape_type] = list(shape.client_id for shape in getattr(self, shape_type))
+        self._delete_shapes_from_db(client_ids_to_delete)
         self._save_shapes_to_db()
+
+    def _update_paths_in_db(self):
+        client_ids_to_delete = {}
+        for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
+            client_ids_to_delete[shape_type] = list(shape.client_id for shape in getattr(self, shape_type))
+        self._delete_paths_from_db(client_ids_to_delete)
         self._save_paths_to_db()
+
+    def _delete_shapes_from_db(self, data):
+        for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
+            client_ids_to_delete = data[shape_type]
+            deleted = self._get_shape_set(shape_type).filter(client_id__in=client_ids_to_delete).delete()
+            class_name = 'engine.{}'.format(self._get_shape_class(shape_type).__name__)
+            if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and (class_name in deleted[1] and deleted[1][class_name] != len(client_ids_to_delete)):
+                raise Exception('Number of deleted object doesn\'t match with requested number')
+
+    def _delete_paths_from_db(self, data):
+        client_ids_to_delete = []
+        for shape_type in ['polygon_paths', 'polyline_paths', 'points_paths', 'box_paths']:
+            client_ids_to_delete.extend(data[shape_type])
+        deleted = self.db_job.objectpath_set.filter(client_id__in=client_ids_to_delete).delete()
+        class_name = 'engine.ObjectPath'
+        if not (deleted[0] == 0 and len(client_ids_to_delete) == 0) and \
+            (class_name in deleted[1] and deleted[1][class_name] != len(client_ids_to_delete)):
+            raise Exception('Number of deleted object doesn\'t match with requested number')
+
+    def delete_all_shapes_from_db(self):
+        for shape_type in ['polygons', 'polylines', 'points', 'boxes']:
+            self._get_shape_set(shape_type).all().delete()
+
+    def delete_all_paths_from_db(self):
+        self.db_job.objectpath_set.all().delete()
+
+    def delete_from_db(self, data):
+        self._delete_shapes_from_db(data)
+        self._delete_paths_from_db(data)
+
+    def update_in_db(self, data):
+        if self.init_from_client(data):
+            self._update_shapes_in_db()
+            self._update_paths_in_db()
+
+    def save_to_db(self, data):
+        if self.init_from_client(data):
+            self._save_shapes_to_db()
+            self._save_paths_to_db()
 
     def to_client(self):
         data = {
@@ -1092,11 +1329,12 @@ class _AnnotationForJob(_Annotation):
             "polylines": [],
             "polyline_paths": [],
             "points": [],
-            "points_paths": []
+            "points_paths": [],
         }
 
         for box in self.boxes:
             data["boxes"].append({
+                "id": box.client_id,
                 "label_id": box.label.id,
                 "group_id": box.group_id,
                 "xtl": box.xtl,
@@ -1112,6 +1350,7 @@ class _AnnotationForJob(_Annotation):
         for poly_type in ['polygons', 'polylines', 'points']:
             for poly in getattr(self, poly_type):
                 data[poly_type].append({
+                    "id": poly.client_id,
                     "label_id": poly.label.id,
                     "group_id": poly.group_id,
                     "points": poly.points,
@@ -1123,6 +1362,7 @@ class _AnnotationForJob(_Annotation):
 
         for box_path in self.box_paths:
             data["box_paths"].append({
+                "id": box_path.client_id,
                 "label_id": box_path.label.id,
                 "group_id": box_path.group_id,
                 "frame": box_path.frame,
@@ -1145,6 +1385,7 @@ class _AnnotationForJob(_Annotation):
         for poly_path_type in ['polygon_paths', 'polyline_paths', 'points_paths']:
             for poly_path in getattr(self, poly_path_type):
                 data[poly_path_type].append({
+                    "id": poly_path.client_id,
                     "label_id": poly_path.label.id,
                     "group_id": poly_path.group_id,
                     "frame": poly_path.frame,
@@ -1163,6 +1404,75 @@ class _AnnotationForJob(_Annotation):
 
         return data
 
+    def validate_data_from_client(self, data):
+        client_ids = {
+            'saved': self._get_client_ids_from_db(),
+            'create': set(),
+            'update': set(),
+            'delete': set(),
+        }
+
+        def extract_clinet_id(shape, action):
+            if action != 'delete':
+                if 'id' not in shape:
+                    raise Exception('No id field in received data')
+                client_id = shape['id']
+            else:
+                # client send only shape.id, not shape object
+                client_id = shape
+            client_ids[action].add(client_id)
+
+        shape_types = ['boxes', 'points', 'polygons', 'polylines', 'box_paths',
+            'points_paths', 'polygon_paths', 'polyline_paths']
+
+        for action in ['create', 'update', 'delete']:
+            for shape_type in shape_types:
+                for shape in data[action][shape_type]:
+                    extract_clinet_id(shape, action)
+
+        # In case of delete action potentially it is possible to intersect set of IDs
+        # that should delete and set of IDs that should create(i.e. save uploaded anno).
+        # There is no need to check that
+        tmp_res = (client_ids['create'] & client_ids['update']) | (client_ids['update'] & client_ids['delete'])
+        if tmp_res:
+            raise Exception('More than one action for shape(s) with id={}'.format(tmp_res))
+
+        tmp_res = (client_ids['saved'] - client_ids['delete']) & client_ids['create']
+        if tmp_res:
+            raise Exception('Trying to create new shape(s) with existing client id {}'.format(tmp_res))
+
+        tmp_res = client_ids['delete'] - client_ids['saved']
+        if tmp_res:
+            raise Exception('Trying to delete shape(s) with nonexistent client id {}'.format(tmp_res))
+
+        tmp_res = client_ids['update'] - (client_ids['saved'] - client_ids['delete'])
+        if tmp_res:
+            raise Exception('Trying to update shape(s) with nonexistent client id {}'.format(tmp_res))
+
+        max_id = self.db_job.max_shape_id
+        if any(new_client_id <= max_id for new_client_id in client_ids['create']):
+            raise Exception('Trying to create shape(s) with client id {} less than allowed value {}'.format(client_ids['create'], max_id))
+
+        return client_ids
+
+    def force_set_client_id(self, data):
+        shape_types = ['boxes', 'points', 'polygons', 'polylines', 'box_paths',
+            'points_paths', 'polygon_paths', 'polyline_paths']
+
+        max_id = self.db_job.max_shape_id
+        for shape_type in shape_types:
+            if not data[shape_type]:
+                continue
+            for shape in data[shape_type]:
+                if 'id' in shape:
+                    max_id = max(max_id, shape['id'])
+
+        max_id += 1
+        for shape_type in shape_types:
+            for shape in data[shape_type]:
+                if 'id' not in shape or shape['id'] == -1:
+                    shape['id'] = max_id
+                    max_id += 1
 
 class _AnnotationForSegment(_Annotation):
     def __init__(self, db_segment):
@@ -1192,7 +1502,7 @@ def _dump(tid, data_format, scheme, host):
     db_task = models.Task.objects.select_for_update().get(id=tid)
     annotation = _AnnotationForTask(db_task)
     annotation.init_from_db()
-    annotation.dump(data_format, db_task, scheme, host)
+    annotation.dump(data_format, scheme, host)
 
 def _calc_box_area(box):
     return (box.xbr - box.xtl) * (box.ybr - box.ytl)
@@ -1571,7 +1881,7 @@ class _AnnotationForTask(_Annotation):
                 # We don't have old boxes on the frame. Let's add all new ones.
                 self.boxes.extend(int_boxes_by_frame[frame])
 
-    def dump(self, data_format, db_task, scheme, host):
+    def dump(self, data_format, scheme, host):
         def _flip_box(box, im_w, im_h):
             box.xbr, box.xtl = im_w - box.xtl, im_w - box.xbr
             box.ybr, box.ytl = im_h - box.ytl, im_h - box.ybr
@@ -1591,6 +1901,7 @@ class _AnnotationForTask(_Annotation):
 
             shape.points = ' '.join(['{},{}'.format(point['x'], point['y']) for point in points])
 
+        db_task = self.db_task
         db_segments = db_task.segment_set.all().prefetch_related('job_set')
         db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
         im_meta_data = get_image_meta_cache(db_task)
@@ -1606,6 +1917,7 @@ class _AnnotationForTask(_Annotation):
                 ("flipped", str(db_task.flipped)),
                 ("created", str(timezone.localtime(db_task.created_date))),
                 ("updated", str(timezone.localtime(db_task.updated_date))),
+                ("source", db_task.source),
 
                 ("labels", [
                     ("label", OrderedDict([
@@ -1633,41 +1945,44 @@ class _AnnotationForTask(_Annotation):
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
 
-        if self.db_task.mode == "interpolation":
+        if db_task.mode == "interpolation":
             meta["task"]["original_size"] = OrderedDict([
                 ("width", str(im_meta_data["original_size"][0]["width"])),
                 ("height", str(im_meta_data["original_size"][0]["height"]))
             ])
 
-        dump_path = self.db_task.get_dump_path()
+        dump_path = db_task.get_dump_path()
         with open(dump_path, "w") as dump_file:
             dumper = _XmlAnnotationWriter(dump_file)
             dumper.open_root()
             dumper.add_meta(meta)
 
-            if self.db_task.mode == "annotation":
+            if db_task.mode == "annotation":
                 shapes = {}
                 shapes["boxes"] = {}
                 shapes["polygons"] = {}
                 shapes["polylines"] = {}
                 shapes["points"] = {}
-
-                for box in self.to_boxes():
+                boxes = self.to_boxes()
+                for box in boxes:
                     if box.frame not in shapes["boxes"]:
                         shapes["boxes"][box.frame] = []
                     shapes["boxes"][box.frame].append(box)
 
-                for polygon in self.to_polygons():
+                polygons = self.to_polygons()
+                for polygon in polygons:
                     if polygon.frame not in shapes["polygons"]:
                         shapes["polygons"][polygon.frame] = []
                     shapes["polygons"][polygon.frame].append(polygon)
 
-                for polyline in self.to_polylines():
+                polylines = self.to_polylines()
+                for polyline in polylines:
                     if polyline.frame not in shapes["polylines"]:
                         shapes["polylines"][polyline.frame] = []
                     shapes["polylines"][polyline.frame].append(polyline)
 
-                for points in self.to_points():
+                points = self.to_points()
+                for points in points:
                     if points.frame not in shapes["points"]:
                         shapes["points"][points.frame] = []
                     shapes["points"][points.frame].append(points)
@@ -1677,7 +1992,7 @@ class _AnnotationForTask(_Annotation):
                     list(shapes["polylines"].keys()) +
                     list(shapes["points"].keys()))):
 
-                    link = get_frame_path(self.db_task.id, frame)
+                    link = get_frame_path(db_task.id, frame)
                     path = os.readlink(link)
 
                     rpath = path.split(os.path.sep)
@@ -1707,7 +2022,7 @@ class _AnnotationForTask(_Annotation):
                                         ("ytl", "{:.2f}".format(shape.ytl)),
                                         ("xbr", "{:.2f}".format(shape.xbr)),
                                         ("ybr", "{:.2f}".format(shape.ybr)),
-                                        ("occluded", str(int(shape.occluded)))
+                                        ("occluded", str(int(shape.occluded))),
                                     ])
                                     if db_task.z_order:
                                         dump_dict['z_order'] = str(shape.z_order)
@@ -1726,7 +2041,7 @@ class _AnnotationForTask(_Annotation):
                                                 "{:.2f}".format(float(p.split(',')[1]))
                                             )) for p in shape.points.split(' '))
                                         )),
-                                        ("occluded", str(int(shape.occluded)))
+                                        ("occluded", str(int(shape.occluded))),
                                     ])
 
                                     if db_task.z_order:
@@ -1767,13 +2082,15 @@ class _AnnotationForTask(_Annotation):
                 im_w = im_meta_data['original_size'][0]['width']
                 im_h = im_meta_data['original_size'][0]['height']
 
-                path_idx = 0
+                counter = 0
                 for shape_type in ["boxes", "polygons", "polylines", "points"]:
                     path_list = paths[shape_type]
                     for path in path_list:
+                        path_id = path.client_id if path.client_id != -1 else counter
+                        counter += 1
                         dump_dict = OrderedDict([
-                            ("id", str(path_idx)),
-                            ("label", path.label.name)
+                            ("id", str(path_id)),
+                            ("label", path.label.name),
                         ])
                         if path.group_id:
                             dump_dict['group_id'] = str(path.group_id)
@@ -1842,6 +2159,5 @@ class _AnnotationForTask(_Annotation):
                                     dumper.close_polyline()
                                 else:
                                     dumper.close_points()
-                        path_idx += 1
                         dumper.close_track()
             dumper.close_root()

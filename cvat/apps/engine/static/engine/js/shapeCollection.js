@@ -8,7 +8,7 @@
 "use strict";
 
 class ShapeCollectionModel extends Listener {
-    constructor() {
+    constructor(idGenereator) {
         super('onCollectionUpdate', () => this);
         this._annotationShapes = {};
         this._groups = {};
@@ -51,10 +51,10 @@ class ShapeCollectionModel extends Listener {
         this._colorIdx = 0;
         this._filter = new FilterModel(() => this.update());
         this._splitter = new ShapeSplitter();
-    }
-
-    _nextIdx() {
-        return this._idx++;
+        this._initialShapes = {};
+        this._exportedShapes = {};
+        this._shapesToDelete = createExportContainer();
+        this._idGen = idGenereator;
     }
 
     _nextGroupIdx() {
@@ -121,7 +121,7 @@ class ShapeCollectionModel extends Listener {
             }
         }
 
-        this._currentShapes = this._filter.filter(this._currentShapes).reverse();
+        this._currentShapes = this._filter.filter(this._currentShapes);
         this.notify();
     }
 
@@ -143,6 +143,38 @@ class ShapeCollectionModel extends Listener {
                 }
             }
             elem.groupId = 0;
+        }
+    }
+
+    // Common code for switchActiveOccluded(), switchActiveKeyframe(), switchActiveLock() and switchActiveOutside()
+    _selectActive() {
+        let shape = null;
+        if (this._activeAAMShape) {
+            shape = this._activeAAMShape;
+        }
+        else {
+            this.selectShape(this._lastPos, false);
+            if (this._activeShape) {
+                shape = this._activeShape;
+            }
+        }
+
+        return shape;
+    }
+
+    _importShape(shape, shapeType, udpateInitialState) {
+        let importedShape = this.add(shape, shapeType);
+        if (udpateInitialState) {
+            if (shape.id === -1) {
+                const toDelete = getExportTargetContainer(ExportType.delete, importedShape.type, this._shapesToDelete);
+                toDelete.push(shape.id);
+            }
+            else {
+                this._initialShapes[shape.id] = {
+                    type: importedShape.type,
+                    exportedString: importedShape.export(),
+                };
+            }
         }
     }
 
@@ -184,86 +216,87 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    import(data) {
+    import(data, udpateInitialState=false) {
         for (let box of data.boxes) {
-            this.add(box, 'annotation_box');
+            this._importShape(box, 'annotation_box', udpateInitialState);
         }
 
-        for (let box_path of data.box_paths) {
-            this.add(box_path, 'interpolation_box');
+        for (let boxPath of data.box_paths) {
+            this._importShape(boxPath, 'interpolation_box', udpateInitialState);
         }
 
         for (let points of data.points) {
-            this.add(points, 'annotation_points');
+            this._importShape(points, 'annotation_points', udpateInitialState);
         }
 
-        for (let points_path of data.points_paths) {
-            this.add(points_path, 'interpolation_points');
+        for (let pointsPath of data.points_paths) {
+            this._importShape(pointsPath, 'interpolation_points', udpateInitialState);
         }
 
         for (let polygon of data.polygons) {
-            this.add(polygon, 'annotation_polygon');
+            this._importShape(polygon, 'annotation_polygon', udpateInitialState);
         }
 
-        for (let polygon_path of data.polygon_paths) {
-            this.add(polygon_path, 'interpolation_polygon');
+        for (let polygonPath of data.polygon_paths) {
+            this._importShape(polygonPath, 'interpolation_polygon', udpateInitialState);
         }
 
         for (let polyline of data.polylines) {
-            this.add(polyline, 'annotation_polyline');
+            this._importShape(polyline, 'annotation_polyline', udpateInitialState);
         }
 
-        for (let polyline_path of data.polyline_paths) {
-            this.add(polyline_path, 'interpolation_polyline');
+        for (let polylinePath of data.polyline_paths) {
+            this._importShape(polylinePath, 'interpolation_polyline', udpateInitialState);
         }
 
         this.notify();
         return this;
     }
 
+    confirmExportedState() {
+        this._initialShapes = this._exportedShapes;
+        this._shapesToDelete = createExportContainer();
+    }
 
     export() {
-        let response = {
-            "boxes": [],
-            "box_paths": [],
-            "points": [],
-            "points_paths": [],
-            "polygons": [],
-            "polygon_paths": [],
-            "polylines": [],
-            "polyline_paths": [],
-        };
+        const response = createExportContainer();
 
-        for (let shape of this._shapes) {
-            if (shape.removed) continue;
-            switch (shape.type) {
-            case 'annotation_box':
-                response.boxes.push(shape.export());
-                break;
-            case 'interpolation_box':
-                response.box_paths.push(shape.export());
-                break;
-            case 'annotation_points':
-                response.points.push(shape.export());
-                break;
-            case 'interpolation_points':
-                response.points_paths.push(shape.export());
-                break;
-            case 'annotation_polygon':
-                response.polygons.push(shape.export());
-                break;
-            case 'interpolation_polygon':
-                response.polygon_paths.push(shape.export());
-                break;
-            case 'annotation_polyline':
-                response.polylines.push(shape.export());
-                break;
-            case 'interpolation_polyline':
-                response.polyline_paths.push(shape.export());
+        for (const shape of this._shapes) {
+            let targetExportContainer = undefined;
+            if (!shape._removed) {
+                if (!(shape.id in this._initialShapes)) {
+                    targetExportContainer = getExportTargetContainer(ExportType.create, shape.type, response);
+                } else if (JSON.stringify(this._initialShapes[shape.id].exportedString) !== JSON.stringify(shape.export())) {
+                    targetExportContainer = getExportTargetContainer(ExportType.update, shape.type, response);
+                } else {
+                    continue;
+                }
+                targetExportContainer.push(shape.export());
+            }
+            else if (shape.id in this._initialShapes) {
+                targetExportContainer = getExportTargetContainer(ExportType.delete, shape.type, response);
+                targetExportContainer.push(shape.id);
+            }
+            else {
+                continue;
             }
         }
+        for (const shapeType in this._shapesToDelete.delete) {
+            const shapes = this._shapesToDelete.delete[shapeType];
+            response.delete[shapeType].push.apply(response.delete[shapeType], shapes);
+        }
 
-        return JSON.stringify(response);
+        return response;
+    }
+
+    exportAll() {
+        const response = createExportContainer();
+        for (const shape of this._shapes) {
+            if (!shape._removed) {
+                getExportTargetContainer(ExportType.create, shape.type, response).push(shape.export());
+            }
+        }
+        return response.create;
     }
 
     find(direction) {
@@ -322,15 +355,39 @@ class ShapeCollectionModel extends Listener {
     }
 
     hasUnsavedChanges() {
-        return md5(this.export()) !== this._hash;
+        const exportData = this.export();
+        for (const actionType in ExportType) {
+            for (const shapes of Object.values(exportData[actionType])) {
+                if (shapes.length) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
-    updateHash() {
-        this._hash = md5(this.export());
+    updateExportedState() {
+        this._exportedShapes = {};
+
+        for (const shape of this._shapes) {
+            if (!shape.removed) {
+                this._exportedShapes[shape.id] = {
+                    type: shape.type,
+                    exportedString: shape.export(),
+                };
+            }
+        }
         return this;
     }
 
     empty() {
+        for (const shapeId in this._initialShapes) {
+            const exportTarget = getExportTargetContainer(ExportType.delete, this._initialShapes[shapeId].type, this._shapesToDelete);
+            exportTarget.push(+shapeId);
+        }
+
+        this._initialShapes = {};
         this._annotationShapes = {};
         this._interpolationShapes = [];
         this._shapes = [];
@@ -340,7 +397,9 @@ class ShapeCollectionModel extends Listener {
     }
 
     add(data, type) {
-        let model = buildShapeModel(data, type, this._nextIdx(), this.nextColor());
+        let id = 'id' in data && data.id !== -1 ? data.id : this._idGen.next();
+
+        let model = buildShapeModel(data, type, id, this.nextColor());
         if (type.startsWith('interpolation')) {
             this._interpolationShapes.push(model);
         }
@@ -358,6 +417,7 @@ class ShapeCollectionModel extends Listener {
             this._groups[groupIdx] = this._groups[groupIdx] || [];
             this._groups[groupIdx].push(model);
         }
+        return model;
     }
 
     selectShape(pos, noActivation) {
@@ -445,6 +505,9 @@ class ShapeCollectionModel extends Listener {
             }
             this._frame = frame;
             this._interpolate();
+            if (!window.cvat.mode) {
+                this.selectShape(this._lastPos, false);
+            }
         }
         else {
             this._clear();
@@ -594,16 +657,7 @@ class ShapeCollectionModel extends Listener {
     }
 
     switchActiveLock() {
-        let shape = null;
-        if (this._activeAAMShape) {
-            shape = this._activeAAMShape;
-        }
-        else {
-            this.selectShape(this._lastPos, false);
-            if (this._activeShape) {
-                shape = this._activeShape;
-            }
-        }
+        let shape = this._selectActive();
 
         if (shape) {
             shape.switchLock();
@@ -614,10 +668,12 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    switchAllLock() {
+    switchObjectsLock(labelId) {
         this.resetActive();
         let value = true;
-        for (let shape of this._currentShapes) {
+
+        let shapes = Number.isInteger(labelId) ? this._currentShapes.filter((el) => el.model.label === labelId) : this._currentShapes;
+        for (let shape of shapes) {
             if (shape.model.removed) continue;
             value = value && shape.model.lock;
             if (!value) break;
@@ -628,7 +684,7 @@ class ShapeCollectionModel extends Listener {
             value: !value,
         });
 
-        for (let shape of this._currentShapes) {
+        for (let shape of shapes) {
             if (shape.model.removed) continue;
             if (shape.model.lock === value) {
                 shape.model.switchLock();
@@ -637,39 +693,40 @@ class ShapeCollectionModel extends Listener {
     }
 
     switchActiveOccluded() {
-        let shape = null;
-        if (this._activeAAMShape) {
-            shape = this._activeAAMShape;
-        }
-        else {
-            this.selectShape(this._lastPos, false);
-            if (this._activeShape && !this._activeShape.lock) {
-                shape = this._activeShape;
-            }
-        }
-
-        if (shape) {
+        let shape = this._selectActive();
+        if (shape && !shape.lock) {
             shape.switchOccluded(window.cvat.player.frames.current);
         }
     }
 
-    switchActiveHide() {
-        if (this._activeAAMShape) {
-            return;
-        }
-
-        this.selectShape(this._lastPos, false);
-        if (this._activeShape) {
-            this._activeShape.switchHide();
+    switchActiveKeyframe() {
+        let shape = this._selectActive();
+        if (shape && shape.type === 'interpolation_box' && !shape.lock) {
+            shape.switchKeyFrame(window.cvat.player.frames.current);
         }
     }
 
-    switchAllHide() {
+    switchActiveOutside() {
+        let shape = this._selectActive();
+        if (shape && shape.type === 'interpolation_box' && !shape.lock) {
+            shape.switchOutside(window.cvat.player.frames.current);
+        }
+    }
+
+    switchActiveHide() {
+        let shape = this._selectActive();
+        if (shape) {
+            shape.switchHide();
+        }
+    }
+
+    switchObjectsHide(labelId) {
         this.resetActive();
         let hiddenShape = true;
         let hiddenText = true;
 
-        for (let shape of this._shapes) {
+        let shapes = Number.isInteger(labelId) ? this._shapes.filter((el) => el.label === labelId) : this._shapes;
+        for (let shape of shapes) {
             if (shape.removed) continue;
             hiddenShape = hiddenShape && shape.hiddenShape;
 
@@ -680,7 +737,7 @@ class ShapeCollectionModel extends Listener {
 
         if (!hiddenShape) {
             // any shape visible
-            for (let shape of this._shapes) {
+            for (let shape of shapes) {
                 if (shape.removed) continue;
                 hiddenText = hiddenText && shape.hiddenText;
 
@@ -691,7 +748,7 @@ class ShapeCollectionModel extends Listener {
 
             if (!hiddenText) {
                 // any shape text visible
-                for (let shape of this._shapes) {
+                for (let shape of shapes) {
                     if (shape.removed) continue;
                     while (shape.hiddenShape || !shape.hiddenText) {
                         shape.switchHide();
@@ -700,7 +757,7 @@ class ShapeCollectionModel extends Listener {
             }
             else {
                 // all shape text invisible
-                for (let shape of this._shapes) {
+                for (let shape of shapes) {
                     if (shape.removed) continue;
                     while (!shape.hiddenShape) {
                         shape.switchHide();
@@ -710,7 +767,7 @@ class ShapeCollectionModel extends Listener {
         }
         else {
             // all shapes invisible
-            for (let shape of this._shapes) {
+            for (let shape of shapes) {
                 if (shape.removed) continue;
                 while (shape.hiddenShape || shape.hiddenText) {
                     shape.switchHide();
@@ -719,17 +776,12 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
+
+
     removePointFromActiveShape(idx) {
         if (this._activeShape && !this._activeShape.lock) {
             this._activeShape.removePoint(idx);
         }
-    }
-
-    clonePointForActiveShape(idx, direction, insertPoint) {
-        if (this._activeShape && !this._activeShape.lock) {
-            return this._activeShape.clonePoint(idx, direction, insertPoint);
-        }
-        else return null;
     }
 
     split() {
@@ -808,6 +860,10 @@ class ShapeCollectionModel extends Listener {
     get shapes() {
         return this._shapes;
     }
+
+    get maxId() {
+        return Math.max(-1, ...this._shapes.map( shape => shape.id ));
+    }
 }
 
 class ShapeCollectionController {
@@ -829,16 +885,20 @@ class ShapeCollectionController {
                 this.switchActiveOccluded();
             }.bind(this));
 
+            let switchActiveKeyframeHandler = Logger.shortkeyLogDecorator(function() {
+                this.switchActiveKeyframe();
+            }.bind(this));
+
+            let switchActiveOutsideHandler = Logger.shortkeyLogDecorator(function() {
+                this.switchActiveOutside();
+            }.bind(this));
+
             let switchHideHandler = Logger.shortkeyLogDecorator(function() {
-                if (!window.cvat.mode || window.cvat.mode === 'aam') {
-                    this._model.switchActiveHide();
-                }
+                this.switchActiveHide();
             }.bind(this));
 
             let switchAllHideHandler = Logger.shortkeyLogDecorator(function() {
-                if (!window.cvat.mode || window.cvat.mode === 'aam') {
-                    this._model.switchAllHide();
-                }
+                this.switchAllHide();
             }.bind(this));
 
             let removeActiveHandler = Logger.shortkeyLogDecorator(function(e) {
@@ -889,6 +949,8 @@ class ShapeCollectionController {
             Mousetrap.bind(shortkeys["switch_lock_property"].value, switchLockHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["switch_all_lock_property"].value, switchAllLockHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["switch_occluded_property"].value, switchOccludedHandler.bind(this), 'keydown');
+            Mousetrap.bind(shortkeys["switch_active_keyframe"].value, switchActiveKeyframeHandler.bind(this), 'keydown');
+            Mousetrap.bind(shortkeys["switch_active_outside"].value, switchActiveOutsideHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["switch_hide_mode"].value, switchHideHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["switch_all_hide_mode"].value, switchAllHideHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["change_default_label"].value, switchDefaultLabelHandler.bind(this), 'keydown');
@@ -909,15 +971,51 @@ class ShapeCollectionController {
         }
     }
 
+    switchActiveKeyframe() {
+        if (!window.cvat.mode) {
+            this._model.switchActiveKeyframe();
+        }
+    }
+
+    switchActiveOutside() {
+        if (!window.cvat.mode) {
+            this._model.switchActiveOutside();
+        }
+    }
+
     switchAllLock() {
         if (!window.cvat.mode || window.cvat.mode === 'aam') {
-            this._model.switchAllLock();
+            this._model.switchObjectsLock();
+        }
+    }
+
+    switchLabelLock(labelId) {
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
+            this._model.switchObjectsLock(labelId);
         }
     }
 
     switchActiveLock() {
         if (!window.cvat.mode || window.cvat.mode === 'aam') {
             this._model.switchActiveLock();
+        }
+    }
+
+    switchAllHide() {
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
+            this._model.switchObjectsHide();
+        }
+    }
+
+    switchLabelHide(lableId) {
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
+            this._model.switchObjectsHide(lableId);
+        }
+    }
+
+    switchActiveHide() {
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
+            this._model.switchActiveHide();
         }
     }
 
@@ -968,10 +1066,6 @@ class ShapeCollectionController {
         this._model.removePointFromActiveShape(idx);
     }
 
-    clonePointForActiveShape(idx, direction, insertPoint) {
-        return this._model.clonePointForActiveShape(idx, direction, insertPoint);
-    }
-
     splitForActive() {
         this._model.split();
     }
@@ -999,17 +1093,23 @@ class ShapeCollectionController {
     get filterController() {
         return this._filterController;
     }
+
+    get activeShape() {
+        return this._model.activeShape;
+    }
 }
 
 class ShapeCollectionView {
     constructor(collectionModel, collectionController) {
         collectionModel.subscribe(this);
         this._controller = collectionController;
+        this._frameBackground = $('#frameBackground');
         this._frameContent = SVG.adopt($('#frameContent')[0]);
         this._UIContent = $('#uiContent');
         this._labelsContent = $('#labelsContent');
         this._showAllInterpolationBox = $('#showAllInterBox');
         this._fillOpacityRange = $('#fillOpacityRange');
+        this._selectedFillOpacityRange = $('#selectedFillOpacityRange');
         this._blackStrokeCheckbox = $('#blackStrokeCheckbox');
         this._colorByInstanceRadio = $('#colorByInstanceRadio');
         this._colorByGroupRadio = $('#colorByGroupRadio');
@@ -1017,6 +1117,10 @@ class ShapeCollectionView {
         this._colorByGroupCheckbox = $('#colorByGroupCheckbox');
         this._filterView = new FilterView(this._controller.filterController);
         this._currentViews = [];
+
+        this._currentModels = [];
+        this._frameMarker = null;
+
         this._activeShapeUI = null;
         this._scale = 1;
         this._colorSettings = {
@@ -1031,7 +1135,7 @@ class ShapeCollectionView {
             let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
             e.target.value = value;
             if (value >= 0) {
-                this._colorSettings["fill-opacity"] = value / 5;
+                this._colorSettings["fill-opacity"] = value;
                 delete this._colorSettings['white-opacity'];
 
                 for (let view of this._currentViews) {
@@ -1040,11 +1144,21 @@ class ShapeCollectionView {
             }
             else {
                 value *= -1;
-                this._colorSettings["white-opacity"] = value / 5;
+                this._colorSettings["white-opacity"] = value;
 
                 for (let view of this._currentViews) {
                     view.updateColorSettings(this._colorSettings);
                 }
+            }
+        });
+
+        this._selectedFillOpacityRange.on('input', (e) => {
+            let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
+            e.target.value = value;
+            this._colorSettings["selected-fill-opacity"] = value;
+
+            for (let view of this._currentViews) {
+                view.updateColorSettings(this._colorSettings);
             }
         });
 
@@ -1103,19 +1217,33 @@ class ShapeCollectionView {
                 return;
             }
 
-            let pos = translateSVGPos(this._frameContent.node, e.clientX, e.clientY);
-            if (!window.cvat.mode) {
-                this._controller.selectShape(pos, false);
-            }
+            let frameHeight = window.cvat.player.geometry.frameHeight;
+            let frameWidth = window.cvat.player.geometry.frameWidth;
+            let pos = window.cvat.translate.point.clientToCanvas(this._frameBackground[0], e.clientX, e.clientY);
+            if (pos.x >= 0 && pos.y >= 0 && pos.x <= frameWidth && pos.y <= frameHeight) {
+                if (!window.cvat.mode) {
+                    this._controller.selectShape(pos, false);
+                }
 
-            this._controller.setLastPosition(pos);
+                this._controller.setLastPosition(pos);
+            }
         }.bind(this));
 
         $('#shapeContextMenu li').click((e) => {
-            let menu = $('#shapeContextMenu');
-            menu.hide(100);
+            $('.custom-menu').hide(100);
 
             switch($(e.target).attr("action")) {
+            case "object_url": {
+                let active = this._controller.activeShape;
+                if (active) {
+                    window.cvat.search.set('frame', window.cvat.player.frames.current);
+                    window.cvat.search.set('filter', `*[id="${active.id}"]`);
+                    copyToClipboard(window.cvat.search.toString());
+                    window.cvat.search.set('frame', null);
+                    window.cvat.search.set('filter', null);
+                }
+                break;
+            }
             case "change_color":
                 this._controller.switchActiveColor();
                 break;
@@ -1158,67 +1286,99 @@ class ShapeCollectionView {
         $('#pointContextMenu li').click((e) => {
             let menu = $('#pointContextMenu');
             let idx = +menu.attr('point_idx');
-            menu.hide(100);
+            $('.custom-menu').hide(100);
 
             switch($(e.target).attr("action")) {
             case "remove_point":
                 this._controller.removePointFromActiveShape(idx);
-                break;
-            case "clone_point_before":
-                this._controller.clonePointForActiveShape(idx, 'before', true);
-                break;
-            case "clone_point_after":
-                this._controller.clonePointForActiveShape(idx, 'after', true);
-                break;
-            }
-        });
-
-        $('#pointContextMenu').mouseout(() => {
-            $(this._frameContent.node).find('.tmp_inserted_point').remove();
-        });
-
-        $('#pointContextMenu li').mouseover((e) => {
-            $(this._frameContent.node).find('.tmp_inserted_point').remove();
-            let menu = $('#pointContextMenu');
-            let idx = +menu.attr('point_idx');
-            let point = null;
-
-            switch($(e.target).attr("action")) {
-            case "clone_point_before":
-                point = this._controller.clonePointForActiveShape(idx, 'before', false);
-                if (point) {
-                    this._frameContent.circle(POINT_RADIUS * 2 / this._scale).center(point.x, point.y)
-                        .addClass('tmp_inserted_point tempMarker').fill('white').stroke('black').attr({
-                            'stroke-width': STROKE_WIDTH / this._scale
-                        });
-                }
-                break;
-            case "clone_point_after":
-                point = this._controller.clonePointForActiveShape(idx, 'after', false);
-                if (point) {
-                    this._frameContent.circle(POINT_RADIUS * 2 / this._scale).center(point.x, point.y)
-                        .addClass('tmp_inserted_point tempMarker').fill('white').stroke('black').attr({
-                            'stroke-width': STROKE_WIDTH / this._scale
-                        });
-                }
                 break;
             }
         });
 
         let labels = window.cvat.labelsInfo.labels();
         for (let labelId in labels) {
-            let div = $('<div></div>').addClass('labelContentElement h2 regular hidden').css({
-                'background-color': collectionController.colorsByGroup(+window.cvat.labelsInfo.labelColorIdx(+labelId)),
-            }).attr({
-                'label_id': labelId,
-            }).on('mouseover mouseup', () => {
-                div.addClass('highlightedUI');
-                collectionModel.selectAllWithLabel(+labelId);
-            }).on('mouseout mousedown', () => {
-                div.removeClass('highlightedUI');
-                collectionModel.deselectAll();
-            }).append( $(`<label> ${labels[labelId]} </label>`) );
-            div.appendTo(this._labelsContent);
+            let lockButton = $(`<button> </button>`)
+                .addClass('graphicButton lockButton')
+                .attr('title', 'Switch lock for all object with same label')
+                .on('click', () => {
+                    this._controller.switchLabelLock(+labelId);
+                });
+
+            lockButton[0].updateState = function(button, labelId) {
+                let models = this._currentModels.filter((el) => el.label === labelId);
+                let locked = true;
+                for (let model of models) {
+                    locked = locked && model.lock;
+                    if (!locked) {
+                        break;
+                    }
+                }
+
+                if (!locked) {
+                    button.removeClass('locked');
+                }
+                else {
+                    button.addClass('locked');
+                }
+            }.bind(this, lockButton, +labelId);
+
+            let hiddenButton = $(`<button> </button>`)
+                .addClass('graphicButton hiddenButton')
+                .attr('title', 'Switch hide for all object with same label')
+                .on('click', () => {
+                    this._controller.switchLabelHide(+labelId);
+                });
+
+            hiddenButton[0].updateState = function(button, labelId) {
+                let models = this._currentModels.filter((el) => el.label === labelId);
+                let hiddenShape = true;
+                let hiddenText = true;
+                for (let model of models) {
+                    hiddenShape = hiddenShape && model.hiddenShape;
+                    hiddenText = hiddenText && model.hiddenText;
+                    if (!hiddenShape && !hiddenText) {
+                        break;
+                    }
+                }
+
+                if (hiddenShape) {
+                    button.removeClass('hiddenText');
+                    button.addClass('hiddenShape');
+                }
+                else if (hiddenText) {
+                    button.addClass('hiddenText');
+                    button.removeClass('hiddenShape');
+                }
+                else {
+                    button.removeClass('hiddenText hiddenShape');
+                }
+            }.bind(this, hiddenButton, +labelId);
+
+            let buttonBlock = $('<center> </center>')
+                .append(lockButton).append(hiddenButton)
+                .addClass('buttonBlockOfLabelUI');
+
+            let title = $(`<label> ${labels[labelId]} </label>`);
+
+            let mainDiv = $('<div> </div>').addClass('labelContentElement h2 regular hidden')
+                .css({
+                    'background-color': collectionController.colorsByGroup(+window.cvat.labelsInfo.labelColorIdx(+labelId)),
+                }).attr({
+                    'label_id': labelId,
+                }).on('mouseover mouseup', () => {
+                    mainDiv.addClass('highlightedUI');
+                    collectionModel.selectAllWithLabel(+labelId);
+                }).on('mouseout mousedown', () => {
+                    mainDiv.removeClass('highlightedUI');
+                    collectionModel.deselectAll();
+                }).append(title).append(buttonBlock);
+
+            mainDiv[0].updateState = function() {
+                lockButton[0].updateState();
+                hiddenButton[0].updateState();
+            };
+
+            this._labelsContent.append(mainDiv);
         }
 
         let sidePanelObjectsButton = $('#sidePanelObjectsButton');
@@ -1239,14 +1399,22 @@ class ShapeCollectionView {
         });
     }
 
-    onCollectionUpdate(collection) {
+    _updateLabelUIs() {
         this._labelsContent.find('.labelContentElement').addClass('hidden');
-        for (let view of this._currentViews) {
-            view.unsubscribe(this);
-            view.controller().model().unsubscribe(view);
-            view.erase();
+        let labels = new Set(this._currentModels.map((el) => el.label));
+        for (let label of labels) {
+            this._labelsContent.find(`.labelContentElement[label_id="${label}"]`).removeClass('hidden');
         }
+        this._updateLabelUIsState();
+    }
 
+    _updateLabelUIsState() {
+        for (let labelUI of this._labelsContent.find('.labelContentElement:not(.hidden)')) {
+            labelUI.updateState();
+        }
+    }
+
+    onCollectionUpdate(collection) {
         // Save parents and detach elements from DOM
         // in order to increase performance in the buildShapeView function
         let parents = {
@@ -1254,25 +1422,69 @@ class ShapeCollectionView {
             shapes: this._frameContent.node.parentNode
         };
 
-        this._frameContent.node.parent = null;
-        this._UIContent.detach();
+        let oldModels = this._currentModels;
+        let oldViews = this._currentViews;
+        let newShapes = collection.currentShapes;
+        let newModels = newShapes.map((el) => el.model);
+
+        let frameChanged = this._frameMarker != window.cvat.player.frames.current;
+
+        if (frameChanged) {
+            this._frameContent.node.parent = null;
+            this._UIContent.detach();
+        }
 
         this._currentViews = [];
-        for (let shape of collection.currentShapes) {
-            let model = shape.model;
+        this._currentModels = [];
+
+        // Check which old models are new models
+        for (let oldIdx = 0; oldIdx < oldModels.length; oldIdx ++) {
+            let newIdx = newModels.indexOf(oldModels[oldIdx]);
+            let significantUpdate = ['remove', 'keyframe', 'outside'].includes(oldModels[oldIdx].updateReason);
+
+            // Changed frame means a changed position in common case. We need redraw it.
+            // If shape has been restored after removing, it view already removed. We need redraw it.
+            if (newIdx === -1 || significantUpdate || frameChanged) {
+                let view = oldViews[oldIdx];
+                view.unsubscribe(this);
+                view.controller().model().unsubscribe(view);
+                view.erase();
+
+                if (newIdx != -1 && (frameChanged || significantUpdate)) {
+                    drawView.call(this, newShapes[newIdx], newModels[newIdx]);
+                }
+            }
+            else {
+                this._currentViews.push(oldViews[oldIdx]);
+                this._currentModels.push(oldModels[oldIdx]);
+            }
+        }
+
+        // Now we need draw new models which aren't on previous collection
+        for (let newIdx = 0; newIdx < newModels.length; newIdx ++) {
+            if (!this._currentModels.includes(newModels[newIdx])) {
+                drawView.call(this, newShapes[newIdx], newModels[newIdx]);
+            }
+        }
+
+        if (frameChanged) {
+            parents.shapes.append(this._frameContent.node);
+            parents.uis.prepend(this._UIContent);
+        }
+
+        ShapeCollectionView.sortByZOrder();
+        this._frameMarker = window.cvat.player.frames.current;
+        this._updateLabelUIs();
+
+        function drawView(shape, model) {
             let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
             view.draw(shape.interpolation);
             view.updateColorSettings(this._colorSettings);
-            this._currentViews.push(view);
             model.subscribe(view);
             view.subscribe(this);
-            this._labelsContent.find(`.labelContentElement[label_id="${model.label}"]`).removeClass('hidden');
+            this._currentViews.push(view);
+            this._currentModels.push(model);
         }
-
-        parents.shapes.append(this._frameContent.node);
-        parents.uis.prepend(this._UIContent);
-
-        ShapeCollectionView.sortByZOrder();
     }
 
     onPlayerUpdate(player) {
@@ -1301,18 +1513,43 @@ class ShapeCollectionView {
     }
 
     onShapeViewUpdate(view) {
-        if (view.dragging) {
-            window.cvat.mode = 'drag';
+        switch (view.updateReason) {
+        case 'drag':
+            if (view.dragging) {
+                window.cvat.mode = 'drag';
+            }
+            else if (window.cvat.mode === 'drag') {
+                window.cvat.mode = null;
+            }
+            break;
+        case 'resize':
+            if (view.resize) {
+                window.cvat.mode = 'resize';
+            }
+            else if (window.cvat.mode === 'resize') {
+                window.cvat.mode = null;
+            }
+            break;
+        case 'remove': {
+            let idx = this._currentViews.indexOf(view);
+            view.unsubscribe(this);
+            view.controller().model().unsubscribe(view);
+            view.erase();
+            this._currentViews.splice(idx, 1);
+            this._currentModels.splice(idx, 1);
+            this._updateLabelUIs();
+            break;
         }
-        else if (window.cvat.mode === 'drag') {
-            window.cvat.mode = null;
+        case 'changelabel': {
+            this._updateLabelUIs();
+            break;
         }
-
-        if (view.resize) {
-            window.cvat.mode = 'resize';
-        }
-        else if (window.cvat.mode === 'resize') {
-            window.cvat.mode = null;
+        case 'lock':
+            this._updateLabelUIsState();
+            break;
+        case 'hidden':
+            this._updateLabelUIsState();
+            break;
         }
     }
 

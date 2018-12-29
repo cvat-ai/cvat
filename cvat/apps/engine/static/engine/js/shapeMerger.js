@@ -35,7 +35,6 @@ class ShapeMergerModel extends Listener {
         }
     }
 
-
     start() {
         if (!window.cvat.mode) {
             window.cvat.mode = 'merge';
@@ -135,14 +134,19 @@ class ShapeMergerModel extends Listener {
                         }
                     )
                 );
-            }
 
-            // if last is annotation box, push outside
-            if (shapeDict[sortedFrames[sortedFrames.length - 1]].shape.type === 'annotation_box') {
-                let copy = Object.assign({}, object.shapes[object.shapes.length - 1]);
-                copy.outside = true;
-                copy.frame += 1;
-                object.shapes.push(copy);
+                // push an outsided box after each annotation box if next frame is empty
+                let nextFrame = frame + 1;
+                let stopFrame = window.cvat.player.frames.stop;
+                let type = shapeDict[frame].shape.type;
+                if (type === 'annotation_box' && !(nextFrame in shapeDict) && nextFrame <= stopFrame) {
+                    let copy = Object.assign({}, object.shapes[object.shapes.length - 1]);
+                    copy.outside = true;
+                    copy.frame += 1;
+                    copy.z_order =  this._collectionModel.zOrder(frame).max;
+                    copy.attributes = [];
+                    object.shapes.push(copy);
+                }
             }
 
             Logger.addEvent(Logger.EventType.mergeObjects, {
@@ -225,14 +229,7 @@ class ShapeMergerController {
                 this.switch();
             }.bind(this));
 
-            let cancelMergeHandler = Logger.shortkeyLogDecorator(function() {
-                if (this._model.mergeMode) {
-                    this._model.cancel();
-                }
-            }.bind(this));
-
             Mousetrap.bind(shortkeys["switch_merge_mode"].value, switchMergeHandler.bind(this), 'keydown');
-            Mousetrap.bind(shortkeys["cancel_merge_mode"].value, cancelMergeHandler.bind(this), 'keydown');
         }
     }
 
@@ -259,8 +256,7 @@ class ShapeMergerView {
 
         let shortkeys = window.cvat.config.shortkeys;
         this._mergeButton.attr('title', `
-            ${shortkeys['switch_merge_mode'].view_value} - ${shortkeys['switch_merge_mode'].description}` + `\n` +
-            `${shortkeys['cancel_merge_mode'].view_value} - ${shortkeys['cancel_merge_mode'].description}`);
+            ${shortkeys['switch_merge_mode'].view_value} - ${shortkeys['switch_merge_mode'].description}`);
 
         model.subscribe(this);
     }

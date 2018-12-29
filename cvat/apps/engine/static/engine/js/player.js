@@ -152,7 +152,14 @@ class PlayerModel extends Listener {
             top: 0,
             width: playerSize.width,
             height: playerSize.height,
+            frameOffset: 0,
         };
+
+        this._geometry.frameOffset = Math.floor(Math.max(
+            (playerSize.height - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE,
+            (playerSize.width - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE
+        ));
+        window.cvat.translate.playerOffset = this._geometry.frameOffset;
 
         this._frameProvider.subscribe(this);
     }
@@ -167,11 +174,7 @@ class PlayerModel extends Listener {
     }
 
     get geometry() {
-        return {
-            scale: this._geometry.scale,
-            top: this._geometry.top,
-            left: this._geometry.left
-        };
+        return Object.assign({}, this._geometry);
     }
 
     get playing() {
@@ -498,7 +501,6 @@ class PlayerController {
             this._moving = true;
             this._lastClickX = e.clientX;
             this._lastClickY = e.clientY;
-            e.preventDefault();
         }
     }
 
@@ -520,6 +522,7 @@ class PlayerController {
             let leftOffset = e.clientX - this._lastClickX;
             this._lastClickX = e.clientX;
             this._lastClickY = e.clientY;
+
             this._model.move(topOffset, leftOffset);
         }
     }
@@ -647,11 +650,21 @@ class PlayerView {
         this._frameNumber = $('#frameNumber');
         this._playerGridPattern = $('#playerGridPattern');
         this._playerGridPath = $('#playerGridPath');
+        this._contextMenuUI = $('#playerContextMenu');
 
-        $('*').on('mouseup', () => this._controller.frameMouseUp());
+        $('*').on('mouseup.player', () => this._controller.frameMouseUp());
+        this._playerContentUI.on('mousedown', (e) => {
+            let pos = window.cvat.translate.point.clientToCanvas(this._playerBackgroundUI[0], e.clientX, e.clientY);
+            let frameWidth = window.cvat.player.geometry.frameWidth;
+            let frameHeight = window.cvat.player.geometry.frameHeight;
+            if (pos.x >= 0 && pos.y >= 0 && pos.x <= frameWidth && pos.y <= frameHeight) {
+                this._controller.frameMouseDown(e);
+            }
+            e.preventDefault();
+        });
+
         this._playerUI.on('wheel', (e) => this._controller.zoom(e));
         this._playerUI.on('dblclick', () => this._controller.fit());
-        this._playerContentUI.on('mousedown', (e) => this._controller.frameMouseDown(e));
         this._playerUI.on('mousemove', (e) => this._controller.frameMouseMove(e));
         this._progressUI.on('mousedown', (e) => this._controller.progressMouseDown(e));
         this._progressUI.on('mouseup', () => this._controller.progressMouseUp());
@@ -763,6 +776,45 @@ class PlayerView {
         this._multiplePrevButtonUI.find('polygon').append($(document.createElementNS('http://www.w3.org/2000/svg', 'title'))
             .html(`${shortkeys['backward_frame'].view_value} - ${shortkeys['backward_frame'].description}`));
 
+
+        this._contextMenuUI.click((e) => {
+            $('.custom-menu').hide(100);
+            switch($(e.target).attr("action")) {
+            case "job_url": {
+                window.cvat.search.set('frame', null);
+                window.cvat.search.set('filter', null);
+                copyToClipboard(window.cvat.search.toString());
+                break;
+            }
+            case "frame_url":
+                window.cvat.search.set('frame', window.cvat.player.frames.current);
+                window.cvat.search.set('filter', null);
+                copyToClipboard(window.cvat.search.toString());
+                window.cvat.search.set('frame', null);
+                break;
+            }
+        });
+
+        this._playerUI.on('contextmenu.playerContextMenu', (e) => {
+            if (!window.cvat.mode) {
+                $('.custom-menu').hide(100);
+                this._contextMenuUI.finish().show(100);
+                let x = Math.min(e.pageX, this._playerUI[0].offsetWidth -
+                    this._contextMenuUI[0].scrollWidth);
+                let y = Math.min(e.pageY, this._playerUI[0].offsetHeight -
+                    this._contextMenuUI[0].scrollHeight);
+                this._contextMenuUI.offset({
+                    left: x,
+                    top: y,
+                });
+                e.preventDefault();
+            }
+        });
+
+        this._playerContentUI.on('mousedown.playerContextMenu', () => {
+            $('.custom-menu').hide(100);
+        });
+
         playerModel.subscribe(this);
     }
 
@@ -778,7 +830,9 @@ class PlayerView {
         }
 
         this._loadingUI.addClass('hidden');
-        this._playerBackgroundUI.css('background-image', 'url(' + '"' + image.src + '"' + ')');
+        if (this._playerBackgroundUI.css('background-image').slice(5,-2) != image.src) {
+            this._playerBackgroundUI.css('background-image', 'url(' + '"' + image.src + '"' + ')');
+        }
 
         if (model.playing) {
             this._playButtonUI.addClass('hidden');
@@ -815,13 +869,19 @@ class PlayerView {
 
         this._progressUI['0'].value = frames.current - frames.start;
 
-        for (let obj of [this._playerBackgroundUI, this._playerContentUI, this._playerGridUI]) {
+        for (let obj of [this._playerBackgroundUI, this._playerGridUI]) {
             obj.css('width', image.width);
             obj.css('height', image.height);
             obj.css('top', geometry.top);
             obj.css('left', geometry.left);
             obj.css('transform', 'scale(' + geometry.scale + ')');
         }
+
+        this._playerContentUI.css('width', image.width + geometry.frameOffset * 2);
+        this._playerContentUI.css('height', image.height + geometry.frameOffset * 2);
+        this._playerContentUI.css('top', geometry.top - geometry.frameOffset * geometry.scale);
+        this._playerContentUI.css('left', geometry.left - geometry.frameOffset * geometry.scale);
+        this._playerContentUI.css('transform', 'scale(' + geometry.scale + ')');
 
         this._playerGridPath.attr('stroke-width', 2 / geometry.scale);
         this._frameNumber.prop('value', frames.current);

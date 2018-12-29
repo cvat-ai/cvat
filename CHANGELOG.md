@@ -4,6 +4,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2018-12-29
+### Added
+- Ability to copy Object URL and Frame URL via object context menu and player context menu respectively.
+- Ability to change opacity for selected shape with help "Selected Fill Opacity" slider.
+- Ability to remove polyshapes points by double click.
+- Ability to draw/change polyshapes (except for points) by slip method. Just press ENTER and moving a cursor.
+- Ability to switch lock/hide properties via label UI element (in right menu) for all objects with same label.
+- Shortcuts for outside/keyframe properties
+- Support of Intel OpenVINO for accelerated model inference
+- Tensorflow annotation now works without CUDA. It can use CPU only. OpenVINO and CUDA are supported optionally.
+- Incremental saving of annotations.
+- Tutorial for using polygons (screencast)
+- Silk profiler to improve development process
+- Admin panel can be used to edit labels and attributes for annotation tasks
+- Analytics component to manage a data annotation team, monitor exceptions, collect client and server logs
+- Changeable job and task statuses (annotation, validation, completed). A job status can be changed manually, a task status is computed automatically based on job statuses (#153)
+- Backlink to a task from its job annotation view (#156)
+- Buttons lock/hide for labels. They work for all objects with the same label on a current frame (#116)
+
+### Changed
+- Polyshape editing method has been improved. You can redraw part of shape instead of points cloning.
+- Unified shortcut (Esc) for close any mode instead of different shortcuts (Alt+N, Alt+G, Alt+M etc.).
+- Dump file contains information about data source (e.g. video name, archive name, ...)
+- Update requests library due to https://nvd.nist.gov/vuln/detail/CVE-2018-18074
+- Per task/job permissions to create/access/change/delete tasks and annotations
+- Documentation was improved
+- Timeout for creating tasks was increased (from 1h to 4h) (#136)
+- Drawing has become more convenience. Now it is possible to draw outside an image. Shapes will be automatically truncated after drawing process (#202)
+
+### Fixed
+- Performance bottleneck has been fixed during you create new objects (draw, copy, merge etc).
+- Label UI elements aren't updated after changelabel.
+- Attribute annotation mode can use invalid shape position after resize or move shapes.
+- Labels order is preserved now (#242)
+- Uploading large XML files (#123)
+- Django vulnerability (#121)
+- Grammatical cleanup of README.md (#107)
+- Dashboard loading has been accelerated (#156)
+- Text drawing outside of a frame in some cases (#202)
+
 ## [0.2.0] - 2018-09-28
 ### Added
 - New annotation shapes: polygons, polylines, points

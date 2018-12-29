@@ -22,6 +22,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.apps import apps
 import os
 
 urlpatterns = [
@@ -31,8 +32,13 @@ urlpatterns = [
     path('django-rq/', include('django_rq.urls')),
     path('auth/', include('cvat.apps.authentication.urls')),
     path('documentation/', include('cvat.apps.documentation.urls')),
-    path('logs/', include('cvat.apps.log_proxy.urls'))
 ]
 
-if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
-    urlpatterns += [path('tf_annotation/', include('cvat.apps.tf_annotation.urls'))]
+if apps.is_installed('cvat.apps.tf_annotation'):
+    urlpatterns.append(path('tensorflow/annotation/', include('cvat.apps.tf_annotation.urls')))
+
+if apps.is_installed('cvat.apps.log_viewer'):
+    urlpatterns.append(path('analytics/', include('cvat.apps.log_viewer.urls')))
+
+if apps.is_installed('silk'):
+    urlpatterns.append(path('profiler/', include('silk.urls')))

@@ -41,14 +41,20 @@ module.exports = {
         'AnnotationParser': true,
         // from annotationUI.js
         'callAnnotationUI': true,
-        'translateSVGPos': true,
         'blurAllElements': true,
         'drawBoxSize': true,
+        'copyToClipboard': true,
         // from base.js
         'showMessage': true,
         'showOverlay': true,
         'confirm': true,
         'dumpAnnotationRequest': true,
+        'createExportContainer': true,
+        'ExportType': true,
+        'getExportTargetContainer': true,
+        // from idGenerator.js
+        'IncrementIdGenerator': true,
+        'ConstIdGenerator': true,
         // from shapeCollection.js
         'ShapeCollectionModel': true,
         'ShapeCollectionController': true,
@@ -73,6 +79,7 @@ module.exports = {
         'ShapeMergerView': true,
         // from shapes.js
         'PolyShapeModel': true,
+        'PolyShapeView': true,
         'buildShapeModel': true,
         'buildShapeController': true,
         'buildShapeView': true,
@@ -82,8 +89,6 @@ module.exports = {
         'SELECT_POINT_STROKE_WIDTH': true,
         // from mousetrap.js
         'Mousetrap': true,
-        // from md5.js
-        'md5': true,
         // from platform.js
         'platform': true,
         // from player.js
@@ -116,5 +121,11 @@ module.exports = {
         'HistoryModel': true,
         'HistoryController': true,
         'HistoryView': true,
+        // from polyshapeEditor.js
+        'PolyshapeEditorModel': true,
+        'PolyshapeEditorController': true,
+        'PolyshapeEditorView': true,
+        // from coordinateTranslator
+        'CoordinateTranslator': true,
     },
 };

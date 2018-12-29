@@ -14,6 +14,7 @@ const AREA_TRESHOLD = 9;
 const TEXT_MARGIN = 10;
 
 /******************************** SHAPE MODELS  ********************************/
+
 class ShapeModel extends Listener {
     constructor(data, positions, type, id, color) {
         super('onShapeUpdate', () => this );
@@ -195,6 +196,17 @@ class ShapeModel extends Listener {
         return counter;
     }
 
+    notify(updateReason) {
+        let oldReason = this._updateReason;
+        this._updateReason = updateReason;
+        try {
+            Listener.prototype.notify.call(this);
+        }
+        finally {
+            this._updateReason = oldReason;
+        }
+    }
+
     collectStatistic() {
         let collectObj = {};
         collectObj.type = this._type.split('_')[1];
@@ -229,8 +241,7 @@ class ShapeModel extends Listener {
         window.cvat.addAction('Change Attribute', () => {
             if (typeof(oldAttr) === 'undefined') {
                 delete this._attributes.mutable[frame][attrId];
-                this._updateReason = 'attributes';
-                this.notify();
+                this.notify('attributes');
             }
             else {
                 this.updateAttribute(frame, attrId, oldAttr);
@@ -249,8 +260,7 @@ class ShapeModel extends Listener {
             this._attributes.immutable[attrId] = labelsInfo.strToValues(attrInfo.type, value)[0];
         }
 
-        this._updateReason = 'attributes';
-        this.notify();
+        this.notify('attributes');
     }
 
     changeLabel(labelId) {
@@ -263,8 +273,7 @@ class ShapeModel extends Listener {
             this._label = +labelId;
             this._importAttributes([], []);
             this._setupKeyFrames();
-            this._updateReason = 'changelabel';
-            this.notify();
+            this.notify('changelabel');
         }
         else {
             throw Error(`Unknown label id value found: ${labelId}`);
@@ -273,8 +282,7 @@ class ShapeModel extends Listener {
 
     changeColor(color) {
         this._color = color;
-        this._updateReason = 'color';
-        this.notify();
+        this.notify('color');
     }
 
     interpolate(frame) {
@@ -297,14 +305,12 @@ class ShapeModel extends Listener {
         // End of undo/redo code
 
         this.updatePosition(frame, position, true);
-        this._updateReason = 'occluded';
-        this.notify();
+        this.notify('occluded');
     }
 
     switchLock() {
         this._locked = !this._locked;
-        this._updateReason = 'lock';
-        this.notify();
+        this.notify('lock');
     }
 
     switchHide() {
@@ -321,8 +327,7 @@ class ShapeModel extends Listener {
             this._hiddenText = false;
         }
 
-        this._updateReason = 'hidden';
-        this.notify();
+        this.notify('hidden');
     }
 
     switchOutside(frame) {
@@ -346,8 +351,7 @@ class ShapeModel extends Listener {
                     delete this._attributes.mutable[frame];
                 }
 
-                this._updateReason = 'outside';
-                this.notify();
+                this.notify('outside');
             }
             else {
                 this.switchOutside(frame);
@@ -370,8 +374,7 @@ class ShapeModel extends Listener {
             this._frame = frame;
         }
 
-        this._updateReason = 'outside';
-        this.notify();
+        this.notify('outside');
     }
 
     switchKeyFrame(frame) {
@@ -381,8 +384,12 @@ class ShapeModel extends Listener {
         }
 
         // Undo/redo code
+        let oldPos = Object.assign({}, this._positions[frame]);
         window.cvat.addAction('Change Keyframe', () => {
             this.switchKeyFrame(frame);
+            if (Object.keys(oldPos).length && oldPos.outside) {
+                this.switchOutside(frame);
+            }
         }, () => {
             this.switchKeyFrame(frame);
         }, frame);
@@ -411,13 +418,12 @@ class ShapeModel extends Listener {
                 this._frame = frame;
             }
         }
-        this._updateReason = 'keyframe';
-        this.notify();
+
+        this.notify('keyframe');
     }
 
     click() {
-        this._updateReason = 'click';
-        this.notify();
+        this.notify('click');
     }
 
     prevKeyFrame() {
@@ -437,23 +443,20 @@ class ShapeModel extends Listener {
     }
 
     aamAttributeFocus() {
-        this._updateReason = 'attributeFocus';
-        this.notify();
+        this.notify('attributeFocus');
     }
 
     select() {
         if (!this._selected) {
             this._selected = true;
-            this._updateReason = 'selection';
-            this.notify();
+            this.notify('selection');
         }
     }
 
     deselect() {
         if (this._selected) {
             this._selected = false;
-            this._updateReason = 'selection';
-            this.notify();
+            this.notify('selection');
         }
     }
 
@@ -470,6 +473,7 @@ class ShapeModel extends Listener {
             this.removed = false;
         }, () => {
             this.removed = true;
+
         }, window.cvat.player.frames.current);
         // End of undo/redo code
     }
@@ -480,8 +484,7 @@ class ShapeModel extends Listener {
             let position = this._interpolatePosition(frame);
             position.z_order = value;
             this.updatePosition(frame, position, true);
-            this._updateReason = 'z_order';
-            this.notify();
+            this.notify('z_order');
         }
     }
 
@@ -489,9 +492,9 @@ class ShapeModel extends Listener {
         if (value) {
             this._active = false;
         }
+
         this._removed = value;
-        this._updateReason = 'remove';
-        this.notify();
+        this.notify('remove');
     }
 
     get removed() {
@@ -513,8 +516,7 @@ class ShapeModel extends Listener {
     set active(value) {
         this._active = value;
         if (!this._removed) {
-            this._updateReason = 'activation';
-            this.notify();
+            this.notify('activation');
         }
     }
 
@@ -525,8 +527,7 @@ class ShapeModel extends Listener {
     set activeAAM(active) {
         this._activeAAM = active.shape;
         this._activeAAMAttributeId = active.attribute;
-        this._updateReason = 'activeAAM';
-        this.notify();
+        this.notify('activeAAM');
     }
 
     get activeAAM() {
@@ -538,8 +539,7 @@ class ShapeModel extends Listener {
 
     set merge(value) {
         this._merge = value;
-        this._updateReason = 'merge';
-        this.notify();
+        this.notify('merge');
     }
 
     get merge() {
@@ -548,8 +548,7 @@ class ShapeModel extends Listener {
 
     set groupping(value) {
         this._groupping = value;
-        this._updateReason = 'groupping';
-        this.notify();
+        this.notify('groupping');
     }
 
     get groupping() {
@@ -610,7 +609,7 @@ class BoxModel extends ShapeModel {
             return Object.assign({},
                 this._positions[this._frame],
                 {
-                    outside: false
+                    outside: this._frame != frame
                 }
             );
         }
@@ -683,8 +682,7 @@ class BoxModel extends ShapeModel {
                 window.cvat.addAction('Change Position', () => {
                     if (!Object.keys(oldPos).length) {
                         delete this._positions[frame];
-                        this._updateReason = 'position';
-                        this.notify();
+                        this.notify('position');
                     }
                     else {
                         this.updatePosition(frame, oldPos, false);
@@ -706,8 +704,7 @@ class BoxModel extends ShapeModel {
         }
 
         if (!silent) {
-            this._updateReason = 'position';
-            this.notify();
+            this.notify('position');
         }
     }
 
@@ -763,6 +760,7 @@ class BoxModel extends ShapeModel {
             }
 
             return Object.assign({}, this._positions[this._frame], {
+                id: this._id,
                 attributes: immutableAttributes,
                 label_id: this._label,
                 group_id: this._groupId,
@@ -771,6 +769,7 @@ class BoxModel extends ShapeModel {
         }
         else {
             let boxPath = {
+                id: this._id,
                 label_id: this._label,
                 group_id: this._groupId,
                 frame: this._frame,
@@ -801,10 +800,6 @@ class BoxModel extends ShapeModel {
     }
 
     removePoint() {
-        // nothing do
-    }
-
-    clonePoint() {
         // nothing do
     }
 
@@ -872,18 +867,43 @@ class PolyShapeModel extends ShapeModel {
         this._setupKeyFrames();
     }
 
-
     _interpolatePosition(frame) {
+        if (this._type.startsWith('annotation')) {
+            return Object.assign({},
+                this._positions[this._frame],
+                {
+                    outside: this._frame != frame
+                }
+            );
+        }
+
+        let [leftFrame, rightFrame] = this._neighboringFrames(frame);
         if (frame in this._positions) {
-            return Object.assign({}, this._positions[frame], {
-                outside: false
-            });
+            leftFrame = frame;
         }
-        else {
-            return {
-                outside: true
-            };
+
+        let leftPos = null;
+        let rightPos = null;
+
+        if (leftFrame != null) leftPos = this._positions[leftFrame];
+        if (rightFrame != null) rightPos = this._positions[rightFrame];
+
+        if (!leftPos) {
+            if (rightPos) {
+                return Object.assign({}, rightPos, {
+                    outside: true,
+                });
+            }
+            else {
+                return {
+                    outside: true
+                };
+            }
         }
+
+        return Object.assign({}, leftPos, {
+            outside: leftFrame != frame,
+        });
     }
 
     updatePosition(frame, position, silent) {
@@ -937,8 +957,7 @@ class PolyShapeModel extends ShapeModel {
         }
 
         if (!silent) {
-            this._updateReason = 'position';
-            this.notify();
+            this.notify('position');
         }
     }
 
@@ -962,6 +981,7 @@ class PolyShapeModel extends ShapeModel {
             }
 
             return Object.assign({}, this._positions[this._frame], {
+                id: this._id,
                 attributes: immutableAttributes,
                 label_id: this._label,
                 group_id: this._groupId,
@@ -970,6 +990,7 @@ class PolyShapeModel extends ShapeModel {
         }
         else {
             let polyPath = {
+                id: this._id,
                 label_id: this._label,
                 group_id: this._groupId,
                 frame: this._frame,
@@ -1011,40 +1032,6 @@ class PolyShapeModel extends ShapeModel {
         }
     }
 
-    clonePoint(idx, direction, inserPoint) {
-        let frame = window.cvat.player.frames.current;
-        let position = this._interpolatePosition(frame);
-        let points = PolyShapeModel.convertStringToNumberArray(position.points);
-
-        let otherIdx = null;
-        if (direction === 'before') {
-            otherIdx = idx - 1 >= 0 ? idx - 1: points.length - 1;
-        }
-        else {
-            otherIdx = idx + 1 in points ? idx + 1: 0;
-        }
-        let curP = points[idx];
-        let otherP = points[otherIdx];
-        let newP = {
-            x: curP.x + (otherP.x - curP.x) / 2,
-            y: curP.y + (otherP.y - curP.y) / 2,
-        };
-
-        if (direction === 'before') {
-            points.splice(idx, 0, newP);
-        }
-        else {
-            points.splice(idx + 1, 0, newP);
-        }
-
-        if (inserPoint) {
-            position.points = PolyShapeModel.convertNumberArrayToString(points);
-            this.updatePosition(frame, position);
-        }
-
-        return newP;
-    }
-
     static convertStringToNumberArray(serializedPoints) {
         let pointArray = [];
         for (let pair of serializedPoints.split(' ')) {
@@ -1057,16 +1044,7 @@ class PolyShapeModel extends ShapeModel {
     }
 
     static convertNumberArrayToString(arrayPoints) {
-        let serializedPoints = '';
-        for (let point of arrayPoints) {
-            serializedPoints += `${point.x},${point.y} `;
-        }
-        let len = serializedPoints.length;
-        if (len) {
-            serializedPoints = serializedPoints.substring(0, len - 1);
-        }
-
-        return serializedPoints;
+        return arrayPoints.map(point => `${point.x},${point.y}`).join(' ');
     }
 
     static importPositions(positions) {
@@ -1247,8 +1225,7 @@ class PolygonModel extends PolyShapeModel {
 
     set draggable(value) {
         this._draggable = value;
-        this._updateReason = 'draggable';
-        this.notify();
+        this.notify('draggable');
     }
 
     get draggable() {
@@ -1438,7 +1415,7 @@ class ShapeView extends Listener {
         this._appearance = {
             colors: shapeModel.color,
             fillOpacity: 0,
-            selectedFillOpacity: 0.1,
+            selectedFillOpacity: 0.2,
         };
 
         this._flags = {
@@ -1449,9 +1426,13 @@ class ShapeView extends Listener {
         };
 
         this._controller = shapeController;
+        this._updateReason = null;
 
         this._shapeContextMenu = $('#shapeContextMenu');
         this._pointContextMenu = $('#pointContextMenu');
+
+        this._rightBorderFrame = $('#playerFrame')[0].offsetWidth;
+        this._bottomBorderFrame = $('#playerFrame')[0].offsetHeight;
 
         shapeModel.subscribe(this);
     }
@@ -1472,7 +1453,7 @@ class ShapeView extends Listener {
                     this._flags.dragging = true;
                     blurAllElements();
                     this._hideShapeText();
-                    this.notify();
+                    this.notify('drag');
                 }).on('dragend', (e) => {
                     let p1 = e.detail.handler.startPoints.point;
                     let p2 = e.detail.p;
@@ -1484,7 +1465,7 @@ class ShapeView extends Listener {
                     events.drag = null;
                     this._flags.dragging = false;
                     this._showShapeText();
-                    this.notify();
+                    this.notify('drag');
                 });
 
                 // Setup resize events
@@ -1502,7 +1483,7 @@ class ShapeView extends Listener {
                     events.resize = Logger.addContinuedEvent(Logger.EventType.resizeObject);
                     blurAllElements();
                     this._hideShapeText();
-                    this.notify();
+                    this.notify('resize');
                 }).on('resizing', () => {
                     objWasResized = true;
                 }).on('resizedone', () => {
@@ -1515,7 +1496,7 @@ class ShapeView extends Listener {
                     events.resize = null;
                     this._flags.resizing = false;
                     this._showShapeText();
-                    this.notify();
+                    this.notify('resize');
                 });
 
 
@@ -1538,8 +1519,7 @@ class ShapeView extends Listener {
             // Setup context menu
             this._uis.shape.on('mousedown.contextMenu', (e) => {
                 if (e.which === 1) {
-                    this._shapeContextMenu.hide(100);
-                    this._pointContextMenu.hide(100);
+                    $('.custom-menu').hide(100);
                 }
                 if (e.which === 3) {
                     e.stopPropagation();
@@ -1547,7 +1527,7 @@ class ShapeView extends Listener {
             });
 
             this._uis.shape.on('contextmenu.contextMenu', (e) => {
-                this._pointContextMenu.hide(100);
+                $('.custom-menu').hide(100);
                 let type = this._controller.type.split('_');
                 if (type[0] === 'interpolation') {
                     this._shapeContextMenu.find('.interpolationItem').removeClass('hidden');
@@ -1571,9 +1551,12 @@ class ShapeView extends Listener {
                     dragPolyItem.addClass('hidden');
                 }
 
-                this._shapeContextMenu.finish().show(100).offset({
-                    top: e.pageY - 10,
-                    left: e.pageX - 10,
+                this._shapeContextMenu.finish().show(100);
+                let x = Math.min(e.pageX, this._rightBorderFrame - this._shapeContextMenu[0].scrollWidth);
+                let y = Math.min(e.pageY, this._bottomBorderFrame - this._shapeContextMenu[0].scrollHeight);
+                this._shapeContextMenu.offset({
+                    left: x,
+                    top: y,
                 });
 
                 e.preventDefault();
@@ -1589,6 +1572,16 @@ class ShapeView extends Listener {
                 deepSelect: true,
             }).resize(false);
 
+            if (this._flags.resizing) {
+                this._flags.resizing = false;
+                this.notify('resize');
+            }
+
+            if (this._flags.dragging) {
+                this._flags.dragging = false;
+                this.notify('drag');
+            }
+
             this._uis.shape.off('dragstart')
                 .off('dragend')
                 .off('resizestart')
@@ -1596,11 +1589,11 @@ class ShapeView extends Listener {
                 .off('resizedone')
                 .off('contextmenu.contextMenu')
                 .off('mousedown.contextMenu');
+
             this._flags.editable = false;
         }
 
-        this._pointContextMenu.hide(100);
-        this._shapeContextMenu.hide(100);
+        $('.custom-menu').hide(100);
     }
 
 
@@ -1828,7 +1821,7 @@ class ShapeView extends Listener {
         UI.style.backgroundColor = this._controller.color.ui;
 
         this._uis.menu = $(UI);
-        this._scenes.menus.append(this._uis.menu);
+        this._scenes.menus.prepend(this._uis.menu);
 
         function makeTitleBlock(id, label, type, shortkeys) {
             let title = document.createElement('div');
@@ -2401,6 +2394,18 @@ class ShapeView extends Listener {
     }
 
 
+    notify(newReason) {
+        let oldReason = this._updateReason;
+        this._updateReason = newReason;
+        try {
+            Listener.prototype.notify.call(this);
+        }
+        finally {
+            this._updateReason = oldReason;
+        }
+    }
+
+
     // Inteface methods
     draw(interpolation) {
         let outside = interpolation.position.outside;
@@ -2442,24 +2447,18 @@ class ShapeView extends Listener {
                 this._uis.shape.attr('stroke-width', STROKE_WIDTH / scale);
             }
 
-
             if (this._uis.text && this._uis.text.node.parentElement) {
                 let revscale = 1 / scale;
                 let shapeBBox = this._uis.shape.node.getBBox();
                 let textBBox = this._uis.text.node.getBBox();
 
-                let x = shapeBBox.x + shapeBBox.width + TEXT_MARGIN;
+                let x = shapeBBox.x + shapeBBox.width + TEXT_MARGIN * revscale;
                 let y = shapeBBox.y;
 
-                if (x + textBBox.width * revscale > window.cvat.player.geometry.frameWidth) {
-                    x = shapeBBox.x - TEXT_MARGIN - textBBox.width * revscale;
-                    if (x < 0) {
-                        x = shapeBBox.x + TEXT_MARGIN;
-                    }
-                }
-
-                if (y + textBBox.height * revscale > window.cvat.player.geometry.frameHeight) {
-                    y = Math.max(0, window.cvat.player.geometry.frameHeight - textBBox.height * revscale);
+                let transl = window.cvat.translate.point;
+                let canvas = this._scenes.svg.node;
+                if (transl.canvasToClient(canvas, x + textBBox.width * revscale, 0).x > this._rightBorderFrame) {
+                    x = shapeBBox.x + TEXT_MARGIN * revscale;
                 }
 
                 this._uis.text.move(x / revscale, y / revscale);
@@ -2508,6 +2507,7 @@ class ShapeView extends Listener {
 
             this._setupLockedUI(locked);
             this._updateButtonsBlock(interpolation.position);
+            this.notify('lock');
             break;
         }
         case 'occluded':
@@ -2517,10 +2517,12 @@ class ShapeView extends Listener {
         case 'hidden':
             setupHidden.call(this, hiddenShape, hiddenText, activeAAM, model.active, interpolation);
             this._updateButtonsBlock(interpolation.position);
+            this.notify('hidden');
             break;
         case 'remove':
             if (model.removed) {
                 this.erase();
+                this.notify('remove');
             }
             break;
         case 'position':
@@ -2542,6 +2544,7 @@ class ShapeView extends Listener {
             if (colorByLabel.prop('checked')) {
                 colorByLabel.trigger('change');
             }
+            this.notify('changelabel');
             break;
         }
         case 'attributeFocus': {
@@ -2683,6 +2686,10 @@ class ShapeView extends Listener {
             }
         }
 
+        if ('selected-fill-opacity' in settings) {
+            this._appearance.selectedFillOpacity = settings['selected-fill-opacity'];
+        }
+
         if (settings['black-stroke']) {
             this._appearance['stroke'] = 'black';
         }
@@ -2705,6 +2712,10 @@ class ShapeView extends Listener {
     // Used by shapeCollectionView for resize management
     get resize() {
         return this._flags.resizing;
+    }
+
+    get updateReason() {
+        return this._updateReason;
     }
 
     // Used in shapeGrouper in order to get model via controller and set group id
@@ -2731,29 +2742,43 @@ ShapeView.labels = function() {
 class BoxView extends ShapeView {
     constructor(boxModel, boxController, svgScene, menusScene) {
         super(boxModel, boxController, svgScene, menusScene);
+
+        this._uis.boxSize = null;
     }
 
 
     _makeEditable() {
         if (this._uis.shape && this._uis.shape.node.parentElement && !this._flags.editable) {
             if (!this._controller.lock) {
-                let sizeObject = null;
                 this._uis.shape.on('resizestart', (e) => {
-                    sizeObject = drawBoxSize(this._scenes.svg, e.target);
+                    if (this._uis.boxSize) {
+                        this._uis.boxSize.rm();
+                        this._uis.boxSize = null;
+                    }
+
+                    this._uis.boxSize = drawBoxSize(this._scenes.svg, e.target);
                 }).on('resizing', (e) => {
-                    sizeObject = drawBoxSize.call(sizeObject, this._scenes.svg, e.target);
+                    this._uis.boxSize = drawBoxSize.call(this._uis.boxSize, this._scenes.svg, e.target);
                 }).on('resizedone', () => {
-                    sizeObject.rm();
+                    this._uis.boxSize.rm();
                 });
             }
             ShapeView.prototype._makeEditable.call(this);
         }
     }
 
+    _makeNotEditable() {
+        if (this._uis.boxSize) {
+            this._uis.boxSize.rm();
+            this._uis.boxSize = null;
+        }
+        ShapeView.prototype._makeNotEditable.call(this);
+    }
+
 
     _buildPosition() {
         let shape = this._uis.shape.node;
-        return {
+        return window.cvat.translate.box.canvasToActual({
             xtl: +shape.getAttribute('x'),
             ytl: +shape.getAttribute('y'),
             xbr: +shape.getAttribute('x') + +shape.getAttribute('width'),
@@ -2761,13 +2786,12 @@ class BoxView extends ShapeView {
             occluded: this._uis.shape.hasClass('occludedShape'),
             outside: false,    // if drag or resize possible, track is not outside
             z_order: +shape.getAttribute('z_order'),
-        };
+        });
     }
 
 
     _drawShapeUI(position) {
-        let xtl = position.xtl;
-        let ytl = position.ytl;
+        position = window.cvat.translate.box.actualToCanvas(position);
         let width = position.xbr - position.xtl;
         let height = position.ybr - position.ytl;
 
@@ -2777,11 +2801,10 @@ class BoxView extends ShapeView {
             'stroke-width': STROKE_WIDTH /  window.cvat.player.geometry.scale,
             'z_order': position.z_order,
             'fill-opacity': this._appearance.fillOpacity
-        }).move(xtl, ytl).addClass('shape');
+        }).move(position.xtl, position.ytl).addClass('shape');
 
         ShapeView.prototype._drawShapeUI.call(this);
     }
-
 
     _setupAAMView(active, pos) {
         let oldRect = $('#outsideRect');
@@ -2793,12 +2816,14 @@ class BoxView extends ShapeView {
                 oldMask.remove();
             }
 
-            let size = {
+            let size = window.cvat.translate.box.actualToCanvas({
                 x: 0,
                 y: 0,
                 width: window.cvat.player.geometry.frameWidth,
                 height: window.cvat.player.geometry.frameHeight
-            };
+            });
+
+            pos = window.cvat.translate.box.actualToCanvas(pos);
 
             let excludeField = this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).fill('#666');
             let includeField = this._scenes.svg.rect(pos.xbr - pos.xtl, pos.ybr - pos.ytl).move(pos.xtl, pos.ytl);
@@ -2824,7 +2849,7 @@ class PolyShapeView extends ShapeView {
 
     _buildPosition() {
         return {
-            points: this._uis.shape.node.getAttribute('points'),
+            points: window.cvat.translate.points.canvasToActual(this._uis.shape.node.getAttribute('points')),
             occluded: this._uis.shape.hasClass('occludedShape'),
             outside: false,
             z_order: +this._uis.shape.node.getAttribute('z_order'),
@@ -2842,15 +2867,17 @@ class PolyShapeView extends ShapeView {
                 oldMask.remove();
             }
 
-            let size = {
+            let size = window.cvat.translate.box.actualToCanvas({
                 x: 0,
                 y: 0,
                 width: window.cvat.player.geometry.frameWidth,
                 height: window.cvat.player.geometry.frameHeight
-            };
+            });
+
+            let points = window.cvat.translate.points.actualToCanvas(pos.points);
 
             let excludeField = this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).fill('#666');
-            let includeField = this._scenes.svg.polygon(pos.points);
+            let includeField = this._scenes.svg.polygon(points);
             this._scenes.svg.mask().add(excludeField).add(includeField).fill('black').attr('id', 'outsideMask');
             this._scenes.svg.rect(size.width, size.height).move(size.x, size.y).attr({
                 mask: 'url(#outsideMask)',
@@ -2869,16 +2896,60 @@ class PolyShapeView extends ShapeView {
         if (this._flags.editable) {
             for (let point of $('.svg_select_points')) {
                 point = $(point);
-                point.on('contextmenu.contextMenu', (e) => {
-                    this._shapeContextMenu.hide(100);
-                    this._pointContextMenu.attr('point_idx', point.index());
 
-                    this._pointContextMenu.finish().show(100).offset({
-                        top: e.pageY - 20,
-                        left: e.pageX - 20,
+                point.on('contextmenu.contextMenu', (e) => {
+                    $('.custom-menu').hide(100);
+                    this._pointContextMenu.attr('point_idx', point.index());
+                    this._pointContextMenu.attr('dom_point_id', point.attr('id'));
+
+                    this._pointContextMenu.finish().show(100);
+                    let x = Math.min(e.pageX, this._rightBorderFrame - this._pointContextMenu[0].scrollWidth);
+                    let y = Math.min(e.pageY, this._bottomBorderFrame - this._pointContextMenu[0].scrollHeight);
+                    this._pointContextMenu.offset({
+                        left: x,
+                        top: y,
                     });
 
                     e.preventDefault();
+                    e.stopPropagation();
+                });
+
+                point.on('dblclick.polyshapeEditor', (e) => {
+                    if (e.shiftKey) {
+                        if (!window.cvat.mode) {
+                            // Get index before detach shape from DOM
+                            let index = point.index();
+
+                            // Make non active view and detach shape from DOM
+                            this._makeNotEditable();
+                            this._deselect();
+                            if (this._controller.hiddenText) {
+                                this._hideShapeText();
+                            }
+                            this._uis.shape.addClass('hidden');
+                            if (this._uis.points) {
+                                this._uis.points.addClass('hidden');
+                            }
+
+                            // Run edit mode
+                            PolyShapeView.editor.edit(this._controller.type.split('_')[1],
+                                this._uis.shape.attr('points'), this._color, index, e,
+                                (points) => {
+                                    this._uis.shape.removeClass('hidden');
+                                    if (this._uis.points) {
+                                        this._uis.points.removeClass('hidden');
+                                    }
+                                    if (points) {
+                                        this._uis.shape.attr('points', points);
+                                        this._controller.updatePosition(window.cvat.player.frames.current, this._buildPosition());
+                                    }
+                                }
+                            );
+                        }
+                    }
+                    else {
+                        this._controller.model().removePoint(point.index());
+                    }
                     e.stopPropagation();
                 });
             }
@@ -2889,6 +2960,7 @@ class PolyShapeView extends ShapeView {
     _makeNotEditable() {
         for (let point of $('.svg_select_points')) {
             $(point).off('contextmenu.contextMenu');
+            $(point).off('dblclick.polyshapeEditor');
         }
         ShapeView.prototype._makeNotEditable.call(this);
     }
@@ -2901,7 +2973,8 @@ class PolygonView extends PolyShapeView {
     }
 
     _drawShapeUI(position) {
-        this._uis.shape = this._scenes.svg.polygon(position.points).fill(this._appearance.colors.shape).attr({
+        let points = window.cvat.translate.points.actualToCanvas(position.points);
+        this._uis.shape = this._scenes.svg.polygon(points).fill(this._appearance.colors.shape).attr({
             'fill': this._appearance.fill || this._appearance.colors.shape,
             'stroke': this._appearance.stroke || this._appearance.colors.shape,
             'stroke-width': STROKE_WIDTH / window.cvat.player.geometry.scale,
@@ -2941,7 +3014,8 @@ class PolylineView extends PolyShapeView {
 
 
     _drawShapeUI(position) {
-        this._uis.shape = this._scenes.svg.polyline(position.points).fill(this._appearance.colors.shape).attr({
+        let points = window.cvat.translate.points.actualToCanvas(position.points);
+        this._uis.shape = this._scenes.svg.polyline(points).fill(this._appearance.colors.shape).attr({
             'stroke': this._appearance.stroke || this._appearance.colors.shape,
             'stroke-width': STROKE_WIDTH / window.cvat.player.geometry.scale,
             'z_order': position.z_order,
@@ -3042,13 +3116,14 @@ class PointsView extends PolyShapeView {
             return;
         }
 
-        this._uis.points = this._scenes.svg.group().fill(this._appearance.fill || this._appearance.colors.shape)
+        this._uis.points = this._scenes.svg.group()
+            .fill(this._appearance.fill || this._appearance.colors.shape)
             .on('click', () => {
                 this._positionateMenus();
                 this._controller.click();
-            }).attr({
-                'z_order': position.z_order
             }).addClass('pointTempGroup');
+
+        this._uis.points.node.setAttribute('z_order', position.z_order);
 
         let points = PolyShapeModel.convertStringToNumberArray(position.points);
         for (let point of points) {
@@ -3083,17 +3158,19 @@ class PointsView extends PolyShapeView {
         if (!this._controller.hiddenShape) {
             let interpolation = this._controller.interpolate(window.cvat.player.frames.current);
             if (interpolation.position.points) {
-                this._drawPointMarkers(interpolation.position);
+                let points = window.cvat.translate.points.actualToCanvas(interpolation.position.points);
+                this._drawPointMarkers(Object.assign(interpolation.position, {points: points}));
             }
         }
     }
 
 
     _drawShapeUI(position) {
-        this._uis.shape = this._scenes.svg.polyline(position.points).addClass('shape points').attr({
+        let points = window.cvat.translate.points.actualToCanvas(position.points);
+        this._uis.shape = this._scenes.svg.polyline(points).addClass('shape points').attr({
             'z_order': position.z_order,
         });
-        this._drawPointMarkers(position);
+        this._drawPointMarkers(Object.assign(position, {points: points}));
         ShapeView.prototype._drawShapeUI.call(this);
     }
 
@@ -3154,8 +3231,6 @@ class PointsView extends PolyShapeView {
         }
     }
 }
-
-
 
 function buildShapeModel(data, type, idx, color) {
     switch (type) {

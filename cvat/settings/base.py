@@ -1,4 +1,3 @@
-
 # Copyright (C) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -54,10 +53,15 @@ INSTALLED_APPS = [
     'cacheops',
     'sendfile',
     'dj_pagination',
+    'revproxy',
+    'rules',
 ]
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
     INSTALLED_APPS += ['cvat.apps.tf_annotation']
+
+if os.getenv('DJANGO_LOG_VIEWER_HOST'):
+    INSTALLED_APPS += ['cvat.apps.log_viewer']
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -96,6 +100,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'cvat.wsgi.application'
 
+# Django Auth
+DJANGO_AUTH_TYPE = 'BASIC'
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = '/'
+AUTH_LOGIN_NOTE = '<p>Have not registered yet? <a href="/auth/register">Register here</a>.</p>'
+
+AUTHENTICATION_BACKENDS = [
+    'rules.permissions.ObjectPermissionBackend',
+    'django.contrib.auth.backends.ModelBackend'
+]
+
+
 # Django-RQ
 # https://github.com/rq/django-rq
 
@@ -104,7 +120,7 @@ RQ_QUEUES = {
         'HOST': 'localhost',
         'PORT': 6379,
         'DB': 0,
-        'DEFAULT_TIMEOUT': '1h'
+        'DEFAULT_TIMEOUT': '4h'
     },
     'low': {
         'HOST': 'localhost',
@@ -157,6 +173,10 @@ CACHEOPS = {
     # Automatically cache any Task.objects.get() calls for 15 minutes
     # This also includes .first() and .last() calls.
     'engine.task': {'ops': 'get', 'timeout': 60*15},
+
+    # Automatically cache any Job.objects.get() calls for 15 minutes
+    # This also includes .first() and .last() calls.
+    'engine.job': {'ops': 'get', 'timeout': 60*15},
 }
 
 CACHEOPS_DEGRADE_ON_FAILURE = True
@@ -185,24 +205,52 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'filters': [],
             'formatter': 'standard',
         },
-        'file': {
+        'server_file': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
-            'filename': os.path.join(BASE_DIR, 'logs', 'cvat.log'),
+            'level': 'DEBUG',
+            'filename': os.path.join(BASE_DIR, 'logs', 'cvat_server.log'),
             'formatter': 'standard',
             'maxBytes': 1024*1024*50, # 50 MB
             'backupCount': 5,
+        },
+        'logstash': {
+            'level': 'INFO',
+            'class': 'logstash.TCPLogstashHandler',
+            'host': os.getenv('DJANGO_LOG_SERVER_HOST', 'localhost'),
+            'port': os.getenv('DJANGO_LOG_SERVER_PORT', 5000),
+            'version': 1,
+            'message_type': 'django',
         }
     },
     'loggers': {
-        'cvat': {
-            'handlers': ['console', 'file'],
+        'cvat.server': {
+            'handlers': ['console', 'server_file'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+
+        'cvat.client': {
+            'handlers': [],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+
+        'revproxy': {
+            'handlers': ['console', 'server_file'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG')
+        },
+        'django': {
+            'handlers': ['console', 'server_file'],
+            'level': 'INFO',
+            'propagate': True
         }
     },
 }
+
+if os.getenv('DJANGO_LOG_SERVER_HOST'):
+    LOGGING['loggers']['cvat.server']['handlers'] += ['logstash']
+    LOGGING['loggers']['cvat.client']['handlers'] += ['logstash']
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/

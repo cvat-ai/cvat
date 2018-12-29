@@ -1,4 +1,3 @@
-
 # Copyright (C) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -8,34 +7,54 @@ from django.conf import settings
 
 from django.contrib.auth.models import User
 
+from io import StringIO
+from enum import Enum
+
 import shlex
 import csv
-from io import StringIO
 import re
 import os
 
+class StatusChoice(Enum):
+    ANNOTATION = 'annotation'
+    VALIDATION = 'validation'
+    COMPLETED = 'completed'
+
+    @classmethod
+    def choices(self):
+        return tuple((x.name, x.value) for x in self)
+
+    def __str__(self):
+        return self.value
+
+class SafeCharField(models.CharField):
+    def get_prep_value(self, value):
+        value = super().get_prep_value(value)
+        if value:
+            return value[:self.max_length]
+        return value
 
 class Task(models.Model):
-    name = models.CharField(max_length=256)
+    name = SafeCharField(max_length=256)
     size = models.PositiveIntegerField()
     path = models.CharField(max_length=256)
     mode = models.CharField(max_length=32)
-    owner = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
-    bug_tracker = models.CharField(max_length=2000, default="")
+    owner = models.ForeignKey(User, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="owners")
+    assignee = models.ForeignKey(User, null=True,  blank=True,
+        on_delete=models.SET_NULL, related_name="assignees")
+    bug_tracker = models.CharField(max_length=2000, blank=True, default="")
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=32, default="annotate")
     overlap = models.PositiveIntegerField(default=0)
     z_order = models.BooleanField(default=False)
     flipped = models.BooleanField(default=False)
+    source = SafeCharField(max_length=256, default="unknown")
+    status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION)
 
     # Extend default permission model
     class Meta:
-        permissions = (
-            ("view_task", "Can see available tasks"),
-            ("view_annotation", "Can see annotation for the task"),
-            ("change_annotation", "Can modify annotation for the task"),
-        )
+        default_permissions = ()
 
     def get_upload_dirname(self):
         return os.path.join(self.path, ".upload")
@@ -71,17 +90,28 @@ class Segment(models.Model):
     start_frame = models.IntegerField()
     stop_frame = models.IntegerField()
 
+    class Meta:
+        default_permissions = ()
+
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
-    annotator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
-    # TODO: add sub-issue number for the task
+    assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION)
+    max_shape_id = models.BigIntegerField(default=-1)
+
+    class Meta:
+        default_permissions = ()
 
 class Label(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
-    name = models.CharField(max_length=64)
+    name = SafeCharField(max_length=64)
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        default_permissions = ()
+
 
 def parse_attribute(text):
     match = re.match(r'^([~@])(\w+)=(\w+):(.+)?$', text)
@@ -98,6 +128,9 @@ def parse_attribute(text):
 class AttributeSpec(models.Model):
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     text  = models.CharField(max_length=1024)
+
+    class Meta:
+        default_permissions = ()
 
     def get_attribute(self):
         return parse_attribute(self.text)
@@ -122,31 +155,38 @@ class AttributeSpec(models.Model):
         attr = self.get_attribute()
         return attr['values']
 
-
     def __str__(self):
         return self.get_attribute()['name']
+
 
 class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
     id = models.BigAutoField(primary_key=True)
     spec = models.ForeignKey(AttributeSpec, on_delete=models.CASCADE)
-    value = models.CharField(max_length=64)
+    value = SafeCharField(max_length=64)
+
     class Meta:
         abstract = True
+        default_permissions = ()
+
 
 class Annotation(models.Model):
     job   = models.ForeignKey(Job, on_delete=models.CASCADE)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     group_id = models.PositiveIntegerField(default=0)
+    client_id = models.BigIntegerField(default=-1)
+
     class Meta:
         abstract = True
 
 class Shape(models.Model):
     occluded = models.BooleanField(default=False)
     z_order = models.IntegerField(default=0)
+
     class Meta:
         abstract = True
+        default_permissions = ()
 
 class BoundingBox(Shape):
     id = models.BigAutoField(primary_key=True)
@@ -154,14 +194,18 @@ class BoundingBox(Shape):
     ytl = models.FloatField()
     xbr = models.FloatField()
     ybr = models.FloatField()
+
     class Meta:
         abstract = True
+        default_permissions = ()
 
 class PolyShape(Shape):
     id = models.BigAutoField(primary_key=True)
     points = models.TextField()
+
     class Meta:
         abstract = True
+        default_permissions = ()
 
 class LabeledBox(Annotation, BoundingBox):
     pass
@@ -200,6 +244,7 @@ class TrackedObject(models.Model):
     outside = models.BooleanField(default=False)
     class Meta:
         abstract = True
+        default_permissions = ()
 
 class TrackedBox(TrackedObject, BoundingBox):
     pass

@@ -10,10 +10,11 @@
 const AAMUndefinedKeyword = '__undefined__';
 
 class AAMModel extends Listener {
-    constructor(shapeCollection, focus) {
+    constructor(shapeCollection, focus, fit) {
         super('onAAMUpdate', () => this);
         this._shapeCollection = shapeCollection;
         this._focus = focus;
+        this._fit = fit;
         this._activeAAM = false;
         this._activeIdx = null;
         this._active = null;
@@ -91,7 +92,10 @@ class AAMModel extends Listener {
         for (let shape of  this._shapeCollection.currentShapes) {
             let labelAttributes = window.cvat.labelsInfo.labelAttributes(shape.model.label);
             if (Object.keys(labelAttributes).length && !shape.model.removed && !shape.interpolation.position.outside) {
-                this._currentShapes.push(shape);
+                this._currentShapes.push({
+                    model: shape.model,
+                    interpolation: shape.model.interpolate(window.cvat.player.frames.current),
+                });
             }
         }
 
@@ -164,6 +168,7 @@ class AAMModel extends Listener {
 
             // Notify for remove aam UI
             this.notify();
+            this._fit();
         }
     }
 
@@ -182,7 +187,7 @@ class AAMModel extends Listener {
         }
 
         this._deactivate();
-        if (Math.sign(direction) > 0) {
+        if (Math.sign(direction) < 0) {
             // next
             this._activeIdx ++;
             if (this._activeIdx >= this._currentShapes.length) {

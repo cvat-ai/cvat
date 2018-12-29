@@ -8,13 +8,14 @@
 "use strict";
 
 class AnnotationParser {
-    constructor(job, labelsInfo) {
+    constructor(job, labelsInfo, idGenerator) {
         this._parser = new DOMParser();
         this._startFrame = job.start;
         this._stopFrame = job.stop;
         this._flipped = job.flipped;
         this._im_meta = job.image_meta_data;
         this._labelsInfo = labelsInfo;
+        this._idGen = idGenerator;
     }
 
     _xmlParseError(parsedXML) {
@@ -131,7 +132,7 @@ class AnnotationParser {
         let result = [];
         for (let track of tracks) {
             let label = track.getAttribute('label');
-            let group_id = track.getAttribute('group_id') || "0";
+            let group_id = track.getAttribute('group_id') || '0';
             let labelId = this._labelsInfo.labelIdOf(label);
             if (labelId === null) {
                 throw Error(`An unknown label found in the annotation file: ${label}`);
@@ -224,6 +225,7 @@ class AnnotationParser {
                         ybr: ybr,
                         z_order: z_order,
                         attributes: attributeList,
+                        id: this._idGen.next(),
                     });
                 }
                 else {
@@ -236,6 +238,7 @@ class AnnotationParser {
                         occluded: occluded,
                         z_order: z_order,
                         attributes: attributeList,
+                        id: this._idGen.next(),
                     });
                 }
             }
@@ -255,7 +258,7 @@ class AnnotationParser {
         let tracks = xml.getElementsByTagName('track');
         for (let track of tracks) {
             let labelId = this._labelsInfo.labelIdOf(track.getAttribute('label'));
-            let groupId = track.getAttribute('group_id') || "0";
+            let groupId = track.getAttribute('group_id') || '0';
             if (labelId === null) {
                 throw Error('An unknown label found in the annotation file: ' + name);
             }
@@ -307,7 +310,8 @@ class AnnotationParser {
                 group_id: +groupId,
                 frame: +parsed[type][0].getAttribute('frame'),
                 attributes: [],
-                shapes: []
+                shapes: [],
+                id: this._idGen.next(),
             };
 
             for (let shape of parsed[type]) {

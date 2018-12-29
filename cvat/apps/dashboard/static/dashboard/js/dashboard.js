@@ -524,12 +524,16 @@ function uploadAnnotationRequest() {
         $.ajax({
             url: '/get/task/' + window.cvat.dashboard.taskID,
             success: function(data) {
-                let annotationParser = new AnnotationParser({
-                    start: 0,
-                    stop: data.size,
-                    image_meta_data: data.image_meta_data,
-                    flipped: data.flipped
-                }, new LabelsInfo(data.spec));
+                let annotationParser = new AnnotationParser(
+                    {
+                        start: 0,
+                        stop: data.size,
+                        image_meta_data: data.image_meta_data,
+                        flipped: data.flipped
+                    },
+                    new LabelsInfo(data.spec),
+                    new ConstIdGenerator(-1)
+                );
 
                 let asyncParse = function() {
                     let parsed = null;
@@ -538,26 +542,62 @@ function uploadAnnotationRequest() {
                     }
                     catch(error) {
                         overlay.remove();
-                        showMessage("Parsing errors was occured. " + error);
+                        showMessage("Parsing errors was occurred. " + error);
                         return;
                     }
 
                     let asyncSave = function() {
                         $.ajax({
-                            url: '/save/annotation/task/' + window.cvat.dashboard.taskID,
-                            type: 'POST',
-                            data: JSON.stringify(parsed),
-                            contentType: 'application/json',
+                            url: '/delete/annotation/task/' + window.cvat.dashboard.taskID,
+                            type: 'DELETE',
                             success: function() {
-                                let message = 'Annotation successfully uploaded';
-                                showMessage(message);
+                                asyncSaveChunk(0);
                             },
                             error: function(response) {
-                                let message = 'Annotation uploading errors was occured. ' + response.responseText;
+                                let message = 'Previous annotations cannot be deleted: ' +
+                                    response.responseText;
                                 showMessage(message);
+                                overlay.remove();
                             },
-                            complete: () => overlay.remove()
                         });
+                    };
+
+                    let asyncSaveChunk = function(start) {
+                        const CHUNK_SIZE = 100000;
+                        let end = start + CHUNK_SIZE;
+                        let chunk = {};
+                        let next = false;
+                        for (let prop in parsed) {
+                            if (parsed.hasOwnProperty(prop)) {
+                                chunk[prop] = parsed[prop].slice(start, end);
+                                next |= chunk[prop].length > 0;
+                            }
+                        }
+
+                        if (next) {
+                            let exportData = createExportContainer();
+                            exportData.create = chunk;
+
+                            $.ajax({
+                                url: '/save/annotation/task/' + window.cvat.dashboard.taskID,
+                                type: 'POST',
+                                data: JSON.stringify(exportData),
+                                contentType: 'application/json',
+                                success: function() {
+                                    asyncSaveChunk(end);
+                                },
+                                error: function(response) {
+                                    let message = 'Annotations uploading errors were occurred: ' +
+                                        response.responseText;
+                                    showMessage(message);
+                                    overlay.remove();
+                                },
+                            });
+                        } else {
+                            let message = 'Annotations were uploaded successfully';
+                            showMessage(message);
+                            overlay.remove();
+                        }
                     };
 
                     overlay.setMessage('Annotation is being saved..');

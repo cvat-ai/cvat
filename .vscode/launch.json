@@ -9,6 +9,7 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
+            "debugStdLib": true,
             "pythonPath": "${config:python.pythonPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
@@ -23,7 +24,6 @@
                 "DjangoDebugging"
             ],
             "cwd": "${workspaceFolder}",
-            "env": {},
             "envFile": "${workspaceFolder}/.env",
         },
         {
@@ -44,6 +44,7 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
+            "debugStdLib": true,
             "pythonPath": "${config:python.pythonPath}",
             "program": "${workspaceRoot}/manage.py",
             "args": [
@@ -65,6 +66,7 @@
             "name": "CVAT RQ - low",
             "type": "python",
             "request": "launch",
+            "debugStdLib": true,
             "stopOnEntry": false,
             "pythonPath": "${config:python.pythonPath}",
             "program": "${workspaceRoot}/manage.py",

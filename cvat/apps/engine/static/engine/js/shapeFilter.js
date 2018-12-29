@@ -64,9 +64,11 @@ class FilterModel {
         }
     }
 
-    updateFilter(value) {
+    updateFilter(value, silent) {
         this._filter = value;
-        this._update();
+        if (!silent) {
+            this._update();
+        }
     }
 }
 
@@ -75,22 +77,22 @@ class FilterController {
         this._model = filterModel;
     }
 
-    updateFilter(value) {
+    updateFilter(value, silent) {
         if (value.length) {
+            value = value.split('|').map(x => '/d:data/' + x).join('|').toLowerCase().replace(/-/g, "_");
             try {
                 document.evaluate(value, document, () => 'ns');
             }
             catch (error) {
                 return false;
             }
-            this._model.updateFilter(value);
+            this._model.updateFilter(value, silent);
             return true;
         }
         else {
-            this._model.updateFilter(value);
+            this._model.updateFilter('', silent);
             return true;
         }
-
     }
 
     deactivate() {
@@ -109,14 +111,12 @@ class FilterView {
         this._filterString.on('keypress keydown keyup', (e) => e.stopPropagation());
         this._filterString.on('change', (e) => {
             let value = $.trim(e.target.value);
-            if (value.length) {
-                value = value.split('|').map(x => '/d:data/' + x).join('|').toLowerCase().replace(/-/g, "_");
-            }
-            if (this._controller.updateFilter(value)) {
+            if (this._controller.updateFilter(value, false)) {
                 this._filterString.css('color', 'green');
             }
             else {
                 this._filterString.css('color', 'red');
+                this._controller.updateFilter('', false);
             }
         });
 
@@ -127,9 +127,19 @@ class FilterView {
 
         this._resetFilterButton.on('click', () => {
             this._filterString.prop('value', '');
-            this._controller.updateFilter('');
+            this._controller.updateFilter('', false);
         });
+
+        let initialFilter = window.cvat.search.get('filter');
+        if (initialFilter) {
+            this._filterString.prop('value', initialFilter);
+            if (this._controller.updateFilter(initialFilter, true)) {
+                this._filterString.css('color', 'green');
+            }
+            else {
+                this._filterString.prop('value', '');
+                this._filterString.css('color', 'red');
+            }
+        }
     }
-
-
 }
