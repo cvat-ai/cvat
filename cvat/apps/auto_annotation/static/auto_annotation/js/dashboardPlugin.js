@@ -123,10 +123,36 @@ window.cvat.auto_annotation = {
                 }
             });
         }
+    },
+    init: {
+        dashboard: function(newElements) {
+            let elem = $(newElements[idx]);
+            let tid = +elem.attr("id").split("_")[1];
+
+            $("<button> Run auto annotation </button>").addClass("regular dashboardButtonUI").on("click", () => {
+                // Set overlay
+                // Getting task info
+                // Setup dialog window
+                // Remove overlay
+                // Open dialog window
+            }).appendTo(elem.find("div.dashboardButtonsUI")[0]);
+        },
+
+        manager: function() {
+            window.cvat.auto_annotation.requests.meta((data) => {
+                window.cvat.auto_annotation.models = data;
+
+                // Add "Open Manager" button
+                // Onclick event
+                    // Set overlay
+                    // Setup model manager
+                    // Remove overlay
+                    // Open dialog window
+            }, showMessage);
+        }
     }
 }
 
 
-window.cvat.dashboard.uiCallbacks.push(function(newElements) {
-
-});
+window.cvat.dashboard.uiCallbacks.push(window.cvat.auto_annotation.init.dashboard);
+document.addEventListener("DOMContentLoaded", window.cvat.auto_annotation.init.manager);
