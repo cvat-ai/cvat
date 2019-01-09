@@ -1,13 +1,9 @@
-#annotatorManagerWindow {
-  
-}
-
-#annotatorManagerContent {
+#annotatorManagerContent, #annotatorRunnerContent {
   width: 800px; 
   height: 300px; 
 }
 
-#annotatorManagerExistingModels {
+.modelsTable {
   width: 100%;
   color:#666;
   text-shadow: 1px 1px 0px #fff;
@@ -17,37 +13,37 @@
   box-shadow: 0 1px 2px black;
 }
 
-#annotatorManagerExistingModels th {
+.modelsTable th {
 	border-top: 1px solid #fafafa;
 	border-bottom: 1px solid #e0e0e0;
 	background: #ededed;
 }
 
-#annotatorManagerExistingModels th:first-child {
+.modelsTable th:first-child {
 	text-align: left;
 	padding-left:20px;
 }
 
-#annotatorManagerExistingModels tr:first-child th:first-child {
+.modelsTable tr:first-child th:first-child {
 	border-top-left-radius:3px;
 }
 
-#annotatorManagerExistingModels tr:first-child th:last-child {
+.modelsTable tr:first-child th:last-child {
 	border-top-right-radius:3px;
 }
 
-#annotatorManagerExistingModels tr {
+.modelsTable tr {
 	text-align: center;
 	padding-left: 20px;
 }
 
-#annotatorManagerExistingModels td:first-child {
+.modelsTable td:first-child {
 	text-align: left;
 	padding-left: 20px;
 	border-left: 0;
 }
 
-#annotatorManagerExistingModels td {
+.modelsTable td {
 	padding: 18px;
 	border-top: 1px solid #ffffff;
 	border-bottom:1px solid #e0e0e0;
@@ -55,23 +51,23 @@
 	background: #fafafa;
 }
 
-#annotatorManagerExistingModels tr.even td {
+.modelsTable tr.even td {
 	background: #f6f6f6;
 }
 
-#annotatorManagerExistingModels tr:last-child td {
+.modelsTable tr:last-child td {
 	border-bottom:0;
 }
 
-#annotatorManagerExistingModels tr:last-child td:first-child {
+.modelsTable tr:last-child td:first-child {
 	border-bottom-left-radius:3px;
 }
 
-#annotatorManagerExistingModels tr:last-child td:last-child {
+.modelsTable tr:last-child td:last-child {
 	border-bottom-right-radius:3px;
 }
 
-#annotatorManagerExistingModels tr:hover td {
+.modelsTable tr:hover td {
 	background: #f2f2f2;
 }
 

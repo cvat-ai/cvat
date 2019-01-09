@@ -127,7 +127,7 @@ window.cvat.auto_annotation = {
 
     managerWindowId: "annotatorManagerWindow",
     managerContentId: "annotatorManagerContent",
-    existingModelsId: "annotatorManagerExistingModels",
+    managerUploadedModelsId: "annotatorManagerUploadedModels",
     uploadContentId: "annotatorManagerUploadModel",
     uploadNameInputId: "annotatorManagerUploadNameInput",
     uploadLocalSourceId: "annotatorManagerUploadLocalSource",
@@ -141,33 +141,43 @@ window.cvat.auto_annotation = {
     cancelUploadButtonId: "annotatorManagerCancelUploadButton",
     uploadMessage: "annotatorUploadStatusMessage",
 
+    runnerWindowId: "annotatorRunnerWindow",
+    runnerContentId: "annotatorRunnerContent",
+    runnerUploadedModelsId: "annotatorRunnerUploadedModels",
+    removeCurrentAnnotation: "annotatorRunnerRemoveCurrentAnnotationBox",
+    annotationLabels: "annotatorRunnerAnnotationLabels",
+    submitAnnotation: "annotatorRunnerSubmitAnnotationButton",
+    cancelAnnotation: "annotatorRunnerCancelAnnotationButton",
+
     init: function(newElements) {
         // Model manager window
         $(`<div class="modal hidden" id="${window.cvat.auto_annotation.managerWindowId}">
             <div class="modal-content" id="${window.cvat.auto_annotation.managerContentId}">
-                <div style="float: left; width: 55%; height: 100%; overflow: auto; display: block;">
+                <div style="float: left; width: 55%; height: 100%;">
                     <center>
-                        <label class="regular h1"> Models </label>
+                        <label class="regular h1"> Uploaded Models </label>
                     </center>
-                    <table class="regular" id="${window.cvat.auto_annotation.existingModelsId}">
-                        <tr>
-                            <th> Name </th>
-                            <th> Upload Date </th>
-                            <th> Actions </th>
-                        </tr>
-                        <tr>
-                            <td> Tensorflow Default Model </td>
-                            <td> 24.03.1997 20:59 </td>
-                            <td>
-                                <button class="regular h3" style="width: 7em;"> Delete </button>
-                                <button class="regular h3" style="width: 7em; margin-top: 5%;"> Update </button>
-                            </td>
-                        </tr>
-                    </table>
+                    <div style="overflow: auto; height: 90%; margin-top: 2%;">
+                        <table class="regular modelsTable" id="${window.cvat.auto_annotation.managerUploadedModelsId}">
+                            <tr>
+                                <th> Name </th>
+                                <th> Upload Date </th>
+                                <th> Actions </th>
+                            </tr>
+                            <tr>
+                                <td> Tensorflow Default Model </td>
+                                <td> 24.03.1997 20:59 </td>
+                                <td>
+                                    <button class="regular h3" style="width: 7em;"> Delete </button>
+                                    <button class="regular h3" style="width: 7em; margin-top: 5%;"> Update </button>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
                 <div class="regular" id="${window.cvat.auto_annotation.uploadContentId}">
                     <center>
-                        <label class="regular h1"> Upload Model </label>
+                        <label class="regular h1"> Upload New Model </label>
                     </center>
                     <table>
                         <tr>
@@ -177,7 +187,7 @@ window.cvat.auto_annotation = {
                         <tr>
                             <td> <label class="regular h3"> Source: </label> </td>
                             <td>
-                                <input id="${window.cvat.auto_annotation.uploadLocalSourceId}" type="radio" name="sourceType" value="local" checked="true/"> <label for="${window.cvat.auto_annotation.uploadLocalSourceId}" class="regular h3"> Local </label>
+                                <input id="${window.cvat.auto_annotation.uploadLocalSourceId}" type="radio" name="sourceType" value="local" checked> <label for="${window.cvat.auto_annotation.uploadLocalSourceId}" class="regular h3"> Local </label>
                                 <br> <input id="${window.cvat.auto_annotation.uploadShareSourceId}" type="radio" name="sourceType" value="share"> <label for="${window.cvat.auto_annotation.uploadShareSourceId}" class="regular h3"> Share </label>
                             </td>
                         </tr>
@@ -205,9 +215,54 @@ window.cvat.auto_annotation = {
             </div>
         </div>`).appendTo('body');
 
-      $('#annotatorManagerWindow').removeClass('hidden');
+        // Model runner window
+        $(`<div class="modal" id="${window.cvat.auto_annotation.runnerWindowId}">
+            <div class="modal-content" id="${window.cvat.auto_annotation.runnerContentId}">
+                <div style="width: 55%; height: 100%; float: left;">
+                    <center style="height: 10%;">
+                        <label class="regular h1"> Uploaded Models </label>
+                    </center>
+                    <div style="height: 70%; overflow: auto; margin-top: 2%;">
+                        <table class="regular modelsTable" id="${window.cvat.auto_annotation.runnerUploadedModelsId}">
+                            <tr>
+                                <td> Tensorflow Default Model (24.03.1997 23:59) </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="${window.cvat.auto_annotation.removeCurrentAnnotation}"/>
+                        <label class="regular h3" for="${window.cvat.auto_annotation.removeCurrentAnnotation}"> Remove current annotation </label>
+                    </div>
+                </div>
+                <div style="width: 40%; height: 100%; float: left; margin-left: 3%;">
+                    <center style="height: 10%;">
+                        <label class="regular h1"> Annotation Labels </label>
+                    </center>
+                    <div style="height: 70%; overflow: auto; margin-top: 2%;">
+                        <table class="regular" id="${window.cvat.auto_annotation.annotationLabels}">
+                            <tr> <td> <input type="checkbox"/> <label class="regular h3"> car </label> </td> </tr>
+                            <tr> <td> <input type="checkbox"/> <label class="regular h3"> person </label> </td> </tr>
+                            <tr> <td> <input type="checkbox"/> <label class="regular h3"> vehicle </label> </td> </tr>
+                            <tr> <td> <input type="checkbox"/> <label class="regular h3"> bus </label> </td> </tr>
+                        </table>
+                    </div>
+                    <div style="float:right;">
+                        <button class="regular h3" id="${window.cvat.auto_annotation.submitAnnotation}"> Start </button>
+                        <button class="regular h3" id="${window.cvat.auto_annotation.cancelAnnotation}"> Cancel </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`).appendTo('body');
 
+    // model manager button
+    // run auto annotation buttons
+    // loading via share window
+    // add events to elements with IDs
 
+    // make some dummy data and setup windows runtime
+
+    $('#annotatorRunnerWindowId').removeClass('hidden');
 /*
         window.cvat.auto_annotation.requests.meta((data) => {
             // Add "Model Manager" button
