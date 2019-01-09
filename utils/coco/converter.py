@@ -373,18 +373,28 @@ def main():
                  'annotation directory includes file <labels.txt>'.format(xml_file_name))
 
     segm_id = 0
+    z_order_off_counter = 0
     # Parse original annotation
     for img in tqdm(root.iter('image'), desc='Processing images from ' + xml_file_name):
         image = {}
         for key, value in img.items():
             image[key] = value
         image['polygon'] = []
+        z_order_on_counter = 0
+        polygon_counter = 0
         for poly in img.iter('polygon'):
             polygon = {}
             for key, value in poly.items():
                 polygon[key] = value
+                if key == 'z_order':
+                    z_order_on_counter += 1
+            polygon_counter += 1
             image['polygon'].append(polygon)
-        image['polygon'].sort(key=lambda x: int(x['z_order']))
+        # If at least one of polygons on image does not have field 'z_order' do not sort them
+        if z_order_on_counter == polygon_counter:
+            image['polygon'].sort(key=lambda x: int(x['z_order']))
+        else:
+            z_order_off_counter += 1
 
         # Create new image
         insert_image_data(image, args.image_dir, result_annotation)
@@ -401,9 +411,13 @@ def main():
         # Draw contours of objects on image
         if args.draw != None:
             draw_polygons(image['polygon'], image['name'], args.image_dir, args.draw, args.draw_labels)
+        break
 
     log.info('Processed images: {}'.format(len(result_annotation['images'])))
     log.info('Processed objects: {}'.format(len(result_annotation['annotations'])))
+    if z_order_off_counter > 0:
+        log.warning('Annotation does not have a field \'z_order\' for {} image(s). '
+                    'Overlapped objects may be cropped incorrectly!'. format(z_order_off_counter))
 
     # Save created annotation
     log.info('Saving annotation...')
