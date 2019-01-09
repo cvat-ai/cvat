@@ -77,6 +77,7 @@ except Exception:
 
 # Application definition
 JS_3RDPARTY = {}
+CSS_3RDPARTY = {}
 
 INSTALLED_APPS = [
     'django.contrib.admin',

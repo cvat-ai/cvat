@@ -15,6 +15,9 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'dashboard/stylesheet.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/jstree/themes/default/style.css' %}">
+    {% for css_file in css_3rdparty %}
+        <link rel="stylesheet" type="text/css" href="{% static css_file %}">
+    {% endfor %}
 {% endblock %}
 
 {% block head_js_3rdparty %}
