@@ -96,8 +96,7 @@ def draw_polygons(polygons, img_name, input_dir, output_dir, draw_labels):
     red = (0, 0, 255)
     for poly in polygons:
         label = poly['label']
-        rle = mask_util.frPyObjects(poly['points'], img.shape[0], img.shape[1])
-        bbox = mask_util.toBbox(rle)
+        _, bbox = polygon_area_and_bbox(poly['points'], img.shape[0], img.shape[1])
         for j in range(0, len(poly['points'])):
             i = 0
             points = []
@@ -106,10 +105,12 @@ def draw_polygons(polygons, img_name, input_dir, output_dir, draw_labels):
                 y = int(poly['points'][j][i + 1])
                 points.append([x, y])
                 i += 2
+            bbox = [int(value) for value in bbox]
             img = cv2.polylines(img, np.int32([points]), True, yellow, 1)
+            img = cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), red, 2)
             if draw_labels:
-                x = int(bbox[0][0]) + int(bbox[0][2] / 4)
-                y = int(bbox[0][1]) + int(bbox[0][3] / 2)
+                x = bbox[0] + bbox[2] // 4
+                y = bbox[1] + bbox[3] // 2
                 cv2.putText(img, label, (x, y), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, red, 1)
     cv2.imwrite(output_file, img)
 
@@ -206,6 +207,10 @@ def polygon_area_and_bbox(polygon, height, width):
     rle = mask_util.frPyObjects(polygon, height, width)
     area = mask_util.area(rle)
     bbox = mask_util.toBbox(rle)
+    bbox = [min(bbox[:, 0]),
+            min(bbox[:, 1]),
+            max(bbox[:, 0] + bbox[:, 2]) - min(bbox[:, 0]),
+            max(bbox[:, 1] + bbox[:, 3]) - min(bbox[:, 1])]
     return area, bbox
 
 def insert_license_data(result_annotation):
@@ -337,8 +342,8 @@ def insert_annotation_data(image, category_map, segm_id, object, img_dims, resul
     new_anno['iscrowd'] = 0
     new_anno['segmentation'] = object['points']
     area, bbox = polygon_area_and_bbox(object['points'], img_dims[0], img_dims[1])
-    new_anno['area'] = float(area[0])
-    new_anno['bbox'] = [bbox[0][0], bbox[0][1], bbox[0][2], bbox[0][3]]
+    new_anno['area'] = float(np.sum(area))
+    new_anno['bbox'] = bbox
     result_annotation['annotations'].append(new_anno)
 
 
