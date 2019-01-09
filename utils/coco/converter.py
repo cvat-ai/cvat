@@ -411,7 +411,6 @@ def main():
         # Draw contours of objects on image
         if args.draw != None:
             draw_polygons(image['polygon'], image['name'], args.image_dir, args.draw, args.draw_labels)
-        break
 
     log.info('Processed images: {}'.format(len(result_annotation['images'])))
     log.info('Processed objects: {}'.format(len(result_annotation['annotations'])))
