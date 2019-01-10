@@ -1505,11 +1505,17 @@ class _AnnotationForSegment(_Annotation):
         self.points_paths = annotation.points_paths
 
 @plugin_decorator
-@transaction.atomic
 def _dump(tid, data_format, scheme, host, plugin_meta_data):
-    db_task = models.Task.objects.select_for_update().get(id=tid)
-    annotation = _AnnotationForTask(db_task)
-    annotation.init_from_db()
+    # For big tasks dump function may run for a long time and
+    # we dont need to acquire lock after _AnnotationForTask instance
+    # has been initialized from DB.
+    # But there is the bug with corrupted dump file in case 2 or more dump request received at the same time.
+    # https://github.com/opencv/cvat/issues/217
+    with transaction.atomic():
+        db_task = models.Task.objects.select_for_update().get(id=tid)
+        annotation = _AnnotationForTask(db_task)
+        annotation.init_from_db()
+
     annotation.dump(data_format, scheme, host, plugin_meta_data)
 
 def _calc_box_area(box):
