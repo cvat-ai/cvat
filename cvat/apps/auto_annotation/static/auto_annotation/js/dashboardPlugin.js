@@ -144,12 +144,41 @@ window.cvat.auto_annotation = {
     runnerWindowId: "annotatorRunnerWindow",
     runnerContentId: "annotatorRunnerContent",
     runnerUploadedModelsId: "annotatorRunnerUploadedModels",
-    removeCurrentAnnotation: "annotatorRunnerRemoveCurrentAnnotationBox",
-    annotationLabels: "annotatorRunnerAnnotationLabels",
-    submitAnnotation: "annotatorRunnerSubmitAnnotationButton",
-    cancelAnnotation: "annotatorRunnerCancelAnnotationButton",
+    removeCurrentAnnotationId: "annotatorRunnerRemoveCurrentAnnotationBox",
+    annotationLabelsId: "annotatorRunnerAnnotationLabels",
+    submitAnnotationId: "annotatorRunnerSubmitAnnotationButton",
+    cancelAnnotationId: "annotatorRunnerCancelAnnotationButton",
 
-    managerButton: "annotatorManagerButton",
+    managerButtonId: "annotatorManagerButton",
+
+    data: {
+        admin: true,
+        models: [{
+            id: 0,
+            name: "TF Faster RCNN",
+            primary: true,
+            uploadDate: "01.01.2018 12:25:00",
+            labels: ["car", "person", "traffic-light", "vehicle", "pedestrian", "train", "banana", "apple", "coat", "bear", "fish", "ship", "sun", "sky"]
+        }, {
+            id: 1,
+            name: "Crossroad Detector",
+            primary: false,
+            uploadDate: "10.10.2018 03:20:24",
+            labels: ["vehicle", "pedestrian", "bike", "bicycle"]
+        }, {
+            id: 2,
+            name: "Person Detector",
+            primary: false,
+            uploadDate: "24.12.2018 19:40:23",
+            labels: ["person"]
+        }, {
+            id: 4,
+            name: "Custom Model",
+            primary: false,
+            uploadDate: "03.01.2019 07:50:44",
+            labels: ["train", "banana", "apple", "coat", "bear", "fish", "ship", "sun", "sky"]
+        }]
+    },
 
     init: function(newElements) {
         // Model manager window
@@ -218,7 +247,7 @@ window.cvat.auto_annotation = {
         </div>`).appendTo('body');
 
         // Model runner window
-        $(`<div class="modal" id="${window.cvat.auto_annotation.runnerWindowId}">
+        $(`<div class="modal hidden" id="${window.cvat.auto_annotation.runnerWindowId}">
             <div class="modal-content" id="${window.cvat.auto_annotation.runnerContentId}">
                 <div style="width: 55%; height: 100%; float: left;">
                     <center style="height: 10%;">
@@ -232,8 +261,8 @@ window.cvat.auto_annotation = {
                         </table>
                     </div>
                     <div>
-                        <input type="checkbox" id="${window.cvat.auto_annotation.removeCurrentAnnotation}"/>
-                        <label class="regular h3" for="${window.cvat.auto_annotation.removeCurrentAnnotation}"> Remove current annotation </label>
+                        <input type="checkbox" id="${window.cvat.auto_annotation.removeCurrentAnnotationId}"/>
+                        <label class="regular h3" for="${window.cvat.auto_annotation.removeCurrentAnnotationId}"> Remove current annotation </label>
                     </div>
                 </div>
                 <div style="width: 40%; height: 100%; float: left; margin-left: 3%;">
@@ -241,7 +270,7 @@ window.cvat.auto_annotation = {
                         <label class="regular h1"> Annotation Labels </label>
                     </center>
                     <div style="height: 70%; overflow: auto; margin-top: 2%;">
-                        <table class="regular" id="${window.cvat.auto_annotation.annotationLabels}">
+                        <table class="regular" id="${window.cvat.auto_annotation.annotationLabelsId}">
                             <tr> <td> <input type="checkbox"/> <label class="regular h3"> car </label> </td> </tr>
                             <tr> <td> <input type="checkbox"/> <label class="regular h3"> person </label> </td> </tr>
                             <tr> <td> <input type="checkbox"/> <label class="regular h3"> vehicle </label> </td> </tr>
@@ -249,47 +278,53 @@ window.cvat.auto_annotation = {
                         </table>
                     </div>
                     <div style="float:right;">
-                        <button class="regular h3" id="${window.cvat.auto_annotation.submitAnnotation}"> Start </button>
-                        <button class="regular h3" id="${window.cvat.auto_annotation.cancelAnnotation}"> Cancel </button>
+                        <button class="regular h3" id="${window.cvat.auto_annotation.submitAnnotationId}"> Start </button>
+                        <button class="regular h3" id="${window.cvat.auto_annotation.cancelAnnotationId}"> Cancel </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>`).appendTo('body');
 
-    $(`<button id="${window.cvat.auto_annotation.managerButton}" class="regular h1" style=""> Model Manager</button>`)
+    // setup events
+
+    $(`<button id="${window.cvat.auto_annotation.managerButtonId}" class="regular h1" style=""> Model Manager</button>`)
+        .on('click', () => {
+            let overlay = showOverlay("The manager are being setup..");
+            // setup data
+            $(`#${window.cvat.auto_annotation.managerWindowId}`).removeClass('hidden');
+            overlay.remove();
+        })
         .appendTo('#dashboardManageButtons');
 
-    // model manager button
-    // run auto annotation buttons
     // make some dummy data and setup windows runtime
     // add events to elements with IDs
     // loading via share window
     
 
     $('#annotatorRunnerWindowId').removeClass('hidden');
-/*
+        // just dummy date instead of real request
+
+        newElements.each(function(idx) {
+            let elem = $(newElements[idx]);
+            let tid = +elem.attr("id").split("_")[1];
+
+            $("<button> Run Auto Annotation </button>").addClass("regular dashboardButtonUI").on("click", () => {
+                let overlay = showOverlay("Task date are being recieved from the server..");
+                // Getting task info
+                overlay.setMessage('The model runner are being setup..')
+                // setup data
+                $(`#${window.cvat.auto_annotation.runnerWindowId}`).removeClass('hidden');
+                overlay.remove();
+            }).appendTo(elem.find("div.dashboardButtonsUI")[0]);
+        });
+
         window.cvat.auto_annotation.requests.meta((data) => {
-            // Add "Model Manager" button
-            // Onclick event for it
-                // Set overlay
-                // Setup model manager
-                // Remove overlay
-                // Open dialog window
+            window.cvat.auto_annotation.data = data;
 
-            newElements.each(function(idx) {
-                let elem = $(newElements[idx]);
-                let tid = +elem.attr("id").split("_")[1];
+            // activate all buttons
 
-                $("<button> Run Auto Annotation </button>").addClass("regular dashboardButtonUI").on("click", () => {
-                    // Set overlay
-                    // Getting task info
-                    // Setup dialog window
-                    // Remove overlay
-                    // Open dialog window
-                }).appendTo(elem.find("div.dashboardButtonsUI")[0]);
-            });
-        }, showMessage); */
+        }, () => console.log("doesn't implemented yet")); 
     }
 }
 
