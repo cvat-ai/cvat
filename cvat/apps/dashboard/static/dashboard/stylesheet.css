@@ -65,7 +65,7 @@
     padding: 10px;
     border: 1px solid grey;
     float: left;
-    width: 70%;
+    width: 76%;
     background: #f1f1f1;
     outline: 0;
 }
@@ -75,7 +75,6 @@
     width: 20%;
     padding: 10px;
     background: #0b7dda;
-    color: white;
     border: 1px solid grey;
     border-left: none;
     cursor: pointer;
@@ -88,10 +87,6 @@
 
 #dashboardSearchSubmit:active {
     background: #0b7fff;
-}
-
-#dashboardCreateTaskButton {
-    font-size: 2em;
 }
 
 #dashboardCreateContent {

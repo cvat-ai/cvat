@@ -3,6 +3,11 @@
   height: 300px; 
 }
 
+#annotatorManagerButton {
+    padding: 7px;
+    margin-left: 4px;
+}
+
 .modelsTable {
   width: 100%;
   color:#666;

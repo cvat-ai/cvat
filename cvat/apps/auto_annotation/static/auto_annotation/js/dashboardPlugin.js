@@ -149,6 +149,8 @@ window.cvat.auto_annotation = {
     submitAnnotation: "annotatorRunnerSubmitAnnotationButton",
     cancelAnnotation: "annotatorRunnerCancelAnnotationButton",
 
+    managerButton: "annotatorManagerButton",
+
     init: function(newElements) {
         // Model manager window
         $(`<div class="modal hidden" id="${window.cvat.auto_annotation.managerWindowId}">
@@ -255,12 +257,15 @@ window.cvat.auto_annotation = {
         </div>
     </div>`).appendTo('body');
 
+    $(`<button id="${window.cvat.auto_annotation.managerButton}" class="regular h1" style=""> Model Manager</button>`)
+        .appendTo('#dashboardManageButtons');
+
     // model manager button
     // run auto annotation buttons
-    // loading via share window
-    // add events to elements with IDs
-
     // make some dummy data and setup windows runtime
+    // add events to elements with IDs
+    // loading via share window
+    
 
     $('#annotatorRunnerWindowId').removeClass('hidden');
 /*
