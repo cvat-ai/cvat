@@ -17,6 +17,7 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 
 ## Screencasts
 
+- [Introduction](https://youtu.be/L9_IvUIHGwM)
 - [Annotation mode](https://youtu.be/6h7HxGL6Ct4)
 - [Interpolation mode](https://youtu.be/U3MYDhESHo4)
 - [Attribute mode](https://youtu.be/UPNfWl8Egd8)
