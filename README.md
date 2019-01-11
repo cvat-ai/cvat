@@ -20,7 +20,7 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 - [Annotation mode](https://youtu.be/6h7HxGL6Ct4)
 - [Interpolation mode](https://youtu.be/U3MYDhESHo4)
 - [Attribute mode](https://youtu.be/UPNfWl8Egd8)
-- [Segmentation mode](https://youtu.be/6IJ0QN7PBKo)
+- [Segmentation mode](https://youtu.be/Fh8oKuSUIPs)
 - [Tutorial for polygons](https://www.youtube.com/watch?v=XTwfXDh4clI)
 
 ## LICENSE
