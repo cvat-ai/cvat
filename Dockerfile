@@ -114,7 +114,9 @@ RUN apt-get update && \
     apt-get install -y git-lfs && \
     git lfs install && \
     rm -rf /var/lib/apt/lists/* && \
-    if [ -n ${socks_proxy} ]; then \
+    if [ -z ${socks_proxy} ]; then \
+        echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30\"" >> ${HOME}/.bashrc; \
+    else \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
     fi
 
