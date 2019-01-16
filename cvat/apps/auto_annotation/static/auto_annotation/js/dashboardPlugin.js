@@ -311,43 +311,50 @@ class AutoAnnotationModelManagerView {
 
         this._cancelButton.on("click", () => this._el.addClass("hidden"));
         this._submitButton.on("click", () => {
-            let validatedFiles = {};
             try {
-                validatedFiles = validateFiles(this._id != null, this._files, this._source);
-            }
-            catch (err) {
-                this._uploadMessage.css('color', 'red');
-                this._uploadMessage.text(err);
-                return;
-            }
+                this._submitButton.prop("disabled", true);
 
-            let name = $.trim(this._modelNameInput.prop("value"));
-            if (!name.length) {
-                this._uploadMessage.css('color', 'red');
-                this._uploadMessage.text("Please specify a model name");
-                return;
-            }
-
-            let modelData = new FormData();
-            modelData.append("name", name);
-            modelData.append("storage", this._source);
-            modelData.append("shared", this._globallyBox.prop('checked'));
-
-            for (let ext in ["xml", "bin", "json", "py"]) {
-                if (ext in validatedFiles) {
-                    modelData.append(ext, validateFiles[ext]);
+                let name = $.trim(this._modelNameInput.prop("value"));
+                if (!name.length) {
+                    this._uploadMessage.css("color", "red");
+                    this._uploadMessage.text("Please specify a model name");
+                    return;
                 }
-            }
 
-            window.cvat.auto_annotation.server.update(modelData, () => {
-                window.location.reload();
-            }, (message) => {
-                this._uploadMessage.css('color', 'red');
-                this._uploadMessage.text(message);
-            }, (progress) => {
-                this._uploadMessage.css('color', 'dodgerblue');
-                this._uploadMessage.text(progress);
-            }, this._id);
+                let validatedFiles = {};
+                try {
+                    validatedFiles = validateFiles(this._id != null, this._files, this._source);
+                }
+                catch (err) {
+                    this._uploadMessage.css("color", "red");
+                    this._uploadMessage.text(err);
+                    return;
+                }
+
+                let modelData = new FormData();
+                modelData.append("name", name);
+                modelData.append("storage", this._source);
+                modelData.append("shared", this._globallyBox.prop("checked"));
+
+                for (let ext in ["xml", "bin", "json", "py"]) {
+                    if (ext in validatedFiles) {
+                        modelData.append(ext, validateFiles[ext]);
+                    }
+                }
+
+                window.cvat.auto_annotation.server.update(modelData, () => {
+                    window.location.reload();
+                }, (message) => {
+                    this._uploadMessage.css("color", "red");
+                    this._uploadMessage.text(message);
+                }, (progress) => {
+                    this._uploadMessage.css("color", "dodgerblue");
+                    this._uploadMessage.text(progress);
+                }, this._id);
+            }
+            finally {
+                this._submitButton.prop("disabled", false);
+            }
         });
     }
 
@@ -371,7 +378,6 @@ class AutoAnnotationModelManagerView {
         this._id = null;
         this._source = this._localSource.prop("checked") ? "local": "share";
         this._files = [];
-
 
         for (let model of window.cvat.auto_annotation.data.models) {
             let rowHtml = `<tr>
@@ -449,12 +455,12 @@ class AutoAnnotationModelRunnerView {
                         <label class="regular h1"> Annotation Labels </label>
                     </center>
                     <div style="height: 70%; overflow: auto; margin-top: 2%;">
-                        <table class="regular" style="text-align: center; word-break: break-all;">
+                        <table class="regular" style="text-align: center; word-break: break-all; width: 100%;">
                             <thead>
-                                <tr style="width: 100%;"> 
-                                    <th style="width: 20%;"> Annotate </th>
-                                    <th style="width: 40%;"> Task Label </th>
-                                    <th style="width: 40%;"> Model Label </th>
+                                <tr style="width: 100%;">
+                                    <th style="width: 45%;"> Task Label </th>
+                                    <th style="width: 45%;"> DL Model Label </th>
+                                    <th style="width: 10%;"> </th>
                                 </tr>
                             </thead>
                             <tbody id="${window.cvat.auto_annotation.annotationLabelsId}">
@@ -471,58 +477,155 @@ class AutoAnnotationModelRunnerView {
         </div>`;
 
         this._el = $(html);
+        this._id = null;
         this._modelsTable = this._el.find(`#${window.cvat.auto_annotation.runnerUploadedModelsId}`);
         this._labelsTable = this._el.find(`#${window.cvat.auto_annotation.annotationLabelsId}`);
+
+        this._el.find(`#${window.cvat.auto_annotation.cancelAnnotationId}`).on("click", () => {
+            this._el.addClass("hidden");
+        });
+
+        this._el.find(`#${window.cvat.auto_annotation.submitAnnotationId}`).on("click", () => {
+            try {
+                if (this._id === null) {
+                    throw Error("Please specify a model for an annotation process");
+                }
+
+                let mapping = {};
+                $(".annotatorMappingRow").each(function() {
+                    let dlModelLabel = $(this).find(".annotatorDlLabelSelector")[0].value;
+                    let taskLabel = $(this).find(".annotatorTaskLabelSelector")[0].value;
+                    if (dlModelLabel in mapping) {
+                        throw Error(`The label "${dlModelLabel}" has been specified twice or more`);
+                    }
+                    mapping[dlModelLabel] = taskLabel;
+                });
+
+                if (!Object.keys(mapping).length) {
+                    throw Error("Labels for an annotation process haven't been found");
+                }
+
+                let overlay = showOverlay("Request has been sent");
+                window.cvat.auto_annotation.server.start(this._id, {
+                    reset: $(`#${window.cvat.auto_annotation.removeCurrentAnnotationId}`).prop("checked"),
+                    labels: mapping
+                }, () => {
+                    overlay.setMessage(`Done.`);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }, (message) => {
+                    overlay.remove();
+                    showMessage(message);
+                }, (message) => {
+                    overlay.setMessage(`Status: ${message}`)
+                });
+            }
+            catch (error) {
+                showMessage(error);
+            }
+        });
     }
 
     reset(data) {
+        function labelsSelect(labels, elClass) {
+            let select = $(`<select class="regular h3 ${elClass}" style="width:100%;"> </select>`);
+            for (let label of labels) {
+                select.append($(`<option value="${label}"> ${label} </option>`));
+            }
+
+            select.prop("value", null);
+
+            return select;
+        }
+
+        function makeCreator(dlSelect, taskSelect, callback) {
+            let dlIsFilled = false;
+            let taskIsFilled = false;
+            let creator = $(`<tr style="margin-bottom: 5px;"> </tr>`).append(
+                $(`<td style="width: 45%;"> </td>`).append(taskSelect),
+                $(`<td style="width: 45%;"> </td>`).append(dlSelect)
+            );
+
+            let _callback = () => {
+                $(`<td style="width: 10%; position: relative;"> </td>`).append(
+                    $(`<a class="close"></a>`).css("top", "0px").on("click", (e) => {
+                        $(e.target.parentNode.parentNode).remove();
+                    })
+                ).appendTo(creator);
+
+                creator.addClass("annotatorMappingRow");
+                callback();
+            }
+
+            dlSelect.on("change", (e) => {
+                if (e.target.value && taskIsFilled) {
+                    dlSelect.off("change");
+                    taskSelect.off("change");
+                    _callback();
+                }
+                dlIsFilled = Boolean(e.target.value);
+            });
+
+            taskSelect.on("change", (e) => {
+                if (e.target.value && dlIsFilled) {
+                    dlSelect.off("change");
+                    taskSelect.off("change");
+                    _callback();
+                }
+
+                taskIsFilled = Boolean(e.target.value);
+            });
+
+            return creator;
+        }
+
+        this._id = null;
         this._modelsTable.empty();
+        this._labelsTable.empty();
 
         let active = null;
         for (let model of window.cvat.auto_annotation.data.models) {
-            function labelsSelect(labels) {
-                let select = $("<select class='regular h3'> </select>");
-                select.append($(`<option> </option>`));
-                for (let label of labels) {
-                    select.append($(`<option value="${label}"> ${label} </option>`));
-                }
-
-                return select;
-            }
-
             let self = this;
             this._modelsTable.append(
                 $(`<tr> <td> <label class="regular h3"> ${model.name} (${model.uploadDate}) </label> </td> </tr>`).on("click", function() {
                     if (active) {
                         active.style.color = "";
                     }
+
+                    self._id = model.id;
                     active = this;
                     active.style.color = "darkblue";
-                    self._labelsTable.empty();
 
+                    self._labelsTable.empty();
                     let labels = Object.values(data.spec.labels);
                     let intersection = labels.filter((el) => model.labels.indexOf(el) != -1);
                     for (let label of intersection) {
-                        let select = labelsSelect(model.labels);
-                        select.prop("value", label);
-                        $(`<tr> </tr>`).append(
-                            $(`<td style="width: 20%;"> <input type="checkbox"/> </td>`),
-                            $(`<td style="width: 40%;"> <label class="regular h3"> ${label} </label> </td>`),
-                            $(`<td style="width: 40%;">  </td>`).append(select)
+                        let dlSelect = labelsSelect(model.labels, "annotatorDlLabelSelector");
+                        dlSelect.prop("value", label);
+                        let taskSelect = labelsSelect(labels, "annotatorTaskLabelSelector");
+                        taskSelect.prop("value", label);
+                        $(`<tr class="annotatorMappingRow" style="margin-bottom: 5px;"> </tr>`).append(
+                            $(`<td style="width: 45%;"> </td>`).append(taskSelect),
+                            $(`<td style="width: 45%;"> </td>`).append(dlSelect),
+                            $(`<td style="width: 10%; position: relative;"> </td>`).append(
+                                $(`<a class="close"></a>`).css("top", "0px").on("click", (e) => {
+                                    $(e.target.parentNode.parentNode).remove();
+                                })
+                            )
                         ).appendTo(self._labelsTable);
                     }
 
-                    for (let label of labels) {
-                        if (intersection.indexOf(label) === -1) {
-                            let select = labelsSelect(model.labels);
-                            select.prop("value", null);
-                            $(`<tr> </tr>`).append(
-                                $(`<td style="width: 20%;"> <input type="checkbox"/> </td>`),
-                                $(`<td style="width: 40%;"> <label class="regular h3"> ${label} </label> </td>`),
-                                $(`<td style="width: 40%;"> </td>`).append(select)
-                            ).appendTo(self._labelsTable);
-                        }
+                    let dlSelect = labelsSelect(model.labels, "annotatorDlLabelSelector");
+                    let taskSelect = labelsSelect(labels, "annotatorTaskLabelSelector");
+
+                    let callback = () => {
+                        let dlSelect = labelsSelect(model.labels, "annotatorDlLabelSelector");
+                        let taskSelect = labelsSelect(labels, "annotatorTaskLabelSelector");
+                        makeCreator(dlSelect, taskSelect, callback).appendTo(self._labelsTable);
                     }
+
+                    makeCreator(dlSelect, taskSelect, callback).appendTo(self._labelsTable);
                 })
             );
         }
@@ -626,7 +729,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
                     overlay.remove();
                 },
                 error: (data) => {
-                    setMessage(`Can't get task data. Code: ${data.status}. Message: ${data.responseText || data.statusText}`);
+                    showMessage(`Can't get task data. Code: ${data.status}. Message: ${data.responseText || data.statusText}`);
                 },
                 complete: () => {
                     overlay.remove();
