@@ -7,8 +7,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("create/task/<int:tid>", views.create),
-    path("check/task/<int:tid>", views.check),
-    path("cancel/task/<int:tid>", views.cancel),
+    path("create/model", views.create_model),
+    path("update/model/<int:mid>", views.update_model),
+    path("delete/model/<int:mid>", views.delete_model),
+    path("start/<int:mid>/<int:tid>", views.start_annotation),
+    path("check/<str:rd_id>", views.check),
     path("meta/get", views.get_meta_info),
 ]
