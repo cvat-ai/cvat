@@ -1475,9 +1475,19 @@ class ShapeView extends Listener {
                     blurAllElements();
                     this._hideShapeText();
                     this.notify('resize');
+
+                    Logger.addEvent(Logger.EventType.debugInfo, {
+                        debugMessage: "Resize has started",
+                        resizeEventInitialized: Boolean(events.resize)
+                    });
                 }).on('resizing', () => {
                     objWasResized = true;
                 }).on('resizedone', () => {
+                    Logger.addEvent(Logger.EventType.debugInfo, {
+                        debugMessage: "Resize has done",
+                        resizeEventInitialized: Boolean(events.resize)
+                    });
+
                     if (objWasResized) {
                         let frame = window.cvat.player.frames.current;
                         this._controller.updatePosition(frame, this._buildPosition());
