@@ -67,11 +67,15 @@ class AutoAnnotationServer {
     }
 
     check(workerId, success, error, progress) {
-        $.ajax({
-            url: "/auto_annotation/check/" + workerId,
-            type: "GET",
-            success: (data) => {
-                let checkCallback = function() {
+        let checkCallback = function() {
+            $.ajax({
+                url: "/auto_annotation/check/" + workerId,
+                type: "GET",
+                success: (data) => {
+                    if (data.progress && progress) {
+                        progress(data.progress);
+                    }
+
                     if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
                         if (data.status === "failed") {
                             let message = `Checking request has returned the "${data.status}" status. Message: ${data.error}`;
@@ -88,19 +92,15 @@ class AutoAnnotationServer {
                     else {
                         setTimeout(checkCallback, 1000);
                     }
-
-                    if (data.progress && progress) {
-                        progress(data.progress);
-                    }
+                },
+                error: (data) => {
+                    let message = `Checking request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                    error(message);
                 }
+            });
+        };
 
-                setTimeout(checkCallback, 1000);
-            },
-            error: (data) => {
-                let message = `Checking request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
-                error(message);
-            }
-        });
+        setTimeout(checkCallback, 1000);
     }
 
     meta(success, error) {
