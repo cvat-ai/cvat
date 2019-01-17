@@ -354,6 +354,8 @@ var Logger = {
         sendException: 22,
         // dumped as "Change frame". There are no additional required fields.
         changeFrame: 23,
+        resizeStart: 24,
+        resizeDone: 25,
     },
 
     /**
@@ -515,6 +517,8 @@ var Logger = {
         case this.EventType.sendUserActivity: return 'Send user activity';
         case this.EventType.sendException: return 'Send exception';
         case this.EventType.changeFrame: return 'Change frame';
+        case this.EventType.resizeDone: return 'Resize done';
+        case this.EventType.resizeStart: return 'Resize start';
         default: return 'Unknown';
         }
     },
