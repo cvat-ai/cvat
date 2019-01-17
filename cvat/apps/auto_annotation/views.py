@@ -451,7 +451,8 @@ def start_annotation(request, mid, tid):
 @login_required
 def check(request, rq_id):
     try:
-        queue = django_rq.get_queue("low")
+        target_queue = "low" if "auto_annotation.run" in rq_id else "default"
+        queue = django_rq.get_queue(target_queue)
         job = queue.fetch_job(rq_id)
         if job is not None and "cancel" in job.meta:
             return JsonResponse({"status": "finished"})
@@ -462,7 +463,7 @@ def check(request, rq_id):
             data["status"] = "queued"
         elif job.is_started:
             data["status"] = "started"
-            data["progress"] = job.meta["progress"]
+            data["progress"] = job.meta["progress"] if "progress" in job.meta else ""
         elif job.is_finished:
             data["status"] = "finished"
             job.delete()

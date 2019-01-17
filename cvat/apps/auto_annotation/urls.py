@@ -11,6 +11,6 @@ urlpatterns = [
     path("update/<int:mid>", views.update_model),
     path("delete/<int:mid>", views.delete_model),
     path("start/<int:mid>/<int:tid>", views.start_annotation),
-    path("check/<str:rd_id>", views.check),
+    path("check/<str:rq_id>", views.check),
     path("meta/get", views.get_meta_info),
 ]

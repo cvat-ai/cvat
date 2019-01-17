@@ -18,6 +18,7 @@ def _update_dl_model_thread(dl_model_id):
     job.meta["progress"] = "Saving data"
     job.save_meta()
 
+    # Only for test
     import time
     time.sleep(10)
 
