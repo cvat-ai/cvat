@@ -449,8 +449,6 @@ def start_annotation(request, mid, tid):
     return JsonResponse({"id": rq_id})
 
 @login_required
-@permission_required(perm=["engine.task.access"],
-    fn=objectgetter(TaskModel, "tid"), raise_exception=True)
 def check(request, rq_id):
     try:
         queue = django_rq.get_queue("low")
