@@ -134,7 +134,8 @@
         <div style="margin-top: 20px">
             <button id="menuButton" class="regular h1"> Open Menu </button>
             <label class="regular h1" style="margin-left: 50px"> Filter: </label>
-            <input type="text" id="filterInputString" class="regular h2"/>
+            <datalist id="filterSubmitList" style="display: none;"> </datalist>
+            <input type="text" list="filterSubmitList" id="filterInputString" class="regular h2" placeholder='car[attr/model=/"mazda"'/>
             <button id="resetFilterButton" class="regular h1"> Reset </button>
             <button class="regular h1" id="undoButton" disabled> &#x27F2; </button>
             <select size="2" class="regular" style="overflow: hidden; width: 15%; top: 0.5em; position: relative;" disabled>
