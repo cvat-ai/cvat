@@ -1476,13 +1476,15 @@ class ShapeView extends Listener {
                     this._hideShapeText();
                     this.notify('resize');
 
-                    Logger.addEvent(Logger.EventType.resizeStart, {
+                    Logger.addEvent(Logger.EventType.debugInfo, {
+                        debugMessage: "Resize has started",
                         resizeEventInitialized: Boolean(events.resize)
                     });
                 }).on('resizing', () => {
                     objWasResized = true;
                 }).on('resizedone', () => {
-                    Logger.addEvent(Logger.EventType.resizeDone, {
+                    Logger.addEvent(Logger.EventType.debugInfo, {
+                        debugMessage: "Resize has done",
                         resizeEventInitialized: Boolean(events.resize)
                     });
 
