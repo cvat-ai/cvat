@@ -53,7 +53,7 @@ def update_model(dl_model_id, name, model_file, weights_file, labelmap_file, int
             remove_old_file(dl_model.interpretation_file)
             dl_model.interpretation_file = interpretation_file
     else:
-        pass
+        raise Exception("Loading model from share isn't implemented yet")
 
     dl_model.updated_date = timezone.now()
     dl_model.save()
