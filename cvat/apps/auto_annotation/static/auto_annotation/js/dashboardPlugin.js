@@ -332,7 +332,7 @@ class AutoAnnotationModelManagerView {
                     }
                 }
 
-                this._uploadMessage.setMessage("");
+                this._uploadMessage.text("");
                 let overlay = showOverlay("Send request to the server..");
                 window.cvat.auto_annotation.server.update(modelData, () => {
                     window.location.reload();
