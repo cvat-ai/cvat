@@ -254,11 +254,14 @@ def create_thread(tid, model_file, weights_file, labels_mapping, attributes, con
             annotation.clear_task(tid)
         annotation.save_task(tid, result)
         slogger.glob.info("auto annotation for task {} done".format(tid))
-    except Exception:
+    except Exception as e:
         try:
             slogger.task[tid].exception("exception was occurred during auto annotation of the task", exc_info=True)
         except Exception as ex:
             slogger.glob.exception("exception was occurred during auto annotation of the task {}: {}".format(tid, str(ex)), exc_info=True)
+            raise ex
+
+        raise e
 
 @login_required
 @permission_required(perm=["engine.task.change"],
@@ -266,7 +269,7 @@ def create_thread(tid, model_file, weights_file, labels_mapping, attributes, con
 def cancel(request, tid):
     try:
         queue = django_rq.get_queue("low")
-        job = queue.fetch_job("auto_annotation.run/{}".format(tid))
+        job = queue.fetch_job("auto_annotation.run.{}".format(tid))
         if job is None or job.is_finished or job.is_failed:
             raise Exception("Task is not being annotated currently")
         elif "cancel" not in job.meta:
@@ -293,7 +296,8 @@ def create_model(request):
         storage = params["storage"]
         name = params["name"]
         is_shared = params["shared"].lower() == "true"
-        files = request.FILES
+
+        files = request.FILES if storage == "local" else params
         model = files["xml"]
         weights = files["bin"]
         labelmap = files["json"]
@@ -352,7 +356,7 @@ def update_model(request, mid):
 def delete_model(request, mid):
     if request.method != 'DELETE':
         return HttpResponseBadRequest("Only DELETE requests are accepted")
-    model_manager.delete(mid)
+    model_manager.delete(mid, request.user)
     return HttpResponse()
 
 @login_required
@@ -361,6 +365,7 @@ def get_meta_info(request):
         response = {
             "admin": has_admin_role(request.user),
             "models": [],
+            "run": {},
         }
         dl_model_list = list(AnnotationModel.objects.filter(Q(owner=request.user) | Q(primary=True) | Q(shared=True)).order_by('-created_date'))
         for dl_model in dl_model_list:
@@ -379,6 +384,9 @@ def get_meta_info(request):
                 "labels": labels,
             })
 
+        queue = django_rq.get_queue("low")
+        response["run"] = {job_id.replace("auto_annotation.run.", ""): job_id for job_id in queue.job_ids if "auto_annotation.run" in job_id}
+
         return JsonResponse(response)
     except Exception as e:
         return HttpResponseBadRequest(str(e))
@@ -392,7 +400,7 @@ def start_annotation(request, mid, tid):
         db_task = TaskModel.objects.get(pk=tid)
         upload_dir = db_task.get_upload_dirname()
         queue = django_rq.get_queue("low")
-        job = queue.fetch_job("auto_annotation.run/{}".format(tid))
+        job = queue.fetch_job("auto_annotation.run.{}".format(tid))
         if job is not None and (job.is_started or job.is_queued):
             raise Exception("The process is already running")
 
@@ -423,7 +431,7 @@ def start_annotation(request, mid, tid):
         if not labels_mapping:
             raise Exception("No labels found for annotation")
 
-        rq_id="auto_annotation.run/{}".format(tid)
+        rq_id="auto_annotation.run.{}".format(tid)
         queue.enqueue_call(func=create_thread,
             args=(
                 tid,
