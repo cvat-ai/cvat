@@ -754,7 +754,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
                     button.text(`Annotation has failed`);
                     button.title(error);
                 }, (progress) => {
-                    button.text(`Cancel Auto Annotation (${progress})`);
+                    button.text(`Cancel Auto Annotation (${progress.toString().slice(0,4)})%`);
                 });
             };
 
