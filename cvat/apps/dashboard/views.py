@@ -10,7 +10,7 @@ from django.conf import settings
 from cvat.apps.authentication.decorators import login_required
 
 from cvat.apps.engine.models import Task as TaskModel, Job as JobModel
-from cvat.settings.base import JS_3RDPARTY
+from cvat.settings.base import JS_3RDPARTY, CSS_3RDPARTY
 
 import os
 
@@ -77,4 +77,5 @@ def DashboardView(request):
         'base_url': "{0}://{1}/".format(request.scheme, request.get_host()),
         'share_path': os.getenv('CVAT_SHARE_URL', default=r'${cvat_root}/share'),
         'js_3rdparty': JS_3RDPARTY.get('dashboard', []),
+        'css_3rdparty': CSS_3RDPARTY.get('dashboard', []),
     })

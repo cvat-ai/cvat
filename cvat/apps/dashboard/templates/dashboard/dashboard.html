@@ -15,6 +15,9 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'dashboard/stylesheet.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/jstree/themes/default/style.css' %}">
+    {% for css_file in css_3rdparty %}
+        <link rel="stylesheet" type="text/css" href="{% static css_file %}">
+    {% endfor %}
 {% endblock %}
 
 {% block head_js_3rdparty %}
@@ -41,19 +44,19 @@
 
 {% block content %}
     <div id="content">
-        <center>
-            <table style="width: 65%;">
-                <tr>
-                    <td><button id="dashboardCreateTaskButton" class="regular h1"> Create New Task </button></td>
-                    <td>
-                        <div style="width: 300px; float: right;">
-                            <input type="text" id="dashboardSearchInput" class="regular h1" placeholder="Search.." name="search">
-                            <button id="dashboardSearchSubmit" class="regular h1"> &#x1F50D; </button>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </center>
+        <div style="width: 100%; display: flex;">
+            <div style="width: 50%; display: flex;"> </div>
+            <div style="width: 50%; display: flex;">
+                <div id="dashboardManageButtons" style="display: flex;">
+                    <button id="dashboardCreateTaskButton" class="regular h1" style="padding: 7px;"> Create New Task </button>
+                </div>
+                <div style="width: 300px; display: flex; margin-left: 4px;">
+                    <input type="text" id="dashboardSearchInput" class="regular h3" placeholder="Search.." name="search">
+                    <button id="dashboardSearchSubmit" class="regular h3"> &#x1F50D; </button>
+                </div>
+            </div>
+            <div style="width: 50%; display: flex;"> </div>
+        </div>
 
         {% autopaginate data %}
         <div style="float: left; width: 100%">
