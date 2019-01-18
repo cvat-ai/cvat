@@ -362,6 +362,7 @@ def delete_model(request, mid):
 @login_required
 def get_meta_info(request):
     try:
+        tids = json.loads(request.body.decode('utf-8'))
         response = {
             "admin": has_admin_role(request.user),
             "models": [],
@@ -385,7 +386,14 @@ def get_meta_info(request):
             })
 
         queue = django_rq.get_queue("low")
-        response["run"] = {job_id.replace("auto_annotation.run.", ""): job_id for job_id in queue.job_ids if "auto_annotation.run" in job_id}
+        for tid in tids:
+            rq_id = "auto_annotation.run.{}".format(tid)
+            job = queue.fetch_job(rq_id)
+            if job is not None:
+                response["run"][tid] = {
+                    "active": job.is_queued or job.is_started,
+                    "rq_id": rq_id,
+                }
 
         return JsonResponse(response)
     except Exception as e:
