@@ -296,6 +296,8 @@ def create_model(request):
         storage = params["storage"]
         name = params["name"]
         is_shared = params["shared"].lower() == "true"
+        if is_shared and not has_admin_role(request.user):
+            raise Exception("Only admin can create shared models")
 
         files = request.FILES if storage == "local" else params
         model = files["xml"]
@@ -331,6 +333,8 @@ def update_model(request, mid):
         name = params.get("name")
         is_shared = params.get("shared")
         is_shared = is_shared.lower() == "true" if is_shared else None
+        if is_shared and not has_admin_role(request.user):
+            raise Exception("Only admin can create shared models")
         files = request.FILES
         model = files.get("xml")
         weights = files.get("bin")
@@ -418,6 +422,10 @@ def start_annotation(request, mid, tid):
         user_defined_labels_mapping = data["labels"]
 
         dl_model = AnnotationModel.objects.get(pk=mid)
+
+        if dl_model.owner != request.user and not has_admin_role(request.user)\
+            and not dl_model.shared and not dl_model.primary:
+            raise Exception("You dont have permission to start auto unnotation")
 
         model_file_path = dl_model.model_file.name
         weights_file_path = dl_model.weights_file.name
