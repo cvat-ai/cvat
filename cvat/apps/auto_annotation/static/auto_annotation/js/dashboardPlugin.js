@@ -17,7 +17,7 @@ class AutoAnnotationServer {
         $.ajax({
             url: "/auto_annotation/start/" + modelId + "/" + taskId,
             type: "POST",
-            data: data,
+            data: JSON.stringify(data),
             contentType: "application/json",
             success: (data) => {
                 check(data.id, success, error, progress);
