@@ -16,7 +16,7 @@ def _remove_old_file(model_file_field):
     if model_file_field and os.path.exists(model_file_field.name):
         os.remove(model_file_field.name)
 
-
+@transaction.atomic
 def _update_dl_model_thread(dl_model_id, model_file, weights_file, labelmap_file, interpretation_file, run_tests):
     def _get_file_content(filename):
         return os.path.basename(filename), open(filename, "rb")
