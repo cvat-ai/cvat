@@ -391,7 +391,7 @@ def get_meta_info(request):
             job = queue.fetch_job(rq_id)
             if job is not None:
                 response["run"][tid] = {
-                    "active": job.is_queued or job.is_started,
+                    "status": job.status,
                     "rq_id": rq_id,
                 }
 
