@@ -13,13 +13,15 @@ window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
 class AutoAnnotationServer {
     constructor() { }
 
-    start(modelId, taskId, data, success, error) {
+    start(modelId, taskId, data, success, error, progress, check) {
         $.ajax({
             url: "/auto_annotation/start/" + modelId + "/" + taskId,
             type: "POST",
             data: JSON.stringify(data),
             contentType: "application/json",
-            success: success,
+            success: (data) => {
+                check(data.id, success, error, progress);
+            },
             error: (data) => {
                 let message = `Starting request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
@@ -482,6 +484,7 @@ class AutoAnnotationModelRunnerView {
         this._el = $(html);
         this._id = null;
         this._tid = null;
+        this._initButton = null;
         this._modelsTable = this._el.find(`#${window.cvat.auto_annotation.runnerUploadedModelsId}`);
         this._labelsTable = this._el.find(`#${window.cvat.auto_annotation.annotationLabelsId}`);
 
@@ -490,6 +493,7 @@ class AutoAnnotationModelRunnerView {
         });
 
         this._el.find(`#${window.cvat.auto_annotation.submitAnnotationId}`).on("click", () => {
+            let initButton = this._initButton;
             try {
                 if (this._id === null) {
                     throw Error("Please specify a model for an annotation process");
@@ -514,9 +518,16 @@ class AutoAnnotationModelRunnerView {
                     reset: $(`#${window.cvat.auto_annotation.removeCurrentAnnotationId}`).prop("checked"),
                     labels: mapping
                 }, () => {
-                    overlay.setMessage("Auto annotation has been started");
-                    setTimeout(() => window.location.reload(), 3000);
-                });
+                    overlay.remove();
+                    initButton[0].setupRun();
+                    window.cvat.auto_annotation.runner.hide();
+                }, (message) => {
+                    overlay.remove();
+                    initButton[0].setupRun();
+                    showMessage(message);
+                }, () => {
+                    window.location.reload();
+                }, window.cvat.auto_annotation.server.check);
             }
             catch (error) {
                 showMessage(error);
@@ -524,7 +535,7 @@ class AutoAnnotationModelRunnerView {
         });
     }
 
-    reset(data) {
+    reset(data, initButton) {
         function labelsSelect(labels, elClass) {
             let select = $(`<select class="regular h3 ${elClass}" style="width:100%;"> </select>`);
             for (let label of labels) {
@@ -578,6 +589,7 @@ class AutoAnnotationModelRunnerView {
         }
 
         this._id = null;
+        this._initButton = initButton;
         this._tid = data.taskid;
         this._modelsTable.empty();
         this._labelsTable.empty();
@@ -633,6 +645,11 @@ class AutoAnnotationModelRunnerView {
 
     show() {
         this._el.removeClass("hidden");
+        return this;
+    }
+
+    hide() {
+        this._el.addClass("hidden");
         return this;
     }
     
@@ -695,17 +712,17 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
             let elem = $(newElements[idx]);
             let tid = +elem.attr("id").split("_")[1];
 
-            function setupButton(button) {
-                button.text("Run Auto Annotation");
-                button.off("click");
-                button.on("click", () => {
+            let button = $("<button> Run Auto Annotation </button>").addClass("regular dashboardButtonUI");
+            button[0].setupRun = function() {
+                self = $(this);
+                self.text("Run Auto Annotation").off("click").on("click", () => {
                     let overlay = showOverlay("Task date are being recieved from the server..");
                     $.ajax({
                         url: `/get/task/${tid}`,
                         dataType: "json",
                         success: (data) => {
                             overlay.setMessage("The model runner are being setup..")
-                            window.cvat.auto_annotation.runner.reset(data).show();
+                            window.cvat.auto_annotation.runner.reset(data, self).show();
                             overlay.remove();
                         },
                         error: (data) => {
@@ -717,14 +734,13 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
                     });
                 });
             }
-            
-            let button = $("<button> Run Auto Annotation </button>").addClass("regular dashboardButtonUI");
-            
-            if (tid in window.cvat.auto_annotation.data.run && window.cvat.auto_annotation.data.run[tid].active) {
-                button.text("Cancel Auto Annotation").on("click", () => {
+
+            button[0].setupCancel = function() {
+                self = $(this);
+                self.off("click").text("Cancel Auto Annotation").on("click", () => {
                     confirm("Process will be canceled. Are you sure?", () => {
                         window.cvat.auto_annotation.server.cancel(tid, () => {
-                            setupButton(button);
+                            this.setupRun();
                         }, (message) => {
                             showMessage(message);
                         });
@@ -732,7 +748,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
                 });
 
                 window.cvat.auto_annotation.check(window.cvat.auto_annotation.dashboard.run[tid].rq_id, () => {
-                    setupButton(button);
+                    this.setupRun();
                 }, (error) => {
                     setupButton(button);
                     button.text(`Annotation has failed`);
@@ -740,9 +756,14 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
                 }, (progress) => {
                     button.text(`Cancel Auto Annotation (${progress})`);
                 });
+            };
+
+            let data = window.cvat.auto_annotation.data.run[tid];
+            if (data && ["queued", "started"].includes(data.status)) {
+                button[0].setupCancel();
             }
             else {
-                setupButton(button);
+                button[0].setupRun();
             }
 
             button.appendTo(elem.find("div.dashboardButtonsUI")[0]);
