@@ -747,7 +747,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
                     });
                 });
 
-                window.cvat.auto_annotation.check(window.cvat.auto_annotation.dashboard.run[tid].rq_id, () => {
+                window.cvat.auto_annotation.server.check(window.cvat.auto_annotation.run[tid].rq_id, () => {
                     this.setupRun();
                 }, (error) => {
                     setupButton(button);
