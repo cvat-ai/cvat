@@ -436,7 +436,7 @@ class AutoAnnotationModelManagerView {
     get element() {
         return this._el;
     }
-}   
+}
 
 
 class AutoAnnotationModelRunnerView {
@@ -652,7 +652,7 @@ class AutoAnnotationModelRunnerView {
         this._el.addClass("hidden");
         return this;
     }
-    
+
     get element() {
         return this._el;
     }
@@ -703,7 +703,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
         $("body").append(window.cvat.auto_annotation.manager.element, window.cvat.auto_annotation.runner.element);
         $(`<button id="${window.cvat.auto_annotation.managerButtonId}" class="regular h1" style=""> Model Manager</button>`)
             .on("click", () => {
-                let overlay = showOverlay("The manager are being setup.."); 
+                let overlay = showOverlay("The manager are being setup..");
                 window.cvat.auto_annotation.manager.reset().show();
                 overlay.remove();
             }).appendTo("#dashboardManageButtons");
@@ -747,7 +747,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
                     });
                 });
 
-                window.cvat.auto_annotation.server.check(window.cvat.auto_annotation.run[tid].rq_id, () => {
+                window.cvat.auto_annotation.server.check(window.cvat.auto_annotation.data.run[tid].rq_id, () => {
                     this.setupRun();
                 }, (error) => {
                     setupButton(button);
