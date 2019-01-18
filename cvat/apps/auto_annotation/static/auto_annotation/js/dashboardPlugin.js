@@ -101,10 +101,12 @@ class AutoAnnotationServer {
         setTimeout(checkCallback, 1000);
     }
 
-    meta(success, error) {
+    meta(tids, success, error) {
         $.ajax({
             url: "/auto_annotation/meta/get",
-            type: "GET",
+            type: "POST",
+            data: JSON.stringify(tids),
+            contentType: "application/json",
             success: success,
             error: (data) => {
                 let message = `Getting meta request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
@@ -673,9 +675,14 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
     window.cvat.auto_annotation.server = new AutoAnnotationServer();
     window.cvat.auto_annotation.manager = new AutoAnnotationModelManagerView();
     window.cvat.auto_annotation.runner = new AutoAnnotationModelRunnerView();
-    window.cvat.auto_annotation.server.meta((data) => {
-        window.cvat.auto_annotation.data = data;
 
+    let tids = [];
+    for (let el of newElements) {
+        tids.push(el.id.split('_')[1]);
+    }
+
+    window.cvat.auto_annotation.server.meta(tids, (data) => {
+        window.cvat.auto_annotation.data = data;
         $("body").append(window.cvat.auto_annotation.manager.element, window.cvat.auto_annotation.runner.element);
         $(`<button id="${window.cvat.auto_annotation.managerButtonId}" class="regular h1" style=""> Model Manager</button>`)
             .on("click", () => {
