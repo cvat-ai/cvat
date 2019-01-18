@@ -388,9 +388,11 @@ function setupTaskCreator() {
 
     cancelBrowseServer.on("click", () => shareFileSelector.addClass("hidden"));
     submitBrowseServer.on("click", function() {
-        files = shareBrowseTree.jstree(true).get_selected();
-        cancelBrowseServer.click();
-        updateSelectedFiles();
+        if (!createModal.hasClass("hidden")) {
+            files = shareBrowseTree.jstree(true).get_selected();
+            cancelBrowseServer.click();
+            updateSelectedFiles();
+        }
     });
 
     flipImagesBox.on("click", (e) => {

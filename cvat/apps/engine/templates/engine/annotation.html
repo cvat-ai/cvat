@@ -9,6 +9,9 @@
 {% block head_css %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'engine/stylesheet.css' %}">
+    {% for css_file in css_3rdparty %}
+        <link rel="stylesheet" type="text/css" src="{% static css_file %}">
+    {% endfor %}
 {% endblock %}
 
 
