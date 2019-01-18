@@ -720,16 +720,18 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
             
             let button = $("<button> Run Auto Annotation </button>").addClass("regular dashboardButtonUI");
             
-            if (tid in window.cvat.auto_annotation.data.run) {
+            if (tid in window.cvat.auto_annotation.data.run && window.cvat.auto_annotation.data.run[tid].active) {
                 button.text("Cancel Auto Annotation").on("click", () => {
-                    window.cvat.auto_annotation.server.cancel(tid, () => {
-                        setupButton(button);
-                    }, (message) => {
-                        showMessage(message);
+                    confirm("Process will be canceled. Are you sure?", () => {
+                        window.cvat.auto_annotation.server.cancel(tid, () => {
+                            setupButton(button);
+                        }, (message) => {
+                            showMessage(message);
+                        });
                     });
                 });
 
-                window.cvat.auto_annotation.check(window.cvat.auto_annotation.dashboard.run[tid], () => {
+                window.cvat.auto_annotation.check(window.cvat.auto_annotation.dashboard.run[tid].rq_id, () => {
                     setupButton(button);
                 }, (error) => {
                     setupButton(button);
