@@ -13,15 +13,13 @@ window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
 class AutoAnnotationServer {
     constructor() { }
 
-    start(modelId, taskId, data, success, error, progress, check) {
+    start(modelId, taskId, data, success, error) {
         $.ajax({
             url: "/auto_annotation/start/" + modelId + "/" + taskId,
             type: "POST",
             data: JSON.stringify(data),
             contentType: "application/json",
-            success: (data) => {
-                check(data.id, success, error, progress);
-            },
+            success: success,
             error: (data) => {
                 let message = `Starting request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
@@ -106,6 +104,18 @@ class AutoAnnotationServer {
     meta(success, error) {
         $.ajax({
             url: "/auto_annotation/meta/get",
+            type: "GET",
+            success: success,
+            error: (data) => {
+                let message = `Getting meta request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                error(message);
+            }
+        });
+    }
+
+    cancel(tid, success, error) {
+        $.ajax({
+            url: "/auto_annotation/cancel/" + tid,
             type: "GET",
             success: success,
             error: (data) => {
@@ -502,16 +512,9 @@ class AutoAnnotationModelRunnerView {
                     reset: $(`#${window.cvat.auto_annotation.removeCurrentAnnotationId}`).prop("checked"),
                     labels: mapping
                 }, () => {
-                    overlay.setMessage(`Done.`);
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                }, (message) => {
-                    overlay.remove();
-                    showMessage(message);
-                }, (message) => {
-                    overlay.setMessage(`Status: ${message}`)
-                }, window.cvat.auto_annotation.server.check);
+                    overlay.setMessage("Auto annotation has been started");
+                    setTimeout(() => window.location.reload(), 3000);
+                });
             }
             catch (error) {
                 showMessage(error);
@@ -685,24 +688,55 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
             let elem = $(newElements[idx]);
             let tid = +elem.attr("id").split("_")[1];
 
-            $("<button> Run Auto Annotation </button>").addClass("regular dashboardButtonUI").on("click", () => {
-                let overlay = showOverlay("Task date are being recieved from the server..");
-                $.ajax({
-                    url: `/get/task/${tid}`,
-                    dataType: "json",
-                    success: (data) => {
-                        overlay.setMessage("The model runner are being setup..")
-                        window.cvat.auto_annotation.runner.reset(data).show();
-                        overlay.remove();
-                    },
-                    error: (data) => {
-                        showMessage(`Can't get task data. Code: ${data.status}. Message: ${data.responseText || data.statusText}`);
-                    },
-                    complete: () => {
-                        overlay.remove();
-                    }
+            function setupButton(button) {
+                button.text("Run Auto Annotation");
+                button.off("click");
+                button.on("click", () => {
+                    let overlay = showOverlay("Task date are being recieved from the server..");
+                    $.ajax({
+                        url: `/get/task/${tid}`,
+                        dataType: "json",
+                        success: (data) => {
+                            overlay.setMessage("The model runner are being setup..")
+                            window.cvat.auto_annotation.runner.reset(data).show();
+                            overlay.remove();
+                        },
+                        error: (data) => {
+                            showMessage(`Can't get task data. Code: ${data.status}. Message: ${data.responseText || data.statusText}`);
+                        },
+                        complete: () => {
+                            overlay.remove();
+                        }
+                    });
                 });
-            }).appendTo(elem.find("div.dashboardButtonsUI")[0]);
+            }
+            
+            let button = $("<button> Run Auto Annotation </button>").addClass("regular dashboardButtonUI");
+            
+            if (tid in window.cvat.auto_annotation.data.run) {
+                button.text("Cancel Auto Annotation").on("click", () => {
+                    window.cvat.auto_annotation.server.cancel(tid, () => {
+                        setupButton(button);
+                    }, (message) => {
+                        showMessage(message);
+                    });
+                });
+
+                window.cvat.auto_annotation.check(window.cvat.auto_annotation.dashboard.run[tid], () => {
+                    setupButton(button);
+                }, (error) => {
+                    setupButton(button);
+                    button.text(`Annotation has failed`);
+                    button.title(error);
+                }, (progress) => {
+                    button.text(`Cancel Auto Annotation (${progress})`);
+                });
+            }
+            else {
+                setupButton(button);
+            }
+
+            button.appendTo(elem.find("div.dashboardButtonsUI")[0]);
         });
     }, (error) => {
         showMessage(`Cannot get models meta information: ${error}`);
