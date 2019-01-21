@@ -8,11 +8,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
 
-import shlex
-import csv
-import re
-import os
-
 fs = FileSystemStorage()
 
 def upload_path_handler(instance, filename):

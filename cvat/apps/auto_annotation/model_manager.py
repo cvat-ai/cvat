@@ -1,5 +1,4 @@
 import django_rq
-import json
 import os
 import rq
 import shutil
@@ -7,8 +6,6 @@ import shutil
 from django.db import transaction
 from django.utils import timezone
 from django.conf import settings
-
-from cvat.apps.engine.log import slogger
 
 from .models import AnnotationModel
 

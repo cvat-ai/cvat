@@ -76,7 +76,7 @@ class AutoAnnotationServer {
                         progress(data.progress);
                     }
 
-                    if (["finished", "failed", "unknown"].indexOf(data.status) != -1) {
+                    if (["finished", "failed", "unknown"].indexOf(data.status) !== -1) {
                         if (data.status === "failed") {
                             let message = `Checking request has returned the "${data.status}" status. Message: ${data.error}`;
                             error(message);
@@ -411,7 +411,7 @@ class AutoAnnotationModelManagerView {
                         $(deleteButtonHtml).on("click", () => {
                             confirm(`Do you actually want to delete the "${model.name}" model. Are you sure?`, () => {
                                 window.cvat.auto_annotation.server.delete(model.id, () => {
-                                    window.cvat.auto_annotation.data.models = window.cvat.auto_annotation.data.models.filter((item) => item != model);
+                                    window.cvat.auto_annotation.data.models = window.cvat.auto_annotation.data.models.filter((item) => item !== model);
                                     this.reset();
                                 }, (message) => {
                                     showMessage(message);
@@ -550,14 +550,14 @@ class AutoAnnotationModelRunnerView {
         function makeCreator(dlSelect, taskSelect, callback) {
             let dlIsFilled = false;
             let taskIsFilled = false;
-            let creator = $(`<tr style="margin-bottom: 5px;"> </tr>`).append(
-                $(`<td style="width: 45%;"> </td>`).append(taskSelect),
-                $(`<td style="width: 45%;"> </td>`).append(dlSelect)
+            let creator = $("<tr style=\"margin-bottom: 5px;\"> </tr>").append(
+                $("<td style=\"width: 45%;\"> </td>").append(taskSelect),
+                $("<td style=\"width: 45%;\"> </td>").append(dlSelect)
             );
 
             let _callback = () => {
-                $(`<td style="width: 10%; position: relative;"> </td>`).append(
-                    $(`<a class="close"></a>`).css("top", "0px").on("click", (e) => {
+                $("<td style=\"width: 10%; position: relative;\"> </td>").append(
+                    $("<a class=\"close\"></a>").css("top", "0px").on("click", (e) => {
                         $(e.target.parentNode.parentNode).remove();
                     })
                 ).appendTo(creator);
@@ -609,17 +609,17 @@ class AutoAnnotationModelRunnerView {
 
                     self._labelsTable.empty();
                     let labels = Object.values(data.spec.labels);
-                    let intersection = labels.filter((el) => model.labels.indexOf(el) != -1);
+                    let intersection = labels.filter((el) => model.labels.indexOf(el) !== -1);
                     for (let label of intersection) {
                         let dlSelect = labelsSelect(model.labels, "annotatorDlLabelSelector");
                         dlSelect.prop("value", label);
                         let taskSelect = labelsSelect(labels, "annotatorTaskLabelSelector");
                         taskSelect.prop("value", label);
-                        $(`<tr class="annotatorMappingRow" style="margin-bottom: 5px;"> </tr>`).append(
-                            $(`<td style="width: 45%;"> </td>`).append(taskSelect),
-                            $(`<td style="width: 45%;"> </td>`).append(dlSelect),
-                            $(`<td style="width: 10%; position: relative;"> </td>`).append(
-                                $(`<a class="close"></a>`).css("top", "0px").on("click", (e) => {
+                        $("<tr class=\"annotatorMappingRow\" style=\"margin-bottom: 5px;\"> </tr>").append(
+                            $("<td style=\"width: 45%;\"> </td>").append(taskSelect),
+                            $("<td style=\"width: 45%;\"> </td>").append(dlSelect),
+                            $("<td style=\"width: 10%; position: relative;\"> </td>").append(
+                                $("<a class=\"close\"></a>").css("top", "0px").on("click", (e) => {
                                     $(e.target.parentNode.parentNode).remove();
                                 })
                             )
@@ -695,7 +695,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
 
     let tids = [];
     for (let el of newElements) {
-        tids.push(el.id.split('_')[1]);
+        tids.push(el.id.split("_")[1]);
     }
 
     window.cvat.auto_annotation.server.meta(tids, (data) => {
@@ -721,7 +721,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
                         url: `/get/task/${tid}`,
                         dataType: "json",
                         success: (data) => {
-                            overlay.setMessage("The model runner are being setup..")
+                            overlay.setMessage("The model runner are being setup..");
                             window.cvat.auto_annotation.runner.reset(data, self).show();
                             overlay.remove();
                         },
@@ -733,7 +733,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
                         }
                     });
                 });
-            }
+            };
 
             button[0].setupCancel = function() {
                 self = $(this);

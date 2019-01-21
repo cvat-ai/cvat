@@ -8,10 +8,8 @@ import fnmatch
 import json
 import os
 import rq
-import rules
 
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
-from django.conf import settings
 from django.db.models import Q
 from rules.contrib.views import permission_required, objectgetter
 
@@ -385,7 +383,6 @@ def get_meta_info(request):
                 "primary": dl_model.primary,
                 "uploadDate": dl_model.created_date,
                 "updateDate": dl_model.updated_date,
-                "primary": dl_model.primary,
                 "labels": labels,
             })
 
@@ -410,7 +407,6 @@ def start_annotation(request, mid, tid):
     slogger.glob.info("auto annotation create request for task {} via DL model {}".format(tid, mid))
     try:
         db_task = TaskModel.objects.get(pk=tid)
-        upload_dir = db_task.get_upload_dirname()
         queue = django_rq.get_queue("low")
         job = queue.fetch_job("auto_annotation.run.{}".format(tid))
         if job is not None and (job.is_started or job.is_queued):
