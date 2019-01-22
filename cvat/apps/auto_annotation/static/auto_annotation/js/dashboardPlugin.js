@@ -69,30 +69,34 @@ class AutoAnnotationServer {
     }
 
     check(workerId, success, error, progress) {
+        function updateProgress(data, progress) {
+            if (data.progress && progress) {
+                progress(data.progress);
+            }
+        };
+
         let checkCallback = function() {
             $.ajax({
                 url: "/auto_annotation/check/" + workerId,
                 type: "GET",
                 success: (data) => {
-                    if (data.progress && progress) {
-                        progress(data.progress);
-                    }
+                    updateProgress(data, progress);
 
-                    if (["finished", "failed", "unknown"].indexOf(data.status) !== -1) {
-                        if (data.status === "failed") {
-                            let message = `Checking request has returned the "${data.status}" status. Message: ${data.error}`;
-                            error(message);
-                        }
-                        else if (data.status === "unknown") {
-                            let message = `Checking request has returned the "${data.status}" status.`;
-                            error(message);
-                        }
-                        else if (data.status === "finished") {
+                    switch(data.status) {
+                        case "failed":
+                            error(`Checking request has returned the "${data.status}" status. Message: ${data.error}`);
+                            break;
+
+                        case "unknown":
+                            error(`Checking request has returned the "${data.status}" status.`);
+                            break
+
+                        case "finished":
                             success();
-                        }
-                    }
-                    else {
-                        setTimeout(checkCallback, 1000);
+                            break;
+
+                        default:
+                            setTimeout(checkCallback, 1000);
                     }
                 },
                 error: (data) => {
@@ -123,7 +127,7 @@ class AutoAnnotationServer {
         $.ajax({
             url: "/auto_annotation/cancel/" + tid,
             type: "GET",
-            success: success,
+            success,
             error: (data) => {
                 let message = `Getting meta request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
@@ -577,7 +581,7 @@ class AutoAnnotationModelRunnerView {
 
                 creator.addClass("annotatorMappingRow");
                 callback();
-            }
+            };
 
             dlSelect.on("change", (e) => {
                 if (e.target.value && taskIsFilled) {
