@@ -7,13 +7,13 @@
     },
     "plugins": [
         "security",
-        "no-unsanitized"
+        "no-unsanitized",
+        "no-unsafe-innerhtml"
     ],
     "extends": [
         "eslint:recommended",
         "plugin:security/recommended",
         "plugin:no-unsanitized/DOM"
-
     ],
     "rules": {
         "complexity": ["warn", { "max": 4 }],
@@ -29,7 +29,9 @@
         "new-cap": 1,
         "arrow-parens": 1,
         "semi": 1,
-        "no-undefined": 1
+        "no-undefined": 1,
+        "no-unsafe-innerhtml": 1,
+        "detect-object-injection": 0
     },
     "globals": {
         "AAMController": true,
