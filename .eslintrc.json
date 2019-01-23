@@ -30,8 +30,8 @@
         "arrow-parens": 1,
         "semi": 1,
         "no-undefined": 1,
-        "no-unsafe-innerhtml": 1,
-        "detect-object-injection": 0
+        "no-unsafe-innerhtml/no-unsafe-innerhtml": 1,
+        "security/detect-object-injection": 0
     },
     "globals": {
         "AAMController": true,
