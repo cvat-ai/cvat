@@ -22,13 +22,14 @@
         "no-extend-native": 2,
         "guard-for-in": 2,
         "eqeqeq": 2,
-        "quotes": ["info", "double"],
-        "camelcase": "info",
-        "object-shorthand": "info",
-        "curly": "info",
-        "new-cap": "info",
-        "arrow-parens": "info",
-        "semi": "info"
+        "quotes": ["warn", "double"],
+        "camelcase": 1,
+        "object-shorthand": 1,
+        "curly": 1,
+        "new-cap": 1,
+        "arrow-parens": 1,
+        "semi": 1,
+        "no-undefined": 1
     },
     "globals": {
         "AAMController": true,
