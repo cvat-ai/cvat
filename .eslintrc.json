@@ -6,12 +6,30 @@
         "qunit": true
     },
     "plugins": [
-        "security"
+        "security",
+        "no-unsanitized"
     ],
     "extends": [
         "eslint:recommended",
-        "plugin:security/recommended"
+        "plugin:security/recommended",
+        "plugin:no-unsanitized/DOM"
+
     ],
+    "rules": {
+        "complexity": ["warn", { "max": 4 }],
+        "no-use-before-define": 2,
+        "no-new": 2,
+        "no-extend-native": 2,
+        "guard-for-in": 2,
+        "eqeqeq": 2,
+        "quotes": ["info", "double"],
+        "camelcase": "info",
+        "object-shorthand": "info",
+        "curly": "info",
+        "new-cap": "info",
+        "arrow-parens": "info",
+        "semi": "info"
+    },
     "globals": {
         "AAMController": true,
         "AAMModel": true,
