@@ -73,7 +73,7 @@ class AutoAnnotationServer {
             if (data.progress && progress) {
                 progress(data.progress);
             }
-        };
+        }
 
         let checkCallback = function() {
             $.ajax({
@@ -89,7 +89,7 @@ class AutoAnnotationServer {
 
                         case "unknown":
                             error(`Checking request has returned the "${data.status}" status.`);
-                            break
+                            break;
 
                         case "finished":
                             success();
@@ -115,7 +115,7 @@ class AutoAnnotationServer {
             type: "POST",
             data: JSON.stringify(tids),
             contentType: "application/json",
-            success: success,
+            success,
             error: (data) => {
                 let message = `Getting meta request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
@@ -237,18 +237,22 @@ class AutoAnnotationModelManagerView {
 
         function extractFiles(extensions, files, source) {
             let _files = {};
+            function getExt(source, file) {
+                return source === "local" ? file.name.split(".").pop() : file.split(".").pop();
+            }
 
-            for (let extension of extensions) {
-                for (let file of files) {
-                    let fileExt = source === "local" ? file.name.split(".").pop() : file.split(".").pop();
-                    if (fileExt === extension) {
-                        if (fileExt in _files) {
-                            throw Error(`More than one file with the extension .${fileExt} have been found`);
-                        }
-                        else {
-                            _files[fileExt] = file;
-                        }
-                    }
+            function addFile(file, extention, files) {
+                if (extention in files) {
+                    throw Error(`More than one file with the extension .${fileExt} have been found`);
+                }
+
+                files[extention] = file;
+            }
+
+            for (let file of files) {
+                let fileExt = getExt(source, file);
+                if (extensions.includes(fileExt)) {
+                    addFile(file, fileExt, _files);
                 }
             }
 
@@ -352,10 +356,8 @@ class AutoAnnotationModelManagerView {
                 modelData.append("storage", this._source);
                 modelData.append("shared", this._globallyBox.prop("checked"));
 
-                for (let ext of ["xml", "bin", "json", "py"]) {
-                    if (ext in validatedFiles) {
-                        modelData.append(ext, validatedFiles[ext]);
-                    }
+                for (let ext of ["xml", "bin", "json", "py"].filter(ext => ext in validatedFiles)) {
+                    modelData.append(ext, validatedFiles[ext]);
                 }
 
                 this._uploadMessage.text("");
@@ -376,13 +378,31 @@ class AutoAnnotationModelManagerView {
     }
 
     reset() {
-        if (window.cvat.autoAnnotation.data.admin) {
-            this._globallyBlock.removeClass("hidden");
-        }
-        else {
-            this._globallyBlock.addClass("hidden");
-        }
+        const setBlocked = () => {
+            if (window.cvat.autoAnnotation.data.admin) {
+                this._globallyBlock.removeClass("hidden");
+            }
+            else {
+                this._globallyBlock.addClass("hidden");
+            }
+        };
 
+        const getModelModifyButtons = (model) => {
+            if (model.primary) {
+                return "<td> <label class='h1 regular'> Primary Model </label> </td>";
+            }
+            else {
+                let updateButtonHtml = "<button class=\"regular h3\" style=\"width: 7em;\"> Update </button>";
+                let deleteButtonHtml = "<button class=\"regular h3\" style=\"width: 7em; margin-top: 5%;\"> Delete </button>";
+
+                return $("<td> </td>").append(
+                            $(updateButtonHtml).on("click", {model}, updateButtonClickHandler),
+                            $(deleteButtonHtml).on("click", {model}, deleteButtonClickHandler)
+                        );
+            }
+        };
+
+        setBlocked();
         this._uploadTitle.text("Create Model");
         this._uploadNameInput.prop("value", "");
         this._uploadMessage.css("color", "");
@@ -421,24 +441,9 @@ class AutoAnnotationModelManagerView {
                 <td> ${model.uploadDate} </td>
             </tr>`;
 
-            let row = $(rowHtml);
-
-            if (model.primary) {
-                row.append("<td> <label class='h1 regular'> Primary Model </label> </td>");
-            }
-            else {
-                let updateButtonHtml = "<button class=\"regular h3\" style=\"width: 7em;\"> Update </button>";
-                let deleteButtonHtml = "<button class=\"regular h3\" style=\"width: 7em; margin-top: 5%;\"> Delete </button>";
-
-                row.append(
-                    $("<td> </td>").append(
-                        $(updateButtonHtml).on("click", {model}, updateButtonClickHandler),
-                        $(deleteButtonHtml).on("click", {model}, deleteButtonClickHandler)
-                    )
-                );
-            }
-
-            this._table.append(row);
+            this._table.append(
+                $(rowHtml).append(getModelModifyButtons(model))
+            );
         }
 
         return this;

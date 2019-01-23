@@ -126,13 +126,11 @@ def create_empty(owner):
     return db_model.id
 
 @transaction.atomic
-def delete(dl_model_id, user):
+def delete(dl_model_id):
     dl_model = AnnotationModel.objects.select_for_update().get(pk=dl_model_id)
     if dl_model:
         if dl_model.primary:
             raise Exception("Can not delete primary model {}".format(dl_model_id))
-        if dl_model.owner != user:
-            raise Exception("You dont have permissions to delete model {}".format(dl_model_id))
 
         dl_model.delete()
         shutil.rmtree(dl_model.get_dirname(), ignore_errors=True)
