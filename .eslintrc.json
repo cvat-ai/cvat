@@ -5,9 +5,12 @@
         "jquery": true,
         "qunit": true
     },
-    "extends": "eslint:recommended",
     "plugins": [
-        "eslint-plugin-security"
+        "security"
+    ],
+    "extends": [
+        "eslint:recommended",
+        "plugin:security/recommended"
     ],
     "globals": {
         "AAMController": true,
