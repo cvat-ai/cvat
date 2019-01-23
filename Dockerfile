@@ -103,7 +103,6 @@ RUN if [ "$WITH_TESTS" = "yes" ]; then \
 COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 RUN  pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
-COPY cvat/ ${HOME}/cvat
 
 COPY ssh ${HOME}/.ssh
 
@@ -120,6 +119,13 @@ RUN apt-get update && \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
     fi
 
+# Install deps for reidentification app
+RUN mkdir ${HOME}/reid && cd reid && \
+    wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -O reid.xml && \
+    wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -O reid.bin
+ENV REID_MODEL_DIR=${HOME}/reid
+
+COPY cvat/ ${HOME}/cvat
 COPY tests ${HOME}/tests
 RUN patch -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
 RUN chown -R ${USER}:${USER} .
