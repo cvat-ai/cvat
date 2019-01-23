@@ -3,12 +3,12 @@
 document.addEventListener("DOMContentLoaded", () => {
     let rqId = null;
 
-    function run(reidButton) {
+    function run(reidButton, tresholdInput, distanceInput) {
         // make treshold and value distance
         let collection = window.cvat.data.get();
         let data = {
-            treshold: 0.5,
-            max_distance: 100,
+            treshold: +tresholdInput.prop("value"),
+            max_distance: +distanceInput.prop("value"),
             boxes: collection.boxes,
         };
 
@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             data: JSON.stringify(data),
             contentType: "application/json"
-        })
+        });
     }
 
     function cancel(reidButton) {
@@ -96,10 +96,51 @@ document.addEventListener("DOMContentLoaded", () => {
     let reidButton = $("<button> Run ReID Merge </button>").on("click", () => {
         $('#taskAnnotationMenu').addClass('hidden');
         if (reidButton.hasClass("run")) {
+            $("#annotationMenu").addClass("hidden");
             confirm("ReID process will be canceld. Are you sure?", () => cancel(reidButton));
         }
         else {
-            confirm("All boxes will be translated to paths. Are you sure?", () => run(reidButton));
+            $("#annotationMenu").addClass("hidden");
+            $(`#${reidWindowId}`).removeClass("hidden");
         }
     }).addClass("menuButton semiBold h2").prependTo(buttonsUI);
+
+    let reidWindowId = "reidSubmitWindow";
+    let reidTresholdValueId = "reidTresholdValue";
+    let reidDistanceValueId = "reidDistanceValue";
+    let reidCancelMergeId = "reidCancelMerge";
+    let reidSubmitMergeId = "reidSubmitMerge";
+
+    $(`
+        <div class="modal hidden" id="${reidWindowId}">
+            <div class="modal-content" style="width: 300px; height: 170px;">
+                <table>
+                    <tr>
+                        <td> <label class="regular h2"> Treshold: </label> </td>
+                        <td> <input id="${reidTresholdValueId}" class="regular h1" type="number" min="0.05" max="0.95" value="0.5" step="0.05"> </td>
+                    </tr>
+                    <tr>
+                        <td> <label class="regular h2"> Max Distance </label> </td>
+                        <td> <input id="${reidDistanceValueId}" class="regular h1" type="number" min="10" max="1000" value="50" step="10"> </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"> <label class="regular h2" style="color: red;"> All boxes will be translated to box paths. Continue? </label> </td>
+                    </tr>
+                </table>
+                <center style="margin-top: 10px;">
+                    <button id="${reidCancelMergeId}" class="regular h2"> Cancel </button>
+                    <button id="${reidSubmitMergeId}" class="regular h2"> Merge </button>
+                </center>
+            </div>
+        </div>
+    `).appendTo('body');
+
+    $(`#${reidCancelMergeId}`).on("click", () => {
+        $(`#${reidWindowId}`).addClass("hidden");
+    });
+
+    $(`#${reidSubmitMergeId}`).on("click", () => {
+        $(`#${reidWindowId}`).addClass("hidden");
+        run(reidButton, $(`#${reidTresholdValueId}`), $(`#${reidDistanceValueId}`));
+    });
 });
