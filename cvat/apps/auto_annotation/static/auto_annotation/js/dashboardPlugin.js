@@ -243,7 +243,7 @@ class AutoAnnotationModelManagerView {
 
             function addFile(file, extention, files) {
                 if (extention in files) {
-                    throw Error(`More than one file with the extension .${fileExt} have been found`);
+                    throw Error(`More than one file with the extension .${extention} have been found`);
                 }
 
                 files[extention] = file;
@@ -356,7 +356,7 @@ class AutoAnnotationModelManagerView {
                 modelData.append("storage", this._source);
                 modelData.append("shared", this._globallyBox.prop("checked"));
 
-                for (let ext of ["xml", "bin", "json", "py"].filter(ext => ext in validatedFiles)) {
+                for (let ext of ["xml", "bin", "json", "py"].filter( (ext) => ext in validatedFiles)) {
                     modelData.append(ext, validatedFiles[ext]);
                 }
 
@@ -387,21 +387,6 @@ class AutoAnnotationModelManagerView {
             }
         };
 
-        const getModelModifyButtons = (model) => {
-            if (model.primary) {
-                return "<td> <label class='h1 regular'> Primary Model </label> </td>";
-            }
-            else {
-                let updateButtonHtml = "<button class=\"regular h3\" style=\"width: 7em;\"> Update </button>";
-                let deleteButtonHtml = "<button class=\"regular h3\" style=\"width: 7em; margin-top: 5%;\"> Delete </button>";
-
-                return $("<td> </td>").append(
-                            $(updateButtonHtml).on("click", {model}, updateButtonClickHandler),
-                            $(deleteButtonHtml).on("click", {model}, deleteButtonClickHandler)
-                        );
-            }
-        };
-
         setBlocked();
         this._uploadTitle.text("Create Model");
         this._uploadNameInput.prop("value", "");
@@ -416,7 +401,7 @@ class AutoAnnotationModelManagerView {
         this._source = this._localSource.prop("checked") ? "local": "share";
         this._files = [];
 
-        let updateButtonClickHandler = (event) => {
+        const updateButtonClickHandler = (event) => {
             this.reset();
 
             this._uploadTitle.text("Update Model");
@@ -424,7 +409,7 @@ class AutoAnnotationModelManagerView {
             this._id = event.data.model.id;
         };
 
-        let deleteButtonClickHandler = (event) => {
+        const deleteButtonClickHandler = (event) => {
             confirm(`Do you actually want to delete the "${event.data.model.name}" model. Are you sure?`, () => {
                 window.cvat.autoAnnotation.server.delete(event.data.model.id, () => {
                     window.cvat.autoAnnotation.data.models = window.cvat.autoAnnotation.data.models.filter((item) => item !== event.data.model);
@@ -433,6 +418,21 @@ class AutoAnnotationModelManagerView {
                     showMessage(message);
                 });
             });
+        };
+
+        const getModelModifyButtons = (model) => {
+            if (model.primary) {
+                return "<td> <label class='h1 regular'> Primary Model </label> </td>";
+            }
+            else {
+                let updateButtonHtml = "<button class=\"regular h3\" style=\"width: 7em;\"> Update </button>";
+                let deleteButtonHtml = "<button class=\"regular h3\" style=\"width: 7em; margin-top: 5%;\"> Delete </button>";
+
+                return $("<td> </td>").append(
+                            $(updateButtonHtml).on("click", {model}, updateButtonClickHandler),
+                            $(deleteButtonHtml).on("click", {model}, deleteButtonClickHandler)
+                        );
+            }
         };
 
         for (let model of window.cvat.autoAnnotation.data.models) {

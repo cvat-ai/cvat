@@ -39,6 +39,7 @@ def _update_dl_model_thread(dl_model_id, model_file, weights_file, labelmap_file
         dl_model.interpretation_file.save(*_get_file_content(interpretation_file))
 
     if run_tests:
+        #only for testing
         import time
         time.sleep(3)
         job.meta["progress"] = "Test started"
