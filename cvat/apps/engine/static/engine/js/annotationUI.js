@@ -115,7 +115,12 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     window.cvat.data = {
         get: () => shapeCollectionModel.exportAll(),
         set: (data) => {
-            shapeCollectionModel.empty();
+            for (let type in data) {
+                for (let shape of data[type]) {
+                    shape.id = idGenerator.next();
+                }
+            }
+
             shapeCollectionModel.import(data, false);
             shapeCollectionModel.update();
         },
