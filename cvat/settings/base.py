@@ -71,7 +71,8 @@ def generate_ssh_keys():
             fcntl.flock(pid, fcntl.LOCK_UN)
 
 try:
-    generate_ssh_keys()
+    if os.getenv("SSH_AUTH_SOCK", None):
+        generate_ssh_keys()
 except Exception:
     pass
 
