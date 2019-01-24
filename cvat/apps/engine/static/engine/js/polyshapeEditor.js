@@ -6,6 +6,14 @@
 
 /* exported PolyshapeEditorModel PolyshapeEditorController PolyshapeEditorView */
 
+/* global
+    Listener:false
+    POINT_RADIUS:false
+    PolyShapeModel:false
+    STROKE_WIDTH:false
+    SVG:false
+*/
+
 "use strict";
 
 class PolyshapeEditorModel extends Listener {

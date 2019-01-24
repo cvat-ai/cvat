@@ -4,6 +4,18 @@
  * SPDX-License-Identifier: MIT
  */
 
+/* global
+    AnnotationParser:false
+    Config:false
+    confirm:false
+    ConstIdGenerator:false
+    createExportContainer:false
+    dumpAnnotationRequest:false
+    LabelsInfo:false
+    showMessage:false
+    showOverlay:false
+*/
+
 "use strict";
 /* Server requests */
 function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {

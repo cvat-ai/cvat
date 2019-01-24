@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: MIT
  */
 
+/* global
+    confirm:false
+    showMessage:false
+*/
+
 "use strict";
 
 function CheckTFAnnotationRequest(taskId, tfAnnotationButton) {

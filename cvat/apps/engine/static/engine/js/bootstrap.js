@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: MIT
  */
 
+/* global
+    callAnnotationUI:false
+    Logger:false
+    platform:false
+*/
+
 "use strict";
 
 String.prototype.normalize = function() {

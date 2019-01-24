@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: MIT
 */
 
+/* global
+    showMessage:false
+*/
+
 "use strict";
 
 window.cvat = window.cvat || {};

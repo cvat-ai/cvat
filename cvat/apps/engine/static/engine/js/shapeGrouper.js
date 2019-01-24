@@ -5,6 +5,14 @@
  */
 
 /* exported ShapeGrouperModel ShapeGrouperController ShapeGrouperView*/
+
+/* global
+    Listener:false
+    Logger:false
+    Mousetrap:false
+    STROKE_WIDTH:false
+*/
+
 "use strict";
 
 class ShapeGrouperModel extends Listener {

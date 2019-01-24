@@ -5,6 +5,15 @@
  */
 
 /* exported PlayerModel PlayerController PlayerView */
+
+/* global
+    blurAllElements:false
+    copyToClipboard:false
+    Listener:false
+    Logger:false
+    Mousetrap:false
+*/
+
 "use strict";
 
 class FrameProvider extends Listener {
