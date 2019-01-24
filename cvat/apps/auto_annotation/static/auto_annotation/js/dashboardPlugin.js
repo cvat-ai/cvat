@@ -223,7 +223,7 @@ class AutoAnnotationModelManagerView {
         this._source = this._localSource.prop("checked") ? "local": "shared";
         this._files = [];
 
-        function filesLabel(source, files, label) {
+        function filesLabel(source, files) {
             let _files = source === "local" ? [...files].map((el) => el.name) : files;
             if (_files.length) {
                 return _files.join(", ").substr(0, 30) + "..";
@@ -341,7 +341,7 @@ class AutoAnnotationModelManagerView {
 
                 let validatedFiles = {};
                 try {
-                    validatedFiles = validateFiles(this._id != null, this._files, this._source);
+                    validatedFiles = validateFiles(this._id !== null, this._files, this._source);
                 }
                 catch (err) {
                     this._uploadMessage.css("color", "red");
@@ -737,7 +737,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
 
             let button = $("<button> Run Auto Annotation </button>").addClass("regular dashboardButtonUI");
             button[0].setupRun = function() {
-                self = $(this);
+                let self = $(this);
                 self.text("Run Auto Annotation").off("click").on("click", () => {
                     let overlay = showOverlay("Task date are being recieved from the server..");
                     $.ajax({
@@ -759,7 +759,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
             };
 
             button[0].setupCancel = function() {
-                self = $(this);
+                let self = $(this);
                 self.off("click").text("Cancel Auto Annotation").on("click", () => {
                     confirm("Process will be canceled. Are you sure?", () => {
                         window.cvat.autoAnnotation.server.cancel(tid, () => {
