@@ -4,7 +4,9 @@
 
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from cvat.apps.authentication.decorators import login_required
+from rules.contrib.views import permission_required, objectgetter
 
+from cvat.apps.engine.models import Job
 from cvat.apps.reid.reid import ReID
 
 import django_rq
@@ -20,7 +22,9 @@ def _create_thread(jid, data):
 
 
 @login_required
-def create(request, jid):
+@permission_required(perm=["reid.process.start"],
+    fn=objectgetter(Job, 'jid'), raise_exception=True)
+def start(request, jid):
     try:
         data = json.loads(request.body.decode('utf-8'))
         queue = django_rq.get_queue("low")
@@ -32,16 +36,19 @@ def create(request, jid):
         job = queue.fetch_job(job_id)
         job.meta = {}
         job.save_meta()
-        
-        return JsonResponse({"rq_id": job_id})
     except Exception as e:
         return HttpResponseBadRequest(str(e))
 
+    return HttpResponse()
+
 
 @login_required
-def check(request, rq_id):
+@permission_required(perm=["reid.process.check"],
+    fn=objectgetter(Job, 'jid'), raise_exception=True)
+def check(request, jid):
     try:
         queue = django_rq.get_queue("low")
+        rq_id = "reid.create.{}".format(jid)
         job = queue.fetch_job(rq_id)
         if job is not None and "cancel" in job.meta:
             return JsonResponse({"status": "finished"})
@@ -63,16 +70,20 @@ def check(request, rq_id):
             data["stderr"] = job.exc_info
             job.delete()
 
-    except Exception:
+    except Exception as ex:
+        data["stderr"] = str(ex)
         data["status"] = "unknown"
 
     return JsonResponse(data)
 
 
 @login_required
-def cancel(request, rq_id):
+@permission_required(perm=["reid.process.cancel"],
+    fn=objectgetter(Job, 'jid'), raise_exception=True)
+def cancel(request, jid):
     try:
         queue = django_rq.get_queue("low")
+        rq_id = "reid.create.{}".format(jid)
         job = queue.fetch_job(rq_id)
         if job is None or job.is_finished or job.is_failed:
             raise Exception("Task is not being annotated currently")

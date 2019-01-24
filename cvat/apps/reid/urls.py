@@ -6,7 +6,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('create/job/<int:jid>', views.create),
-    path('cancel/<str:rq_id>', views.cancel),
-    path('check/<str:rq_id>', views.check),
+    path('start/job/<int:jid>', views.start),
+    path('cancel/<int:jid>', views.cancel),
+    path('check/<int:jid>', views.check),
 ]

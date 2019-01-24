@@ -7,10 +7,7 @@
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
-    let rqId = null;
-
     function run(reidButton, tresholdInput, distanceInput) {
-        // make treshold and value distance
         let collection = window.cvat.data.get();
         let data = {
             treshold: +tresholdInput.prop("value"),
@@ -20,15 +17,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         reidButton.prop("disabled", true);
         $.ajax({
-            url: "reid/create/job/" + window.cvat.job.id,
+            url: "reid/start/job/" + window.cvat.job.id,
             type: "POST",
-            success: (data) => {
-                reidButton.addClass("run").text("Cancel ReID Merge").prop("disabled", false);
-                rqId = data.rq_id;
+            success: () => {
+                reidButton.addClass("run").text("Cancel ReID Merge");
 
                 function checkCallback() {
                     $.ajax({
-                        url: "/reid/check/" + rqId,
+                        url: "/reid/check/" + window.cvat.job.id,
                         type: "GET",
                         success: (data) => {
                             if (data["progress"]) {
@@ -42,28 +38,33 @@ document.addEventListener("DOMContentLoaded", () => {
                                 reidButton.removeClass("run").text("Run ReID Merge");
                                 
                                 if (data["status"] === "finished") {
-                                    collection.boxes = [];
-                                    collection.box_paths = collection.box_paths.concat(JSON.parse(data["result"]));
-                                    window.cvat.data.clear();
-                                    window.cvat.data.set(collection);
-                                    showMessage("ReID merge has done.");
+                                    if (data["result"]) {
+                                        collection.boxes = [];
+                                        collection.box_paths = collection.box_paths.concat(JSON.parse(data["result"]));
+                                        window.cvat.data.clear();
+                                        window.cvat.data.set(collection);
+                                        showMessage("ReID merge has done.");
+                                    }
+                                    else {
+                                        showMessage("ReID merge been canceled.");
+                                    }
                                 }
                                 else if (data["status"] === "failed") {
                                     let message = `ReID merge has fallen. Error: '${data["stderr"]}'`;
                                     showMessage(message);
-                                    throw Error(message);
                                 }
                                 else {
                                     let message = `Check request returned '${data["status"]}' status.`;
+                                    if (data["stderr"]) {
+                                        message += ` Error: ${data["stderr"]}`;
+                                    }
                                     showMessage(message);
-                                    throw Error(message);
                                 }
                             }
                         },
                         error: (data) => {
                             let message = `Can not check ReID merge. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                             showMessage(message);
-                            throw Error(message);
                         }
                     });
                 }
@@ -71,10 +72,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 setTimeout(checkCallback, 1000);
             },
             error: (data) => {
-                reidButton.prop("disabled", false);
                 let message = `Can not start ReID merge. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 showMessage(message);
-                throw Error(message);
+            },
+            complete: () => {
+                reidButton.prop("disabled", false);
             },
             data: JSON.stringify(data),
             contentType: "application/json"
@@ -84,16 +86,17 @@ document.addEventListener("DOMContentLoaded", () => {
     function cancel(reidButton) {
         reidButton.prop("disabled", true);
         $.ajax({
-            url: "/reid/cancel/" + rqId,
+            url: "/reid/cancel/" + window.cvat.job.id,
             type: "GET",
             success: () => {
                 reidButton.removeClass("run").text("Run ReID Merge").prop("disabled", false);
             },
             error: (data) => {
-                reidButton.prop("disabled", false);
                 let message = `Can not cancel ReID process. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 showMessage(message);
-                throw Error(message);
+            },
+            complete: () => {
+                reidButton.prop("disabled", false);
             }
         });
     }

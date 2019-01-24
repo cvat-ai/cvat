@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 from django.apps import AppConfig
-
+from .permissions import setup_permissions
 
 class ReidConfig(AppConfig):
     name = 'reid'
+
+    def ready(self):
+        setup_permissions()
