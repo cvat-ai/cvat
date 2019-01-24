@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import Enum
+
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -12,6 +14,14 @@ fs = FileSystemStorage()
 
 def upload_path_handler(instance, filename):
     return "{models_root}/{id}/{file}".format(models_root=settings.MODELS_ROOT, id=instance.id, file=filename)
+
+class FrameworkChoice(Enum):
+    OPENVINO = 'openvino'
+    TENSORFLOW = 'tensorflow'
+
+    def __str__(self):
+        return self.value
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -32,6 +42,7 @@ class AnnotationModel(models.Model):
     interpretation_file = models.FileField(upload_to=upload_path_handler, storage=fs)
     shared = models.BooleanField(default=False)
     primary = models.BooleanField(default=False)
+    framework = models.CharField(max_length=32, default=FrameworkChoice.OPENVINO)
 
     class Meta:
         default_permissions = ()

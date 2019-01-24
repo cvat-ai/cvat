@@ -1,3 +1,7 @@
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+
 import django_rq
 import os
 import rq
@@ -7,7 +11,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.conf import settings
 
-from .models import AnnotationModel
+from .models import AnnotationModel, FrameworkChoice
 
 def _remove_old_file(model_file_field):
     if model_file_field and os.path.exists(model_file_field.name):
@@ -113,7 +117,7 @@ def update_model(dl_model_id, name, model_file, weights_file, labelmap_file, int
 
     return rq_id
 
-def create_empty(owner):
+def create_empty(owner, framework=FrameworkChoice.OPENVINO):
     db_model = AnnotationModel(
         owner=owner,
     )
