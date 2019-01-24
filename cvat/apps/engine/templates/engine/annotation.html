@@ -132,19 +132,21 @@
             <input type = "range" id = "playerProgress"/>
         </div>  <!-- END of PLAYER PANEL -->
         <div style="margin-top: 20px">
-            <button id="menuButton" class="regular h1"> Open Menu </button>
-            <label class="regular h1" style="margin-left: 50px"> Filter: </label>
+            <button id="menuButton" class="regular h2"> Open Menu </button>
+            <label class="regular h2" style="margin-left: 50px"> Filter: </label>
             <datalist id="filterSubmitList" style="display: none;"> </datalist>
             <input type="text" list="filterSubmitList" id="filterInputString" class="regular h2" placeholder='car[attr/model=/"mazda"'/>
-            <button id="resetFilterButton" class="regular h1"> Reset </button>
-            <button class="regular h1" id="undoButton" disabled> &#x27F2; </button>
+            <button id="resetFilterButton" class="regular h2"> Reset </button>
+            <button class="regular h2" id="undoButton" disabled> &#x27F2; </button>
             <select size="2" class="regular" style="overflow: hidden; width: 15%; top: 0.5em; position: relative;" disabled>
                 <option id="lastUndoText" title="Undo Action" selected> None </option>
                 <option id="lastRedoText" title="Redo Action"> None </option>
             </select>
-            <button class="regular h1" id="redoButton" disabled> &#10227; </button>
+            <button class="regular h2" id="redoButton" disabled> &#10227; </button>
+            <label class="regular h2" style="margin-left: 15px;"> Propagation: </label>
+            <input type ="number" id="propagateFramesInput" style="width: 3em" min="1" max="10000" value="50" class="regular h2"/>
             <div style="float: right;">
-                <label class="regular h1"> Frame </label>
+                <label class="regular h2"> Frame </label>
                 <input class="regular h2" style="width: 3.5em;" type="number" id="frameNumber">
             </div>
             <hr>
@@ -263,15 +265,15 @@
                         </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2" for="playerBrightnessRange"> Brightness: </label> </td>
+                        <td> <label for="playerBrightnessRange"> Brightness: </label> </td>
                         <td> <input type="range" min="50" max="200" value="100" id="playerBrightnessRange"> </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2" for="playerContrastRange"> Contrast: </label> </td>
+                        <td> <label for="playerContrastRange"> Contrast: </label> </td>
                         <td> <input type="range" min="50" max="200" value="100" id="playerContrastRange"> </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2" for="playerSaturationRange"> Saturation: </label> </td>
+                        <td> <label for="playerSaturationRange"> Saturation: </label> </td>
                         <td> <input type="range" min="0" max="300" value="100" id="playerSaturationRange"> </td>
                     </tr>
                     <tr>
@@ -300,10 +302,6 @@
                     <tr>
                         <td> <label> Auto Saving Interval (Min) </label> </td>
                         <td> <input type = "number"  id="autoSaveTime" style="width: 3em" min="5" max="60" value="15" class="regular h2"/> </td>
-                    </tr>
-                    <tr>
-                        <td> <label> Propagate Frames </label> </td>
-                        <td> <input type = "number" id="propagateFramesInput" style="width: 3em" min="1" max="10000" value="50" class="regular h2"/> </td>
                     </tr>
                 </table>
             </div>

@@ -281,6 +281,7 @@ class ShapeBufferController {
             let propagateDialogShowed = false;
             let propagateHandler = Logger.shortkeyLogDecorator(function() {
                 if (!propagateDialogShowed) {
+                    blurAllElements();
                     if (this._model.copyToBuffer()) {
                         let curFrame = window.cvat.player.frames.current;
                         let startFrame = window.cvat.player.frames.start;
