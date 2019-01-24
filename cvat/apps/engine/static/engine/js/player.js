@@ -493,6 +493,7 @@ class PlayerController {
     }
 
     fit() {
+        Logger.addEvent(Logger.EventType.fitImage)
         this._model.fit();
     }
 
