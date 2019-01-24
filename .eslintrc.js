@@ -15,7 +15,6 @@
         "security",
         "no-unsanitized",
         "no-unsafe-innerhtml",
-        "airbnb"
     ],
     "extends": [
         "eslint:recommended",
