@@ -1,7 +1,7 @@
 import rules
 
 from cvat.apps.authentication.auth import has_admin_role, has_user_role, \
-    has_annotator_role, has_observer_role
+    has_annotator_role
 
 @rules.predicate
 def is_model_owner(db_user, db_dl_model):
