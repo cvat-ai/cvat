@@ -32,7 +32,7 @@ def start(request, jid):
         job = queue.fetch_job(job_id)
         if job is not None and (job.is_started or job.is_queued):
             raise Exception('ReID process has been already started')
-        queue.enqueue_call(func=_create_thread, args=(jid, data), job_id=job_id, timeout=7200) 
+        queue.enqueue_call(func=_create_thread, args=(jid, data), job_id=job_id, timeout=7200)
         job = queue.fetch_job(job_id)
         job.meta = {}
         job.save_meta()
@@ -89,7 +89,7 @@ def cancel(request, jid):
             raise Exception("Task is not being annotated currently")
         elif "cancel" not in job.meta:
             job.meta["cancel"] = True
-            job.save_meta()            
+            job.save_meta()
     except Exception as e:
         return HttpResponseBadRequest(str(e))
 

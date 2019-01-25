@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import rules 
+import rules
 
 from cvat.apps.authentication.auth import has_admin_role, is_job_annotator, is_job_owner
 

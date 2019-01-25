@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+/* global showMessage */
+
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -11,7 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let collection = window.cvat.data.get();
         let data = {
             treshold: +tresholdInput.prop("value"),
-            max_distance: +distanceInput.prop("value"),
+            maxDistance: +distanceInput.prop("value"),
             boxes: collection.boxes,
         };
 
@@ -102,8 +104,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     let buttonsUI = $("#engineMenuButtons");
+    
+    let reidWindowId = "reidSubmitWindow";
+    let reidTresholdValueId = "reidTresholdValue";
+    let reidDistanceValueId = "reidDistanceValue";
+    let reidCancelMergeId = "reidCancelMerge";
+    let reidSubmitMergeId = "reidSubmitMerge";
+
     let reidButton = $("<button> Run ReID Merge </button>").on("click", () => {
-        $('#taskAnnotationMenu').addClass('hidden');
+        $("#taskAnnotationMenu").addClass("hidden");
         if (reidButton.hasClass("run")) {
             $("#annotationMenu").addClass("hidden");
             confirm("ReID process will be canceld. Are you sure?", () => cancel(reidButton));
@@ -113,12 +122,6 @@ document.addEventListener("DOMContentLoaded", () => {
             $(`#${reidWindowId}`).removeClass("hidden");
         }
     }).addClass("menuButton semiBold h2").prependTo(buttonsUI);
-
-    let reidWindowId = "reidSubmitWindow";
-    let reidTresholdValueId = "reidTresholdValue";
-    let reidDistanceValueId = "reidDistanceValue";
-    let reidCancelMergeId = "reidCancelMerge";
-    let reidSubmitMergeId = "reidSubmitMerge";
 
     $(`
         <div class="modal hidden" id="${reidWindowId}">
@@ -142,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </center>
             </div>
         </div>
-    `).appendTo('body');
+    `).appendTo("body");
 
     $(`#${reidCancelMergeId}`).on("click", () => {
         $(`#${reidWindowId}`).addClass("hidden");

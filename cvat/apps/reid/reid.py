@@ -2,10 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os 
+import os
 import rq
 import cv2
-import sys
 import math
 import numpy
 import fnmatch
@@ -33,7 +32,7 @@ class ReID:
 
     def __init__(self, jid, data):
         self.__treshold = data["treshold"]
-        self.__max_distance = data["max_distance"]
+        self.__max_distance = data["maxDistance"]
         self.__frame_urls = {}
         self.__frame_boxes = {}
 
@@ -144,13 +143,13 @@ class ReID:
                 crop_1 = cur_image[cur_ytl:cur_ybr, cur_xtl:cur_xbr]
                 crop_2 = next_image[next_ytl:next_ybr, next_xtl:next_xbr]
                 matrix[row][col] = self.__compute_difference(crop_1, crop_2)
-        
+
         return matrix
 
 
     def __apply_matching(self):
         frames = sorted(list(self.__frame_boxes.keys()))
-        job = rq.get_current_job() 
+        job = rq.get_current_job()
         box_paths = {}
 
         for idx, (cur_frame, next_frame) in enumerate(list(zip(frames[:-1], frames[1:]))):
@@ -198,7 +197,7 @@ class ReID:
         output = []
 
         # ReID process has been canceled
-        if box_paths is None:        
+        if box_paths is None:
             return
 
         for path_id in box_paths:
