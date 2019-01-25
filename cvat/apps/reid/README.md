@@ -7,7 +7,7 @@ Before                                     |  After                             
 :-----------------------------------------:|:-------------------------------------------:
 <img src="images/before.gif" width="100%"> |  <img src="images/after.gif" width="100%"> |
 
-It perform automatic bbox merging between neighbor frames.
+It performs automatic bbox merging between neighbor frames.
 
 ## Installation
 This application will be installed automatically with the [OpenVINO](https://github.com/opencv/cvat/blob/develop/components/openvino/README.md) component. 
