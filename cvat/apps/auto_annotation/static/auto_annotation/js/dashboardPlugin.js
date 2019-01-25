@@ -6,97 +6,95 @@
 
 /* global showOverlay showMessage */
 
-"use strict";
+'use strict';
 
 window.cvat = window.cvat || {};
 window.cvat.dashboard = window.cvat.dashboard || {};
 window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
 
-class AutoAnnotationServer {
-    constructor() { }
-
+const AutoAnnotationServer = {
     start(modelId, taskId, data, success, error, progress, check) {
         $.ajax({
-            url: "/auto_annotation/start/" + modelId + "/" + taskId,
-            type: "POST",
+            url: `/auto_annotation/start/${modelId}/${taskId}`,
+            type: 'POST',
             data: JSON.stringify(data),
-            contentType: "application/json",
+            contentType: 'application/json',
             success: (data) => {
                 check(data.id, success, error, progress);
             },
             error: (data) => {
-                let message = `Starting request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                const message = `Starting request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
             }
         });
-    }
+    },
 
     update(data, success, error, progress, check, modelId) {
-        let url = "";
+        let url = '';
         if (modelId === null) {
-            url = "/auto_annotation/create";
+            url = '/auto_annotation/create';
         }
         else {
-            url = "/auto_annotation/update/" + modelId;
+            url = `/auto_annotation/update/${modelId}`;
         }
 
         $.ajax({
             url,
-            type: "POST",
+            type: 'POST',
             data,
             contentType: false,
             processData: false,
-            success: (data) => {
-                check(data.id, success, error, progress);
+            success: (responseData) => {
+                check(responseData.id, success, error, progress);
             },
-            error: (data) => {
-                let message = `Creating request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+            error: (responseData) => {
+                const message = `Creating request has been failed. Code: ${responseData.status}. Message: ${responseData.responseText || responseData.statusText}`;
                 error(message);
             }
         });
-    }
+    },
 
     delete(modelId, success, error) {
         $.ajax({
-            url: "/auto_annotation/delete/" + modelId,
-            type: "DELETE",
+            url: `/auto_annotation/delete/${modelId}`,
+            type: 'DELETE',
             success,
             error: (data) => {
-                let message = `Deleting request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                const message = `Deleting request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
             }
         });
-    }
+    },
 
     check(workerId, success, error, progress) {
-        function updateProgress(data, progress) {
+        function updateProgress(data) {
             if (data.progress && progress) {
                 progress(data.progress);
             }
         }
 
-        let checkCallback = function() {
+        const checkCallback = function () {
             $.ajax({
-                url: "/auto_annotation/check/" + workerId,
-                type: "GET",
+                url: `/auto_annotation/check/${workerId}`,
+                type: 'GET',
                 success: (data) => {
                     updateProgress(data, progress);
 
-                    switch(data.status) {
-                        case "failed":
-                            error(`Checking request has returned the "${data.status}" status. Message: ${data.error}`);
-                            break;
+                    switch (data.status) {
+                    case 'failed':
+                        error(`Checking request has returned the "${data.status}" status. Message: ${data.error}`);
+                        break;
 
-                        case "unknown":
-                            error(`Checking request has returned the "${data.status}" status.`);
-                            break;
+                    case 'unknown':
+                        error(`Checking request has returned the "${data.status}" status.`);
+                        break;
 
-                        case "finished":
-                            success();
-                            break;
+                    case 'finished':
+                        success();
+                        break;
 
-                        default:
-                            setTimeout(checkCallback, 1000);
+                    default:
+                        setTimeout(checkCallback, 1000);
                     }
                 },
                 error: (data) => {
@@ -107,25 +105,25 @@ class AutoAnnotationServer {
         };
 
         setTimeout(checkCallback, 1000);
-    }
+    },
 
     meta(tids, success, error) {
         $.ajax({
-            url: "/auto_annotation/meta/get",
-            type: "POST",
+            url: '/auto_annotation/meta/get',
+            type: 'POST',
             data: JSON.stringify(tids),
-            contentType: "application/json",
+            contentType: 'application/json',
             success,
             error: (data) => {
                 let message = `Getting meta request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
             }
         });
-    }
+    },
 
     cancel(tid, success, error) {
         $.ajax({
-            url: "/auto_annotation/cancel/" + tid,
+            url: `/auto_annotation/cancel/${tid}`,
             type: "GET",
             success,
             error: (data) => {
@@ -133,7 +131,7 @@ class AutoAnnotationServer {
                 error(message);
             }
         });
-    }
+    },
 }
 
 
@@ -217,28 +215,28 @@ class AutoAnnotationModelManagerView {
         this._globallyBox = this._el.find(`#${window.cvat.autoAnnotation.uploadGloballyId}`);
         this._selectButton = this._el.find(`#${window.cvat.autoAnnotation.selectFilesButtonId}`);
         this._localSelector = this._el.find(`#${window.cvat.autoAnnotation.localFileSelectorId}`);
-        this._shareSelector = $("#dashboardShareBrowseModal");
-        this._shareBrowseTree = $("#dashboardShareBrowser");
-        this._submitShare = $("#dashboardSubmitBrowseServer");
+        this._shareSelector = $('#dashboardShareBrowseModal');
+        this._shareBrowseTree = $('#dashboardShareBrowser');
+        this._submitShare = $('#dashboardSubmitBrowseServer');
 
         this._id = null;
-        this._source = this._localSource.prop("checked") ? "local": "shared";
+        this._source = this._localSource.prop('checked') ? 'local': 'shared';
         this._files = [];
 
         function filesLabel(source, files) {
-            let _files = source === "local" ? [...files].map((el) => el.name) : files;
+            let _files = source === 'local' ? [...files].map((el) => el.name) : files;
             if (_files.length) {
-                return _files.join(", ").substr(0, 30) + "..";
+                return _files.join('', '').substr(0, 30) + '..';
             }
             else {
-                return "No Files";
+                return 'No Files';
             }
         }
 
         function extractFiles(extensions, files, source) {
             let _files = {};
             function getExt(source, file) {
-                return source === "local" ? file.name.split(".").pop() : file.split(".").pop();
+                return source === 'local' ? file.name.split('.').pop() : file.split('.').pop();
             }
 
             function addFile(file, extention, files) {
@@ -260,7 +258,7 @@ class AutoAnnotationModelManagerView {
         }
 
         function validateFiles(isUpdate, files, source) {
-            let extensions = ["xml", "bin", "py", "json"];
+            let extensions = ['xml', 'bin', 'py', 'json'];
             let _files = extractFiles(extensions, files, source);
 
             if (!isUpdate) {
@@ -274,70 +272,70 @@ class AutoAnnotationModelManagerView {
             return _files;
         }
 
-        this._localSource.on("click", () => {
-            if (this._source === "local") {
+        this._localSource.on('click', () => {
+            if (this._source === 'local') {
                 return;
             }
             else {
-                this._source = "local";
+                this._source = 'local';
                 this._files = [];
                 this._selectedFilesLabel.text(filesLabel(this._source, this._files));
             }
         });
 
-        this._shareSource.on("click", () => {
-            if (this._source === "shared") {
+        this._shareSource.on('click', () => {
+            if (this._source === 'shared') {
                 return;
             }
             else {
-                this._source = "shared";
+                this._source = 'shared';
                 this._files = [];
                 this._selectedFilesLabel.text(filesLabel(this._source, this._files));
             }
         });
 
-        this._selectButton.on("click", () => {
-            if (this._source === "local") {
+        this._selectButton.on('click', () => {
+            if (this._source === 'local') {
                 this._localSelector.click();
             }
             else {
-                this._shareSelector.appendTo("body");
-                this._shareBrowseTree.jstree("refresh");
-                this._shareSelector.removeClass("hidden");
+                this._shareSelector.appendTo('body');
+                this._shareBrowseTree.jstree('refresh');
+                this._shareSelector.removeClass('hidden');
                 this._shareBrowseTree.jstree({
                     core: {
                         data: {
-                            url: "get_share_nodes",
-                            data: (node) => { return {"id" : node.id}; }
+                            url: 'get_share_nodes',
+                            data: (node) => { return {'id' : node.id}; }
                         }
                     },
-                    plugins: ["checkbox", "sort"],
+                    plugins: ['checkbox', 'sort'],
                 });
             }
         });
 
-        this._submitShare.on("click", () => {
-            if (!this._el.hasClass("hidden")) {
-                this._shareSelector.addClass("hidden");
+        this._submitShare.on('click', () => {
+            if (!this._el.hasClass('hidden')) {
+                this._shareSelector.addClass('hidden');
                 this._files = this._shareBrowseTree.jstree(true).get_selected();
                 this._selectedFilesLabel.text(filesLabel(this._source, this._files));
             }
         });
 
-        this._localSelector.on("change", (e) => {
+        this._localSelector.on('change', (e) => {
             this._files = e.target.files;
             this._selectedFilesLabel.text(filesLabel(this._source, this._files));
         });
 
-        this._cancelButton.on("click", () => this._el.addClass("hidden"));
-        this._submitButton.on("click", () => {
+        this._cancelButton.on('click', () => this._el.addClass('hidden'));
+        this._submitButton.on('click', () => {
             try {
-                this._submitButton.prop("disabled", true);
+                this._submitButton.prop('disabled', true);
 
-                let name = $.trim(this._modelNameInput.prop("value"));
+                let name = $.trim(this._modelNameInput.prop('value'));
                 if (!name.length) {
-                    this._uploadMessage.css("color", "red");
-                    this._uploadMessage.text("Please specify a model name");
+                    this._uploadMessage.css('color', 'red');
+                    this._uploadMessage.text('Please specify a model name');
                     return;
                 }
 
@@ -346,22 +344,22 @@ class AutoAnnotationModelManagerView {
                     validatedFiles = validateFiles(this._id !== null, this._files, this._source);
                 }
                 catch (err) {
-                    this._uploadMessage.css("color", "red");
+                    this._uploadMessage.css('color', 'red');
                     this._uploadMessage.text(err);
                     return;
                 }
 
                 let modelData = new FormData();
-                modelData.append("name", name);
-                modelData.append("storage", this._source);
-                modelData.append("shared", this._globallyBox.prop("checked"));
+                modelData.append('name', name);
+                modelData.append('storage', this._source);
+                modelData.append('shared', this._globallyBox.prop('checked'));
 
-                for (let ext of ["xml", "bin", "json", "py"].filter( (ext) => ext in validatedFiles)) {
+                for (let ext of ['xml', 'bin', 'json', 'py'].filter( (ext) => ext in validatedFiles)) {
                     modelData.append(ext, validatedFiles[ext]);
                 }
 
-                this._uploadMessage.text("");
-                let overlay = showOverlay("Send request to the server..");
+                this._uploadMessage.text('');
+                let overlay = showOverlay('Send request to the server..');
                 window.cvat.autoAnnotation.server.update(modelData, () => {
                     window.location.reload();
                 }, (message) => {
@@ -372,7 +370,7 @@ class AutoAnnotationModelManagerView {
                 }, window.cvat.autoAnnotation.server.check, this._id);
             }
             finally {
-                this._submitButton.prop("disabled", false);
+                this._submitButton.prop('disabled', false);
             }
         });
     }
@@ -380,32 +378,32 @@ class AutoAnnotationModelManagerView {
     reset() {
         const setBlocked = () => {
             if (window.cvat.autoAnnotation.data.admin) {
-                this._globallyBlock.removeClass("hidden");
+                this._globallyBlock.removeClass('hidden');
             }
             else {
-                this._globallyBlock.addClass("hidden");
+                this._globallyBlock.addClass('hidden');
             }
         };
 
         setBlocked();
-        this._uploadTitle.text("Create Model");
-        this._uploadNameInput.prop("value", "");
-        this._uploadMessage.css("color", "");
-        this._uploadMessage.text("");
-        this._selectedFilesLabel.text("No Files");
-        this._localSource.prop("checked", true);
-        this._globallyBox.prop("checked", false);
+        this._uploadTitle.text('Create Model');
+        this._uploadNameInput.prop('value', '');
+        this._uploadMessage.css('color', '');
+        this._uploadMessage.text('');
+        this._selectedFilesLabel.text('No Files');
+        this._localSource.prop('checked', true);
+        this._globallyBox.prop('checked', false);
         this._table.empty();
 
         this._id = null;
-        this._source = this._localSource.prop("checked") ? "local": "share";
+        this._source = this._localSource.prop('checked') ? 'local': 'share';
         this._files = [];
 
         const updateButtonClickHandler = (event) => {
             this.reset();
 
-            this._uploadTitle.text("Update Model");
-            this._uploadNameInput.prop("value",`${event.data.model.name}`);
+            this._uploadTitle.text('Update Model');
+            this._uploadNameInput.prop('value',`${event.data.model.name}`);
             this._id = event.data.model.id;
         };
 
@@ -422,16 +420,16 @@ class AutoAnnotationModelManagerView {
 
         const getModelModifyButtons = (model) => {
             if (model.primary) {
-                return "<td> <label class='h1 regular'> Primary Model </label> </td>";
+                return '<td> <label class="h1 regular"> Primary Model </label> </td>';
             }
             else {
-                let updateButtonHtml = "<button class=\"regular h3\" style=\"width: 7em;\"> Update </button>";
-                let deleteButtonHtml = "<button class=\"regular h3\" style=\"width: 7em; margin-top: 5%;\"> Delete </button>";
+                let updateButtonHtml = '<button class="regular h3" style="width: 7em;"> Update </button>';
+                let deleteButtonHtml = '<button class="regular h3" style="width: 7em; margin-top: 5%;"> Delete </button>';
 
-                return $("<td> </td>").append(
-                            $(updateButtonHtml).on("click", {model}, updateButtonClickHandler),
-                            $(deleteButtonHtml).on("click", {model}, deleteButtonClickHandler)
-                        );
+                return $('<td> </td>').append(
+                    $(updateButtonHtml).on('click', {model}, updateButtonClickHandler),
+                    $(deleteButtonHtml).on('click', {model}, deleteButtonClickHandler)
+                );
             }
         };
 
@@ -450,7 +448,7 @@ class AutoAnnotationModelManagerView {
     }
 
     show() {
-        this._el.removeClass("hidden");
+        this._el.removeClass('hidden');
         return this;
     }
 
@@ -510,21 +508,21 @@ class AutoAnnotationModelRunnerView {
         this._labelsTable = this._el.find(`#${window.cvat.autoAnnotation.annotationLabelsId}`);
         this._active = null;
 
-        this._el.find(`#${window.cvat.autoAnnotation.cancelAnnotationId}`).on("click", () => {
-            this._el.addClass("hidden");
+        this._el.find(`#${window.cvat.autoAnnotation.cancelAnnotationId}`).on('click', () => {
+            this._el.addClass('hidden');
         });
 
-        this._el.find(`#${window.cvat.autoAnnotation.submitAnnotationId}`).on("click", () => {
+        this._el.find(`#${window.cvat.autoAnnotation.submitAnnotationId}`).on('click', () => {
             let initButton = this._initButton;
             try {
                 if (this._id === null) {
-                    throw Error("Please specify a model for an annotation process");
+                    throw Error('Please specify a model for an annotation process');
                 }
 
                 let mapping = {};
-                $(".annotatorMappingRow").each(function() {
-                    let dlModelLabel = $(this).find(".annotatorDlLabelSelector")[0].value;
-                    let taskLabel = $(this).find(".annotatorTaskLabelSelector")[0].value;
+                $('.annotatorMappingRow').each(function() {
+                    let dlModelLabel = $(this).find('.annotatorDlLabelSelector')[0].value;
+                    let taskLabel = $(this).find('.annotatorTaskLabelSelector')[0].value;
                     if (dlModelLabel in mapping) {
                         throw Error(`The label "${dlModelLabel}" has been specified twice or more`);
                     }
@@ -532,12 +530,12 @@ class AutoAnnotationModelRunnerView {
                 });
 
                 if (!Object.keys(mapping).length) {
-                    throw Error("Labels for an annotation process haven't been found");
+                    throw Error('Labels for an annotation process haven\'t been found');
                 }
 
-                let overlay = showOverlay("Request has been sent");
+                let overlay = showOverlay('Request has been sent');
                 window.cvat.autoAnnotation.server.start(this._id, this._tid, {
-                    reset: $(`#${window.cvat.autoAnnotation.removeCurrentAnnotationId}`).prop("checked"),
+                    reset: $(`#${window.cvat.autoAnnotation.removeCurrentAnnotationId}`).prop('checked'),
                     labels: mapping
                 }, () => {
                     overlay.remove();
@@ -564,7 +562,7 @@ class AutoAnnotationModelRunnerView {
                 select.append($(`<option value="${label}"> ${label} </option>`));
             }
 
-            select.prop("value", null);
+            select.prop('value', null);
 
             return select;
         }
@@ -572,35 +570,35 @@ class AutoAnnotationModelRunnerView {
         function makeCreator(dlSelect, taskSelect, callback) {
             let dlIsFilled = false;
             let taskIsFilled = false;
-            let creator = $("<tr style=\"margin-bottom: 5px;\"> </tr>").append(
-                $("<td style=\"width: 45%;\"> </td>").append(taskSelect),
-                $("<td style=\"width: 45%;\"> </td>").append(dlSelect)
+            let creator = $('<tr style="margin-bottom: 5px;"> </tr>').append(
+                $('<td style="width: 45%;"> </td>').append(taskSelect),
+                $('<td style="width: 45%;"> </td>').append(dlSelect)
             );
 
             let _callback = () => {
-                $("<td style=\"width: 10%; position: relative;\"> </td>").append(
-                    $("<a class=\"close\"></a>").css("top", "0px").on("click", (e) => {
+                $('<td style="width: 10%; position: relative;"> </td>').append(
+                    $('<a class="close"></a>').css('top', '0px').on('click', (e) => {
                         $(e.target.parentNode.parentNode).remove();
                     })
                 ).appendTo(creator);
 
-                creator.addClass("annotatorMappingRow");
+                creator.addClass('annotatorMappingRow');
                 callback();
             };
 
-            dlSelect.on("change", (e) => {
+            dlSelect.on('change', (e) => {
                 if (e.target.value && taskIsFilled) {
-                    dlSelect.off("change");
-                    taskSelect.off("change");
+                    dlSelect.off('change');
+                    taskSelect.off('change');
                     _callback();
                 }
                 dlIsFilled = Boolean(e.target.value);
             });
 
-            taskSelect.on("change", (e) => {
+            taskSelect.on('change', (e) => {
                 if (e.target.value && dlIsFilled) {
-                    dlSelect.off("change");
-                    taskSelect.off("change");
+                    dlSelect.off('change');
+                    taskSelect.off('change');
                     _callback();
                 }
 
@@ -619,38 +617,38 @@ class AutoAnnotationModelRunnerView {
 
         let modelItemClickHandler = function(event) {
             if (event.data.self._active) {
-                event.data.self._active.style.color = "";
+                event.data.self._active.style.color = '';
             }
 
             event.data.self._id = event.data.model.id;
             event.data.self._active = this;
-            event.data.self._active.style.color = "darkblue";
+            event.data.self._active.style.color = 'darkblue';
 
             event.data.self._labelsTable.empty();
             let labels = Object.values(event.data.data.spec.labels);
             let intersection = labels.filter((el) => event.data.model.labels.indexOf(el) !== -1);
             for (let label of intersection) {
-                let dlSelect = labelsSelect(event.data.model.labels, "annotatorDlLabelSelector");
-                dlSelect.prop("value", label);
-                let taskSelect = labelsSelect(labels, "annotatorTaskLabelSelector");
-                taskSelect.prop("value", label);
-                $("<tr class=\"annotatorMappingRow\" style=\"margin-bottom: 5px;\"> </tr>").append(
-                    $("<td style=\"width: 45%;\"> </td>").append(taskSelect),
-                    $("<td style=\"width: 45%;\"> </td>").append(dlSelect),
-                    $("<td style=\"width: 10%; position: relative;\"> </td>").append(
-                        $("<a class=\"close\"></a>").css("top", "0px").on("click", (e) => {
+                let dlSelect = labelsSelect(event.data.model.labels, 'annotatorDlLabelSelector');
+                dlSelect.prop('value', label);
+                let taskSelect = labelsSelect(labels, 'annotatorTaskLabelSelector');
+                taskSelect.prop('value', label);
+                $('<tr class="annotatorMappingRow" style="margin-bottom: 5px;"> </tr>').append(
+                    $('<td style="width: 45%;"> </td>').append(taskSelect),
+                    $('<td style="width: 45%;"> </td>').append(dlSelect),
+                    $('<td style="width: 10%; position: relative;"> </td>').append(
+                        $('<a class="close"></a>').css('top', '0px').on('click', (e) => {
                             $(e.target.parentNode.parentNode).remove();
                         })
                     )
                 ).appendTo(event.data.self._labelsTable);
             }
 
-            let dlSelect = labelsSelect(event.data.model.labels, "annotatorDlLabelSelector");
-            let taskSelect = labelsSelect(labels, "annotatorTaskLabelSelector");
+            let dlSelect = labelsSelect(event.data.model.labels, 'annotatorDlLabelSelector');
+            let taskSelect = labelsSelect(labels, 'annotatorTaskLabelSelector');
 
             let callback = () => {
-                let dlSelect = labelsSelect(event.data.model.labels, "annotatorDlLabelSelector");
-                let taskSelect = labelsSelect(labels, "annotatorTaskLabelSelector");
+                let dlSelect = labelsSelect(event.data.model.labels, 'annotatorDlLabelSelector');
+                let taskSelect = labelsSelect(labels, 'annotatorTaskLabelSelector');
                 makeCreator(dlSelect, taskSelect, callback).appendTo(event.data.self._labelsTable);
             };
 
@@ -661,7 +659,7 @@ class AutoAnnotationModelRunnerView {
             let self = this;
             this._modelsTable.append(
                 $(`<tr> <td> <label class="regular h3"> ${model.name} (${model.uploadDate}) </label> </td> </tr>`).on(
-                    "click", {model, data, self}, modelItemClickHandler)
+                    'click', {model, data, self}, modelItemClickHandler)
             );
         }
 
@@ -669,12 +667,12 @@ class AutoAnnotationModelRunnerView {
     }
 
     show() {
-        this._el.removeClass("hidden");
+        this._el.removeClass('hidden');
         return this;
     }
 
     hide() {
-        this._el.addClass("hidden");
+        this._el.addClass('hidden');
         return this;
     }
 
@@ -684,69 +682,69 @@ class AutoAnnotationModelRunnerView {
 }
 
 window.cvat.autoAnnotation = {
-    managerWindowId: "annotatorManagerWindow",
-    managerContentId: "annotatorManagerContent",
-    managerUploadedModelsId: "annotatorManagerUploadedModels",
-    uploadContentId: "annotatorManagerUploadModel",
-    uploadTitleId: "annotatorManagerUploadTitle",
-    uploadNameInputId: "annotatorManagerUploadNameInput",
-    uploadLocalSourceId: "annotatorManagerUploadLocalSource",
-    uploadShareSourceId: "annotatorManagerUploadShareSource",
-    uploadGloballyId: "annotatorManagerUploadGlobally",
-    uploadGloballyBlockId: "annotatorManagerUploadGloballyblock",
-    selectFilesButtonId: "annotatorManagerUploadSelector",
-    selectedFilesId: "annotatorManagerUploadSelectedFiles",
-    localFileSelectorId: "annotatorManagerUploadLocalSelector",
-    shareFileSelectorId: "annotatorManagerUploadShareSelector",
-    submitUploadButtonId: "annotatorManagerSubmitUploadButton",
-    cancelUploadButtonId: "annotatorManagerCancelUploadButton",
-    uploadMessageId: "annotatorUploadStatusMessage",
+    managerWindowId: 'annotatorManagerWindow',
+    managerContentId: 'annotatorManagerContent',
+    managerUploadedModelsId: 'annotatorManagerUploadedModels',
+    uploadContentId: 'annotatorManagerUploadModel',
+    uploadTitleId: 'annotatorManagerUploadTitle',
+    uploadNameInputId: 'annotatorManagerUploadNameInput',
+    uploadLocalSourceId: 'annotatorManagerUploadLocalSource',
+    uploadShareSourceId: 'annotatorManagerUploadShareSource',
+    uploadGloballyId: 'annotatorManagerUploadGlobally',
+    uploadGloballyBlockId: 'annotatorManagerUploadGloballyblock',
+    selectFilesButtonId: 'annotatorManagerUploadSelector',
+    selectedFilesId: 'annotatorManagerUploadSelectedFiles',
+    localFileSelectorId: 'annotatorManagerUploadLocalSelector',
+    shareFileSelectorId: 'annotatorManagerUploadShareSelector',
+    submitUploadButtonId: 'annotatorManagerSubmitUploadButton',
+    cancelUploadButtonId: 'annotatorManagerCancelUploadButton',
+    uploadMessageId: 'annotatorUploadStatusMessage',
 
-    runnerWindowId: "annotatorRunnerWindow",
-    runnerContentId: "annotatorRunnerContent",
-    runnerUploadedModelsId: "annotatorRunnerUploadedModels",
-    removeCurrentAnnotationId: "annotatorRunnerRemoveCurrentAnnotationBox",
-    annotationLabelsId: "annotatorRunnerAnnotationLabels",
-    submitAnnotationId: "annotatorRunnerSubmitAnnotationButton",
-    cancelAnnotationId: "annotatorRunnerCancelAnnotationButton",
+    runnerWindowId: 'annotatorRunnerWindow',
+    runnerContentId: 'annotatorRunnerContent',
+    runnerUploadedModelsId: 'annotatorRunnerUploadedModels',
+    removeCurrentAnnotationId: 'annotatorRunnerRemoveCurrentAnnotationBox',
+    annotationLabelsId: 'annotatorRunnerAnnotationLabels',
+    submitAnnotationId: 'annotatorRunnerSubmitAnnotationButton',
+    cancelAnnotationId: 'annotatorRunnerCancelAnnotationButton',
 
-    managerButtonId: "annotatorManagerButton",
+    managerButtonId: 'annotatorManagerButton',
 };
 
 window.cvat.dashboard.uiCallbacks.push((newElements) => {
-    window.cvat.autoAnnotation.server = new AutoAnnotationServer();
+    window.cvat.autoAnnotation.server = AutoAnnotationServer;
     window.cvat.autoAnnotation.manager = new AutoAnnotationModelManagerView();
     window.cvat.autoAnnotation.runner = new AutoAnnotationModelRunnerView();
 
     let tids = [];
     for (let el of newElements) {
-        tids.push(el.id.split("_")[1]);
+        tids.push(el.id.split('_')[1]);
     }
 
     window.cvat.autoAnnotation.server.meta(tids, (data) => {
         window.cvat.autoAnnotation.data = data;
-        $("body").append(window.cvat.autoAnnotation.manager.element, window.cvat.autoAnnotation.runner.element);
+        $('body').append(window.cvat.autoAnnotation.manager.element, window.cvat.autoAnnotation.runner.element);
         $(`<button id="${window.cvat.autoAnnotation.managerButtonId}" class="regular h1" style=""> Model Manager</button>`)
-            .on("click", () => {
-                let overlay = showOverlay("The manager are being setup..");
+            .on('click', () => {
+                let overlay = showOverlay('The manager are being setup..');
                 window.cvat.autoAnnotation.manager.reset().show();
                 overlay.remove();
-            }).appendTo("#dashboardManageButtons");
+            }).appendTo('#dashboardManageButtons');
 
         newElements.each(function(idx) {
             let elem = $(newElements[idx]);
-            let tid = +elem.attr("id").split("_")[1];
+            let tid = +elem.attr('id').split('_')[1];
 
-            let button = $("<button> Run Auto Annotation </button>").addClass("regular dashboardButtonUI");
+            let button = $('<button> Run Auto Annotation </button>').addClass('regular dashboardButtonUI');
             button[0].setupRun = function() {
                 let self = $(this);
-                self.text("Run Auto Annotation").off("click").on("click", () => {
-                    let overlay = showOverlay("Task date are being recieved from the server..");
+                self.text('Run Auto Annotation').off('click').on('click', () => {
+                    let overlay = showOverlay('Task date are being recieved from the server..');
                     $.ajax({
                         url: `/get/task/${tid}`,
-                        dataType: "json",
+                        dataType: 'json',
                         success: (data) => {
-                            overlay.setMessage("The model runner are being setup..");
+                            overlay.setMessage('The model runner are being setup..');
                             window.cvat.autoAnnotation.runner.reset(data, self).show();
                             overlay.remove();
                         },
@@ -762,8 +760,8 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
 
             button[0].setupCancel = function() {
                 let self = $(this);
-                self.off("click").text("Cancel Auto Annotation").on("click", () => {
-                    confirm("Process will be canceled. Are you sure?", () => {
+                self.off('click').text('Cancel Auto Annotation').on('click', () => {
+                    confirm('Process will be canceled. Are you sure?', () => {
                         window.cvat.autoAnnotation.server.cancel(tid, () => {
                             this.setupRun();
                         }, (message) => {
@@ -776,7 +774,7 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
                     this.setupRun();
                 }, (error) => {
                     button[0].setupRun();
-                    button.text("Annotation has failed");
+                    button.text('Annotation has failed');
                     button.title(error);
                 }, (progress) => {
                     button.text(`Cancel Auto Annotation (${progress.toString().slice(0,4)})%`);
@@ -784,14 +782,14 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
             };
 
             let data = window.cvat.autoAnnotation.data.run[tid];
-            if (data && ["queued", "started"].includes(data.status)) {
+            if (data && ['queued', 'started'].includes(data.status)) {
                 button[0].setupCancel();
             }
             else {
                 button[0].setupRun();
             }
 
-            button.appendTo(elem.find("div.dashboardButtonsUI")[0]);
+            button.appendTo(elem.find('div.dashboardButtonsUI')[0]);
         });
     }, (error) => {
         showMessage(`Cannot get models meta information: ${error}`);
