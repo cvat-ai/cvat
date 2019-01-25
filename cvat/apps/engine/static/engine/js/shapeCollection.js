@@ -6,7 +6,7 @@
 
 /* exported ShapeCollectionModel ShapeCollectionController ShapeCollectionView */
 
-/*global
+/* global
     buildShapeController:false
     buildShapeModel:false
     buildShapeView:false
