@@ -358,6 +358,8 @@ var Logger = {
         debugInfo: 24,
         // dumped as "Fit image". There are no additional required fields.
         fitImage: 25,
+        // dumped as "Rotate image". There are no additional required fields.
+        rotateImage: 26,
     },
 
     /**
@@ -521,6 +523,7 @@ var Logger = {
         case this.EventType.changeFrame: return 'Change frame';
         case this.EventType.debugInfo: return 'Debug info';
         case this.EventType.fitImage: return 'Fit image';
+        case this.EventType.rotateImage: return 'Rotate image';
         default: return 'Unknown';
         }
     },
