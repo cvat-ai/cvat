@@ -5,6 +5,11 @@
  */
 
 /* exported Logger */
+
+/* global
+    Cookies:false
+*/
+
 "use strict";
 
 var UserActivityHandler = function()

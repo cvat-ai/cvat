@@ -5,6 +5,19 @@
  */
 
 /* exported ShapeBufferModel ShapeBufferController ShapeBufferView */
+
+/* global
+    AREA_TRESHOLD:false
+    confirm:false
+    Listener:false
+    Logger:false
+    Mousetrap:false
+    POINT_RADIUS:false
+    PolyShapeModel:false
+    STROKE_WIDTH:false
+    SVG:false
+*/
+
 "use strict";
 
 class ShapeBufferModel extends Listener  {

@@ -5,6 +5,11 @@
  */
 
 /* exported serverRequest saveJobRequest encodeFilePathToURI */
+
+/* global
+    showOverlay:false
+*/
+
 "use strict";
 
 function serverRequest(url, successCallback)
