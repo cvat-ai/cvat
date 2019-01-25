@@ -9,7 +9,7 @@
         "browser": true,
         "es6": true,
         "jquery": true,
-        "qunit": true
+        "qunit": true,
     },
     "plugins": [
         "security",
@@ -20,11 +20,13 @@
         "eslint:recommended",
         "plugin:security/recommended",
         "plugin:no-unsanitized/DOM",
-        "airbnb"
+        "airbnb",
     ],
     "rules": {
+        "no-underscore-dangle": 0,
         "no-unsafe-innerhtml/no-unsafe-innerhtml": 1,
         // This rule actual for user input data on the node.js environment mainly.
-        "security/detect-object-injection": 0
+        "security/detect-object-injection": 0,
+        "indent": ["warn", 4],
     },
 };
