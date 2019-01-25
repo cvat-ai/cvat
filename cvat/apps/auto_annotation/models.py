@@ -18,6 +18,7 @@ def upload_path_handler(instance, filename):
 class FrameworkChoice(Enum):
     OPENVINO = 'openvino'
     TENSORFLOW = 'tensorflow'
+    PYTORCH = 'pytorch'
 
     def __str__(self):
         return self.value
