@@ -4,7 +4,19 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported PolyShapeModel buildShapeModel buildShapeController buildShapeView */
+/* exported PolyShapeModel buildShapeModel buildShapeController buildShapeView PolyShapeView */
+
+/* global
+    AAMUndefinedKeyword:false
+    blurAllElements:false
+    drawBoxSize:false
+    Listener:false
+    Logger:false
+    Mousetrap:false
+    ShapeCollectionView:false
+    SVG:false
+*/
+
 "use strict";
 
 const STROKE_WIDTH = 2.5;
@@ -1475,9 +1487,19 @@ class ShapeView extends Listener {
                     blurAllElements();
                     this._hideShapeText();
                     this.notify('resize');
+
+                    Logger.addEvent(Logger.EventType.debugInfo, {
+                        debugMessage: "Resize has started",
+                        resizeEventInitialized: Boolean(events.resize)
+                    });
                 }).on('resizing', () => {
                     objWasResized = true;
                 }).on('resizedone', () => {
+                    Logger.addEvent(Logger.EventType.debugInfo, {
+                        debugMessage: "Resize has done",
+                        resizeEventInitialized: Boolean(events.resize)
+                    });
+
                     if (objWasResized) {
                         let frame = window.cvat.player.frames.current;
                         this._controller.updatePosition(frame, this._buildPosition());

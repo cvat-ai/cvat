@@ -5,6 +5,50 @@
  */
 
 /* exported callAnnotationUI blurAllElements drawBoxSize copyToClipboard */
+
+/* global
+    AAMController:false
+    AAMModel:false
+    AAMView:false
+    AnnotationParser:false
+    Config:false
+    confirm:false
+    CoordinateTranslator:false
+    dumpAnnotationRequest:false
+    HistoryController:false
+    HistoryModel:false
+    HistoryView:false
+    IncrementIdGenerator:false,
+    Logger:false
+    Mousetrap:false
+    PlayerController:false
+    PlayerModel:false
+    PlayerView:false
+    PolyshapeEditorController:false
+    PolyshapeEditorModel:false
+    PolyshapeEditorView:false
+    PolyShapeView:false
+    saveJobRequest:false
+    serverRequest:false
+    ShapeBufferController:false
+    ShapeBufferModel:false
+    ShapeBufferView:false
+    ShapeCollectionController:false
+    ShapeCollectionModel:false
+    ShapeCollectionView:false
+    ShapeCreatorController:false
+    ShapeCreatorModel:false
+    ShapeCreatorView:false
+    ShapeGrouperController:false
+    ShapeGrouperModel:false
+    ShapeGrouperView:false
+    ShapeMergerController:false
+    ShapeMergerModel:false
+    ShapeMergerView:false
+    showMessage:false
+    showOverlay:false
+*/
+
 "use strict";
 
 function callAnnotationUI(jid) {

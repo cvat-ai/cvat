@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 
+/* global
+    Mousetrap:false
+*/
+
 Mousetrap.bind(window.cvat.config.shortkeys["open_analytics"].value, function() {
     window.open("/analytics/app/kibana");
 

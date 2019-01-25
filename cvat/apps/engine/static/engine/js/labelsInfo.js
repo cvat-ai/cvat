@@ -5,6 +5,11 @@
  */
 
 /* exported LabelsInfo */
+
+/* global
+    showMessage:false
+*/
+
 "use strict";
 
 class LabelsInfo {

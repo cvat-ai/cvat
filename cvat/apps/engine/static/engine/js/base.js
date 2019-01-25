@@ -5,13 +5,17 @@
  */
 
 /* exported
-    ExportType
     confirm
     createExportContainer
     dumpAnnotationRequest
+    ExportType
     getExportTargetContainer
     showMessage
     showOverlay
+*/
+
+/* global
+    Cookies:false
 */
 
 "use strict";

@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenVINO auto annotation: it is possible to upload a custom model and annotate images automatically.
 
 ### Changed
--
+- Propagation setup has been moved from settings to bottom player panel
+- Additional events like "Debug Info" or "Fit Image" have been added for analitics
 
 ### Deprecated
 -
@@ -18,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Django 2.1.5 (security fix, https://nvd.nist.gov/vuln/detail/CVE-2019-3498)
 
 ### Security
 -
