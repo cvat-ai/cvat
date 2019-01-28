@@ -8,7 +8,7 @@
 
 /* global
     AREA_TRESHOLD:false
-    confirm:false
+    userConfirm:false
     Listener:false
     Logger:false
     Mousetrap:false
@@ -313,7 +313,7 @@ class ShapeBufferController {
                         message += 'Are you sure?';
 
                         propagateDialogShowed = true;
-                        confirm(message, () => {
+                        userConfirm(message, () => {
                             this._model.propagateToFrames();
                             propagateDialogShowed = false;
                         }, () => propagateDialogShowed = false);

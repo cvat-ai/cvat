@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: MIT
 */
 
-/* global showOverlay showMessage */
-
-'use strict';
+/* global
+    showMessage
+    showOverlay
+    userConfirm
+*/
 
 window.cvat = window.cvat || {};
 window.cvat.dashboard = window.cvat.dashboard || {};
@@ -25,7 +27,7 @@ const AutoAnnotationServer = {
             error: (responseData) => {
                 const message = `Starting request has been failed. Code: ${responseData.status}. Message: ${responseData.responseText || responseData.statusText}`;
                 error(message);
-            }
+            },
         });
     },
 
@@ -33,8 +35,7 @@ const AutoAnnotationServer = {
         let url = '';
         if (modelId === null) {
             url = '/auto_annotation/create';
-        }
-        else {
+        } else {
             url = `/auto_annotation/update/${modelId}`;
         }
 
@@ -50,7 +51,7 @@ const AutoAnnotationServer = {
             error: (responseData) => {
                 const message = `Creating request has been failed. Code: ${responseData.status}. Message: ${responseData.responseText || responseData.statusText}`;
                 error(message);
-            }
+            },
         });
     },
 
@@ -62,7 +63,7 @@ const AutoAnnotationServer = {
             error: (data) => {
                 const message = `Deleting request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
-            }
+            },
         });
     },
 
@@ -100,7 +101,7 @@ const AutoAnnotationServer = {
                 error: (data) => {
                     const message = `Checking request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                     error(message);
-                }
+                },
             });
         }
 
@@ -117,7 +118,7 @@ const AutoAnnotationServer = {
             error: (data) => {
                 const message = `Getting meta request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
-            }
+            },
         });
     },
 
@@ -129,7 +130,7 @@ const AutoAnnotationServer = {
             error: (data) => {
                 const message = `Getting meta request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
-            }
+            },
         });
     },
 };
@@ -295,8 +296,7 @@ class AutoAnnotationModelManagerView {
         this.selectButton.on('click', () => {
             if (this.source === 'local') {
                 this.localSelector.click();
-            }
-            else {
+            } else {
                 this.shareSelector.appendTo('body');
                 this.shareBrowseTree.jstree('refresh');
                 this.shareSelector.removeClass('hidden');
@@ -304,8 +304,8 @@ class AutoAnnotationModelManagerView {
                     core: {
                         data: {
                             url: 'get_share_nodes',
-                            data: (node) => { return { id: node.id }; },
-                        }
+                            data: node => ({ id: node.id }),
+                        },
                     },
                     plugins: ['checkbox', 'sort'],
                 });
@@ -340,8 +340,7 @@ class AutoAnnotationModelManagerView {
                 let validatedFiles = {};
                 try {
                     validatedFiles = validateFiles(this.id !== null, this.files, this.source);
-                }
-                catch (err) {
+                } catch (err) {
                     this.uploadMessage.css('color', 'red');
                     this.uploadMessage.text(err);
                     return;
@@ -352,7 +351,7 @@ class AutoAnnotationModelManagerView {
                 modelData.append('storage', this.source);
                 modelData.append('shared', this.globallyBox.prop('checked'));
 
-                ['xml', 'bin', 'json', 'py'].filter( e => e in validatedFiles).forEach( (ext) => {
+                ['xml', 'bin', 'json', 'py'].filter(e => e in validatedFiles).forEach((ext) => {
                     modelData.append(ext, validatedFiles[ext]);
                 });
 
@@ -366,8 +365,7 @@ class AutoAnnotationModelManagerView {
                 }, (progress) => {
                     overlay.setMessage(progress);
                 }, window.cvat.autoAnnotation.server.check, this.id);
-            }
-            finally {
+            } finally {
                 this.submitButton.prop('disabled', false);
             }
         });
@@ -377,8 +375,7 @@ class AutoAnnotationModelManagerView {
         const setBlocked = () => {
             if (window.cvat.autoAnnotation.data.admin) {
                 this.globallyBlock.removeClass('hidden');
-            }
-            else {
+            } else {
                 this.globallyBlock.addClass('hidden');
             }
         };
@@ -406,12 +403,12 @@ class AutoAnnotationModelManagerView {
         };
 
         const deleteButtonClickHandler = (event) => {
-            confirm(`Do you actually want to delete the "${event.data.model.name}" model. Are you sure?`, () => {
+            userConfirm(`Do you actually want to delete the "${event.data.model.name}" model. Are you sure?`, () => {
                 window.cvat.autoAnnotation.server.delete(event.data.model.id, () => {
-                    window.cvat.autoAnnotation.data.models =
-                        window.cvat.autoAnnotation.data.models.filter(
-                            item => item !== event.data.model
-                        );
+                    const filtered = window.cvat.autoAnnotation.data.models.filter(
+                        item => item !== event.data.model,
+                    );
+                    window.cvat.autoAnnotation.data.models = filtered;
                     this.reset();
                 }, (message) => {
                     showMessage(message);
@@ -513,16 +510,15 @@ class AutoAnnotationModelRunnerView {
         });
 
         this.el.find(`#${window.cvat.autoAnnotation.submitAnnotationId}`).on('click', () => {
-            const initButton = this.initButton;
             try {
                 if (this.id === null) {
                     throw Error('Please specify a model for an annotation process');
                 }
 
                 const mapping = {};
-                $('.annotatorMappingRow').each(function () {
-                    const dlModelLabel = $(this).find('.annotatorDlLabelSelector')[0].value;
-                    const taskLabel = $(this).find('.annotatorTaskLabelSelector')[0].value;
+                $('.annotatorMappingRow').each((_, element) => {
+                    const dlModelLabel = $(element).find('.annotatorDlLabelSelector')[0].value;
+                    const taskLabel = $(element).find('.annotatorTaskLabelSelector')[0].value;
                     if (dlModelLabel in mapping) {
                         throw Error(`The label "${dlModelLabel}" has been specified twice or more`);
                     }
@@ -539,17 +535,16 @@ class AutoAnnotationModelRunnerView {
                     labels: mapping,
                 }, () => {
                     overlay.remove();
-                    initButton[0].setupRun();
+                    this.initButton[0].setupRun();
                     window.cvat.autoAnnotation.runner.hide();
                 }, (message) => {
                     overlay.remove();
-                    initButton[0].setupRun();
+                    this.initButton[0].setupRun();
                     showMessage(message);
                 }, () => {
                     window.location.reload();
                 }, window.cvat.autoAnnotation.server.check);
-            }
-            catch (error) {
+            } catch (error) {
                 showMessage(error);
             }
         });
@@ -558,7 +553,7 @@ class AutoAnnotationModelRunnerView {
     reset(data, initButton) {
         function labelsSelect(labels, elClass) {
             const select = $(`<select class="regular h3 ${elClass}" style="width:100%;"> </select>`);
-            labels.forEach( label => select.append($(`<option value="${label}"> ${label} </option>`)));
+            labels.forEach(label => select.append($(`<option value="${label}"> ${label} </option>`)));
             select.prop('value', null);
 
             return select;
@@ -576,7 +571,7 @@ class AutoAnnotationModelRunnerView {
                 $('<td style="width: 10%; position: relative;"> </td>').append(
                     $('<a class="close"></a>').css('top', '0px').on('click', (e) => {
                         $(e.target.parentNode.parentNode).remove();
-                    })
+                    }),
                 ).appendTo(creator);
 
                 creator.addClass('annotatorMappingRow');
@@ -612,22 +607,22 @@ class AutoAnnotationModelRunnerView {
         this.labelsTable.empty();
         this.active = null;
 
-        const modelItemClickHandler = function (event) {
-            if (event.data.self.active) {
-                event.data.self.active.style.color = '';
+        const modelItemClickHandler = (event) => {
+            if (this.active) {
+                this.active.style.color = '';
             }
 
-            event.data.self.id = event.data.model.id;
-            event.data.self.active = this;
-            event.data.self.active.style.color = 'darkblue';
+            this.id = event.data.model.id;
+            this.active = event.target;
+            this.active.style.color = 'darkblue';
 
-            event.data.self.labelsTable.empty();
+            this.labelsTable.empty();
             const labels = Object.values(event.data.data.spec.labels);
-            const intersection = labels.filter((el) => event.data.model.labels.indexOf(el) !== -1);
-            intersection.forEach( (label) => {
-                let dlSelect = labelsSelect(event.data.model.labels, 'annotatorDlLabelSelector');
+            const intersection = labels.filter(el => event.data.model.labels.indexOf(el) !== -1);
+            intersection.forEach((label) => {
+                const dlSelect = labelsSelect(event.data.model.labels, 'annotatorDlLabelSelector');
                 dlSelect.prop('value', label);
-                let taskSelect = labelsSelect(labels, 'annotatorTaskLabelSelector');
+                const taskSelect = labelsSelect(labels, 'annotatorTaskLabelSelector');
                 taskSelect.prop('value', label);
                 $('<tr class="annotatorMappingRow" style="margin-bottom: 5px;"> </tr>').append(
                     $('<td style="width: 45%;"> </td>').append(taskSelect),
@@ -637,24 +632,28 @@ class AutoAnnotationModelRunnerView {
                             $(e.target.parentNode.parentNode).remove();
                         }),
                     ),
-                ).appendTo(event.data.self.labelsTable);
+                ).appendTo(this.labelsTable);
             });
 
             const dlSelect = labelsSelect(event.data.model.labels, 'annotatorDlLabelSelector');
             const taskSelect = labelsSelect(labels, 'annotatorTaskLabelSelector');
 
             const callback = () => {
-                makeCreator(dlSelect, taskSelect, callback).appendTo(event.data.self.labelsTable);
+                makeCreator(
+                    labelsSelect(event.data.model.labels, 'annotatorDlLabelSelector'),
+                    labelsSelect(labels, 'annotatorTaskLabelSelector'),
+                    callback,
+                ).appendTo(this.labelsTable);
             };
 
-            makeCreator(dlSelect, taskSelect, callback).appendTo(event.data.self.labelsTable);
+            makeCreator(dlSelect, taskSelect, callback).appendTo(this.labelsTable);
         };
 
-        window.cvat.autoAnnotation.data.models.forEach( (model) => {
-            let self = this;
+        window.cvat.autoAnnotation.data.models.forEach((model) => {
             this.modelsTable.append(
                 $(`<tr> <td> <label class="regular h3"> ${model.name} (${model.uploadDate}) </label> </td> </tr>`).on(
-                    'click', {model, data, self}, modelItemClickHandler)
+                    'click', { model, data }, modelItemClickHandler,
+                ),
             );
         });
 
@@ -711,52 +710,49 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
     window.cvat.autoAnnotation.manager = new AutoAnnotationModelManagerView();
     window.cvat.autoAnnotation.runner = new AutoAnnotationModelRunnerView();
 
-    const tids = [];
-    for (let el of newElements) {
-        tids.push(el.id.split('_')[1]);
-    }
+    const tids = Array.from(newElements, el => el.id.split('_')[1]);
 
     window.cvat.autoAnnotation.server.meta(tids, (data) => {
         window.cvat.autoAnnotation.data = data;
         $('body').append(window.cvat.autoAnnotation.manager.element, window.cvat.autoAnnotation.runner.element);
         $(`<button id="${window.cvat.autoAnnotation.managerButtonId}" class="regular h1" style=""> Model Manager</button>`)
             .on('click', () => {
-                let overlay = showOverlay('The manager are being setup..');
+                const overlay = showOverlay('The manager are being setup..');
                 window.cvat.autoAnnotation.manager.reset().show();
                 overlay.remove();
             }).appendTo('#dashboardManageButtons');
 
-        newElements.each(function (idx) {
-            const elem = $(newElements[idx]);
+        newElements.each((_, element) => {
+            const elem = $(element);
             const tid = +elem.attr('id').split('_')[1];
 
             const button = $('<button> Run Auto Annotation </button>').addClass('regular dashboardButtonUI');
-            button[0].setupRun = function() {
-                let self = $(this);
+            button[0].setupRun = function setupRun() {
+                const self = $(this);
                 self.text('Run Auto Annotation').off('click').on('click', () => {
-                    let overlay = showOverlay('Task date are being recieved from the server..');
+                    const overlay = showOverlay('Task date are being recieved from the server..');
                     $.ajax({
                         url: `/get/task/${tid}`,
                         dataType: 'json',
-                        success: (data) => {
+                        success: (responseData) => {
                             overlay.setMessage('The model runner are being setup..');
-                            window.cvat.autoAnnotation.runner.reset(data, self).show();
+                            window.cvat.autoAnnotation.runner.reset(responseData, self).show();
                             overlay.remove();
                         },
-                        error: (data) => {
-                            showMessage(`Can't get task data. Code: ${data.status}. Message: ${data.responseText || data.statusText}`);
+                        error: (responseData) => {
+                            showMessage(`Can't get task data. Code: ${responseData.status}. Message: ${responseData.responseText || responseData.statusText}`);
                         },
                         complete: () => {
                             overlay.remove();
-                        }
+                        },
                     });
                 });
             };
 
-            button[0].setupCancel = function() {
-                let self = $(this);
+            button[0].setupCancel = function setupCancel() {
+                const self = $(this);
                 self.off('click').text('Cancel Auto Annotation').on('click', () => {
-                    confirm('Process will be canceled. Are you sure?', () => {
+                    userConfirm('Process will be canceled. Are you sure?', () => {
                         window.cvat.autoAnnotation.server.cancel(tid, () => {
                             this.setupRun();
                         }, (message) => {
@@ -765,22 +761,26 @@ window.cvat.dashboard.uiCallbacks.push((newElements) => {
                     });
                 });
 
-                window.cvat.autoAnnotation.server.check(window.cvat.autoAnnotation.data.run[tid].rq_id, () => {
-                    this.setupRun();
-                }, (error) => {
-                    button[0].setupRun();
-                    button.text('Annotation has failed');
-                    button.title(error);
-                }, (progress) => {
-                    button.text(`Cancel Auto Annotation (${progress.toString().slice(0,4)})%`);
-                });
+                window.cvat.autoAnnotation.server.check(
+                    window.cvat.autoAnnotation.data.run[tid].rq_id,
+                    () => {
+                        this.setupRun();
+                    },
+                    (error) => {
+                        button[0].setupRun();
+                        button.text('Annotation has failed');
+                        button.title(error);
+                    },
+                    (progress) => {
+                        button.text(`Cancel Auto Annotation (${progress.toString().slice(0, 4)})%`);
+                    },
+                );
             };
 
-            let data = window.cvat.autoAnnotation.data.run[tid];
-            if (data && ['queued', 'started'].includes(data.status)) {
+            const taskStatus = window.cvat.autoAnnotation.data.run[tid];
+            if (taskStatus && ['queued', 'started'].includes(taskStatus.status)) {
                 button[0].setupCancel();
-            }
-            else {
+            } else {
                 button[0].setupRun();
             }
 
