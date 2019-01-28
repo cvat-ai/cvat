@@ -24,6 +24,16 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 - [Segmentation mode](https://youtu.be/Fh8oKuSUIPs)
 - [Tutorial for polygons](https://www.youtube.com/watch?v=XTwfXDh4clI)
 
+## Online Demo
+
+[OnePanel.io](https://www.onepanel.io/) has built CVAT and integrated it into their platform.
+A running demo of CVAT can be accessed on their platform here: [CVAT Public Demo](https://c.onepanel.io/onepanel-demo/projects/cvat-public-demo/workspaces)
+- Click on "go to workspace" and the CVAT environment will load up
+- The environment is backed by a k80 GPU hosted by AWS
+
+If you have any questions, please contact Onepanel at support@onepanel.io
+- If you are on the website, you can also use "intercom" through the icon in the bottom right.
+
 ## LICENSE
 
 Code released under the [MIT License](https://opensource.org/licenses/MIT).
