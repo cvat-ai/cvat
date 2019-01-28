@@ -73,7 +73,7 @@ const AutoAnnotationServer = {
             }
         }
 
-        const checkCallback = function () {
+        function checkCallback() {
             $.ajax({
                 url: `/auto_annotation/check/${workerId}`,
                 type: 'GET',
@@ -220,7 +220,7 @@ class AutoAnnotationModelManagerView {
         this.submitShare = $('#dashboardSubmitBrowseServer');
 
         this.id = null;
-        this.source = this.localSource.prop('checked') ? 'local': 'shared';
+        this.source = this.localSource.prop('checked') ? 'local' : 'shared';
         this.files = [];
 
         function filesLabel(source, files) {
@@ -262,7 +262,7 @@ class AutoAnnotationModelManagerView {
         }
 
         function validateFiles(isUpdate, files, source) {
-            let extensions = ['xml', 'bin', 'py', 'json'];
+            const extensions = ['xml', 'bin', 'py', 'json'];
             const extractedFiles = extractFiles(extensions, files, source);
 
             if (!isUpdate) {
@@ -304,7 +304,7 @@ class AutoAnnotationModelManagerView {
                     core: {
                         data: {
                             url: 'get_share_nodes',
-                            data: (node) => { return {'id' : node.id}; }
+                            data: (node) => { return {id: node.id}; },
                         }
                     },
                     plugins: ['checkbox', 'sort'],
@@ -330,7 +330,7 @@ class AutoAnnotationModelManagerView {
             try {
                 this.submitButton.prop('disabled', true);
 
-                let name = $.trim(this.modelNameInput.prop('value'));
+                const name = $.trim(this.modelNameInput.prop('value'));
                 if (!name.length) {
                     this.uploadMessage.css('color', 'red');
                     this.uploadMessage.text('Please specify a model name');
@@ -347,17 +347,17 @@ class AutoAnnotationModelManagerView {
                     return;
                 }
 
-                let modelData = new FormData();
+                const modelData = new FormData();
                 modelData.append('name', name);
                 modelData.append('storage', this.source);
                 modelData.append('shared', this.globallyBox.prop('checked'));
 
-                for (let ext of ['xml', 'bin', 'json', 'py'].filter( (ext) => ext in validatedFiles)) {
+                for (const ext of ['xml', 'bin', 'json', 'py'].filter( e => e in validatedFiles)) {
                     modelData.append(ext, validatedFiles[ext]);
                 }
 
                 this.uploadMessage.text('');
-                let overlay = showOverlay('Send request to the server..');
+                const overlay = showOverlay('Send request to the server..');
                 window.cvat.autoAnnotation.server.update(modelData, () => {
                     window.location.reload();
                 }, (message) => {
@@ -394,21 +394,22 @@ class AutoAnnotationModelManagerView {
         this.table.empty();
 
         this.id = null;
-        this.source = this.localSource.prop('checked') ? 'local': 'share';
+        this.source = this.localSource.prop('checked') ? 'local' : 'share';
         this.files = [];
 
         const updateButtonClickHandler = (event) => {
             this.reset();
 
             this.uploadTitle.text('Update Model');
-            this.uploadNameInput.prop('value',`${event.data.model.name}`);
+            this.uploadNameInput.prop('value', `${event.data.model.name}`);
             this.id = event.data.model.id;
         };
 
         const deleteButtonClickHandler = (event) => {
             confirm(`Do you actually want to delete the "${event.data.model.name}" model. Are you sure?`, () => {
                 window.cvat.autoAnnotation.server.delete(event.data.model.id, () => {
-                    window.cvat.autoAnnotation.data.models = window.cvat.autoAnnotation.data.models.filter((item) => item !== event.data.model);
+                    window.cvat.autoAnnotation.data.models = window.cvat.autoAnnotation.data.models.filter(
+                        item => item !== event.data.model);
                     this.reset();
                 }, (message) => {
                     showMessage(message);
@@ -420,19 +421,18 @@ class AutoAnnotationModelManagerView {
             if (model.primary) {
                 return '<td> <label class="h1 regular"> Primary Model </label> </td>';
             }
-            else {
-                let updateButtonHtml = '<button class="regular h3" style="width: 7em;"> Update </button>';
-                let deleteButtonHtml = '<button class="regular h3" style="width: 7em; margin-top: 5%;"> Delete </button>';
 
-                return $('<td> </td>').append(
-                    $(updateButtonHtml).on('click', {model}, updateButtonClickHandler),
-                    $(deleteButtonHtml).on('click', {model}, deleteButtonClickHandler)
-                );
-            }
+            const updateButtonHtml = '<button class="regular h3" style="width: 7em;"> Update </button>';
+            const deleteButtonHtml = '<button class="regular h3" style="width: 7em; margin-top: 5%;"> Delete </button>';
+
+            return $('<td> </td>').append(
+                $(updateButtonHtml).on('click', { model }, updateButtonClickHandler),
+                $(deleteButtonHtml).on('click', { model }, deleteButtonClickHandler),
+            );
         };
 
         for (let model of window.cvat.autoAnnotation.data.models) {
-            let rowHtml = `<tr>
+            const rowHtml = `<tr>
                 <td> ${model.name} </td>
                 <td> ${model.uploadDate} </td>
             </tr>`;
@@ -498,26 +498,26 @@ class AutoAnnotationModelRunnerView {
             </div>
         </div>`;
 
-        this._el = $(html);
-        this._id = null;
-        this._tid = null;
-        this._initButton = null;
-        this._modelsTable = this._el.find(`#${window.cvat.autoAnnotation.runnerUploadedModelsId}`);
-        this._labelsTable = this._el.find(`#${window.cvat.autoAnnotation.annotationLabelsId}`);
-        this._active = null;
+        this.el = $(html);
+        this.id = null;
+        this.tid = null;
+        this.initButton = null;
+        this.modelsTable = this.el.find(`#${window.cvat.autoAnnotation.runnerUploadedModelsId}`);
+        this.labelsTable = this.el.find(`#${window.cvat.autoAnnotation.annotationLabelsId}`);
+        this.active = null;
 
-        this._el.find(`#${window.cvat.autoAnnotation.cancelAnnotationId}`).on('click', () => {
-            this._el.addClass('hidden');
+        this.el.find(`#${window.cvat.autoAnnotation.cancelAnnotationId}`).on('click', () => {
+            this.el.addClass('hidden');
         });
 
-        this._el.find(`#${window.cvat.autoAnnotation.submitAnnotationId}`).on('click', () => {
-            let initButton = this._initButton;
+        this.el.find(`#${window.cvat.autoAnnotation.submitAnnotationId}`).on('click', () => {
+            const initButton = this.initButton;
             try {
-                if (this._id === null) {
+                if (this.id === null) {
                     throw Error('Please specify a model for an annotation process');
                 }
 
-                let mapping = {};
+                const mapping = {};
                 $('.annotatorMappingRow').each(function() {
                     let dlModelLabel = $(this).find('.annotatorDlLabelSelector')[0].value;
                     let taskLabel = $(this).find('.annotatorTaskLabelSelector')[0].value;
@@ -531,8 +531,8 @@ class AutoAnnotationModelRunnerView {
                     throw Error('Labels for an annotation process haven\'t been found');
                 }
 
-                let overlay = showOverlay('Request has been sent');
-                window.cvat.autoAnnotation.server.start(this._id, this._tid, {
+                const overlay = showOverlay('Request has been sent');
+                window.cvat.autoAnnotation.server.start(this.id, this.tid, {
                     reset: $(`#${window.cvat.autoAnnotation.removeCurrentAnnotationId}`).prop('checked'),
                     labels: mapping
                 }, () => {
@@ -555,8 +555,8 @@ class AutoAnnotationModelRunnerView {
 
     reset(data, initButton) {
         function labelsSelect(labels, elClass) {
-            let select = $(`<select class="regular h3 ${elClass}" style="width:100%;"> </select>`);
-            for (let label of labels) {
+            const select = $(`<select class="regular h3 ${elClass}" style="width:100%;"> </select>`);
+            for (const label of labels) {
                 select.append($(`<option value="${label}"> ${label} </option>`));
             }
 
@@ -568,12 +568,12 @@ class AutoAnnotationModelRunnerView {
         function makeCreator(dlSelect, taskSelect, callback) {
             let dlIsFilled = false;
             let taskIsFilled = false;
-            let creator = $('<tr style="margin-bottom: 5px;"> </tr>').append(
+            const creator = $('<tr style="margin-bottom: 5px;"> </tr>').append(
                 $('<td style="width: 45%;"> </td>').append(taskSelect),
                 $('<td style="width: 45%;"> </td>').append(dlSelect)
             );
 
-            let _callback = () => {
+            const _callback = () => {
                 $('<td style="width: 10%; position: relative;"> </td>').append(
                     $('<a class="close"></a>').css('top', '0px').on('click', (e) => {
                         $(e.target.parentNode.parentNode).remove();
@@ -606,12 +606,12 @@ class AutoAnnotationModelRunnerView {
             return creator;
         }
 
-        this._id = null;
-        this._initButton = initButton;
-        this._tid = data.taskid;
-        this._modelsTable.empty();
-        this._labelsTable.empty();
-        this._active = null;
+        this.id = null;
+        this.initButton = initButton;
+        this.tid = data.taskid;
+        this.modelsTable.empty();
+        this.labelsTable.empty();
+        this.active = null;
 
         let modelItemClickHandler = function(event) {
             if (event.data.self._active) {
@@ -653,9 +653,9 @@ class AutoAnnotationModelRunnerView {
             makeCreator(dlSelect, taskSelect, callback).appendTo(event.data.self._labelsTable);
         };
 
-        for (let model of window.cvat.autoAnnotation.data.models) {
+        for (const model of window.cvat.autoAnnotation.data.models) {
             let self = this;
-            this._modelsTable.append(
+            this.modelsTable.append(
                 $(`<tr> <td> <label class="regular h3"> ${model.name} (${model.uploadDate}) </label> </td> </tr>`).on(
                     'click', {model, data, self}, modelItemClickHandler)
             );
@@ -665,17 +665,17 @@ class AutoAnnotationModelRunnerView {
     }
 
     show() {
-        this._el.removeClass('hidden');
+        this.el.removeClass('hidden');
         return this;
     }
 
     hide() {
-        this._el.addClass('hidden');
+        this.el.addClass('hidden');
         return this;
     }
 
     get element() {
-        return this._el;
+        return this.el;
     }
 }
 
