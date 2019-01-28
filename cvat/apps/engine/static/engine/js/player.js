@@ -355,25 +355,17 @@ class PlayerModel extends Listener {
 
     }
 
-    scale(x, y, value) {
+    scale(point, value) {
         if (!this._frameProvider.require(this._frame.current)) return;
 
-        let currentCenter = {
-            x: (x - this._geometry.left) / this._geometry.scale,
-            y: (y - this._geometry.top) / this._geometry.scale
-        };
+        let oldScale = this._geometry.scale;
+        this._geometry.scale = Math.clamp(
+            value > 0 ? this._geometry.scale * 6/5 : this._geometry.scale * 5/6,
+            MIN_PLAYER_SCALE, MAX_PLAYER_SCALE
+        );
 
-        this._geometry.scale = value > 0 ? this._geometry.scale * 6/5 : this._geometry.scale * 5/6;
-        this._geometry.scale = Math.min(this._geometry.scale, MAX_PLAYER_SCALE);
-        this._geometry.scale = Math.max(this._geometry.scale, MIN_PLAYER_SCALE);
-
-        let newCenter = {
-            x: (x - this._geometry.left) / this._geometry.scale,
-            y: (y - this._geometry.top) / this._geometry.scale
-        };
-
-        this._geometry.left += (newCenter.x - currentCenter.x) * this._geometry.scale;
-        this._geometry.top += (newCenter.y - currentCenter.y) * this._geometry.scale;
+        this._geometry.left += (point.x * (oldScale / this._geometry.scale - 1)) * this._geometry.scale;
+        this._geometry.top += (point.y * (oldScale / this._geometry.scale - 1)) * this._geometry.scale;
 
         window.cvat.player.geometry.scale = this._geometry.scale;
         this.notify();
@@ -501,17 +493,16 @@ class PlayerController {
         }
     }
 
-    zoom(e) {
-        let x = e.originalEvent.pageX - this._leftOffset;
-        let y = e.originalEvent.pageY - this._topOffset;
+    zoom(e, canvas) {
+        let point = window.cvat.translate.point.clientToCanvas(canvas, e.clientX, e.clientY);
 
         let zoomImageEvent = Logger.addContinuedEvent(Logger.EventType.zoomImage);
 
         if (e.originalEvent.deltaY < 0) {
-            this._model.scale(x, y, 1);
+            this._model.scale(point, 1);
         }
         else {
-            this._model.scale(x, y, -1);
+            this._model.scale(point, -1);
         }
         zoomImageEvent.close();
         e.preventDefault();
@@ -709,7 +700,7 @@ class PlayerView {
             e.preventDefault();
         });
 
-        this._playerContentUI.on('wheel', (e) => this._controller.zoom(e));
+        this._playerContentUI.on('wheel', (e) => this._controller.zoom(e, this._playerBackgroundUI[0]));
         this._playerContentUI.on('dblclick', () => this._controller.fit());
         this._playerContentUI.on('mousemove', (e) => this._controller.frameMouseMove(e));
         this._progressUI.on('mousedown', (e) => this._controller.progressMouseDown(e));
