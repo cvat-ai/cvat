@@ -19,11 +19,11 @@ const AutoAnnotationServer = {
             type: 'POST',
             data: JSON.stringify(data),
             contentType: 'application/json',
-            success: (data) => {
-                check(data.id, success, error, progress);
+            success: (responseData) => {
+                check(responseData.id, success, error, progress);
             },
-            error: (data) => {
-                const message = `Starting request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+            error: (responseData) => {
+                const message = `Starting request has been failed. Code: ${responseData.status}. Message: ${responseData.responseText || responseData.statusText}`;
                 error(message);
             }
         });
@@ -98,7 +98,7 @@ const AutoAnnotationServer = {
                     }
                 },
                 error: (data) => {
-                    let message = `Checking request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                    const message = `Checking request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                     error(message);
                 }
             });
@@ -115,7 +115,7 @@ const AutoAnnotationServer = {
             contentType: 'application/json',
             success,
             error: (data) => {
-                let message = `Getting meta request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                const message = `Getting meta request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
             }
         });
@@ -124,20 +124,20 @@ const AutoAnnotationServer = {
     cancel(tid, success, error) {
         $.ajax({
             url: `/auto_annotation/cancel/${tid}`,
-            type: "GET",
+            type: 'GET',
             success,
             error: (data) => {
-                let message = `Getting meta request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                const message = `Getting meta request has been failed. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
                 error(message);
             }
         });
     },
-}
+};
 
 
 class AutoAnnotationModelManagerView {
     constructor() {
-        let html = `<div class="modal hidden" id="${window.cvat.autoAnnotation.managerWindowId}">
+        const html = `<div class="modal hidden" id="${window.cvat.autoAnnotation.managerWindowId}">
             <div class="modal-content" id="${window.cvat.autoAnnotation.managerContentId}">
                 <div style="float: left; width: 55%; height: 100%;">
                     <center>
@@ -199,110 +199,108 @@ class AutoAnnotationModelManagerView {
             </div>
         </div>`;
 
-        this._el = $(html);
+        this.el = $(html);
 
-        this._table = this._el.find(`#${window.cvat.autoAnnotation.managerUploadedModelsId}`);
-        this._globallyBlock = this._el.find(`#${window.cvat.autoAnnotation.uploadGloballyBlockId}`);
-        this._uploadTitle = this._el.find(`#${window.cvat.autoAnnotation.uploadTitleId}`);
-        this._uploadNameInput = this._el.find(`#${window.cvat.autoAnnotation.uploadNameInputId}`);
-        this._uploadMessage = this._el.find(`#${window.cvat.autoAnnotation.uploadMessageId}`);
-        this._selectedFilesLabel = this._el.find(`#${window.cvat.autoAnnotation.selectedFilesId}`);
-        this._modelNameInput = this._el.find(`#${window.cvat.autoAnnotation.uploadNameInputId}`);
-        this._localSource = this._el.find(`#${window.cvat.autoAnnotation.uploadLocalSourceId}`);
-        this._shareSource = this._el.find(`#${window.cvat.autoAnnotation.uploadShareSourceId}`);
-        this._cancelButton = this._el.find(`#${window.cvat.autoAnnotation.cancelUploadButtonId}`);
-        this._submitButton = this._el.find(`#${window.cvat.autoAnnotation.submitUploadButtonId}`);
-        this._globallyBox = this._el.find(`#${window.cvat.autoAnnotation.uploadGloballyId}`);
-        this._selectButton = this._el.find(`#${window.cvat.autoAnnotation.selectFilesButtonId}`);
-        this._localSelector = this._el.find(`#${window.cvat.autoAnnotation.localFileSelectorId}`);
-        this._shareSelector = $('#dashboardShareBrowseModal');
-        this._shareBrowseTree = $('#dashboardShareBrowser');
-        this._submitShare = $('#dashboardSubmitBrowseServer');
+        this.table = this.el.find(`#${window.cvat.autoAnnotation.managerUploadedModelsId}`);
+        this.globallyBlock = this.el.find(`#${window.cvat.autoAnnotation.uploadGloballyBlockId}`);
+        this.uploadTitle = this.el.find(`#${window.cvat.autoAnnotation.uploadTitleId}`);
+        this.uploadNameInput = this.el.find(`#${window.cvat.autoAnnotation.uploadNameInputId}`);
+        this.uploadMessage = this.el.find(`#${window.cvat.autoAnnotation.uploadMessageId}`);
+        this.selectedFilesLabel = this.el.find(`#${window.cvat.autoAnnotation.selectedFilesId}`);
+        this.modelNameInput = this.el.find(`#${window.cvat.autoAnnotation.uploadNameInputId}`);
+        this.localSource = this.el.find(`#${window.cvat.autoAnnotation.uploadLocalSourceId}`);
+        this.shareSource = this.el.find(`#${window.cvat.autoAnnotation.uploadShareSourceId}`);
+        this.cancelButton = this.el.find(`#${window.cvat.autoAnnotation.cancelUploadButtonId}`);
+        this.submitButton = this.el.find(`#${window.cvat.autoAnnotation.submitUploadButtonId}`);
+        this.globallyBox = this.el.find(`#${window.cvat.autoAnnotation.uploadGloballyId}`);
+        this.selectButton = this.el.find(`#${window.cvat.autoAnnotation.selectFilesButtonId}`);
+        this.localSelector = this.el.find(`#${window.cvat.autoAnnotation.localFileSelectorId}`);
+        this.shareSelector = $('#dashboardShareBrowseModal');
+        this.shareBrowseTree = $('#dashboardShareBrowser');
+        this.submitShare = $('#dashboardSubmitBrowseServer');
 
-        this._id = null;
-        this._source = this._localSource.prop('checked') ? 'local': 'shared';
-        this._files = [];
+        this.id = null;
+        this.source = this.localSource.prop('checked') ? 'local': 'shared';
+        this.files = [];
 
         function filesLabel(source, files) {
-            let _files = source === 'local' ? [...files].map((el) => el.name) : files;
-            if (_files.length) {
-                return _files.join('', '').substr(0, 30) + '..';
+            const fileLabels = source === 'local' ? [...files].map(el => el.name) : files;
+            if (fileLabels.length) {
+                const labelStr = fileLabels.join(', ');
+                if (labelStr.length > 30) {
+                    return `${labelStr.substr(0, 30)}..`;
+                }
+
+                return labelStr;
             }
-            else {
-                return 'No Files';
-            }
+
+            return 'No Files';
         }
 
         function extractFiles(extensions, files, source) {
-            let _files = {};
-            function getExt(source, file) {
+            const extractedFiles = {};
+            function getExt(file) {
                 return source === 'local' ? file.name.split('.').pop() : file.split('.').pop();
             }
 
-            function addFile(file, extention, files) {
+            function addFile(file, extention) {
                 if (extention in files) {
                     throw Error(`More than one file with the extension .${extention} have been found`);
                 }
 
-                files[extention] = file;
+                extractedFiles[extention] = file;
             }
 
-            for (let file of files) {
-                let fileExt = getExt(source, file);
+            for (const file of files) {
+                const fileExt = getExt(file);
                 if (extensions.includes(fileExt)) {
-                    addFile(file, fileExt, _files);
+                    addFile(file, fileExt);
                 }
             }
 
-            return _files;
+            return extractedFiles;
         }
 
         function validateFiles(isUpdate, files, source) {
             let extensions = ['xml', 'bin', 'py', 'json'];
-            let _files = extractFiles(extensions, files, source);
+            const extractedFiles = extractFiles(extensions, files, source);
 
             if (!isUpdate) {
-                for (let extension of extensions) {
-                    if (!(extension in _files)) {
+                for (const extension of extensions) {
+                    if (!(extension in extractedFiles)) {
                         throw Error(`Please specify a .${extension} file`);
                     }
                 }
             }
 
-            return _files;
+            return extractedFiles;
         }
 
-        this._localSource.on('click', () => {
-            if (this._source === 'local') {
-                return;
-            }
-            else {
-                this._source = 'local';
-                this._files = [];
-                this._selectedFilesLabel.text(filesLabel(this._source, this._files));
+        this.localSource.on('click', () => {
+            if (this.source !== 'local') {
+                this.source = 'local';
+                this.files = [];
+                this.selectedFilesLabel.text(filesLabel(this.source, this.files));
             }
         });
 
-        this._shareSource.on('click', () => {
-            if (this._source === 'shared') {
-                return;
-            }
-            else {
-                this._source = 'shared';
-                this._files = [];
-                this._selectedFilesLabel.text(filesLabel(this._source, this._files));
+        this.shareSource.on('click', () => {
+            if (this.source !== 'shared') {
+                this.source = 'shared';
+                this.files = [];
+                this.selectedFilesLabel.text(filesLabel(this.source, this.files));
             }
         });
 
-        this._selectButton.on('click', () => {
-            if (this._source === 'local') {
-                this._localSelector.click();
+        this.selectButton.on('click', () => {
+            if (this.source === 'local') {
+                this.localSelector.click();
             }
             else {
-                this._shareSelector.appendTo('body');
-                this._shareBrowseTree.jstree('refresh');
-                this._shareSelector.removeClass('hidden');
-                this._shareBrowseTree.jstree({
+                this.shareSelector.appendTo('body');
+                this.shareBrowseTree.jstree('refresh');
+                this.shareSelector.removeClass('hidden');
+                this.shareBrowseTree.jstree({
                     core: {
                         data: {
                             url: 'get_share_nodes',
@@ -314,51 +312,51 @@ class AutoAnnotationModelManagerView {
             }
         });
 
-        this._submitShare.on('click', () => {
-            if (!this._el.hasClass('hidden')) {
-                this._shareSelector.addClass('hidden');
-                this._files = this._shareBrowseTree.jstree(true).get_selected();
-                this._selectedFilesLabel.text(filesLabel(this._source, this._files));
+        this.submitShare.on('click', () => {
+            if (!this.el.hasClass('hidden')) {
+                this.shareSelector.addClass('hidden');
+                this.files = this.shareBrowseTree.jstree(true).get_selected();
+                this.selectedFilesLabel.text(filesLabel(this.source, this.files));
             }
         });
 
-        this._localSelector.on('change', (e) => {
-            this._files = e.target.files;
-            this._selectedFilesLabel.text(filesLabel(this._source, this._files));
+        this.localSelector.on('change', (e) => {
+            this.files = e.target.files;
+            this.selectedFilesLabel.text(filesLabel(this.source, this.files));
         });
 
-        this._cancelButton.on('click', () => this._el.addClass('hidden'));
-        this._submitButton.on('click', () => {
+        this.cancelButton.on('click', () => this.el.addClass('hidden'));
+        this.submitButton.on('click', () => {
             try {
-                this._submitButton.prop('disabled', true);
+                this.submitButton.prop('disabled', true);
 
-                let name = $.trim(this._modelNameInput.prop('value'));
+                let name = $.trim(this.modelNameInput.prop('value'));
                 if (!name.length) {
-                    this._uploadMessage.css('color', 'red');
-                    this._uploadMessage.text('Please specify a model name');
+                    this.uploadMessage.css('color', 'red');
+                    this.uploadMessage.text('Please specify a model name');
                     return;
                 }
 
                 let validatedFiles = {};
                 try {
-                    validatedFiles = validateFiles(this._id !== null, this._files, this._source);
+                    validatedFiles = validateFiles(this.id !== null, this.files, this.source);
                 }
                 catch (err) {
-                    this._uploadMessage.css('color', 'red');
-                    this._uploadMessage.text(err);
+                    this.uploadMessage.css('color', 'red');
+                    this.uploadMessage.text(err);
                     return;
                 }
 
                 let modelData = new FormData();
                 modelData.append('name', name);
-                modelData.append('storage', this._source);
-                modelData.append('shared', this._globallyBox.prop('checked'));
+                modelData.append('storage', this.source);
+                modelData.append('shared', this.globallyBox.prop('checked'));
 
                 for (let ext of ['xml', 'bin', 'json', 'py'].filter( (ext) => ext in validatedFiles)) {
                     modelData.append(ext, validatedFiles[ext]);
                 }
 
-                this._uploadMessage.text('');
+                this.uploadMessage.text('');
                 let overlay = showOverlay('Send request to the server..');
                 window.cvat.autoAnnotation.server.update(modelData, () => {
                     window.location.reload();
@@ -367,10 +365,10 @@ class AutoAnnotationModelManagerView {
                     showMessage(message);
                 }, (progress) => {
                     overlay.setMessage(progress);
-                }, window.cvat.autoAnnotation.server.check, this._id);
+                }, window.cvat.autoAnnotation.server.check, this.id);
             }
             finally {
-                this._submitButton.prop('disabled', false);
+                this.submitButton.prop('disabled', false);
             }
         });
     }
@@ -378,33 +376,33 @@ class AutoAnnotationModelManagerView {
     reset() {
         const setBlocked = () => {
             if (window.cvat.autoAnnotation.data.admin) {
-                this._globallyBlock.removeClass('hidden');
+                this.globallyBlock.removeClass('hidden');
             }
             else {
-                this._globallyBlock.addClass('hidden');
+                this.globallyBlock.addClass('hidden');
             }
         };
 
         setBlocked();
-        this._uploadTitle.text('Create Model');
-        this._uploadNameInput.prop('value', '');
-        this._uploadMessage.css('color', '');
-        this._uploadMessage.text('');
-        this._selectedFilesLabel.text('No Files');
-        this._localSource.prop('checked', true);
-        this._globallyBox.prop('checked', false);
-        this._table.empty();
+        this.uploadTitle.text('Create Model');
+        this.uploadNameInput.prop('value', '');
+        this.uploadMessage.css('color', '');
+        this.uploadMessage.text('');
+        this.selectedFilesLabel.text('No Files');
+        this.localSource.prop('checked', true);
+        this.globallyBox.prop('checked', false);
+        this.table.empty();
 
-        this._id = null;
-        this._source = this._localSource.prop('checked') ? 'local': 'share';
-        this._files = [];
+        this.id = null;
+        this.source = this.localSource.prop('checked') ? 'local': 'share';
+        this.files = [];
 
         const updateButtonClickHandler = (event) => {
             this.reset();
 
-            this._uploadTitle.text('Update Model');
-            this._uploadNameInput.prop('value',`${event.data.model.name}`);
-            this._id = event.data.model.id;
+            this.uploadTitle.text('Update Model');
+            this.uploadNameInput.prop('value',`${event.data.model.name}`);
+            this.id = event.data.model.id;
         };
 
         const deleteButtonClickHandler = (event) => {
@@ -439,7 +437,7 @@ class AutoAnnotationModelManagerView {
                 <td> ${model.uploadDate} </td>
             </tr>`;
 
-            this._table.append(
+            this.table.append(
                 $(rowHtml).append(getModelModifyButtons(model))
             );
         }
@@ -448,12 +446,12 @@ class AutoAnnotationModelManagerView {
     }
 
     show() {
-        this._el.removeClass('hidden');
+        this.el.removeClass('hidden');
         return this;
     }
 
     get element() {
-        return this._el;
+        return this.el;
     }
 }
 
