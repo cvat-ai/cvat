@@ -111,7 +111,7 @@ class ReID:
 
         return cosine(embedding_1, embedding_2)
     
-    
+
     def __compute_difference_matrix(self, cur_boxes, next_boxes, cur_image, next_image):
         def _int(number, upper):
             return math.floor(numpy.clip(number, 0, upper - 1))

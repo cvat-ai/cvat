@@ -6,66 +6,67 @@
 
 /* global showMessage */
 
-"use strict";
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener('DOMContentLoaded', () => {
     function run(reidButton, tresholdInput, distanceInput) {
-        let collection = window.cvat.data.get();
-        let data = {
-            treshold: +tresholdInput.prop("value"),
-            maxDistance: +distanceInput.prop("value"),
+        const collection = window.cvat.data.get();
+        const data = {
+            treshold: +tresholdInput.prop('value'),
+            maxDistance: +distanceInput.prop('value'),
             boxes: collection.boxes,
         };
 
-        reidButton.prop("disabled", true);
+        reidButton.prop('disabled', true);
         $.ajax({
-            url: "reid/start/job/" + window.cvat.job.id,
-            type: "POST",
+            url: `reid/start/job/${window.cvat.job.id}`,
+            type: 'POST',
+            data: JSON.stringify(data),
+            contentType: 'application/json',
             success: () => {
-                reidButton.addClass("run").text("Cancel ReID Merge");
+                reidButton.addClass('run').text('Cancel ReID Merge');
 
                 function checkCallback() {
                     $.ajax({
-                        url: "/reid/check/" + window.cvat.job.id,
-                        type: "GET",
-                        success: (data) => {
-                            if (data["progress"]) {
-                                reidButton.text(`Cancel ReID Merge (${data["progress"].toString().slice(0,4)}%)`);
+                        url: '/reid/check/' + window.cvat.job.id,
+                        type: 'GET',
+                        success: (jobData) => {
+                            if (jobData.progress) {
+                                reidButton.text(`Cancel ReID Merge (${jobData.progress.toString().slice(0, 4)}%)`);
                             }
                             
-                            if (["queued", "started"].includes(data["status"])) {
+                            if (['queued', 'started'].includes(jobData.status)) {
                                 setTimeout(checkCallback, 1000);
                             }
                             else {
-                                reidButton.removeClass("run").text("Run ReID Merge");
+                                reidButton.removeClass('run').text('Run ReID Merge');
                                 
-                                if (data["status"] === "finished") {
-                                    if (data["result"]) {
+                                if (jobData.status === 'finished') {
+                                    if (jobData.result) {
                                         collection.boxes = [];
-                                        collection.box_paths = collection.box_paths.concat(JSON.parse(data["result"]));
+                                        collection.box_paths = collection.box_paths.concat(JSON.parse(jobData.result));
                                         window.cvat.data.clear();
                                         window.cvat.data.set(collection);
-                                        showMessage("ReID merge has done.");
+                                        showMessage('ReID merge has done.');
                                     }
                                     else {
-                                        showMessage("ReID merge been canceled.");
+                                        showMessage('ReID merge been canceled.');
                                     }
                                 }
-                                else if (data["status"] === "failed") {
-                                    let message = `ReID merge has fallen. Error: '${data["stderr"]}'`;
+                                else if (jobData.status === 'failed') {
+                                    const message = `ReID merge has fallen. Error: '${jobData.stderr}'`;
                                     showMessage(message);
                                 }
                                 else {
-                                    let message = `Check request returned '${data["status"]}' status.`;
-                                    if (data["stderr"]) {
-                                        message += ` Error: ${data["stderr"]}`;
+                                    const message = `Check request returned "${jobData.status}" status.`;
+                                    if (jobData.stderr) {
+                                        message += ` Error: ${jobData.stderr}`;
                                     }
                                     showMessage(message);
                                 }
                             }
                         },
-                        error: (data) => {
-                            let message = `Can not check ReID merge. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+                        error: (errorData) => {
+                            const message = `Can not check ReID merge. Code: ${errorData.status}. Message: ${errorData.responseText || errorData.statusText}`;
                             showMessage(message);
                         }
                     });
@@ -73,55 +74,53 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 setTimeout(checkCallback, 1000);
             },
-            error: (data) => {
-                let message = `Can not start ReID merge. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
+            error: (errorData) => {
+                const message = `Can not start ReID merge. Code: ${errorData.status}. Message: ${errorData.responseText || errorData.statusText}`;
                 showMessage(message);
             },
             complete: () => {
-                reidButton.prop("disabled", false);
-            },
-            data: JSON.stringify(data),
-            contentType: "application/json"
-        });
-    }
-
-    function cancel(reidButton) {
-        reidButton.prop("disabled", true);
-        $.ajax({
-            url: "/reid/cancel/" + window.cvat.job.id,
-            type: "GET",
-            success: () => {
-                reidButton.removeClass("run").text("Run ReID Merge").prop("disabled", false);
-            },
-            error: (data) => {
-                let message = `Can not cancel ReID process. Code: ${data.status}. Message: ${data.responseText || data.statusText}`;
-                showMessage(message);
-            },
-            complete: () => {
-                reidButton.prop("disabled", false);
+                reidButton.prop('disabled', false);
             }
         });
     }
 
-    let buttonsUI = $("#engineMenuButtons");
-    
-    let reidWindowId = "reidSubmitWindow";
-    let reidTresholdValueId = "reidTresholdValue";
-    let reidDistanceValueId = "reidDistanceValue";
-    let reidCancelMergeId = "reidCancelMerge";
-    let reidSubmitMergeId = "reidSubmitMerge";
+    function cancel(reidButton) {
+        reidButton.prop('disabled', true);
+        $.ajax({
+            url: `/reid/cancel/${window.cvat.job.id}`,
+            type: 'GET',
+            success: () => {
+                reidButton.removeClass('run').text('Run ReID Merge').prop('disabled', false);
+            },
+            error: (errorData) => {
+                const message = `Can not cancel ReID process. Code: ${errorData.status}. Message: ${errorData.responseText || errorData.statusText}`;
+                showMessage(message);
+            },
+            complete: () => {
+                reidButton.prop('disabled', false);
+            }
+        });
+    }
 
-    let reidButton = $("<button> Run ReID Merge </button>").on("click", () => {
-        $("#taskAnnotationMenu").addClass("hidden");
-        if (reidButton.hasClass("run")) {
-            $("#annotationMenu").addClass("hidden");
-            confirm("ReID process will be canceld. Are you sure?", () => cancel(reidButton));
+    let buttonsUI = $('#engineMenuButtons');
+    
+    let reidWindowId = 'reidSubmitWindow';
+    let reidTresholdValueId = 'reidTresholdValue';
+    let reidDistanceValueId = 'reidDistanceValue';
+    let reidCancelMergeId = 'reidCancelMerge';
+    let reidSubmitMergeId = 'reidSubmitMerge';
+
+    let reidButton = $('<button> Run ReID Merge </button>').on('click', () => {
+        $('#taskAnnotationMenu').addClass('hidden');
+        if (reidButton.hasClass('run')) {
+            $('#annotationMenu').addClass('hidden');
+            confirm('ReID process will be canceld. Are you sure?', () => cancel(reidButton));
         }
         else {
-            $("#annotationMenu").addClass("hidden");
-            $(`#${reidWindowId}`).removeClass("hidden");
+            $('#annotationMenu').addClass('hidden');
+            $(`#${reidWindowId}`).removeClass('hidden');
         }
-    }).addClass("menuButton semiBold h2").prependTo(buttonsUI);
+    }).addClass('menuButton semiBold h2').prependTo(buttonsUI);
 
     $(`
         <div class="modal hidden" id="${reidWindowId}">
@@ -145,14 +144,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 </center>
             </div>
         </div>
-    `).appendTo("body");
+    `).appendTo('body');
 
-    $(`#${reidCancelMergeId}`).on("click", () => {
-        $(`#${reidWindowId}`).addClass("hidden");
+    $(`#${reidCancelMergeId}`).on('click', () => {
+        $(`#${reidWindowId}`).addClass('hidden');
     });
 
-    $(`#${reidSubmitMergeId}`).on("click", () => {
-        $(`#${reidWindowId}`).addClass("hidden");
+    $(`#${reidSubmitMergeId}`).on('click', () => {
+        $(`#${reidWindowId}`).addClass('hidden');
         run(reidButton, $(`#${reidTresholdValueId}`), $(`#${reidDistanceValueId}`));
     });
 });
