@@ -259,7 +259,7 @@
 }
 
 .shapeText {
-    font-size: 0.14em;
+    font-size: 0.12em;
     fill: white;
     stroke:black;
     stroke-width: 0.05;
@@ -473,7 +473,7 @@
 
 #frameText {
     position: absolute;
-    z-index: 2;
+    z-index: 3;
     transform-origin: center center;
     pointer-events: none;
 }

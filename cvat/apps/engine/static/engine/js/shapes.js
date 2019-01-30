@@ -1690,18 +1690,16 @@ class ShapeView extends Listener {
         if (this._uis.shape) {
             let id = this._controller.id;
             let label = ShapeView.labels()[this._controller.label];
-            let bbox = this._uis.shape.node.getBBox();
-            let x = bbox.x + bbox.width + TEXT_MARGIN;
 
             this._uis.text = this._scenes.texts.text((add) => {
-                add.tspan(`${label.normalize()} ${id}`).addClass('bold');
+                add.tspan(`${label.normalize()} ${id}`).style("text-transform", "uppercase");
                 for (let attrId in attributes) {
                     let value = attributes[attrId].value != AAMUndefinedKeyword ?
                         attributes[attrId].value : '';
                     let name = attributes[attrId].name;
-                    add.tspan(`${name}: ${value}`).attr({ dy: '1em', x: x, attrId: attrId});
+                    add.tspan(`${name}: ${value}`).attr({ dy: '1em', x: 0, attrId: attrId});
                 }
-            }).move(x, bbox.y).addClass('shapeText regular');
+            }).move(0, 0).addClass('shapeText bold');
         }
     }
 
