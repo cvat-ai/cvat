@@ -2456,7 +2456,8 @@ class ShapeView extends Listener {
                     y: shapeBBox.y
                 };
 
-                if (drawPoint.x + textBBox.width > this._rightBorderFrame) {
+                const textContentScale = 10;
+                if ((drawPoint.x + textBBox.width * textContentScale) > this._rightBorderFrame) {
                     drawPoint = {
                         x: shapeBBox.x + TEXT_MARGIN, 
                         y: shapeBBox.y
