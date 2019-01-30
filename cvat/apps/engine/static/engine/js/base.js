@@ -5,13 +5,17 @@
  */
 
 /* exported
-    ExportType
-    confirm
+    userConfirm
     createExportContainer
     dumpAnnotationRequest
+    ExportType
     getExportTargetContainer
     showMessage
     showOverlay
+*/
+
+/* global
+    Cookies:false
 */
 
 "use strict";
@@ -21,7 +25,7 @@ Math.clamp = function(x, min, max) {
 };
 
 
-function confirm(message, onagree, ondisagree) {
+function userConfirm(message, onagree, ondisagree) {
     let template = $('#confirmTemplate');
     let confirmWindow = $(template.html()).css('display', 'block');
 

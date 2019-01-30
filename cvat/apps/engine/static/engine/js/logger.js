@@ -5,6 +5,11 @@
  */
 
 /* exported Logger */
+
+/* global
+    Cookies:false
+*/
+
 "use strict";
 
 var UserActivityHandler = function()
@@ -354,7 +359,10 @@ var Logger = {
         sendException: 22,
         // dumped as "Change frame". There are no additional required fields.
         changeFrame: 23,
+        // dumped as "Debug info". There are no additional required fields.
         debugInfo: 24,
+        // dumped as "Fit image". There are no additional required fields.
+        fitImage: 25,
     },
 
     /**
@@ -517,6 +525,7 @@ var Logger = {
         case this.EventType.sendException: return 'Send exception';
         case this.EventType.changeFrame: return 'Change frame';
         case this.EventType.debugInfo: return 'Debug info';
+        case this.EventType.fitImage: return 'Fit image';
         default: return 'Unknown';
         }
     },

@@ -5,6 +5,19 @@
  */
 
 /* exported ShapeBufferModel ShapeBufferController ShapeBufferView */
+
+/* global
+    AREA_TRESHOLD:false
+    userConfirm:false
+    Listener:false
+    Logger:false
+    Mousetrap:false
+    POINT_RADIUS:false
+    PolyShapeModel:false
+    STROKE_WIDTH:false
+    SVG:false
+*/
+
 "use strict";
 
 class ShapeBufferModel extends Listener  {
@@ -281,6 +294,7 @@ class ShapeBufferController {
             let propagateDialogShowed = false;
             let propagateHandler = Logger.shortkeyLogDecorator(function() {
                 if (!propagateDialogShowed) {
+                    blurAllElements();
                     if (this._model.copyToBuffer()) {
                         let curFrame = window.cvat.player.frames.current;
                         let startFrame = window.cvat.player.frames.start;
@@ -299,7 +313,7 @@ class ShapeBufferController {
                         message += 'Are you sure?';
 
                         propagateDialogShowed = true;
-                        confirm(message, () => {
+                        userConfirm(message, () => {
                             this._model.propagateToFrames();
                             propagateDialogShowed = false;
                         }, () => propagateDialogShowed = false);

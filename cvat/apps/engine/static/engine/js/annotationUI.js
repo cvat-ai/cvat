@@ -5,6 +5,50 @@
  */
 
 /* exported callAnnotationUI blurAllElements drawBoxSize copyToClipboard */
+
+/* global
+    AAMController:false
+    AAMModel:false
+    AAMView:false
+    AnnotationParser:false
+    Config:false
+    userConfirm:false
+    CoordinateTranslator:false
+    dumpAnnotationRequest:false
+    HistoryController:false
+    HistoryModel:false
+    HistoryView:false
+    IncrementIdGenerator:false,
+    Logger:false
+    Mousetrap:false
+    PlayerController:false
+    PlayerModel:false
+    PlayerView:false
+    PolyshapeEditorController:false
+    PolyshapeEditorModel:false
+    PolyshapeEditorView:false
+    PolyShapeView:false
+    saveJobRequest:false
+    serverRequest:false
+    ShapeBufferController:false
+    ShapeBufferModel:false
+    ShapeBufferView:false
+    ShapeCollectionController:false
+    ShapeCollectionModel:false
+    ShapeCollectionView:false
+    ShapeCreatorController:false
+    ShapeCreatorModel:false
+    ShapeCreatorView:false
+    ShapeGrouperController:false
+    ShapeGrouperModel:false
+    ShapeGrouperView:false
+    ShapeMergerController:false
+    ShapeMergerModel:false
+    ShapeMergerView:false
+    showMessage:false
+    showOverlay:false
+*/
+
 "use strict";
 
 function callAnnotationUI(jid) {
@@ -565,7 +609,7 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
 
     $('#uploadAnnotationButton').on('click', () => {
         hide();
-        confirm('Current annotation will be removed from the client. Continue?',
+        userConfirm('Current annotation will be removed from the client. Continue?',
             () => {
                 uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, $('#uploadAnnotationButton'));
             }
@@ -575,7 +619,7 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
     $('#removeAnnotationButton').on('click', () => {
         if (!window.cvat.mode) {
             hide();
-            confirm('Do you want to remove all annotations? The action cannot be undone!',
+            userConfirm('Do you want to remove all annotations? The action cannot be undone!',
                 () => {
                     historyModel.empty();
                     shapeCollectionModel.empty();

@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The ReID application for automatic bounding box merging has been added.
 
 ### Changed
--
+- Propagation setup has been moved from settings to bottom player panel
+- Additional events like "Debug Info" or "Fit Image" have been added for analitics
 
 ### Deprecated
 -

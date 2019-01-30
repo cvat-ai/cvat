@@ -4,7 +4,19 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported PolyShapeModel buildShapeModel buildShapeController buildShapeView */
+/* exported PolyShapeModel buildShapeModel buildShapeController buildShapeView PolyShapeView */
+
+/* global
+    AAMUndefinedKeyword:false
+    blurAllElements:false
+    drawBoxSize:false
+    Listener:false
+    Logger:false
+    Mousetrap:false
+    ShapeCollectionView:false
+    SVG:false
+*/
+
 "use strict";
 
 const STROKE_WIDTH = 2.5;
