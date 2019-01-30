@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: MIT
 
 import django_rq
+import fnmatch
+import numpy as np
 import os
 import rq
 import shutil
-import fnmatch
 
 from django.db import transaction
 from django.utils import timezone
@@ -44,13 +45,22 @@ def _update_dl_model_thread(dl_model_id, model_file, weights_file, labelmap_file
         dl_model.interpretation_file.save(*_get_file_content(interpretation_file))
 
     if run_tests:
-        #only for testing
-        import time
-        time.sleep(3)
         job.meta["progress"] = "Test started"
         job.save_meta()
-        time.sleep(5)
+
+        blank_image = np.zeros((1980, 1024, 3), np.uint8)
+        blank_image[:, 0:width//2] = (255,0,0)
+
+        _run_inference_engine_annotation(
+            data=[blank_image,],
+            model_file=dl_model.model_file.name,
+            weights_file=dl_model.weights_file.name,
+            labels_mapping=dl_model.labelmap_file.name,
+            attribute_spec={},
+            convertation_file=dl_model.interpretation_file.name,
+        )
         job.meta["progress"] = "Test finished"
+        job.save_meta()
 
 @transaction.atomic
 def update_model(dl_model_id, name, model_file, weights_file, labelmap_file, interpretation_file, storage, is_shared):
@@ -248,19 +258,8 @@ def _process_detections(detections, path_to_conv_script):
     exec (open(path_to_conv_script).read(), global_vars, local_vars)
     return results
 
-def _run_inference_engine_annotation(path_to_data, model_file, weights_file,
-       labels_mapping, attribute_spec, convertation_file, job=None):
-
-    def update_progress(job, progress):
-        job.refresh()
-        if "cancel" in job.meta:
-            del job.meta["cancel"]
-            job.save()
-            return False
-        job.meta["progress"] = progress
-        job.save_meta()
-        return True
-
+def _run_inference_engine_annotation(data, model_file, weights_file,
+       labels_mapping, attribute_spec, convertation_file, job=None, update_progress=None):
     def process_attributes(shape_attributes, label_attr_spec):
         attributes = []
         for attr_text, attr_value in shape_attributes.items():
@@ -313,9 +312,7 @@ def _run_inference_engine_annotation(path_to_data, model_file, weights_file,
         "delete": create_anno_container(),
     }
 
-    data = get_image_data(path_to_data)
     data_len = len(data)
-
     model = ModelLoader(model=model_file, weights=weights_file)
 
     frame_counter = 0
@@ -332,7 +329,7 @@ def _run_inference_engine_annotation(path_to_data, model_file, weights_file,
         })
 
         frame_counter += 1
-        if job and not update_progress(job, frame_counter * 100 / data_len):
+        if job and update_progress and not update_progress(job, frame_counter * 100 / data_len):
             return None
     processed_detections = _process_detections(detections, convertation_file)
 
@@ -344,6 +341,16 @@ def _run_inference_engine_annotation(path_to_data, model_file, weights_file,
     return result
 
 def run_inference_thread(tid, model_file, weights_file, labels_mapping, attributes, convertation_file, reset):
+    def update_progress(job, progress):
+        job.refresh()
+        if "cancel" in job.meta:
+            del job.meta["cancel"]
+            job.save()
+            return False
+        job.meta["progress"] = progress
+        job.save_meta()
+        return True
+
     try:
         job = rq.get_current_job()
         job.meta["progress"] = 0
@@ -353,13 +360,14 @@ def run_inference_thread(tid, model_file, weights_file, labels_mapping, attribut
         result = None
         slogger.glob.info("auto annotation with openvino toolkit for task {}".format(tid))
         result = _run_inference_engine_annotation(
-            path_to_data=db_task.get_data_dirname(),
+            data=get_image_data(db_task.get_data_dirname()),
             model_file=model_file,
             weights_file=weights_file,
             labels_mapping=labels_mapping,
             attribute_spec=attributes,
             convertation_file= convertation_file,
             job=job,
+            update_progress=update_progress,
         )
 
         if result is None:
