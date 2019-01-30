@@ -5,7 +5,7 @@
  */
 
 /* global
-    confirm:false
+    userConfirm:false
     showMessage:false
 */
 
@@ -85,10 +85,10 @@ function onTFAnnotationClick() {
     window.cvat.dashboard.taskName = taskName;
 
     if (button.hasClass("tfAnnotationProcess")) {
-        confirm('The process will be canceled. Continue?', CancelTFAnnotationRequest.bind(button));
+        userConfirm('The process will be canceled. Continue?', CancelTFAnnotationRequest.bind(button));
     }
     else {
-        confirm('The current annotation will be lost. Are you sure?', RunTFAnnotationRequest.bind(button));
+        userConfirm('The current annotation will be lost. Are you sure?', RunTFAnnotationRequest.bind(button));
     }
 }
 

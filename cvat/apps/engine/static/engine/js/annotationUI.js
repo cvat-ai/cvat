@@ -12,7 +12,7 @@
     AAMView:false
     AnnotationParser:false
     Config:false
-    confirm:false
+    userConfirm:false
     CoordinateTranslator:false
     dumpAnnotationRequest:false
     HistoryController:false
@@ -604,7 +604,7 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
 
     $('#uploadAnnotationButton').on('click', () => {
         hide();
-        confirm('Current annotation will be removed from the client. Continue?',
+        userConfirm('Current annotation will be removed from the client. Continue?',
             () => {
                 uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, $('#uploadAnnotationButton'));
             }
@@ -614,7 +614,7 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
     $('#removeAnnotationButton').on('click', () => {
         if (!window.cvat.mode) {
             hide();
-            confirm('Do you want to remove all annotations? The action cannot be undone!',
+            userConfirm('Do you want to remove all annotations? The action cannot be undone!',
                 () => {
                     historyModel.empty();
                     shapeCollectionModel.empty();

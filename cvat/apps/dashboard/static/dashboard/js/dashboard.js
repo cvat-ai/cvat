@@ -7,7 +7,7 @@
 /* global
     AnnotationParser:false
     Config:false
-    confirm:false
+    userConfirm:false
     ConstIdGenerator:false
     createExportContainer:false
     dumpAnnotationRequest:false
@@ -97,7 +97,7 @@ function updateTaskRequest(labels) {
 
 
 function removeTaskRequest() {
-    confirm("The action can not be undone. Are you sure?", confirmCallback);
+    userConfirm("The action can not be undone. Are you sure?", confirmCallback);
 
     function confirmCallback() {
         $.ajax ({
@@ -266,7 +266,7 @@ window.cvat.dashboard.uiCallbacks.push(function(elements) {
         uploadButton.on("click", function() {
             window.cvat.dashboard.taskID = taskID;
             window.cvat.dashboard.taskName = taskName;
-            confirm("The current annotation will be lost. Are you sure?", uploadAnnotationRequest);
+            userConfirm("The current annotation will be lost. Are you sure?", uploadAnnotationRequest);
         });
 
         updateButton.on("click", function() {
@@ -400,9 +400,11 @@ function setupTaskCreator() {
 
     cancelBrowseServer.on("click", () => shareFileSelector.addClass("hidden"));
     submitBrowseServer.on("click", function() {
-        files = shareBrowseTree.jstree(true).get_selected();
-        cancelBrowseServer.click();
-        updateSelectedFiles();
+        if (!createModal.hasClass("hidden")) {
+            files = shareBrowseTree.jstree(true).get_selected();
+            cancelBrowseServer.click();
+            updateSelectedFiles();
+        }
     });
 
     flipImagesBox.on("click", (e) => {
