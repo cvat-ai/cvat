@@ -1101,6 +1101,7 @@ class ShapeCollectionView {
         this._controller = collectionController;
         this._frameBackground = $('#frameBackground');
         this._frameContent = SVG.adopt($('#frameContent')[0]);
+        this._textContent = SVG.adopt($('#frameText')[0]);
         this._UIContent = $('#uiContent');
         this._labelsContent = $('#labelsContent');
         this._showAllInterpolationBox = $('#showAllInterBox');
@@ -1473,7 +1474,7 @@ class ShapeCollectionView {
         this._updateLabelUIs();
 
         function drawView(shape, model) {
-            let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
+            let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent, this._textContent);
             view.draw(shape.interpolation);
             view.updateColorSettings(this._colorSettings);
             model.subscribe(view);

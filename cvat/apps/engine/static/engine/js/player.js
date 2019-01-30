@@ -161,6 +161,7 @@ class PlayerModel extends Listener {
             (playerSize.width - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE
         ));
         window.cvat.translate.playerOffset = this._geometry.frameOffset;
+        window.cvat.translate.rotation = this._geometry.rotation;
 
         this._frameProvider.subscribe(this);
     }
@@ -380,16 +381,8 @@ class PlayerModel extends Listener {
     rotate(angle) {
         this._geometry.rotation += angle;
         this._geometry.rotation %= 360;
+        window.cvat.translate.rotation = this._geometry.rotation;
         this.fit();
-    }
-
-    rotatePoint(x, y) {
-        let radians = (Math.PI / 180) * this._geometry.rotation;
-        let cos = Math.cos(radians);
-        let sin = Math.sin(radians);
-        let nx = (cos * x) + sin * y;
-        let ny = (cos * y) - sin * x;
-        return [nx, ny];
     }
 }
 
@@ -517,10 +510,10 @@ class PlayerController {
         if ((e.which === 1 && !window.cvat.mode) || (e.which === 2)) {
             this._moving = true;
 
-            let [x, y] = this._model.rotatePoint(e.clientX, e.clientY);
+            let p = window.cvat.translate.point.rotate(e.clientX, e.clientY);
 
-            this._lastClickX = x;
-            this._lastClickY = y;
+            this._lastClickX = p.x;
+            this._lastClickY = p.y;
         }
     }
 
@@ -537,13 +530,12 @@ class PlayerController {
             if (!this._events.move) {
                 this._events.move = Logger.addContinuedEvent(Logger.EventType.moveImage);
             }
-
-            let [x, y] = this._model.rotatePoint(e.clientX, e.clientY);
-
-            let topOffset = y - this._lastClickY;
-            let leftOffset = x - this._lastClickX;
-            this._lastClickX = x;
-            this._lastClickY = y;
+            
+            let p = window.cvat.translate.point.rotate(e.clientX, e.clientY);
+            let topOffset = p.y - this._lastClickY;
+            let leftOffset = p.x - this._lastClickX;
+            this._lastClickX = p.x;
+            this._lastClickY = p.y;
             this._model.move(topOffset, leftOffset);
         }
     }
@@ -660,6 +652,7 @@ class PlayerView {
         this._playerBackgroundUI = $('#frameBackground');
         this._playerContentUI = $('#frameContent');
         this._playerGridUI = $('#frameGrid');
+        this._playerTextUI = $('#frameText');
         this._progressUI = $('#playerProgress');
         this._loadingUI = $('#frameLoadingAnim');
         this._playButtonUI = $('#playButton');
@@ -916,14 +909,16 @@ class PlayerView {
             obj.css('transform', 'scale(' + geometry.scale + ')');
         }
 
-        this._playerContentUI.css('width', image.width + geometry.frameOffset * 2);
-        this._playerContentUI.css('height', image.height + geometry.frameOffset * 2);
-        this._playerContentUI.css('top', geometry.top - geometry.frameOffset * geometry.scale);
-        this._playerContentUI.css('left', geometry.left - geometry.frameOffset * geometry.scale);
-        this._playerContentUI.css('transform', 'scale(' + geometry.scale + ')');
+        for (let obj of [this._playerContentUI, this._playerTextUI]) {
+            obj.css('width', image.width + geometry.frameOffset * 2);
+            obj.css('height', image.height + geometry.frameOffset * 2);
+            obj.css('top', geometry.top - geometry.frameOffset * geometry.scale);
+            obj.css('left', geometry.left - geometry.frameOffset * geometry.scale);
+        }
 
+        this._playerContentUI.css('transform', 'scale(' + geometry.scale + ')');
+        this._playerTextUI.css('transform', `scale(10) rotate(${-geometry.rotation}deg)`);
         this._playerGridPath.attr('stroke-width', 2 / geometry.scale);
         this._frameNumber.prop('value', frames.current);
-
     }
 }
