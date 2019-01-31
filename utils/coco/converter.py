@@ -397,6 +397,7 @@ def main():
             z_order_off_counter += 1
 
         # Create new image
+        image['id'] = int(image['id'])
         insert_image_data(image, args.image_dir, result_annotation)
         height = result_annotation['images'][-1]['height']
         width = result_annotation['images'][-1]['width']

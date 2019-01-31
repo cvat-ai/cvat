@@ -3,7 +3,7 @@
 ### Description
 
 The application will be enabled automatically if
-[OpenVINO&trade; component](https://github.com/opencv/cvat/tree/master/components/openvino)
+[OpenVINO&trade; component](../../../components/openvino)
 is installed. It allows to use custom models for auto annotation. Only models in
 OpenVINO&trade; toolkit format are supported. If you would like to annotate a
 task with a custom model please convert it to the intermediate representation
