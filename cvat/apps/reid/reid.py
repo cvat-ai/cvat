@@ -110,7 +110,7 @@ class ReID:
         embedding_2 = embedding_2.reshape(embedding_2.size)
 
         return cosine(embedding_1, embedding_2)
-    
+
 
     def __compute_difference_matrix(self, cur_boxes, next_boxes, cur_image, next_image):
         def _int(number, upper):
