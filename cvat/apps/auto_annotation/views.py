@@ -64,14 +64,14 @@ def create_model(request):
         interpretation_script = files["py"]
         owner = request.user
 
-        dl_model_id = model_manager.create_empty(owner=owner)
-        rq_id = model_manager.update_model(
-            dl_model_id=dl_model_id,
+        rq_id = model_manager.create_or_update(
+            dl_model_id=None,
             name=name,
             model_file=model,
             weights_file=weights,
             labelmap_file=labelmap,
             interpretation_file=interpretation_script,
+            owner=owner,
             storage=storage,
             is_shared=is_shared,
         )
@@ -101,13 +101,14 @@ def update_model(request, mid):
         labelmap = files.get("json")
         interpretation_script = files.get("py")
 
-        rq_id = model_manager.update_model(
+        rq_id = model_manager.create_or_update(
             dl_model_id=mid,
             name=name,
             model_file=model,
             weights_file=weights,
             labelmap_file=labelmap,
             interpretation_file=interpretation_script,
+            owner=None,
             storage=storage,
             is_shared=is_shared,
         )

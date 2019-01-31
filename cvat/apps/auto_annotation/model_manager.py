@@ -8,63 +8,111 @@ import numpy as np
 import os
 import rq
 import shutil
+import tempfile
 
 from django.db import transaction
 from django.utils import timezone
 from django.conf import settings
 
+from cvat.apps.engine.log import slogger
+from cvat.apps.engine.models import Task as TaskModel
+from cvat.apps.engine import annotation
+
 from .models import AnnotationModel, FrameworkChoice
+from .model_loader import ModelLoader
+from .image_loader import ImageLoader
 
 def _remove_old_file(model_file_field):
     if model_file_field and os.path.exists(model_file_field.name):
         os.remove(model_file_field.name)
 
-@transaction.atomic
-def _update_dl_model_thread(dl_model_id, model_file, weights_file, labelmap_file, interpretation_file, run_tests):
+def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_file, labelmap_file,
+        interpretation_file, run_tests, is_local_storage, delete_if_test_fails):
     def _get_file_content(filename):
         return os.path.basename(filename), open(filename, "rb")
+
+    def _delete_source_files():
+        for f in [model_file, weights_file, labelmap_file, interpretation_file]:
+            if f:
+                os.remove(model_file)
+
+    def _run_test(model_file, weights_file, labelmap_file, interpretation_file):
+        test_image = np.ones((1024, 1980, 3), np.uint8) * 255
+        try:
+            _run_inference_engine_annotation(
+                data=[test_image,],
+                model_file=model_file,
+                weights_file=weights_file,
+                labels_mapping=labelmap_file,
+                attribute_spec={},
+                convertation_file=interpretation_file,
+            )
+        except Exception as e:
+            return False, str(e)
+
+        return True, ""
 
     job = rq.get_current_job()
     job.meta["progress"] = "Saving data"
     job.save_meta()
 
-    dl_model = AnnotationModel.objects.select_for_update().get(pk=dl_model_id)
+    with transaction.atomic():
+        dl_model = AnnotationModel.objects.select_for_update().get(pk=dl_model_id)
 
-    #save files in case of files should be uploaded from share
-    if model_file:
-        _remove_old_file(dl_model.model_file)
-        dl_model.model_file.save(*_get_file_content(model_file))
-    if weights_file:
-        _remove_old_file(dl_model.weights_file)
-        dl_model.weights_file.save(*_get_file_content(weights_file))
-    if labelmap_file:
-        _remove_old_file(dl_model.labelmap_file)
-        dl_model.labelmap_file.save(*_get_file_content(labelmap_file))
-    if interpretation_file:
-        _remove_old_file(dl_model.interpretation_file)
-        dl_model.interpretation_file.save(*_get_file_content(interpretation_file))
+        test_res = True
+        message = ""
+        if run_tests:
+            job.meta["progress"] = "Test started"
+            job.save_meta()
 
-    if run_tests:
-        job.meta["progress"] = "Test started"
-        job.save_meta()
+            test_res, message = _run_test(
+                model_file=model_file or dl_model.model_file.name,
+                weights_file=weights_file or dl_model.weights_file.name,
+                labelmap_file=labelmap_file or dl_model.labelmap_file.name,
+                interpretation_file=interpretation_file or dl_model.interpretation_file.name,
+            )
 
-        blank_image = np.zeros((1980, 1024, 3), np.uint8)
-        blank_image[:, 0:width//2] = (255,0,0)
+            if not test_res:
+                job.meta["progress"] = "Test failed"
+                if delete_if_test_fails:
+                    shutil.rmtree(dl_model.get_dirname(), ignore_errors=True)
+                    dl_model.delete()
+            else:
+                job.meta["progress"] = "Test passed"
+            job.save_meta()
 
-        _run_inference_engine_annotation(
-            data=[blank_image,],
-            model_file=dl_model.model_file.name,
-            weights_file=dl_model.weights_file.name,
-            labels_mapping=dl_model.labelmap_file.name,
-            attribute_spec={},
-            convertation_file=dl_model.interpretation_file.name,
-        )
-        job.meta["progress"] = "Test finished"
-        job.save_meta()
+        # update DL model
+        if test_res:
+            if model_file:
+                _remove_old_file(dl_model.model_file)
+                dl_model.model_file.save(*_get_file_content(model_file))
+            if weights_file:
+                _remove_old_file(dl_model.weights_file)
+                dl_model.weights_file.save(*_get_file_content(weights_file))
+            if labelmap_file:
+                _remove_old_file(dl_model.labelmap_file)
+                dl_model.labelmap_file.save(*_get_file_content(labelmap_file))
+            if interpretation_file:
+                _remove_old_file(dl_model.interpretation_file)
+                dl_model.interpretation_file.save(*_get_file_content(interpretation_file))
+
+            if name:
+                dl_model.name = name
+
+            if is_shared != None:
+                dl_model.shared = is_shared
+
+            dl_model.updated_date = timezone.now()
+            dl_model.save()
+
+    if not is_local_storage:
+        _delete_source_files()
+
+    if not test_res:
+        raise Exception("Model was not properly created/updated. Test failed: {}".format(message))
 
 @transaction.atomic
-def update_model(dl_model_id, name, model_file, weights_file, labelmap_file, interpretation_file, storage, is_shared):
-
+def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file, interpretation_file, owner, storage, is_shared):
     def get_abs_path(share_path):
         if not share_path:
             return share_path
@@ -77,13 +125,17 @@ def update_model(dl_model_id, name, model_file, weights_file, labelmap_file, int
             raise Exception('Bad file path on share: ' + abspath)
         return abspath
 
-    dl_model = AnnotationModel.objects.select_for_update().get(pk=dl_model_id)
+    def save_file_as_tmp(data):
+        if not data:
+            return None
+        fd, filename = tempfile.mkstemp()
+        with open(filename, 'wb') as tmp_file:
+            for chunk in data.chunks():
+                tmp_file.write(chunk)
+        os.close(fd)
+        return filename
 
-    if name:
-        dl_model.name = name
-
-    if is_shared != None:
-        dl_model.shared = is_shared
+    dl_model = AnnotationModel.objects.get(pk=dl_model_id) if dl_model_id else create_empty(owner=owner)
 
     run_tests = bool(model_file or weights_file or labelmap_file or interpretation_file)
     if storage != "local":
@@ -92,38 +144,28 @@ def update_model(dl_model_id, name, model_file, weights_file, labelmap_file, int
         labelmap_file = get_abs_path(labelmap_file)
         interpretation_file = get_abs_path(interpretation_file)
     else:
-        if model_file:
-            _remove_old_file(dl_model.model_file)
-            dl_model.model_file = model_file
-            model_file = None
-        if weights_file:
-            _remove_old_file(dl_model.weights_file)
-            dl_model.weights_file = weights_file
-            weights_file = None
-        if labelmap_file:
-            _remove_old_file(dl_model.labelmap_file)
-            dl_model.labelmap_file = labelmap_file
-            labelmap_file = None
-        if interpretation_file:
-            _remove_old_file(dl_model.interpretation_file)
-            dl_model.interpretation_file = interpretation_file
-            interpretation_file = None
+        model_file = save_file_as_tmp(model_file)
+        weights_file = save_file_as_tmp(weights_file)
+        labelmap_file = save_file_as_tmp(labelmap_file)
+        interpretation_file = save_file_as_tmp(interpretation_file)
 
-    dl_model.updated_date = timezone.now()
-    dl_model.save()
-
-    rq_id = "auto_annotation.create.{}".format(dl_model_id)
-    queue = django_rq.get_queue('default')
+    rq_id = "auto_annotation.create.{}".format(dl_model.id)
+    queue = django_rq.get_queue("default")
     queue.enqueue_call(
-        func = _update_dl_model_thread,
-        args = (dl_model_id,
+        func=_update_dl_model_thread,
+        args=(
+            dl_model.id,
+            name,
+            is_shared,
             model_file,
             weights_file,
             labelmap_file,
             interpretation_file,
             run_tests,
+            storage == "local",
+            not bool(dl_model_id),
         ),
-        job_id = rq_id
+        job_id=rq_id
     )
 
     return rq_id
@@ -139,7 +181,7 @@ def create_empty(owner, framework=FrameworkChoice.OPENVINO):
         shutil.rmtree(model_path)
     os.mkdir(model_path)
 
-    return db_model.id
+    return db_model
 
 @transaction.atomic
 def delete(dl_model_id):
@@ -148,8 +190,8 @@ def delete(dl_model_id):
         if dl_model.primary:
             raise Exception("Can not delete primary model {}".format(dl_model_id))
 
-        dl_model.delete()
         shutil.rmtree(dl_model.get_dirname(), ignore_errors=True)
+        dl_model.delete()
     else:
         raise Exception("Requested DL model {} doesn't exist".format(dl_model_id))
 
@@ -318,7 +360,7 @@ def _run_inference_engine_annotation(data, model_file, weights_file,
     frame_counter = 0
 
     detections = []
-    for _, frame in data:
+    for frame in data:
         orig_rows, orig_cols = frame.shape[:2]
 
         detections.append({
