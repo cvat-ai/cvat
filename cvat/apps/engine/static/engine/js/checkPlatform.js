@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: MIT
  */
 
+/* global
+    platform:false
+*/
+
 // legacy syntax for IE support
 
 var supportedPlatforms = ['Chrome'];

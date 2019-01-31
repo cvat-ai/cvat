@@ -5,6 +5,19 @@
  */
 
 /* exported ShapeBufferModel ShapeBufferController ShapeBufferView */
+
+/* global
+    AREA_TRESHOLD:false
+    userConfirm:false
+    Listener:false
+    Logger:false
+    Mousetrap:false
+    POINT_RADIUS:false
+    PolyShapeModel:false
+    STROKE_WIDTH:false
+    SVG:false
+*/
+
 "use strict";
 
 class ShapeBufferModel extends Listener  {
@@ -300,7 +313,7 @@ class ShapeBufferController {
                         message += 'Are you sure?';
 
                         propagateDialogShowed = true;
-                        confirm(message, () => {
+                        userConfirm(message, () => {
                             this._model.propagateToFrames();
                             propagateDialogShowed = false;
                         }, () => propagateDialogShowed = false);

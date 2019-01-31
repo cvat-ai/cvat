@@ -5,6 +5,11 @@
  */
 
 /* exported AnnotationParser */
+
+/* global
+    PolyShapeModel:false
+*/
+
 "use strict";
 
 class AnnotationParser {

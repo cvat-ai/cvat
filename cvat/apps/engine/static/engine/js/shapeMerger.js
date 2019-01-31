@@ -5,6 +5,13 @@
  */
 
 /* exported ShapeMergerModel ShapeMergerController ShapeMergerView*/
+
+/* global
+    Listener:false
+    Logger:false
+    Mousetrap:false
+*/
+
 "use strict";
 
 class ShapeMergerModel extends Listener {

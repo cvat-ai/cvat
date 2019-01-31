@@ -4,7 +4,16 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported AAMModel AAMController AAMView */
+/* exported AAMModel AAMController AAMView AAMUndefinedKeyword */
+
+/* global
+    Listener:false
+    Logger:false
+    Mousetrap:false
+    PolyShapeModel:false
+    SVG:false
+*/
+
 "use strict";
 
 const AAMUndefinedKeyword = '__undefined__';

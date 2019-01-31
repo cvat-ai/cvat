@@ -5,6 +5,19 @@
  */
 
 /* exported ShapeCreatorModel ShapeCreatorController ShapeCreatorView */
+
+/* global
+    AREA_TRESHOLD:false
+    drawBoxSize:false
+    Listener:false
+    Logger:false
+    Mousetrap:false
+    PolyShapeModel:false
+    showMessage:false
+    STROKE_WIDTH:false
+    SVG:false
+*/
+
 "use strict";
 
 class ShapeCreatorModel extends Listener {

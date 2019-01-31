@@ -5,6 +5,28 @@
  */
 
 /* exported ShapeCollectionModel ShapeCollectionController ShapeCollectionView */
+
+/* global
+    buildShapeController:false
+    buildShapeModel:false
+    buildShapeView:false
+    copyToClipboard:false
+    createExportContainer:false
+    ExportType:false
+    FilterController:false
+    FilterModel:false
+    FilterView:false
+    getExportTargetContainer:false
+    Listener:false
+    Logger:false
+    Mousetrap:false
+    POINT_RADIUS:false
+    SELECT_POINT_STROKE_WIDTH:false
+    ShapeSplitter:false
+    STROKE_WIDTH:false
+    SVG:false
+*/
+
 "use strict";
 
 class ShapeCollectionModel extends Listener {

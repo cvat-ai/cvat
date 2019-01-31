@@ -2,8 +2,9 @@
 
 ### Description
 
-The application will be enabled automatically if OpenVINO&trade; component is
-installed. It allows to use custom models for auto annotation. Only models in
+The application will be enabled automatically if
+[OpenVINO&trade; component](../../../components/openvino)
+is installed. It allows to use custom models for auto annotation. Only models in
 OpenVINO&trade; toolkit format are supported. If you would like to annotate a
 task with a custom model please convert it to the intermediate representation
 (IR) format via the model optimizer tool. See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
@@ -14,9 +15,7 @@ To annotate a task with a custom model you need to prepare 4 files:
 1. __Model config__ (*.xml) - a text file with network configuration.
 1. __Model weights__ (*.bin) - a binary file with trained weights.
 1. __Label map__ (*.json) - a simple json file with `label_map` dictionary like
-object with string values for label numbers. Values in `label_map` should be
-exactly equal to labels for the annotation task, otherwise objects with mismatched
-labels will be ignored.
+object with string values for label numbers.
   Example:
     ```json
     {
