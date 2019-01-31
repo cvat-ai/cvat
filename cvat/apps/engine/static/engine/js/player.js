@@ -137,6 +137,7 @@ class PlayerModel extends Listener {
         this._settings = {
             multipleStep: 10,
             fps: 25,
+            rotateAll: job.mode === 'interpolation',
             resetZoom: job.mode === 'annotation'
         };
 
@@ -155,6 +156,7 @@ class PlayerModel extends Listener {
             frameOffset: 0,
             rotation: 0,
         };
+        this._frameRotation = {};
 
         this._geometry.frameOffset = Math.floor(Math.max(
             (playerSize.height - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE,
@@ -176,7 +178,10 @@ class PlayerModel extends Listener {
     }
 
     get geometry() {
-        return Object.assign({}, this._geometry);
+        let copy = Object.assign({}, this._geometry);
+        copy.rotation = this._settings.rotateAll ? this._geometry.rotation :
+            this._frameRotation[this._frame.current] || 0;
+        return copy;
     }
 
     get playing() {
@@ -193,6 +198,20 @@ class PlayerModel extends Listener {
 
     get multipleStep() {
         return this._settings.multipleStep;
+    }
+
+    get rotateAll() {
+        return this._settings.rotateAll;
+    }
+
+    set rotateAll(value) {
+        this._settings.rotateAll = value;
+
+        if (!value) {
+            this._geometry.rotation = 0;
+        } else {
+            this._frameRotation = {};
+        }
     }
 
     set fps(value) {
@@ -297,7 +316,8 @@ class PlayerModel extends Listener {
         });
 
         let changed = this._frame.previous != this._frame.current;
-        if (this._settings.resetZoom || this._frame.previous === null) {  // fit in annotation mode or once in interpolation mode
+        // fit if tool is in the annotation mode or frame loading is first in the interpolation mode
+        if (this._settings.resetZoom || !this._settings.rotateAll || this._frame.previous === null) {
             this._frame.previous = this._frame.current;
             this.fit();     // notify() inside the fit()
         }
@@ -313,7 +333,9 @@ class PlayerModel extends Listener {
         let img = this._frameProvider.require(this._frame.current);
         if (!img) return;
 
-        if ((this._geometry.rotation / 90) % 2) {
+        let rotation = this.geometry.rotation;
+
+        if ((rotation / 90) % 2) {
             // 90, 270, ..
             this._geometry.scale = Math.min(this._geometry.width / img.height, this._geometry.height / img.width);   
         }
@@ -321,9 +343,11 @@ class PlayerModel extends Listener {
             // 0, 180, ..
             this._geometry.scale = Math.min(this._geometry.width / img.width, this._geometry.height / img.height);
         }
-        
+
         this._geometry.top = (this._geometry.height - img.height * this._geometry.scale) / 2;
         this._geometry.left = (this._geometry.width - img.width * this._geometry.scale ) / 2;
+
+        window.cvat.translate.rotation = rotation;
         window.cvat.player.geometry.scale = this._geometry.scale;
         this.notify();
     }
@@ -379,9 +403,18 @@ class PlayerModel extends Listener {
     }
 
     rotate(angle) {
-        this._geometry.rotation += angle;
-        this._geometry.rotation %= 360;
-        window.cvat.translate.rotation = this._geometry.rotation;
+        if (this._settings.rotateAll) {
+            this._geometry.rotation += angle;
+            this._geometry.rotation %= 360;
+        } else {
+            if (typeof(this._frameRotation[this._frame.current]) === 'undefined') {
+                this._frameRotation[this._frame.current] = angle;
+            } else {
+                this._frameRotation[this._frame.current] += angle;
+                this._frameRotation[this._frame.current] %= 360;
+            }
+        }
+
         this.fit();
     }
 }
@@ -642,6 +675,14 @@ class PlayerController {
         Logger.addEvent(Logger.EventType.rotateImage);
         this._model.rotate(angle);
     }
+
+    get rotateAll() {
+        return this._model.rotateAll;
+    }
+
+    set rotateAll(value) {
+        this._model.rotateAll = value;
+    }
 }
 
 
@@ -670,16 +711,22 @@ class PlayerView {
         this._playerGridPattern = $('#playerGridPattern');
         this._playerGridPath = $('#playerGridPath');
         this._contextMenuUI = $('#playerContextMenu');
-        this._clockwiseRotationButtonUI = $("#clockwiseRotation");
-        this._counterClockwiseRotationButtonUI = $("#counterClockwiseRotation");
-        this._rotationWrapperUI = $("#rotationWrapper");
+        this._clockwiseRotationButtonUI = $('#clockwiseRotation');
+        this._counterClockwiseRotationButtonUI = $('#counterClockwiseRotation');
+        this._rotationWrapperUI = $('#rotationWrapper');
+        this._rotatateAllImagesUI = $('#rotateAllImages');
 
-        this._clockwiseRotationButtonUI.on("click", () => {
+        this._clockwiseRotationButtonUI.on('click', () => {
             this._controller.rotate(90);
         });
 
-        this._counterClockwiseRotationButtonUI.on("click", () => {
+        this._counterClockwiseRotationButtonUI.on('click', () => {
             this._controller.rotate(-90);
+        });
+
+        this._rotatateAllImagesUI.prop("checked", this._controller.rotateAll);
+        this._rotatateAllImagesUI.on("change", (e) => {
+            this._controller.rotateAll = e.target.checked;
         });
 
         $('*').on('mouseup.player', () => this._controller.frameMouseUp());
