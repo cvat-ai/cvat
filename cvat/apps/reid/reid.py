@@ -70,7 +70,7 @@ class ReID:
         self.__executable_network = self.__plugin.load(network=network)
         del network
 
-    
+
     def __del__(self):
         if self.__executable_network:
             del self.__executable_network

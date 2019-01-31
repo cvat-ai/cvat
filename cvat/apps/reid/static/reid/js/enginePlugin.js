@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                             else {
                                 reidButton.removeClass('run').text('Run ReID Merge');
-                                
+
                                 if (jobData.status === 'finished') {
                                     if (jobData.result) {
                                         collection.boxes = [];
@@ -48,16 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                         window.cvat.data.clear();
                                         window.cvat.data.set(collection);
                                         showMessage('ReID merge has done.');
-                                    }
-                                    else {
+                                    } else {
                                         showMessage('ReID merge been canceled.');
                                     }
-                                }
-                                else if (jobData.status === 'failed') {
+                                } else if (jobData.status === 'failed') {
                                     const message = `ReID merge has fallen. Error: '${jobData.stderr}'`;
                                     showMessage(message);
-                                }
-                                else {
+                                } else {
                                     let message = `Check request returned "${jobData.status}" status.`;
                                     if (jobData.stderr) {
                                         message += ` Error: ${jobData.stderr}`;
@@ -69,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         error: (errorData) => {
                             const message = `Can not check ReID merge. Code: ${errorData.status}. Message: ${errorData.responseText || errorData.statusText}`;
                             showMessage(message);
-                        }
+                        },
                     });
                 }
 
@@ -81,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             complete: () => {
                 reidButton.prop('disabled', false);
-            }
+            },
         });
     }
 
