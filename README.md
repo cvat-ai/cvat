@@ -23,13 +23,14 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 
 ## Online Demo
 
-[OnePanel.io](https://www.onepanel.io/) has built CVAT and integrated it into their platform.
-A running demo of CVAT can be accessed on their platform here: [CVAT Public Demo](https://c.onepanel.io/onepanel-demo/projects/cvat-public-demo/workspaces)
-- Click on "go to workspace" and the CVAT environment will load up
-- The environment is backed by a k80 GPU hosted by AWS
+[Onepanel](https://www.onepanel.io/) has added CVAT as an environment into their platform and a running demo of CVAT can be accessed at [CVAT Public Demo](https://c.onepanel.io/onepanel-demo/projects/cvat-public-demo/workspaces).
 
-If you have any questions, please contact Onepanel at support@onepanel.io
-- If you are on the website, you can also use "intercom" through the icon in the bottom right.
+After you click the link above:
+
+- Click on "GO TO WORKSPACE" and the CVAT environment will load up
+- The environment is backed by a K80 GPU
+
+If you have any questions, please contact Onepanel directly at support@onepanel.io. If you are in the Onepanel application, you can also use the chat icon in the bottom right corner.
 
 ## LICENSE
 
