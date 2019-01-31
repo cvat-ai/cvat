@@ -119,8 +119,7 @@ class ReID:
         default_mat_value = 1000.0
 
         matrix = numpy.full([len(cur_boxes), len(next_boxes)], default_mat_value, dtype=float)
-        for row in range(len(cur_boxes)):
-            cur_box = cur_boxes[row]
+        for row, cur_box in enumerate(cur_boxes):
             cur_width = cur_image.shape[1]
             cur_height = cur_image.shape[0]
             cur_xtl, cur_xbr, cur_ytl, cur_ybr = (
@@ -128,7 +127,7 @@ class ReID:
                 _int(cur_box["ytl"], cur_height), _int(cur_box["ybr"], cur_height)
             )
 
-            for col in range(len(next_boxes)):
+            for col, next_box in enumerate(next_boxes):
                 next_box = next_boxes[col]
                 next_width = next_image.shape[1]
                 next_height = next_image.shape[0]
@@ -176,9 +175,9 @@ class ReID:
             next_image = cv2.imread(self.__frame_urls[next_frame], cv2.IMREAD_COLOR)
             difference_matrix = self.__compute_difference_matrix(cur_boxes, next_boxes, cur_image, next_image)
             cur_idxs, next_idxs = linear_sum_assignment(difference_matrix)
-            for idx in range(len(cur_idxs)):
-                if (difference_matrix[cur_idxs[idx]][next_idxs[idx]]) <= self.__treshold:
-                    cur_box = cur_boxes[cur_idxs[idx]]
+            for idx, cur_idx in enumerate(cur_idxs):
+                if (difference_matrix[cur_idx][next_idxs[idx]]) <= self.__treshold:
+                    cur_box = cur_boxes[cur_idx]
                     next_box = next_boxes[next_idxs[idx]]
                     next_box["path_id"] = cur_box["path_id"]
                     box_paths[cur_box["path_id"]].append(next_box)
