@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* global showMessage */
+/* global showMessage userConfirm */
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('#taskAnnotationMenu').addClass('hidden');
         if (reidButton.hasClass('run')) {
             $('#annotationMenu').addClass('hidden');
-            confirm('ReID process will be canceld. Are you sure?', () => cancel(reidButton));
+            userConfirm('ReID process will be canceld. Are you sure?', () => cancel(reidButton));
         }
         else {
             $('#annotationMenu').addClass('hidden');
