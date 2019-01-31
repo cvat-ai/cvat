@@ -61,7 +61,7 @@ class ReID:
 
         REID_XML = os.path.join(REID_MODEL_DIR, "reid.xml")
         REID_BIN = os.path.join(REID_MODEL_DIR, "reid.bin")
-        
+
         self.__plugin = IEPlugin(device="CPU", plugin_dirs=[IE_PLUGINS_PATH])
         network = IENetwork.from_ir(model=REID_XML, weights=REID_BIN)
         self.__input_blob_name = next(iter(network.inputs))

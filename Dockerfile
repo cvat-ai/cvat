@@ -107,7 +107,7 @@ RUN  pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.tx
 # Install git application dependencies
 RUN apt-get update && \
     apt-get install -y ssh netcat-openbsd git curl zip  && \
-    curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \
+    wget -qO /dev/stdout https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && \
     apt-get install -y git-lfs && \
     git lfs install && \
     rm -rf /var/lib/apt/lists/* && \
@@ -120,9 +120,9 @@ RUN apt-get update && \
 # Download model for re-identification app
 ENV REID_MODEL_DIR=${HOME}/reid
 RUN if [ "$OPENVINO_TOOLKIT" = "yes" ]; then \
-        mkdir ${HOME}/reid && cd reid && \
-        wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -O reid.xml && \
-        wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -O reid.bin; \
+        mkdir ${HOME}/reid && \
+        wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -O reid/reid.xml && \
+        wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -O reid/reid.bin; \
     fi
 
 COPY ssh ${HOME}/.ssh

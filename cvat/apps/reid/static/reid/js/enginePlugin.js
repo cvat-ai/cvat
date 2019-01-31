@@ -33,11 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (jobData.progress) {
                                 reidButton.text(`Cancel ReID Merge (${jobData.progress.toString().slice(0, 4)}%)`);
                             }
-                            
+
                             if (['queued', 'started'].includes(jobData.status)) {
                                 setTimeout(checkCallback, 1000);
-                            }
-                            else {
+                            } else {
                                 reidButton.removeClass('run').text('Run ReID Merge');
 
                                 if (jobData.status === 'finished') {
