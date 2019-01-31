@@ -165,7 +165,7 @@ class PlayerModel extends Listener {
             frameOffset: 0,
             rotation: 0,
         };
-        this._frameRotation = {};
+        this._framewiseRotation = {};
 
         this._geometry.frameOffset = Math.floor(Math.max(
             (playerSize.height - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE,
@@ -189,7 +189,7 @@ class PlayerModel extends Listener {
     get geometry() {
         let copy = Object.assign({}, this._geometry);
         copy.rotation = this._settings.rotateAll ? this._geometry.rotation :
-            this._frameRotation[this._frame.current] || 0;
+            this._framewiseRotation[this._frame.current] || 0;
         return copy;
     }
 
@@ -219,7 +219,7 @@ class PlayerModel extends Listener {
         if (!value) {
             this._geometry.rotation = 0;
         } else {
-            this._frameRotation = {};
+            this._framewiseRotation = {};
         }
     }
 
@@ -416,11 +416,11 @@ class PlayerModel extends Listener {
             this._geometry.rotation += angle;
             this._geometry.rotation %= 360;
         } else {
-            if (typeof(this._frameRotation[this._frame.current]) === 'undefined') {
-                this._frameRotation[this._frame.current] = angle;
+            if (typeof(this._framewiseRotation[this._frame.current]) === 'undefined') {
+                this._framewiseRotation[this._frame.current] = angle;
             } else {
-                this._frameRotation[this._frame.current] += angle;
-                this._frameRotation[this._frame.current] %= 360;
+                this._framewiseRotation[this._frame.current] += angle;
+                this._framewiseRotation[this._frame.current] %= 360;
             }
         }
 

@@ -52,7 +52,7 @@ class CoordinateTranslator {
                 let xmin = Math.min(...xes);
                 let xmax = Math.max(...xes);
                 let ymin = Math.min(...yes);
-                let ymax = Math.max(...xes);
+                let ymax = Math.max(...yes);
 
                 return {
                     x: xmin,
