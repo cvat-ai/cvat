@@ -273,6 +273,7 @@ class Results():
     def get_points_paths(self):
         return self._results["points_paths"]
 
+    @staticmethod
     def _create_polyshape(self, points, label, frame_number, attributes=None):
         return {
             "label": label,

@@ -5,7 +5,6 @@
 import django_rq
 import json
 import os
-import rq
 
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.db.models import Q
