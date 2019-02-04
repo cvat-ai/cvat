@@ -14,7 +14,7 @@ class ImageLoader():
 
     def __iter__(self):
         for imagename in self.image_list:
-            yield imagename, self._load_image(imagename)
+            yield self._load_image(imagename)
 
     def __len__(self):
         return len(self.image_list)
