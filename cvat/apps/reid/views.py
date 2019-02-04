@@ -22,7 +22,7 @@ def _create_thread(jid, data):
 
 
 @login_required
-@permission_required(perm=["reid.process.start"],
+@permission_required(perm=["engine.job.change"],
     fn=objectgetter(Job, 'jid'), raise_exception=True)
 def start(request, jid):
     try:
@@ -43,7 +43,7 @@ def start(request, jid):
 
 
 @login_required
-@permission_required(perm=["reid.process.check"],
+@permission_required(perm=["engine.job.change"],
     fn=objectgetter(Job, 'jid'), raise_exception=True)
 def check(request, jid):
     try:
@@ -78,7 +78,7 @@ def check(request, jid):
 
 
 @login_required
-@permission_required(perm=["reid.process.cancel"],
+@permission_required(perm=["engine.job.change"],
     fn=objectgetter(Job, 'jid'), raise_exception=True)
 def cancel(request, jid):
     try:
