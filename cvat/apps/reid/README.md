@@ -2,13 +2,8 @@
 
 ## About the application
 
-The ReID application is able to merge bounding boxes into tracks as shown below:
-
-|                   Before                   |                   After                   |
-| :----------------------------------------: | :---------------------------------------: |
-| <img src="images/before.gif" width="100%"> | <img src="images/after.gif" width="100%"> |
-
-It performs automatic bbox merging between neighbor frames.
+The ReID application uses deep learning model to perform an automatic bbox merging between neighbor frames.
+You can use "Merge" and "Split" functionality to edit automatically generated annotation.
 
 ## Installation
 
