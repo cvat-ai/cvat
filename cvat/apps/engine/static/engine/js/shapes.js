@@ -1513,6 +1513,23 @@ class ShapeView extends Listener {
                     this.notify('resize');
                 });
 
+                let centers = ['t', 'r', 'b', 'l'];
+                let corners = ['lt', 'rt', 'rb', 'lb'];
+                let elements = {};
+                for (let i = 0; i < 4; ++i) {
+                    elements[centers[i]] = $(`.svg_select_points_${centers[i]}`);
+                    elements[corners[i]] = $(`.svg_select_points_${corners[i]}`);
+                }
+
+                let angle = window.cvat.player.rotation;
+                let offset = angle / 90 < 0 ? angle / 90 + centers.length : angle / 90;
+
+                for (let i = 0; i < 4; ++i) {
+                    elements[centers[i]].removeClass(`svg_select_points_${centers[i]}`)
+                        .addClass(`svg_select_points_${centers[(i+offset) % centers.length]}`);
+                    elements[corners[i]].removeClass(`svg_select_points_${corners[i]}`)
+                        .addClass(`svg_select_points_${corners[(i+offset) % centers.length]}`);
+                }
 
                 this._updateColorForDots();
                 let self = this;
@@ -2471,7 +2488,7 @@ class ShapeView extends Listener {
                 const textContentScale = 10;
                 if ((drawPoint.x + textBBox.width * textContentScale) > this._rightBorderFrame) {
                     drawPoint = {
-                        x: shapeBBox.x + TEXT_MARGIN, 
+                        x: shapeBBox.x + TEXT_MARGIN,
                         y: shapeBBox.y
                     };
                 }

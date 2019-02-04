@@ -172,7 +172,7 @@ class PlayerModel extends Listener {
             (playerSize.width - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE
         ));
         window.cvat.translate.playerOffset = this._geometry.frameOffset;
-        window.cvat.translate.rotation = this._geometry.rotation;
+        window.cvat.player.rotation = this._geometry.rotation;
 
         this._frameProvider.subscribe(this);
     }
@@ -346,7 +346,7 @@ class PlayerModel extends Listener {
 
         if ((rotation / 90) % 2) {
             // 90, 270, ..
-            this._geometry.scale = Math.min(this._geometry.width / img.height, this._geometry.height / img.width);   
+            this._geometry.scale = Math.min(this._geometry.width / img.height, this._geometry.height / img.width);
         }
         else {
             // 0, 180, ..
@@ -356,7 +356,7 @@ class PlayerModel extends Listener {
         this._geometry.top = (this._geometry.height - img.height * this._geometry.scale) / 2;
         this._geometry.left = (this._geometry.width - img.width * this._geometry.scale ) / 2;
 
-        window.cvat.translate.rotation = rotation;
+        window.cvat.player.rotation = rotation;
         window.cvat.player.geometry.scale = this._geometry.scale;
         this.notify();
     }
@@ -572,7 +572,7 @@ class PlayerController {
             if (!this._events.move) {
                 this._events.move = Logger.addContinuedEvent(Logger.EventType.moveImage);
             }
-            
+
             let p = window.cvat.translate.point.rotate(e.clientX, e.clientY);
             let topOffset = p.y - this._lastClickY;
             let leftOffset = p.x - this._lastClickX;

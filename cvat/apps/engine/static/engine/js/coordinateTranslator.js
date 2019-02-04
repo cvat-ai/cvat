@@ -113,7 +113,7 @@ class CoordinateTranslator {
                 cx = (typeof cx === "undefined" ? 0 : cx);
                 cy = (typeof cy === "undefined" ? 0 : cy);
 
-                let radians = (Math.PI / 180) * this._rotation;
+                let radians = (Math.PI / 180) * window.cvat.player.rotation;
                 let cos = Math.cos(radians);
                 let sin = Math.sin(radians);
 
