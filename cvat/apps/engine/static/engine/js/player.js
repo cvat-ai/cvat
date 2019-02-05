@@ -525,6 +525,14 @@ class PlayerController {
             Mousetrap.bind(shortkeys["forward_frame"].value, forwardHandler, 'keydown');
             Mousetrap.bind(shortkeys["backward_frame"].value, backwardHandler, 'keydown');
             Mousetrap.bind(shortkeys["play_pause"].value, playPauseHandler, 'keydown');
+            Mousetrap.bind(shortkeys['clockwise_rotation'].value, (e) => {
+                e.preventDefault();
+                this.rotate(90);
+            }, 'keydown');
+            Mousetrap.bind(shortkeys['counter_clockwise_rotation'].value, (e) => {
+                e.preventDefault();
+                this.rotate(-90);
+            }, 'keydown');
         }
     }
 
@@ -775,6 +783,12 @@ class PlayerView {
         });
 
         let shortkeys = window.cvat.config.shortkeys;
+
+        this._clockwiseRotationButtonUI.attr('title', `
+            ${shortkeys['clockwise_rotation'].view_value} - ${shortkeys['clockwise_rotation'].description}`);
+        this._counterClockwiseRotationButtonUI.attr('title', `
+            ${shortkeys['counter_clockwise_rotation'].view_value} - ${shortkeys['counter_clockwise_rotation'].description}`);
+
         let playerGridOpacityInput = $('#playerGridOpacityInput');
         playerGridOpacityInput.on('input', (e) => {
             let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);

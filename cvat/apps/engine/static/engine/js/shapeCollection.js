@@ -1142,6 +1142,7 @@ class ShapeCollectionView {
 
         this._activeShapeUI = null;
         this._scale = 1;
+        this._rotation = 0;
         this._colorSettings = {
             "fill-opacity": 0
         };
@@ -1510,7 +1511,13 @@ class ShapeCollectionView {
         if (!player.ready())  this._frameContent.addClass('hidden');
         else this._frameContent.removeClass('hidden');
 
-        if (this._scale === player.geometry.scale) return;
+        let geometry = player.geometry;
+        if (this._rotation != geometry.rotation) {
+            this._rotation = geometry.rotation;
+            this._controller.resetActive();
+        }
+
+        if (this._scale === geometry.scale) return;
 
         this._scale = player.geometry.scale;
         let scaledR = POINT_RADIUS / this._scale;
