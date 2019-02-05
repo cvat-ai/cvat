@@ -146,6 +146,7 @@ class PlayerModel extends Listener {
         this._settings = {
             multipleStep: 10,
             fps: 25,
+            rotateAll: job.mode === 'interpolation',
             resetZoom: job.mode === 'annotation'
         };
 
@@ -162,13 +163,16 @@ class PlayerModel extends Listener {
             width: playerSize.width,
             height: playerSize.height,
             frameOffset: 0,
+            rotation: 0,
         };
+        this._framewiseRotation = {};
 
         this._geometry.frameOffset = Math.floor(Math.max(
             (playerSize.height - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE,
             (playerSize.width - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE
         ));
         window.cvat.translate.playerOffset = this._geometry.frameOffset;
+        window.cvat.player.rotation = this._geometry.rotation;
 
         this._frameProvider.subscribe(this);
     }
@@ -183,7 +187,10 @@ class PlayerModel extends Listener {
     }
 
     get geometry() {
-        return Object.assign({}, this._geometry);
+        let copy = Object.assign({}, this._geometry);
+        copy.rotation = this._settings.rotateAll ? this._geometry.rotation :
+            this._framewiseRotation[this._frame.current] || 0;
+        return copy;
     }
 
     get playing() {
@@ -200,6 +207,20 @@ class PlayerModel extends Listener {
 
     get multipleStep() {
         return this._settings.multipleStep;
+    }
+
+    get rotateAll() {
+        return this._settings.rotateAll;
+    }
+
+    set rotateAll(value) {
+        this._settings.rotateAll = value;
+
+        if (!value) {
+            this._geometry.rotation = 0;
+        } else {
+            this._framewiseRotation = {};
+        }
     }
 
     set fps(value) {
@@ -304,7 +325,8 @@ class PlayerModel extends Listener {
         });
 
         let changed = this._frame.previous != this._frame.current;
-        if (this._settings.resetZoom || this._frame.previous === null) {  // fit in annotation mode or once in interpolation mode
+        // fit if tool is in the annotation mode or frame loading is first in the interpolation mode
+        if (this._settings.resetZoom || !this._settings.rotateAll || this._frame.previous === null) {
             this._frame.previous = this._frame.current;
             this.fit();     // notify() inside the fit()
         }
@@ -319,10 +341,22 @@ class PlayerModel extends Listener {
     fit() {
         let img = this._frameProvider.require(this._frame.current);
         if (!img) return;
-        this._geometry.scale = Math.min(this._geometry.width / img.width, this._geometry.height / img.height);
+
+        let rotation = this.geometry.rotation;
+
+        if ((rotation / 90) % 2) {
+            // 90, 270, ..
+            this._geometry.scale = Math.min(this._geometry.width / img.height, this._geometry.height / img.width);
+        }
+        else {
+            // 0, 180, ..
+            this._geometry.scale = Math.min(this._geometry.width / img.width, this._geometry.height / img.height);
+        }
+
         this._geometry.top = (this._geometry.height - img.height * this._geometry.scale) / 2;
         this._geometry.left = (this._geometry.width - img.width * this._geometry.scale ) / 2;
 
+        window.cvat.player.rotation = rotation;
         window.cvat.player.geometry.scale = this._geometry.scale;
         this.notify();
     }
@@ -352,28 +386,19 @@ class PlayerModel extends Listener {
         window.cvat.player.geometry.scale = this._geometry.scale;
         this._frame.previous = this._frame.current;     // fix infinite loop via playerUpdate->collectionUpdate*->AAMUpdate->playerUpdate->...
         this.notify();
-
     }
 
-    scale(x, y, value) {
+    scale(point, value) {
         if (!this._frameProvider.require(this._frame.current)) return;
 
-        let currentCenter = {
-            x: (x - this._geometry.left) / this._geometry.scale,
-            y: (y - this._geometry.top) / this._geometry.scale
-        };
+        let oldScale = this._geometry.scale;
+        this._geometry.scale = Math.clamp(
+            value > 0 ? this._geometry.scale * 6/5 : this._geometry.scale * 5/6,
+            MIN_PLAYER_SCALE, MAX_PLAYER_SCALE
+        );
 
-        this._geometry.scale = value > 0 ? this._geometry.scale * 6/5 : this._geometry.scale * 5/6;
-        this._geometry.scale = Math.min(this._geometry.scale, MAX_PLAYER_SCALE);
-        this._geometry.scale = Math.max(this._geometry.scale, MIN_PLAYER_SCALE);
-
-        let newCenter = {
-            x: (x - this._geometry.left) / this._geometry.scale,
-            y: (y - this._geometry.top) / this._geometry.scale
-        };
-
-        this._geometry.left += (newCenter.x - currentCenter.x) * this._geometry.scale;
-        this._geometry.top += (newCenter.y - currentCenter.y) * this._geometry.scale;
+        this._geometry.left += (point.x * (oldScale / this._geometry.scale - 1)) * this._geometry.scale;
+        this._geometry.top += (point.y * (oldScale / this._geometry.scale - 1)) * this._geometry.scale;
 
         window.cvat.player.geometry.scale = this._geometry.scale;
         this.notify();
@@ -383,6 +408,26 @@ class PlayerModel extends Listener {
         this._geometry.top += topOffset;
         this._geometry.left += leftOffset;
         this.notify();
+    }
+
+    rotate(angle) {
+        if (['resize', 'drag'].indexOf(window.cvat.mode) != -1) {
+            return false;
+        }
+
+        if (this._settings.rotateAll) {
+            this._geometry.rotation += angle;
+            this._geometry.rotation %= 360;
+        } else {
+            if (typeof(this._framewiseRotation[this._frame.current]) === 'undefined') {
+                this._framewiseRotation[this._frame.current] = angle;
+            } else {
+                this._framewiseRotation[this._frame.current] += angle;
+                this._framewiseRotation[this._frame.current] %= 360;
+            }
+        }
+
+        this.fit();
     }
 }
 
@@ -483,19 +528,27 @@ class PlayerController {
             Mousetrap.bind(shortkeys["forward_frame"].value, forwardHandler, 'keydown');
             Mousetrap.bind(shortkeys["backward_frame"].value, backwardHandler, 'keydown');
             Mousetrap.bind(shortkeys["play_pause"].value, playPauseHandler, 'keydown');
+            Mousetrap.bind(shortkeys['clockwise_rotation'].value, (e) => {
+                e.preventDefault();
+                this.rotate(90);
+            }, 'keydown');
+            Mousetrap.bind(shortkeys['counter_clockwise_rotation'].value, (e) => {
+                e.preventDefault();
+                this.rotate(-90);
+            }, 'keydown');
         }
     }
 
-    zoom(e) {
-        let x = e.originalEvent.pageX - this._leftOffset;
-        let y = e.originalEvent.pageY - this._topOffset;
+    zoom(e, canvas) {
+        let point = window.cvat.translate.point.clientToCanvas(canvas, e.clientX, e.clientY);
 
         let zoomImageEvent = Logger.addContinuedEvent(Logger.EventType.zoomImage);
+
         if (e.originalEvent.deltaY < 0) {
-            this._model.scale(x, y, 1);
+            this._model.scale(point, 1);
         }
         else {
-            this._model.scale(x, y, -1);
+            this._model.scale(point, -1);
         }
         zoomImageEvent.close();
         e.preventDefault();
@@ -509,8 +562,11 @@ class PlayerController {
     frameMouseDown(e) {
         if ((e.which === 1 && !window.cvat.mode) || (e.which === 2)) {
             this._moving = true;
-            this._lastClickX = e.clientX;
-            this._lastClickY = e.clientY;
+
+            let p = window.cvat.translate.point.rotate(e.clientX, e.clientY);
+
+            this._lastClickX = p.x;
+            this._lastClickY = p.y;
         }
     }
 
@@ -528,11 +584,11 @@ class PlayerController {
                 this._events.move = Logger.addContinuedEvent(Logger.EventType.moveImage);
             }
 
-            let topOffset = e.clientY - this._lastClickY;
-            let leftOffset = e.clientX - this._lastClickX;
-            this._lastClickX = e.clientX;
-            this._lastClickY = e.clientY;
-
+            let p = window.cvat.translate.point.rotate(e.clientX, e.clientY);
+            let topOffset = p.y - this._lastClickY;
+            let leftOffset = p.x - this._lastClickX;
+            this._lastClickX = p.x;
+            this._lastClickY = p.y;
             this._model.move(topOffset, leftOffset);
         }
     }
@@ -634,6 +690,19 @@ class PlayerController {
     seek(frame) {
         this._model.shift(frame, true);
     }
+
+    rotate(angle) {
+        Logger.addEvent(Logger.EventType.rotateImage);
+        this._model.rotate(angle);
+    }
+
+    get rotateAll() {
+        return this._model.rotateAll;
+    }
+
+    set rotateAll(value) {
+        this._model.rotateAll = value;
+    }
 }
 
 
@@ -644,6 +713,7 @@ class PlayerView {
         this._playerBackgroundUI = $('#frameBackground');
         this._playerContentUI = $('#frameContent');
         this._playerGridUI = $('#frameGrid');
+        this._playerTextUI = $('#frameText');
         this._progressUI = $('#playerProgress');
         this._loadingUI = $('#frameLoadingAnim');
         this._playButtonUI = $('#playButton');
@@ -661,6 +731,23 @@ class PlayerView {
         this._playerGridPattern = $('#playerGridPattern');
         this._playerGridPath = $('#playerGridPath');
         this._contextMenuUI = $('#playerContextMenu');
+        this._clockwiseRotationButtonUI = $('#clockwiseRotation');
+        this._counterClockwiseRotationButtonUI = $('#counterClockwiseRotation');
+        this._rotationWrapperUI = $('#rotationWrapper');
+        this._rotatateAllImagesUI = $('#rotateAllImages');
+
+        this._clockwiseRotationButtonUI.on('click', () => {
+            this._controller.rotate(90);
+        });
+
+        this._counterClockwiseRotationButtonUI.on('click', () => {
+            this._controller.rotate(-90);
+        });
+
+        this._rotatateAllImagesUI.prop("checked", this._controller.rotateAll);
+        this._rotatateAllImagesUI.on("change", (e) => {
+            this._controller.rotateAll = e.target.checked;
+        });
 
         $('*').on('mouseup.player', () => this._controller.frameMouseUp());
         this._playerContentUI.on('mousedown', (e) => {
@@ -673,9 +760,9 @@ class PlayerView {
             e.preventDefault();
         });
 
-        this._playerUI.on('wheel', (e) => this._controller.zoom(e));
-        this._playerUI.on('dblclick', () => this._controller.fit());
-        this._playerUI.on('mousemove', (e) => this._controller.frameMouseMove(e));
+        this._playerContentUI.on('wheel', (e) => this._controller.zoom(e, this._playerBackgroundUI[0]));
+        this._playerContentUI.on('dblclick', () => this._controller.fit());
+        this._playerContentUI.on('mousemove', (e) => this._controller.frameMouseMove(e));
         this._progressUI.on('mousedown', (e) => this._controller.progressMouseDown(e));
         this._progressUI.on('mouseup', () => this._controller.progressMouseUp());
         this._progressUI.on('mousemove', (e) => this._controller.progressMouseMove(e));
@@ -699,6 +786,12 @@ class PlayerView {
         });
 
         let shortkeys = window.cvat.config.shortkeys;
+
+        this._clockwiseRotationButtonUI.attr('title', `
+            ${shortkeys['clockwise_rotation'].view_value} - ${shortkeys['clockwise_rotation'].description}`);
+        this._counterClockwiseRotationButtonUI.attr('title', `
+            ${shortkeys['counter_clockwise_rotation'].view_value} - ${shortkeys['counter_clockwise_rotation'].description}`);
+
         let playerGridOpacityInput = $('#playerGridOpacityInput');
         playerGridOpacityInput.on('input', (e) => {
             let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
@@ -879,6 +972,8 @@ class PlayerView {
 
         this._progressUI['0'].value = frames.current - frames.start;
 
+        this._rotationWrapperUI.css("transform", `rotate(${geometry.rotation}deg)`);
+
         for (let obj of [this._playerBackgroundUI, this._playerGridUI]) {
             obj.css('width', image.width);
             obj.css('height', image.height);
@@ -887,12 +982,15 @@ class PlayerView {
             obj.css('transform', 'scale(' + geometry.scale + ')');
         }
 
-        this._playerContentUI.css('width', image.width + geometry.frameOffset * 2);
-        this._playerContentUI.css('height', image.height + geometry.frameOffset * 2);
-        this._playerContentUI.css('top', geometry.top - geometry.frameOffset * geometry.scale);
-        this._playerContentUI.css('left', geometry.left - geometry.frameOffset * geometry.scale);
-        this._playerContentUI.css('transform', 'scale(' + geometry.scale + ')');
+        for (let obj of [this._playerContentUI, this._playerTextUI]) {
+            obj.css('width', image.width + geometry.frameOffset * 2);
+            obj.css('height', image.height + geometry.frameOffset * 2);
+            obj.css('top', geometry.top - geometry.frameOffset * geometry.scale);
+            obj.css('left', geometry.left - geometry.frameOffset * geometry.scale);
+        }
 
+        this._playerContentUI.css('transform', 'scale(' + geometry.scale + ')');
+        this._playerTextUI.css('transform', `scale(10) rotate(${-geometry.rotation}deg)`);
         this._playerGridPath.attr('stroke-width', 2 / geometry.scale);
         this._frameNumber.prop('value', frames.current);
     }

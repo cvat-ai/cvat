@@ -1123,6 +1123,7 @@ class ShapeCollectionView {
         this._controller = collectionController;
         this._frameBackground = $('#frameBackground');
         this._frameContent = SVG.adopt($('#frameContent')[0]);
+        this._textContent = SVG.adopt($('#frameText')[0]);
         this._UIContent = $('#uiContent');
         this._labelsContent = $('#labelsContent');
         this._showAllInterpolationBox = $('#showAllInterBox');
@@ -1141,6 +1142,7 @@ class ShapeCollectionView {
 
         this._activeShapeUI = null;
         this._scale = 1;
+        this._rotation = 0;
         this._colorSettings = {
             "fill-opacity": 0
         };
@@ -1495,7 +1497,7 @@ class ShapeCollectionView {
         this._updateLabelUIs();
 
         function drawView(shape, model) {
-            let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent);
+            let view = buildShapeView(model, buildShapeController(model), this._frameContent, this._UIContent, this._textContent);
             view.draw(shape.interpolation);
             view.updateColorSettings(this._colorSettings);
             model.subscribe(view);
@@ -1509,7 +1511,13 @@ class ShapeCollectionView {
         if (!player.ready())  this._frameContent.addClass('hidden');
         else this._frameContent.removeClass('hidden');
 
-        if (this._scale === player.geometry.scale) return;
+        let geometry = player.geometry;
+        if (this._rotation != geometry.rotation) {
+            this._rotation = geometry.rotation;
+            this._controller.resetActive();
+        }
+
+        if (this._scale === geometry.scale) return;
 
         this._scale = player.geometry.scale;
         let scaledR = POINT_RADIUS / this._scale;

@@ -653,13 +653,11 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
 }
 
 
-function drawBoxSize(scene, box) {
-    let scale = window.cvat.player.geometry.scale;
-    let width = +box.getAttribute('width');
-    let height = +box.getAttribute('height');
-    let text = `${width.toFixed(1)}x${height.toFixed(1)}`;
+function drawBoxSize(boxScene, textScene, box) {
+    let clientBox = window.cvat.translate.box.canvasToClient(boxScene.node, box);
+    let text = `${box.width.toFixed(1)}x${box.height.toFixed(1)}`;
     let obj = this && this.textUI && this.rm ? this : {
-        textUI: scene.text('').font({
+        textUI: textScene.text('').font({
             weight: 'bolder'
         }).fill('white'),
 
@@ -670,16 +668,11 @@ function drawBoxSize(scene, box) {
         }
     };
 
+    let textPoint = window.cvat.translate.point.clientToCanvas(textScene.node, clientBox.x, clientBox.y);
+
     obj.textUI.clear().plain(text);
-
-    obj.textUI.font({
-        size: 20 / scale,
-    }).style({
-        stroke: 'black',
-        'stroke-width': 1 / scale
-    });
-
-    obj.textUI.move(+box.getAttribute('x'), +box.getAttribute('y'));
+    obj.textUI.addClass("shapeText");
+    obj.textUI.move(textPoint.x, textPoint.y);
 
     return obj;
 }

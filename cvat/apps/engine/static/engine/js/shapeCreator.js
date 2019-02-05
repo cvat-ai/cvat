@@ -184,6 +184,7 @@ class ShapeCreatorView {
         this._typeSelector = $('#shapeTypeSelector');
         this._polyShapeSizeInput = $('#polyShapeSize');
         this._frameContent = SVG.adopt($('#frameContent')[0]);
+        this._frameText = SVG.adopt($("#frameText")[0]);
         this._playerFrame = $('#playerFrame');
         this._createButton.on('click', () => this._controller.switchCreateMode(false));
         this._drawInstance = null;
@@ -406,7 +407,7 @@ class ShapeCreatorView {
 
                 this._controller.switchCreateMode(true);
             }.bind(this)).on('drawupdate', (e) => {
-                sizeUI = drawBoxSize.call(sizeUI, this._frameContent, e.target);
+                sizeUI = drawBoxSize.call(sizeUI, this._frameContent, this._frameText, e.target.getBBox());
             }).on('drawcancel', () => {
                 if (sizeUI) {
                     sizeUI.rm();

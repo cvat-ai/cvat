@@ -37,6 +37,30 @@ class CoordinateTranslator {
 
                 return this._convert(actualBox, -1);
             },
+
+            canvasToClient: function(sourceCanvas, canvasBox) {
+                let points = [
+                    window.cvat.translate.point.canvasToClient(sourceCanvas, canvasBox.x, canvasBox.y),
+                    window.cvat.translate.point.canvasToClient(sourceCanvas, canvasBox.x + canvasBox.width, canvasBox.y),
+                    window.cvat.translate.point.canvasToClient(sourceCanvas, canvasBox.x, canvasBox.y + canvasBox.height),
+                    window.cvat.translate.point.canvasToClient(sourceCanvas, canvasBox.x + canvasBox.width, canvasBox.y + canvasBox.height),
+                ];
+
+                let xes = points.map((el) => el.x);
+                let yes = points.map((el) => el.y);
+
+                let xmin = Math.min(...xes);
+                let xmax = Math.max(...xes);
+                let ymin = Math.min(...yes);
+                let ymax = Math.max(...yes);
+
+                return {
+                    x: xmin,
+                    y: ymin,
+                    width: xmax - xmin,
+                    height: ymax - ymin
+                };
+            },
         };
 
         this._pointsTranslator = {
@@ -70,6 +94,7 @@ class CoordinateTranslator {
         },
 
         this._pointTranslator = {
+            _rotation: 0,
             clientToCanvas: function(targetCanvas, clientX, clientY) {
                 let pt = targetCanvas.createSVGPoint();
                 pt.x = clientX;
@@ -83,6 +108,19 @@ class CoordinateTranslator {
                 pt.y = canvasY;
                 pt = pt.matrixTransform(sourceCanvas.getScreenCTM());
                 return pt;
+            },
+            rotate(x, y, cx, cy) {
+                cx = (typeof cx === "undefined" ? 0 : cx);
+                cy = (typeof cy === "undefined" ? 0 : cy);
+
+                let radians = (Math.PI / 180) * window.cvat.player.rotation;
+                let cos = Math.cos(radians);
+                let sin = Math.sin(radians);
+
+                return {
+                    x: (cos * (x - cx)) + (sin * (y - cy)) + cx,
+                    y: (cos * (y - cy)) - (sin * (x - cx)) + cy
+                }
             }
         };
     }
@@ -102,5 +140,9 @@ class CoordinateTranslator {
     set playerOffset(value) {
         this._boxTranslator._playerOffset = value;
         this._pointsTranslator._playerOffset = value;
+    }
+
+    set rotation(value) {
+        this._pointTranslator._rotation = value;
     }
 }
