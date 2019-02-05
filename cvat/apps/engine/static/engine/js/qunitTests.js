@@ -8,7 +8,8 @@
 
 let qUnitTests = [];
 window.cvat = {
-    translate: {}
+    translate: {},
+    player: {},
 };
 
 // Run all tests

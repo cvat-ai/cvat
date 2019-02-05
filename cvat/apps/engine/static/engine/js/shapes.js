@@ -1399,7 +1399,7 @@ class PolygonController extends PolyShapeController {
 
 /******************************** SHAPE VIEWS  ********************************/
 class ShapeView extends Listener {
-    constructor(shapeModel, shapeController, svgScene, menusScene) {
+    constructor(shapeModel, shapeController, svgScene, menusScene, textsScene) {
         super('onShapeViewUpdate', () => this);
         this._uis = {
             menu: null,
@@ -1412,7 +1412,8 @@ class ShapeView extends Listener {
 
         this._scenes = {
             svg: svgScene,
-            menus: menusScene
+            menus: menusScene,
+            texts: textsScene
         };
 
         this._appearance = {
@@ -1512,6 +1513,23 @@ class ShapeView extends Listener {
                     this.notify('resize');
                 });
 
+                let centers = ['t', 'r', 'b', 'l'];
+                let corners = ['lt', 'rt', 'rb', 'lb'];
+                let elements = {};
+                for (let i = 0; i < 4; ++i) {
+                    elements[centers[i]] = $(`.svg_select_points_${centers[i]}`);
+                    elements[corners[i]] = $(`.svg_select_points_${corners[i]}`);
+                }
+
+                let angle = window.cvat.player.rotation;
+                let offset = angle / 90 < 0 ? angle / 90 + centers.length : angle / 90;
+
+                for (let i = 0; i < 4; ++i) {
+                    elements[centers[i]].removeClass(`svg_select_points_${centers[i]}`)
+                        .addClass(`svg_select_points_${centers[(i+offset) % centers.length]}`);
+                    elements[corners[i]].removeClass(`svg_select_points_${corners[i]}`)
+                        .addClass(`svg_select_points_${corners[(i+offset) % centers.length]}`);
+                }
 
                 this._updateColorForDots();
                 let self = this;
@@ -1678,7 +1696,7 @@ class ShapeView extends Listener {
 
     _hideShapeText() {
         if (this._uis.text && this._uis.text.node.parentElement) {
-            this._scenes.svg.node.removeChild(this._uis.text.node);
+            this._scenes.texts.node.removeChild(this._uis.text.node);
         }
     }
 
@@ -1689,7 +1707,7 @@ class ShapeView extends Listener {
             this._drawShapeText(this._controller.interpolate(frame).attributes);
         }
         else if (!this._uis.text.node.parentElement) {
-            this._scenes.svg.node.appendChild(this._uis.text.node);
+            this._scenes.texts.node.appendChild(this._uis.text.node);
         }
 
         this.updateShapeTextPosition();
@@ -1701,18 +1719,16 @@ class ShapeView extends Listener {
         if (this._uis.shape) {
             let id = this._controller.id;
             let label = ShapeView.labels()[this._controller.label];
-            let bbox = this._uis.shape.node.getBBox();
-            let x = bbox.x + bbox.width + TEXT_MARGIN;
 
-            this._uis.text = this._scenes.svg.text((add) => {
-                add.tspan(`${label.normalize()} ${id}`).addClass('bold');
+            this._uis.text = this._scenes.texts.text((add) => {
+                add.tspan(`${label.normalize()} ${id}`).style("text-transform", "uppercase");
                 for (let attrId in attributes) {
                     let value = attributes[attrId].value != AAMUndefinedKeyword ?
                         attributes[attrId].value : '';
                     let name = attributes[attrId].name;
-                    add.tspan(`${name}: ${value}`).attr({ dy: '1em', x: x, attrId: attrId});
+                    add.tspan(`${name}: ${value}`).attr({ dy: '1em', x: 0, attrId: attrId});
                 }
-            }).move(x, bbox.y).addClass('shapeText regular');
+            }).move(0, 0).addClass('shapeText bold');
         }
     }
 
@@ -2461,21 +2477,29 @@ class ShapeView extends Listener {
             }
 
             if (this._uis.text && this._uis.text.node.parentElement) {
-                let revscale = 1 / scale;
-                let shapeBBox = this._uis.shape.node.getBBox();
+                let shapeBBox = window.cvat.translate.box.canvasToClient(this._scenes.svg.node, this._uis.shape.node.getBBox());
                 let textBBox = this._uis.text.node.getBBox();
 
-                let x = shapeBBox.x + shapeBBox.width + TEXT_MARGIN * revscale;
-                let y = shapeBBox.y;
+                let drawPoint = {
+                    x: shapeBBox.x + shapeBBox.width + TEXT_MARGIN,
+                    y: shapeBBox.y
+                };
 
-                let transl = window.cvat.translate.point;
-                let canvas = this._scenes.svg.node;
-                if (transl.canvasToClient(canvas, x + textBBox.width * revscale, 0).x > this._rightBorderFrame) {
-                    x = shapeBBox.x + TEXT_MARGIN * revscale;
+                const textContentScale = 10;
+                if ((drawPoint.x + textBBox.width * textContentScale) > this._rightBorderFrame) {
+                    drawPoint = {
+                        x: shapeBBox.x + TEXT_MARGIN,
+                        y: shapeBBox.y
+                    };
                 }
 
-                this._uis.text.move(x / revscale, y / revscale);
-                this._uis.text.attr('transform', `scale(${revscale})`);
+                let textPoint = window.cvat.translate.point.clientToCanvas(
+                    this._scenes.texts.node,
+                    drawPoint.x,
+                    drawPoint.y
+                );
+
+                this._uis.text.move(textPoint.x, textPoint.y);
 
                 for (let tspan of this._uis.text.lines().members) {
                     tspan.attr('x', this._uis.text.attr('x'));
@@ -2758,8 +2782,8 @@ ShapeView.labels = function() {
 
 
 class BoxView extends ShapeView {
-    constructor(boxModel, boxController, svgScene, menusScene) {
-        super(boxModel, boxController, svgScene, menusScene);
+    constructor(boxModel, boxController, svgScene, menusScene, textsScene) {
+        super(boxModel, boxController, svgScene, menusScene, textsScene);
 
         this._uis.boxSize = null;
     }
@@ -2774,9 +2798,9 @@ class BoxView extends ShapeView {
                         this._uis.boxSize = null;
                     }
 
-                    this._uis.boxSize = drawBoxSize(this._scenes.svg, e.target);
+                    this._uis.boxSize = drawBoxSize(this._scenes.svg, this._scenes.texts, e.target.getBBox());
                 }).on('resizing', (e) => {
-                    this._uis.boxSize = drawBoxSize.call(this._uis.boxSize, this._scenes.svg, e.target);
+                    this._uis.boxSize = drawBoxSize.call(this._uis.boxSize, this._scenes.svg, this._scenes.texts, e.target.getBBox());
                 }).on('resizedone', () => {
                     this._uis.boxSize.rm();
                 });
@@ -2827,8 +2851,8 @@ class BoxView extends ShapeView {
 
 
 class PolyShapeView extends ShapeView {
-    constructor(polyShapeModel, polyShapeController, svgScene, menusScene) {
-        super(polyShapeModel, polyShapeController, svgScene, menusScene);
+    constructor(polyShapeModel, polyShapeController, svgScene, menusScene, textsScene) {
+        super(polyShapeModel, polyShapeController, svgScene, menusScene, textsScene);
     }
 
 
@@ -2918,8 +2942,8 @@ class PolyShapeView extends ShapeView {
 
 
 class PolygonView extends PolyShapeView {
-    constructor(polygonModel, polygonController, svgContent, UIContent) {
-        super(polygonModel, polygonController, svgContent, UIContent);
+    constructor(polygonModel, polygonController, svgContent, UIContent, textsScene) {
+        super(polygonModel, polygonController, svgContent, UIContent, textsScene);
     }
 
     _drawShapeUI(position) {
@@ -2958,8 +2982,8 @@ class PolygonView extends PolyShapeView {
 
 
 class PolylineView extends PolyShapeView {
-    constructor(polylineModel, polylineController, svgScene, menusScene) {
-        super(polylineModel, polylineController, svgScene, menusScene);
+    constructor(polylineModel, polylineController, svgScene, menusScene, textsScene) {
+        super(polylineModel, polylineController, svgScene, menusScene, textsScene);
     }
 
 
@@ -3031,8 +3055,8 @@ class PolylineView extends PolyShapeView {
 
 
 class PointsView extends PolyShapeView {
-    constructor(pointsModel, pointsController, svgScene, menusScene) {
-        super(pointsModel, pointsController, svgScene, menusScene);
+    constructor(pointsModel, pointsController, svgScene, menusScene, textsScene) {
+        super(pointsModel, pointsController, svgScene, menusScene, textsScene);
         this._uis.points = null;
     }
 
@@ -3220,20 +3244,20 @@ function buildShapeController(shapeModel) {
 }
 
 
-function buildShapeView(shapeModel, shapeController, svgContent, UIContent) {
+function buildShapeView(shapeModel, shapeController, svgContent, UIContent, textsContent) {
     switch (shapeModel.type) {
     case 'interpolation_box':
     case 'annotation_box':
-        return new BoxView(shapeModel, shapeController, svgContent, UIContent);
+        return new BoxView(shapeModel, shapeController, svgContent, UIContent, textsContent);
     case 'interpolation_points':
     case 'annotation_points':
-        return new PointsView(shapeModel, shapeController, svgContent, UIContent);
+        return new PointsView(shapeModel, shapeController, svgContent, UIContent, textsContent);
     case 'interpolation_polyline':
     case 'annotation_polyline':
-        return new PolylineView(shapeModel, shapeController, svgContent, UIContent);
+        return new PolylineView(shapeModel, shapeController, svgContent, UIContent, textsContent);
     case 'interpolation_polygon':
     case 'annotation_polygon':
-        return new PolygonView(shapeModel, shapeController, svgContent, UIContent);
+        return new PolygonView(shapeModel, shapeController, svgContent, UIContent, textsContent);
     }
     throw Error('Unreacheable code was reached.');
 }

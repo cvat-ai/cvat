@@ -286,7 +286,19 @@ class Config {
                 value: 'esc',
                 view_value: "Esc",
                 description: "cancel active mode"
-            }
+            },
+
+            clockwise_rotation: {
+                value: 'ctrl+r',
+                view_value: 'Ctrl + R',
+                description: 'clockwise image rotation'
+            },
+
+            counter_clockwise_rotation: {
+                value: 'ctrl+shift+r',
+                view_value: 'Ctrl + Shift + R',
+                description: 'counter clockwise image rotation'
+            },
         };
 
         if (window.cvat && window.cvat.job && window.cvat.job.z_order) {
