@@ -6,7 +6,7 @@ Given a CVAT XML and a directory with the image dataset, this script reads the
 CVAT XML and writes the annotations in PASCAL VOC format into a given
 directory.
 
-This implementation only supports bounding boxes in CVAT annotation format. 
+This implementation only supports bounding boxes in CVAT annotation format.
 It supports both interpolation tracks from video and annotated images.
 If it encounters any tracks or annotations that are not bounding boxes,
 it ignores them.
@@ -71,8 +71,8 @@ def process_cvat_xml(xml_file, image_dir, output_dir):
             for box in boxes:
                 frameid  = int(box.get('frame'))
                 outside  = int(box.get('outside'))
-                occluded = int(box.get('occluded'))
-                keyframe = int(box.get('keyframe'))
+                #occluded = int(box.get('occluded'))  #currently unused
+                #keyframe = int(box.get('keyframe'))  #currently unused
                 xtl      = float(box.get('xtl'))
                 ytl      = float(box.get('ytl'))
                 xbr      = float(box.get('xbr'))
@@ -82,7 +82,7 @@ def process_cvat_xml(xml_file, image_dir, output_dir):
                 
                 if outside == 0:
                     frame[ trackid ] = { 'xtl': xtl, 'ytl': ytl, 'xbr': xbr, 'ybr': ybr, 'label': label }
-                    
+
                 frames[ frameid ] = frame
 
         # Spit out a list of each object for each frame
