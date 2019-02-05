@@ -386,7 +386,6 @@ class PlayerModel extends Listener {
         window.cvat.player.geometry.scale = this._geometry.scale;
         this._frame.previous = this._frame.current;     // fix infinite loop via playerUpdate->collectionUpdate*->AAMUpdate->playerUpdate->...
         this.notify();
-
     }
 
     scale(point, value) {
@@ -412,6 +411,10 @@ class PlayerModel extends Listener {
     }
 
     rotate(angle) {
+        if (['resize', 'drag'].indexOf(window.cvat.mode) != -1) {
+            return false;
+        }
+
         if (this._settings.rotateAll) {
             this._geometry.rotation += angle;
             this._geometry.rotation %= 360;
