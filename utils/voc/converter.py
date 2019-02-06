@@ -6,10 +6,9 @@ Given a CVAT XML and a directory with the image dataset, this script reads the
 CVAT XML and writes the annotations in PASCAL VOC format into a given
 directory.
 
-This implementation only supports bounding boxes in CVAT annotation format.
-It supports both interpolation tracks from video and annotated images.
-If it encounters any tracks or annotations that are not bounding boxes,
-it ignores them.
+This implementation supports both interpolation tracks from video and 
+annotated images.  If it encounters any tracks or annotations that are 
+not bounding boxes, it ignores them.
 """
 
 import os
@@ -97,7 +96,6 @@ def process_cvat_xml(xml_file, image_dir, output_dir):
                 log.warn('{} image cannot be found. Is `{}` image directory correct?'.
                     format(image_path, image_dir))
             writer = Writer(image_path, width, height)
-
 
             frame = frames[frameid]
 
