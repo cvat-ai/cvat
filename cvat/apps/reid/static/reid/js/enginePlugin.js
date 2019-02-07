@@ -8,7 +8,7 @@
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    function run(reidButton, tresholdInput, distanceInput) {
+    function run(overlay, cancelButton, tresholdInput, distanceInput) {
         const collection = window.cvat.data.get();
         const data = {
             treshold: +tresholdInput.prop('value'),
@@ -16,28 +16,27 @@ document.addEventListener('DOMContentLoaded', () => {
             boxes: collection.boxes,
         };
 
-        reidButton.prop('disabled', true);
+        overlay.removeClass('hidden');
+        cancelButton.prop('disabled', true);
         $.ajax({
             url: `reid/start/job/${window.cvat.job.id}`,
             type: 'POST',
             data: JSON.stringify(data),
             contentType: 'application/json',
             success: () => {
-                reidButton.addClass('run').text('Cancel ReID Merge');
-
                 function checkCallback() {
                     $.ajax({
                         url: `/reid/check/${window.cvat.job.id}`,
                         type: 'GET',
                         success: (jobData) => {
                             if (jobData.progress) {
-                                reidButton.text(`Cancel ReID Merge (${jobData.progress.toString().slice(0, 4)}%)`);
+                                cancelButton.text(`Cancel ReID Merge (${jobData.progress.toString().slice(0, 4)}%)`);
                             }
 
                             if (['queued', 'started'].includes(jobData.status)) {
                                 setTimeout(checkCallback, 1000);
                             } else {
-                                reidButton.removeClass('run').text('Run ReID Merge');
+                                overlay.addClass('hidden');
 
                                 if (jobData.status === 'finished') {
                                     if (jobData.result) {
@@ -63,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         },
                         error: (errorData) => {
+                            overlay.addClass('hidden');
                             const message = `Can not check ReID merge. Code: ${errorData.status}. Message: ${errorData.responseText || errorData.statusText}`;
                             showMessage(message);
                         },
@@ -72,30 +72,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(checkCallback, 1000);
             },
             error: (errorData) => {
+                overlay.addClass('hidden');
                 const message = `Can not start ReID merge. Code: ${errorData.status}. Message: ${errorData.responseText || errorData.statusText}`;
                 showMessage(message);
             },
             complete: () => {
-                reidButton.prop('disabled', false);
+                cancelButton.prop('disabled', false);
             },
         });
     }
 
-    function cancel(reidButton) {
-        reidButton.prop('disabled', true);
+    function cancel(overlay, cancelButton) {
+        cancelButton.prop('disabled', true);
         $.ajax({
             url: `/reid/cancel/${window.cvat.job.id}`,
             type: 'GET',
             success: () => {
-                reidButton.removeClass('run').text('Run ReID Merge').prop('disabled', false);
+                overlay.addClass('hidden');
+                cancelButton.text('Cancel ReID Merge (0%)');
             },
             error: (errorData) => {
                 const message = `Can not cancel ReID process. Code: ${errorData.status}. Message: ${errorData.responseText || errorData.statusText}`;
                 showMessage(message);
             },
             complete: () => {
-                reidButton.prop('disabled', false);
-            },
+                cancelButton.prop('disabled', false);
+            }
         });
     }
 
@@ -105,16 +107,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const reidDistanceValueId = 'reidDistanceValue';
     const reidCancelMergeId = 'reidCancelMerge';
     const reidSubmitMergeId = 'reidSubmitMerge';
+    const reidCancelButtonId = 'reidCancelReID';
+    const reidOverlay = 'reidOverlay';
 
-    const reidButton = $('<button> Run ReID Merge </button>').on('click', () => {
-        $('#taskAnnotationMenu').addClass('hidden');
-        if (reidButton.hasClass('run')) {
-            $('#annotationMenu').addClass('hidden');
-            userConfirm('ReID process will be canceld. Are you sure?', () => cancel(reidButton));
-        } else {
-            $('#annotationMenu').addClass('hidden');
-            $(`#${reidWindowId}`).removeClass('hidden');
-        }
+    $('<button> Run ReID Merge </button>').on('click', () => {
+        $('#annotationMenu').addClass('hidden');
+        $(`#${reidWindowId}`).removeClass('hidden');
     }).addClass('menuButton semiBold h2').prependTo(buttonsUI);
 
     $(`
@@ -123,11 +121,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <table>
                     <tr>
                         <td> <label class="regular h2"> Treshold: </label> </td>
-                        <td> <input id="${reidTresholdValueId}" class="regular h1" type="number" min="0.05" max="0.95" value="0.5" step="0.05"> </td>
+                        <td> <input id="${reidTresholdValueId}" class="regular h1" type="number"` +
+                        `title="Maximum cosine distance between embeddings of objects" min="0.05" max="0.95" value="0.5" step="0.05"> </td>
                     </tr>
                     <tr>
                         <td> <label class="regular h2"> Max Distance </label> </td>
-                        <td> <input id="${reidDistanceValueId}" class="regular h1" type="number" min="10" max="1000" value="50" step="10"> </td>
+                        <td> <input id="${reidDistanceValueId}" class="regular h1" type="number"` +
+                        `title="Maximum radius that an object can diverge between neightbor frames" min="10" max="1000" value="50" step="10"> </td>
                     </tr>
                     <tr>
                         <td colspan="2"> <label class="regular h2" style="color: red;"> All boxes will be translated to box paths. Continue? </label> </td>
@@ -141,12 +141,30 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
     `).appendTo('body');
 
+    $(`
+        <div class="modal hidden force-modal" id="${reidOverlay}">
+            <div class="modal-content" style="width: 300px; height: 70px;">
+                <center> <label class="regular h2"> ReID is processing the data </label></center>
+                <center style="margin-top: 5px;">
+                    <button id="${reidCancelButtonId}" class="regular h2" style="width: 250px;"> Cancel ReID Merge (0%) </button>
+                </center>
+            </div>
+        </div>
+    `).appendTo('body');
+
     $(`#${reidCancelMergeId}`).on('click', () => {
         $(`#${reidWindowId}`).addClass('hidden');
     });
 
+    $(`#${reidCancelButtonId}`).on('click', () => {
+        userConfirm('ReID process will be canceld. Are you sure?', () => {
+            cancel($(`#${reidOverlay}`), $(`#${reidCancelButtonId}`));
+        });
+    });
+
     $(`#${reidSubmitMergeId}`).on('click', () => {
         $(`#${reidWindowId}`).addClass('hidden');
-        run(reidButton, $(`#${reidTresholdValueId}`), $(`#${reidDistanceValueId}`));
+        run($(`#${reidOverlay}`), $(`#${reidCancelButtonId}`),
+            $(`#${reidTresholdValueId}`), $(`#${reidDistanceValueId}`));
     });
 });

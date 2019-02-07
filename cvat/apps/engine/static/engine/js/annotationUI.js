@@ -253,7 +253,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
 
     $(window).on('click', function(event) {
         Logger.updateUserActivityTimer();
-        if (event.target.classList.contains('modal')) {
+        if (event.target.classList.contains('modal') && !event.target.classList.contains('force-modal')) {
             event.target.classList.add('hidden');
         }
     });
