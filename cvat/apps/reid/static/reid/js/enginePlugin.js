@@ -8,10 +8,10 @@
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    function run(overlay, cancelButton, tresholdInput, distanceInput) {
+    function run(overlay, cancelButton, thresholdInput, distanceInput) {
         const collection = window.cvat.data.get();
         const data = {
-            treshold: +tresholdInput.prop('value'),
+            threshold: +thresholdInput.prop('value'),
             maxDistance: +distanceInput.prop('value'),
             boxes: collection.boxes,
         };
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const buttonsUI = $('#engineMenuButtons');
     const reidWindowId = 'reidSubmitWindow';
-    const reidTresholdValueId = 'reidTresholdValue';
+    const reidThresholdValueId = 'reidThresholdValue';
     const reidDistanceValueId = 'reidDistanceValue';
     const reidCancelMergeId = 'reidCancelMerge';
     const reidSubmitMergeId = 'reidSubmitMerge';
@@ -120,12 +120,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="modal-content" style="width: 300px; height: 170px;">
                 <table>
                     <tr>
-                        <td> <label class="regular h2"> Treshold: </label> </td>
-                        <td> <input id="${reidTresholdValueId}" class="regular h1" type="number"` +
+                        <td> <label class="regular h2"> Threshold: </label> </td>
+                        <td> <input id="${reidThresholdValueId}" class="regular h1" type="number"` +
                         `title="Maximum cosine distance between embeddings of objects" min="0.05" max="0.95" value="0.5" step="0.05"> </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2"> Max Distance </label> </td>
+                        <td> <label class="regular h2"> Max Pixel Distance </label> </td>
                         <td> <input id="${reidDistanceValueId}" class="regular h1" type="number"` +
                         `title="Maximum radius that an object can diverge between neightbor frames" min="10" max="1000" value="50" step="10"> </td>
                     </tr>
@@ -165,6 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
     $(`#${reidSubmitMergeId}`).on('click', () => {
         $(`#${reidWindowId}`).addClass('hidden');
         run($(`#${reidOverlay}`), $(`#${reidCancelButtonId}`),
-            $(`#${reidTresholdValueId}`), $(`#${reidDistanceValueId}`));
+            $(`#${reidThresholdValueId}`), $(`#${reidDistanceValueId}`));
     });
 });

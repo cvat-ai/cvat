@@ -17,7 +17,7 @@ from cvat.apps.engine.models import Job
 
 
 class ReID:
-    __treshold = None
+    __threshold = None
     __max_distance = None
     __frame_urls = None
     __frame_boxes = None
@@ -31,7 +31,7 @@ class ReID:
 
 
     def __init__(self, jid, data):
-        self.__treshold = data["treshold"]
+        self.__threshold = data["threshold"]
         self.__max_distance = data["maxDistance"]
         self.__frame_urls = {}
         self.__frame_boxes = {}
@@ -176,7 +176,7 @@ class ReID:
             difference_matrix = self.__compute_difference_matrix(cur_boxes, next_boxes, cur_image, next_image)
             cur_idxs, next_idxs = linear_sum_assignment(difference_matrix)
             for idx, cur_idx in enumerate(cur_idxs):
-                if (difference_matrix[cur_idx][next_idxs[idx]]) <= self.__treshold:
+                if (difference_matrix[cur_idx][next_idxs[idx]]) <= self.__threshold:
                     cur_box = cur_boxes[cur_idx]
                     next_box = next_boxes[next_idxs[idx]]
                     next_box["path_id"] = cur_box["path_id"]
