@@ -299,6 +299,18 @@ class Config {
                 view_value: 'Ctrl + Shift + R',
                 description: 'counter clockwise image rotation'
             },
+
+            next_shape_type: {
+                value: ['alt+.'],
+                view_value: 'Alt + >',
+                description: 'switch next default shape type'
+            },
+
+            prev_shape_type: {
+                value: ['alt+,'],
+                view_value: 'Alt + <',
+                description: 'switch previous default shape type'
+            },
         };
 
         if (window.cvat && window.cvat.job && window.cvat.job.z_order) {
