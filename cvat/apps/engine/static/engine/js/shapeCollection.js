@@ -814,14 +814,16 @@ class ShapeCollectionModel extends Listener {
                 // Undo/redo code
                 let newShapes = this._shapes.slice(-list.length);
                 let originalShape = this._activeShape;
-                window.cvat.addAction('Split Object', () => {
+                window.cvat.addAction('Split Object', (self) => {
                     for (let shape of newShapes) {
                         shape.removed = true;
                         shape.unsubscribe(this);
                     }
+                    originalShape.id = self.generateId();
                     originalShape.removed = false;
-                }, () => {
+                }, (self) => {
                     for (let shape of newShapes) {
+                        shape.id = self.generateId();
                         shape.removed = false;
                         shape.subscribe(this);
                     }

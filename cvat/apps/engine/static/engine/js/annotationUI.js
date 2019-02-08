@@ -224,7 +224,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
         }), job);
     new PlayerView(playerModel, playerController, job);
 
-    let historyModel = new HistoryModel(playerModel);
+    let historyModel = new HistoryModel(playerModel, idGenerator);
     let historyController = new HistoryController(historyModel);
     new HistoryView(historyController, historyModel);
 

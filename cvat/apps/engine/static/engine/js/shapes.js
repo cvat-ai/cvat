@@ -476,11 +476,11 @@ class ShapeModel extends Listener {
         this.removed = true;
 
         // Undo/redo code
-        window.cvat.addAction('Remove Object', () => {
+        window.cvat.addAction('Remove Object', (self) => {
+            this.id = self.generateId();
             this.removed = false;
         }, () => {
             this.removed = true;
-
         }, window.cvat.player.frames.current);
         // End of undo/redo code
     }
@@ -572,6 +572,10 @@ class ShapeModel extends Listener {
 
     get id() {
         return this._id;
+    }
+
+    set id(value) {
+        this._id = value;
     }
 
     get frame() {
