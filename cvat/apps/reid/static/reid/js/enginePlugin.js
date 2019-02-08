@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <tr>
                         <td> <label class="regular h2"> Max Pixel Distance </label> </td>
                         <td> <input id="${reidDistanceValueId}" class="regular h1" type="number"` +
-                        `title="Maximum radius that an object can diverge between neightbor frames" min="10" max="1000" value="50" step="10"> </td>
+                        `title="Maximum radius that an object can diverge between neighbor frames" min="10" max="1000" value="50" step="10"> </td>
                     </tr>
                     <tr>
                         <td colspan="2"> <label class="regular h2" style="color: red;"> All boxes will be translated to box paths. Continue? </label> </td>
