@@ -107,6 +107,9 @@ if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
 if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
     INSTALLED_APPS += ['cvat.apps.auto_annotation']
 
+if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
+    INSTALLED_APPS += ['cvat.apps.reid']
+
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 

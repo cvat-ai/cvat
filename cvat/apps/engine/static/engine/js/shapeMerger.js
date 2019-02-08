@@ -167,20 +167,22 @@ class ShapeMergerModel extends Listener {
             let shapes = this._shapesForMerge;
 
             // Undo/redo code
-            window.cvat.addAction('Merge Objects', () => {
+            window.cvat.addAction('Merge Objects', (self) => {
                 model.unsubscribe(this._collectionModel);
                 model.removed = true;
                 for (let shape of shapes) {
+                    shape.id = self.generateId();
                     shape.removed = false;
                     shape.subscribe(this._collectionModel);
                 }
                 this._collectionModel.update();
-            }, () => {
+            }, (self) => {
                 for (let shape of shapes) {
                     shape.removed = true;
                     shape.unsubscribe(this._collectionModel);
                 }
                 model.subscribe(this._collectionModel);
+                model.id = self.generateId();
                 model.removed = false;
             }, window.cvat.player.frames.current);
             // End of undo/redo code

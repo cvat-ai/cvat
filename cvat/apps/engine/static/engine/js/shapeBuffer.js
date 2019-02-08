@@ -157,8 +157,9 @@ class ShapeBufferModel extends Listener  {
             window.cvat.addAction('Paste Object', () => {
                 model.removed = true;
                 model.unsubscribe(this._collection);
-            }, () => {
+            }, (self) => {
                 model.subscribe(this._collection);
+                model.id = self.generateId();
                 model.removed = false;
             }, window.cvat.player.frames.current);
             // End of undo/redo code
@@ -247,8 +248,9 @@ class ShapeBufferModel extends Listener  {
                             object.removed = true;
                             object.unsubscribe(this._collection);
                         }
-                    }, () => {
+                    }, (self) => {
                         for (let object of addedObjects) {
+                            object.id = self.generateId();
                             object.removed = false;
                             object.subscribe(this._collection);
                         }
