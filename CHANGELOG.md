@@ -15,15 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Propagation setup has been moved from settings to bottom player panel
 - Additional events like "Debug Info" or "Fit Image" have been added for analitics
+- Optional using LFS for git annotation storages (#314)
 
 ### Deprecated
--
+- "Flip images" flag in the create task dialog will be removed. Rotation functionality in client part have been added instead.
 
 ### Removed
 -
 
 ### Fixed
 - Django 2.1.5 (security fix, https://nvd.nist.gov/vuln/detail/CVE-2019-3498)
+- Several scenarious which cause code 400 after undo/redo/save have been fixed (#315)
 
 ### Security
 -

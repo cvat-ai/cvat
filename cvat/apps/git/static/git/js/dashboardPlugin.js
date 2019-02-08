@@ -60,6 +60,7 @@ window.cvat.git = {
     labelStatusId: "gitReposLabelStatus",
     labelMessageId: "gitReposLabelMessage",
     createURLInputTextId: "gitCreateURLInputText",
+    lfsCheckboxId: "gitLFSCheckbox",
 
     updateState: () => {
         let gitWindow = $(`#${window.cvat.git.reposWindowId}`);
@@ -136,6 +137,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 `style="width: 90%", placeholder="github.com/user/repos [annotation/<dump_file_name>.zip]" ` +
                 `title = "Field for a repository URL and a relative path inside the repository. Default repository path is 'annotation/<dump_file_name>.zip'. There are .zip or .xml extenstions are supported."/>` +
             `</td>
+        </tr>
+        <tr>
+            <td> <label class="regular h2" checked> Use LFS: </label> </td>
+            <td> <input type="checkbox" checked id="${window.cvat.git.lfsCheckboxId}" </td>
         </tr>`
     ).insertAfter($("#dashboardBugTrackerInput").parent().parent());
 
@@ -145,6 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let gitPath = $(`#${window.cvat.git.createURLInputTextId}`).prop("value").replace(/\s/g, "");
         if (gitPath.length) {
             oData.append("git_path", gitPath);
+            oData.append("use_lfs", $(`#${window.cvat.git.lfsCheckboxId}`).prop("checked"));
         }
         originalCreateTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus);
     };
