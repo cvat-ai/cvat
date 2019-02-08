@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenVINO auto annotation: it is possible to upload a custom model and annotate images automatically.
 - Ability to rotate images/video in the client part (Ctrl+R, Shift+Ctrl+R shortcuts) (#305)
 - The ReID application for automatic bounding box merging has been added (#299)
+- Keyboard shortcuts to switch next/previous default shape type (box, polygon etc) [Alt + <, Alt + >] (#316)
+
 
 ### Changed
 - Propagation setup has been moved from settings to bottom player panel

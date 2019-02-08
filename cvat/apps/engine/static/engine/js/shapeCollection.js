@@ -965,6 +965,30 @@ class ShapeCollectionController {
                 }
             }.bind(this));
 
+            let nextShapeType = Logger.shortkeyLogDecorator(function(e) {
+                if (window.cvat.mode === null) {
+                    let next = $('#shapeTypeSelector option:selected').next();
+                    if (!next.length) {
+                        next = $('#shapeTypeSelector option').first();
+                    }
+
+                    next.prop('selected', true);
+                    next.trigger('change');
+                }
+            }.bind(this));
+
+            let prevShapeType = Logger.shortkeyLogDecorator(function(e) {
+                if (window.cvat.mode === null) {
+                    let prev = $('#shapeTypeSelector option:selected').prev();
+                    if (!prev.length) {
+                        prev = $('#shapeTypeSelector option').last();
+                    }
+
+                    prev.prop('selected', true);
+                    prev.trigger('change');
+                }
+            }.bind(this));
+
             let shortkeys = window.cvat.config.shortkeys;
             Mousetrap.bind(shortkeys["switch_lock_property"].value, switchLockHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["switch_all_lock_property"].value, switchAllLockHandler.bind(this), 'keydown');
@@ -977,6 +1001,9 @@ class ShapeCollectionController {
             Mousetrap.bind(shortkeys["change_shape_label"].value, switchLabelHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["delete_shape"].value, removeActiveHandler.bind(this), 'keydown');
             Mousetrap.bind(shortkeys["change_shape_color"].value, changeShapeColorHandler.bind(this), 'keydown');
+            Mousetrap.bind(shortkeys['next_shape_type'].value, nextShapeType.bind(this), 'keydown');
+            Mousetrap.bind(shortkeys['prev_shape_type'].value, prevShapeType.bind(this), 'keydown');
+
 
             if (window.cvat.job.z_order) {
                 Mousetrap.bind(shortkeys["inc_z"].value, incZHandler.bind(this), 'keydown');
