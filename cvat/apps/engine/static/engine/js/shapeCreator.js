@@ -70,8 +70,9 @@ class ShapeCreatorModel extends Listener {
         window.cvat.addAction('Draw Object', () => {
             model.removed = true;
             model.unsubscribe(this._shapeCollection);
-        }, () => {
+        }, (self) => {
             model.subscribe(this._shapeCollection);
+            model.id = self.generateId();
             model.removed = false;
         }, window.cvat.player.frames.current);
         // End of undo/redo code
