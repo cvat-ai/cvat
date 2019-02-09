@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - OpenVINO auto annotation: it is possible to upload a custom model and annotate images automatically.
 - Ability to rotate images/video in the client part (Ctrl+R, Shift+Ctrl+R shortcuts) (#305)
+- Converter for VOC now supports interpolation tracks 
 
 ### Changed
 - Propagation setup has been moved from settings to bottom player panel

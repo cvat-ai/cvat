@@ -86,11 +86,12 @@ def process_cvat_xml(xml_file, image_dir, output_dir):
 
         # Spit out a list of each object for each frame
         for frameid in sorted(frames.keys()):
-            print( frameid )
+            #print( frameid )
 
             image_name = "%s_%08d.jpg" % (basename, frameid)
-            width = 1270
-            height = 780
+            orig = cvat_xml.find('.//meta/task/original_size')
+            width = orig.get( 'width' )
+            height = orig.get( 'height' )
             image_path = os.path.join(image_dir, image_name)
             if not os.path.exists(image_path):
                 log.warn('{} image cannot be found. Is `{}` image directory correct?'.
@@ -104,7 +105,7 @@ def process_cvat_xml(xml_file, image_dir, output_dir):
             for objid in objids:
 
                 obj = frame[objid]
-                print( "    %d: (%f,%f) (%f,%f) '%s'" % (objid, obj['xtl'],obj['ytl'],obj['xbr'],obj['ybr'],obj['label']) )
+                #print( "    %d: (%f,%f) (%f,%f) '%s'" % (objid, obj['xtl'],obj['ytl'],obj['xbr'],obj['ybr'],obj['label']) )
 
 
             for objid in objids:
