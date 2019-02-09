@@ -50,6 +50,7 @@ class Git:
     __diffs_dir = None
     __annotation_file = None
     __sync_date = None
+    __lfs = None
 
     def __init__(self, db_git, tid, user):
         self.__db_git = db_git
@@ -66,6 +67,7 @@ class Git:
         self.__branch_name = 'cvat_{}_{}'.format(tid, self.__task_name)
         self.__annotation_file = os.path.join(self.__cwd, self.__path)
         self.__sync_date = db_git.sync_date
+        self.__lfs = db_git.lfs
 
 
     # Method parses an got URL.
@@ -256,6 +258,28 @@ class Git:
         if os.path.exists(self.__annotation_file):
             os.remove(self.__annotation_file)
 
+        # Initialize LFS if need
+        if self.__lfs:
+            updated = False
+            lfs_settings = ["*.xml\tfilter=lfs diff=lfs merge=lfs -text\n", "*.zip\tfilter=lfs diff=lfs merge=lfs -text\n"]
+            if not os.path.isfile(os.path.join(self.__cwd, ".gitattributes")):
+                with open(os.path.join(self.__cwd, ".gitattributes"), "w") as gitattributes:
+                    gitattributes.writelines(lfs_settings)
+                    updated = True
+            else:
+                with open(os.path.join(self.__cwd, ".gitattributes"), "r+") as gitattributes:
+                    lines = gitattributes.readlines()
+                    for setting in lfs_settings:
+                        if setting not in lines:
+                            updated = True
+                            lines.append(setting)
+                    gitattributes.seek(0)
+                    gitattributes.writelines(lines)
+                    gitattributes.truncate()
+
+            if updated:
+                self.__rep.git.add(['.gitattributes'])
+
         # Dump an annotation
         dump(self.__tid, format, scheme, host, OrderedDict())
         dump_name = Task.objects.get(pk = self.__tid).get_dump_path()
@@ -268,8 +292,6 @@ class Git:
         else:
             raise Exception("Got unknown annotation file type")
 
-        # Setup LFS for *.zip files
-        self.__rep.git.lfs("track", self.__path)
         self.__rep.git.add(self.__annotation_file)
 
         # Merge diffs
@@ -279,12 +301,7 @@ class Git:
                 diff = json.loads(f.read())
                 _accumulate(diff, summary_diff, None)
 
-        # Commit and push
-        self.__rep.index.add([
-            '.gitattributes',
-        ])
         self.__rep.index.commit("CVAT Annotation updated by {}. Summary: {}".format(self.__user["name"], str(summary_diff)))
-
         self.__rep.git.push("origin", self.__branch_name, "--force")
 
         shutil.rmtree(self.__diffs_dir, True)
@@ -344,6 +361,7 @@ def _initial_create(tid, params):
             db_git.url = git_path
             db_git.path = path
             db_git.task = db_task
+            db_git.lfs = params["use_lfs"].lower() == "true"
 
             try:
                 _git = Git(db_git, tid, user)
