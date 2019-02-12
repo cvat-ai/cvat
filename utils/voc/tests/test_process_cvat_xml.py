@@ -103,6 +103,10 @@ XML_INTERPOLATION_EXAMPLE = """<?xml version="1.0" encoding="utf-8"?>
         <username>admin</username>
         <email></email>
       </owner>
+      <original_size>
+         <width>1024</width>
+         <height>768</height>
+      </original_size>
     </task>
     <dumped>2018-06-06 15:52:11.138470+03:00</dumped>
   </meta>
@@ -153,6 +157,7 @@ class TestProcessCvatXml(TestCase):
         process_cvat_xml(xml_filename, 'img_dir', voc_dir)
         for exp in expected_xmls:
             self.assertTrue(os.path.exists(exp))
+            # We should add in some code to parse the resulting xml files
 
     @mock.patch('utils.voc.converter.log')
     def test_parse_interpolation_xml(self, mock_log):
@@ -161,10 +166,19 @@ class TestProcessCvatXml(TestCase):
             file.write(XML_INTERPOLATION_EXAMPLE)
 
         voc_dir = os.path.join(self.test_dir, 'voc_dir')
-        expected_warn = 'Cannot parse interpolation tracks, ignoring 2 tracks'
+
+
+        frames = [0, 1, 2, 110, 111, 112 ]
+        expected_xmls = [os.path.join(voc_dir, 'interpolations_%08d.xml' % x )
+                         for x in frames]
 
         process_cvat_xml(xml_filename, 'img_dir', voc_dir)
 
         self.assertTrue(os.path.exists(voc_dir))
-        self.assertTrue(len(os.listdir(voc_dir)) == 0)
-        mock_log.warn.assert_called_once_with(expected_warn)
+        self.assertTrue(len(os.listdir(voc_dir)) == len(frames))
+        for exp in expected_xmls:
+            self.assertTrue(os.path.exists(exp))
+            # We should add in some code to parse the resulting xml files
+
+
+

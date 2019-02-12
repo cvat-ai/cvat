@@ -283,6 +283,8 @@ class _FrameExtractor:
         ff = FFmpeg(
             inputs  = {source_path: None},
             outputs = {target_path: output_opts})
+
+        slogger.glob.info("FFMpeg cmd: {} ".format(ff.cmd))
         ff.run()
 
     def getframepath(self, k):
