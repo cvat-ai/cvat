@@ -84,13 +84,14 @@ def process_cvat_xml(xml_file, image_dir, output_dir):
 
                 frames[ frameid ] = frame
 
+        width = int(cvat_xml.find('.//original_size/width').text)
+        height  = int(cvat_xml.find('.//original_size/height').text)
+
         # Spit out a list of each object for each frame
         for frameid in sorted(frames.keys()):
             #print( frameid )
 
             image_name = "%s_%08d.jpg" % (basename, frameid)
-            width = int(cvat_xml.find('.//original_size/width').text)
-            height  = int(cvat_xml.find('.//original_size/height').text)
             image_path = os.path.join(image_dir, image_name)
             if not os.path.exists(image_path):
                 log.warn('{} image cannot be found. Is `{}` image directory correct?'.
