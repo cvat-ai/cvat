@@ -2790,8 +2790,8 @@ class BoxView extends ShapeView {
         this._uis.boxSize = null;
     }
 
-    _drawShapeText() {
-        ShapeView.prototype._drawShapeText.call(this);
+    _drawShapeText(attributes) {
+        ShapeView.prototype._drawShapeText.call(this, attributes);
         if (this._uis.shape && this._uis.text) {
             const box = this._uis.shape.node.getBBox();
             const size = `${Math.round(box.width)}x${Math.round(box.height)}`;
