@@ -52,11 +52,12 @@ def parse_args():
     return parser.parse_args()
 
 
-def mask_to_polygon(mask, tolerance=1.0):
+def mask_to_polygon(mask, tolerance=1.0, area_threshold=5):
     """Convert object's mask to polygon [[x1,y1, x2,y2 ...], [...]]
     Args:
         mask: object's mask presented as 2D array of 0 and 1
         tolerance: maximum distance from original points of polygon to approximated
+        area_threshold: if area of a polygon is less than this value, remove this small object
     """
     polygons = []
     # pad mask with 0 around borders
@@ -77,7 +78,11 @@ def mask_to_polygon(mask, tolerance=1.0):
             for i in range(0, len(reshaped_contour)):
                 if reshaped_contour[i] < 0:
                     reshaped_contour[i] = 0
-            polygons.append(reshaped_contour)
+            # Check if area of a polygon is enough
+            rle = mask_util.frPyObjects([reshaped_contour], mask.shape[0], mask.shape[1])
+            area = mask_util.area(rle)
+            if sum(area) > area_threshold:
+                polygons.append(reshaped_contour)
     return polygons
 
 def draw_polygons(polygons, img_name, input_dir, output_dir, draw_labels):
