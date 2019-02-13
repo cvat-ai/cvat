@@ -660,7 +660,7 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
 
 function drawBoxSize(boxScene, textScene, box) {
     let clientBox = window.cvat.translate.box.canvasToClient(boxScene.node, box);
-    let text = `${Math.round(box.width)}x${Math.round(box.height)}`;
+    let text = `${Math.round(box.width)}\u2715${Math.round(box.height)}`;
     let obj = this && this.textUI && this.rm ? this : {
         textUI: textScene.text('').font({
             weight: 'bolder'

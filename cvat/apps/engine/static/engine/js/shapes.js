@@ -2794,7 +2794,7 @@ class BoxView extends ShapeView {
         ShapeView.prototype._drawShapeText.call(this, attributes);
         if (this._uis.shape && this._uis.text) {
             const box = this._uis.shape.node.getBBox();
-            const size = `${Math.round(box.width)}x${Math.round(box.height)}`;
+            const size = `${Math.round(box.width)}\u2715${Math.round(box.height)}`;
             this._uis.text.node.children[0].innerHTML += ` [${size}]`
         }
     }
