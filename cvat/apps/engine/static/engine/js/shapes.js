@@ -2438,7 +2438,6 @@ class ShapeView extends Listener {
         }
     }
 
-
     // Inteface methods
     draw(interpolation) {
         let outside = interpolation.position.outside;
@@ -2459,7 +2458,6 @@ class ShapeView extends Listener {
         this._activateMenu();
         this._setupLockedUI(this._controller.lock);
     }
-
 
     erase() {
         this._removeShapeUI();
@@ -2792,6 +2790,14 @@ class BoxView extends ShapeView {
         this._uis.boxSize = null;
     }
 
+    _drawShapeText() {
+        ShapeView.prototype._drawShapeText.call(this);
+        if (this._uis.shape && this._uis.text) {
+            const box = this._uis.shape.node.getBBox();
+            const size = `${Math.round(box.width)}x${Math.round(box.height)}`;
+            this._uis.text.node.children[0].innerHTML += ` [${size}]`
+        }
+    }
 
     _makeEditable() {
         if (this._uis.shape && this._uis.shape.node.parentElement && !this._flags.editable) {
