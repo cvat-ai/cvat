@@ -36,3 +36,23 @@ label1 label2
 label3
 ```
 
+## Merge several annotations in COCO representation into one
+
+Run the script `merge_annotations.py`
+
+```bash
+python merge_annotations.py --input-dir /path/to/directory/with/datasets --output /path/to/result/annotation.json --images-map /path/to/file/with/matched/datasets/and/images.txt --draw /path/to/directory/where/save/images
+```
+
+Please run `python merge_annotations.py --help` for more details.
+
+Example of a file for `--images-map`:
+
+```bash
+{
+    "dataset1_part1.json": "images/dataset1/part1",
+    "dataset1_part2.json": "images/dataset1/part2",
+    "dataset2_part1.json": "images/dataset2/part1",
+    "dataset2_part2.json": "images/dataset2/part2"
+}
+```
