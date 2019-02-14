@@ -11,6 +11,7 @@ from cvat.apps.authentication.decorators import login_required
 
 from cvat.apps.engine.models import Task as TaskModel, Job as JobModel
 from cvat.settings.base import JS_3RDPARTY, CSS_3RDPARTY
+from cvat.apps.dashboard.filter import DashboardFilter
 
 import os
 
@@ -56,16 +57,22 @@ def JsTreeView(request):
 
 @login_required
 def DashboardView(request):
-    query_name = request.GET['search'] if 'search' in request.GET else None
     query_job = int(request.GET['jid']) if 'jid' in request.GET and request.GET['jid'].isdigit() else None
+    query_all = request.GET['all'] if 'all' in request.GET else None
     task_list = None
 
     if query_job is not None and JobModel.objects.filter(pk = query_job).exists():
         task_list = [JobModel.objects.select_related('segment__task').get(pk = query_job).segment.task]
     else:
-        task_list = list(TaskModel.objects.prefetch_related('segment_set__job_set').order_by('-created_date').all())
-        if query_name is not None:
-            task_list = list(filter(lambda x: query_name.lower() in x.name.lower(), task_list))
+        task_list = TaskModel.objects.prefetch_related('segment_set__job_set').order_by('-created_date').all()
+        if query_all:
+            result = []
+            for query_fragment in query_all.split():
+                for field in ["name", "mode", "assignee", "owner"]:
+                    result.extend(list(DashboardFilter({field: query_fragment}, queryset=task_list).qs))
+            task_list = sorted(list(set(result)), key=lambda task: task.created_date, reverse=True)
+        else:
+            task_list = list(DashboardFilter(request.GET, queryset=task_list).qs)
 
     task_list = list(filter(lambda task: request.user.has_perm(
         'engine.task.access', task), task_list))
