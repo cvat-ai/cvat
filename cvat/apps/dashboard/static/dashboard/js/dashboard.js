@@ -607,28 +607,59 @@ function setupTaskUpdater() {
 
 
 function setupSearch() {
-    function getUrlParameter(name) {
-        let regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
-        let results = regex.exec(window.location.search);
-        return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-    }
+    const searchInput = $('#dashboardSearchInput');
+    const searchSubmit = $('#dashboardSearchSubmit');
 
-    let searchInput = $("#dashboardSearchInput");
-    let searchSubmit = $("#dashboardSearchSubmit");
+    searchInput.on('keypress', (e) => {
+        if (e.keyCode != 13) {
+            return;
+        }
 
-    let line = getUrlParameter("search") || "";
-    searchInput.val(line);
+        const params = {};
+        const search = e.target.value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim().split(' ');
+        for (let field of ['name', 'mode', 'owner', 'assignee']) {
+            for (let param of search) {
+                if (param.includes(':')) {
+                    param = param.split(':');
+                    if (param[0] === field && param[1]) {
+                        params[field] = param[1];
+                    }
+                }
+            }
+        }
 
-    searchSubmit.on("click", function() {
-        let e = $.Event("keypress");
+        if (!Object.keys(params).length && search.length) {
+            params['all'] = search.join(' ');
+        }
+
+        if (Object.keys(params).length) {
+            const searchParams = new URLSearchParams();
+            for (let key in params) {
+                searchParams.set(key, params[key]);
+            }
+
+            window.location.search = searchParams.toString();
+        }
+    });
+
+    searchSubmit.on('click', function() {
+        let e = $.Event('keypress');
         e.keyCode = 13;
         searchInput.trigger(e);
     });
 
-    searchInput.on("keypress", function(e) {
-        if (e.keyCode != 13) return;
-        let filter = e.target.value;
-        if (!filter) window.location.search = "";
-        else window.location.search = `search=${filter}`;
-    });
+    const searchParams = new URLSearchParams(window.location.search.substring(1));
+    if (searchParams.get('all')) {
+        searchInput.prop('value', searchParams.get('all'));
+    }
+    else {
+        let search = '';
+        for (let field of ['name', 'mode', 'owner', 'assignee']) {
+            const fieldVal = searchParams.get(field);
+            if (fieldVal) {
+                search += `${field}: ${fieldVal} `;
+            }
+        }
+        searchInput.prop('value', search.trim());
+    }
 }
