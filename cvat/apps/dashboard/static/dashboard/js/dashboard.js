@@ -616,9 +616,9 @@ function setupSearch() {
         }
 
         const params = {};
-        const search = e.target.value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim().split(' ');
-        for (let field of ['name', 'mode', 'owner', 'assignee']) {
-            for (let param of search) {
+        const search = e.target.value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim().toLowerCase();
+        for (let field of ['name', 'mode', 'owner', 'assignee', 'status']) {
+            for (let param of search.split(' and ')) {
                 if (param.includes(':')) {
                     param = param.split(':');
                     if (param[0] === field && param[1]) {
@@ -629,7 +629,7 @@ function setupSearch() {
         }
 
         if (!Object.keys(params).length && search.length) {
-            params['all'] = search.join(' ');
+            params['all'] = search;
         }
 
         if (Object.keys(params).length) {
@@ -639,6 +639,8 @@ function setupSearch() {
             }
 
             window.location.search = searchParams.toString();
+        } else {
+            window.location.search = '';
         }
     });
 
@@ -651,15 +653,14 @@ function setupSearch() {
     const searchParams = new URLSearchParams(window.location.search.substring(1));
     if (searchParams.get('all')) {
         searchInput.prop('value', searchParams.get('all'));
-    }
-    else {
+    } else {
         let search = '';
-        for (let field of ['name', 'mode', 'owner', 'assignee']) {
+        for (let field of ['name', 'mode', 'owner', 'assignee', 'status']) {
             const fieldVal = searchParams.get(field);
             if (fieldVal) {
-                search += `${field}: ${fieldVal} `;
+                search += `${field}: ${fieldVal} and `;
             }
         }
-        searchInput.prop('value', search.trim());
+        searchInput.prop('value', search.slice(0, -5));
     }
 }

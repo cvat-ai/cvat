@@ -13,4 +13,4 @@ class DashboardFilter(django_filters.FilterSet):
 
     class Meta:
         model = Task
-        fields = ["name", "mode", "assignee", "owner"]
+        fields = ['name', 'mode', 'assignee', 'owner', 'status']

@@ -14,6 +14,7 @@ from cvat.settings.base import JS_3RDPARTY, CSS_3RDPARTY
 from cvat.apps.dashboard.filter import DashboardFilter
 
 import os
+import shlex
 
 def ScanNode(directory):
     if '..' in directory.split(os.path.sep):
@@ -67,12 +68,14 @@ def DashboardView(request):
         task_list = TaskModel.objects.prefetch_related('segment_set__job_set').order_by('-created_date').all()
         if query_all:
             result = []
-            for query_fragment in query_all.split():
-                for field in ["name", "mode", "assignee", "owner"]:
+            for query_fragment in shlex.split(query_all):
+                query_fragment = query_fragment.replace('"', '')
+                for field in ['name', 'mode', 'assignee', 'owner', 'status']:
                     result.extend(list(DashboardFilter({field: query_fragment}, queryset=task_list).qs))
             task_list = sorted(list(set(result)), key=lambda task: task.created_date, reverse=True)
         else:
-            task_list = list(DashboardFilter(request.GET, queryset=task_list).qs)
+            d = {key: value.replace('"', '') for (key, value) in request.GET.items()}
+            task_list = list(DashboardFilter(d, queryset=task_list).qs)
 
     task_list = list(filter(lambda task: request.user.has_perm(
         'engine.task.access', task), task_list))
