@@ -221,6 +221,8 @@ class PlayerModel extends Listener {
         } else {
             this._framewiseRotation = {};
         }
+
+        this.fit();
     }
 
     set fps(value) {
@@ -325,8 +327,9 @@ class PlayerModel extends Listener {
         });
 
         let changed = this._frame.previous != this._frame.current;
+        let differentRotation = this._framewiseRotation[this._frame.previous] != this._framewiseRotation[this._frame.current];
         // fit if tool is in the annotation mode or frame loading is first in the interpolation mode
-        if (this._settings.resetZoom || !this._settings.rotateAll || this._frame.previous === null) {
+        if (this._settings.resetZoom || this._frame.previous === null || differentRotation) {
             this._frame.previous = this._frame.current;
             this.fit();     // notify() inside the fit()
         }
