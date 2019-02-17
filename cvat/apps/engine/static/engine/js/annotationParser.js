@@ -28,9 +28,9 @@ class AnnotationParser {
     }
 
     _getBoxPosition(box, frame) {
-        frame = Math.min(frame - this._startFrame, this._im_meta['original_size'].length - 1);
-        let im_w = this._im_meta['original_size'][frame].width;
-        let im_h = this._im_meta['original_size'][frame].height;
+        frame = Math.min(frame - this._startFrame, this._im_meta.length - 1);
+        let im_w = this._im_meta[frame].width;
+        let im_h = this._im_meta[frame].height;
 
         let xtl = +box.getAttribute('xtl');
         let ytl = +box.getAttribute('ytl');
@@ -61,9 +61,9 @@ class AnnotationParser {
     }
 
     _getPolyPosition(shape, frame) {
-        frame = Math.min(frame - this._startFrame, this._im_meta['original_size'].length - 1);
-        let im_w = this._im_meta['original_size'][frame].width;
-        let im_h = this._im_meta['original_size'][frame].height;
+        frame = Math.min(frame - this._startFrame, this._im_meta.length - 1);
+        let im_w = this._im_meta[frame].width;
+        let im_h = this._im_meta[frame].height;
         let points = shape.getAttribute('points').split(';').join(' ');
         points = PolyShapeModel.convertStringToNumberArray(points);
 

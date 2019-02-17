@@ -11,6 +11,8 @@ INSTALLED_APPS += [
     'django_extensions',
 ]
 
+ALLOWED_HOSTS.append('testserver')
+
 # Django-sendfile:
 # https://github.com/johnsensible/django-sendfile
 SENDFILE_BACKEND = 'sendfile.backends.development'

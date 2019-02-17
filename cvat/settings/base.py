@@ -99,7 +99,24 @@ INSTALLED_APPS = [
     'dj_pagination',
     'revproxy',
     'rules',
+    'rest_framework',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_VERSIONING_CLASS':
+        # Don't try to use URLPathVersioning. It will give you /api/{version}
+        # in path and '/api/docs' will not collapse similar items (flat list
+        # of all possible methods isn't readable).
+        'rest_framework.versioning.NamespaceVersioning',
+    # Need to add 'api-docs' here as a workaround for include_docs_urls.
+    'ALLOWED_VERSIONS': ('v1', 'api-docs'),
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10
+}
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
     INSTALLED_APPS += ['cvat.apps.tf_annotation']

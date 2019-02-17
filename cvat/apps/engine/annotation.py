@@ -22,7 +22,7 @@ from django.db import transaction
 from cvat.apps.profiler import silk_profile
 from cvat.apps.engine.plugins import plugin_decorator
 from . import models
-from .task import get_frame_path, get_image_meta_cache
+from .task import get_image_meta_cache
 from .log import slogger
 
 ############################# Low Level server API
@@ -911,7 +911,7 @@ class _AnnotationForJob(_Annotation):
             frame_idx = int(box['frame']) if db_task.mode == 'annotation' else 0
             xtl, ytl, xbr, ybr = self._clamp_box(float(box['xtl']), float(box['ytl']),
                 float(box['xbr']), float(box['ybr']),
-                image_meta['original_size'][frame_idx])
+                image_meta[frame_idx])
 
             labeled_box = _LabeledBox(
                 label=label,
@@ -935,7 +935,7 @@ class _AnnotationForJob(_Annotation):
                 label = _Label(self.db_labels[int(poly_shape['label_id'])])
 
                 frame_idx = int(poly_shape['frame']) if db_task.mode == 'annotation' else 0
-                points = self._clamp_poly(poly_shape['points'], image_meta['original_size'][frame_idx])
+                points = self._clamp_poly(poly_shape['points'], image_meta[frame_idx])
                 labeled_poly_shape = _LabeledPolyShape(
                     label=label,
                     points=points,
@@ -976,7 +976,7 @@ class _AnnotationForJob(_Annotation):
                 if int(box['frame']) <= self.stop_frame and int(box['frame']) >= self.start_frame:
                     frame_idx = int(box['frame']) if db_task.mode == 'annotation' else 0
                     xtl, ytl, xbr, ybr = self._clamp_box(float(box['xtl']), float(box['ytl']),
-                        float(box['xbr']), float(box['ybr']), image_meta['original_size'][frame_idx])
+                        float(box['xbr']), float(box['ybr']), image_meta[frame_idx])
                     tracked_box = _TrackedBox(
                         x0=xtl, y0=ytl, x1=xbr, y1=ybr,
                         frame=int(box['frame']),
@@ -1039,7 +1039,7 @@ class _AnnotationForJob(_Annotation):
                 for poly_shape in path['shapes']:
                     if int(poly_shape['frame']) <= self.stop_frame and int(poly_shape['frame']) >= self.start_frame:
                         frame_idx = int(poly_shape['frame']) if db_task.mode == 'annotation' else 0
-                        points = self._clamp_poly(poly_shape['points'], image_meta['original_size'][frame_idx])
+                        points = self._clamp_poly(poly_shape['points'], image_meta[frame_idx])
                         tracked_poly_shape = _TrackedPolyShape(
                             points=points,
                             frame=int(poly_shape['frame']),
@@ -1963,8 +1963,8 @@ class _AnnotationForTask(_Annotation):
 
         if db_task.mode == "interpolation":
             meta["task"]["original_size"] = OrderedDict([
-                ("width", str(im_meta_data["original_size"][0]["width"])),
-                ("height", str(im_meta_data["original_size"][0]["height"]))
+                ("width", str(im_meta_data[0]["width"])),
+                ("height", str(im_meta_data[0]["height"]))
             ])
 
         dump_path = db_task.get_dump_path()
@@ -2008,20 +2008,20 @@ class _AnnotationForTask(_Annotation):
                     list(shapes["polylines"].keys()) +
                     list(shapes["points"].keys()))):
 
-                    link = get_frame_path(db_task.id, frame)
+                    link = db_task.get_frame_path(frame)
                     path = os.readlink(link)
 
                     rpath = path.split(os.path.sep)
                     rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
 
-                    im_w = im_meta_data['original_size'][frame]['width']
-                    im_h = im_meta_data['original_size'][frame]['height']
+                    im_w = im_meta_data[frame]['width']
+                    im_h = im_meta_data[frame]['height']
 
                     dumper.open_image(OrderedDict([
                         ("id", str(frame)),
                         ("name", rpath),
-                        ("width", str(im_meta_data['original_size'][frame]["width"])),
-                        ("height", str(im_meta_data['original_size'][frame]["height"]))
+                        ("width", str(im_meta_data[frame]["width"])),
+                        ("height", str(im_meta_data[frame]["height"]))
                     ]))
 
                     for shape_type in ["boxes", "polygons", "polylines", "points"]:
@@ -2095,8 +2095,8 @@ class _AnnotationForTask(_Annotation):
                 paths["polylines"] = self.to_polyline_paths()
                 paths["points"] = self.to_points_paths()
 
-                im_w = im_meta_data['original_size'][0]['width']
-                im_h = im_meta_data['original_size'][0]['height']
+                im_w = im_meta_data[0]['width']
+                im_h = im_meta_data[0]['height']
 
                 counter = 0
                 for shape_type in ["boxes", "polygons", "polylines", "points"]:

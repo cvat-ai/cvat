@@ -519,8 +519,7 @@ function makePlayerModel() {
 
 // stub data
 window.job = {
-    "image_meta_data": {
-        "original_size": [{
+    "image_meta_data": [{
             "height": 1280,
             "width": 1920
         }, {
@@ -568,8 +567,8 @@ window.job = {
         }, {
             "height": 1280,
             "width": 1920
-        }]
-    },
+        }
+    ],
     "z_order": true,
     "start": 0,
     "slug": "QUnitTests",

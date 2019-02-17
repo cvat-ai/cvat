@@ -6,26 +6,42 @@ from django.db import models
 from django.conf import settings
 
 from django.contrib.auth.models import User
+from django.core.files.storage import FileSystemStorage
 
-from io import StringIO
 from enum import Enum
 
 import shlex
 import csv
-import re
 import os
+import sys
 
-class StatusChoice(Enum):
+
+class StatusChoice(str, Enum):
     ANNOTATION = 'annotation'
     VALIDATION = 'validation'
     COMPLETED = 'completed'
 
     @classmethod
     def choices(self):
-        return tuple((x.name, x.value) for x in self)
+        return tuple((x.value, x.name) for x in self)
 
     def __str__(self):
         return self.value
+
+class AttributeType(str, Enum):
+    CHECKBOX = 'checkbox'
+    RADIO = 'radio'
+    NUMBER = 'number'
+    TEXT = 'text'
+    SELECT = 'select'
+
+    @classmethod
+    def choices(self):
+        return tuple((x.value, x.name) for x in self)
+
+    def __str__(self):
+        return self.value
+
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -37,7 +53,6 @@ class SafeCharField(models.CharField):
 class Task(models.Model):
     name = SafeCharField(max_length=256)
     size = models.PositiveIntegerField()
-    path = models.CharField(max_length=256)
     mode = models.CharField(max_length=32)
     owner = models.ForeignKey(User, null=True, blank=True,
         on_delete=models.SET_NULL, related_name="owners")
@@ -47,43 +62,111 @@ class Task(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)
     overlap = models.PositiveIntegerField(default=0)
+    segment_size = models.PositiveIntegerField(default=0)
     z_order = models.BooleanField(default=False)
     flipped = models.BooleanField(default=False)
-    source = SafeCharField(max_length=256, default="unknown")
-    status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION)
+    image_quality = models.PositiveSmallIntegerField()
+    status = models.CharField(max_length=32, choices=StatusChoice.choices(),
+        default=StatusChoice.ANNOTATION)
 
     # Extend default permission model
     class Meta:
         default_permissions = ()
 
+    def get_frame_path(self, frame):
+        d1 = str(int(frame) // 10000)
+        d2 = str(int(frame) // 100)
+        path = os.path.join(self.get_data_dirname(), d1, d2,
+            str(frame) + '.jpg')
+
+        return path
+
     def get_upload_dirname(self):
-        return os.path.join(self.path, ".upload")
+        return os.path.join(self.get_task_dirname(), ".upload")
 
     def get_data_dirname(self):
-        return os.path.join(self.path, "data")
+        return os.path.join(self.get_task_dirname(), "data")
 
     def get_dump_path(self):
         name = re.sub(r'[\\/*?:"<>|]', '_', self.name)
-        return os.path.join(self.path, "{}.xml".format(name))
+        return os.path.join(self.get_task_dirname(), "{}.xml".format(name))
 
     def get_log_path(self):
-        return os.path.join(self.path, "task.log")
+        return os.path.join(self.get_task_dirname(), "task.log")
 
     def get_client_log_path(self):
-        return os.path.join(self.path, "client.log")
+        return os.path.join(self.get_task_dirname(), "client.log")
 
     def get_image_meta_cache_path(self):
-        return os.path.join(self.path, "image_meta.cache")
-
-    def set_task_dirname(self, path):
-        self.path = path
-        self.save(update_fields=['path'])
+        return os.path.join(self.get_task_dirname(), "image_meta.cache")
 
     def get_task_dirname(self):
-        return self.path
+        return os.path.join(settings.DATA_ROOT, str(self.id))
 
     def __str__(self):
         return self.name
+
+# Redefined a couple of operation for FileSystemStorage to avoid renaming
+# or other side effects.
+class MyFileSystemStorage(FileSystemStorage):
+    def get_valid_name(self, name):
+        return name
+
+    def get_available_name(self, name, max_length=None):
+        if self.exists(name) or (max_length and len(name) > max_length):
+            raise IOError('`{}` file already exists or its name is too long'.format(name))
+        return name
+
+def upload_path_handler(instance, filename):
+    return os.path.join(instance.task.get_upload_dirname(), filename)
+
+# For client files which the user is uploaded
+class ClientFile(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    file = models.FileField(upload_to=upload_path_handler,
+        storage=MyFileSystemStorage())
+
+    class Meta:
+        default_permissions = ()
+        unique_together = ("task", "file")
+
+# For server files on the mounted share
+class ServerFile(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    file = models.CharField(max_length=1024)
+
+    class Meta:
+        default_permissions = ()
+
+# For URLs
+class RemoteFile(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    file = models.CharField(max_length=1024)
+
+    class Meta:
+        default_permissions = ()
+
+class Video(models.Model):
+    task = models.OneToOneField(Task, on_delete=models.CASCADE)
+    path = models.CharField(max_length=1024)
+    start_frame = models.PositiveIntegerField()
+    stop_frame = models.PositiveIntegerField()
+    step = models.PositiveIntegerField(default=1)
+    width = models.PositiveIntegerField()
+    height = models.PositiveIntegerField()
+
+    class Meta:
+        default_permissions = ()
+
+class Image(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    path = models.CharField(max_length=1024)
+    frame = models.PositiveIntegerField()
+    width = models.PositiveIntegerField()
+    height = models.PositiveIntegerField()
+
+    class Meta:
+        default_permissions = ()
 
 class Segment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
@@ -96,7 +179,8 @@ class Segment(models.Model):
 class Job(models.Model):
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
     assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
-    status = models.CharField(max_length=32, default=StatusChoice.ANNOTATION)
+    status = models.CharField(max_length=32, choices=StatusChoice.choices(),
+        default=StatusChoice.ANNOTATION)
     max_shape_id = models.BigIntegerField(default=-1)
 
     class Meta:
@@ -111,52 +195,23 @@ class Label(models.Model):
 
     class Meta:
         default_permissions = ()
+        unique_together = ('task', 'name')
 
-
-def parse_attribute(text):
-    match = re.match(r'^([~@])(\w+)=(\w+):(.+)?$', text)
-    prefix = match.group(1)
-    type = match.group(2)
-    name = match.group(3)
-    if match.group(4):
-        values = list(csv.reader(StringIO(match.group(4)), quotechar="'"))[0]
-    else:
-        values = []
-
-    return {'prefix':prefix, 'type':type, 'name':name, 'values':values}
 
 class AttributeSpec(models.Model):
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
-    text  = models.CharField(max_length=1024)
+    name = models.CharField(max_length=64)
+    mutable = models.BooleanField()
+    input_type = models.CharField(max_length=16, choices=AttributeType.choices())
+    default_value = models.CharField(max_length=128)
+    values = models.CharField(max_length=4096)
 
     class Meta:
         default_permissions = ()
-
-    def get_attribute(self):
-        return parse_attribute(self.text)
-
-    def is_mutable(self):
-        attr = self.get_attribute()
-        return attr['prefix'] == '~'
-
-    def get_type(self):
-        attr = self.get_attribute()
-        return attr['type']
-
-    def get_name(self):
-        attr = self.get_attribute()
-        return attr['name']
-
-    def get_default_value(self):
-        attr = self.get_attribute()
-        return attr['values'][0]
-
-    def get_values(self):
-        attr = self.get_attribute()
-        return attr['values']
+        unique_together = ('label', 'name')
 
     def __str__(self):
-        return self.get_attribute()['name']
+        return self.name
 
 
 class AttributeVal(models.Model):
@@ -171,6 +226,7 @@ class AttributeVal(models.Model):
 
 
 class Annotation(models.Model):
+    id = models.BigAutoField(primary_key=True)
     job   = models.ForeignKey(Job, on_delete=models.CASCADE)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
@@ -189,7 +245,6 @@ class Shape(models.Model):
         default_permissions = ()
 
 class BoundingBox(Shape):
-    id = models.BigAutoField(primary_key=True)
     xtl = models.FloatField()
     ytl = models.FloatField()
     xbr = models.FloatField()
@@ -200,7 +255,6 @@ class BoundingBox(Shape):
         default_permissions = ()
 
 class PolyShape(Shape):
-    id = models.BigAutoField(primary_key=True)
     points = models.TextField()
 
     class Meta:
@@ -232,13 +286,13 @@ class LabeledPointsAttributeVal(AttributeVal):
     points = models.ForeignKey(LabeledPoints, on_delete=models.CASCADE)
 
 class ObjectPath(Annotation):
-    id = models.BigAutoField(primary_key=True)
     shapes = models.CharField(max_length=10, default='boxes')
 
 class ObjectPathAttributeVal(AttributeVal):
     track = models.ForeignKey(ObjectPath, on_delete=models.CASCADE)
 
 class TrackedObject(models.Model):
+    id = models.BigAutoField(primary_key=True)
     track = models.ForeignKey(ObjectPath, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     outside = models.BooleanField(default=False)
@@ -269,3 +323,20 @@ class TrackedPoints(TrackedObject, PolyShape):
 
 class TrackedPointsAttributeVal(AttributeVal):
     points = models.ForeignKey(TrackedPoints, on_delete=models.CASCADE)
+
+class Plugin(models.Model):
+    name = models.SlugField(max_length=32, primary_key=True)
+    description = SafeCharField(max_length=8192)
+    maintainer = models.ForeignKey(User, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name="maintainers")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
+
+    # Extend default permission model
+    class Meta:
+        default_permissions = ()
+
+class PluginOption(models.Model):
+    plugin = models.ForeignKey(Plugin, on_delete=models.CASCADE)
+    name = SafeCharField(max_length=32)
+    value = SafeCharField(max_length=1024)

@@ -6,6 +6,9 @@ import os
 from django.conf import settings
 import rules
 from . import AUTH_ROLE
+from rest_framework.permissions import (BasePermission, IsAuthenticated,
+    IsAdminUser)
+
 
 def register_signals():
     from django.db.models.signals import post_migrate, post_save
@@ -67,6 +70,11 @@ def is_job_annotator(db_user, db_job):
     return has_rights
 
 # AUTH PERMISSIONS RULES
+rules.add_perm('engine.role.user', has_user_role)
+rules.add_perm('engine.role.admin', has_admin_role)
+rules.add_perm('engine.role.annotator', has_annotator_role)
+rules.add_perm('engine.role.observer', has_observer_role)
+
 rules.add_perm('engine.task.create', has_admin_role | has_user_role)
 rules.add_perm('engine.task.access', has_admin_role | has_observer_role |
     is_task_owner | is_task_annotator)
@@ -78,3 +86,43 @@ rules.add_perm('engine.job.access', has_admin_role | has_observer_role |
     is_job_owner | is_job_annotator)
 rules.add_perm('engine.job.change', has_admin_role | is_job_owner |
     is_job_annotator)
+
+class AdminRolePermission(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.has_perm("engine.role.admin")
+
+class UserRolePermission(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.has_perm("engine.role.user")
+
+class AnnotatorRolePermission(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.has_perm("engine.role.annotator")
+
+class ObserverRolePermission(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.has_perm("engine.role.observer")
+
+class TaskCreatePermission(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.has_perm("engine.task.create")
+
+class TaskAccessPermission(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.task.access", obj)
+
+class TaskChangePermission(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.task.change", obj)
+
+class TaskDeletePermission(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.task.delete", obj)
+
+class JobAccessPermission(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.job.access", obj)
+
+class JobChangePermission(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.job.change", obj)

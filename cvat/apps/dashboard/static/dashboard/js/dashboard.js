@@ -20,7 +20,7 @@
 /* Server requests */
 function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {
     $.ajax({
-        url: "/create/task",
+        url: "/api/v1/tasks/",
         type: "POST",
         data: oData,
         contentType: false,
@@ -35,14 +35,14 @@ function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, on
         }
     });
 
-    function requestCreatingStatus(data) {
-        let tid = data.tid;
+    function requestCreatingStatus(task) {
+        let tid = task.id;
         let request_frequency_ms = 1000;
         let done = false;
 
         let requestInterval = setInterval(function() {
             $.ajax({
-                url: "/check/task/" + tid,
+                url: `/api/v1/tasks/${tid}/status`,
                 success: receiveStatus,
                 error: function(data) {
                     clearInterval(requestInterval);
@@ -54,20 +54,20 @@ function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, on
 
         function receiveStatus(data) {
             if (done) return;
-            if (data["state"] === "created") {
+            if (data.state === "Finished") {
                 done = true;
                 clearInterval(requestInterval);
                 onComplete();
                 onSuccessCreate(tid);
             }
-            else if (data["state"] === "error") {
+            else if (data.state === "Failed") {
                 done = true;
                 clearInterval(requestInterval);
                 onComplete();
-                onError(data.stderr);
+                onError(data.message);
             }
-            else if (data["state"] === "started" && "status" in data) {
-                onUpdateStatus(data["status"]);
+            else if (data["state"] === "Started" && data.message != "") {
+                onUpdateStatus(data.message);
             }
         }
     }
@@ -75,13 +75,12 @@ function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, on
 
 
 function updateTaskRequest(labels) {
-    let oData = new FormData();
-    oData.append("labels", labels);
+    let data = new LabelsInfo(labels);
 
     $.ajax({
-        url: "/update/task/" + window.cvat.dashboard.taskID,
-        type: "POST",
-        data: oData,
+        url: "/api/v1/tasks/" + window.cvat.dashboard.taskID,
+        type: "PATCH",
+        data: data,
         contentType: false,
         processData: false,
         success: function() {
@@ -134,17 +133,27 @@ function uploadAnnotationRequest() {
     function parseFile(e, overlay) {
         let xmlText = e.target.result;
         overlay.setMessage("Request task data from server..");
-        $.ajax({
-            url: "/get/task/" + window.cvat.dashboard.taskID,
-            success: function(data) {
+        $.when(
+            $.get("/api/v1/tasks/" + window.cvat.dashboard.taskID),
+            $.get("/api/v1/tasks/" + window.cvat.dashboard.taskID + "/frames/meta"),
+        ).then(
+            function(taskInfo, imageMetaCache) {
+                let spec = {"labels": {}, "attributes": {}};
+                for (let label of taskInfo[0].labels) {
+                    spec.labels[label.id] = label.name;
+                    spec.attributes[label.id] = {};
+                    for (let attr of label.attributes) {
+                        spec.attributes[label.id][attr.id] = attr.text;
+                    }
+                }
                 let annotationParser = new AnnotationParser(
                     {
                         start: 0,
-                        stop: data.size,
-                        image_meta_data: data.image_meta_data,
-                        flipped: data.flipped
+                        stop: taskInfo[0].size,
+                        image_meta_data: imageMetaCache[0],
+                        flipped: taskInfo[0].flipped
                     },
-                    new LabelsInfo(data.spec),
+                    new LabelsInfo(spec),
                     new ConstIdGenerator(-1)
                 );
 
@@ -220,13 +229,13 @@ function uploadAnnotationRequest() {
                 overlay.setMessage("File is being parsed..");
                 setTimeout(asyncParse);
             },
-            error: function(response) {
+            function(response) {
                 overlay.remove();
                 let message = "Bad task request: " + response.responseText;
                 showMessage(message);
                 throw Error(message);
             }
-        });
+        );
     }
 }
 
@@ -499,25 +508,49 @@ function setupTaskCreator() {
         }
 
         let taskData = new FormData();
-        taskData.append("task_name", name);
-        taskData.append("bug_tracker_link", bugTrackerLink);
-        taskData.append("labels", labels);
-        taskData.append("flip_flag", flipImages);
+        taskData.append("name", name);
+        taskData.append("bug_tracker", bugTrackerLink);
+        // FIXME: a trivial parser for labels
+        labels = labels.split(/\s+/);
+        let labelObjs = [];
+        for (let labelIdx = 0; labelIdx < labels.length; labelIdx++) {
+            let label = labels[labelIdx]
+            let attributes = [];
+            while (labelIdx + 1 < labels.length) {
+                if (labels[labelIdx + 1].startsWith("~") ||
+                    labels[labelIdx + 1].startsWith("@")) {
+                    attributes.push({"text" : labels[++labelIdx]});
+                } else {
+                    break;
+                }
+            }
+
+            labelObjs.push(JSON.stringify(
+                {"name": label, "attributes": attributes }));
+        }
+        for (let i = 0; i < labelObjs.length; i++) {
+            taskData.append(`labels[${i}]`, labelObjs[i]);
+        }
+
+        taskData.append("flipped", flipImages);
         taskData.append("z_order", zOrder);
-        taskData.append("storage", source);
 
         if (customSegmentSize.prop("checked")) {
             taskData.append("segment_size", segmentSize);
         }
         if (customOverlapSize.prop("checked")) {
-            taskData.append("overlap_size", overlapSize);
+            taskData.append("overlap", overlapSize);
         }
         if (customCompressQuality.prop("checked")) {
-            taskData.append("compress_quality", compressQuality);
+            taskData.append("image_quality", compressQuality);
         }
 
-        for (let file of files) {
-            taskData.append("data", file);
+        for (let j = 0; j < files.length; j++) {
+            if (source === "local") {
+                taskData.append(`client_files[${j}]`, files[j]);
+            } else {
+                taskData.append(`server_files[${j}]`, files[j]);
+            }
         }
 
         submitCreate.prop("disabled", true);
@@ -584,9 +617,17 @@ function setupTaskUpdater() {
 
     updateModal[0].loadCurrentLabels = function() {
         $.ajax({
-            url: "/get/task/" + window.cvat.dashboard.taskID,
-            success: function(data) {
-                let labels = new LabelsInfo(data.spec);
+            url: "/api/v1/tasks/" + window.cvat.dashboard.taskID,
+            success: function(taskInfo) {
+                let spec = {"labels": {}, "attributes": {}};
+                for (let label of taskInfo.labels) {
+                    spec.labels[label.id] = label.name;
+                    spec.attributes[label.id] = {};
+                    for (let attr of label.attributes) {
+                        spec.attributes[label.id][attr.id] = attr.text;
+                    }
+                }
+                let labels = new LabelsInfo(spec);
                 oldLabels.attr("value", labels.normalize());
             },
             error: function(response) {

@@ -54,12 +54,39 @@
 function callAnnotationUI(jid) {
     initLogger(jid);
     let loadJobEvent = Logger.addContinuedEvent(Logger.EventType.loadJob);
-    serverRequest("/get/job/" + jid, function(job) {
-        serverRequest("get/annotation/job/" + jid, function(data) {
-            $('#loadingOverlay').remove();
-            setTimeout(() => {
-                buildAnnotationUI(job, data, loadJobEvent);
-            }, 0);
+    serverRequest("/api/v1/jobs/" + jid, function(job) {
+        serverRequest("/api/v1/tasks/" + job.task_id, function(task) {
+            serverRequest("/api/v1/tasks/" + job.task_id + "/frames/meta", function(imageMetaCache) {
+                serverRequest("get/annotation/job/" + jid, function(data) {
+                    $('#loadingOverlay').remove();
+                    setTimeout(() => {
+                        // FIXME: code cloning
+                        let spec = {"labels": {}, "attributes": {}};
+                        for (let label of task.labels) {
+                            spec.labels[label.id] = label.name;
+                            spec.attributes[label.id] = {};
+                            for (let attr of label.attributes) {
+                                spec.attributes[label.id][attr.id] = attr.text;
+                            }
+                        }
+                        // FIXME: patch job object to correspond to the new REST API
+                        job.labels = spec.labels;
+                        job.attributes = spec.attributes;
+                        job.stop = job.stop_frame;
+                        job.start = job.start_frame;
+                        job.jobid = job.id;
+                        job.taskid = task.id;
+                        job.slug = task.name;
+                        job.mode = task.mode;
+                        job.overlap = task.overlap;
+                        job.z_order = task.z_order;
+                        job.flipped = task.flipped;
+                        job.image_meta_data = imageMetaCache;
+
+                        buildAnnotationUI(job, data, loadJobEvent);
+                    }, 0);
+                });
+            });
         });
     });
 }
@@ -75,7 +102,7 @@ function initLogger(jobID) {
 
     Logger.setTimeThreshold(Logger.EventType.zoomImage);
 
-    serverRequest('/get/username', function(response) {
+    serverRequest('/api/v1/users/self', function(response) {
         Logger.setUsername(response.username);
     });
 }
@@ -576,8 +603,8 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
     $('#statFlipped').text(job.flipped);
     $('#statTaskStatus').prop("value", job.status).on('change', (e) => {
         $.ajax({
-            type: 'POST',
-            url: 'save/status/job/' + window.cvat.job.id,
+            type: 'PATCH',
+            url: '/api/v1/jobs/' + window.cvat.job.id,
             data: JSON.stringify({
                 status: e.target.value
             }),

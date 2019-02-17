@@ -90,7 +90,8 @@ class dotdict(dict):
 
 clogger = dotdict({
     'task': TaskClientLoggerStorage(),
-    'job': JobClientLoggerStorage()
+    'job': JobClientLoggerStorage(),
+    'glob': logging.getLogger('cvat.client'),
 })
 
 slogger = dotdict({
