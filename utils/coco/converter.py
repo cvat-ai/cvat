@@ -30,8 +30,8 @@ def parse_args():
         help='input file with CVAT annotation in *.xml format'
     )
     parser.add_argument(
-        '--output', required=True,
-        help='output annotation file'
+        '--output', default=None,
+        help='output annotation file. If not defined, the output file name will be created from input file name'
     )
     parser.add_argument(
         '--image-dir', required=True,
@@ -343,7 +343,7 @@ def insert_categories_data(xml_root, use_background_label, result_annotation, la
     return category_map
 
 
-def insert_image_data(image, path_to_images, result_annotation):
+def insert_image_data(image, result_annotation):
     """Get data from input annotation for image and fill fields for this image in output annotation
     Args:
         image: dictionary with data for image from original annotation
@@ -357,9 +357,8 @@ def insert_image_data(image, path_to_images, result_annotation):
     new_img['license'] = 0
     new_img['id'] = image['id']
     new_img['file_name'] = osp.basename(image['name'])
-    pic = cv2.imread(osp.join(path_to_images, new_img['file_name']))
-    new_img['height'] = pic.shape[0]
-    new_img['width'] = pic.shape[1]
+    new_img['height'] = int(image['height'])
+    new_img['width'] = int(image['width'])
     result_annotation['images'].append(new_img)
 
 
@@ -388,10 +387,14 @@ def insert_annotation_data(image, category_map, segm_id, object, img_dims, resul
 def main():
     args = parse_args()
     xml_file_name = args.cvat_xml
-    output_file_name = args.output
+    if args.output is not None:
+        output_file_name = args.output
+    else:
+        output_file_name = args.cvat_xml.split('.xml')[0] + '.json'
+        log.info('Output file name set to: {}'.format(output_file_name))
     root = etree.parse(xml_file_name).getroot()
 
-    if args.draw != None:
+    if args.draw is not None:
         log.info('Draw key was enabled. Images will be saved in directory <{}>'.format(args.draw))
 
     result_annotation = {
@@ -417,6 +420,9 @@ def main():
         image = {}
         for key, value in img.items():
             image[key] = value
+        img_name = osp.join(args.image_dir, osp.basename(image['name']))
+        if not osp.isfile(img_name):
+            log.warning('Image <{}> is not available'.format(img_name))
         image['polygon'] = []
         z_order_on_counter = 0
         polygon_counter = 0
@@ -436,7 +442,7 @@ def main():
 
         # Create new image
         image['id'] = int(image['id'])
-        insert_image_data(image, args.image_dir, result_annotation)
+        insert_image_data(image, result_annotation)
         height = result_annotation['images'][-1]['height']
         width = result_annotation['images'][-1]['width']
         image['polygon'] = fix_segments_intersections(image['polygon'], height, width,
@@ -448,7 +454,7 @@ def main():
             segm_id += 1
 
         # Draw contours of objects on image
-        if args.draw != None:
+        if args.draw is not None:
             draw_polygons(image['polygon'], image['name'], args.image_dir, args.draw, args.draw_labels)
 
     log.info('Processed images: {}'.format(len(result_annotation['images'])))
@@ -466,12 +472,11 @@ def main():
     # Try to load created annotation via cocoapi
     try:
         log.info('Trying to load annotation <{}> via cocoapi...'.format(output_file_name))
-        anno = coco_loader.COCO(output_file_name)
+        coco_loader.COCO(output_file_name)
     except:
         raise
     else:
-        log.info('Annotation in COCO representation <{}> created from <{}> successfully!'
-                 .format(output_file_name, xml_file_name))
+        log.info('Conversion <{}> --> <{}> has finished successfully!'.format(xml_file_name, output_file_name))
 
 
 if __name__ == "__main__":
