@@ -625,13 +625,6 @@ class TaskListAPITestCase(APITestCase):
             [task.name for task in self.tasks],
             [res["name"] for res in response.data["results"]])
 
-    def test_api_v1_tasks_admin(self):
-        response = self._run_api_v1_tasks(self.admin)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertListEqual(
-            [task.name for task in self.tasks],
-            [res["name"] for res in response.data["results"]])
-
     def test_api_v1_tasks_user(self):
         response = self._run_api_v1_tasks(self.user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -649,3 +642,59 @@ class TaskListAPITestCase(APITestCase):
     def test_api_v1_tasks_no_auth(self):
         response = self._run_api_v1_tasks(None)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class TaskGetAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        createUsers(cls)
+        createManyTasks(cls)
+
+    def _run_api_v1_tasks_id(self, tid, user):
+        if user:
+            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+        response = self.client.get('/api/v1/tasks/{}'.format(tid))
+
+        if user:
+            self.client.logout()
+
+        return response
+
+    def _check_response(self, response, db_task):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["name"], db_task.name)
+        self.assertEqual(response.data["size"], db_task.size)
+        self.assertEqual(response.data["mode"], db_task.mode)
+        owner = db_task.owner.id if db_task.owner else None
+        self.assertEqual(response.data["owner"], owner)
+        assignee = db_task.assignee.id if db_task.assignee else None
+        self.assertEqual(response.data["assignee"], assignee)
+        self.assertEqual(response.data["overlap"], db_task.overlap)
+        self.assertEqual(response.data["segment_size"], db_task.segment_size)
+        self.assertEqual(response.data["z_order"], db_task.z_order)
+        self.assertEqual(response.data["image_quality"], db_task.image_quality)
+        self.assertEqual(response.data["status"], db_task.status)
+
+    def _check_api_v1_tasks_id(self, user):
+        for db_task in self.tasks:
+            response = self._run_api_v1_tasks_id(db_task.id, user)
+            if user and user.has_perm("engine.task.access", db_task):
+                self._check_response(response, db_task)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_api_v1_tasks_id_admin(self):
+        self._check_api_v1_tasks_id(self.admin)
+
+    def test_api_v1_tasks_id_user(self):
+        self._check_api_v1_tasks_id(self.user)
+
+    def test_api_v1_tasks_id_observer(self):
+        self._check_api_v1_tasks_id(self.observer)
+
+    def test_api_v1_tasks_id_no_auth(self):
+        self._check_api_v1_tasks_id(None)
