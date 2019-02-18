@@ -103,7 +103,7 @@ class ServerViewSet(viewsets.ViewSet):
 
 
 class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
-    queryset = Task.objects.all()
+    queryset = Task.objects.all().order_by('id')
     serializer_class = TaskSerializer
     search_fields = ("name", "owner__username", "mode", "status")
     filter_fields = ("name", "owner", "mode", "status", "assignee")
@@ -219,7 +219,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
 class JobViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
-    queryset = Job.objects.all()
+    queryset = Job.objects.all().order_by('id')
     serializer_class = JobSerializer
 
     def get_permissions(self):
@@ -243,7 +243,7 @@ class JobViewSet(viewsets.GenericViewSet,
 
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('id')
     serializer_class = UserSerializer
 
     def get_permissions(self):

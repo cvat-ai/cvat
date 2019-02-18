@@ -116,7 +116,8 @@ class TaskGetQuerySetMixin(object):
     def get_queryset(self):
         queryset = super().get_queryset()
         user = self.request.user
-        if has_admin_role(user) or has_observer_role(user):
+        # Don't filter queryset for admin, observer and detail methods
+        if has_admin_role(user) or has_observer_role(user) or self.detail:
             return queryset
         else:
             return queryset.filter(Q(owner=user) | Q(assignee=user) |
