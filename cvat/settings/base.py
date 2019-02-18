@@ -100,6 +100,7 @@ INSTALLED_APPS = [
     'revproxy',
     'rules',
     'rest_framework',
+    'django_filters'
 ]
 
 REST_FRAMEWORK = {
@@ -115,7 +116,11 @@ REST_FRAMEWORK = {
     'ALLOWED_VERSIONS': ('v1', 'api-docs'),
     'DEFAULT_PAGINATION_CLASS':
         'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
+    'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': (
+        'rest_framework.filters.SearchFilter',
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.OrderingFilter')
 }
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):

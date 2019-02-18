@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Server",
+            "name": "server",
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
@@ -22,7 +22,7 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "Client",
+            "name": "client",
             "type": "chrome",
             "request": "launch",
             "url": "http://localhost:7000/",
@@ -119,10 +119,10 @@
     ],
     "compounds": [
         {
-            "name": "Debugging",
+            "name": "debugging",
             "configurations": [
-                "Client",
-                "Server",
+                "client",
+                "server",
                 "RQ - default",
                 "RQ - low",
                 "git",

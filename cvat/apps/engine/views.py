@@ -105,6 +105,9 @@ class ServerViewSet(viewsets.ViewSet):
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    search_fields = ("name", "owner__username", "mode", "status")
+    filter_fields = ("name", "owner", "mode", "status", "assignee")
+    ordering_fields = ("id", "name", "owner", "status", "assignee")
 
     def get_permissions(self):
         http_method = self.request.method
