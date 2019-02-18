@@ -4,6 +4,7 @@
 
 import os
 from django.conf import settings
+from django.db.models import Q
 import rules
 from . import AUTH_ROLE
 from rest_framework.permissions import (BasePermission, IsAuthenticated,
@@ -110,6 +111,16 @@ class TaskCreatePermission(BasePermission):
 class TaskAccessPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm("engine.task.access", obj)
+
+class TaskGetQuerySetMixin(object):
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        if has_admin_role(user) or has_observer_role(user):
+            return queryset
+        else:
+            return queryset.filter(Q(owner=user) | Q(assignee=user) |
+                Q(segment__job__assignee=user)).distinct()
 
 class TaskChangePermission(BasePermission):
     def has_object_permission(self, request, view, obj):

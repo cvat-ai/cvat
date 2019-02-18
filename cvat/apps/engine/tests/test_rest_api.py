@@ -505,3 +505,147 @@ class UserPartialUpdateAPITestCase(UserUpdateAPITestCase):
         response = self._run_api_v1_users_id(None, self.user.id, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+def createManyTasks(cls):
+    cls.tasks = []
+
+    task = {
+        "name": "my task #1",
+        "owner": cls.owner,
+        "assignee": cls.assignee,
+        "overlap": 0,
+        "segment_size": 100,
+        "z_order": False,
+        "image_quality": 75,
+        "size": 100
+    }
+    db_task = Task.objects.create(**task)
+
+    segment = {
+        "start_frame": 0,
+        "stop_frame": 99
+    }
+    db_segment = Segment.objects.create(task=db_task, **segment)
+    db_job = Job.objects.create(segment=db_segment, assignee=cls.annotator)
+
+    cls.tasks.append(db_task)
+
+    task = {
+        "name": "my multijob task",
+        "owner": cls.user,
+        "overlap": 0,
+        "segment_size": 100,
+        "z_order": True,
+        "image_quality": 50,
+        "size": 200
+    }
+    db_task = Task.objects.create(**task)
+
+    segment = {
+        "start_frame": 0,
+        "stop_frame": 99
+    }
+    db_segment = Segment.objects.create(task=db_task, **segment)
+    db_job = Job.objects.create(segment=db_segment, assignee=cls.annotator)
+
+    segment = {
+        "start_frame": 100,
+        "stop_frame": 199
+    }
+    db_segment = Segment.objects.create(task=db_task, **segment)
+    db_job = Job.objects.create(segment=db_segment, assignee=cls.annotator)
+
+    cls.tasks.append(db_task)
+
+    task = {
+        "name": "my task #2",
+        "owner": cls.owner,
+        "assignee": cls.assignee,
+        "overlap": 0,
+        "segment_size": 100,
+        "z_order": False,
+        "image_quality": 75,
+        "size": 100
+    }
+    db_task = Task.objects.create(**task)
+
+    segment = {
+        "start_frame": 0,
+        "stop_frame": 99
+    }
+    db_segment = Segment.objects.create(task=db_task, **segment)
+    db_job = Job.objects.create(segment=db_segment, assignee=cls.annotator)
+
+    cls.tasks.append(db_task)
+
+    task = {
+        "name": "super task",
+        "owner": cls.admin,
+        "overlap": 0,
+        "segment_size": 50,
+        "z_order": False,
+        "image_quality": 95,
+        "size": 50
+    }
+    db_task = Task.objects.create(**task)
+
+    segment = {
+        "start_frame": 0,
+        "stop_frame": 49
+    }
+    db_segment = Segment.objects.create(task=db_task, **segment)
+    db_job = Job.objects.create(segment=db_segment, assignee=cls.annotator)
+
+    cls.tasks.append(db_task)
+
+
+class TaskListAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        createUsers(cls)
+        createManyTasks(cls)
+
+    def _run_api_v1_tasks(self, user, params=""):
+        if user:
+            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+        response = self.client.get('/api/v1/tasks{}'.format(params))
+
+        if user:
+            self.client.logout()
+
+        return response
+
+    def test_api_v1_tasks_admin(self):
+        response = self._run_api_v1_tasks(self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            [task.name for task in self.tasks],
+            [res["name"] for res in response.data["results"]])
+
+    def test_api_v1_tasks_admin(self):
+        response = self._run_api_v1_tasks(self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            [task.name for task in self.tasks],
+            [res["name"] for res in response.data["results"]])
+
+    def test_api_v1_tasks_user(self):
+        response = self._run_api_v1_tasks(self.user)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            [task.name for task in self.tasks if task.owner == self.user],
+            [res["name"] for res in response.data["results"]])
+
+    def test_api_v1_tasks_observer(self):
+        response = self._run_api_v1_tasks(self.observer)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            [task.name for task in self.tasks],
+            [res["name"] for res in response.data["results"]])
+
+    def test_api_v1_tasks_no_auth(self):
+        response = self._run_api_v1_tasks(None)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

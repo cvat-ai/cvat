@@ -102,7 +102,7 @@ class ServerViewSet(viewsets.ViewSet):
     #         return Response(serializer.data)
 
 
-class TaskViewSet(viewsets.ModelViewSet):
+class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     search_fields = ("name", "owner__username", "mode", "status")
