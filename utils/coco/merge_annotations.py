@@ -5,7 +5,6 @@ import json
 import numpy as np
 import os
 
-from difflib import SequenceMatcher
 from tqdm import tqdm
 
 from pycocotools import coco as coco_loader
@@ -95,6 +94,19 @@ def get_anno_list(directory):
     return files
 
 
+def pretty_string(name_list):
+    """ Make a string from list of some names
+    :param name_list: list of names [name#0, name#1, ...]
+    :return: string in format:
+              -name#0
+              -name#1
+    """
+    output_string = ''
+    for s in name_list:
+        output_string += '\n -' + s
+    return output_string
+
+
 def common_path_images(images_map):
     """ Define which part of paths to images is common for all of them
     :param images_map: dictionary of matched datasets and its images paths. Format:
@@ -105,14 +117,8 @@ def common_path_images(images_map):
                         }
     :return: string with a common part of the images paths
     """
-    common_path = ''
-    for _, path in images_map.items():
-        if common_path == '':
-            common_path = path
-        else:
-            match = SequenceMatcher(None, common_path, path).find_longest_match(0, len(common_path), 0, len(path))
-            common_path = common_path[match.a: match.a + match.size]
-    return common_path
+    paths = [path for _, path in images_map.items()]
+    return os.path.commonpath(paths)
 
 
 def merge_annotations(directory, anno_list, images_map):
@@ -120,17 +126,22 @@ def merge_annotations(directory, anno_list, images_map):
     :param directory: base directory where is saved all datasets which is needed to merge
     :param anno_list: list of annotations to merge. [dataset1.json, dataset2.json, ...]
     :param images_map: dictionary of matched datasets and its images paths
-    :return: merged annotation
+    :return: merged annotation, list of used annotations and list of skipped annotations
     """
     merged_anno = None
     first_step = True
     reference_classes = None
     common_path = common_path_images(images_map)
+    valid_annos = []
+    skipped_annos = []
     for anno_file in tqdm(anno_list, 'Parsing annotations...'):
         if anno_file not in images_map:
-            glog.warning('Dataset <{}> is absent in images-map file and will be ignored!'.format(anno_file))
+            glog.warning('Dataset <{}> is absent in \'images-map\' file and will be ignored!'.format(anno_file))
+            skipped_annos.append(anno_file)
             continue
         img_prefix = images_map[anno_file].replace(common_path, '')
+        if img_prefix[0] == '/':
+            img_prefix = img_prefix.replace('/', '', 1)
         with open(os.path.join(directory, anno_file)) as f:
             data = json.load(f)
             for img in data['images']:
@@ -144,6 +155,7 @@ def merge_annotations(directory, anno_list, images_map):
                 if classes != reference_classes:
                     glog.warning('Categories field in dataset <{}> has another classes and will be ignored!'
                                  .format(anno_file))
+                    skipped_annos.append(anno_file)
                     continue
                 add_img_id = len(merged_anno['images'])
                 add_obj_id = len(merged_anno['annotations'])
@@ -154,7 +166,8 @@ def merge_annotations(directory, anno_list, images_map):
                     ann['image_id'] += add_img_id
                 merged_anno['images'].extend(data['images'])
                 merged_anno['annotations'].extend(data['annotations'])
-    return merged_anno
+        valid_annos.append(anno_file)
+    return merged_anno, valid_annos, skipped_annos
 
 
 def main():
@@ -163,7 +176,9 @@ def main():
     with open(args.images_map) as f:
         images_map = json.load(f)
 
-    result_annotation = merge_annotations(args.input_dir, anno_list, images_map)
+    result_annotation, valid_annos, skipped_annos = merge_annotations(args.input_dir, anno_list, images_map)
+
+    assert len(valid_annos) > 0, 'The result annotation is empty! Please check parameters and your \'images_map\' file.'
 
     # Save created annotation
     glog.info('Saving annotation...')
@@ -178,8 +193,10 @@ def main():
     except:
         raise
     else:
-        glog.info('Annotation in COCO representation <{}> created from \n<{}> \nsuccessfully!'
-                  .format(args.output, anno_list))
+        glog.info('Annotation in COCO representation <{}> successfully created from: {}'
+                  .format(args.output, pretty_string(valid_annos)))
+        if len(skipped_annos) > 0:
+            glog.info('The next annotations were skipped: {}'.format(pretty_string(skipped_annos)))
 
     if args.draw:
         for img in tqdm(result_annotation['images'], 'Drawing and saving images...'):
