@@ -678,6 +678,10 @@ class TaskGetAPITestCase(APITestCase):
         self.assertEqual(response.data["z_order"], db_task.z_order)
         self.assertEqual(response.data["image_quality"], db_task.image_quality)
         self.assertEqual(response.data["status"], db_task.status)
+        self.assertListEqual(
+            [label.name for label in db_task.label_set.all()],
+            [label["name"] for label in response.data["labels"]]
+        )
 
     def _check_api_v1_tasks_id(self, user):
         for db_task in self.tasks:
