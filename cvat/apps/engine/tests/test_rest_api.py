@@ -769,7 +769,6 @@ class TaskUpdateAPITestCase(APITestCase):
         return response
 
     def _check_response(self, response, db_task, data):
-        # Task was changed, need to update the object
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         name = data.get("name", db_task.name)
         self.assertEqual(response.data["name"], name)
@@ -927,3 +926,101 @@ class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
         }
         self._check_api_v1_tasks_id(None, data)
 
+class TaskCreateAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        createUsers(cls)
+
+    @patch('cvat.apps.engine.serializers.slogger')
+    def _run_api_v1_tasks(self, user, data, slogger):
+        if user:
+            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+        response = self.client.post('/api/v1/tasks', data=data, format="json")
+
+        if user:
+            self.client.logout()
+
+        return response
+
+    def _check_response(self, response, user, data):
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["name"], data["name"])
+        self.assertEqual(response.data["size"], 0)
+        self.assertEqual(response.data["mode"], "")
+        self.assertEqual(response.data["owner"], data.get("owner", user.id))
+        self.assertEqual(response.data["assignee"], data.get("assignee"))
+        self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", ""))
+        self.assertEqual(response.data["overlap"], data.get("overlap", 0))
+        self.assertEqual(response.data["segment_size"], data.get("segment_size"))
+        self.assertEqual(response.data["z_order"], data.get("z_order", False))
+        self.assertEqual(response.data["image_quality"], data.get("image_quality", 50))
+        self.assertEqual(response.data["status"], StatusChoice.ANNOTATION)
+        self.assertListEqual(
+            [label["name"] for label in data.get("labels")],
+            [label["name"] for label in response.data["labels"]]
+        )
+
+    def _check_api_v1_tasks(self, user, data):
+        response = self._run_api_v1_tasks(user, data)
+        if user and user.has_perm("engine.task.create"):
+            self._check_response(response, user, data)
+        else:
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_api_v1_tasks_admin(self):
+        data = {
+            "name": "new name for the task",
+            "image_quality": 60,
+            "labels": [{
+                "name": "non-vehicle",
+                "attributes": [{
+                    "name": "my_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }]
+            }]
+        }
+        self._check_api_v1_tasks(self.admin, data)
+
+    def test_api_v1_tasks_user(self):
+        data = {
+            "name": "new name for the task",
+            "owner": self.assignee.id,
+            "image_quality": 63,
+            "labels": [{
+                "name": "car",
+                "attributes": [{
+                    "name": "color",
+                    "mutable": False,
+                    "input_type": AttributeType.SELECT,
+                    "default_value": "white",
+                    "values": ["white", "yellow", "green", "red"]
+                }]
+            }]
+        }
+        self._check_api_v1_tasks(self.user, data)
+
+    def test_api_v1_tasks_observer(self):
+        data = {
+            "name": "new name for the task",
+            "image_quality": 61,
+            "labels": [{
+                "name": "test",
+            }]
+        }
+        self._check_api_v1_tasks(self.observer, data)
+
+    def test_api_v1_tasks_no_auth(self):
+        data = {
+            "name": "new name for the task",
+            "image_quality": 59,
+            "labels": [{
+                "name": "test",
+            }]
+        }
+        self._check_api_v1_tasks(None, data)

@@ -62,6 +62,7 @@ class Task(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now_add=True)
     overlap = models.PositiveIntegerField(default=0)
+    # Zero means that there are no limits (default)
     segment_size = models.PositiveIntegerField(default=0)
     z_order = models.BooleanField(default=False)
     flipped = models.BooleanField(default=False)
