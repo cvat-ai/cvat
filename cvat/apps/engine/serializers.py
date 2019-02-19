@@ -20,7 +20,7 @@ class AttributeSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         attribute = data.copy()
-        attribute['values'] = '\n'.join(data['values'])
+        attribute['values'] = '\n'.join(data.get('values', []))
         return attribute
 
     def to_representation(self, instance):
@@ -166,8 +166,7 @@ class WriteOnceMixin:
 class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
-    image_quality = serializers.IntegerField(min_value=0, max_value=100,
-        default=50)
+    image_quality = serializers.IntegerField(min_value=0, max_value=100)
 
     class Meta:
         model = Task
@@ -177,7 +176,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'image_quality')
         read_only_fields = ('size', 'mode', 'created_date', 'updated_date',
             'status')
-        write_once_fields = ('overlap', 'segment_size')
+        write_once_fields = ('overlap', 'segment_size', 'image_quality')
         ordering = ['-id']
 
     def create(self, validated_data):

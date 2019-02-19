@@ -5,7 +5,9 @@
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth.models import User, Group
-from cvat.apps.engine.models import Task, Segment, Job, StatusChoice
+from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
+    AttributeType)
+from unittest.mock import patch
 
 def setUpModule():
     import logging
@@ -280,7 +282,8 @@ class ServerExceptionAPITestCase(APITestCase):
             "stack": None
         }
 
-    def _run_api_v1_server_exception(self, user):
+    @patch("cvat.apps.engine.views.clogger")
+    def _run_api_v1_server_exception(self, user, clogger):
         if user:
             self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
 
@@ -702,3 +705,225 @@ class TaskGetAPITestCase(APITestCase):
 
     def test_api_v1_tasks_id_no_auth(self):
         self._check_api_v1_tasks_id(None)
+
+class TaskDeleteAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        createUsers(cls)
+        createManyTasks(cls)
+
+    def _run_api_v1_tasks_id(self, tid, user):
+        if user:
+            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+        response = self.client.delete('/api/v1/tasks/{}'.format(tid), format="json")
+
+        if user:
+            self.client.logout()
+
+        return response
+
+    def _check_api_v1_tasks_id(self, user):
+        for db_task in self.tasks:
+            response = self._run_api_v1_tasks_id(db_task.id, user)
+            if user and user.has_perm("engine.task.delete", db_task):
+                self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_api_v1_tasks_id_admin(self):
+        self._check_api_v1_tasks_id(self.admin)
+
+    def test_api_v1_tasks_id_user(self):
+        self._check_api_v1_tasks_id(self.user)
+
+    def test_api_v1_tasks_id_observer(self):
+        self._check_api_v1_tasks_id(self.observer)
+
+    def test_api_v1_tasks_id_no_auth(self):
+        self._check_api_v1_tasks_id(None)
+
+
+class TaskUpdateAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        createUsers(cls)
+        createManyTasks(cls)
+
+    @patch('cvat.apps.engine.serializers.slogger')
+    def _run_api_v1_tasks_id(self, tid, user, data, slogger):
+        if user:
+            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+        response = self.client.put('/api/v1/tasks/{}'.format(tid), data=data, format="json")
+
+        if user:
+            self.client.logout()
+
+        return response
+
+    def _check_response(self, response, db_task, data):
+        # Task was changed, need to update the object
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        name = data.get("name", db_task.name)
+        self.assertEqual(response.data["name"], name)
+        self.assertEqual(response.data["size"], db_task.size)
+        mode = data.get("mode", db_task.mode)
+        self.assertEqual(response.data["mode"], mode)
+        owner = db_task.owner.id if db_task.owner else None
+        owner = data.get("owner", owner)
+        self.assertEqual(response.data["owner"], owner)
+        assignee = db_task.assignee.id if db_task.assignee else None
+        assignee = data.get("assignee", assignee)
+        self.assertEqual(response.data["assignee"], assignee)
+        self.assertEqual(response.data["overlap"], db_task.overlap)
+        self.assertEqual(response.data["segment_size"], db_task.segment_size)
+        z_order = data.get("z_order", db_task.z_order)
+        self.assertEqual(response.data["z_order"], z_order)
+        image_quality = data.get("image_quality", db_task.image_quality)
+        self.assertEqual(response.data["image_quality"], image_quality)
+        self.assertEqual(response.data["status"], db_task.status)
+        if data.get("labels"):
+            self.assertListEqual(
+                [label["name"] for label in data.get("labels")],
+                [label["name"] for label in response.data["labels"]]
+            )
+        else:
+            self.assertListEqual(
+                [label.name for label in db_task.label_set.all()],
+                [label["name"] for label in response.data["labels"]]
+            )
+
+    def _check_api_v1_tasks_id(self, user, data):
+        for db_task in self.tasks:
+            response = self._run_api_v1_tasks_id(db_task.id, user, data)
+            if user and user.has_perm("engine.task.change", db_task):
+                self._check_response(response, db_task, data)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_api_v1_tasks_id_admin(self):
+        data = {
+            "name": "new name for the task",
+            "owner": self.owner.id,
+            "image_quality": 60,
+            "labels": [{
+                "name": "non-vehicle",
+                "attributes": [{
+                    "name": "my_attribute",
+                    "mutable": True,
+                    "input_type": AttributeType.CHECKBOX,
+                    "default_value": "true"
+                }]
+            }]
+        }
+        self._check_api_v1_tasks_id(self.admin, data)
+
+    def test_api_v1_tasks_id_user(self):
+        data = {
+            "name": "new name for the task",
+            "owner": self.assignee.id,
+            "image_quality": 63,
+            "labels": [{
+                "name": "car",
+                "attributes": [{
+                    "name": "color",
+                    "mutable": False,
+                    "input_type": AttributeType.SELECT,
+                    "default_value": "white",
+                    "values": ["white", "yellow", "green", "red"]
+                }]
+            }]
+        }
+        self._check_api_v1_tasks_id(self.user, data)
+
+    def test_api_v1_tasks_id_observer(self):
+        data = {
+            "name": "new name for the task",
+            "image_quality": 61,
+            "labels": [{
+                "name": "test",
+            }]
+        }
+        self._check_api_v1_tasks_id(self.observer, data)
+
+    def test_api_v1_tasks_id_no_auth(self):
+        data = {
+            "name": "new name for the task",
+            "image_quality": 59,
+            "labels": [{
+                "name": "test",
+            }]
+        }
+        self._check_api_v1_tasks_id(None, data)
+
+class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
+
+    @patch('cvat.apps.engine.serializers.slogger')
+    def _run_api_v1_tasks_id(self, tid, user, data, slogger):
+        if user:
+            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+        response = self.client.patch('/api/v1/tasks/{}'.format(tid), data=data, format="json")
+
+        if user:
+            self.client.logout()
+
+        return response
+
+    def test_api_v1_tasks_id_admin_partial(self):
+        data = {
+            "name": "new name for the task",
+            "owner": self.owner.id
+        }
+        self._check_api_v1_tasks_id(self.admin, data)
+
+        data = {
+            "name": "new name for the task #2",
+        }
+        self._check_api_v1_tasks_id(self.admin, data)
+
+
+    def test_api_v1_tasks_id_user_partial(self):
+        data = {
+            "labels": [{
+                "name": "car",
+                "attributes": [{
+                    "name": "color",
+                    "mutable": False,
+                    "input_type": AttributeType.SELECT,
+                    "default_value": "white",
+                    "values": ["white", "yellow", "green", "red"]
+                }]
+            }]
+        }
+        self._check_api_v1_tasks_id(self.user, data)
+
+        data = {
+            "owner": self.observer.id,
+            "assignee": self.annotator.id
+        }
+        self._check_api_v1_tasks_id(self.user, data)
+
+
+    def test_api_v1_tasks_id_observer(self):
+        data = {
+            "name": "my task #3"
+        }
+        self._check_api_v1_tasks_id(self.observer, data)
+
+    def test_api_v1_tasks_id_no_auth(self):
+        data = {
+            "name": "new name for the task",
+            "labels": [{
+                "name": "test",
+            }]
+        }
+        self._check_api_v1_tasks_id(None, data)
+
