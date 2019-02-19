@@ -6,21 +6,363 @@
 
 /* global
     AnnotationParser:false
-    Config:false
     userConfirm:false
     ConstIdGenerator:false
     createExportContainer:false
-    dumpAnnotationRequest:false
+    dumpAnnotation:false
     LabelsInfo:false
     showMessage:false
     showOverlay:false
 */
 
-"use strict";
+'use strict';
+
+class TaskView {
+    constructor(details, ondelete, onupdate) {
+        this.init(details);
+
+        this._ondelete = ondelete;
+        this._onupdate = onupdate;
+        this._UI = null;
+    }
+
+    _disable() {
+        this._UI.find('*').attr('disabled', true).css('opacity', 0.5);
+        this._UI.find('.dashboardJobList').empty();
+    }
+
+    _remove() {
+        $.ajax ({
+            url: `/api/v1/tasks/${this._id}`,
+            type: 'DELETE',
+            success: () => {
+                this._ondelete(this._id);
+                this._disable();
+            },
+            error: (errorData) => {
+                const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
+                    `Message: ${errorData.statusText || errorData.responseText}`;
+                showMessage(message);
+            }
+        });
+    }
+
+    _update() {
+        $('#dashboardUpdateModal').remove();
+        const dashboardUpdateModal = $($('#dashboardUpdateTemplate').html()).appendTo('body');
+        $('#dashboardOldLabels').prop('value', LabelsInfo.serialize(this._labels));
+
+        $('#dashboardCancelUpdate').on('click', () => {
+            dashboardUpdateModal.remove();
+        });
+
+        $('#dashboardSubmitUpdate').on('click', () => {
+            try {
+                const body = {
+                    labels: LabelsInfo.deserialize($('#dashboardNewLabels').prop('value'))
+                };
+                $.ajax({
+                    url: `/api/v1/tasks/${this._id}`,
+                    type: 'PATCH',
+                    contentType: 'application/json',
+                    data: JSON.stringify(body)
+                }).done(() => {
+                    this._onupdate();
+                    dashboardUpdateModal.remove();
+                    showMessage('Task has been successfully updated');
+                }).fail((errorData) => {
+                    const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
+                        `Message: ${errorData.statusText || errorData.responseText}`;
+                    showMessage(message);
+                });
+            } catch (exception) {
+                showMessage(exception);
+            }
+        });
+    }
+
+    _upload() {
+        // TODO Today
+    }
+
+    _dump() {
+        // TODO Today
+    }
+
+    init(details) {
+        for (let prop in details) {
+            this[`_${prop}`] = details[prop];
+        }
+    }
+
+    render(baseURL) {
+        const self = this;
+        this._UI = $('<div class="dashboardItem"> </div>').append(
+            $(`<center class="dashboardTitleWrapper">
+                <label class="semiBold h1 selectable"> ${this._name} </label>
+            </center>`)
+        ).append(
+            $(`<center class="dashboardTitleWrapper">
+                <label class="regular selectable"> ${this._status} </label>
+            </center>`)
+        ).append(
+            $('<div class="dashboardTaskIntro"> </div>').css({
+                'background-image': `url("/api/v1/tasks/${this._id}/frames/0")`
+            })
+        );
+
+
+        const buttonsContainer = $(`<div class="dashboardButtonsUI"> </div>`).appendTo(this._UI);
+        $('<button class="regular dashboardButtonUI"> Dump Annotation </button>').on('click', () => {
+            self._dumpAnnotation();
+        }).appendTo(buttonsContainer);
+
+        $('<button class="regular dashboardButtonUI"> Upload Annotation </button>').on('click', () => {
+            userConfirm("The current annotation will be lost. Are you sure?", () => self._uploadAnnotation());
+        }).appendTo(buttonsContainer);
+
+        $('<button class="regular dashboardButtonUI"> Update Task </button>').on('click', () => {
+            self._update();
+        }).appendTo(buttonsContainer);
+
+        $('<button class="regular dashboardButtonUI"> Delete Task </button>').on('click', () => {
+            userConfirm("The task will be removed. Are you sure?", () => self._remove());
+        }).appendTo(buttonsContainer);
+
+        if (this._bug_tracker) {
+            $('<button class="regular dashboardButtonUI"> Open Bug Tracker </button>').on('click', () => {
+                window.open(this._bug_tracker);
+            }).appendTo(buttonsContainer);
+        }
+
+
+        const jobsContainer = $(`<table class="dashboardJobList regular">`);
+        for (let segment of this._segments) {
+            for (let job of segment.jobs) {
+                const link = `${baseURL}?id=${job.id}`;
+                jobsContainer.append($(`<tr> <td> <a href="${link}"> ${link} </a> </td> </tr>`));
+            }
+        }
+
+        this._UI.append($(`
+            <div class="dashboardJobsUI">
+                <center class="dashboardTitleWrapper">
+                    <label class="regular h1"> Jobs </label>
+                </center>
+            </div>
+        `).append(jobsContainer));
+
+        if (this._removed) {
+            this._disable();
+        }
+
+        return this._UI;
+    }
+}
+
+
+class DashboardView {
+    constructor(metaData, taskData) {
+        this._dashboardList = taskData.results;
+        this._maxUploadSize = metaData.max_upload_size;
+        this._maxUploadCount = metaData.max_upload_count;
+        this._baseURL = metaData.base_url;
+        this._sharePath = metaData.share_path;
+
+        this._setupList();
+        this._setupTaskSearch();
+        this._setupCreateDialog();
+    }
+
+    _setupList() {
+        const dashboardList = $('#dashboardList');
+        const dashboardPagination = $('#dashboardPagination');
+
+        const baseURL = this._baseURL;
+        dashboardPagination.pagination({
+            dataSource: this._dashboardList,
+            callback: function(pageList) {
+                dashboardList.empty();
+                for (let details of pageList) {
+                    const taskView = new TaskView(details, () => {
+                        // on delete task callback
+                        details.removed = true
+                    }, (body) => {
+                        // on update task callback
+                        $.get(`/api/v1/tasks/${details.id}`).done((taskData) => {
+                            Object.assign(details, taskData);
+                            taskView.init(details);
+                        }).fail((errorData) => {
+                            const message = `Can not get task from server. Showed info may be obsolete. Code: ${errorData.status}. ` +
+                                `Message: ${errorData.statusText || errorData.responseText}`;
+                            showMessage(message);
+                        })
+                    });
+                    dashboardList.append(taskView.render(baseURL));
+                }
+
+                const pages = $('.paginationjs-pages');
+                pages.css('margin-left', (window.screen.width - pages.width()) / 2);
+            }
+        });
+    }
+
+    _setupTaskSearch() {
+
+    }
+
+    _setupCreateDialog() {
+
+    }
+}
+
+
+// DASHBOARD ENTRYPOINT
+window.addEventListener('DOMContentLoaded', () => {
+    $.when(
+        // TODO: Use REST API in order to get meta
+        $.get('/dashboard/meta'),
+        $.get('/api/v1/tasks'),
+    ).then((metaData, taskData) => {
+        try {
+            new DashboardView(metaData[0], taskData[0]);
+            $(window).on('click', function(event) {
+                if (event.target.classList.contains('modal')) {
+                    event.target.classList.add('hidden');
+                }
+            });
+        }
+        catch(exception) {
+            $('#content').empty();
+            const message = `Can not build CVAT dashboard. Exception: ${exception}.`;
+            showMessage(message);
+        }
+    }).fail((errorData) => {
+        $('#content').empty();
+        const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
+            `Message: ${errorData.statusText || errorData.responseText}`;
+        showMessage(message);
+    }).always(() => {
+        $('#loadingOverlay').remove();
+    });
+});
+
+
+// TODO:
+// UPLOAD
+// DUMP
+// SEARCH
+// CREATE TASK & SHARE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* Server requests */
 function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {
     $.ajax({
-        url: "/api/v1/tasks/",
+        url: '/api/v1/tasks/',
         type: "POST",
         data: oData,
         contentType: false,
@@ -74,48 +416,9 @@ function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, on
 }
 
 
-function updateTaskRequest(labels) {
-    let data = new LabelsInfo(labels);
 
-    $.ajax({
-        url: "/api/v1/tasks/" + window.cvat.dashboard.taskID,
-        type: "PATCH",
-        data: data,
-        contentType: false,
-        processData: false,
-        success: function() {
-            $("#dashboardNewLabels").prop("value", "");
-            showMessage("Task successfully updated.");
-        },
-        error: function(data) {
-            showMessage("Task update error. " + data.responseText);
-        },
-        complete: () => $("#dashboardUpdateModal").addClass("hidden")
-    });
-}
+function uploadAnnotationRequest(tid) {
 
-
-function removeTaskRequest() {
-    userConfirm("The action can not be undone. Are you sure?", confirmCallback);
-
-    function confirmCallback() {
-        $.ajax ({
-            url: "/delete/task/" + window.cvat.dashboard.taskID,
-            success: function() {
-                $(`#dashboardTask_${window.cvat.dashboard.taskID}`).remove();
-                showMessage("Task removed.");
-            },
-            error: function(response) {
-                let message = "Abort. Reason: " + response.responseText;
-                showMessage(message);
-                throw Error(message);
-            }
-        });
-    }
-}
-
-
-function uploadAnnotationRequest() {
     let input = $("<input>").attr({
         type: "file",
         accept: "text/xml"
@@ -237,83 +540,6 @@ function uploadAnnotationRequest() {
             }
         );
     }
-}
-
-
-/* Dashboard entrypoint */
-window.cvat = window.cvat || {};
-window.cvat.dashboard = window.cvat.dashboard || {};
-window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
-window.cvat.config = new Config();
-
-window.cvat.dashboard.uiCallbacks.push(function(elements) {
-    elements.each(function(idx) {
-        let elem = $(elements[idx]);
-        let taskID = +elem.attr("id").split("_")[1];
-        let taskName = $.trim($( elem.find("label.dashboardTaskNameLabel")[0] ).text());
-        let buttonsUI = elem.find("div.dashboardButtonsUI")[0];
-
-        let dumpButton = $( $(buttonsUI).find("button.dashboardDumpAnnotation")[0] );
-        let uploadButton = $( $(buttonsUI).find("button.dashboardUploadAnnotation")[0] );
-        let updateButton = $( $(buttonsUI).find("button.dashboardUpdateTask")[0] );
-        let deleteButton = $( $(buttonsUI).find("button.dashboardDeleteTask")[0] );
-
-        let bugTrackerButton =  $(buttonsUI).find(".dashboardOpenTrackerButton");
-        if (bugTrackerButton.length) {
-            bugTrackerButton = $(bugTrackerButton[0]);
-            bugTrackerButton.on("click", function() {
-                window.open($(buttonsUI).find("a.dashboardBugTrackerLink").attr("href"));
-            });
-        }
-
-        dumpButton.on("click", function() {
-            window.cvat.dashboard.taskID = taskID;
-            window.cvat.dashboard.taskName = taskName;
-            dumpAnnotationRequest(dumpButton, taskID, taskName);
-        });
-
-        uploadButton.on("click", function() {
-            window.cvat.dashboard.taskID = taskID;
-            window.cvat.dashboard.taskName = taskName;
-            userConfirm("The current annotation will be lost. Are you sure?", uploadAnnotationRequest);
-        });
-
-        updateButton.on("click", function() {
-            window.cvat.dashboard.taskID = taskID;
-            window.cvat.dashboard.taskName = taskName;
-            $("#dashboardUpdateModal").removeClass("hidden");
-            $("#dashboardUpdateModal")[0].loadCurrentLabels();
-        });
-
-        deleteButton.on("click", function() {
-            window.cvat.dashboard.taskID = taskID;
-            window.cvat.dashboard.taskName = taskName;
-            removeTaskRequest();
-        });
-    });
-});
-
-document.addEventListener("DOMContentLoaded", buildDashboard);
-
-
-function buildDashboard() {
-    /* Setup static content */
-    setupTaskCreator();
-    setupTaskUpdater();
-    setupSearch();
-
-    $(window).on("click", function(event) {
-        if (event.target.classList.contains("modal")) {
-            event.target.classList.add("hidden");
-        }
-    });
-
-    /* Setup task UIs */
-    for (let callback of window.cvat.dashboard.uiCallbacks) {
-        callback( $(".dashboardTaskUI") );
-    }
-
-    $("#loadingOverlay").remove();
 }
 
 

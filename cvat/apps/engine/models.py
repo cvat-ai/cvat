@@ -66,7 +66,7 @@ class Task(models.Model):
     segment_size = models.PositiveIntegerField(default=0)
     z_order = models.BooleanField(default=False)
     flipped = models.BooleanField(default=False)
-    image_quality = models.PositiveSmallIntegerField()
+    image_quality = models.PositiveSmallIntegerField(default=50)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
 

@@ -150,4 +150,73 @@ class LabelsInfo {
             return string.toString().split(',');
         }
     }
+
+    static serialize(deserialized) {
+        let serialized = "";
+        for (let label of deserialized) {
+            serialized += " " + label.name;
+            for (let attr of label.attributes) {
+                serialized += ' ' + (attr.mutable? "~":"@");
+                serialized += attr.input_type + '=' + attr.name + ':';
+                serialized += attr.values.join(',');
+            }
+        }
+
+        return serialized.trim();
+    }
+
+    static deserialize(serialized) {
+        let normalized = serialized.replace(/"+/g, '"').replace(/\s+/g, ' ');
+
+        let splitted = [];
+        let deserialized = [];
+
+        let tempSplitted = normalized.split(' ');
+        for (let idx = 0; idx < tempSplitted.length; idx ++) {
+            let fragment = tempSplitted[idx];
+            while ((fragment.match(/"/g) || []).length % 2) {
+                idx ++;
+                if (idx < tempSplitted.length) {
+                    fragment += ' ' + tempSplitted[idx];
+                } else {
+                    throw Error('Invalid label specification');
+                }
+            }
+
+            splitted.push(fragment);
+        }
+
+
+        let latest = null;
+        for (let fragment of splitted) {
+            if ((fragment.startsWith('~')) || (fragment.startsWith('@'))) {
+                const regex = /([a-zA-Z]+)=([a-zA-Z0-9\s"'`_]+):([a-zA-Z0-9\s,"'`_]+)/g;
+                const mutable = fragment.startsWith('~');
+                fragment = fragment.slice(1);
+                fragment = regex.exec(fragment);
+                if (latest && fragment && fragment.length === 4 &&
+                    ['checkbox', 'number', 'select', 'radio', 'text'].includes(fragment[1])) {
+
+                    latest.attributes.push({
+                        name: fragment[2],
+                        mutable: mutable,
+                        input_type: fragment[1],
+                        default_value: fragment[3].split(',')[0],
+                        values: fragment[3].split(',')
+                    });
+                } else {
+                    throw Error('Invalid label specification');
+                }
+            } else {
+                latest = {
+                    name: fragment,
+                    attributes: []
+                };
+
+                deserialized.push(latest);
+            }
+        }
+
+        return deserialized;
+    }
 }

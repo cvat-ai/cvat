@@ -125,7 +125,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='task',
             name='image_quality',
-            field=models.PositiveSmallIntegerField(),
+            field=models.PositiveSmallIntegerField(default=50),
         ),
         migrations.CreateModel(
             name='Plugin',
