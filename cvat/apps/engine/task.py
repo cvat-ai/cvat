@@ -190,7 +190,7 @@ def _copy_video_to_task(video, db_task):
         shutil.copyfile(image_orig_path, image_dest_path)
 
     image = Image.open(db_task.get_frame_path(0))
-    models.Video.objects.create(db_task, path=video,
+    models.Video.objects.create(task=db_task, path=video,
         start_frame=0, stop_frame=db_task.size, step=1,
         width=image.width, height=image.height)
     image.close()
@@ -303,6 +303,7 @@ def _create_thread(tid, data):
 
     if video:
         db_task.mode = "interpolation"
+        video = os.path.join(upload_dir, video)
         _copy_video_to_task(video, db_task)
     else:
         db_task.mode = "annotation"
