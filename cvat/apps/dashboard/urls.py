@@ -9,5 +9,6 @@ from . import views
 urlpatterns = [
     path('get_share_nodes', views.JsTreeView),
     path('', views.DashboardView),
+    path('meta', views.DashboardMeta),
 ]
 

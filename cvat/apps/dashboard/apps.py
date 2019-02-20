@@ -5,7 +5,9 @@
 
 from django.apps import AppConfig
 
-
 class DashboardConfig(AppConfig):
-    name = 'dashboard'
+    name = 'cvat.apps.dashboard'
 
+    def ready(self):
+        # plugin registration
+        pass
