@@ -432,7 +432,7 @@ class DashboardView {
 
         let name = nameInput.prop('value');
         let labels = labelsInput.prop('value');
-        let bugTrackerLink = bugTrackerInput.prop('value');
+        let bugTrackerLink = bugTrackerInput.prop('value').trim();
         let source = 'local';
         let flipImages = false;
         let zOrder = false;
@@ -446,7 +446,7 @@ class DashboardView {
         });
 
         nameInput.on('change', (e) => name = e.target.value);
-        bugTrackerInput.on('change', (e) => bugTrackerLink = e.target.value);
+        bugTrackerInput.on('change', (e) => bugTrackerLink = e.target.value.trim());
         labelsInput.on('change', (e) => labels = e.target.value);
 
         localSourceRadio.on('click', () => {
@@ -593,22 +593,27 @@ class DashboardView {
             }
 
             const description = {
-                'name': name,
-                'bug_tracker': bugTrackerLink,
-                'flipped': flipImages,
-                'z_order': zOrder,
-                'labels': LabelsInfo.deserialize(labels),
+                name: name,
+                labels: LabelsInfo.deserialize(labels),
+                image_quality: compressQuality
             }
 
+            if (bugTrackerLink) {
+                description.bug_tracker = bugTrackerLink;
+            }
+            if (flipImages) {
+                description.flipped = flipImages;
+            }
+            if (zOrder) {
+                description.z_order = zOrder;
+            }
             if (customSegmentSize.prop('checked')) {
                 description.segment_size = segmentSize;
             }
             if (customOverlapSize.prop('checked')) {
                 description.overlap = overlapSize;
             }
-            if (customCompressQuality.prop('checked')) {
-                description.image_quality = compressQuality;
-            }
+
 
             submitCreate.prop('disabled', true);
             $.ajax({
@@ -653,7 +658,7 @@ class DashboardView {
                     const message = `Can not put the data for the task. Code: ${errorData.status}. ` +
                         `Message: ${errorData.responseText || errorData.statusText}`;
                     taskMessage.css('color', 'red');
-                    taskMessage.text(`Task has not been created. ${message}`);
+                    taskMessage.text(message);
                     submitCreate.prop('disabled', false);
 
                     $.ajax({
@@ -662,10 +667,10 @@ class DashboardView {
                     });
                 });
             }).fail((errorData) => {
-                const message = `Can not check task status. Code: ${errorData.status}. ` +
+                const message = `Task has not been created. Code: ${errorData.status}. ` +
                     `Message: ${errorData.responseText || errorData.statusText}`;
                 taskMessage.css('color', 'red');
-                taskMessage.text(`Task has not been created. ${message}`);
+                taskMessage.text(message);
                 submitCreate.prop('disabled', false);
             });
         });

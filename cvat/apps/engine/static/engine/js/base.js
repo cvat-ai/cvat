@@ -24,6 +24,35 @@ Math.clamp = function(x, min, max) {
     return Math.min(Math.max(x, min), max);
 };
 
+String.customSplit = function(string, separator) {
+    const regex = /"/gi;
+    const occurences = [];
+    let occurence = null;
+    while ( (occurence = regex.exec(string)) ) {
+        occurences.push(occurence.index);
+    }
+
+    if (occurences.length % 2) {
+        occurences.pop();
+    }
+
+    let copy = "";
+    if (occurences.length) {
+        let start = 0;
+        for (let idx = 0; idx < occurences.length; idx += 2) {
+            copy += string.substr(start, occurences[idx] - start);
+            copy += string.substr(occurences[idx], occurences[idx + 1] - occurences[idx] + 1)
+                .replace(new RegExp(separator, 'g'), '\0');
+            start = occurences[idx + 1] + 1;
+        }
+        copy += string.substr(occurences[occurences.length - 1] + 1);
+    } else {
+        copy = string;
+    }
+
+    return copy.split(new RegExp(separator, 'g')).map((x) => x.replace(/\0/g, separator));
+};
+
 
 function userConfirm(message, onagree, ondisagree) {
     let template = $('#confirmTemplate');
