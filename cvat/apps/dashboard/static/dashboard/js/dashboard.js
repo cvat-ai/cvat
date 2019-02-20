@@ -18,57 +18,6 @@
 
 'use strict';
 
-function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {
-    $.ajax({
-        url: '/api/v1/tasks',
-        type: 'POST',
-        data: oData,
-        contentType: false,
-        processData: false
-    }).done((data) => {
-        onSuccessRequest();
-        requestCreatingStatus(data.id);
-    }).fail((errorData) => {
-        onComplete();
-        const message = `Can not create task. Code: ${errorData.status}. ` +
-            `Message: ${errorData.responseText || errorData.statusText}`;
-        onError(message);
-    });
-
-    function requestCreatingStatus(tid) {
-        function checkCallback() {
-            $.get(`/api/v1/tasks/${tid}/status`).done((data) => {
-                if (['queued', 'Started'].includes(data.state)) {
-                    if (data.message != '') {
-                        onUpdateStatus(data.message);
-                    }
-                    setTimeout(checkCallback, 1000);
-                } else {
-                    onComplete();
-                    if (data.state === 'Finished') {
-                        onSuccessCreate(tid);
-                    }
-                    else if (data.state === 'Failed') {
-                        const message = `Can not create task. ${data.message}`;
-                        onError(message);
-                    } else {
-                        const message = `Unknown state has been received: ${data.state}`;
-                        onError(message);
-                    }
-
-                }
-            }).fail((errorData) => {
-                onComplete();
-                const message = `Can not check task status. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.responseText || errorData.statusText}`;
-                onError(message);
-            });
-        }
-
-        setTimeout(checkCallback, 1000);
-    }
-}
-
 class TaskView {
     constructor(details, ondelete, onupdate) {
         this.init(details);
@@ -387,6 +336,73 @@ class DashboardView {
     }
 
     _setupCreateDialog() {
+        function updateSelectedFiles() {
+            switch (files.length) {
+            case 0:
+                filesLabel.text('No Files');
+                break;
+            case 1:
+                filesLabel.text(typeof(files[0]) === 'string' ? files[0] : files[0].name);
+                break;
+            default:
+                filesLabel.text(files.length + ' files');
+            }
+        }
+
+
+        function validateName(name) {
+            const math = name.match('[a-zA-Z0-9_]+');
+            return math != null;
+        }
+
+        function validateLabels(labels) {
+            try {
+                LabelsInfo.deserialize(labels)
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
+        function validateSegmentSize(segmentSize) {
+            return (segmentSize >= 100 && segmentSize <= 50000);
+        }
+
+        function validateOverlapSize(overlapSize, segmentSize) {
+            return (overlapSize >= 0 && overlapSize <= segmentSize - 1);
+        }
+
+        function requestCreatingStatus(tid, onUpdateStatus, onSuccess, onError) {
+            function checkCallback() {
+                $.get(`/api/v1/tasks/${tid}/status`).done((data) => {
+                    if (['Queued', 'Started'].includes(data.state)) {
+                        if (data.message != '') {
+                            onUpdateStatus(data.message);
+                        }
+                        setTimeout(checkCallback, 1000);
+                    } else {
+                        if (data.state === 'Finished') {
+                            onSuccess(tid);
+                        }
+                        else if (data.state === 'Failed') {
+                            const message = `Can not create task. ${data.message}`;
+                            onError(message);
+                        } else {
+                            const message = `Unknown state has been received: ${data.state}`;
+                            onError(message);
+                        }
+
+                    }
+                }).fail((errorData) => {
+                    const message = `Can not check task status. Code: ${errorData.status}. ` +
+                        `Message: ${errorData.responseText || errorData.statusText}`;
+                    onError(message);
+                });
+            }
+
+            setTimeout(checkCallback, 1000);
+        }
+
         const dashboardCreateTaskButton = $('#dashboardCreateTaskButton');
         const createModal = $('#dashboardCreateModal');
         const nameInput = $('#dashboardNameInput');
@@ -576,91 +592,83 @@ class DashboardView {
                 }
             }
 
-            let taskData = new FormData();
-            taskData.append('name', name);
-            taskData.append('bug_tracker', bugTrackerLink);
-            taskData.append('flipped', flipImages);
-            taskData.append('z_order', zOrder);
-
-            const deserialized = LabelsInfo.deserialize(labels);
-            for (let i = 0; i < deserialized.length; i++) {
-                taskData.append(`labels[${i}]`, JSON.stringify(deserialized[i]));
+            const description = {
+                'name': name,
+                'bug_tracker': bugTrackerLink,
+                'flipped': flipImages,
+                'z_order': zOrder,
+                'labels': LabelsInfo.deserialize(labels),
             }
 
             if (customSegmentSize.prop('checked')) {
-                taskData.append('segment_size', segmentSize);
+                description.segment_size = segmentSize;
             }
             if (customOverlapSize.prop('checked')) {
-                taskData.append('overlap', overlapSize);
+                description.overlap = overlapSize;
             }
             if (customCompressQuality.prop('checked')) {
-                taskData.append('image_quality', compressQuality);
-            }
-
-            for (let j = 0; j < files.length; j++) {
-                if (source === 'local') {
-                    taskData.append(`client_files[${j}]`, files[j]);
-                } else {
-                    taskData.append(`server_files[${j}]`, files[j]);
-                }
+                description.image_quality = compressQuality;
             }
 
             submitCreate.prop('disabled', true);
-            createTaskRequest(taskData,
-                () => {
-                    // Success create request
-                    taskMessage.css('color', 'green');
-                    taskMessage.text('Successful request! Creating..');
-                },
-                () => window.location.reload(), // Success create
-                (errorMessage) => {
-                    // On error
+            $.ajax({
+                url: '/api/v1/tasks',
+                type: 'POST',
+                data: JSON.stringify(description),
+                contentType: 'application/json'
+            }).done((data) => {
+                taskMessage.css('color', 'green');
+                taskMessage.text('Task has been created. Uploading the data..');
+
+                const batchOfFiles = new FormData();
+                for (let j = 0; j < files.length; j++) {
+                    if (source === "local") {
+                        batchOfFiles.append(`client_files[${j}]`, files[j]);
+                    } else {
+                        batchOfFiles.append(`server_files[${j}]`, files[j]);
+                    }
+                }
+
+                $.ajax({
+                    url: `/api/v1/tasks/${data.id}/data`,
+                    type: 'POST',
+                    data: batchOfFiles,
+                    contentType: false,
+                    processData: false
+                }).done(() => {
+                    taskMessage.text('The data has been sent. Task is being created..');
+
+                    requestCreatingStatus(data.id, (status) => {
+                        taskMessage.css('color', 'blue');
+                        taskMessage.text(status);
+                    }, () => {
+                        window.location.reload();
+                    }, (errorMessage) => {
+                        submitCreate.prop('disabled', false);
+                        taskMessage.css('color', 'red');
+                        taskMessage.text(errorMessage);
+                    });
+
+                }).fail((errorData) => {
+                    const message = `Can not put the data for the task. Code: ${errorData.status}. ` +
+                        `Message: ${errorData.responseText || errorData.statusText}`;
                     taskMessage.css('color', 'red');
-                    taskMessage.text(errorMessage);
-                },
-                () => submitCreate.prop('disabled', false), // On complete
-                (status) => {
-                    // On update status
-                    taskMessage.css('color', 'blue');
-                    taskMessage.text(status);
+                    taskMessage.text(`Task has not been created. ${message}`);
+                    submitCreate.prop('disabled', false);
+
+                    $.ajax({
+                        url: `/api/v1/tasks/${data.id}`,
+                        type: 'DELETE',
+                    });
                 });
+            }).fail((errorData) => {
+                const message = `Can not check task status. Code: ${errorData.status}. ` +
+                    `Message: ${errorData.responseText || errorData.statusText}`;
+                taskMessage.css('color', 'red');
+                taskMessage.text(`Task has not been created. ${message}`);
+                submitCreate.prop('disabled', false);
+            });
         });
-
-        function updateSelectedFiles() {
-            switch (files.length) {
-            case 0:
-                filesLabel.text('No Files');
-                break;
-            case 1:
-                filesLabel.text(typeof(files[0]) === 'string' ? files[0] : files[0].name);
-                break;
-            default:
-                filesLabel.text(files.length + ' files');
-            }
-        }
-
-
-        function validateName(name) {
-            const math = name.match('[a-zA-Z0-9_]+');
-            return math != null;
-        }
-
-        function validateLabels(labels) {
-            try {
-                LabelsInfo.deserialize(labels)
-                return true;
-            } catch {
-                return false;
-            }
-        }
-
-        function validateSegmentSize(segmentSize) {
-            return (segmentSize >= 100 && segmentSize <= 50000);
-        }
-
-        function validateOverlapSize(overlapSize, segmentSize) {
-            return (overlapSize >= 0 && overlapSize <= segmentSize - 1);
-        }
 
         cancelCreate.on('click', () => createModal.addClass('hidden'));
     }
