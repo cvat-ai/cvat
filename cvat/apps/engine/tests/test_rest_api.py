@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
+import shutil
 from PIL import Image
 from io import BytesIO
 import random
@@ -11,22 +13,9 @@ from rest_framework import status
 from django.contrib.auth.models import User, Group
 from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
     AttributeType)
-from unittest.mock import patch
+from unittest import mock
 
-def setUpModule():
-    import logging
-    global django_request_logger
-    global django_request_loglevel
-
-    django_request_logger = logging.getLogger('django.request')
-    django_request_loglevel = django_request_logger.getEffectiveLevel()
-    django_request_logger.setLevel(logging.ERROR)
-
-def tearDownModule():
-    django_request_logger.setLevel(django_request_loglevel)
-
-
-def createUsers(cls):
+def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
     (group_user, _) = Group.objects.get_or_create(name="user")
     (group_annotator, _) = Group.objects.get_or_create(name="annotator")
@@ -53,25 +42,82 @@ def createUsers(cls):
     cls.observer = user_observer
     cls.user = user_dummy
 
-def createTask(cls):
-    task = {
-        "name": "my test task",
-        "owner": cls.owner,
-        "assignee": cls.assignee,
+def create_db_task(data):
+    db_task = Task.objects.create(**data)
+    shutil.rmtree(db_task.get_task_dirname(), ignore_errors=True)
+    os.makedirs(db_task.get_upload_dirname())
+    os.makedirs(db_task.get_data_dirname())
+
+    for x in range(0, db_task.size, db_task.segment_size):
+        start_frame = x
+        stop_frame = min(x + db_task.segment_size - 1, db_task.size - 1)
+
+        db_segment = Segment()
+        db_segment.task = db_task
+        db_segment.start_frame = start_frame
+        db_segment.stop_frame = stop_frame
+        db_segment.save()
+
+        db_job = Job()
+        db_job.segment = db_segment
+        db_job.save()
+
+    return db_task
+
+def create_dummy_db_tasks(obj):
+    tasks = []
+
+    data = {
+        "name": "my task #1",
+        "owner": obj.owner,
+        "assignee": obj.assignee,
         "overlap": 0,
         "segment_size": 100,
         "z_order": False,
         "image_quality": 75,
         "size": 100
     }
-    cls.task = Task.objects.create(**task)
+    db_task = create_db_task(data)
+    tasks.append(db_task)
 
-    segment = {
-        "start_frame": 0,
-        "stop_frame": 100
+    data = {
+        "name": "my multijob task",
+        "owner": obj.user,
+        "overlap": 0,
+        "segment_size": 100,
+        "z_order": True,
+        "image_quality": 50,
+        "size": 200
     }
-    cls.segment = Segment.objects.create(task=cls.task, **segment)
-    cls.job = Job.objects.create(segment=cls.segment, assignee=cls.annotator)
+    db_task = create_db_task(data)
+    tasks.append(db_task)
+
+    data = {
+        "name": "my task #2",
+        "owner": obj.owner,
+        "assignee": obj.assignee,
+        "overlap": 0,
+        "segment_size": 100,
+        "z_order": False,
+        "image_quality": 75,
+        "size": 100
+    }
+    db_task = create_db_task(data)
+    tasks.append(db_task)
+
+    data = {
+        "name": "super task",
+        "owner": obj.admin,
+        "overlap": 0,
+        "segment_size": 50,
+        "z_order": False,
+        "image_quality": 95,
+        "size": 50
+    }
+    db_task = create_db_task(data)
+    tasks.append(db_task)
+
+    return tasks
 
 class JobGetAPITestCase(APITestCase):
     def setUp(self):
@@ -79,8 +125,11 @@ class JobGetAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
-        createTask(cls)
+        create_db_users(cls)
+        cls.task = create_dummy_db_tasks(cls)[0]
+        cls.job = Job.objects.filter(segment__task_id=cls.task.id).first()
+        cls.job.assignee = cls.annotator
+        cls.job.save()
 
     def _run_api_v1_jobs_id(self, jid, user):
         if user:
@@ -140,11 +189,14 @@ class JobGetAPITestCase(APITestCase):
 class JobUpdateAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        createTask(self)
+        self.task = create_dummy_db_tasks(self)[0]
+        self.job = Job.objects.filter(segment__task_id=self.task.id).first()
+        self.job.assignee = self.annotator
+        self.job.save()
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
+        create_db_users(cls)
 
     def _run_api_v1_jobs_id(self, jid, user, data):
         if user:
@@ -161,7 +213,8 @@ class JobUpdateAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], self.job.id)
         self.assertEqual(response.data["status"], data.get('status', self.job.status))
-        self.assertEqual(response.data["assignee"], data.get('assignee', self.job.assignee.id))
+        assignee = self.job.assignee.id if self.job.assignee else None
+        self.assertEqual(response.data["assignee"], data.get('assignee', assignee))
         self.assertEqual(response.data["start_frame"], self.job.segment.start_frame)
         self.assertEqual(response.data["stop_frame"], self.job.segment.stop_frame)
 
@@ -235,7 +288,7 @@ class ServerAboutAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
+        create_db_users(cls)
 
     def _run_api_v1_server_about(self, user):
         if user:
@@ -272,7 +325,7 @@ class ServerExceptionAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
+        create_db_users(cls)
         cls.data = {
             "system": "Linux",
             "client": "rest_framework.APIClient",
@@ -285,7 +338,7 @@ class ServerExceptionAPITestCase(APITestCase):
             "stack": None
         }
 
-    @patch("cvat.apps.engine.views.clogger")
+    @mock.patch("cvat.apps.engine.views.clogger")
     def _run_api_v1_server_exception(self, user, clogger):
         if user:
             self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
@@ -315,7 +368,7 @@ class UserListAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
+        create_db_users(cls)
 
     def _run_api_v1_users(self, user):
         if user:
@@ -349,7 +402,7 @@ class UserSelfAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
+        create_db_users(cls)
 
     def _run_api_v1_users_self(self, user):
         if user:
@@ -389,7 +442,7 @@ class UserGetAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
+        create_db_users(cls)
 
     def _run_api_v1_users_id(self, user, id):
         if user:
@@ -438,7 +491,7 @@ class UserGetAPITestCase(APITestCase):
 class UserUpdateAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        createUsers(self)
+        create_db_users(self)
 
     def _run_api_v1_users_id(self, user, id, data):
         if user:
@@ -510,97 +563,6 @@ class UserPartialUpdateAPITestCase(UserUpdateAPITestCase):
         response = self._run_api_v1_users_id(None, self.user.id, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-def createManyTasks(cls):
-    cls.tasks = []
-
-    task = {
-        "name": "my task #1",
-        "owner": cls.owner,
-        "assignee": cls.assignee,
-        "overlap": 0,
-        "segment_size": 100,
-        "z_order": False,
-        "image_quality": 75,
-        "size": 100
-    }
-    db_task = Task.objects.create(**task)
-
-    segment = {
-        "start_frame": 0,
-        "stop_frame": 99
-    }
-    db_segment = Segment.objects.create(task=db_task, **segment)
-    db_job = Job.objects.create(segment=db_segment, assignee=cls.annotator)
-
-    cls.tasks.append(db_task)
-
-    task = {
-        "name": "my multijob task",
-        "owner": cls.user,
-        "overlap": 0,
-        "segment_size": 100,
-        "z_order": True,
-        "image_quality": 50,
-        "size": 200
-    }
-    db_task = Task.objects.create(**task)
-
-    segment = {
-        "start_frame": 0,
-        "stop_frame": 99
-    }
-    db_segment = Segment.objects.create(task=db_task, **segment)
-    db_job = Job.objects.create(segment=db_segment, assignee=cls.annotator)
-
-    segment = {
-        "start_frame": 100,
-        "stop_frame": 199
-    }
-    db_segment = Segment.objects.create(task=db_task, **segment)
-    db_job = Job.objects.create(segment=db_segment, assignee=cls.annotator)
-
-    cls.tasks.append(db_task)
-
-    task = {
-        "name": "my task #2",
-        "owner": cls.owner,
-        "assignee": cls.assignee,
-        "overlap": 0,
-        "segment_size": 100,
-        "z_order": False,
-        "image_quality": 75,
-        "size": 100
-    }
-    db_task = Task.objects.create(**task)
-
-    segment = {
-        "start_frame": 0,
-        "stop_frame": 99
-    }
-    db_segment = Segment.objects.create(task=db_task, **segment)
-    db_job = Job.objects.create(segment=db_segment, assignee=cls.annotator)
-
-    cls.tasks.append(db_task)
-
-    task = {
-        "name": "super task",
-        "owner": cls.admin,
-        "overlap": 0,
-        "segment_size": 50,
-        "z_order": False,
-        "image_quality": 95,
-        "size": 50
-    }
-    db_task = Task.objects.create(**task)
-
-    segment = {
-        "start_frame": 0,
-        "stop_frame": 49
-    }
-    db_segment = Segment.objects.create(task=db_task, **segment)
-    db_job = Job.objects.create(segment=db_segment, assignee=cls.annotator)
-
-    cls.tasks.append(db_task)
 
 class TaskListAPITestCase(APITestCase):
     def setUp(self):
@@ -608,8 +570,8 @@ class TaskListAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
-        createManyTasks(cls)
+        create_db_users(cls)
+        cls.tasks = create_dummy_db_tasks(cls)
 
     def _run_api_v1_tasks(self, user, params=""):
         if user:
@@ -653,8 +615,8 @@ class TaskGetAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
-        createManyTasks(cls)
+        create_db_users(cls)
+        cls.tasks = create_dummy_db_tasks(cls)
 
     def _run_api_v1_tasks_id(self, tid, user):
         if user:
@@ -712,8 +674,8 @@ class TaskDeleteAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
-        createManyTasks(cls)
+        create_db_users(cls)
+        cls.tasks = create_dummy_db_tasks(cls)
 
     def _run_api_v1_tasks_id(self, tid, user):
         if user:
@@ -752,11 +714,10 @@ class TaskUpdateAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
-        createManyTasks(cls)
+        create_db_users(cls)
+        cls.tasks = create_dummy_db_tasks(cls)
 
-    @patch('cvat.apps.engine.serializers.slogger')
-    def _run_api_v1_tasks_id(self, tid, user, data, slogger):
+    def _run_api_v1_tasks_id(self, tid, user, data):
         if user:
             self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
 
@@ -862,9 +823,7 @@ class TaskUpdateAPITestCase(APITestCase):
         self._check_api_v1_tasks_id(None, data)
 
 class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
-
-    @patch('cvat.apps.engine.serializers.slogger')
-    def _run_api_v1_tasks_id(self, tid, user, data, slogger):
+    def _run_api_v1_tasks_id(self, tid, user, data):
         if user:
             self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
 
@@ -931,10 +890,9 @@ class TaskCreateAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
+        create_db_users(cls)
 
-    @patch('cvat.apps.engine.serializers.slogger')
-    def _run_api_v1_tasks(self, user, data, slogger):
+    def _run_api_v1_tasks(self, user, data):
         if user:
             self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
 
@@ -1024,22 +982,14 @@ class TaskCreateAPITestCase(APITestCase):
         }
         self._check_api_v1_tasks(None, data)
 
-django_rq_get_queue_orig = django_rq.get_queue
-def django_rq_get_queue_sync(name='default', default_timeout=None, async=False,
-    autocommit=None, queue_class=None):
-
-    return django_rq_get_queue_orig(name, default_timeout, async,
-        autocommit, queue_class)
-
 class TaskDataAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
 
     @classmethod
     def setUpTestData(cls):
-        createUsers(cls)
+        create_db_users(cls)
 
-    @patch("cvat.apps.engine.task.django_rq.get_queue", django_rq_get_queue_sync)
     def _run_api_v1_tasks_id_data(self, tid, user, data):
         if user:
             self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
@@ -1051,8 +1001,7 @@ class TaskDataAPITestCase(APITestCase):
 
         return response
 
-    @patch('cvat.apps.engine.serializers.slogger')
-    def _create_task(self, user, data, slogger):
+    def _create_task(self, user, data):
         if user:
             self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
 
@@ -1096,6 +1045,7 @@ class TaskDataAPITestCase(APITestCase):
         data = {
             "client_files[0]": self._generate_image_file(),
             "client_files[1]": self._generate_image_file(),
+            "client_files[2]": self._generate_image_file(),
         }
 
         response = self._run_api_v1_tasks_id_data(task_id, self.admin, data)

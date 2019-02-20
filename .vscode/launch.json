@@ -110,7 +110,9 @@
             "program": "${workspaceRoot}/manage.py",
             "args": [
                 "test",
-                "cvat/apps/engine"
+                "--settings",
+                "cvat.settings.testing",
+                "cvat/apps/engine",
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
