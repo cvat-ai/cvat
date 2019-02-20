@@ -61,8 +61,6 @@ There you can:
 
     __Source__. To create huge tasks please use ``shared`` server directory (choose ``Share`` option in the dialog).
 
-    __Flip images__. All selected files will be turned around 180.
-
     __Z-Order__. Defines the order on drawn polygons. Check the box for enable layered displaying.
 
     __Overlap Size__. Use this option to make overlapped segments. The option makes tracks continuous from one segment into another. Use it for interpolation mode. There are several use cases for the parameter:
@@ -116,7 +114,7 @@ Usage examples:
     ![](static/documentation/images/image082.jpg) ![](static/documentation/images/image081.jpg)
 
 2. Create a new annotation:
-  
+
    - Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
 
     ![](static/documentation/images/image080.jpg) ![](static/documentation/images/image083.jpg)
@@ -294,7 +292,7 @@ By clicking on the points of poly-shapes ``Remove`` option is available.
 
 By clicking outside any shapes you can either copy ``Frame URL`` (link to present frame) or ``Job URL`` (link from address bar)
 
-![](static/documentation/images/image091.jpg) 
+![](static/documentation/images/image091.jpg)
 
 ---
 ### Settings
@@ -574,7 +572,7 @@ When ``Shift`` isn't pressed, you can zoom in/out (on mouse wheel scroll) and mo
 
 ![](static/documentation/images/gif007.gif)
 
-Also you can set fixed number of points in the field "poly shape size", then drawing will be stopped automatically. 
+Also you can set fixed number of points in the field "poly shape size", then drawing will be stopped automatically.
 To enable dragging, right-click inside polygon and choose ``Enable Dragging``.
 
 

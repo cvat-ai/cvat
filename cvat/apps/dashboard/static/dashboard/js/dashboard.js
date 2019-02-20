@@ -417,7 +417,6 @@ class DashboardView {
         const shareBrowseTree = $('#dashboardShareBrowser');
         const cancelBrowseServer = $('#dashboardCancelBrowseServer');
         const submitBrowseServer = $('#dashboardSubmitBrowseServer');
-        const flipImagesBox = $('#dashboardFlipImages');
         const zOrderBox = $('#dashboardZOrder');
         const segmentSizeInput = $('#dashboardSegmentSize');
         const customSegmentSize = $('#dashboardCustomSegment');
@@ -434,7 +433,6 @@ class DashboardView {
         let labels = labelsInput.prop('value');
         let bugTrackerLink = bugTrackerInput.prop('value').trim();
         let source = 'local';
-        let flipImages = false;
         let zOrder = false;
         let segmentSize = 5000;
         let overlapSize = 0;
@@ -498,10 +496,6 @@ class DashboardView {
                 cancelBrowseServer.click();
                 updateSelectedFiles();
             }
-        });
-
-        flipImagesBox.on('click', (e) => {
-            flipImages = e.target.checked;
         });
 
         zOrderBox.on('click', (e) => {
@@ -600,9 +594,6 @@ class DashboardView {
 
             if (bugTrackerLink) {
                 description.bug_tracker = bugTrackerLink;
-            }
-            if (flipImages) {
-                description.flipped = flipImages;
             }
             if (zOrder) {
                 description.z_order = zOrder;

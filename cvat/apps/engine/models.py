@@ -15,6 +15,12 @@ import csv
 import os
 import sys
 
+class SafeCharField(models.CharField):
+    def get_prep_value(self, value):
+        value = super().get_prep_value(value)
+        if value:
+            return value[:self.max_length]
+        return value
 
 class StatusChoice(str, Enum):
     ANNOTATION = 'annotation'
@@ -27,28 +33,6 @@ class StatusChoice(str, Enum):
 
     def __str__(self):
         return self.value
-
-class AttributeType(str, Enum):
-    CHECKBOX = 'checkbox'
-    RADIO = 'radio'
-    NUMBER = 'number'
-    TEXT = 'text'
-    SELECT = 'select'
-
-    @classmethod
-    def choices(self):
-        return tuple((x.value, x.name) for x in self)
-
-    def __str__(self):
-        return self.value
-
-
-class SafeCharField(models.CharField):
-    def get_prep_value(self, value):
-        value = super().get_prep_value(value)
-        if value:
-            return value[:self.max_length]
-        return value
 
 class Task(models.Model):
     name = SafeCharField(max_length=256)
@@ -198,12 +182,26 @@ class Label(models.Model):
         default_permissions = ()
         unique_together = ('task', 'name')
 
+class AttributeType(str, Enum):
+    CHECKBOX = 'checkbox'
+    RADIO = 'radio'
+    NUMBER = 'number'
+    TEXT = 'text'
+    SELECT = 'select'
+
+    @classmethod
+    def choices(self):
+        return tuple((x.value, x.name) for x in self)
+
+    def __str__(self):
+        return self.value
 
 class AttributeSpec(models.Model):
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     name = models.CharField(max_length=64)
     mutable = models.BooleanField()
-    input_type = models.CharField(max_length=16, choices=AttributeType.choices())
+    input_type = models.CharField(max_length=16,
+        choices=AttributeType.choices())
     default_value = models.CharField(max_length=128)
     values = models.CharField(max_length=4096)
 
@@ -213,7 +211,6 @@ class AttributeSpec(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class AttributeVal(models.Model):
     # TODO: add a validator here to be sure that it corresponds to self.label
@@ -225,105 +222,65 @@ class AttributeVal(models.Model):
         abstract = True
         default_permissions = ()
 
+class ShapeType(str, Enum):
+    RECTANGLE = 'rectangle' # (x0, y0, x1, y1)
+    POLYGON = 'polygon'     # (x0, y0, ..., xn, yn)
+    POLYLINE = 'polyline'   # (x0, y0, ..., xn, yn)
+    POINTS = 'points'       # (x0, y0, ..., xn, yn)
+
+    @classmethod
+    def choices(self):
+        return tuple((x.name, x.value) for x in self)
 
 class Annotation(models.Model):
     id = models.BigAutoField(primary_key=True)
-    job   = models.ForeignKey(Job, on_delete=models.CASCADE)
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     group_id = models.PositiveIntegerField(default=0)
     client_id = models.BigIntegerField(default=-1)
 
-    class Meta:
-        abstract = True
 
 class Shape(models.Model):
+    type = models.CharField(max_length=16, choices=ShapeType.choices())
     occluded = models.BooleanField(default=False)
     z_order = models.IntegerField(default=0)
-
-    class Meta:
-        abstract = True
-        default_permissions = ()
-
-class BoundingBox(Shape):
-    xtl = models.FloatField()
-    ytl = models.FloatField()
-    xbr = models.FloatField()
-    ybr = models.FloatField()
-
-    class Meta:
-        abstract = True
-        default_permissions = ()
-
-class PolyShape(Shape):
     points = models.TextField()
 
     class Meta:
         abstract = True
         default_permissions = ()
 
-class LabeledBox(Annotation, BoundingBox):
+class LabeledImage(Annotation):
     pass
 
-class LabeledBoxAttributeVal(AttributeVal):
-    box = models.ForeignKey(LabeledBox, on_delete=models.CASCADE)
+class LabeledImageAttributeVal(AttributeVal):
+    image = models.ForeignKey(LabeledImage, on_delete=models.CASCADE)
 
-class LabeledPolygon(Annotation, PolyShape):
+class LabeledShape(Annotation, Shape):
     pass
 
-class LabeledPolygonAttributeVal(AttributeVal):
-    polygon = models.ForeignKey(LabeledPolygon, on_delete=models.CASCADE)
+class LabeledShapeAttributeVal(AttributeVal):
+    shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE)
 
-class LabeledPolyline(Annotation, PolyShape):
+class ObjectTrack(Annotation):
     pass
-
-class LabeledPolylineAttributeVal(AttributeVal):
-    polyline = models.ForeignKey(LabeledPolyline, on_delete=models.CASCADE)
-
-class LabeledPoints(Annotation, PolyShape):
-    pass
-
-class LabeledPointsAttributeVal(AttributeVal):
-    points = models.ForeignKey(LabeledPoints, on_delete=models.CASCADE)
-
-class ObjectPath(Annotation):
-    shapes = models.CharField(max_length=10, default='boxes')
 
 class ObjectPathAttributeVal(AttributeVal):
-    track = models.ForeignKey(ObjectPath, on_delete=models.CASCADE)
+    track = models.ForeignKey(ObjectTrack, on_delete=models.CASCADE)
 
-class TrackedObject(models.Model):
+class TrackedShape(Shape):
     id = models.BigAutoField(primary_key=True)
-    track = models.ForeignKey(ObjectPath, on_delete=models.CASCADE)
+    track = models.ForeignKey(ObjectTrack, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     outside = models.BooleanField(default=False)
+
     class Meta:
-        abstract = True
         default_permissions = ()
 
-class TrackedBox(TrackedObject, BoundingBox):
-    pass
+class TrackedShapeAttributeVal(AttributeVal):
+    shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE)
 
-class TrackedBoxAttributeVal(AttributeVal):
-    box = models.ForeignKey(TrackedBox, on_delete=models.CASCADE)
-
-class TrackedPolygon(TrackedObject, PolyShape):
-    pass
-
-class TrackedPolygonAttributeVal(AttributeVal):
-    polygon = models.ForeignKey(TrackedPolygon, on_delete=models.CASCADE)
-
-class TrackedPolyline(TrackedObject, PolyShape):
-    pass
-
-class TrackedPolylineAttributeVal(AttributeVal):
-    polyline = models.ForeignKey(TrackedPolyline, on_delete=models.CASCADE)
-
-class TrackedPoints(TrackedObject, PolyShape):
-    pass
-
-class TrackedPointsAttributeVal(AttributeVal):
-    points = models.ForeignKey(TrackedPoints, on_delete=models.CASCADE)
 
 class Plugin(models.Model):
     name = models.SlugField(max_length=32, primary_key=True)
