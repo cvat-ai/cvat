@@ -42,7 +42,7 @@ def create(tid, data):
 
 @transaction.atomic
 def rq_handler(job, exc_type, exc_value, traceback):
-    tid = job.id.split('/')[1]
+    tid = job.id.split('/')[-1]
     db_task = models.Task.objects.select_for_update().get(pk=tid)
     with open(db_task.get_log_path(), "wt") as log_file:
         print_exception(exc_type, exc_value, traceback, file=log_file)

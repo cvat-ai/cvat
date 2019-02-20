@@ -318,7 +318,7 @@ class DashboardView {
         let searchInput = $('#dashboardSearchInput');
         let searchSubmit = $('#dashboardSearchSubmit');
 
-        let line = getUrlParameter('name') || '';
+        let line = getUrlParameter('search') || '';
         searchInput.val(line);
 
         searchSubmit.on('click', function() {
@@ -331,7 +331,7 @@ class DashboardView {
             if (e.keyCode != 13) return;
             let filter = e.target.value;
             if (!filter) window.location.search = '';
-            else window.location.search = `name=${filter}`;
+            else window.location.search = `search=${filter}`;
         });
     }
 
@@ -660,11 +660,6 @@ class DashboardView {
                     taskMessage.css('color', 'red');
                     taskMessage.text(message);
                     submitCreate.prop('disabled', false);
-
-                    $.ajax({
-                        url: `/api/v1/tasks/${data.id}`,
-                        type: 'DELETE',
-                    });
                 });
             }).fail((errorData) => {
                 const message = `Task has not been created. Code: ${errorData.status}. ` +
@@ -685,7 +680,7 @@ window.addEventListener('DOMContentLoaded', () => {
     $.when(
         // TODO: Use REST API in order to get meta
         $.get('/dashboard/meta'),
-        $.get('/api/v1/tasks'),
+        $.get(`/api/v1/tasks${window.location.search}`),
     ).then((metaData, taskData) => {
         try {
             new DashboardView(metaData[0], taskData[0]);
