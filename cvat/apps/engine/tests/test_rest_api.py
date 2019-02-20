@@ -5,14 +5,13 @@
 from PIL import Image
 from io import BytesIO
 import random
-from django_rq import get_worker
+import django_rq
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth.models import User, Group
 from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
     AttributeType)
 from unittest.mock import patch
-from django.test.utils import override_settings
 
 def setUpModule():
     import logging
@@ -1025,37 +1024,39 @@ class TaskCreateAPITestCase(APITestCase):
         }
         self._check_api_v1_tasks(None, data)
 
-RQ_QUEUES = {
-    'default': {
-        'ASYNC': False
-    }
-}
+django_rq_get_queue_orig = django_rq.get_queue
+def django_rq_get_queue_sync(name='default', default_timeout=None, async=False,
+    autocommit=None, queue_class=None):
+
+    return django_rq_get_queue_orig(name, default_timeout, async,
+        autocommit, queue_class)
 
 class TaskDataAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        task = {
-            "name": "my task #1",
-            "owner": self.owner,
-            "assignee": self.assignee,
-            "overlap": 0,
-            "segment_size": 100,
-            "z_order": False,
-            "image_quality": 75,
-            "size": 0
-        }
-        self.task = Task.objects.create(**task)
 
     @classmethod
     def setUpTestData(cls):
         createUsers(cls)
 
-    @override_settings(RQ_QUEUES=RQ_QUEUES)
+    @patch("cvat.apps.engine.task.django_rq.get_queue", django_rq_get_queue_sync)
     def _run_api_v1_tasks_id_data(self, tid, user, data):
         if user:
             self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
 
         response = self.client.post('/api/v1/tasks/{}/data'.format(tid), data=data)
+
+        if user:
+            self.client.logout()
+
+        return response
+
+    @patch('cvat.apps.engine.serializers.slogger')
+    def _create_task(self, user, data, slogger):
+        if user:
+            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+        response = self.client.post('/api/v1/tasks', data=data, format="json")
 
         if user:
             self.client.logout()
@@ -1075,9 +1076,27 @@ class TaskDataAPITestCase(APITestCase):
 
     def test_api_v1_tasks_id_data_admin(self):
         data = {
-            "client_file[0]": self._generate_image_file(),
-            "client_file[1]": self._generate_image_file(),
+            "name": "my task #1",
+            "owner": self.owner.id,
+            "assignee": self.assignee.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "z_order": False,
+            "image_quality": 75,
+            "size": 0,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+        response = self._create_task(self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        task_id = response.data["id"]
+        data = {
+            "client_files[0]": self._generate_image_file(),
+            "client_files[1]": self._generate_image_file(),
         }
 
-        response = self._run_api_v1_tasks_id_data(self.task.id, self.admin, data)
+        response = self._run_api_v1_tasks_id_data(task_id, self.admin, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
