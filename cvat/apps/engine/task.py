@@ -230,9 +230,13 @@ def _save_task_to_db(db_task):
     job.meta['status'] = 'Task is being saved in database'
     job.save_meta()
 
-    for x in range(0, db_task.size, db_task.segment_size):
+    segment_size = db_task.segment_size
+    if segment_size == 0:
+        segment_size = db_task.size
+
+    for x in range(0, db_task.size, segment_size):
         start_frame = x
-        stop_frame = min(x + db_task.segment_size - 1, db_task.size - 1)
+        stop_frame = min(x + segment_size - 1, db_task.size - 1)
         slogger.glob.info("New segment for task #{}: start_frame = {}, \
             stop_frame = {}".format(db_task.id, start_frame, stop_frame))
 

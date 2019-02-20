@@ -1032,7 +1032,6 @@ class TaskDataAPITestCase(APITestCase):
             "segment_size": 100,
             "z_order": False,
             "image_quality": 75,
-            "size": 0,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
@@ -1049,4 +1048,28 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         response = self._run_api_v1_tasks_id_data(task_id, self.admin, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_api_v1_tasks_id_data_user(self):
+        data = {
+            "name": "my task #2",
+            "overlap": 0,
+            "segment_size": 0,
+            "image_quality": 75,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+        response = self._create_task(self.user, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        task_id = response.data["id"]
+        data = {
+            "client_files[0]": self._generate_image_file(),
+            "client_files[1]": self._generate_image_file(),
+            "client_files[2]": self._generate_image_file(),
+        }
+
+        response = self._run_api_v1_tasks_id_data(task_id, self.user, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
