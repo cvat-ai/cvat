@@ -20,7 +20,7 @@
 
 function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, onComplete, onUpdateStatus) {
     $.ajax({
-        url: 'api/v1/tasks',
+        url: '/api/v1/tasks',
         type: 'POST',
         data: oData,
         contentType: false,
@@ -29,8 +29,9 @@ function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, on
         onSuccessRequest();
         requestCreatingStatus(data.id);
     }).fail((errorData) => {
+        onComplete();
         const message = `Can not create task. Code: ${errorData.status}. ` +
-            `Message: ${errorData.statusText || errorData.responseText}`;
+            `Message: ${errorData.responseText || errorData.statusText}`;
         onError(message);
     });
 
@@ -43,19 +44,23 @@ function createTaskRequest(oData, onSuccessRequest, onSuccessCreate, onError, on
                     }
                     setTimeout(checkCallback, 1000);
                 } else {
+                    onComplete();
                     if (data.state === 'Finished') {
-                        onComplete();
                         onSuccessCreate(tid);
                     }
                     else if (data.state === 'Failed') {
-                        onComplete();
                         const message = `Can not create task. ${data.message}`;
                         onError(message);
+                    } else {
+                        const message = `Unknown state has been received: ${data.state}`;
+                        onError(message);
                     }
+
                 }
             }).fail((errorData) => {
+                onComplete();
                 const message = `Can not check task status. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.statusText || errorData.responseText}`;
+                    `Message: ${errorData.responseText || errorData.statusText}`;
                 onError(message);
             });
         }
@@ -88,7 +93,7 @@ class TaskView {
             },
             error: (errorData) => {
                 const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.statusText || errorData.responseText}`;
+                    `Message: ${errorData.responseText || errorData.statusText}`;
                 showMessage(message);
             }
         });
@@ -119,7 +124,7 @@ class TaskView {
                     showMessage('Task has been successfully updated');
                 }).fail((errorData) => {
                     const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
-                        `Message: ${errorData.statusText || errorData.responseText}`;
+                        `Message: ${errorData.responseText || errorData.statusText}`;
                     showMessage(message);
                 });
             } catch (exception) {
@@ -131,16 +136,15 @@ class TaskView {
     _upload(tid) {
         function parse(overlay, e) {
             const xmlText = e.target.result;
-            $.get(`api/v1/tasks/${tid}`).done(() => {
+            $.get(`/api/v1/tasks/${tid}/frames/meta`).done((imageMetaCache) => {
                 const labelsCopy = JSON.parse(JSON.stringify(this._labels));
 
-                // TODO: Update labels info for new data format
-                // TODO: this context are saved?
                 const parser = new AnnotationParser({
                     start: 0,
                     stop: this._size,
                     flipped: this._flipped,
-                }, new LabelsInfo(labelsCopy), new ConstIdGenerator(-1));
+                    image_meta_data: imageMetaCache,
+                }, new LabelsInfo({labels: {}, attributes: {}}).restConstructor(labelsCopy), new ConstIdGenerator(-1));
 
                 function asyncParse() {
                     let parsed = null;
@@ -155,6 +159,7 @@ class TaskView {
 
                     function asyncSave() {
                         $.ajax({
+                            // TODO: Use REST API
                             url: '/delete/annotation/task/' + window.cvat.dashboard.taskID,
                             type: 'DELETE',
                             success: function() {
@@ -162,7 +167,7 @@ class TaskView {
                             },
                             error: function(response) {
                                 const message = `Could not remove current annotation. Code: ${errorData.status}. ` +
-                                    `Message: ${errorData.statusText || errorData.responseText}`;
+                                    `Message: ${errorData.responseText || errorData.statusText}`;
                                 showMessage(message);
                             },
                         });
@@ -185,6 +190,7 @@ class TaskView {
                             exportData.create = chunk;
 
                             $.ajax({
+                                // TODO: Use REST API
                                 url: `/save/annotation/task/${tid}`,
                                 type: 'POST',
                                 data: JSON.stringify(exportData),
@@ -193,7 +199,7 @@ class TaskView {
                                 asyncSaveChunk(end);
                             }).fail((errorData) => {
                                 const message = `Annotation uploading errors occurred. Code: ${errorData.status}. ` +
-                                    `Message: ${errorData.statusText || errorData.responseText}`;
+                                    `Message: ${errorData.responseText || errorData.statusText}`;
                                 showMessage(message);
                             });
                         } else {
@@ -211,7 +217,7 @@ class TaskView {
                 setTimeout(asyncParse);
             }).fail((errorData) => {
                 const message = `Can not get required data from the server. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.statusText || errorData.responseText}`;
+                    `Message: ${errorData.responseText || errorData.statusText}`;
                 showMessage(message);
             });
 
@@ -340,7 +346,7 @@ class DashboardView {
                             taskView.init(details);
                         }).fail((errorData) => {
                             const message = `Can not get task from server. Showed info may be obsolete. Code: ${errorData.status}. ` +
-                                `Message: ${errorData.statusText || errorData.responseText}`;
+                                `Message: ${errorData.responseText || errorData.statusText}`;
                             showMessage(message);
                         })
                     });
@@ -486,9 +492,9 @@ class DashboardView {
             zOrder = e.target.checked;
         });
 
-        customSegmentSize.on('change', (e) => segmentSizeInput.prop("disabled", !e.target.checked));
-        customOverlapSize.on('change', (e) => overlapSizeInput.prop("disabled", !e.target.checked));
-        customCompressQuality.on('change', (e) => imageQualityInput.prop("disabled", !e.target.checked));
+        customSegmentSize.on('change', (e) => segmentSizeInput.prop('disabled', !e.target.checked));
+        customOverlapSize.on('change', (e) => overlapSizeInput.prop('disabled', !e.target.checked));
+        customCompressQuality.on('change', (e) => imageQualityInput.prop('disabled', !e.target.checked));
 
         segmentSizeInput.on('change', () => {
             const value = Math.clamp(
@@ -577,8 +583,8 @@ class DashboardView {
             taskData.append('z_order', zOrder);
 
             const deserialized = LabelsInfo.deserialize(labels);
-            for (let i = 0; i < labelObjs.length; i++) {
-                taskData.append(`labels[${i}]`, deserialized[i]);
+            for (let i = 0; i < deserialized.length; i++) {
+                taskData.append(`labels[${i}]`, JSON.stringify(deserialized[i]));
             }
 
             if (customSegmentSize.prop('checked')) {
@@ -684,7 +690,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }).fail((errorData) => {
         $('#content').empty();
         const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
-            `Message: ${errorData.statusText || errorData.responseText}`;
+            `Message: ${errorData.responseText || errorData.statusText}`;
         showMessage(message);
     }).always(() => {
         $('#loadingOverlay').remove();

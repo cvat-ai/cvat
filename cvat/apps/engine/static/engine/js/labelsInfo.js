@@ -14,9 +14,9 @@
 
 class LabelsInfo {
     constructor(job) {
-        this._labels = new Object;
-        this._attributes = new Object;
-        this._colorIdxs = new Object;
+        this._labels = {};
+        this._attributes = {};
+        this._colorIdxs = {};
 
         for (let labelKey in job.labels) {
             let label = {
@@ -48,6 +48,40 @@ class LabelsInfo {
                 values: this.strToValues(match[2], match[4]),
             };
         }
+    }
+
+    restConstructor(labels) {
+        this._labels = {};
+        this._attributes = {};
+        this._colorIdxs = {};
+
+        for (let label of labels) {
+            this._labels[label.id] = {
+                name: label.name,
+                attributes: {},
+            }
+
+            for (let attr of label.attributes) {
+                this._attributes[attr.id] = convertAttribute(attr);
+                this._labels[label.id].attributes[attr.id] = this._attributes[attr.id];
+
+            }
+
+            this._colorIdxs[label.id] = +label.id;
+        }
+
+        function convertAttribute(attribute) {
+            return {
+                mutable: attribute.mutable,
+                type: attribute.input_type,
+                name: attribute.name,
+                values: attribute.input_type === 'checkbox' ?
+                    [attribute.values[0].toLoweCase() !== 'false' && attribute.values[0] !== false] :
+                    attribute.values,
+            }
+        }
+
+        return this;
     }
 
     labelColorIdx(labelId) {
@@ -143,7 +177,7 @@ class LabelsInfo {
     strToValues(type, string) {
         switch (type) {
         case 'checkbox':
-            return [string !== '0' && string !== 'false' && string !== false];
+            return [string !== '0' && string.toLoweCase() !== 'false' && string !== false];
         case 'text':
             return [string];
         default:
