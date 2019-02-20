@@ -25,3 +25,7 @@ for logger in LOGGING["loggers"].values():
         logger["level"] = "ERROR"
 
 LOGGING["handlers"]["server_file"] = LOGGING["handlers"]["console"]
+
+PASSWORD_HASHERS = (
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+)
