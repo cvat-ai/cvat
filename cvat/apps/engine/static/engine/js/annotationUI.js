@@ -57,7 +57,7 @@ function callAnnotationUI(jid) {
     serverRequest("/api/v1/jobs/" + jid, function(job) {
         serverRequest("/api/v1/tasks/" + job.task_id, function(task) {
             serverRequest("/api/v1/tasks/" + job.task_id + "/frames/meta", function(imageMetaCache) {
-                serverRequest("get/annotation/job/" + jid, function(data) {
+                serverRequest(`/api/v1/tasks/${jid}/annotation`, function(data) {
                     $('#loadingOverlay').remove();
                     setTimeout(() => {
                         // FIXME: code cloning
