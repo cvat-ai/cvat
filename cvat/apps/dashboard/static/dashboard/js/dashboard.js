@@ -614,6 +614,12 @@ class DashboardView {
                 description.overlap = overlapSize;
             }
 
+            function cleanupTask(tid) {
+                $.ajax({
+                    url: `/api/v1/tasks/${tid}`,
+                    type: 'DELETE'
+                });
+            }
 
             submitCreate.prop('disabled', true);
             $.ajax({
@@ -652,14 +658,15 @@ class DashboardView {
                         submitCreate.prop('disabled', false);
                         taskMessage.css('color', 'red');
                         taskMessage.text(errorMessage);
+                        cleanupTask(data.id);
                     });
-
                 }).fail((errorData) => {
                     const message = `Can not put the data for the task. Code: ${errorData.status}. ` +
                         `Message: ${errorData.responseText || errorData.statusText}`;
                     taskMessage.css('color', 'red');
                     taskMessage.text(message);
                     submitCreate.prop('disabled', false);
+                    cleanupTask(data.id);
                 });
             }).fail((errorData) => {
                 const message = `Task has not been created. Code: ${errorData.status}. ` +
@@ -667,6 +674,7 @@ class DashboardView {
                 taskMessage.css('color', 'red');
                 taskMessage.text(message);
                 submitCreate.prop('disabled', false);
+                cleanupTask(data.id);
             });
         });
 
