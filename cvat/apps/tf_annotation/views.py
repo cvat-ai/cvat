@@ -253,11 +253,12 @@ def create_thread(tid, labels_mapping):
         annotation.clear_task(tid)
         annotation.save_task(tid, result)
         slogger.glob.info('tf annotation for task {} done'.format(tid))
-    except:
+    except Exception as ex:
         try:
             slogger.task[tid].exception('exception was occured during tf annotation of the task', exc_info=True)
         except:
             slogger.glob.exception('exception was occured during tf annotation of the task {}'.format(tid), exc_into=True)
+        raise ex
 
 @login_required
 def get_meta_info(request):
@@ -360,6 +361,7 @@ def check(request, tid):
             job.delete()
         else:
             data['status'] = 'failed'
+            data['stderr'] = job.exc_info
             job.delete()
 
     except Exception:
