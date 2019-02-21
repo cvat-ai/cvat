@@ -653,17 +653,22 @@ class DashboardView {
                         taskMessage.css('color', 'blue');
                         taskMessage.text(status);
                     }, () => {
-                        let abort = false;
-                        for (let decorator of DashboardView.decorators('createTask')) {
-                            decorator(taskData, () => {
-                                abort = true;
-                                cleanupTask(tid);
-                            });
+                        const decorators = DashboardView.decorators('createTask');
+                        let idx = 0;
+
+                        function next() {
+                            const decorator = decorators[idx++];
+                            if (decorator) {
+                                decorator(taskData, next, () => {
+                                    submitCreate.prop('disabled', false);
+                                    cleanupTask(tid);
+                                });
+                            } else {
+                                window.location.reload();
+                            }
                         }
 
-                        if (!abort) {
-                            window.location.reload();
-                        }
+                        next();
                     }, (errorMessage) => {
                         submitCreate.prop('disabled', false);
                         taskMessage.css('color', 'red');
@@ -692,12 +697,12 @@ class DashboardView {
     }
 }
 
-DashboardView.decorators(action) = () => {
+DashboardView.decorators = (action) => {
     DashboardView._decorators = DashboardView._decorators || {};
     return DashboardView._decorators[action] || [];
 }
 
-DashboardView.registerDecorator(action, decorator) = () => {
+DashboardView.registerDecorator = (action, decorator) => {
     DashboardView._decorators = DashboardView._decorators || {};
     DashboardView._decorators[action] = DashboardView._decorators[action] || [];
     DashboardView._decorators[action].push(decorator);

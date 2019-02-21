@@ -24,7 +24,7 @@ window.addEventListener('dashboardReady', () => {
     const lfsCheckboxId = 'gitLFSCheckbox';
 
     const reposWindowTemplate =
-        `<div id="${reposWindowId}" class="modal hidden">
+        `<div id="${reposWindowId}" class="modal">
             <div style="width: 700px; height: auto;" class="modal-content">
                 <div style="width: 100%; height: 60%; overflow-y: auto;">
                     <table style="width: 100%;">
@@ -65,7 +65,7 @@ window.addEventListener('dashboardReady', () => {
             if (tid in gitData) {
                 if (['sync', 'syncing'].includes(gitData[tid])) {
                     this.style.background = 'floralwhite';
-                } else if (data[tid] === 'merged') {
+                } else if (gitData[tid] === 'merged') {
                     this.style.background = 'azure';
                 } else {
                     this.style.background = 'mistyrose';
@@ -73,14 +73,58 @@ window.addEventListener('dashboardReady', () => {
 
                 $('<button> Git Repository Sync </button>').addClass('regular dashboardButtonUI').on('click', () => {
                     $(`#${reposWindowId}`).remove();
-
                     const gitWindow = $(reposWindowTemplate).appendTo('body');
-                    const closeRepositoryWindowButton = $(`#${closeReposWindowButtonId}`);
-                    const repositorySyncButton = $(`#${reposSyncButtonId}`);
+                    const closeReposWindowButton = $(`#${closeReposWindowButtonId}`);
+                    const reposSyncButton = $(`#${reposSyncButtonId}`);
                     const gitLabelMessage = $(`#${labelMessageId}`);
                     const gitLabelStatus = $(`#${labelStatusId}`);
+                    const reposURLText = $(`#${reposURLTextId}`);
 
-                    closeRepositoryWindowButton.on('click', () => {
+                    function updateState() {
+                        reposURLText.attr('placeholder', 'Waiting for server response..');
+                        reposURLText.prop('value', '');
+                        gitLabelMessage.css('color', '#cccc00').text('Waiting for server response..');
+                        gitLabelStatus.css('color', '#cccc00').text('\u25cc');
+                        reposSyncButton.attr('disabled', true);
+
+                        $.get(`/git/repository/get/${tid}`).done(function(data) {
+                            reposURLText.attr('placeholder', '');
+                            reposURLText.prop('value', data.url.value);
+
+                            if (!data.status.value) {
+                                gitLabelStatus.css('color', 'red').text('\u26a0');
+                                gitLabelMessage.css('color', 'red').text(data.status.error);
+                                reposSyncButton.attr('disabled', false);
+                                return;
+                            }
+
+                            if (data.status.value === '!sync') {
+                                gitLabelStatus.css('color', 'red').text('\u2606');
+                                gitLabelMessage.css('color', 'red').text('Repository is not synchronized');
+                                reposSyncButton.attr('disabled', false);
+                            } else if (data.status.value === 'sync') {
+                                gitLabelStatus.css('color', '#cccc00').text('\u2605');
+                                gitLabelMessage.css('color', 'black').text('Synchronized (merge required)');
+                            } else if (data.status.value === 'merged') {
+                                gitLabelStatus.css('color', 'darkgreen').text('\u2605');
+                                gitLabelMessage.css('color', 'darkgreen').text('Synchronized');
+                            } else if (data.status.value === 'syncing') {
+                                gitLabelMessage.css('color', '#cccc00').text('Synchronization..');
+                                gitLabelStatus.css('color', '#cccc00').text('\u25cc');
+                            } else {
+                                let message = `Got unknown repository status: ${data.status.value}`;
+                                gitLabelStatus.css('color', 'red').text('\u26a0');
+                                gitLabelMessage.css('color', 'red').text(message);
+                            }
+                        }).fail(function(data) {
+                            gitWindow.remove();
+                            const message = `Error occured during get an repos status. ` +
+                                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+                            showMessage(message);
+                        });
+                    }
+
+                    closeReposWindowButton.on('click', () => {
                         gitWindow.remove();
                     });
 
@@ -97,81 +141,38 @@ window.addEventListener('dashboardReady', () => {
 
                         gitLabelMessage.css('color', '#cccc00').text('Synchronization..');
                         gitLabelStatus.css('color', '#cccc00').text('\u25cc');
-                        repositorySyncButton.attr('disabled', true);
+                        reposSyncButton.attr('disabled', true);
 
-                        $.get(`/git/repository/push/${tid}`).done((data) => {
+                        $.get(`/git/repository/push/${tid}`).done((rqData) => {
                             setTimeout(timeoutCallback, 1000);
 
                             function timeoutCallback() {
-                                $.get(`/git/repository/check/${data.rq_id}`).done((data) => {
-                                    if (['finished', 'failed', 'unknown'].indexOf(data.status) != -1) {
-                                        if (data.status === 'failed') {
-                                            const message = data.error;
-                                            badResponse(message);
-                                        } else if (data.status === 'unknown') {
-                                            const message = `Request for pushing returned status "${data.status}".`;
-                                            badResponse(message);
-                                        } else {
-                                            window.cvat.git.updateState();
-                                        }
+                                $.get(`/git/repository/check/${rqData.rq_id}`).done((statusData) => {
+                                    if (['queued', 'started'].includes(statusData.status)) {
+                                        setTimeout(checkCallback, 1000);
+                                    } else if (statusData.status === 'finished') {
+                                        updateState();
+                                    } else if (statusData.status === 'failed') {
+                                        const message = `Can not push to remote repository. Message: ${statusData.stderr}`;
+                                        badResponse(message);
                                     } else {
-                                        setTimeout(timeoutCallback, 1000);
+                                        const message = `Check returned status "${statusData.status}".`;
+                                        badResponse(message);
                                     }
-                                }).fail((data) => {
+                                }).fail((errorData) => {
                                     const message = `Errors occured during pushing an repos entry. ` +
-                                        `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+                                        `Code: ${errorData.status}, text: ${errorData.responseText || errorData.statusText}`;
                                     badResponse(message);
                                 });
                             }
-                        }).fail((data) => {
+                        }).fail((errorData) => {
                             const message = `Errors occured during pushing an repos entry. ` +
-                                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+                                `Code: ${errorData.status}, text: ${errorData.responseText || errorData.statusText}`;
                             badResponse(message);
                         });
                     });
 
-
-                    reposURLText.attr('placeholder', 'Waiting for server response..');
-                    reposURLText.prop('value', '');
-                    gitLabelMessage.css('color', '#cccc00').text('Waiting for server response..');
-                    gitLabelStatus.css('color', '#cccc00').text('\u25cc');
-                    syncButton.attr('disabled', true);
-
-                    $.get(`/git/repository/get/${tid}`).done(function(data) {
-                        reposURLText.attr('placeholder', '');
-                        reposURLText.prop('value', data.url.value);
-
-                        if (!data.status.value) {
-                            gitLabelStatus.css('color', 'red').text('\u26a0');
-                            gitLabelMessage.css('color', 'red').text(data.status.error);
-                            syncButton.attr('disabled', false);
-                            return;
-                        }
-
-                        if (data.status.value === '!sync') {
-                            gitLabelStatus.css('color', 'red').text('\u2606');
-                            gitLabelMessage.css('color', 'red').text('Repository is not synchronized');
-                            syncButton.attr('disabled', false);
-                        } else if (data.status.value === 'sync') {
-                            gitLabelStatus.css('color', '#cccc00').text('\u2605');
-                            gitLabelMessage.css('color', 'black').text('Synchronized (merge required)');
-                        } else if (data.status.value === 'merged') {
-                            gitLabelStatus.css('color', 'darkgreen').text('\u2605');
-                            gitLabelMessage.css('color', 'darkgreen').text('Synchronized');
-                        } else if (data.status.value === 'syncing') {
-                            gitLabelMessage.css('color', '#cccc00').text('Synchronization..');
-                            gitLabelStatus.css('color', '#cccc00').text('\u25cc');
-                        } else {
-                            let message = `Got unknown repository status: ${data.status.value}`;
-                            gitLabelStatus.css('color', 'red').text('\u26a0');
-                            gitLabelMessage.css('color', 'red').text(message);
-                        }
-                    }).fail(function(data) {
-                        gitWindow.remove();
-                        const message = `Error occured during get an repos status. ` +
-                            `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
-                        showMessage(message);
-                    });
+                    updateState();
                 }).appendTo($(this).find('div.dashboardButtonsUI')[0]);
             }
         });
@@ -183,7 +184,7 @@ window.addEventListener('dashboardReady', () => {
 
     // Setup the "Create task" dialog
     const title = 'Field for a repository URL and a relative path inside the repository. \n' +
-        'Default repository path is "annotation/<dump_file_name>.zip". \n' +
+        'Default repository path is `annotation/<dump_file_name>.zip`. \n' +
         'There are .zip or .xml extenstions are supported.'
     const placeh = 'github.com/user/repos [annotation/<dump_file_name>.zip]';
 
@@ -191,7 +192,7 @@ window.addEventListener('dashboardReady', () => {
         <tr>
             <td> <label class="regular h2"> Dataset Repository: </label> </td>
             <td>
-                <input type="text" id="${createURLInputTextId}" class="regular" style="width: 90%", placeholder="${placeh}" title ="${title}"/>
+                <input type="text" id="${createURLInputTextId}" class="regular" style="width: 90%", placeholder="${placeh}" title="${title}"/>
             </td>
         </tr>
         <tr>
@@ -200,7 +201,7 @@ window.addEventListener('dashboardReady', () => {
         </tr>`
     ).insertAfter($('#dashboardBugTrackerInput').parent().parent());
 
-    DashboardView.registerDecorator('createTask', (taskData, onFault) => {
+    DashboardView.registerDecorator('createTask', (taskData, next, onFault) => {
         const taskMessage = $('#dashboardCreateTaskMessage');
 
         const path = $(`#${createURLInputTextId}`).prop('value').replace(/\s/g, '');
@@ -211,7 +212,7 @@ window.addEventListener('dashboardReady', () => {
             taskMessage.text('Git repository is being cloned..');
 
             $.ajax({
-                url: `/git/repository/clone/${taskData.id}`,
+                url: `/git/repository/create/${taskData.id}`,
                 type: 'POST',
                 data: JSON.stringify({
                     path: path,
@@ -219,19 +220,20 @@ window.addEventListener('dashboardReady', () => {
                     tid: taskData.id
                 }),
                 contentType: 'application/json'
-            }).done(() => {
+            }).done((rqData) => {
                 function checkCallback() {
                     $.ajax({
-                        url: `/git/repository/clone/${taskData.id}/status`,
+                        url: `/git/repository/check/${rqData.rq_id}`,
                         type: 'GET',
                     }).done((statusData) => {
                         if (['queued', 'started'].includes(statusData.status)) {
-                            setTimeout(1000, checkCallback);
+                            setTimeout(checkCallback, 1000);
                         } else if (statusData.status === 'finished') {
                             taskMessage.css('color', 'blue');
                             taskMessage.text('Git repository has been cloned');
+                            next();
                         } else if (statusData.status === 'failed') {
-                            let message = 'Repository status check failed';
+                            let message = 'Repository status check failed. ';
                             if (statusData.stderr) {
                                 message += statusData.stderr;
                             }
@@ -254,7 +256,7 @@ window.addEventListener('dashboardReady', () => {
                     });
                 }
 
-                setInterval(1000, checkCallback);
+                setTimeout(checkCallback, 1000);
             }).fail((errorData) => {
                 const message = `Can not sent a request to clone the repository. Code: ${errorData.status}. ` +
                             `Message: ${errorData.responseText || errorData.statusText}`;
