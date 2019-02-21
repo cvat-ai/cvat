@@ -73,6 +73,60 @@ class Migration(migrations.Migration):
                 'default_permissions': (),
             },
         ),
+        migrations.CreateModel(
+            name='LabeledImage',
+            fields=[
+                ('annotation_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='engine.Annotation')),
+            ],
+            bases=('engine.annotation',),
+        ),
+        migrations.CreateModel(
+            name='LabeledShape',
+            fields=[
+                ('annotation_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='engine.Annotation')),
+                ('type', models.CharField(choices=[('RECTANGLE', 'rectangle'), ('POLYGON', 'polygon'), ('POLYLINE', 'polyline'), ('POINTS', 'points')], max_length=16)),
+                ('occluded', models.BooleanField(default=False)),
+                ('z_order', models.IntegerField(default=0)),
+                ('points', models.TextField()),
+            ],
+            options={
+                'abstract': False,
+                'default_permissions': (),
+            },
+            bases=('engine.annotation', models.Model),
+        ),
+        migrations.CreateModel(
+            name='ObjectTrack',
+            fields=[
+                ('annotation_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='engine.Annotation')),
+            ],
+            bases=('engine.annotation',),
+        ),
+        migrations.AddField(
+            model_name='annotation',
+            name='job',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.Job'),
+        ),
+        migrations.AddField(
+            model_name='annotation',
+            name='label',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.Label'),
+        ),
+        migrations.AddField(
+            model_name='trackedshape',
+            name='track',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.ObjectTrack'),
+        ),
+        migrations.AddField(
+            model_name='labeledshapeattributeval',
+            name='shape',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.LabeledShape'),
+        ),
+        migrations.AddField(
+            model_name='labeledimageattributeval',
+            name='image',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.LabeledImage'),
+        ),
         migrations.RemoveField(
             model_name='labeledbox',
             name='job',
@@ -198,35 +252,6 @@ class Migration(migrations.Migration):
             name='track',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.ObjectTrack'),
         ),
-        migrations.CreateModel(
-            name='LabeledImage',
-            fields=[
-                ('annotation_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='engine.Annotation')),
-            ],
-            bases=('engine.annotation',),
-        ),
-        migrations.CreateModel(
-            name='LabeledShape',
-            fields=[
-                ('annotation_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='engine.Annotation')),
-                ('type', models.CharField(choices=[('RECTANGLE', 'rectangle'), ('POLYGON', 'polygon'), ('POLYLINE', 'polyline'), ('POINTS', 'points')], max_length=16)),
-                ('occluded', models.BooleanField(default=False)),
-                ('z_order', models.IntegerField(default=0)),
-                ('points', models.TextField()),
-            ],
-            options={
-                'abstract': False,
-                'default_permissions': (),
-            },
-            bases=('engine.annotation', models.Model),
-        ),
-        migrations.CreateModel(
-            name='ObjectTrack',
-            fields=[
-                ('annotation_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='engine.Annotation')),
-            ],
-            bases=('engine.annotation',),
-        ),
         migrations.DeleteModel(
             name='LabeledBox',
         ),
@@ -277,30 +302,5 @@ class Migration(migrations.Migration):
         ),
         migrations.DeleteModel(
             name='TrackedPolylineAttributeVal',
-        ),
-        migrations.AddField(
-            model_name='annotation',
-            name='job',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.Job'),
-        ),
-        migrations.AddField(
-            model_name='annotation',
-            name='label',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.Label'),
-        ),
-        migrations.AddField(
-            model_name='trackedshape',
-            name='track',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.ObjectTrack'),
-        ),
-        migrations.AddField(
-            model_name='labeledshapeattributeval',
-            name='shape',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.LabeledShape'),
-        ),
-        migrations.AddField(
-            model_name='labeledimageattributeval',
-            name='image',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.LabeledImage'),
         ),
     ]
