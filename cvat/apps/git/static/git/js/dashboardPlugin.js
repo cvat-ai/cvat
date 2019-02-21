@@ -11,7 +11,6 @@
 
 'use strict';
 
-
 // GIT ENTRYPOINT
 window.addEventListener('dashboardReady', () => {
     const reposWindowId = 'gitReposWindow';
@@ -23,8 +22,8 @@ window.addEventListener('dashboardReady', () => {
     const createURLInputTextId = 'gitCreateURLInputText';
     const lfsCheckboxId = 'gitLFSCheckbox';
 
-    const reposWindowTemplate =
-        `<div id="${reposWindowId}" class="modal">
+    const reposWindowTemplate = `
+        <div id="${reposWindowId}" class="modal">
             <div style="width: 700px; height: auto;" class="modal-content">
                 <div style="width: 100%; height: 60%; overflow-y: auto;">
                     <table style="width: 100%;">
@@ -60,8 +59,8 @@ window.addEventListener('dashboardReady', () => {
 
     $.get('/git/repository/meta/get').done((gitData) => {
         const dashboardItems = $('.dashboardItem');
-        dashboardItems.each(function() {
-            let tid = +this.getAttribute('tid');
+        dashboardItems.each(function setupDashboardItem() {
+            const tid = +this.getAttribute('tid');
             if (tid in gitData) {
                 if (['sync', 'syncing'].includes(gitData[tid])) {
                     this.style.background = 'floralwhite';
@@ -87,7 +86,7 @@ window.addEventListener('dashboardReady', () => {
                         gitLabelStatus.css('color', '#cccc00').text('\u25cc');
                         reposSyncButton.attr('disabled', true);
 
-                        $.get(`/git/repository/get/${tid}`).done(function(data) {
+                        $.get(`/git/repository/get/${tid}`).done((data) => {
                             reposURLText.attr('placeholder', '');
                             reposURLText.prop('value', data.url.value);
 
@@ -112,14 +111,14 @@ window.addEventListener('dashboardReady', () => {
                                 gitLabelMessage.css('color', '#cccc00').text('Synchronization..');
                                 gitLabelStatus.css('color', '#cccc00').text('\u25cc');
                             } else {
-                                let message = `Got unknown repository status: ${data.status.value}`;
+                                const message = `Got unknown repository status: ${data.status.value}`;
                                 gitLabelStatus.css('color', 'red').text('\u26a0');
                                 gitLabelMessage.css('color', 'red').text(message);
                             }
-                        }).fail(function(data) {
+                        }).fail((data) => {
                             gitWindow.remove();
-                            const message = `Error occured during get an repos status. ` +
-                                `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
+                            const message = 'Error occured during get an repos status. '
+                                + `Code: ${data.status}, text: ${data.responseText || data.statusText}`;
                             showMessage(message);
                         });
                     }
@@ -133,8 +132,7 @@ window.addEventListener('dashboardReady', () => {
                             try {
                                 showMessage(message);
                                 throw Error(message);
-                            }
-                            finally {
+                            } finally {
                                 gitWindow.remove();
                             }
                         }
@@ -166,8 +164,8 @@ window.addEventListener('dashboardReady', () => {
 
                             setTimeout(checkCallback, 1000);
                         }).fail((errorData) => {
-                            const message = `Errors occured during pushing an repos entry. ` +
-                                `Code: ${errorData.status}, text: ${errorData.responseText || errorData.statusText}`;
+                            const message = 'Errors occured during pushing an repos entry. '
+                                + `Code: ${errorData.status}, text: ${errorData.responseText || errorData.statusText}`;
                             badResponse(message);
                         });
                     });
@@ -177,15 +175,15 @@ window.addEventListener('dashboardReady', () => {
             }
         });
     }).fail((errorData) => {
-        const message = `Can not get repository meta information. Code: ${errorData.status}. ` +
-            `Message: ${errorData.responseText || errorData.statusText}`;
+        const message = `Can not get repository meta information. Code: ${errorData.status}. `
+            + `Message: ${errorData.responseText || errorData.statusText}`;
         showMessage(message);
     });
 
     // Setup the "Create task" dialog
-    const title = 'Field for a repository URL and a relative path inside the repository. \n' +
-        'Default repository path is `annotation/<dump_file_name>.zip`. \n' +
-        'There are .zip or .xml extenstions are supported.'
+    const title = 'Field for a repository URL and a relative path inside the repository. \n'
+        + 'Default repository path is `annotation/<dump_file_name>.zip`. \n'
+        + 'There are .zip or .xml extenstions are supported.';
     const placeh = 'github.com/user/repos [annotation/<dump_file_name>.zip]';
 
     $(`
@@ -198,8 +196,8 @@ window.addEventListener('dashboardReady', () => {
         <tr>
             <td> <label class="regular h2" checked> Use LFS: </label> </td>
             <td> <input type="checkbox" checked id="${lfsCheckboxId}" </td>
-        </tr>`
-    ).insertAfter($('#dashboardBugTrackerInput').parent().parent());
+        </tr>`).insertAfter($('#dashboardBugTrackerInput').parent().parent());
+
 
     DashboardView.registerDecorator('createTask', (taskData, next, onFault) => {
         const taskMessage = $('#dashboardCreateTaskMessage');
@@ -215,11 +213,11 @@ window.addEventListener('dashboardReady', () => {
                 url: `/git/repository/create/${taskData.id}`,
                 type: 'POST',
                 data: JSON.stringify({
-                    path: path,
-                    lfs: lfs,
-                    tid: taskData.id
+                    path,
+                    lfs,
+                    tid: taskData.id,
                 }),
-                contentType: 'application/json'
+                contentType: 'application/json',
             }).done((rqData) => {
                 function checkCallback() {
                     $.ajax({
@@ -248,8 +246,8 @@ window.addEventListener('dashboardReady', () => {
                             onFault();
                         }
                     }).fail((errorData) => {
-                        const message = `Can not sent a request to clone the repository. Code: ${errorData.status}. ` +
-                                `Message: ${errorData.responseText || errorData.statusText}`;
+                        const message = `Can not sent a request to clone the repository. Code: ${errorData.status}. `
+                            + `Message: ${errorData.responseText || errorData.statusText}`;
                         taskMessage.css('color', 'red');
                         taskMessage.text(message);
                         onFault();
@@ -258,8 +256,8 @@ window.addEventListener('dashboardReady', () => {
 
                 setTimeout(checkCallback, 1000);
             }).fail((errorData) => {
-                const message = `Can not sent a request to clone the repository. Code: ${errorData.status}. ` +
-                            `Message: ${errorData.responseText || errorData.statusText}`;
+                const message = `Can not sent a request to clone the repository. Code: ${errorData.status}. `
+                    + `Message: ${errorData.responseText || errorData.statusText}`;
                 taskMessage.css('color', 'red');
                 taskMessage.text(message);
                 onFault();

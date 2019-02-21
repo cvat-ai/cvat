@@ -722,7 +722,7 @@ window.addEventListener('dashboardReady', (event) => {
                 overlay.remove();
             }).appendTo('#dashboardManageButtons');
 
-        elements.each(function() {
+        elements.each(function setupDashboardItem () {
             const elem = $(this);
             const tid = +elem.attr('tid');
 
@@ -730,7 +730,9 @@ window.addEventListener('dashboardReady', (event) => {
             button[0].setupRun = function setupRun() {
                 const self = $(this);
                 self.text('Run Auto Annotation').off('click').on('click', () => {
-                    window.cvat.autoAnnotation.runner.reset(event.detail.filter(task => task.id === tid)[0], self).show();
+                    window.cvat.autoAnnotation.runner.reset(
+                        event.detail.filter(task => task.id === tid)[0], self
+                    ).show();
                 });
             };
 

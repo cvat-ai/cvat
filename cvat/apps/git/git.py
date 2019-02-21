@@ -22,7 +22,7 @@ import json
 import git
 import os
 import re
-import rq
+
 
 def _have_no_access_exception(ex):
     if 'Permission denied' in ex.stderr or 'Could not read from remote repository' in ex.stderr:

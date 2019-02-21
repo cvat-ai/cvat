@@ -16,25 +16,25 @@ window.addEventListener('dashboardReady', () => {
         function checkCallback() {
             $.get(`/tensorflow/annotation/check/task/${tid}`).done((statusData) => {
                 if (['started', 'queued'].includes(statusData.status)) {
-                    const progress = Math.round(statusData["progress"]) || "0";
+                    const progress = Math.round(statusData.progress) || '0';
                     button.text(`Cancel TF Annotation (${progress}%)`);
                     setTimeout(checkCallback, 5000);
                 } else {
-                    button.text("Run TF Annotation");
-                    button.removeClass("tfAnnotationProcess");
-                    button.prop("disabled", false);
+                    button.text('Run TF Annotation');
+                    button.removeClass('tfAnnotationProcess');
+                    button.prop('disabled', false);
 
                     if (statusData.status === 'failed') {
                         const message = `Tensorflow annotation failed. Error: ${statusData.stderr}`;
                         showMessage(message);
-                    } else if (statusData.status != 'finished') {
+                    } else if (statusData.status !== 'finished') {
                         const message = `Tensorflow annotation check request returned status "${statusData.status}"`;
                         showMessage(message);
                     }
                 }
-            }).fail(() => {
-                const message = `Can not sent tensorflow annotation check request. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.responseText || errorData.statusText}`;
+            }).fail((errorData) => {
+                const message = `Can not sent tensorflow annotation check request. Code: ${errorData.status}. `
+                    + `Message: ${errorData.responseText || errorData.statusText}`;
                 showMessage(message);
             });
         }
@@ -46,12 +46,12 @@ window.addEventListener('dashboardReady', () => {
     function runProcess(tid, button) {
         $.get(`/tensorflow/annotation/create/task/${tid}`).done(() => {
             showMessage('Process has started');
-            button.text(`Cancel TF Annotation (0%)`);
-            button.addClass("tfAnnotationProcess");
+            button.text('Cancel TF Annotation (0%)');
+            button.addClass('tfAnnotationProcess');
             checkProcess(tid, button);
         }).fail((errorData) => {
-            const message = `Can not run tf annotation. Code: ${errorData.status}. ` +
-                `Message: ${errorData.responseText || errorData.statusText}`;
+            const message = `Can not run tf annotation. Code: ${errorData.status}. `
+                + `Message: ${errorData.responseText || errorData.statusText}`;
             showMessage(message);
         });
     }
@@ -59,10 +59,10 @@ window.addEventListener('dashboardReady', () => {
 
     function cancelProcess(tid, button) {
         $.get(`/tensorflow/annotation/cancel/task/${tid}`).done(() => {
-            button.prop("disabled", true);
+            button.prop('disabled', true);
         }).fail((errorData) => {
-            const message = `Can not cancel tf annotation. Code: ${errorData.status}. ` +
-                `Message: ${errorData.responseText || errorData.statusText}`;
+            const message = `Can not cancel tf annotation. Code: ${errorData.status}. `
+                + `Message: ${errorData.responseText || errorData.statusText}`;
             showMessage(message);
         });
     }
@@ -73,12 +73,11 @@ window.addEventListener('dashboardReady', () => {
         const button = $('<button> Run TF Annotation </button>');
 
         button.on('click', () => {
-            if (button.hasClass("tfAnnotationProcess")) {
+            if (button.hasClass('tfAnnotationProcess')) {
                 userConfirm('The process will be canceled. Continue?', () => {
                     cancelProcess(tid, button);
                 });
-            }
-            else {
+            } else {
                 userConfirm('The current annotation will be lost. Are you sure?', () => {
                     runProcess(tid, button);
                 });
@@ -104,12 +103,12 @@ window.addEventListener('dashboardReady', () => {
         data: JSON.stringify(tids),
         contentType: 'application/json; charset=utf-8',
     }).done((metaData) => {
-        elements.each(function() {
-            setupDashboardItem($(this), metaData)
+        elements.each(function setupDashboardItemWrapper() {
+            setupDashboardItem($(this), metaData);
         });
     }).fail((errorData) => {
-        const message = `Can not get tf annotation meta info. Code: ${errorData.status}. ` +
-            `Message: ${errorData.responseText || errorData.statusText}`;
+        const message = `Can not get tf annotation meta info. Code: ${errorData.status}. `
+            + `Message: ${errorData.responseText || errorData.statusText}`;
         showMessage(message);
     });
 });
