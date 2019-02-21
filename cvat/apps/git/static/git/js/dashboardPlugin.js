@@ -144,9 +144,7 @@ window.addEventListener('dashboardReady', () => {
                         reposSyncButton.attr('disabled', true);
 
                         $.get(`/git/repository/push/${tid}`).done((rqData) => {
-                            setTimeout(timeoutCallback, 1000);
-
-                            function timeoutCallback() {
+                            function checkCallback() {
                                 $.get(`/git/repository/check/${rqData.rq_id}`).done((statusData) => {
                                     if (['queued', 'started'].includes(statusData.status)) {
                                         setTimeout(checkCallback, 1000);
@@ -165,6 +163,8 @@ window.addEventListener('dashboardReady', () => {
                                     badResponse(message);
                                 });
                             }
+
+                            setTimeout(checkCallback, 1000);
                         }).fail((errorData) => {
                             const message = `Errors occured during pushing an repos entry. ` +
                                 `Code: ${errorData.status}, text: ${errorData.responseText || errorData.statusText}`;
