@@ -329,49 +329,41 @@ class Git:
                     return GitStatusChoice.NON_SYNCED
 
 
-def _initial_create(tid, params):
-    if 'git_path' in params:
+def initial_create(tid, git_path, lfs, user):
+    try:
+        db_task = Task.objects.get(pk = tid)
+        path_pattern = r"\[(.+)\]"
+        path_search = re.search(path_pattern, git_path)
+        path = None
+
+        if path_search is not None:
+            path = path_search.group(1)
+            git_path = git_path[0:git_path.find(path) - 1].strip()
+            path = os.path.join('/', path.strip())
+        else:
+            anno_file = re.sub(r'[\\/*?:"<>|\s]', '_', db_task.name)[:100]
+            path = '/annotation/{}.zip'.format(anno_file)
+
+        path = path[1:]
+        _split = os.path.splitext(path)
+        if len(_split) < 2 or _split[1] not in [".xml", ".zip"]:
+            raise Exception("Only .xml and .zip formats are supported")
+
+        db_git = GitData()
+        db_git.url = git_path
+        db_git.path = path
+        db_git.task = db_task
+        db_git.lfs = lfs
+
         try:
-            job = rq.get_current_job()
-            job.meta['status'] = 'Cloning a repository..'
-            job.save_meta()
-
-            user = params['owner']
-            git_path = params['git_path']
-
-            db_task = Task.objects.get(pk = tid)
-            path_pattern = r"\[(.+)\]"
-            path_search = re.search(path_pattern, git_path)
-            path = None
-
-            if path_search is not None:
-                path = path_search.group(1)
-                git_path = git_path[0:git_path.find(path) - 1].strip()
-                path = os.path.join('/', path.strip())
-            else:
-                anno_file = re.sub(r'[\\/*?:"<>|\s]', '_', db_task.name)[:100]
-                path = '/annotation/{}.zip'.format(anno_file)
-
-            path = path[1:]
-            _split = os.path.splitext(path)
-            if len(_split) < 2 or _split[1] not in [".xml", ".zip"]:
-                raise Exception("Only .xml and .zip formats are supported")
-
-            db_git = GitData()
-            db_git.url = git_path
-            db_git.path = path
-            db_git.task = db_task
-            db_git.lfs = params["use_lfs"].lower() == "true"
-
-            try:
-                _git = Git(db_git, tid, user)
-                _git.init_repos()
-                db_git.save()
-            except git.exc.GitCommandError as ex:
-                _have_no_access_exception(ex)
-        except Exception as ex:
-            slogger.task[tid].exception('exception occured during git _initial_create', exc_info = True)
-            raise ex
+            _git = Git(db_git, tid, db_task.owner)
+            _git.init_repos()
+            db_git.save()
+        except git.exc.GitCommandError as ex:
+            _have_no_access_exception(ex)
+    except Exception as ex:
+        slogger.task[tid].exception('exception occured during git initial_create', exc_info = True)
+        raise ex
 
 
 @transaction.atomic
@@ -487,5 +479,4 @@ def _ondump(tid, data_format, scheme, host, plugin_meta_data):
         pass
 
 add_plugin("save_job", _onsave, "after", exc_ok = False)
-add_plugin("_create_thread", _initial_create, "before", exc_ok = False)
 add_plugin("_dump", _ondump, "before", exc_ok = False)

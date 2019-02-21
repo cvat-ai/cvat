@@ -197,7 +197,7 @@ class TaskView {
 
     render(baseURL) {
         const self = this;
-        this._UI = $('<div class="dashboardItem"> </div>').append(
+        this._UI = $(`<div tid=${this._id} class="dashboardItem"> </div>`).append(
             $(`<center class="dashboardTitleWrapper">
                 <label class="semiBold h1 selectable"> ${this._name} </label>
             </center>`)
@@ -618,7 +618,7 @@ class DashboardView {
                 type: 'POST',
                 data: JSON.stringify(description),
                 contentType: 'application/json'
-            }).done((data) => {
+            }).done((taskData) => {
                 taskMessage.css('color', 'green');
                 taskMessage.text('Task has been created. Uploading the data..');
 
@@ -632,7 +632,7 @@ class DashboardView {
                 }
 
                 $.ajax({
-                    url: `/api/v1/tasks/${data.id}/data`,
+                    url: `/api/v1/tasks/${taskData.id}/data`,
                     type: 'POST',
                     data: batchOfFiles,
                     contentType: false,
@@ -640,16 +640,31 @@ class DashboardView {
                 }).done(() => {
                     taskMessage.text('The data has been sent. Task is being created..');
 
-                    requestCreatingStatus(data.id, (status) => {
+                    requestCreatingStatus(taskData.id, (status) => {
                         taskMessage.css('color', 'blue');
                         taskMessage.text(status);
                     }, () => {
-                        window.location.reload();
+                        const decorators = DashboardView.decorators('createTask');
+                        let idx = 0;
+
+                        function next() {
+                            const decorator = decorators[idx++];
+                            if (decorator) {
+                                decorator(taskData, next, () => {
+                                    submitCreate.prop('disabled', false);
+                                    cleanupTask(tid);
+                                });
+                            } else {
+                                window.location.reload();
+                            }
+                        }
+
+                        next();
                     }, (errorMessage) => {
                         submitCreate.prop('disabled', false);
                         taskMessage.css('color', 'red');
                         taskMessage.text(errorMessage);
-                        cleanupTask(data.id);
+                        cleanupTask(taskData.id);
                     });
                 }).fail((errorData) => {
                     const message = `Can not put the data for the task. Code: ${errorData.status}. ` +
@@ -657,7 +672,7 @@ class DashboardView {
                     taskMessage.css('color', 'red');
                     taskMessage.text(message);
                     submitCreate.prop('disabled', false);
-                    cleanupTask(data.id);
+                    cleanupTask(taskData.id);
                 });
             }).fail((errorData) => {
                 const message = `Task has not been created. Code: ${errorData.status}. ` +
@@ -665,12 +680,23 @@ class DashboardView {
                 taskMessage.css('color', 'red');
                 taskMessage.text(message);
                 submitCreate.prop('disabled', false);
-                cleanupTask(data.id);
+                cleanupTask(taskData.id);
             });
         });
 
         cancelCreate.on('click', () => createModal.addClass('hidden'));
     }
+}
+
+DashboardView.decorators = (action) => {
+    DashboardView._decorators = DashboardView._decorators || {};
+    return DashboardView._decorators[action] || [];
+}
+
+DashboardView.registerDecorator = (action, decorator) => {
+    DashboardView._decorators = DashboardView._decorators || {};
+    DashboardView._decorators[action] = DashboardView._decorators[action] || [];
+    DashboardView._decorators[action].push(decorator);
 }
 
 
@@ -683,11 +709,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ).then((metaData, taskData) => {
         try {
             new DashboardView(metaData[0], taskData[0]);
-            $(window).on('click', function(event) {
-                if (event.target.classList.contains('modal')) {
-                    event.target.classList.add('hidden');
-                }
-            });
+            window.dispatchEvent(new Event('dashboardReady'));
         }
         catch(exception) {
             $('#content').empty();
