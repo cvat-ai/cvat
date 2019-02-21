@@ -328,7 +328,7 @@ class DashboardView {
         });
 
         searchInput.on('keypress', function(e) {
-            if (e.keyCode != 13) return;
+            if (e.keyCode !== 13) return;
             let filter = e.target.value;
             if (!filter) window.location.search = '';
             else window.location.search = `search=${filter}`;
@@ -352,7 +352,7 @@ class DashboardView {
 
         function validateName(name) {
             const math = name.match('[a-zA-Z0-9_]+');
-            return math != null;
+            return math !== null;
         }
 
         function validateLabels(labels) {
@@ -376,7 +376,7 @@ class DashboardView {
             function checkCallback() {
                 $.get(`/api/v1/tasks/${tid}/status`).done((data) => {
                     if (['Queued', 'Started'].includes(data.state)) {
-                        if (data.message != '') {
+                        if (data.message !== '') {
                             onUpdateStatus(data.message);
                         }
                         setTimeout(checkCallback, 1000);
