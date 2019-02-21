@@ -9,8 +9,6 @@
     DashboardView:false
 */
 
-'use strict';
-
 // GIT ENTRYPOINT
 window.addEventListener('dashboardReady', () => {
     const reposWindowId = 'gitReposWindow';
@@ -156,8 +154,8 @@ window.addEventListener('dashboardReady', () => {
                                         badResponse(message);
                                     }
                                 }).fail((errorData) => {
-                                    const message = `Errors occured during pushing an repos entry. ` +
-                                        `Code: ${errorData.status}, text: ${errorData.responseText || errorData.statusText}`;
+                                    const message = 'Errors occured during pushing an repos entry. '
+                                        + `Code: ${errorData.status}, text: ${errorData.responseText || errorData.statusText}`;
                                     badResponse(message);
                                 });
                             }

@@ -9,8 +9,6 @@
     showMessage:false
 */
 
-'use strict';
-
 window.addEventListener('dashboardReady', () => {
     function checkProcess(tid, button) {
         function checkCallback() {

@@ -722,17 +722,16 @@ window.addEventListener('dashboardReady', (event) => {
                 overlay.remove();
             }).appendTo('#dashboardManageButtons');
 
-        elements.each(function setupDashboardItem () {
+        elements.each(function setupDashboardItem() {
             const elem = $(this);
             const tid = +elem.attr('tid');
 
             const button = $('<button> Run Auto Annotation </button>').addClass('regular dashboardButtonUI');
             button[0].setupRun = function setupRun() {
                 const self = $(this);
+                const taskInfo = event.detail.filter(task => task.id === tid)[0];
                 self.text('Run Auto Annotation').off('click').on('click', () => {
-                    window.cvat.autoAnnotation.runner.reset(
-                        event.detail.filter(task => task.id === tid)[0], self
-                    ).show();
+                    window.cvat.autoAnnotation.runner.reset(taskInfo, self).show();
                 });
             };
 
@@ -776,6 +775,4 @@ window.addEventListener('dashboardReady', (event) => {
     }, (error) => {
         showMessage(`Cannot get models meta information: ${error}`);
     });
-
-
 });
