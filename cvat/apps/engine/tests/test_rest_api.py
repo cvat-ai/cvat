@@ -1048,7 +1048,7 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         response = self._run_api_v1_tasks_id_data(task_id, self.admin, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
     def test_api_v1_tasks_id_data_user(self):
         data = {
@@ -1072,4 +1072,4 @@ class TaskDataAPITestCase(APITestCase):
         }
 
         response = self._run_api_v1_tasks_id_data(task_id, self.user, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)

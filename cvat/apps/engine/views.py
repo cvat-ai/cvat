@@ -152,7 +152,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             task.create(db_task.id, serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     #@action(detail=True, methods=['GET', 'DELETE', 'POST'], serializer_class=None)
     @action(detail=True, methods=['GET'], serializer_class=None)

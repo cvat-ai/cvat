@@ -2,19 +2,20 @@
 #
 # SPDX-License-Identifier: MIT
 
-from rest_framework import serializers
-from cvat.apps.engine.models import (Task, Job, Label, AttributeSpec,
-    Segment, ClientFile, ServerFile, RemoteFile, Plugin)
-from cvat.apps.engine.log import slogger
-
-from django.contrib.auth.models import User, Group
 import os
 import shutil
 import json
 
+from rest_framework import serializers
+from django.contrib.auth.models import User, Group
+
+from cvat.apps.engine import models
+from cvat.apps.engine.log import slogger
+
+
 class AttributeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AttributeSpec
+        model = models.AttributeSpec
         fields = ('id', 'name', 'mutable', 'input_type', 'default_value',
             'values')
 
@@ -33,7 +34,7 @@ class LabelSerializer(serializers.ModelSerializer):
     attributes = AttributeSerializer(many=True, source='attributespec_set',
         default=[])
     class Meta:
-        model = Label
+        model = models.Label
         fields = ('id', 'name', 'attributes')
 
 class JobSerializer(serializers.ModelSerializer):
@@ -42,14 +43,14 @@ class JobSerializer(serializers.ModelSerializer):
     stop_frame = serializers.ReadOnlyField(source="segment.stop_frame")
 
     class Meta:
-        model = Job
+        model = models.Job
         fields = ('url', 'id', 'assignee', 'status', 'start_frame',
             'stop_frame', 'max_shape_id', 'task_id')
         read_only_fields = ('max_shape_id',)
 
 class SimpleJobSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Job
+        model = models.Job
         fields = ('url', 'id', 'assignee', 'status', 'max_shape_id')
         read_only_fields = ('max_shape_id',)
 
@@ -57,12 +58,12 @@ class SegmentSerializer(serializers.ModelSerializer):
     jobs = SimpleJobSerializer(many=True, source='job_set')
 
     class Meta:
-        model = Segment
+        model = models.Segment
         fields = ('start_frame', 'stop_frame', 'jobs')
 
 class ClientFileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ClientFile
+        model = models.ClientFile
         fields = ('file', )
 
     def to_internal_value(self, data):
@@ -74,12 +75,12 @@ class ClientFileSerializer(serializers.ModelSerializer):
 
 class ServerFileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ServerFile
+        model = models.ServerFile
         fields = ('file', )
 
 class RemoteFileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = RemoteFile
+        model = models.RemoteFile
         fields = ('file', )
 
 class RqStatusSerializer(serializers.Serializer):
@@ -96,7 +97,7 @@ class TaskDataSerializer(serializers.ModelSerializer):
         default=[])
 
     class Meta:
-        model = Task
+        model = models.Task
         fields = ('client_files', 'server_files', 'remote_files')
 
     def update(self, instance, validated_data):
@@ -105,15 +106,15 @@ class TaskDataSerializer(serializers.ModelSerializer):
         remote_files = validated_data.pop('remotefile_set')
 
         for file in client_files:
-            client_file = ClientFile(task=instance, **file)
+            client_file = models.ClientFile(task=instance, **file)
             client_file.save()
 
         for file in server_files:
-            server_file = ServerFile(task=instance, **file)
+            server_file = models.ServerFile(task=instance, **file)
             server_file.save()
 
         for file in remote_files:
-            remote_file = RemoteFile(task=instance, **file)
+            remote_file = models.RemoteFile(task=instance, **file)
             remote_file.save()
 
         return instance
@@ -169,7 +170,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     image_quality = serializers.IntegerField(min_value=0, max_value=100)
 
     class Meta:
-        model = Task
+        model = models.Task
         fields = ('url', 'id', 'name', 'size', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'z_order', 'flipped', 'status', 'labels', 'segments',
@@ -181,12 +182,12 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
-        db_task = Task.objects.create(size=0, **validated_data)
+        db_task = models.Task.objects.create(size=0, **validated_data)
         for label in labels:
             attributes = label.pop('attributespec_set')
-            db_label = Label.objects.create(task=db_task, **label)
+            db_label = models.Label.objects.create(task=db_task, **label)
             for attr in attributes:
-                AttributeSpec.objects.create(label=db_label, **attr)
+                models.AttributeSpec.objects.create(label=db_label, **attr)
 
         task_path = db_task.get_task_dirname()
         if os.path.isdir(task_path):
@@ -212,7 +213,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         labels = validated_data.get('label_set', [])
         for label in labels:
             attributes = label.pop('attributespec_set', [])
-            (db_label, created) = Label.objects.get_or_create(task=instance,
+            (db_label, created) = models.Label.objects.get_or_create(task=instance,
                 name=label['name'])
             if created:
                 slogger.task[instance.id].info("New {} label was created"
@@ -221,7 +222,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 slogger.task[instance.id].info("{} label was updated"
                     .format(db_label.name))
             for attr in attributes:
-                (db_attr, created) = AttributeSpec.objects.get_or_create(
+                (db_attr, created) = models.AttributeSpec.objects.get_or_create(
                     label=db_label, name=attr['name'], defaults=attr)
                 if created:
                     slogger.task[instance.id].info("New {} attribute for {} label was created"
@@ -277,8 +278,69 @@ class ImageMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
 
+class LabeledImageAttributeValSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.LabeledImageAttributeVal
+        fields = ("spec", "value")
+
+class LabeledImageSerializer(serializers.ModelSerializer):
+    attributes = LabeledImageAttributeValSerializer(many=True,
+        source="labeledimageattributeval_set")
+    class Meta:
+        model = models.LabeledImage
+        fields = ("frame", "label", "group_id", "client_id", "attributes")
+
+class LabeledShapeAttributeValSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.LabeledShapeAttributeVal
+        fields = ("spec", "value")
+
+class LabeledShapeSerializer(serializers.ModelSerializer):
+    attributes = LabeledImageAttributeValSerializer(many=True,
+        source="labeledshapeattributeval_set")
+    class Meta:
+        model = models.LabeledShape
+        fields = ("type", "occluded", "z_order", "points", "frame", "label",
+            "group_id", "client_id", "attributes")
+
+class TrackedShapeAttributeValSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.TrackedShapeAttributeVal
+        fields = ("spec", "value")
+
+class TrackedShapeSerializer(serializers.ModelSerializer):
+    attributes = TrackedShapeAttributeValSerializer(many=True,
+        source="trackedshapeattributeval_set")
+    class Meta:
+        model = models.TrackedShape
+        fields = ("type", "occluded", "z_order", "points", "frame", "outside",
+            "attributes")
+
+class LabeledTrackAttributeValSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.LabeledTrackAttributeVal
+        fields = ("spec", "value")
+
+class LabeledTrackSerializer(serializers.ModelSerializer):
+    attributes = LabeledTrackAttributeValSerializer(many=True,
+        source="labeledtrackattributeval_set")
+    class Meta:
+        model = models.LabeledTrack
+        fields = ("frame", "label", "group_id", "client_id", "attributes")
+
+
+class JobAnnotationSerializer(serializers.ModelSerializer):
+    tags   = LabeledImageSerializer(many=True, source="labeledimage_set")
+    shapes = LabeledShapeSerializer(many=True, source="labeledshape_set")
+    tracks = LabeledTrackSerializer(many=True, source="labeledtrack_set")
+
+    class Meta:
+        model = models.Job
+        fields = ("tags", "shapes", "tracks")
+
+
 class PluginSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Plugin
+        model = models.Plugin
         fields = ('name', 'description', 'maintainer', 'created_at',
             'updated_at')
