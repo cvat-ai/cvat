@@ -266,7 +266,7 @@ class LabeledShapeAttributeVal(AttributeVal):
 class ObjectTrack(Annotation):
     pass
 
-class ObjectPathAttributeVal(AttributeVal):
+class ObjectTrackAttributeVal(AttributeVal):
     track = models.ForeignKey(ObjectTrack, on_delete=models.CASCADE)
 
 class TrackedShape(Shape):
