@@ -263,15 +263,15 @@ class LabeledShape(Annotation, Shape):
 class LabeledShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(LabeledShape, on_delete=models.CASCADE)
 
-class ObjectTrack(Annotation):
+class LabeledTrack(Annotation):
     pass
 
-class ObjectTrackAttributeVal(AttributeVal):
-    track = models.ForeignKey(ObjectTrack, on_delete=models.CASCADE)
+class LabeledTrackAttributeVal(AttributeVal):
+    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
 
 class TrackedShape(Shape):
     id = models.BigAutoField(primary_key=True)
-    track = models.ForeignKey(ObjectTrack, on_delete=models.CASCADE)
+    track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     outside = models.BooleanField(default=False)
 
