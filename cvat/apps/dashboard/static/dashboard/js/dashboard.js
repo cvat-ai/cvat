@@ -709,7 +709,9 @@ window.addEventListener('DOMContentLoaded', () => {
     ).then((metaData, taskData) => {
         try {
             new DashboardView(metaData[0], taskData[0]);
-            window.dispatchEvent(new Event('dashboardReady'));
+            window.dispatchEvent(new CustomEvent('dashboardReady', {
+                detail: JSON.parse(JSON.stringify(taskData[0].results))
+            }));
         }
         catch(exception) {
             $('#content').empty();
