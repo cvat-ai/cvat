@@ -21,12 +21,13 @@ from rest_framework.reverse import reverse
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
 from rest_framework import viewsets
+from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework import mixins
 import django_rq
 
 
-from . import annotation, task, models
+from . import annotation_v2, task, models
 from cvat.settings.base import JS_3RDPARTY, CSS_3RDPARTY
 from cvat.apps.authentication.decorators import login_required
 from requests.exceptions import RequestException
@@ -35,7 +36,8 @@ from .log import slogger, clogger
 from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
 from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
-   RqStatusSerializer, TaskDataSerializer, PluginSerializer)
+   RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
+   PluginSerializer)
 from django.contrib.auth.models import User
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
@@ -94,6 +96,12 @@ class ServerViewSet(viewsets.ViewSet):
                 clogger.glob.error(message)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    # @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
+    # def logs(self, request):
+    #     serializer = LogEventSerializer(many=True, data=request.data)
+    #     if serializer.is_valid(raise_exception=True):
+    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     # @action(detail=False, methods=['GET'], serializer_class=ShareSerializer)
     # def share(self, request):
@@ -154,10 +162,33 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             task.create(db_task.id, serializer.data)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-    #@action(detail=True, methods=['GET', 'DELETE', 'POST'], serializer_class=None)
-    @action(detail=True, methods=['GET'], serializer_class=None)
+    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
+        serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        pass
+        if request.method == 'GET':
+            data = annotation_v2.get_task_data(pk)
+            serializer = LabeledDataSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                return Response(serializer.data)
+        elif request.method == 'PUT':
+            serializer = LabeledDataSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                annotation_v2.put_task_data(pk, serializer.data)
+                return Response(status=status.HTTP_201_CREATED)
+        elif request.method == 'DELETE':
+            serializer = LabeledDataSerializer()
+            if serializer.is_valid(raise_exception=True):
+                annotation_v2.delete_task_data(pk)
+                return Response()
+        elif request.method == 'PATCH':
+            action = self.request.query_params.get("action", None)
+            if action not in annotation_v2.PatchAction:
+                raise serializers.ValidationError(
+                    "Please specify a correct 'action' for the request")
+            serializer = LabeledDataSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                annotation_v2.patch_task_data(pk, serializer.data, action)
+                return Response()
 
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
@@ -235,11 +266,31 @@ class JobViewSet(viewsets.GenericViewSet,
 
         return [perm() for perm in permissions]
 
-    #@action(detail=True, methods=['GET', 'DELETE', 'POST'], serializer_class=None)
-    @action(detail=True, methods=['GET'], serializer_class=None)
+    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
+        serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
-        pass
-
+        if request.method == 'GET':
+            data = annotation_v2.get_job_data(pk)
+            serializer = LabeledDataSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                return Response(serializer.data)
+        elif request.method == 'PUT':
+            serializer = LabeledDataSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                annotation_v2.put_job_data(pk, serializer.data)
+                return Response(status=status.HTTP_201_CREATED)
+        elif request.method == 'DELETE':
+            annotation_v2.delete_job_data(pk)
+            return Response()
+        elif request.method == 'PATCH':
+            action = self.request.query_params.get("action", None)
+            if action not in annotation_v2.PatchAction:
+                raise serializers.ValidationError(
+                    "Please specify a correct 'action' for the request")
+            serializer = LabeledDataSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                annotation_v2.patch_job_data(pk, serializer.data, action)
+                return Response()
 
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):

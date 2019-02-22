@@ -278,66 +278,50 @@ class ImageMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
 
-class LabeledImageAttributeValSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.LabeledImageAttributeVal
-        fields = ("spec", "value")
 
-class LabeledImageSerializer(serializers.ModelSerializer):
-    attributes = LabeledImageAttributeValSerializer(many=True,
-        source="labeledimageattributeval_set")
-    class Meta:
-        model = models.LabeledImage
-        fields = ("frame", "label", "group_id", "client_id", "attributes")
+class AttributeValSerializer(serializers.Serializer):
+    attribute = serializers.IntegerField()
+    value = serializers.CharField(max_length=64, allow_blank=True)
 
-class LabeledShapeAttributeValSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.LabeledShapeAttributeVal
-        fields = ("spec", "value")
+class AnnotationSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    frame = serializers.IntegerField(min_value=0)
+    label = serializers.IntegerField(min_value=0)
+    group = serializers.IntegerField(min_value=0)
+    attributes = AttributeValSerializer(many=True)
 
-class LabeledShapeSerializer(serializers.ModelSerializer):
-    attributes = LabeledImageAttributeValSerializer(many=True,
-        source="labeledshapeattributeval_set")
-    class Meta:
-        model = models.LabeledShape
-        fields = ("type", "occluded", "z_order", "points", "frame", "label",
-            "group_id", "client_id", "attributes")
+class LabeledImageSerializer(AnnotationSerializer):
+    pass
 
-class TrackedShapeAttributeValSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.TrackedShapeAttributeVal
-        fields = ("spec", "value")
+class ShapeSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=models.ShapeType.choices())
+    occluded = serializers.BooleanField()
+    z_order = serializers.BooleanField()
+    points = serializers.ListField(
+        child=serializers.FloatField(min_value=0)
+    )
 
-class TrackedShapeSerializer(serializers.ModelSerializer):
-    attributes = TrackedShapeAttributeValSerializer(many=True,
-        source="trackedshapeattributeval_set")
-    class Meta:
-        model = models.TrackedShape
-        fields = ("type", "occluded", "z_order", "points", "frame", "outside",
-            "attributes")
+class LabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
+    pass
 
-class LabeledTrackAttributeValSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.LabeledTrackAttributeVal
-        fields = ("spec", "value")
+class TrackedShapeSerializer(ShapeSerializer):
+    frame = serializers.IntegerField(min_value=0)
+    outside = serializers.BooleanField()
+    attributes = AttributeValSerializer(many=True)
 
-class LabeledTrackSerializer(serializers.ModelSerializer):
-    attributes = LabeledTrackAttributeValSerializer(many=True,
-        source="labeledtrackattributeval_set")
-    class Meta:
-        model = models.LabeledTrack
-        fields = ("frame", "label", "group_id", "client_id", "attributes")
+class LabeledTrackSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    frame = serializers.IntegerField(min_value=0)
+    label = serializers.IntegerField(min_value=0)
+    group = serializers.IntegerField(min_value=0)
+    attributes = AttributeValSerializer(many=True)
+    shapes = TrackedShapeSerializer(many=True)
 
-
-class JobAnnotationSerializer(serializers.ModelSerializer):
-    tags   = LabeledImageSerializer(many=True, source="labeledimage_set")
-    shapes = LabeledShapeSerializer(many=True, source="labeledshape_set")
-    tracks = LabeledTrackSerializer(many=True, source="labeledtrack_set")
-
-    class Meta:
-        model = models.Job
-        fields = ("tags", "shapes", "tracks")
-
+class LabeledDataSerializer(serializers.Serializer):
+    version = serializers.IntegerField()
+    tags   = LabeledImageSerializer(many=True)
+    shapes = LabeledShapeSerializer(many=True)
+    tracks = LabeledTrackSerializer(many=True)
 
 class PluginSerializer(serializers.ModelSerializer):
     class Meta:
