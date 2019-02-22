@@ -12,6 +12,7 @@ from cvat.apps.git.models import GitData
 
 import cvat.apps.git.git as CVATGit
 import django_rq
+import json
 
 @login_required
 def check_process(request, rq_id):
@@ -21,15 +22,35 @@ def check_process(request, rq_id):
 
         if rq_job is not None:
             if rq_job.is_queued or rq_job.is_started:
-                return JsonResponse({"status": "processing"})
+                return JsonResponse({"status": rq_job.get_status()})
             elif rq_job.is_finished:
-                return JsonResponse({"status": "finished"})
+                return JsonResponse({"status": rq_job.get_status()})
             else:
-                return JsonResponse({"status": "failed", "error": rq_job.exc_info})
+                return JsonResponse({"status": rq_job.get_status(), "stderr": rq_job.exc_info})
         else:
             return JsonResponse({"status": "unknown"})
     except Exception as ex:
         slogger.glob.error("error occured during checking repository request with rq id {}".format(rq_id), exc_info=True)
+        return HttpResponseBadRequest(str(ex))
+
+
+@login_required
+@permission_required(perm=['engine.task.create'],
+    fn=objectgetter(models.Task, 'tid'), raise_exception=True)
+def create(request, tid):
+    try:
+        slogger.task[tid].info("create repository request")
+
+        body = json.loads(request.body.decode('utf-8'))
+        path = body["path"]
+        lfs = body["lfs"]
+        rq_id = "git.create.{}".format(tid)
+        queue = django_rq.get_queue("default")
+
+        queue.enqueue_call(func = CVATGit.initial_create, args = (tid, path, lfs, request.user), job_id = rq_id)
+        return JsonResponse({ "rq_id": rq_id })
+    except Exception as ex:
+        slogger.glob.error("error occured during initial cloning repository request with rq id {}".format(rq_id), exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
 
