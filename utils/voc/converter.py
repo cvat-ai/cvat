@@ -6,9 +6,9 @@ Given a CVAT XML and a directory with the image dataset, this script reads the
 CVAT XML and writes the annotations in PASCAL VOC format into a given
 directory.
 
-This implementation only supports bounding boxes in CVAT annotation format, and
-warns if it encounter any tracks or annotations that are not bounding boxes,
-ignoring them in both cases.
+This implementation supports both interpolation tracks from video and 
+annotated images.  If it encounters any tracks or annotations that are 
+not bounding boxes, it ignores them.
 """
 
 import os
@@ -56,38 +56,97 @@ def process_cvat_xml(xml_file, image_dir, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     cvat_xml = etree.parse(xml_file)
 
-    tracks = [(x.get('id'), x.get('label'))
-              for x in cvat_xml.findall('track')]
-    if tracks:
-        log.warn('Cannot parse interpolation tracks, ignoring {} tracks'.format(len(tracks)))
+    basename = os.path.splitext( os.path.basename( xml_file ) )[0]
 
-    for img_tag in cvat_xml.findall('image'):
-        image_name = img_tag.get('name')
-        width = img_tag.get('width')
-        height = img_tag.get('height')
-        image_path = os.path.join(image_dir, image_name)
-        if not os.path.exists(image_path):
-            log.warn('{} image cannot be found. Is `{}` image directory correct?'.
-                format(image_path, image_dir))
-        writer = Writer(image_path, width, height)
+    tracks= cvat_xml.findall( './/track' )
 
-        unknown_tags = {x.tag for x in img_tag.iter()}.difference(KNOWN_TAGS)
-        if unknown_tags:
-            log.warn('Ignoring tags for image {}: {}'.format(image_path, unknown_tags))
+    if (tracks is not None) and (len(tracks) > 0):
+        frames = {}
 
-        for box in img_tag.findall('box'):
-            label = box.get('label')
-            xmin = float(box.get('xtl'))
-            ymin = float(box.get('ytl'))
-            xmax = float(box.get('xbr'))
-            ymax = float(box.get('ybr'))
+        for track in tracks:
+            trackid = int(track.get("id"))
+            label = track.get("label")
+            boxes = track.findall( './box' )
+            for box in boxes:
+                frameid  = int(box.get('frame'))
+                outside  = int(box.get('outside'))
+                #occluded = int(box.get('occluded'))  #currently unused
+                #keyframe = int(box.get('keyframe'))  #currently unused
+                xtl      = float(box.get('xtl'))
+                ytl      = float(box.get('ytl'))
+                xbr      = float(box.get('xbr'))
+                ybr      = float(box.get('ybr'))
+                
+                frame = frames.get( frameid, {} )
+                
+                if outside == 0:
+                    frame[ trackid ] = { 'xtl': xtl, 'ytl': ytl, 'xbr': xbr, 'ybr': ybr, 'label': label }
 
-            writer.addObject(label, xmin, ymin, xmax, ymax)
+                frames[ frameid ] = frame
 
-        anno_name = os.path.basename(os.path.splitext(image_name)[0] + '.xml')
-        anno_dir = os.path.dirname(os.path.join(output_dir, image_name))
-        os.makedirs(anno_dir, exist_ok=True)
-        writer.save(os.path.join(anno_dir, anno_name))
+        width = int(cvat_xml.find('.//original_size/width').text)
+        height  = int(cvat_xml.find('.//original_size/height').text)
+
+        # Spit out a list of each object for each frame
+        for frameid in sorted(frames.keys()):
+            #print( frameid )
+
+            image_name = "%s_%08d.jpg" % (basename, frameid)
+            image_path = os.path.join(image_dir, image_name)
+            if not os.path.exists(image_path):
+                log.warn('{} image cannot be found. Is `{}` image directory correct?'.
+                    format(image_path, image_dir))
+            writer = Writer(image_path, width, height)
+
+            frame = frames[frameid]
+
+            objids = sorted(frame.keys())
+
+            for objid in objids:
+
+                box = frame[objid]
+
+                label = box.get('label')
+                xmin = float(box.get('xtl'))
+                ymin = float(box.get('ytl'))
+                xmax = float(box.get('xbr'))
+                ymax = float(box.get('ybr'))
+
+                writer.addObject(label, xmin, ymin, xmax, ymax)
+
+            anno_name = os.path.basename(os.path.splitext(image_name)[0] + '.xml')
+            anno_dir = os.path.dirname(os.path.join(output_dir, image_name))
+            os.makedirs(anno_dir, exist_ok=True)
+            writer.save(os.path.join(anno_dir, anno_name))
+
+    else:
+        for img_tag in cvat_xml.findall('image'):
+            image_name = img_tag.get('name')
+            width = img_tag.get('width')
+            height = img_tag.get('height')
+            image_path = os.path.join(image_dir, image_name)
+            if not os.path.exists(image_path):
+                log.warn('{} image cannot be found. Is `{}` image directory correct?'.
+                    format(image_path, image_dir))
+            writer = Writer(image_path, width, height)
+
+            unknown_tags = {x.tag for x in img_tag.iter()}.difference(KNOWN_TAGS)
+            if unknown_tags:
+                log.warn('Ignoring tags for image {}: {}'.format(image_path, unknown_tags))
+
+            for box in img_tag.findall('box'):
+                label = box.get('label')
+                xmin = float(box.get('xtl'))
+                ymin = float(box.get('ytl'))
+                xmax = float(box.get('xbr'))
+                ymax = float(box.get('ybr'))
+
+                writer.addObject(label, xmin, ymin, xmax, ymax)
+
+            anno_name = os.path.basename(os.path.splitext(image_name)[0] + '.xml')
+            anno_dir = os.path.dirname(os.path.join(output_dir, image_name))
+            os.makedirs(anno_dir, exist_ok=True)
+            writer.save(os.path.join(anno_dir, anno_name))
 
 
 def main():
