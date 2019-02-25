@@ -31,3 +31,4 @@ django-filter==2.0.0
 Markdown==3.0.1
 djangorestframework==3.9.0
 Pygments==2.3.1
+django-model-utils==3.1.2

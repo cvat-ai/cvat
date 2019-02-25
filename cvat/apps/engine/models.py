@@ -2,18 +2,20 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.db import models
-from django.conf import settings
-
-from django.contrib.auth.models import User
-from django.core.files.storage import FileSystemStorage
-
 from enum import Enum
 
 import shlex
 import csv
 import os
 import sys
+import re
+
+from django.db import models
+from django.conf import settings
+
+from django.contrib.auth.models import User
+from django.core.files.storage import FileSystemStorage
+from model_utils.managers import InheritanceManager
 
 class SafeCharField(models.CharField):
     def get_prep_value(self, value):
@@ -233,6 +235,8 @@ class ShapeType(str, Enum):
         return tuple((x.name, x.value) for x in self)
 
 class Annotation(models.Model):
+    objects = InheritanceManager()
+
     id = models.BigAutoField(primary_key=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
