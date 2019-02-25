@@ -122,7 +122,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
                     const { frameWidth } = window.cvat.player.geometry;
                     const { frameHeight } = window.cvat.player.geometry;
-                    for (let idx = 0; idx < actualPoints.length; idx++) {
+                    for (let idx = 0; idx < actualPoints.length; idx += 1) {
                         const point = actualPoints[idx];
                         point.x = Math.clamp(point.x, 0, frameWidth);
                         point.y = Math.clamp(point.y, 0, frameHeight);
@@ -131,7 +131,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     e.target.setAttribute('points',
                         window.cvat.translate.points.actualToCanvas(
                             PolyShapeModel.convertNumberArrayToString(actualPoints),
-                    ));
+                        ));
 
                     const polybox = e.target.getBBox();
                     const area = polybox.width * polybox.height;
