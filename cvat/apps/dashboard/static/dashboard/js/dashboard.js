@@ -382,7 +382,7 @@ class DashboardView {
                         setTimeout(checkCallback, 1000);
                     } else {
                         if (data.state === 'Finished') {
-                            onSuccess(tid);
+                            onSuccess();
                         }
                         else if (data.state === 'Failed') {
                             const message = `Can not create task. ${data.message}`;
