@@ -4,7 +4,7 @@
 
 import os
 import copy
-import Enum
+from enum import Enum
 from django.utils import timezone
 from collections import OrderedDict
 import numpy as np

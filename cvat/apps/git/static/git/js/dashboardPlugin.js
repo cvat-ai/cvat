@@ -260,6 +260,8 @@ window.addEventListener('dashboardReady', () => {
                 taskMessage.text(message);
                 onFault();
             });
+        } else {
+            next();
         }
     });
 });
