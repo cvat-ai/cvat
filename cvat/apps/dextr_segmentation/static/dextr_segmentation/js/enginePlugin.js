@@ -4,13 +4,15 @@
  * SPDX-License-Identifier: MIT
  */
 
- /* global
+/* global
     AREA_TRESHOLD:false
-    ShapeCreatorModel:false
-    ShapeCreatorView:false
+    PolyShapeModel:false
+    ShapeCreatorModel:true
+    ShapeCreatorView:true
+    showMessage:false
 */
 
-'use strict';
+/* eslint no-underscore-dangle: 0 */
 
 window.addEventListener('DOMContentLoaded', () => {
     $('<option value="auto_segmentation" class="regular"> Auto Segmentation </option>').appendTo('#shapeTypeSelector');
@@ -39,26 +41,24 @@ window.addEventListener('DOMContentLoaded', () => {
             },
             complete: () => {
                 dextrCancelButton.prop('disabled', false);
-            }
+            },
         });
     });
 
-    function ShapeCreatorModelWrapper(originalClass) {
+    function ShapeCreatorModelWrapper(OriginalClass) {
         // Constructor will patch some properties for a created instance
-        function constructorDecorator() {
-            const instance = new originalClass(...arguments);
+        function constructorDecorator(...args) {
+            const instance = new OriginalClass(...args);
 
             // Decorator for the defaultType property
             Object.defineProperty(instance, 'defaultType', {
-                get: function() {
-                    return instance._defaultType;
-                },
-                set: function(type) {
+                get: () => instance._defaultType,
+                set: (type) => {
                     if (!['box', 'points', 'polygon', 'polyline', 'auto_segmentation'].includes(type)) {
                         throw Error(`Unknown shape type found ${type}`);
                     }
                     instance._defaultType = type;
-                }
+                },
             });
 
             // Decorator for finish method.
@@ -68,12 +68,10 @@ window.addEventListener('DOMContentLoaded', () => {
                     try {
                         instance._defaultType = 'polygon';
                         decoratedFinish.call(instance, result);
-                    }
-                    finally {
+                    } finally {
                         instance._defaultType = 'auto_segmentation';
                     }
-                }
-                else {
+                } else {
                     decoratedFinish.call(instance, result);
                 }
             };
@@ -81,34 +79,37 @@ window.addEventListener('DOMContentLoaded', () => {
             return instance;
         }
 
-        constructorDecorator.prototype = originalClass.prototype;
+        constructorDecorator.prototype = OriginalClass.prototype;
         constructorDecorator.prototype.constructor = constructorDecorator;
         return constructorDecorator;
     }
 
 
-    function ShapeCreatorViewWrapper(originalClass) {
+    function ShapeCreatorViewWrapper(OriginalClass) {
         // Constructor will patch some properties for each instance
-        function constructorDecorator() {
-            const instance = new originalClass(...arguments);
+        function constructorDecorator(...args) {
+            const instance = new OriginalClass(...args);
 
             // Decorator for the _create() method.
             // We save the decorated _create() and we will use it if type != 'auto_segmentation'
             const decoratedCreate = instance._create;
             instance._create = () => {
-                if (instance._type != 'auto_segmentation') {
+                if (instance._type !== 'auto_segmentation') {
                     decoratedCreate.call(instance);
                     return;
                 }
 
-                instance._drawInstance = instance._frameContent.polyline().draw({snapToGrid: 0.1}).addClass('shapeCreation').attr({
+                instance._drawInstance = instance._frameContent.polyline().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
                     'stroke-width': 0,
-                    'z_order': Number.MAX_SAFE_INTEGER,
+                    z_order: Number.MAX_SAFE_INTEGER,
                 });
                 instance._createPolyEvents();
 
-                // the _createPolyEvents method have added "drawdone" event handler which invalid for this case
-                // because of that reason we remove the handler and create the valid handler instead
+                /* the _createPolyEvents method have added "drawdone"
+                * event handler which invalid for this case
+                * because of that reason we remove the handler and
+                * create the valid handler instead
+                */
                 instance._drawInstance.off('drawdone').on('drawdone', (e) => {
                     let actualPoints = window.cvat.translate.points.canvasToActual(e.target.getAttribute('points'));
                     actualPoints = PolyShapeModel.convertStringToNumberArray(actualPoints);
@@ -119,15 +120,18 @@ window.addEventListener('DOMContentLoaded', () => {
                         return;
                     }
 
-                    const frameWidth = window.cvat.player.geometry.frameWidth;
-                    const frameHeight = window.cvat.player.geometry.frameHeight;
-                    for (let point of actualPoints) {
+                    const { frameWidth } = window.cvat.player.geometry;
+                    const { frameHeight } = window.cvat.player.geometry;
+                    for (let idx = 0; idx < actualPoints.length; idx++) {
+                        const point = actualPoints[idx];
                         point.x = Math.clamp(point.x, 0, frameWidth);
                         point.y = Math.clamp(point.y, 0, frameHeight);
                     }
 
-                    e.target.setAttribute('points', window.cvat.translate.points.actualToCanvas(
-                        PolyShapeModel.convertNumberArrayToString(actualPoints)));
+                    e.target.setAttribute('points',
+                        window.cvat.translate.points.actualToCanvas(
+                            PolyShapeModel.convertNumberArrayToString(actualPoints),
+                    ));
 
                     const polybox = e.target.getBBox();
                     const area = polybox.width * polybox.height;
@@ -138,7 +142,7 @@ window.addEventListener('DOMContentLoaded', () => {
                             type: 'POST',
                             data: JSON.stringify({
                                 frame: window.cvat.player.frames.current,
-                                points: actualPoints
+                                points: actualPoints,
                             }),
                             contentType: 'application/json',
                             success: () => {
@@ -156,7 +160,7 @@ window.addEventListener('DOMContentLoaded', () => {
                                                 dextrOverlay.addClass('hidden');
                                                 if (jobData.status === 'finished') {
                                                     if (jobData.result) {
-                                                        instance._controller.finish({points: jobData.result}, 'polygon');
+                                                        instance._controller.finish({ points: jobData.result }, 'polygon');
                                                     }
                                                 } else if (jobData.status === 'failed') {
                                                     const message = `Segmentation has fallen. Error: '${jobData.stderr}'`;
@@ -170,12 +174,12 @@ window.addEventListener('DOMContentLoaded', () => {
                                                 }
                                             }
                                         },
-                                        error: () => {
+                                        error: (errorData) => {
                                             dextrOverlay.addClass('hidden');
-                                            const message = `Can not check segmentation. Code: ${errorData.status}.
-                                                Message: ${errorData.responseText || errorData.statusText}`;
+                                            const message = `Can not check segmentation. Code: ${errorData.status}.`
+                                                + ` Message: ${errorData.responseText || errorData.statusText}`;
                                             showMessage(message);
-                                        }
+                                        },
                                     });
                                 }
 
@@ -184,10 +188,10 @@ window.addEventListener('DOMContentLoaded', () => {
                                 setTimeout(intervalCallback, 1000);
                             },
                             error: (errorData) => {
-                                const message = `Can not cancel ReID process. Code: ${errorData.status}.
-                                    Message: ${errorData.responseText || errorData.statusText}`;
+                                const message = `Can not cancel ReID process. Code: ${errorData.status}.`
+                                    + ` Message: ${errorData.responseText || errorData.statusText}`;
                                 showMessage(message);
-                            }
+                            },
                         });
                     }
 
@@ -198,7 +202,7 @@ window.addEventListener('DOMContentLoaded', () => {
             return instance;
         } // end of constructorDecorator()
 
-        constructorDecorator.prototype = originalClass.prototype;
+        constructorDecorator.prototype = OriginalClass.prototype;
         constructorDecorator.prototype.constructor = constructorDecorator;
         return constructorDecorator;
     } // end of ShapeCreatorViewWrapper
