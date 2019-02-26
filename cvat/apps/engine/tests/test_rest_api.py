@@ -982,6 +982,17 @@ class TaskCreateAPITestCase(APITestCase):
         }
         self._check_api_v1_tasks(None, data)
 
+def generate_image_file(filename):
+    f = BytesIO()
+    width = random.randint(100, 800)
+    height = random.randint(100, 800)
+    image = Image.new('RGB', size=(width, height))
+    image.save(f, 'jpeg')
+    f.name = filename
+    f.seek(0)
+
+    return f
+
 class TaskDataAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -1012,17 +1023,6 @@ class TaskDataAPITestCase(APITestCase):
 
         return response
 
-    def _generate_image_file(self):
-        f = BytesIO()
-        width = random.randint(100, 800)
-        height = random.randint(100, 800)
-        image = Image.new('RGB', size=(width, height))
-        image.save(f, 'jpeg')
-        f.name = 'test_{}.jpg'.format(random.randint(0, 1000))
-        f.seek(0)
-
-        return f
-
     def test_api_v1_tasks_id_data_admin(self):
         data = {
             "name": "my task #1",
@@ -1042,9 +1042,9 @@ class TaskDataAPITestCase(APITestCase):
 
         task_id = response.data["id"]
         data = {
-            "client_files[0]": self._generate_image_file(),
-            "client_files[1]": self._generate_image_file(),
-            "client_files[2]": self._generate_image_file(),
+            "client_files[0]": generate_image_file("test_1.jpg"),
+            "client_files[1]": generate_image_file("test_2.jpg"),
+            "client_files[2]": generate_image_file("test_3.jpg"),
         }
 
         response = self._run_api_v1_tasks_id_data(task_id, self.admin, data)
@@ -1066,10 +1066,79 @@ class TaskDataAPITestCase(APITestCase):
 
         task_id = response.data["id"]
         data = {
-            "client_files[0]": self._generate_image_file(),
-            "client_files[1]": self._generate_image_file(),
-            "client_files[2]": self._generate_image_file(),
+            "client_files[0]": generate_image_file("test_1.jpg"),
+            "client_files[1]": generate_image_file("test_2.jpg"),
+            "client_files[2]": generate_image_file("test_3.jpg"),
         }
 
         response = self._run_api_v1_tasks_id_data(task_id, self.user, data)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+class JobAnnotationAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def _create_task(self, user):
+        data = {
+            "name": "my task #1",
+            "owner": self.owner.id,
+            "assignee": self.assignee.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "z_order": False,
+            "image_quality": 75,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+
+        if user:
+            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+        response = self.client.post('/api/v1/tasks', data=data, format="json")
+        assert response.status_code == status.HTTP_201_CREATED
+        tid = response.data["id"]
+
+        images = {
+            "client_files[0]": generate_image_file("test_1.jpg"),
+            "client_files[1]": generate_image_file("test_2.jpg"),
+            "client_files[2]": generate_image_file("test_3.jpg"),
+        }
+        response = self.client.post('/api/v1/tasks/{}/data'.format(tid), data=images)
+        assert response.status_code == status.HTTP_202_ACCEPTED
+
+        response = self.client.get('/api/v1/tasks/{}'.format(tid))
+        task = response.data
+
+        response = self.client.get("/api/v1/tasks/{}/jobs".format(tid))
+        jobs = response.data
+
+        if user:
+            self.client.logout()
+
+        return (task, jobs)
+
+    def test_api_v1_jobs_id_annotations_admin(self):
+        task, jobs = self._create_task(self.admin)
+
+
+class JobPutAnnotationAPITestCase(JobAnnotationAPITestCase):
+    def test_api_v1_jobs_id_annotations_admin(self):
+        task, jobs = self._create_task(self.admin)
+
+    def _run_api_v1_jobs_id_data(self, jid, user, data):
+        if user:
+            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+        response = self.client.put('/api/v1/jobs/{}/annotations'.format(jid),
+            data=data, format="json")
+
+        if user:
+            self.client.logout()
+
+        return response
