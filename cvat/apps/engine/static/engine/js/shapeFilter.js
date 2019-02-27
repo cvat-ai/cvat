@@ -29,6 +29,9 @@ class FilterModel {
         if (shape.model.type.split('_')[1] === 'box') {
             converted.width = shape.interpolation.position.xbr - shape.interpolation.position.xtl;
             converted.height = shape.interpolation.position.ybr - shape.interpolation.position.ytl;
+        } else {
+            converted.width = shape.interpolation.position.width;
+            converted.height = shape.interpolation.position.height;
         }
 
         return converted;
