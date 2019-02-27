@@ -259,7 +259,7 @@ class JobViewSet(viewsets.GenericViewSet,
 
         if http_method in SAFE_METHODS:
             permissions.append(auth.JobAccessPermission)
-        elif http_method in ["PATCH", "PUT"]:
+        elif http_method in ["PATCH", "PUT", "DELETE"]:
             permissions.append(auth.JobChangePermission)
         else:
             permissions.append(auth.AdminRolePermission)
@@ -284,7 +284,7 @@ class JobViewSet(viewsets.GenericViewSet,
             return Response()
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
-            if action not in annotation_v2.PatchAction:
+            if action not in annotation_v2.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
             serializer = LabeledDataSerializer(data=request.data)

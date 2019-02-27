@@ -30,6 +30,10 @@ class PatchAction(str, Enum):
     UPDATE = "update"
     DELETE = "delete"
 
+    @classmethod
+    def values(cls):
+        return [item.value for item in cls]
+
     def __str__(self):
         return self.value
 
@@ -311,6 +315,7 @@ class JobAnnotation(Annotation):
         # accept "23".
         db_task = self.db_job.segment.task
         image_meta = get_image_meta_cache(db_task)
+        image_meta = image_meta["original_size"]
         self.reset()
 
         for shape in data["shapes"]:
@@ -412,70 +417,15 @@ class JobAnnotation(Annotation):
 
 
     def delete(self):
-        self.db_job.annotation_set.delete()
-
-    def _merge_table_rows(self, rows, keys_for_merge, field_id):
-        """dot.notation access to dictionary attributes"""
-        class dotdict(OrderedDict):
-            __getattr__ = OrderedDict.get
-            __setattr__ = OrderedDict.__setitem__
-            __delattr__ = OrderedDict.__delitem__
-            __eq__ = lambda self, other: self.id == other.id
-            __hash__ = lambda self: self.id
-
-        # It is necessary to keep a stable order of original rows
-        # (e.g. for tracked boxes). Otherwise prev_box.frame can be bigger
-        # than next_box.frame.
-        merged_rows = OrderedDict()
-
-        # Group all rows by field_id. In grouped rows replace fields in
-        # accordance with keys_for_merge structure.
-        for row in rows:
-            row_id = row[field_id]
-            if not row_id in merged_rows:
-                merged_rows[row_id] = dotdict(row)
-                for key in keys_for_merge:
-                    merged_rows[row_id][key] = []
-
-            for key in keys_for_merge:
-                item = dotdict({v.split('__', 1)[-1]:row[v] for v in keys_for_merge[key]})
-                if item.id:
-                    merged_rows[row_id][key].append(item)
-
-        # Remove redundant keys from final objects
-        redundant_keys = [item for values in keys_for_merge.values() for item in values]
-        for i in merged_rows:
-            for j in redundant_keys:
-                del merged_rows[i][j]
-
-        return list(merged_rows.values())
-
-    @staticmethod
-    def _clamp(value, min_value, max_value):
-        return max(min(value, max_value), min_value)
-
-    def _clamp_points(self, points, im_size):
-        raise NotImplementedError("need to implement the method for the common case")
+        self.db_job.annotation_set.all().delete()
 
     def init_from_db(self):
         self.reset()
-        (values, merge_keys, prefetch) = [
-            ('id', 'frame', 'points', 'label_id', 'group_id', 'occluded', 'z_order', 'client_id',
-            'labeledshapeattributeval__value', 'labeledshapeattributeval__spec_id',
-            'labeledshapeattributeval__id'), {
-                'attributes': [
-                    'labeledshapeattributeval__value',
-                    'labeledshapeattributeval__spec_id',
-                    'labeledshapeattributeval__id'
-                ]
-            }, 'labeledshapeattributeval_set'
-        ]
-
         db_annotations = list(self.db_job.annotation_set
             .select_subclasses(models.LabeledShape)
-            .prefetch_related("labeledshape__label"))
+            .prefetch_related("label"))
         for db_annotation in db_annotations:
-            db_shape = db_annotation.labeldshape
+            db_shape = db_annotation.shape
             label = Label(db_shape.label)
             shape = LabeledShape(
                 label=label,
@@ -489,89 +439,41 @@ class JobAnnotation(Annotation):
 
             self.shapes.append(shape)
 
-        db_annotations = self.db_job.labeledtrack_set \
-            .prefetch_related("labeledtrackattributeval_set") \
-            .prefetch_related("trackedshape_set") \
-            .prefetch_related("trackedshape_set__trackedshapeattributeval_set")
-
-        labeled_tracks = list(db_tracks.values(
-            'id', 'frame', 'group_id', 'shapes', 'client_id',
-            'labeledtrackattributeval__spec_id',
-            'labeledtrackattributeval__id',
-            'labeledtrackattributeval__value',
-            'trackedshape__id',
-            'trackedshape__points',
-            'trackedshape__frame',
-            'trackedshape__occluded',
-            'trackedshape__z_order',
-            'trackedshape__outside',
-            'trackedshape__trackedshapeattributeval__spec_id',
-            'trackedshape__trackedshapeattributeval__value',
-            'trackedshape__trackedshapeattributeval__id')
-            .order_by('id', 'trackedshape__frame'))
-
-        labeled_tracks = self._merge_table_rows(labeled_tracks, {
-            'attributes': [
-                'labeledtrackattributeval__value',
-                'labeledtracktributeval__spec_id',
-                'labeledtracktributeval__id'
-            ],
-            'shapes': [
-                'trackedshape__id',
-                'trackedshape__points',
-                'trackedshape__frame',
-                'trackedshape__occluded',
-                'trackedshape__z_order',
-                'trackedshape__outside',
-                'trackedshape__trackedpolygonattributeval__value',
-                'trackedshape__trackedpolygonattributeval__spec_id',
-                'trackedshape__trackedpolygonattributeval__id'
-            ]
-        }, 'id')
-
-        for track in labeled_tracks:
-            track.attributes = list(set(track.attributes))
-            track.shapes = self._merge_table_rows(track.shapes, {
-                'attributes': [
-                    'trackedshapeattributeval__value',
-                    'trackedshapeattributeval__spec_id',
-                    'trackedshapeattributeval__id'
-                ]
-            }, 'id')
-
-
-        for _track in labeled_tracks:
-            for shape in _track.shapes:
-                shape.attributes = list(set(shape.attributes))
-
-            label = Label(self.db_labels[track.label_id])
+        db_annotations = list(self.db_job.annotation_set
+            .select_subclasses(models.LabeledTrack)
+            .select_related("label")
+            .prefetch_related("labeledtrackattributeval_set")
+            .prefetch_related("trackedshape_set")
+            .prefetch_related("trackedshape_set__trackedshapeattributeval_set"))
+        for db_annotation in db_annotations:
+            db_track = db_annotation.track
+            label = Label(db_track.label)
             track = LabeledTrack(
                 label=label,
-                start_frame=_track.frame,
+                start_frame=db_track.frame,
                 stop_frame= self.stop_frame,
-                group_id=_track.group_id,
-                client_id=_track.client_id,
-            )
-            for attr in _track.attributes:
-                spec = self.db_attributes[attr.spec_id]
-                attr = Attribute(spec, attr.value)
+                group_id=db_track.group_id,
+                client_id=db_track.client_id)
+
+            for db_attr in db_track.labeledtrackattributeval_set.all():
+                spec = self.db_attributes[db_attr.spec_id]
+                attr = Attribute(spec, db_attr.value)
                 track.add_attribute(attr)
 
             frame = -1
-            for tracked_shape in _track.shapes:
+            for db_shape in db_track.trackedshape_set.all():
                 shape = TrackedShape(
-                    points=tracked_shape.points,
-                    frame=tracked_shape.frame,
-                    occluded=tracked_shape.occluded,
-                    z_order=tracked_shape.z_order,
-                    outside=tracked_shape.outside,
-                )
+                    points=db_shape.points,
+                    frame=db_shape.frame,
+                    occluded=db_shape.occluded,
+                    z_order=db_shape.z_order,
+                    outside=db_shape.outside)
                 assert shape.frame > frame
                 frame = shape.frame
 
-                for attr in tracked_shape.attributes:
-                    spec = self.db_attributes[attr.spec_id]
-                    attr = Attribute(spec, attr.value)
+                for db_attr in db_shape.trackedshapeattributeval_set.all():
+                    spec = self.db_attributes[db_attr.spec_id]
+                    attr = Attribute(spec, db_attr.value)
                     shape.add_attribute(attr)
                 track.add_shape(shape)
 

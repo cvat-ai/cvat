@@ -119,6 +119,22 @@ def create_dummy_db_tasks(obj):
 
     return tasks
 
+class ForceLogin:
+    def __init__(self, user, client):
+        self.user = user
+        self.client = client
+
+    def __enter__(self):
+        if self.user:
+            self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
+
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if self.user:
+            self.client.logout()
+
+
 class JobGetAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -132,13 +148,8 @@ class JobGetAPITestCase(APITestCase):
         cls.job.save()
 
     def _run_api_v1_jobs_id(self, jid, user):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.get('/api/v1/jobs/{}'.format(jid))
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/jobs/{}'.format(jid))
 
         return response
 
@@ -199,13 +210,8 @@ class JobUpdateAPITestCase(APITestCase):
         create_db_users(cls)
 
     def _run_api_v1_jobs_id(self, jid, user, data):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.put('/api/v1/jobs/{}'.format(jid), data=data, format='json')
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.put('/api/v1/jobs/{}'.format(jid), data=data, format='json')
 
         return response
 
@@ -262,13 +268,8 @@ class JobUpdateAPITestCase(APITestCase):
 
 class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
     def _run_api_v1_jobs_id(self, jid, user, data):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.patch('/api/v1/jobs/{}'.format(jid), data=data, format='json')
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/v1/jobs/{}'.format(jid), data=data, format='json')
 
         return response
 
@@ -291,13 +292,8 @@ class ServerAboutAPITestCase(APITestCase):
         create_db_users(cls)
 
     def _run_api_v1_server_about(self, user):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.get('/api/v1/server/about')
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/server/about')
 
         return response
 
@@ -340,13 +336,8 @@ class ServerExceptionAPITestCase(APITestCase):
 
     @mock.patch("cvat.apps.engine.views.clogger")
     def _run_api_v1_server_exception(self, user, clogger):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.post('/api/v1/server/exception', self.data, format='json')
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/server/exception', self.data, format='json')
 
         return response
 
@@ -371,13 +362,8 @@ class UserListAPITestCase(APITestCase):
         create_db_users(cls)
 
     def _run_api_v1_users(self, user):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.get('/api/v1/users')
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/users')
 
         return response
 
@@ -405,13 +391,8 @@ class UserSelfAPITestCase(APITestCase):
         create_db_users(cls)
 
     def _run_api_v1_users_self(self, user):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.get('/api/v1/users/self')
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/users/self')
 
         return response
 
@@ -445,13 +426,8 @@ class UserGetAPITestCase(APITestCase):
         create_db_users(cls)
 
     def _run_api_v1_users_id(self, user, id):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.get('/api/v1/users/{}'.format(id))
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/users/{}'.format(id))
 
         return response
 
@@ -494,13 +470,8 @@ class UserUpdateAPITestCase(APITestCase):
         create_db_users(self)
 
     def _run_api_v1_users_id(self, user, id, data):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.put('/api/v1/users/{}'.format(id), data=data)
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.put('/api/v1/users/{}'.format(id), data=data)
 
         return response
 
@@ -534,13 +505,8 @@ class UserUpdateAPITestCase(APITestCase):
 
 class UserPartialUpdateAPITestCase(UserUpdateAPITestCase):
     def _run_api_v1_users_id(self, user, id, data):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.patch('/api/v1/users/{}'.format(id), data=data)
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/v1/users/{}'.format(id), data=data)
 
         return response
 
@@ -574,13 +540,8 @@ class TaskListAPITestCase(APITestCase):
         cls.tasks = create_dummy_db_tasks(cls)
 
     def _run_api_v1_tasks(self, user, params=""):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.get('/api/v1/tasks{}'.format(params))
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/tasks{}'.format(params))
 
         return response
 
@@ -619,13 +580,8 @@ class TaskGetAPITestCase(APITestCase):
         cls.tasks = create_dummy_db_tasks(cls)
 
     def _run_api_v1_tasks_id(self, tid, user):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.get('/api/v1/tasks/{}'.format(tid))
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/tasks/{}'.format(tid))
 
         return response
 
@@ -678,13 +634,8 @@ class TaskDeleteAPITestCase(APITestCase):
         cls.tasks = create_dummy_db_tasks(cls)
 
     def _run_api_v1_tasks_id(self, tid, user):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.delete('/api/v1/tasks/{}'.format(tid), format="json")
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.delete('/api/v1/tasks/{}'.format(tid), format="json")
 
         return response
 
@@ -718,13 +669,9 @@ class TaskUpdateAPITestCase(APITestCase):
         cls.tasks = create_dummy_db_tasks(cls)
 
     def _run_api_v1_tasks_id(self, tid, user, data):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.put('/api/v1/tasks/{}'.format(tid), data=data, format="json")
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.put('/api/v1/tasks/{}'.format(tid),
+                data=data, format="json")
 
         return response
 
@@ -824,13 +771,9 @@ class TaskUpdateAPITestCase(APITestCase):
 
 class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
     def _run_api_v1_tasks_id(self, tid, user, data):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.patch('/api/v1/tasks/{}'.format(tid), data=data, format="json")
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/v1/tasks/{}'.format(tid),
+                data=data, format="json")
 
         return response
 
@@ -893,13 +836,8 @@ class TaskCreateAPITestCase(APITestCase):
         create_db_users(cls)
 
     def _run_api_v1_tasks(self, user, data):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.post('/api/v1/tasks', data=data, format="json")
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/tasks', data=data, format="json")
 
         return response
 
@@ -1002,24 +940,15 @@ class TaskDataAPITestCase(APITestCase):
         create_db_users(cls)
 
     def _run_api_v1_tasks_id_data(self, tid, user, data):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.post('/api/v1/tasks/{}/data'.format(tid), data=data)
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/tasks/{}/data'.format(tid),
+                data=data)
 
         return response
 
     def _create_task(self, user, data):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.post('/api/v1/tasks', data=data, format="json")
-
-        if user:
-            self.client.logout()
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/tasks', data=data, format="json")
 
         return response
 
@@ -1082,11 +1011,11 @@ class JobAnnotationAPITestCase(APITestCase):
     def setUpTestData(cls):
         create_db_users(cls)
 
-    def _create_task(self, user):
+    def _create_task(self, owner, assignee):
         data = {
             "name": "my task #1",
-            "owner": self.owner.id,
-            "assignee": self.assignee.id,
+            "owner": owner.id,
+            "assignee": assignee.id,
             "overlap": 0,
             "segment_size": 100,
             "z_order": False,
@@ -1097,48 +1026,129 @@ class JobAnnotationAPITestCase(APITestCase):
             ]
         }
 
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+        with ForceLogin(owner, self.client):
+            response = self.client.post('/api/v1/tasks', data=data, format="json")
+            assert response.status_code == status.HTTP_201_CREATED
+            tid = response.data["id"]
 
-        response = self.client.post('/api/v1/tasks', data=data, format="json")
-        assert response.status_code == status.HTTP_201_CREATED
-        tid = response.data["id"]
+            images = {
+                "client_files[0]": generate_image_file("test_1.jpg"),
+                "client_files[1]": generate_image_file("test_2.jpg"),
+                "client_files[2]": generate_image_file("test_3.jpg"),
+            }
+            response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=images)
+            assert response.status_code == status.HTTP_202_ACCEPTED
 
-        images = {
-            "client_files[0]": generate_image_file("test_1.jpg"),
-            "client_files[1]": generate_image_file("test_2.jpg"),
-            "client_files[2]": generate_image_file("test_3.jpg"),
-        }
-        response = self.client.post('/api/v1/tasks/{}/data'.format(tid), data=images)
-        assert response.status_code == status.HTTP_202_ACCEPTED
+            response = self.client.get("/api/v1/tasks/{}".format(tid))
+            task = response.data
 
-        response = self.client.get('/api/v1/tasks/{}'.format(tid))
-        task = response.data
-
-        response = self.client.get("/api/v1/tasks/{}/jobs".format(tid))
-        jobs = response.data
-
-        if user:
-            self.client.logout()
+            response = self.client.get("/api/v1/tasks/{}/jobs".format(tid))
+            jobs = response.data
 
         return (task, jobs)
 
-    def test_api_v1_jobs_id_annotations_admin(self):
-        task, jobs = self._create_task(self.admin)
-
-
-class JobPutAnnotationAPITestCase(JobAnnotationAPITestCase):
-    def test_api_v1_jobs_id_annotations_admin(self):
-        task, jobs = self._create_task(self.admin)
-
-    def _run_api_v1_jobs_id_data(self, jid, user, data):
-        if user:
-            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-
-        response = self.client.put('/api/v1/jobs/{}/annotations'.format(jid),
-            data=data, format="json")
-
-        if user:
-            self.client.logout()
+    def _put_api_v1_jobs_id_data(self, jid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.put("/api/v1/jobs/{}/annotations".format(jid),
+                data=data, format="json")
 
         return response
+
+    def _get_api_v1_jobs_id_data(self, jid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get("/api/v1/jobs/{}/annotations".format(jid))
+
+        return response
+
+    def _delete_api_v1_jobs_id_data(self, jid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.delete("/api/v1/jobs/{}/annotations".format(jid),
+            format="json")
+
+        return response
+
+    def _patch_api_v1_jobs_id_data(self, jid, user, action, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch(
+                "/api/v1/jobs/{}/annotations?action={}".format(jid, action),
+                data=data, format="json")
+
+        return response
+
+    def _run_api_v1_jobs_id_annotations(self, owner, assignee, annotator):
+        task, jobs = self._create_task(owner, assignee)
+        if annotator:
+            HTTP_200_OK = status.HTTP_200_OK
+            HTTP_201_CREATED = status.HTTP_201_CREATED
+        else:
+            HTTP_200_OK = status.HTTP_403_FORBIDDEN
+            HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
+
+        job = jobs[0]
+        data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
+        response = self._put_api_v1_jobs_id_data(job["id"], annotator, data)
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+
+        data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
+        response = self._put_api_v1_jobs_id_data(job["id"], annotator, data)
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+
+        response = self._get_api_v1_jobs_id_data(job["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
+        response = self._delete_api_v1_jobs_id_data(job["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
+        response = self._get_api_v1_jobs_id_data(job["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
+        data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
+        response = self._patch_api_v1_jobs_id_data(job["id"], annotator,
+            "create", data)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
+        data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
+        response = self._patch_api_v1_jobs_id_data(job["id"], annotator,
+            "update", data)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
+        data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
+        response = self._patch_api_v1_jobs_id_data(job["id"], annotator,
+            "delete", data)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
+    def test_api_v1_jobs_id_annotations_admin(self):
+        self._run_api_v1_jobs_id_annotations(self.admin, self.assignee,
+            self.assignee)
+
+    def test_api_v1_jobs_id_annotations_user(self):
+        self._run_api_v1_jobs_id_annotations(self.user, self.assignee,
+            self.assignee)
+
+    def test_api_v1_jobs_id_annotations_no_auth(self):
+        self._run_api_v1_jobs_id_annotations(self.user, self.assignee, None)
