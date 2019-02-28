@@ -1094,15 +1094,84 @@ class JobAnnotationAPITestCase(APITestCase):
 
         data = {
             "version": 0,
-            "tags": [],
-            "shapes": [],
-            "tracks": []
+            "tags": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "attributes": []
+                }
+            ],
+            "shapes": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "points": [1.0, 2.1, 100, 300.222],
+                    "type": "rectangle",
+                    "occluded": False
+                },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
+                    "type": "polygon",
+                    "occluded": False
+                },
+            ],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False
+                        },
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [2.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": True,
+                            "outside": True
+                        },
+                    ]
+                },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False
+                        }
+                    ]
+                },
+            ]
         }
         response = self._put_api_v1_jobs_id_data(job["id"], annotator, data)
         self.assertEqual(response.status_code, HTTP_200_OK)
 
         response = self._get_api_v1_jobs_id_data(job["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
+
+        data = response.data
 
         response = self._delete_api_v1_jobs_id_data(job["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)

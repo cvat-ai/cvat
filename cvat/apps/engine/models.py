@@ -232,15 +232,18 @@ class ShapeType(str, Enum):
 
     @classmethod
     def choices(self):
-        return tuple((x.name, x.value) for x in self)
+        return tuple((x.value, x.name) for x in self)
 
 class Annotation(models.Model):
-    objects = InheritanceManager()
     id = models.BigAutoField(primary_key=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     group = models.PositiveIntegerField(null=True)
+
+    class Meta:
+        abstract = True
+        default_permissions = ()
 
 class Shape(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())
