@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
                 ('type', models.CharField(choices=[('rectangle', 'RECTANGLE'), ('polygon', 'POLYGON'), ('polyline', 'POLYLINE'), ('points', 'POINTS')], max_length=16)),
                 ('occluded', models.BooleanField(default=False)),
                 ('z_order', models.IntegerField(default=0)),
-                ('points', models.TextField()),
+                ('points', cvat.apps.engine.models.FloatArrayField()),
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
                 ('frame', models.PositiveIntegerField()),
                 ('outside', models.BooleanField(default=False)),
@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
                 ('type', models.CharField(choices=[('rectangle', 'RECTANGLE'), ('polygon', 'POLYGON'), ('polyline', 'POLYLINE'), ('points', 'POINTS')], max_length=16)),
                 ('occluded', models.BooleanField(default=False)),
                 ('z_order', models.IntegerField(default=0)),
-                ('points', models.TextField()),
+                ('points', cvat.apps.engine.models.FloatArrayField()),
             ],
             options={
                 'abstract': False,

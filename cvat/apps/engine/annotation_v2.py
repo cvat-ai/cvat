@@ -161,10 +161,8 @@ class JobAnnotation:
 
             for shape in shapes:
                 attributes = shape.pop("attributes")
-                points = shape.pop("points")
 
                 db_shape = models.TrackedShape(**shape)
-                db_shape.points = ",".join(map(str, points))
                 db_shape.track_id = len(db_tracks)
 
                 for attr in attributes:
@@ -199,9 +197,7 @@ class JobAnnotation:
 
         for shape in self.data["shapes"]:
             attributes = shape.pop("attributes")
-            points = shape.pop("points")
             db_shape = models.LabeledShape(job=self.db_job, **shape)
-            db_shape.points = ",".join(map(str, points))
 
             for attr in attributes:
                 db_attrval = models.LabeledShapeAttributeVal(**attr)
