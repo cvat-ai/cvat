@@ -24,6 +24,7 @@ from cvat.apps.engine.plugins import plugin_decorator
 from . import models
 from .task import get_image_meta_cache
 from .log import slogger
+from . import serializers
 
 class PatchAction(str, Enum):
     CREATE = "create"
@@ -45,7 +46,7 @@ def get_job_data(pk):
     annotation = JobAnnotation(db_job)
     annotation.init_from_db()
 
-    return annotation.to_client()
+    return annotation.data
 
 @silk_profile(name="POST job data")
 @transaction.atomic
@@ -60,6 +61,7 @@ def put_job_data(pk, data):
     annotation.create(data)
 
     slogger.job[pk].info("Leave put_job_data API: jid = {}".format(pk))
+    return annotation.data
 
 @silk_profile(name="UPDATE job data")
 @transaction.atomic
@@ -117,7 +119,7 @@ class JobAnnotation:
         db_segment = db_job.segment
         self.start_frame = db_segment.start_frame
         self.stop_frame = db_segment.stop_frame
-        self.data = None
+        self.reset()
 
         # pylint: disable=bad-continuation
         self.db_job = db_job
@@ -132,7 +134,16 @@ class JobAnnotation:
         return self.data and (self.data["tags"] or self.data["shapes"] or
             self.data["tracks"])
 
+    def reset(self):
+        self.data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
+
     def _save_tracks_to_db(self):
+        # FIXME: need to have all values inside data and add 'id's
         db_tracks = []
         db_track_attrvals = []
         db_shapes = []
@@ -150,7 +161,10 @@ class JobAnnotation:
 
             for shape in shapes:
                 attributes = shape.pop("attributes")
+                points = shape.pop("points")
+
                 db_shape = models.TrackedShape(**shape)
+                db_shape.points = ",".join(map(str, points))
                 db_shape.track_id = len(db_tracks)
 
                 for attr in attributes:
@@ -185,7 +199,9 @@ class JobAnnotation:
 
         for shape in self.data["shapes"]:
             attributes = shape.pop("attributes")
+            points = shape.pop("points")
             db_shape = models.LabeledShape(job=self.db_job, **shape)
+            db_shape.points = ",".join(map(str, points))
 
             for attr in attributes:
                 db_attrval = models.LabeledShapeAttributeVal(**attr)
@@ -218,111 +234,23 @@ class JobAnnotation:
             self.db_job.save()
 
     def delete(self):
-        self.db_job.annotation_set.all().delete()
+        self.db_job.labeledimage_set.all().delete()
+        self.db_job.labeledshape_set.all().delete()
+        self.db_job.labeledtrack_set.all().delete()
 
     def init_from_db(self):
-        self.reset()
-        db_annotations = list(self.db_job.annotation_set
-            .select_subclasses(models.LabeledShape)
-            .prefetch_related("label"))
-        for db_annotation in db_annotations:
-            db_shape = db_annotation.shape
-            label = Label(db_shape.label)
-            shape = LabeledShape(
-                label=label,
-                points=db_shape.points,
-                frame=db_shape.frame,
-                group_id=db_shape.group_id,
-                occluded=db_shape.occluded,
-                z_order=db_shape.z_order,
-                client_id=db_shape.client_id,
-            )
+        db_shapes = list(self.db_job.labeledshape_set
+            .prefetch_related("label")
+            .prefetch_related("labeledshapeattributeval_set"))
+        for db_shape in db_shapes:
+            shape = serializers.LabeledShapeSerializer(db_shape)
+            self.data["shapes"].append(shape.data)
 
-            self.shapes.append(shape)
-
-        db_annotations = list(self.db_job.annotation_set
-            .select_subclasses(models.LabeledTrack)
+        db_tracks = list(self.db_job.labeledtrack_set
             .select_related("label")
             .prefetch_related("labeledtrackattributeval_set")
-            .prefetch_related("trackedshape_set")
             .prefetch_related("trackedshape_set__trackedshapeattributeval_set"))
-        for db_annotation in db_annotations:
-            db_track = db_annotation.track
-            label = Label(db_track.label)
-            track = LabeledTrack(
-                label=label,
-                start_frame=db_track.frame,
-                stop_frame= self.stop_frame,
-                group_id=db_track.group_id,
-                client_id=db_track.client_id)
-
-            for db_attr in db_track.labeledtrackattributeval_set.all():
-                spec = self.db_attributes[db_attr.spec_id]
-                attr = Attribute(spec, db_attr.value)
-                track.add_attribute(attr)
-
-            frame = -1
-            for db_shape in db_track.trackedshape_set.all():
-                shape = TrackedShape(
-                    points=db_shape.points,
-                    frame=db_shape.frame,
-                    occluded=db_shape.occluded,
-                    z_order=db_shape.z_order,
-                    outside=db_shape.outside)
-                assert shape.frame > frame
-                frame = shape.frame
-
-                for db_attr in db_shape.trackedshapeattributeval_set.all():
-                    spec = self.db_attributes[db_attr.spec_id]
-                    attr = Attribute(spec, db_attr.value)
-                    shape.add_attribute(attr)
-                track.add_shape(shape)
-
-            self.tracks.append(track)
-
-    def to_client(self):
-        data = {
-            "version": 0,
-            "tags": [],
-            "shapes": [],
-            "tracks": []
-        }
-
-        for shape in self.shapes:
-            data["shapes"].append({
-                "id": shape.client_id,
-                "label": shape.label.id,
-                "group": shape.group_id,
-                "points": shape.points,
-                "occluded": shape.occluded,
-                "z_order": shape.z_order,
-                "frame": shape.frame,
-                "attributes": [{
-                    "id": attr.id, "value": attr.value} for attr in shape.attributes
-                ],
-            })
-
-        for track in self.tracks:
-            data["tracks"].append({
-                "id": track.client_id,
-                "label": track.label.id,
-                "group": track.group_id,
-                "frame": track.frame,
-                "attributes": [{
-                    "id": attr.id, "value": attr.value} for attr in track.attributes
-                ],
-                "shapes": list(map(lambda shape:
-                    ({
-                        "frame": shape.frame,
-                        "points": shape.points,
-                        "occluded": shape.occluded,
-                        "z_order": shape.z_order,
-                        "outside": shape.outside,
-                        "attributes": [{
-                            "id": attr.id, "value":attr.value} for attr in shape.attributes
-                        ],
-                    }), track.shapes)),
-            })
-
-        return data
+        for db_track in db_tracks:
+            track = serializers.LabeledTrackSerializer(db_track)
+            self.data["tracks"].append(track.data)
 
