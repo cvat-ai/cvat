@@ -236,14 +236,11 @@ class ShapeType(str, Enum):
 
 class Annotation(models.Model):
     objects = InheritanceManager()
-
     id = models.BigAutoField(primary_key=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     label = models.ForeignKey(Label, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
-    group_id = models.PositiveIntegerField(default=0)
-    client_id = models.BigIntegerField(default=-1)
-
+    group = models.PositiveIntegerField(null=True)
 
 class Shape(models.Model):
     type = models.CharField(max_length=16, choices=ShapeType.choices())
@@ -278,9 +275,6 @@ class TrackedShape(Shape):
     track = models.ForeignKey(LabeledTrack, on_delete=models.CASCADE)
     frame = models.PositiveIntegerField()
     outside = models.BooleanField(default=False)
-
-    class Meta:
-        default_permissions = ()
 
 class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE)

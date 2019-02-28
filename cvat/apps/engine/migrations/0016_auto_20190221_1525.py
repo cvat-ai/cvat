@@ -23,8 +23,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
                 ('frame', models.PositiveIntegerField()),
-                ('group_id', models.PositiveIntegerField(default=0)),
-                ('client_id', models.BigIntegerField(default=-1)),
+                ('group', models.PositiveIntegerField(null=True)),
             ],
         ),
         migrations.CreateModel(

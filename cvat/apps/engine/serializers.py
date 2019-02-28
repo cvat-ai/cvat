@@ -305,16 +305,12 @@ class LabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
     pass
 
 class TrackedShapeSerializer(ShapeSerializer):
+    id = serializers.IntegerField()
     frame = serializers.IntegerField(min_value=0)
     outside = serializers.BooleanField()
     attributes = AttributeValSerializer(many=True)
 
-class LabeledTrackSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    frame = serializers.IntegerField(min_value=0)
-    label = serializers.IntegerField(min_value=0)
-    group = serializers.IntegerField(min_value=0)
-    attributes = AttributeValSerializer(many=True)
+class LabeledTrackSerializer(AnnotationSerializer):
     shapes = TrackedShapeSerializer(many=True)
 
 class LabeledDataSerializer(serializers.Serializer):

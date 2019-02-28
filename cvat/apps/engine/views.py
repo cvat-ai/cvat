@@ -278,10 +278,10 @@ class JobViewSet(viewsets.GenericViewSet,
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 annotation_v2.put_job_data(pk, serializer.data)
-                return Response(status=status.HTTP_201_CREATED)
+                return Response(serializer.data)
         elif request.method == 'DELETE':
             annotation_v2.delete_job_data(pk)
-            return Response()
+            return Response(status.HTTP_204_NO_CONTENT)
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
             if action not in annotation_v2.PatchAction.values():
@@ -290,7 +290,7 @@ class JobViewSet(viewsets.GenericViewSet,
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 annotation_v2.patch_job_data(pk, serializer.data, action)
-                return Response()
+                return Response(serializer.data)
 
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):

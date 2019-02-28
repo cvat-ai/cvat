@@ -1079,10 +1079,8 @@ class JobAnnotationAPITestCase(APITestCase):
         task, jobs = self._create_task(owner, assignee)
         if annotator:
             HTTP_200_OK = status.HTTP_200_OK
-            HTTP_201_CREATED = status.HTTP_201_CREATED
         else:
             HTTP_200_OK = status.HTTP_403_FORBIDDEN
-            HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
 
         job = jobs[0]
         data = {
@@ -1092,7 +1090,7 @@ class JobAnnotationAPITestCase(APITestCase):
             "tracks": []
         }
         response = self._put_api_v1_jobs_id_data(job["id"], annotator, data)
-        self.assertEqual(response.status_code, HTTP_201_CREATED)
+        self.assertEqual(response.status_code, HTTP_200_OK)
 
         data = {
             "version": 0,
@@ -1101,7 +1099,7 @@ class JobAnnotationAPITestCase(APITestCase):
             "tracks": []
         }
         response = self._put_api_v1_jobs_id_data(job["id"], annotator, data)
-        self.assertEqual(response.status_code, HTTP_201_CREATED)
+        self.assertEqual(response.status_code, HTTP_200_OK)
 
         response = self._get_api_v1_jobs_id_data(job["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
