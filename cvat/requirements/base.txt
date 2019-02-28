@@ -4,7 +4,7 @@ django-appconf==1.0.2
 django-auth-ldap==1.4.0
 django-cacheops==4.0.6
 django-compressor==2.2
-django-rq==1.0.1
+django-rq==1.3.0
 EasyProcess==0.2.3
 ffmpy==0.2.2
 Pillow==5.1.0
