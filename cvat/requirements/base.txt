@@ -14,10 +14,10 @@ python-ldap==3.0.0
 pytz==2018.3
 pyunpack==0.1.2
 rcssmin==1.0.6
-redis==2.10.6
+redis==3.2.0
 requests==2.20.0
 rjsmin==1.0.12
-rq==0.10.0
+rq==0.13.0
 scipy==1.0.1
 sqlparse==0.2.4
 django-sendfile==0.3.11
