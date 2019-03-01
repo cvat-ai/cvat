@@ -1003,6 +1003,22 @@ class TaskDataAPITestCase(APITestCase):
         response = self._run_api_v1_tasks_id_data(task_id, self.user, data)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
+def compare_object(self, obj1, obj2, ignore_keys=[]):
+    if isinstance(obj1, dict):
+        self.assertTrue(isinstance(obj2, dict), "{} != {}".format(obj1, obj2))
+        for k, v in obj1.items():
+            if k in ignore_keys:
+                continue
+            compare_object(self, obj1[k], obj2.get(k), ignore_keys)
+    elif isinstance(obj1, list):
+        self.assertTrue(isinstance(obj2, list), "{} != {}".format(obj1, obj2))
+        self.assertEqual(len(obj1), len(obj2), "{} != {}".format(obj1, obj2))
+        for v1, v2 in zip(obj1, obj2):
+            compare_object(self, v1, v2, ignore_keys)
+    else:
+        self.assertEqual(obj1, obj2)
+
+
 class JobAnnotationAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -1091,6 +1107,10 @@ class JobAnnotationAPITestCase(APITestCase):
                 data=data, format="json")
 
         return response
+
+    def _check_response(self, response, data):
+        if response.status_code != status.HTTP_403_FORBIDDEN:
+            compare_object(self, data, response.data, ignore_keys=["id"])
 
     def _run_api_v1_jobs_id_annotations(self, owner, assignee, annotator):
         task, jobs = self._create_task(owner, assignee)
@@ -1202,17 +1222,26 @@ class JobAnnotationAPITestCase(APITestCase):
         }
         response = self._put_api_v1_jobs_id_data(job["id"], annotator, data)
         self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
 
         response = self._get_api_v1_jobs_id_data(job["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
 
         data = response.data
 
         response = self._delete_api_v1_jobs_id_data(job["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
 
+        data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
         response = self._get_api_v1_jobs_id_data(job["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
 
         data = {
             "version": 0,

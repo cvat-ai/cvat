@@ -288,10 +288,11 @@ class AnnotationSerializer(serializers.Serializer):
     frame = serializers.IntegerField(min_value=0)
     label_id = serializers.IntegerField(min_value=0)
     group = serializers.IntegerField(min_value=0, allow_null=True)
-    attributes = AttributeValSerializer(many=True, default=[])
 
 class LabeledImageSerializer(AnnotationSerializer):
-    pass
+    attributes = AttributeValSerializer(many=True,
+        source="labeledimageattributeval_set")
+
 
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
@@ -302,7 +303,8 @@ class ShapeSerializer(serializers.Serializer):
     )
 
 class LabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):
-    pass
+    attributes = AttributeValSerializer(many=True,
+        source="labeledshapeattributeval_set")
 
 class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
@@ -315,6 +317,8 @@ class TrackedShapeSerializer(ShapeSerializer):
 class LabeledTrackSerializer(AnnotationSerializer):
     shapes = TrackedShapeSerializer(many=True, allow_empty=False,
         source="trackedshape_set")
+    attributes = AttributeValSerializer(many=True,
+        source="labeledtrackattributeval_set")
 
 
 class LabeledDataSerializer(serializers.Serializer):
