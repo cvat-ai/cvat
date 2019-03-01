@@ -308,10 +308,14 @@ class TrackedShapeSerializer(ShapeSerializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
     outside = serializers.BooleanField()
-    attributes = AttributeValSerializer(many=True)
+    attributes = AttributeValSerializer(many=True,
+        source="trackedshapeattributeval_set")
+
 
 class LabeledTrackSerializer(AnnotationSerializer):
-    shapes = TrackedShapeSerializer(many=True, allow_empty=False)
+    shapes = TrackedShapeSerializer(many=True, allow_empty=False,
+        source="trackedshape_set")
+
 
 class LabeledDataSerializer(serializers.Serializer):
     version = serializers.IntegerField()

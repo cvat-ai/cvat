@@ -1021,7 +1021,24 @@ class JobAnnotationAPITestCase(APITestCase):
             "z_order": False,
             "image_quality": 75,
             "labels": [
-                {"name": "car"},
+                {
+                    "name": "car",
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "select",
+                            "default_value": "mazda",
+                            "values": ["bmw", "mazda", "reno"]
+                        },
+                        {
+                            "name": "parked",
+                            "mutable": True,
+                            "input_type": "checkbox",
+                            "default_value": False
+                        },
+                    ]
+                },
                 {"name": "person"},
             ]
         }
@@ -1107,7 +1124,16 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "attributes": [],
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][0]["default_value"]
+                        }
+                    ],
                     "points": [1.0, 2.1, 100, 300.222],
                     "type": "rectangle",
                     "occluded": False
@@ -1131,11 +1157,20 @@ class JobAnnotationAPITestCase(APITestCase):
                     "shapes": [
                         {
                             "frame": 0,
-                            "attributes": [],
                             "points": [1.0, 2.1, 100, 300.222],
                             "type": "rectangle",
                             "occluded": False,
-                            "outside": False
+                            "outside": False,
+                            "attributes": [
+                                {
+                                    "spec_id": task["labels"][0]["attributes"][0]["id"],
+                                    "value": task["labels"][0]["attributes"][0]["values"][0]
+                                },
+                                {
+                                    "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                    "value": task["labels"][0]["attributes"][0]["default_value"]
+                                }
+                            ]
                         },
                         {
                             "frame": 1,
