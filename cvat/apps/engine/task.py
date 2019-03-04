@@ -9,6 +9,7 @@ import rq
 import shlex
 import shutil
 import tempfile
+import numpy as np
 from PIL import Image
 from traceback import print_exception
 from ast import literal_eval
@@ -577,7 +578,11 @@ def _find_and_compress_images(upload_dir, output_dir, db_task, compress_quality,
             job.meta['status'] = 'Images are being compressed.. {}%'.format(idx * 100 // len(filenames))
             job.save_meta()
             compressed_name = os.path.splitext(name)[0] + '.jpg'
-            image = Image.open(name).convert('RGB')
+            image = Image.open(name)
+            if image.mode == "I":
+                im_data = np.array(image)
+                image = Image.fromarray(im_data // (im_data.max() // 2**8))
+            image = image.convert('RGB')
             if flip_flag:
                 image = image.transpose(Image.ROTATE_180)
             image.save(compressed_name, quality=compress_quality, optimize=True)
