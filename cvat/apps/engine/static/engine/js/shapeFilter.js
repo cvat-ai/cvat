@@ -5,6 +5,8 @@
  */
 
 /* exported FilterModel FilterController FilterView */
+/* eslint no-unused-vars: ["error", { "caughtErrors": "none" }] */
+
 "use strict";
 
 class FilterModel {
@@ -55,7 +57,7 @@ class FilterModel {
                 let idxs = JSON.search(this._convertCollection(interpolation), `(${this._filter})/id`);
                 return interpolation.filter(x => idxs.indexOf(x.model.id) != -1);
             }
-            catch(err) {
+            catch(ignore) {
                 return [];
             }
         }
@@ -83,7 +85,7 @@ class FilterController {
             try {
                 document.evaluate(value, document, () => "ns");
             }
-            catch (error) {
+            catch (ignore) {
                 return false;
             }
             this._model.updateFilter(value, silent);
@@ -113,10 +115,10 @@ class FilterView {
         try {
             predefinedValues = JSON.parse(localStorage.getItem("filterValues")) || [];
         }
-        catch {
+        catch (ignore) {
             predefinedValues = [];
         }
-        
+
         let initSubmitList = () => {
             this._filterSubmitList.empty();
             for (let value of predefinedValues) {
