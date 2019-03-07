@@ -10,19 +10,24 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 
 ## Documentation
 
-- [User's guide](cvat/apps/documentation/user_guide.md)
-- [XML annotation format](cvat/apps/documentation/xml_format.md)
-- [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
-- [Questions](#questions)
+-   [User's guide](cvat/apps/documentation/user_guide.md)
+-   [XML annotation format](cvat/apps/documentation/xml_format.md)
+-   [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
+-   [Questions](#questions)
 
 ## Screencasts
 
-- [Introduction](https://youtu.be/L9_IvUIHGwM)
-- [Annotation mode](https://youtu.be/6h7HxGL6Ct4)
-- [Interpolation mode](https://youtu.be/U3MYDhESHo4)
-- [Attribute mode](https://youtu.be/UPNfWl8Egd8)
-- [Segmentation mode](https://youtu.be/Fh8oKuSUIPs)
-- [Tutorial for polygons](https://www.youtube.com/watch?v=XTwfXDh4clI)
+-   [Introduction](https://youtu.be/L9_IvUIHGwM)
+-   [Annotation mode](https://youtu.be/6h7HxGL6Ct4)
+-   [Interpolation mode](https://youtu.be/U3MYDhESHo4)
+-   [Attribute mode](https://youtu.be/UPNfWl8Egd8)
+-   [Segmentation mode](https://youtu.be/Fh8oKuSUIPs)
+-   [Tutorial for polygons](https://www.youtube.com/watch?v=XTwfXDh4clI)
+
+## Links
+-   [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
+-   [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
+-   [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
 
 ## Online Demo
 
@@ -30,8 +35,8 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 
 After you click the link above:
 
-- Click on "GO TO WORKSPACE" and the CVAT environment will load up
-- The environment is backed by a K80 GPU
+-   Click on "GO TO WORKSPACE" and the CVAT environment will load up
+-   The environment is backed by a K80 GPU
 
 If you have any questions, please contact Onepanel directly at support@onepanel.io. If you are in the Onepanel application, you can also use the chat icon in the bottom right corner.
 
@@ -73,10 +78,10 @@ docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml 
 
 ### Additional optional components
 
-- [Support for Intel OpenVINO: auto annotation](components/openvino/README.md)
-- [Analytics: management and monitoring of data annotation team](components/analytics/README.md)
-- [TF Object Detection API: auto annotation](components/tf_annotation/README.md)
-- [Support for NVIDIA GPUs](components/cuda/README.md)
+-   [Auto annotation using DL models in OpenVINO toolkit format](cvat/apps/auto_annotation/README.md)
+-   [Analytics: management and monitoring of data annotation team](components/analytics/README.md)
+-   [TF Object Detection API: auto annotation](components/tf_annotation/README.md)
+-   [Support for NVIDIA GPUs](components/cuda/README.md)
 
 ### Create superuser account
 
