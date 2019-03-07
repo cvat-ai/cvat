@@ -24,6 +24,11 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 - [Segmentation mode](https://youtu.be/Fh8oKuSUIPs)
 - [Tutorial for polygons](https://www.youtube.com/watch?v=XTwfXDh4clI)
 
+## Links
+- [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
+- [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
+- [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
+
 ## Online Demo
 
 [Onepanel](https://www.onepanel.io/) has added CVAT as an environment into their platform and a running demo of CVAT can be accessed at [CVAT Public Demo](https://c.onepanel.io/onepanel-demo/projects/cvat-public-demo/workspaces).
@@ -73,7 +78,7 @@ docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml 
 
 ### Additional optional components
 
-- [Support for Intel OpenVINO: auto annotation](components/openvino/README.md)
+- [Auto annotation using DL models in OpenVINO toolkit format](cvat/apps/auto_annotation/README.md)
 - [Analytics: management and monitoring of data annotation team](components/analytics/README.md)
 - [TF Object Detection API: auto annotation](components/tf_annotation/README.md)
 - [Support for NVIDIA GPUs](components/cuda/README.md)
