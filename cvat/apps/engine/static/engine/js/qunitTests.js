@@ -279,7 +279,7 @@ qUnitTests.push(function() {
                 <attribute name="false_positive">false</attribute>
                 <attribute name="age">25</attribute>
                 <attribute name="gender">female</attribute>
-                <attribute name="clother">non-initialized</attribute>
+                <attribute name="clother">non-initialized&amp;&lt;&gt;</attribute>
                 <attribute name="action">standing</attribute>
             </polygon>
             <polygon label="person" points="1064.14,997.18;1368.70,1185.26;1746.24,1071.57;1377.12,894.73" occluded="0" z_order="11">
@@ -640,7 +640,7 @@ window.jobData = {
             "value": "female"
         }, {
             "id": "34",
-            "value": "non-initialized"
+            "value": "non-initialized&<>"
         }, {
             "id": "35",
             "value": "standing"
