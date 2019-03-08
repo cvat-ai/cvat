@@ -582,7 +582,7 @@ def _find_and_compress_images(upload_dir, output_dir, db_task, compress_quality,
             # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
             if image.mode == "I":
                 # Image mode is 32bit integer pixels.
-                # Autoscale pixels by factor 2**8 / im_data.max() to fit into 8bit 
+                # Autoscale pixels by factor 2**8 / im_data.max() to fit into 8bit
                 im_data = np.array(image)
                 im_data *=  2**8 / im_data.max()
                 image = Image.fromarray(im_data.astype(np.int32))
