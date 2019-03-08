@@ -579,9 +579,12 @@ def _find_and_compress_images(upload_dir, output_dir, db_task, compress_quality,
             job.save_meta()
             compressed_name = os.path.splitext(name)[0] + '.jpg'
             image = Image.open(name)
+            # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
             if image.mode == "I":
-                im_data = np.array(image)
-                image = Image.fromarray(im_data // (im_data.max() // 2**8))
+                # Image mode is 32bit integer pixels.
+                # Autoscale pixels by factor 2**8 / im_data.max() to fit into 8bit 
+                im_data = np.array(image) * (2**8 / im_data.max())
+                image = Image.fromarray(im_data.astype(np.int32)
             image = image.convert('RGB')
             if flip_flag:
                 image = image.transpose(Image.ROTATE_180)
