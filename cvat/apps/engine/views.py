@@ -281,7 +281,7 @@ class JobViewSet(viewsets.GenericViewSet,
                 return Response(data)
         elif request.method == 'DELETE':
             annotation_v2.delete_job_data(pk)
-            return Response(status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
             if action not in annotation_v2.PatchAction.values():

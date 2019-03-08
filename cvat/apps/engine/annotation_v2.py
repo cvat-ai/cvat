@@ -66,7 +66,24 @@ def put_job_data(pk, data):
 @silk_profile(name="UPDATE job data")
 @transaction.atomic
 def patch_job_data(pk, data, action):
-    pass
+    slogger.job[pk].info("Enter patch_job_data API: jid = {}, action = {}"
+        .format(pk, action))
+
+    db_job = models.Job.objects.select_related('segment__task') \
+        .select_for_update().get(id=pk)
+
+    annotation = JobAnnotation(db_job)
+    if action == PatchAction.CREATE:
+        annotation.create(data)
+    elif action == PatchAction.UPDATE:
+        annotation.delete(data)
+        annotation.create(data)
+    elif action == PatchAction.DELETE:
+        annotation.delete(data)
+
+    slogger.job[pk].info("Leave patch_job_data API: jid = {}, action = {}"
+        .format(pk, action))
+    return annotation.data
 
 @silk_profile(name="DELETE job data")
 @transaction.atomic
@@ -262,27 +279,55 @@ class JobAnnotation:
             db_task.save()
             self.db_job.save()
 
-    def delete(self):
-        self.db_job.labeledimage_set.all().delete()
-        self.db_job.labeledshape_set.all().delete()
-        self.db_job.labeledtrack_set.all().delete()
+    def delete(self, data=None):
+        if data is None:
+            self.db_job.labeledimage_set.all().delete()
+            self.db_job.labeledshape_set.all().delete()
+            self.db_job.labeledtrack_set.all().delete()
+        else:
+            labeledimage_ids = [image["id"] for image in data["tags"]]
+            labeledshape_ids = [shape["id"] for shape in data["shapes"]]
+            labeledtrack_ids = [track["id"] for track in data["tracks"]]
+            labeledimage_set = self.db_job.labeledimage_set
+            labeledimage_set = labeledimage_set.filter(pk__in=labeledimage_ids)
+            labeledshape_set = self.db_job.labeledshape_set
+            labeledshape_set = labeledshape_set.filter(pk__in=labeledshape_ids)
+            labeledtrack_set = self.db_job.labeledtrack_set
+            labeledtrack_set = labeledtrack_set.filter(pk__in=labeledtrack_ids)
 
-    def init_from_db(self):
-        db_tags = list(self.db_job.labeledimage_set
+            self.init_from_queries(
+                labeledimage_set,
+                labeledshape_set,
+                labeledtrack_set)
+
+            labeledimage_set.delete()
+            labeledshape_set.delete()
+            labeledtrack_set.delete()
+
+    def init_from_queries(self, labeledimage_set, labeledshape_set,
+        labeledtrack_set):
+        db_tags = list(labeledimage_set
             .prefetch_related("label")
             .prefetch_related("labeledimageattributeval_set"))
         tags = serializers.LabeledImageSerializer(db_tags, many=True)
         self.data["tags"] = tags.data
 
-        db_shapes = list(self.db_job.labeledshape_set
+        db_shapes = list(labeledshape_set
             .prefetch_related("label")
             .prefetch_related("labeledshapeattributeval_set"))
         shapes = serializers.LabeledShapeSerializer(db_shapes, many=True)
         self.data["shapes"] = shapes.data
 
-        db_tracks = list(self.db_job.labeledtrack_set
+        db_tracks = list(labeledtrack_set
             .select_related("label")
             .prefetch_related("labeledtrackattributeval_set")
             .prefetch_related("trackedshape_set__trackedshapeattributeval_set"))
         tracks = serializers.LabeledTrackSerializer(db_tracks, many=True)
         self.data["tracks"] = tracks.data
+
+
+    def init_from_db(self):
+        self.init_from_queries(
+            self.db_job.labeledimage_set,
+            self.db_job.labeledshape_set,
+            self.db_job.labeledtrack_set)
