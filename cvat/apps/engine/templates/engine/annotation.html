@@ -196,7 +196,7 @@
     <div id="helpWindow" class="modal hidden">
         <div id="helpWindowContent" class="modal-content">
             <div style="width: 100%; height: 90%; overflow-y: auto;">
-                <div>
+                <div class="selectable">
                     <label class="h1 semiBold"> Shortkeys: </label> <br>
                     <table class="regular" id="shortkeyHelpTable"> </table>
                     <label class="h1 semiBold"> <br> Hints: <br> </label>
@@ -220,6 +220,8 @@
                         person[attr/race="asian"] | car[attr/model="bmw"] - asians and BMW cars <br>
                         face[attr/glass="sunglass" or attr/glass="no"] - faces with sunglass or without glass <br>
                         *[attr/*="__undefined__"] - any tracks with any unlabeled attributes <br>
+                        *[width<300 or height<300] - shapes with height or width less than 300px <br>
+                        person[width>300 and height<200] - person shapes with width > 300px and height < 200px <br>
                      </label>
                 </div>
             </div>

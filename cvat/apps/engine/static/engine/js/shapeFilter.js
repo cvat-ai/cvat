@@ -18,7 +18,7 @@ class FilterModel {
     }
 
     _convertShape(shape) {
-        return {
+        let converted = {
             id: shape.model.id,
             label: shape.model.label,
             type: shape.model.type.split("_")[1],
@@ -27,6 +27,16 @@ class FilterModel {
             attr: convertAttributes(shape.interpolation.attributes),
             lock: shape.model.lock
         };
+
+        if (shape.model.type.split('_')[1] === 'box') {
+            converted.width = shape.interpolation.position.xbr - shape.interpolation.position.xtl;
+            converted.height = shape.interpolation.position.ybr - shape.interpolation.position.ytl;
+        } else {
+            converted.width = shape.interpolation.position.width;
+            converted.height = shape.interpolation.position.height;
+        }
+
+        return converted;
 
         // We replace all dashes due to defiant.js can't work with it
         function convertAttributes(attributes) {
@@ -122,13 +132,14 @@ class FilterView {
         let initSubmitList = () => {
             this._filterSubmitList.empty();
             for (let value of predefinedValues) {
-                this._filterSubmitList.append(`<option value=${value}> ${value} </option>`);
+                value = value.replace(/'/g, '"');
+                this._filterSubmitList.append(`<option value='${value}'> ${value} </option>`);
             }
         }
         initSubmitList();
 
         this._filterString.on("change", (e) => {
-            let value = $.trim(e.target.value);
+            let value = $.trim(e.target.value).replace(/'/g, '"');
             if (this._controller.updateFilter(value, false)) {
                 this._filterString.css("color", "green");
                 if (!predefinedValues.includes(value)) {
