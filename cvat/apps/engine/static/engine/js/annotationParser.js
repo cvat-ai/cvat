@@ -93,7 +93,7 @@ class AnnotationParser {
             throw Error('An unknown attribute found in the annotation file: ' + name);
         }
         let attrInfo = this._labelsInfo.attrInfo(attrId);
-        let value = this._labelsInfo.strToValues(attrInfo.type, attrTag.innerHTML)[0];
+        let value = this._labelsInfo.strToValues(attrInfo.type, attrTag.textContent)[0];
 
         if (['select', 'radio'].includes(attrInfo.type) && !attrInfo.values.includes(value)) {
             throw Error('Incorrect attribute value found for "' + name + '" attribute: ' + value);
