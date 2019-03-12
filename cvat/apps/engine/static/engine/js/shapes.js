@@ -925,6 +925,7 @@ class PolyShapeModel extends ShapeModel {
         for (let point of points) {
             point.x = Math.clamp(point.x, 0, window.cvat.player.geometry.frameWidth);
             point.y = Math.clamp(point.y, 0, window.cvat.player.geometry.frameHeight);
+
             box.xtl = Math.min(box.xtl, point.x);
             box.ytl = Math.min(box.ytl, point.y);
             box.xbr = Math.max(box.xbr, point.x);
@@ -933,6 +934,8 @@ class PolyShapeModel extends ShapeModel {
         position.points = PolyShapeModel.convertNumberArrayToString(points);
 
         let pos = {
+            height: box.ybr - box.ytl,
+            width: box.xbr - box.xtl,
             occluded: position.occluded,
             points: position.points,
             z_order: position.z_order,
@@ -1055,6 +1058,24 @@ class PolyShapeModel extends ShapeModel {
     }
 
     static importPositions(positions) {
+        function getBBRect(points) {
+            const box = {
+                xtl: Number.MAX_SAFE_INTEGER,
+                ytl: Number.MAX_SAFE_INTEGER,
+                xbr: Number.MIN_SAFE_INTEGER,
+                ybr: Number.MIN_SAFE_INTEGER,
+            };
+
+            for (let point of PolyShapeModel.convertStringToNumberArray(points)) {
+                box.xtl = Math.min(box.xtl, point.x);
+                box.ytl = Math.min(box.ytl, point.y);
+                box.xbr = Math.max(box.xbr, point.x);
+                box.ybr = Math.max(box.ybr, point.y);
+            }
+
+            return [box.xbr - box.xtl, box.ybr - box.ytl];
+        }
+
         let imported = {};
         if (this._type.startsWith('interpolation')) {
             let last_key_in_prev_segm = null;
@@ -1064,7 +1085,10 @@ class PolyShapeModel extends ShapeModel {
             for (let pos of positions) {
                 let frame = pos.frame;
                 if (frame >= segm_start && frame <= segm_stop) {
+                    const [width, height] = getBBRect(pos.points);
                     imported[pos.frame] = {
+                        width: width,
+                        height: height,
                         points: pos.points,
                         occluded: pos.occluded,
                         outside: pos.outside,
@@ -1080,7 +1104,10 @@ class PolyShapeModel extends ShapeModel {
             }
 
             if (last_key_in_prev_segm && !(segm_start in imported)) {
+                const [width, height] = getBBRect(last_key_in_prev_segm.points);
                 imported[segm_start] = {
+                    width: width,
+                    height: height,
                     points: last_key_in_prev_segm.points,
                     occluded: last_key_in_prev_segm.occluded,
                     outside: last_key_in_prev_segm.outside,
@@ -1091,7 +1118,10 @@ class PolyShapeModel extends ShapeModel {
             return imported;
         }
 
+        const [width, height] = getBBRect(positions.points);
         imported[this._frame] = {
+            width: width,
+            height: height,
             points: positions.points,
             occluded: positions.occluded,
             z_order: positions.z_order,

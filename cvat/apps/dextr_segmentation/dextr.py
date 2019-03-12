@@ -46,7 +46,7 @@ class DEXTR_HANDLER:
             self._exec_network = self._plugin.load(network=self._network)
 
         image = PIL.Image.open(im_path)
-        numpy_image = np.array(PIL.Image.open(im_path))
+        numpy_image = np.array(image)
         points = np.asarray([[int(p["x"]), int(p["y"])] for p in points], dtype=int)
         bounding_box = (
             max(min(points[:, 0]) - _DEXTR_PADDING, 0),
