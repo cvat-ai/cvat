@@ -52,43 +52,29 @@
 "use strict";
 
 function callAnnotationUI(jid) {
-    initLogger(jid);
-    let loadJobEvent = Logger.addContinuedEvent(Logger.EventType.loadJob);
-    serverRequest("/api/v1/jobs/" + jid, function(job) {
-        serverRequest("/api/v1/tasks/" + job.task_id, function(task) {
-            serverRequest("/api/v1/tasks/" + job.task_id + "/frames/meta", function(imageMetaCache) {
-                serverRequest(`/api/v1/tasks/${jid}/annotation`, function(data) {
-                    $('#loadingOverlay').remove();
-                    setTimeout(() => {
-                        // FIXME: code cloning
-                        let spec = {"labels": {}, "attributes": {}};
-                        for (let label of task.labels) {
-                            spec.labels[label.id] = label.name;
-                            spec.attributes[label.id] = {};
-                            for (let attr of label.attributes) {
-                                spec.attributes[label.id][attr.id] = attr.text;
-                            }
-                        }
-                        // FIXME: patch job object to correspond to the new REST API
-                        job.labels = spec.labels;
-                        job.attributes = spec.attributes;
-                        job.stop = job.stop_frame;
-                        job.start = job.start_frame;
-                        job.jobid = job.id;
-                        job.taskid = task.id;
-                        job.slug = task.name;
-                        job.mode = task.mode;
-                        job.overlap = task.overlap;
-                        job.z_order = task.z_order;
-                        job.flipped = task.flipped;
-                        job.image_meta_data = imageMetaCache;
+    function onError(errorData) {
+        $('body').empty();
+        const message = `Can not build CVAT annotation UI. Code: ${errorData.status}. ` +
+            `Message: ${errorData.responseText || errorData.statusText}`;
+        showMessage(message);
+    }
 
-                        buildAnnotationUI(job, data, loadJobEvent);
-                    }, 0);
-                });
+    initLogger(jid);
+
+    let loadJobEvent = Logger.addContinuedEvent(Logger.EventType.loadJob);
+    $.get(`/api/v1/jobs/${jid}`).done((jobData) => {
+        let tid = jobData.task_id;
+        $.when(
+            $.get(`/api/v1/tasks/${jobData.task_id}`),
+            $.get(`/api/v1/tasks/${jobData.task_id}/frames/meta`),
+            $.get(`/api/v1/jobs/${jid}/annotations`),
+        ).then((taskData, imageMetaData, annotationData) => {
+            $('#loadingOverlay').remove();
+            setTimeout(() => {
+                buildAnnotationUI(jobData, taskData[0], imageMetaData[0], annotationData[0], loadJobEvent);
             });
-        });
-    });
+        }).fail(onError);
+    }).fail(onError);
 }
 
 function initLogger(jobID) {
@@ -107,26 +93,26 @@ function initLogger(jobID) {
     });
 }
 
-function buildAnnotationUI(job, shapeData, loadJobEvent) {
+function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loadJobEvent) {
     // Setup some API
     window.cvat = {
-        labelsInfo: new LabelsInfo(job),
+        labelsInfo: new LabelsInfo(taskData.labels),
         translate: new CoordinateTranslator(),
         player: {
             geometry: {
                 scale: 1,
             },
             frames: {
-                current: job.start,
-                start: job.start,
-                stop: job.stop,
+                current: jobData.start_frame,
+                start: jobData.start_frame,
+                stop: jobData.stop_frame,
             }
         },
         mode: null,
         job: {
-            z_order: job.z_order,
-            id: job.jobid,
-            images: job.image_meta_data,
+            z_order: taskData.z_order,
+            id: jobData.id,
+            images: imageMetaData,
         },
         search: {
             value: window.location.search,
@@ -166,20 +152,25 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     };
 
     // Remove external search parameters from url
-    window.history.replaceState(null, null, `${window.location.origin}/?id=${job.jobid}`);
+    window.history.replaceState(null, null, `${window.location.origin}/?id=${jobData.id}`);
 
     window.cvat.config = new Config();
 
     // Setup components
-    let idGenerator = new IncrementIdGenerator(job.max_shape_id + 1);
-    let annotationParser = new AnnotationParser(job, window.cvat.labelsInfo, idGenerator);
+    let idGenerator = new IncrementIdGenerator(jobData.max_shape_id + 1);
+    let annotationParser = new AnnotationParser({
+        start: window.cvat.job.start,
+        stop: window.cvat.job.stop,
+        flipped: taskData.flipped,
+        image_meta_data: imageMetaData,
+    }, window.cvat.labelsInfo, idGenerator);
 
-    let shapeCollectionModel = new ShapeCollectionModel(idGenerator).import(shapeData, true);
+    let shapeCollectionModel = new ShapeCollectionModel(idGenerator).import(annotationData, true);
     let shapeCollectionController = new ShapeCollectionController(shapeCollectionModel);
     let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
 
     // In case of old tasks that dont provide max saved shape id properly
-    if (job.max_shape_id === -1) {
+    if (jobData.max_shape_id === -1) {
         idGenerator.reset(shapeCollectionModel.maxId + 1);
     }
 
@@ -202,8 +193,8 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     let shapeBufferController = new ShapeBufferController(shapeBufferModel);
     let shapeBufferView = new ShapeBufferView(shapeBufferModel, shapeBufferController);
 
-    $('#shapeModeSelector').prop('value', job.mode);
-    let shapeCreatorModel = new ShapeCreatorModel(shapeCollectionModel, job);
+    $('#shapeModeSelector').prop('value', taskData.mode);
+    let shapeCreatorModel = new ShapeCreatorModel(shapeCollectionModel);
     let shapeCreatorController = new ShapeCreatorController(shapeCreatorModel);
     let shapeCreatorView = new ShapeCreatorView(shapeCreatorModel, shapeCreatorController);
 
@@ -241,15 +232,15 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
         height: $('#playerFrame').height(),
     };
 
-    let playerModel = new PlayerModel(job, playerGeometry);
+    let playerModel = new PlayerModel(taskData, playerGeometry);
     let playerController = new PlayerController(playerModel,
         () => shapeCollectionModel.activeShape,
         (direction) => shapeCollectionModel.find(direction),
         Object.assign({}, playerGeometry, {
             left: $('#playerFrame').offset().left,
             top: $('#playerFrame').offset().top,
-        }), job);
-    new PlayerView(playerModel, playerController, job);
+        }));
+    new PlayerView(playerModel, playerController);
 
     let historyModel = new HistoryModel(playerModel, idGenerator);
     let historyController = new HistoryController(historyModel);
@@ -291,7 +282,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
             totalStat.polygons.annotation + totalStat.polygons.interpolation +
             totalStat.polylines.annotation + totalStat.polylines.interpolation +
             totalStat.points.annotation + totalStat.points.interpolation,
-        'frame count': job.stop - job.start + 1,
+        'frame count': window.cvat.player.frames.stop - window.cvat.player.frames.start + 1,
         'object count': totalStat.total,
         'box count': totalStat.boxes.annotation + totalStat.boxes.interpolation,
         'polygon count': totalStat.polygons.annotation + totalStat.polygons.interpolation,
@@ -520,7 +511,7 @@ function setupSettingsWindow() {
 }
 
 
-function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel) {
+function setupMenu(task, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel) {
     let annotationMenu = $('#annotationMenu');
     let menuButton = $('#menuButton');
 
@@ -595,13 +586,12 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
             }
         });
     })();
-
-    $('#statTaskName').text(job.slug);
-    $('#statFrames').text(`[${job.start}-${job.stop}]`);
-    $('#statOverlap').text(job.overlap);
-    $('#statZOrder').text(job.z_order);
-    $('#statFlipped').text(job.flipped);
-    $('#statTaskStatus').prop("value", job.status).on('change', (e) => {
+    $('#statTaskName').text(task.name);
+    $('#statFrames').text(`[${window.cvat.player.frames.start}-${window.cvat.player.frames.stop}]`);
+    $('#statOverlap').text(task.overlap);
+    $('#statZOrder').text(task.z_order);
+    $('#statFlipped').text(task.flipped);
+    $('#statTaskStatus').prop("value", task.status).on('change', (e) => {
         $.ajax({
             type: 'PATCH',
             url: '/api/v1/jobs/' + window.cvat.job.id,
@@ -631,7 +621,7 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
         ${shortkeys['open_settings'].view_value} - ${shortkeys['open_settings'].description}`);
 
     $('#downloadAnnotationButton').on('click', (e) => {
-        dumpAnnotationRequest(e.target, job.taskid, job.slug);
+        dumpAnnotationRequest(e.target, task.id, task.name);
     });
 
     $('#uploadAnnotationButton').on('click', () => {
@@ -656,7 +646,7 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
     });
 
     $('#saveButton').on('click', () => {
-        saveAnnotation(shapeCollectionModel, job);
+        saveAnnotation(shapeCollectionModel);
     });
     $('#saveButton').attr('title', `
         ${shortkeys['save_work'].view_value} - ${shortkeys['save_work'].description}`);
@@ -761,7 +751,7 @@ function uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, 
 }
 
 
-function saveAnnotation(shapeCollectionModel, job) {
+function saveAnnotation(shapeCollectionModel) {
     let saveButton = $('#saveButton');
 
     Logger.addEvent(Logger.EventType.saveJob);
@@ -771,7 +761,7 @@ function saveAnnotation(shapeCollectionModel, job) {
             totalStat.polygons.annotation + totalStat.polygons.interpolation +
             totalStat.polylines.annotation + totalStat.polylines.interpolation +
             totalStat.points.annotation + totalStat.points.interpolation,
-        'frame count': job.stop - job.start + 1,
+        'frame count': window.cvat.player.frames.stop - window.cvat.player.frames.start + 1,
         'object count': totalStat.total,
         'box count': totalStat.boxes.annotation + totalStat.boxes.interpolation,
         'polygon count': totalStat.polygons.annotation + totalStat.polygons.interpolation,
@@ -791,7 +781,7 @@ function saveAnnotation(shapeCollectionModel, job) {
     saveButton.prop('disabled', true);
     saveButton.text('Saving..');
 
-    saveJobRequest(job.jobid, data, () => {
+    saveJobRequest(window.cvat.job.id, data, () => {
         // success
         shapeCollectionModel.confirmExportedState();
         saveButton.text('Success!');

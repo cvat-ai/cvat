@@ -93,7 +93,7 @@ class TaskView {
                     stop: this._size,
                     flipped: this._flipped,
                     image_meta_data: imageMetaCache,
-                }, new LabelsInfo({labels: {}, attributes: {}}).restConstructor(labelsCopy), new ConstIdGenerator(-1));
+                }, new LabelsInfo(labelsCopy), new ConstIdGenerator(-1));
 
                 function asyncParse() {
                     let parsed = null;
@@ -114,7 +114,7 @@ class TaskView {
                             success: function() {
                                 asyncSaveChunk(0);
                             },
-                            error: function(response) {
+                            error: function(errorData) {
                                 const message = `Could not remove current annotation. Code: ${errorData.status}. ` +
                                     `Message: ${errorData.responseText || errorData.statusText}`;
                                 showMessage(message);

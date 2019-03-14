@@ -134,25 +134,25 @@ const MAX_PLAYER_SCALE = 10;
 const MIN_PLAYER_SCALE = 0.1;
 
 class PlayerModel extends Listener {
-    constructor(job, playerSize) {
+    constructor(task,  playerSize) {
         super('onPlayerUpdate', () => this);
         this._frame = {
-            start: job.start,
-            stop: job.stop,
-            current: job.start,
+            start: window.cvat.player.frames.start,
+            stop: window.cvat.player.frames.stop,
+            current: window.cvat.player.frames.current,
             previous: null
         };
 
         this._settings = {
             multipleStep: 10,
             fps: 25,
-            rotateAll: job.mode === 'interpolation',
-            resetZoom: job.mode === 'annotation'
+            rotateAll: task.mode === 'interpolation',
+            resetZoom: task.mode === 'annotation'
         };
 
         this._playInterval = null;
         this._pauseFlag = null;
-        this._frameProvider = new FrameProvider(this._frame.stop, job.taskid);
+        this._frameProvider = new FrameProvider(this._frame.stop, task.id);
         this._continueAfterLoad = false;
         this._continueTimeout = null;
 
