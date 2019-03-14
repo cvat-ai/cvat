@@ -258,7 +258,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
 
     setupHelpWindow(shortkeys);
     setupSettingsWindow();
-    setupMenu(job, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel);
+    setupMenu(taskData, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel);
     setupFrameFilters();
     setupShortkeys(shortkeys, {
         aam: aamModel,

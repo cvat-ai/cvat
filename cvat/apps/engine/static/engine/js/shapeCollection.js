@@ -233,37 +233,55 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    import(data, udpateInitialState=false) {
-        for (let box of data.boxes) {
-            this._importShape(box, 'annotation_box', udpateInitialState);
+    import(data, udpateInitialState = false) {
+        for (let shape of data.shapes) {
+            let type = null;
+            switch (shape.type) {
+                case 'rectangle': {
+                    type = 'annotation_box';
+                    break;
+                }
+                case 'polygon': {
+                    type = 'annotation_polygon';
+                    break;
+                }
+                case 'polyline': {
+                    type = 'annotation_polyline';
+                    break;
+                }
+                case 'points': {
+                    type = 'annotation_points';
+                    break;
+                }
+                default:
+                    throw Error(`Unsupported shape type has been imported into client: ${shape.type}`);
+            }
+            this._importShape(shape, type, udpateInitialState);
         }
 
-        for (let boxPath of data.box_paths) {
-            this._importShape(boxPath, 'interpolation_box', udpateInitialState);
-        }
-
-        for (let points of data.points) {
-            this._importShape(points, 'annotation_points', udpateInitialState);
-        }
-
-        for (let pointsPath of data.points_paths) {
-            this._importShape(pointsPath, 'interpolation_points', udpateInitialState);
-        }
-
-        for (let polygon of data.polygons) {
-            this._importShape(polygon, 'annotation_polygon', udpateInitialState);
-        }
-
-        for (let polygonPath of data.polygon_paths) {
-            this._importShape(polygonPath, 'interpolation_polygon', udpateInitialState);
-        }
-
-        for (let polyline of data.polylines) {
-            this._importShape(polyline, 'annotation_polyline', udpateInitialState);
-        }
-
-        for (let polylinePath of data.polyline_paths) {
-            this._importShape(polylinePath, 'interpolation_polyline', udpateInitialState);
+        for (let track of data.tracks) {
+            let type = null;
+            switch (track.shapes[0].type) {
+                case 'rectangle': {
+                    type = 'interpolation_box';
+                    break;
+                }
+                case 'polygon': {
+                    type = 'interpolation_polygon';
+                    break;
+                }
+                case 'polyline': {
+                    type = 'interpolation_polyline';
+                    break;
+                }
+                case 'points': {
+                    type = 'interpolation_points';
+                    break;
+                }
+                default:
+                    throw Error(`Unsupported shape type has been imported into client: ${track.shapes[0].type}`);
+            }
+            this._importShape(track, type, udpateInitialState);
         }
 
         this.notify();

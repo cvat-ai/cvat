@@ -24,6 +24,10 @@ function serverRequest(url, successCallback)
 
 function saveJobRequest(jid, data, success, error) {
     $.ajax({
+        
+    })
+
+    $.ajax({
         url: "save/annotation/job/" + jid,
         type: "POST",
         data: JSON.stringify(data),
