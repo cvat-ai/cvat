@@ -111,7 +111,6 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
     if not test_res:
         raise Exception("Model was not properly created/updated. Test failed: {}".format(message))
 
-@transaction.atomic
 def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file, interpretation_file, owner, storage, is_shared):
     def get_abs_path(share_path):
         if not share_path:
@@ -134,8 +133,9 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
                 tmp_file.write(chunk)
         os.close(fd)
         return filename
-
-    dl_model = AnnotationModel.objects.get(pk=dl_model_id) if dl_model_id else create_empty(owner=owner)
+    is_create_request = dl_model_id is None
+    if is_create_request:
+        dl_model_id = create_empty(owner=owner)
 
     run_tests = bool(model_file or weights_file or labelmap_file or interpretation_file)
     if storage != "local":
@@ -149,12 +149,12 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
         labelmap_file = save_file_as_tmp(labelmap_file)
         interpretation_file = save_file_as_tmp(interpretation_file)
 
-    rq_id = "auto_annotation.create.{}".format(dl_model.id)
+    rq_id = "auto_annotation.create.{}".format(dl_model_id)
     queue = django_rq.get_queue("default")
     queue.enqueue_call(
         func=_update_dl_model_thread,
         args=(
-            dl_model.id,
+            dl_model_id,
             name,
             is_shared,
             model_file,
@@ -163,13 +163,14 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
             interpretation_file,
             run_tests,
             storage == "local",
-            not bool(dl_model_id),
+            is_create_request,
         ),
         job_id=rq_id
     )
 
     return rq_id
 
+@transaction.atomic
 def create_empty(owner, framework=FrameworkChoice.OPENVINO):
     db_model = AnnotationModel(
         owner=owner,
@@ -181,7 +182,7 @@ def create_empty(owner, framework=FrameworkChoice.OPENVINO):
         shutil.rmtree(model_path)
     os.mkdir(model_path)
 
-    return db_model
+    return db_model.id
 
 @transaction.atomic
 def delete(dl_model_id):
