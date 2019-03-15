@@ -157,33 +157,21 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
     window.cvat.config = new Config();
 
     // Setup components
-    let idGenerator = new IncrementIdGenerator(jobData.max_shape_id + 1);
     let annotationParser = new AnnotationParser({
         start: window.cvat.job.start,
         stop: window.cvat.job.stop,
         flipped: taskData.flipped,
         image_meta_data: imageMetaData,
-    }, window.cvat.labelsInfo, idGenerator);
+    }, window.cvat.labelsInfo);
 
-    let shapeCollectionModel = new ShapeCollectionModel(idGenerator).import(annotationData, true);
+    let shapeCollectionModel = new ShapeCollectionModel(jobData.max_shape_id).import(annotationData);
     let shapeCollectionController = new ShapeCollectionController(shapeCollectionModel);
     let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
-
-    // In case of old tasks that dont provide max saved shape id properly
-    if (jobData.max_shape_id === -1) {
-        idGenerator.reset(shapeCollectionModel.maxId + 1);
-    }
 
     window.cvat.data = {
         get: () => shapeCollectionModel.exportAll(),
         set: (data) => {
-            for (let type in data) {
-                for (let shape of data[type]) {
-                    shape.id = idGenerator.next();
-                }
-            }
-
-            shapeCollectionModel.import(data, false);
+            shapeCollectionModel.import(data);
             shapeCollectionModel.update();
         },
         clear: () => shapeCollectionModel.empty(),
@@ -242,7 +230,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
         }));
     new PlayerView(playerModel, playerController);
 
-    let historyModel = new HistoryModel(playerModel, idGenerator);
+    let historyModel = new HistoryModel(playerModel);
     let historyController = new HistoryController(historyModel);
     new HistoryView(historyController, historyModel);
 
@@ -731,7 +719,7 @@ function uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, 
                     try {
                         historyModel.empty();
                         shapeCollectionModel.empty();
-                        shapeCollectionModel.import(data, false);
+                        shapeCollectionModel.import(data);
                         shapeCollectionModel.update();
                     }
                     finally {
@@ -783,7 +771,6 @@ function saveAnnotation(shapeCollectionModel) {
 
     saveJobRequest(window.cvat.job.id, data, () => {
         // success
-        shapeCollectionModel.confirmExportedState();
         saveButton.text('Success!');
         setTimeout(() => {
             saveButton.prop('disabled', false);

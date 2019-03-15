@@ -13,14 +13,13 @@
 "use strict";
 
 class AnnotationParser {
-    constructor(job, labelsInfo, idGenerator) {
+    constructor(job, labelsInfo) {
         this._parser = new DOMParser();
         this._startFrame = job.start;
         this._stopFrame = job.stop;
         this._flipped = job.flipped;
         this._im_meta = job.image_meta_data;
         this._labelsInfo = labelsInfo;
-        this._idGen = idGenerator;
     }
 
     _xmlParseError(parsedXML) {
@@ -229,8 +228,7 @@ class AnnotationParser {
                         xbr: xbr,
                         ybr: ybr,
                         z_order: z_order,
-                        attributes: attributeList,
-                        id: this._idGen.next(),
+                        attributes: attributeList
                     });
                 }
                 else {
@@ -242,8 +240,7 @@ class AnnotationParser {
                         points: points,
                         occluded: occluded,
                         z_order: z_order,
-                        attributes: attributeList,
-                        id: this._idGen.next(),
+                        attributes: attributeList
                     });
                 }
             }
@@ -315,8 +312,7 @@ class AnnotationParser {
                 group_id: +groupId,
                 frame: +parsed[type][0].getAttribute('frame'),
                 attributes: [],
-                shapes: [],
-                id: this._idGen.next(),
+                shapes: []
             };
 
             for (let shape of parsed[type]) {

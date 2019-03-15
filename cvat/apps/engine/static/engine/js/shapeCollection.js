@@ -11,12 +11,9 @@
     buildShapeModel:false
     buildShapeView:false
     copyToClipboard:false
-    createExportContainer:false
-    ExportType:false
     FilterController:false
     FilterModel:false
     FilterView:false
-    getExportTargetContainer:false
     Listener:false
     Logger:false
     Mousetrap:false
@@ -30,16 +27,15 @@
 "use strict";
 
 class ShapeCollectionModel extends Listener {
-    constructor(idGenereator) {
+    constructor(initialShapeId) {
         super('onCollectionUpdate', () => this);
         this._annotationShapes = {};
         this._groups = {};
         this._interpolationShapes = [];
         this._shapes = [];
         this._showAllInterpolation = false;
-        this._hash = null;
         this._currentShapes = [];
-        this._idx = 0;
+        this._idx = initialShapeId;
         this._groupIdx = 0;
         this._frame = null;
         this._activeShape = null;
@@ -72,10 +68,6 @@ class ShapeCollectionModel extends Listener {
         this._colorIdx = 0;
         this._filter = new FilterModel(() => this.update());
         this._splitter = new ShapeSplitter();
-        this._initialShapes = {};
-        this._exportedShapes = {};
-        this._shapesToDelete = createExportContainer();
-        this._idGen = idGenereator;
     }
 
     _nextGroupIdx() {
@@ -179,22 +171,6 @@ class ShapeCollectionModel extends Listener {
         return shape;
     }
 
-    _importShape(shape, shapeType, udpateInitialState) {
-        let importedShape = this.add(shape, shapeType);
-        if (udpateInitialState) {
-            if (shape.id === -1) {
-                const toDelete = getExportTargetContainer(ExportType.delete, importedShape.type, this._shapesToDelete);
-                toDelete.push(shape.id);
-            }
-            else {
-                this._initialShapes[shape.id] = {
-                    type: importedShape.type,
-                    exportedString: importedShape.export(),
-                };
-            }
-        }
-    }
-
     colorsByGroup(groupId) {
         // If group id of shape is 0 (default value), then shape not contained in a group
         if (!groupId) {
@@ -233,105 +209,52 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    import(data, udpateInitialState = false) {
-        for (let shape of data.shapes) {
-            let type = null;
-            switch (shape.type) {
-                case 'rectangle': {
-                    type = 'annotation_box';
-                    break;
-                }
-                case 'polygon': {
-                    type = 'annotation_polygon';
-                    break;
-                }
-                case 'polyline': {
-                    type = 'annotation_polyline';
-                    break;
-                }
-                case 'points': {
-                    type = 'annotation_points';
-                    break;
-                }
-                default:
-                    throw Error(`Unsupported shape type has been imported into client: ${shape.type}`);
+    import(data) {
+        function _import(shape, mode) {
+            const shape_type = shape.type || shape.shapes[0].type;
+            if (shape_type === 'rectangle') {
+                return this.add(shape, `${mode}_box`);
+            } else {
+                return this.add(shape, `${mode}_${shape_type}`);
             }
-            this._importShape(shape, type, udpateInitialState);
         }
 
-        for (let track of data.tracks) {
-            let type = null;
-            switch (track.shapes[0].type) {
-                case 'rectangle': {
-                    type = 'interpolation_box';
-                    break;
-                }
-                case 'polygon': {
-                    type = 'interpolation_polygon';
-                    break;
-                }
-                case 'polyline': {
-                    type = 'interpolation_polyline';
-                    break;
-                }
-                case 'points': {
-                    type = 'interpolation_points';
-                    break;
-                }
-                default:
-                    throw Error(`Unsupported shape type has been imported into client: ${track.shapes[0].type}`);
-            }
-            this._importShape(track, type, udpateInitialState);
+
+        for (let shape of data.shapes) {
+            _import.call(this, shape, 'annotation');
+        }
+
+        for (let shape of data.tracks) {
+            _import.call(this, shape, 'interpolation');
         }
 
         this.notify();
         return this;
     }
 
-    confirmExportedState() {
-        this._initialShapes = this._exportedShapes;
-        this._shapesToDelete = createExportContainer();
-    }
-
     export() {
-        const response = createExportContainer();
+        // TODO from scratch
 
-        for (const shape of this._shapes) {
-            let targetExportContainer = undefined;
-            if (!shape._removed) {
-                if (!(shape.id in this._initialShapes)) {
-                    targetExportContainer = getExportTargetContainer(ExportType.create, shape.type, response);
-                } else if (JSON.stringify(this._initialShapes[shape.id].exportedString) !== JSON.stringify(shape.export())) {
-                    targetExportContainer = getExportTargetContainer(ExportType.update, shape.type, response);
-                } else {
-                    continue;
-                }
-                targetExportContainer.push(shape.export());
-            }
-            else if (shape.id in this._initialShapes) {
-                targetExportContainer = getExportTargetContainer(ExportType.delete, shape.type, response);
-                targetExportContainer.push(shape.id);
-            }
-            else {
-                continue;
-            }
+        return {
+            version: 0,
+            tags: [],
+            shapes: [],
+            tracks: [],
         }
-        for (const shapeType in this._shapesToDelete.delete) {
-            const shapes = this._shapesToDelete.delete[shapeType];
-            response.delete[shapeType].push.apply(response.delete[shapeType], shapes);
-        }
-
-        return response;
     }
 
     exportAll() {
-        const response = createExportContainer();
-        for (const shape of this._shapes) {
-            if (!shape._removed) {
-                getExportTargetContainer(ExportType.create, shape.type, response).push(shape.export());
-            }
+        // TODO from scratch. Return old format
+        return {
+            boxes: [],
+            box_paths: [],
+            polygons: [],
+            polygon_paths: [],
+            polylines: [],
+            polyline_paths: [],
+            points: [],
+            points_paths: [],
         }
-        return response.create;
     }
 
     find(direction) {
@@ -390,38 +313,11 @@ class ShapeCollectionModel extends Listener {
     }
 
     hasUnsavedChanges() {
-        const exportData = this.export();
-        for (const actionType in ExportType) {
-            for (const shapes of Object.values(exportData[actionType])) {
-                if (shapes.length) {
-                    return true;
-                }
-            }
-        }
-
+        // TODO with hash
         return false;
     }
 
-    updateExportedState() {
-        this._exportedShapes = {};
-
-        for (const shape of this._shapes) {
-            if (!shape.removed) {
-                this._exportedShapes[shape.id] = {
-                    type: shape.type,
-                    exportedString: shape.export(),
-                };
-            }
-        }
-        return this;
-    }
-
     empty() {
-        for (const shapeId in this._initialShapes) {
-            const exportTarget = getExportTargetContainer(ExportType.delete, this._initialShapes[shapeId].type, this._shapesToDelete);
-            exportTarget.push(+shapeId);
-        }
-
         this._initialShapes = {};
         this._annotationShapes = {};
         this._interpolationShapes = [];
@@ -432,13 +328,11 @@ class ShapeCollectionModel extends Listener {
     }
 
     add(data, type) {
-        let id = 'id' in data && data.id !== -1 ? data.id : this._idGen.next();
-
-        let model = buildShapeModel(data, type, id, this.nextColor());
+        const id = data.id || ++this._idx;
+        const model = buildShapeModel(data, type, id, this.nextColor());
         if (type.startsWith('interpolation')) {
             this._interpolationShapes.push(model);
-        }
-        else {
+        } else {
             this._annotationShapes[model.frame] = this._annotationShapes[model.frame] || [];
             this._annotationShapes[model.frame].push(model);
         }
@@ -446,7 +340,7 @@ class ShapeCollectionModel extends Listener {
         model.subscribe(this);
 
         // Update collection groups & group index
-        let groupIdx = model.groupId;
+        const groupIdx = model.groupId;
         this._groupIdx = Math.max(this._groupIdx, groupIdx);
         if (groupIdx) {
             this._groups[groupIdx] = this._groups[groupIdx] || [];
@@ -832,16 +726,14 @@ class ShapeCollectionModel extends Listener {
                 // Undo/redo code
                 let newShapes = this._shapes.slice(-list.length);
                 let originalShape = this._activeShape;
-                window.cvat.addAction('Split Object', (self) => {
+                window.cvat.addAction('Split Object', () => {
                     for (let shape of newShapes) {
                         shape.removed = true;
                         shape.unsubscribe(this);
                     }
-                    originalShape.id = self.generateId();
                     originalShape.removed = false;
-                }, (self) => {
+                }, () => {
                     for (let shape of newShapes) {
-                        shape.id = self.generateId();
                         shape.removed = false;
                         shape.subscribe(this);
                     }

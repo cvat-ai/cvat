@@ -822,10 +822,10 @@ class BoxModel extends ShapeModel {
 
                 if (frame >= segm_start && frame <= segm_stop) {
                     imported[frame] = {
-                        xtl: pos.xtl,
-                        ytl: pos.ytl,
-                        xbr: pos.xbr,
-                        ybr: pos.ybr,
+                        xtl: pos.points[0],
+                        ytl: pos.points[1],
+                        xbr: pos.points[2],
+                        ybr: pos.points[3],
                         occluded: pos.occluded,
                         outside: pos.outside,
                         z_order: pos.z_order,
@@ -855,10 +855,10 @@ class BoxModel extends ShapeModel {
         }
 
         imported[this._frame] = {
-            xtl: positions.xtl,
-            ytl: positions.ytl,
-            xbr: positions.xbr,
-            ybr: positions.ybr,
+            xtl: positions.points[0],
+            ytl: positions.points[1],
+            xbr: positions.points[2],
+            ybr: positions.points[3],
             occluded: positions.occluded,
             z_order: positions.z_order,
         };
@@ -1055,6 +1055,13 @@ class PolyShapeModel extends ShapeModel {
     }
 
     static importPositions(positions) {
+        function _convertToClient(points) {
+            return points.reduce((acc, val, idx) => {
+                idx % 2 == 0 ? acc.push([val]) : acc[acc.length - 1].push(val);
+                return acc
+            }, []).map((point) => `${point[0]},${point[1]}`).join(' ');
+        }
+
         let imported = {};
         if (this._type.startsWith('interpolation')) {
             let last_key_in_prev_segm = null;
@@ -1065,7 +1072,7 @@ class PolyShapeModel extends ShapeModel {
                 let frame = pos.frame;
                 if (frame >= segm_start && frame <= segm_stop) {
                     imported[pos.frame] = {
-                        points: pos.points,
+                        points: _convertToClient(pos.points),
                         occluded: pos.occluded,
                         outside: pos.outside,
                         z_order: pos.z_order,
@@ -1081,7 +1088,7 @@ class PolyShapeModel extends ShapeModel {
 
             if (last_key_in_prev_segm && !(segm_start in imported)) {
                 imported[segm_start] = {
-                    points: last_key_in_prev_segm.points,
+                    points: _convertToClient(last_key_in_prev_segm.points),
                     occluded: last_key_in_prev_segm.occluded,
                     outside: last_key_in_prev_segm.outside,
                     z_order: last_key_in_prev_segm.z_order,
@@ -1091,8 +1098,10 @@ class PolyShapeModel extends ShapeModel {
             return imported;
         }
 
+
+
         imported[this._frame] = {
-            points: positions.points,
+            points: _convertToClient(positions.points),
             occluded: positions.occluded,
             z_order: positions.z_order,
         };
