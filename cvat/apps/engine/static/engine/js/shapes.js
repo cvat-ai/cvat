@@ -477,8 +477,7 @@ class ShapeModel extends Listener {
         this.removed = true;
 
         // Undo/redo code
-        window.cvat.addAction('Remove Object', (self) => {
-            this.id = self.generateId();
+        window.cvat.addAction('Remove Object', () => {
             this.removed = false;
         }, () => {
             this.removed = true;
@@ -499,6 +498,7 @@ class ShapeModel extends Listener {
     set removed(value) {
         if (value) {
             this._active = false;
+            this._serverID = undefined;
         }
 
         this._removed = value;

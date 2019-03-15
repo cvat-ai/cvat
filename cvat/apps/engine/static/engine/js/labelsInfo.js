@@ -138,13 +138,18 @@ class LabelsInfo {
     }
 
     strToValues(type, string) {
-        switch (type) {
-        case 'checkbox':
-            return [string !== '0' && string.toLowerCase() !== 'false' && string !== false];
-        case 'text':
+        if (type === 'checkbox') {
+            const value =
+                string !== '0' &&
+                string !== false &&
+                String(string).toLowerCase() !== 'false';
+            return [value];
+        } else if (type === 'text') {
             return [string];
-        default:
-            return string.toString().split(',');
+        } else if (type === 'number') {
+            return String(string).split(',');
+        } else {
+            return string.split(',');
         }
     }
 
