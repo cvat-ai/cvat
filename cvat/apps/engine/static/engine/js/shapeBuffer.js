@@ -79,7 +79,7 @@ class ShapeBufferModel extends Listener  {
         }
 
         object.label_id = this._shape.label;
-        object.group_id = 0;
+        object.group = 0;
         object.frame = window.cvat.player.frames.current;
         object.attributes = attributes;
 

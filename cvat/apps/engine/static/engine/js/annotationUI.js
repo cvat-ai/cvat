@@ -169,7 +169,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
     let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
 
     window.cvat.data = {
-        get: () => shapeCollectionModel.exportAll(),
+        get: () => shapeCollectionModel.export(),
         set: (data) => {
             shapeCollectionModel.import(data);
             shapeCollectionModel.update();
@@ -758,18 +758,12 @@ function saveAnnotation(shapeCollectionModel) {
     });
 
     const exportedData = shapeCollectionModel.export();
-    shapeCollectionModel.updateExportedState();
     const annotationLogs = Logger.getLogs();
-
-    const data = {
-        annotation: JSON.stringify(exportedData),
-        logs: JSON.stringify(annotationLogs.export()),
-    };
 
     saveButton.prop('disabled', true);
     saveButton.text('Saving..');
 
-    saveJobRequest(window.cvat.job.id, data, () => {
+    saveJobRequest(window.cvat.job.id, exportedData, () => {
         // success
         saveButton.text('Success!');
         setTimeout(() => {

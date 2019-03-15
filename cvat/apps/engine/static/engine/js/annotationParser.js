@@ -228,7 +228,7 @@ class AnnotationParser {
                         xbr: xbr,
                         ybr: ybr,
                         z_order: z_order,
-                        attributes: attributeList
+                        attributes: attributeList,
                     });
                 }
                 else {
@@ -240,7 +240,7 @@ class AnnotationParser {
                         points: points,
                         occluded: occluded,
                         z_order: z_order,
-                        attributes: attributeList
+                        attributes: attributeList,
                     });
                 }
             }
@@ -312,7 +312,7 @@ class AnnotationParser {
                 group_id: +groupId,
                 frame: +parsed[type][0].getAttribute('frame'),
                 attributes: [],
-                shapes: []
+                shapes: [],
             };
 
             for (let shape of parsed[type]) {

@@ -93,7 +93,7 @@ class ShapeMergerModel extends Listener {
 
             let object = {
                 label_id: label,
-                group_id: 0,
+                group: 0,
                 frame: sortedFrames[0],
                 attributes: [],
                 shapes: [],

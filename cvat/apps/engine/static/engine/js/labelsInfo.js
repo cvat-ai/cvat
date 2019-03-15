@@ -140,7 +140,7 @@ class LabelsInfo {
     strToValues(type, string) {
         switch (type) {
         case 'checkbox':
-            return [string !== '0' && string.toLoweCase() !== 'false' && string !== false];
+            return [string !== '0' && string.toLowerCase() !== 'false' && string !== false];
         case 'text':
             return [string];
         default:

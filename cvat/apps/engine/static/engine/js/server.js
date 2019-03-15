@@ -24,17 +24,12 @@ function serverRequest(url, successCallback)
 
 function saveJobRequest(jid, data, success, error) {
     $.ajax({
-        
-    })
-
-    $.ajax({
-        url: "save/annotation/job/" + jid,
-        type: "POST",
+        url: `/api/v1/jobs/${jid}/annotations`,
+        type: 'PUT',
         data: JSON.stringify(data),
-        contentType: "application/json; charset=utf-8",
+        contentType: 'application/json',
         success: success,
         error: error,
-        processData: false,
     });
 }
 
