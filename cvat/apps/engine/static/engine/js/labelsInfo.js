@@ -13,44 +13,7 @@
 "use strict";
 
 class LabelsInfo {
-    constructor(job) {
-        this._labels = {};
-        this._attributes = {};
-        this._colorIdxs = {};
-
-        for (let labelKey in job.labels) {
-            let label = {
-                name: job.labels[labelKey],
-                attributes: {},
-            };
-
-            for (let attrKey in job.attributes[labelKey]) {
-                label.attributes[attrKey] = parseAttributeRow.call(this, job.attributes[labelKey][attrKey]);
-                this._attributes[attrKey] = label.attributes[attrKey];
-            }
-
-            this._labels[labelKey] = label;
-            this._colorIdxs[labelKey] = +labelKey;
-        }
-
-        function parseAttributeRow(attrRow) {
-            let match = attrRow.match(/([~@]{1})(.+)=(.+):(.*)/);
-            if (match == null) {
-                let message = 'Can not parse attribute string: ' + attrRow;
-                showMessage(message);
-                throw new Error(message);
-            }
-
-            return {
-                mutable: match[1] === "~",
-                type: match[2],
-                name: match[3],
-                values: this.strToValues(match[2], match[4]),
-            };
-        }
-    }
-
-    restConstructor(labels) {
+    constructor(labels) {
         this._labels = {};
         this._attributes = {};
         this._colorIdxs = {};
@@ -76,7 +39,7 @@ class LabelsInfo {
                 type: attribute.input_type,
                 name: attribute.name,
                 values: attribute.input_type === 'checkbox' ?
-                    [attribute.values[0].toLoweCase() !== 'false' && attribute.values[0] !== false] :
+                    [attribute.values[0].toLowerCase() !== 'false' && attribute.values[0] !== false] :
                     attribute.values,
             }
         }
@@ -175,13 +138,15 @@ class LabelsInfo {
     }
 
     strToValues(type, string) {
-        switch (type) {
-        case 'checkbox':
-            return [string !== '0' && string.toLoweCase() !== 'false' && string !== false];
-        case 'text':
+        if (type === 'checkbox') {
+            const value = string !== '0' && String(string).toLowerCase() !== 'false';
+            return [value];
+        } else if (type === 'text') {
             return [string];
-        default:
-            return string.toString().split(',');
+        } else if (type === 'number') {
+            return String(string).split(',');
+        } else {
+            return string.split(',');
         }
     }
 

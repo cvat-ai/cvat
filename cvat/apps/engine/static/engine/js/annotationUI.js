@@ -28,7 +28,6 @@
     PolyshapeEditorModel:false
     PolyshapeEditorView:false
     PolyShapeView:false
-    saveJobRequest:false
     serverRequest:false
     ShapeBufferController:false
     ShapeBufferModel:false
@@ -47,48 +46,35 @@
     ShapeMergerView:false
     showMessage:false
     showOverlay:false
+    buildAnnotationSaver:false
 */
 
 "use strict";
 
 function callAnnotationUI(jid) {
-    initLogger(jid);
-    let loadJobEvent = Logger.addContinuedEvent(Logger.EventType.loadJob);
-    serverRequest("/api/v1/jobs/" + jid, function(job) {
-        serverRequest("/api/v1/tasks/" + job.task_id, function(task) {
-            serverRequest("/api/v1/tasks/" + job.task_id + "/frames/meta", function(imageMetaCache) {
-                serverRequest(`/api/v1/tasks/${jid}/annotation`, function(data) {
-                    $('#loadingOverlay').remove();
-                    setTimeout(() => {
-                        // FIXME: code cloning
-                        let spec = {"labels": {}, "attributes": {}};
-                        for (let label of task.labels) {
-                            spec.labels[label.id] = label.name;
-                            spec.attributes[label.id] = {};
-                            for (let attr of label.attributes) {
-                                spec.attributes[label.id][attr.id] = attr.text;
-                            }
-                        }
-                        // FIXME: patch job object to correspond to the new REST API
-                        job.labels = spec.labels;
-                        job.attributes = spec.attributes;
-                        job.stop = job.stop_frame;
-                        job.start = job.start_frame;
-                        job.jobid = job.id;
-                        job.taskid = task.id;
-                        job.slug = task.name;
-                        job.mode = task.mode;
-                        job.overlap = task.overlap;
-                        job.z_order = task.z_order;
-                        job.flipped = task.flipped;
-                        job.image_meta_data = imageMetaCache;
+    function onError(errorData) {
+        $('body').empty();
+        const message = `Can not build CVAT annotation UI. Code: ${errorData.status}. ` +
+            `Message: ${errorData.responseText || errorData.statusText}`;
+        showMessage(message);
+    }
 
-                        buildAnnotationUI(job, data, loadJobEvent);
-                    }, 0);
-                });
+    initLogger(jid);
+
+    let loadJobEvent = Logger.addContinuedEvent(Logger.EventType.loadJob);
+    $.get(`/api/v1/jobs/${jid}`).done((jobData) => {
+        let tid = jobData.task_id;
+        $.when(
+            $.get(`/api/v1/tasks/${jobData.task_id}`),
+            $.get(`/api/v1/tasks/${jobData.task_id}/frames/meta`),
+            $.get(`/api/v1/jobs/${jid}/annotations`),
+        ).then((taskData, imageMetaData, annotationData) => {
+            $('#loadingOverlay').remove();
+            setTimeout(() => {
+                buildAnnotationUI(jobData, taskData[0], imageMetaData[0], annotationData[0], loadJobEvent);
             });
-        });
-    });
+        }).fail(onError);
+    }).fail(onError);
 }
 
 function initLogger(jobID) {
@@ -107,26 +93,26 @@ function initLogger(jobID) {
     });
 }
 
-function buildAnnotationUI(job, shapeData, loadJobEvent) {
+function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loadJobEvent) {
     // Setup some API
     window.cvat = {
-        labelsInfo: new LabelsInfo(job),
+        labelsInfo: new LabelsInfo(taskData.labels),
         translate: new CoordinateTranslator(),
         player: {
             geometry: {
                 scale: 1,
             },
             frames: {
-                current: job.start,
-                start: job.start,
-                stop: job.stop,
+                current: jobData.start_frame,
+                start: jobData.start_frame,
+                stop: jobData.stop_frame,
             }
         },
         mode: null,
         job: {
-            z_order: job.z_order,
-            id: job.jobid,
-            images: job.image_meta_data,
+            z_order: taskData.z_order,
+            id: jobData.id,
+            images: imageMetaData,
         },
         search: {
             value: window.location.search,
@@ -166,33 +152,28 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     };
 
     // Remove external search parameters from url
-    window.history.replaceState(null, null, `${window.location.origin}/?id=${job.jobid}`);
+    window.history.replaceState(null, null, `${window.location.origin}/?id=${jobData.id}`);
 
     window.cvat.config = new Config();
 
     // Setup components
-    let idGenerator = new IncrementIdGenerator(job.max_shape_id + 1);
-    let annotationParser = new AnnotationParser(job, window.cvat.labelsInfo, idGenerator);
+    let annotationParser = new AnnotationParser({
+        start: window.cvat.job.start,
+        stop: window.cvat.job.stop,
+        flipped: taskData.flipped,
+        image_meta_data: imageMetaData,
+    }, window.cvat.labelsInfo);
 
-    let shapeCollectionModel = new ShapeCollectionModel(idGenerator).import(shapeData, true);
+    let shapeCollectionModel = new ShapeCollectionModel().import(annotationData);
     let shapeCollectionController = new ShapeCollectionController(shapeCollectionModel);
     let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
 
-    // In case of old tasks that dont provide max saved shape id properly
-    if (job.max_shape_id === -1) {
-        idGenerator.reset(shapeCollectionModel.maxId + 1);
-    }
+    buildAnnotationSaver(annotationData, shapeCollectionModel);
 
     window.cvat.data = {
-        get: () => shapeCollectionModel.exportAll(),
+        get: () => shapeCollectionModel.export(),
         set: (data) => {
-            for (let type in data) {
-                for (let shape of data[type]) {
-                    shape.id = idGenerator.next();
-                }
-            }
-
-            shapeCollectionModel.import(data, false);
+            shapeCollectionModel.import(data);
             shapeCollectionModel.update();
         },
         clear: () => shapeCollectionModel.empty(),
@@ -202,8 +183,8 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
     let shapeBufferController = new ShapeBufferController(shapeBufferModel);
     let shapeBufferView = new ShapeBufferView(shapeBufferModel, shapeBufferController);
 
-    $('#shapeModeSelector').prop('value', job.mode);
-    let shapeCreatorModel = new ShapeCreatorModel(shapeCollectionModel, job);
+    $('#shapeModeSelector').prop('value', taskData.mode);
+    let shapeCreatorModel = new ShapeCreatorModel(shapeCollectionModel);
     let shapeCreatorController = new ShapeCreatorController(shapeCreatorModel);
     let shapeCreatorView = new ShapeCreatorView(shapeCreatorModel, shapeCreatorController);
 
@@ -241,17 +222,17 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
         height: $('#playerFrame').height(),
     };
 
-    let playerModel = new PlayerModel(job, playerGeometry);
+    let playerModel = new PlayerModel(taskData, playerGeometry);
     let playerController = new PlayerController(playerModel,
         () => shapeCollectionModel.activeShape,
         (direction) => shapeCollectionModel.find(direction),
         Object.assign({}, playerGeometry, {
             left: $('#playerFrame').offset().left,
             top: $('#playerFrame').offset().top,
-        }), job);
-    new PlayerView(playerModel, playerController, job);
+        }));
+    new PlayerView(playerModel, playerController);
 
-    let historyModel = new HistoryModel(playerModel, idGenerator);
+    let historyModel = new HistoryModel(playerModel);
     let historyController = new HistoryController(historyModel);
     new HistoryView(historyController, historyModel);
 
@@ -267,7 +248,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
 
     setupHelpWindow(shortkeys);
     setupSettingsWindow();
-    setupMenu(job, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel);
+    setupMenu(taskData, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel);
     setupFrameFilters();
     setupShortkeys(shortkeys, {
         aam: aamModel,
@@ -291,7 +272,7 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
             totalStat.polygons.annotation + totalStat.polygons.interpolation +
             totalStat.polylines.annotation + totalStat.polylines.interpolation +
             totalStat.points.annotation + totalStat.points.interpolation,
-        'frame count': job.stop - job.start + 1,
+        'frame count': window.cvat.player.frames.stop - window.cvat.player.frames.start + 1,
         'object count': totalStat.total,
         'box count': totalStat.boxes.annotation + totalStat.boxes.interpolation,
         'polygon count': totalStat.polygons.annotation + totalStat.polygons.interpolation,
@@ -299,15 +280,6 @@ function buildAnnotationUI(job, shapeData, loadJobEvent) {
         'points count': totalStat.points.annotation + totalStat.points.interpolation,
     });
     loadJobEvent.close();
-
-    window.onbeforeunload = function(e) {
-        if (shapeCollectionModel.hasUnsavedChanges()) {
-            let message = "You have unsaved changes. Leave this page?";
-            e.returnValue = message;
-            return message;
-        }
-        return;
-    };
 
     $('#player').on('click', (e) => {
         if (e.target.tagName.toLowerCase() != 'input') {
@@ -432,14 +404,6 @@ function setupShortkeys(shortkeys, models) {
         return false;
     });
 
-    let saveHandler = Logger.shortkeyLogDecorator(function() {
-        let saveButtonLocked = $('#saveButton').prop('disabled');
-        if (!saveButtonLocked) {
-            $('#saveButton').click();
-        }
-        return false;
-    });
-
     let cancelModeHandler = Logger.shortkeyLogDecorator(function() {
         switch (window.cvat.mode) {
         case 'aam':
@@ -466,7 +430,6 @@ function setupShortkeys(shortkeys, models) {
 
     Mousetrap.bind(shortkeys["open_help"].value, openHelpHandler, 'keydown');
     Mousetrap.bind(shortkeys["open_settings"].value, openSettingsHandler, 'keydown');
-    Mousetrap.bind(shortkeys["save_work"].value, saveHandler, 'keydown');
     Mousetrap.bind(shortkeys["cancel_mode"].value, cancelModeHandler, 'keydown');
 }
 
@@ -487,40 +450,14 @@ function setupHelpWindow(shortkeys) {
 
 function setupSettingsWindow() {
     let closeSettingsButton = $('#closeSettignsButton');
-    let autoSaveBox = $('#autoSaveBox');
-    let autoSaveTime = $('#autoSaveTime');
 
     closeSettingsButton.on('click', function() {
         $('#settingsWindow').addClass('hidden');
     });
-
-    let saveInterval = null;
-    autoSaveBox.on('change', function(e) {
-        if (saveInterval) {
-            clearInterval(saveInterval);
-            saveInterval = null;
-        }
-
-        if (e.target.checked) {
-            let time = +autoSaveTime.prop('value');
-            saveInterval = setInterval(() => {
-                let saveButton = $('#saveButton');
-                if (!saveButton.prop('disabled')) {
-                    saveButton.click();
-                }
-            }, time * 1000 * 60);
-        }
-
-        autoSaveTime.on('change', () => {
-            let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
-            e.target.value = value;
-            autoSaveBox.trigger('change');
-        });
-    });
 }
 
 
-function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel) {
+function setupMenu(task, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel) {
     let annotationMenu = $('#annotationMenu');
     let menuButton = $('#menuButton');
 
@@ -595,13 +532,12 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
             }
         });
     })();
-
-    $('#statTaskName').text(job.slug);
-    $('#statFrames').text(`[${job.start}-${job.stop}]`);
-    $('#statOverlap').text(job.overlap);
-    $('#statZOrder').text(job.z_order);
-    $('#statFlipped').text(job.flipped);
-    $('#statTaskStatus').prop("value", job.status).on('change', (e) => {
+    $('#statTaskName').text(task.name);
+    $('#statFrames').text(`[${window.cvat.player.frames.start}-${window.cvat.player.frames.stop}]`);
+    $('#statOverlap').text(task.overlap);
+    $('#statZOrder').text(task.z_order);
+    $('#statFlipped').text(task.flipped);
+    $('#statTaskStatus').prop("value", task.status).on('change', (e) => {
         $.ajax({
             type: 'PATCH',
             url: '/api/v1/jobs/' + window.cvat.job.id,
@@ -631,7 +567,7 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
         ${shortkeys['open_settings'].view_value} - ${shortkeys['open_settings'].description}`);
 
     $('#downloadAnnotationButton').on('click', (e) => {
-        dumpAnnotationRequest(e.target, job.taskid, job.slug);
+        dumpAnnotationRequest(e.target, task.id, task.name);
     });
 
     $('#uploadAnnotationButton').on('click', () => {
@@ -654,12 +590,6 @@ function setupMenu(job, shapeCollectionModel, annotationParser, aamModel, player
             );
         }
     });
-
-    $('#saveButton').on('click', () => {
-        saveAnnotation(shapeCollectionModel, job);
-    });
-    $('#saveButton').attr('title', `
-        ${shortkeys['save_work'].view_value} - ${shortkeys['save_work'].description}`);
 
     // JS function cancelFullScreen don't work after pressing
     // and it is famous problem.
@@ -741,7 +671,7 @@ function uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, 
                     try {
                         historyModel.empty();
                         shapeCollectionModel.empty();
-                        shapeCollectionModel.import(data, false);
+                        shapeCollectionModel.import(data);
                         shapeCollectionModel.update();
                     }
                     finally {
@@ -758,55 +688,6 @@ function uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, 
         };
         fileReader.readAsText(file);
     }).click();
-}
-
-
-function saveAnnotation(shapeCollectionModel, job) {
-    let saveButton = $('#saveButton');
-
-    Logger.addEvent(Logger.EventType.saveJob);
-    let totalStat = shapeCollectionModel.collectStatistic()[1];
-    Logger.addEvent(Logger.EventType.sendTaskInfo, {
-        'track count': totalStat.boxes.annotation + totalStat.boxes.interpolation +
-            totalStat.polygons.annotation + totalStat.polygons.interpolation +
-            totalStat.polylines.annotation + totalStat.polylines.interpolation +
-            totalStat.points.annotation + totalStat.points.interpolation,
-        'frame count': job.stop - job.start + 1,
-        'object count': totalStat.total,
-        'box count': totalStat.boxes.annotation + totalStat.boxes.interpolation,
-        'polygon count': totalStat.polygons.annotation + totalStat.polygons.interpolation,
-        'polyline count': totalStat.polylines.annotation + totalStat.polylines.interpolation,
-        'points count': totalStat.points.annotation + totalStat.points.interpolation,
-    });
-
-    const exportedData = shapeCollectionModel.export();
-    shapeCollectionModel.updateExportedState();
-    const annotationLogs = Logger.getLogs();
-
-    const data = {
-        annotation: JSON.stringify(exportedData),
-        logs: JSON.stringify(annotationLogs.export()),
-    };
-
-    saveButton.prop('disabled', true);
-    saveButton.text('Saving..');
-
-    saveJobRequest(job.jobid, data, () => {
-        // success
-        shapeCollectionModel.confirmExportedState();
-        saveButton.text('Success!');
-        setTimeout(() => {
-            saveButton.prop('disabled', false);
-            saveButton.text('Save Work');
-        }, 3000);
-    }, (response) => {
-        // error
-        saveButton.prop('disabled', false);
-        saveButton.text('Save Work');
-        let message = `Impossible to save job. Errors was occured. Status: ${response.status}`;
-        showMessage(message + ' ' + 'Please immediately report the problem to support team');
-        throw Error(message);
-    });
 }
 
 

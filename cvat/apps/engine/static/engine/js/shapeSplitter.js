@@ -16,7 +16,7 @@ class ShapeSplitter {
             let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
             if (attrInfo.mutable) {
                 result.push({
-                    id: +attrId,
+                    spec_id: +attrId,
                     value: attributes[attrId].value
                 });
             }
@@ -26,15 +26,15 @@ class ShapeSplitter {
     }
 
     split(track, frame) {
-        let keyFrames = track.keyframes.sort((a,b) => a - b);
-        let exported = track.export();
+        const keyFrames = track.keyframes.sort((a,b) => a - b);
+        const exported = track.export();
         if (frame > +keyFrames[0]) {
-            let curInterpolation = track.interpolate(frame);
-            let prevInterpolation = track.interpolate(frame - 1);
-            let curAttributes = this._convertMutableAttributes(curInterpolation.attributes);
-            let prevAttrributes = this._convertMutableAttributes(prevInterpolation.attributes);
-            let curPositionList = [];
-            let prevPositionList = [];
+            const curInterpolation = track.interpolate(frame);
+            const prevInterpolation = track.interpolate(frame - 1);
+            const curAttributes = this._convertMutableAttributes(curInterpolation.attributes);
+            const prevAttrributes = this._convertMutableAttributes(prevInterpolation.attributes);
+            const curPositionList = [];
+            const prevPositionList = [];
 
             for (let shape of exported.shapes) {
                 if (shape.frame < frame) {
@@ -46,33 +46,57 @@ class ShapeSplitter {
             }
 
             if (track.type.split('_')[1] === 'box') {
-                prevPositionList.push(Object.assign({}, prevInterpolation.position, {
+                const prevPos = prevInterpolation.position;
+                prevPositionList.push({
                     frame: frame - 1,
                     attributes: prevAttrributes,
-                }));
+                    points: [prevPos.xtl, prevPos.xbr, prevPos.ytl, prevPos.ybr],
+                    type: "rectangle",
+                    occluded: Boolean(prevPos.occluded),
+                    outside: Boolean(prevPos.outside),
+                });
 
-                if (!prevInterpolation.position.outside) {
-                    prevPositionList.push(Object.assign({}, prevInterpolation.position, {
-                        outside: true,
-                        frame: frame,
+                if (!prevPos.outside) {
+                    prevPositionList.push({
+                        frame: frame - 1,
                         attributes: [],
-                    }));
+                        points: [prevPos.xtl, prevPos.xbr, prevPos.ytl, prevPos.ybr],
+                        type: "rectangle",
+                        occluded: Boolean(prevPos.occluded),
+                        outside: true,
+                    });
                 }
-            }
 
-            curPositionList.push(Object.assign(curInterpolation.position, {
-                frame: frame,
-                attributes: curAttributes,
-            }));
+                const curPos = curInterpolation.position;
+                curPositionList.push({
+                    frame: frame,
+                    attributes: curAttributes,
+                    points: [curPos.xtl, curPos.xbr, curPos.ytl, curPos.ybr],
+                    type: "rectangle",
+                    occluded: Boolean(curPos.occluded),
+                    outside: Boolean(curPos.outside),
+                });
+            } else {
+                const curPos = curInterpolation.position;
+                curPositionList.push({
+                    frame: frame,
+                    attributes: curAttributes,
+                    points: curPos.points.split(' ').join(','),
+                    type: track.type.split('_')[1],
+                    occluded: Boolean(curPos.occluded),
+                    outside: Boolean(curPos.outside),
+                });
+            }
 
             // don't clone id of splitted object
             delete exported.id;
-            let prevExported = Object.assign({}, exported);
-            let curExported = Object.assign({}, exported);
+            // don't clone group of splitted object
+            delete exported.group;
+
+            let prevExported = JSON.parse(JSON.stringify(exported));
+            let curExported = JSON.parse(JSON.stringify(exported));
             prevExported.shapes = prevPositionList;
-            prevExported.group_id = 0;
             curExported.shapes = curPositionList;
-            curExported.group_id = 0;
             curExported.frame = frame;
             return [prevExported, curExported];
         }
