@@ -7,7 +7,6 @@
 /* global
     AnnotationParser:false
     userConfirm:false
-    ConstIdGenerator:false
     createExportContainer:false
     dumpAnnotationRequest: false
     dumpAnnotation:false
@@ -93,7 +92,7 @@ class TaskView {
                     stop: this._size,
                     flipped: this._flipped,
                     image_meta_data: imageMetaCache,
-                }, new LabelsInfo(labelsCopy), new ConstIdGenerator(-1));
+                }, new LabelsInfo(labelsCopy));
 
                 function asyncParse() {
                     let parsed = null;
