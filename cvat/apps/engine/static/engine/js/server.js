@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-/* exported serverRequest saveJobRequest encodeFilePathToURI */
+/* exported serverRequest encodeFilePathToURI */
 
 /* global
     showOverlay:false
@@ -19,17 +19,6 @@ function serverRequest(url, successCallback)
         dataType: "json",
         success: successCallback,
         error: serverError
-    });
-}
-
-function saveJobRequest(jid, data, success, error) {
-    $.ajax({
-        url: `/api/v1/jobs/${jid}/annotations`,
-        type: 'PUT',
-        data: JSON.stringify(data),
-        contentType: 'application/json',
-        success: success,
-        error: error,
     });
 }
 

@@ -28,7 +28,6 @@
     PolyshapeEditorModel:false
     PolyshapeEditorView:false
     PolyShapeView:false
-    saveJobRequest:false
     serverRequest:false
     ShapeBufferController:false
     ShapeBufferModel:false
@@ -411,14 +410,6 @@ function setupShortkeys(shortkeys, models) {
         return false;
     });
 
-    let saveHandler = Logger.shortkeyLogDecorator(function() {
-        let saveButtonLocked = $('#saveButton').prop('disabled');
-        if (!saveButtonLocked) {
-            $('#saveButton').click();
-        }
-        return false;
-    });
-
     let cancelModeHandler = Logger.shortkeyLogDecorator(function() {
         switch (window.cvat.mode) {
         case 'aam':
@@ -445,7 +436,6 @@ function setupShortkeys(shortkeys, models) {
 
     Mousetrap.bind(shortkeys["open_help"].value, openHelpHandler, 'keydown');
     Mousetrap.bind(shortkeys["open_settings"].value, openSettingsHandler, 'keydown');
-    Mousetrap.bind(shortkeys["save_work"].value, saveHandler, 'keydown');
     Mousetrap.bind(shortkeys["cancel_mode"].value, cancelModeHandler, 'keydown');
 }
 
@@ -466,35 +456,9 @@ function setupHelpWindow(shortkeys) {
 
 function setupSettingsWindow() {
     let closeSettingsButton = $('#closeSettignsButton');
-    let autoSaveBox = $('#autoSaveBox');
-    let autoSaveTime = $('#autoSaveTime');
 
     closeSettingsButton.on('click', function() {
         $('#settingsWindow').addClass('hidden');
-    });
-
-    let saveInterval = null;
-    autoSaveBox.on('change', function(e) {
-        if (saveInterval) {
-            clearInterval(saveInterval);
-            saveInterval = null;
-        }
-
-        if (e.target.checked) {
-            let time = +autoSaveTime.prop('value');
-            saveInterval = setInterval(() => {
-                let saveButton = $('#saveButton');
-                if (!saveButton.prop('disabled')) {
-                    saveButton.click();
-                }
-            }, time * 1000 * 60);
-        }
-
-        autoSaveTime.on('change', () => {
-            let value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
-            e.target.value = value;
-            autoSaveBox.trigger('change');
-        });
     });
 }
 
@@ -633,12 +597,6 @@ function setupMenu(task, shapeCollectionModel, annotationParser, aamModel, playe
         }
     });
 
-    $('#saveButton').on('click', () => {
-        saveAnnotation(shapeCollectionModel);
-    });
-    $('#saveButton').attr('title', `
-        ${shortkeys['save_work'].view_value} - ${shortkeys['save_work'].description}`);
-
     // JS function cancelFullScreen don't work after pressing
     // and it is famous problem.
     $('#fullScreenButton').on('click', () => {
@@ -736,48 +694,6 @@ function uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, 
         };
         fileReader.readAsText(file);
     }).click();
-}
-
-
-function saveAnnotation(shapeCollectionModel) {
-    let saveButton = $('#saveButton');
-
-    Logger.addEvent(Logger.EventType.saveJob);
-    let totalStat = shapeCollectionModel.collectStatistic()[1];
-    Logger.addEvent(Logger.EventType.sendTaskInfo, {
-        'track count': totalStat.boxes.annotation + totalStat.boxes.interpolation +
-            totalStat.polygons.annotation + totalStat.polygons.interpolation +
-            totalStat.polylines.annotation + totalStat.polylines.interpolation +
-            totalStat.points.annotation + totalStat.points.interpolation,
-        'frame count': window.cvat.player.frames.stop - window.cvat.player.frames.start + 1,
-        'object count': totalStat.total,
-        'box count': totalStat.boxes.annotation + totalStat.boxes.interpolation,
-        'polygon count': totalStat.polygons.annotation + totalStat.polygons.interpolation,
-        'polyline count': totalStat.polylines.annotation + totalStat.polylines.interpolation,
-        'points count': totalStat.points.annotation + totalStat.points.interpolation,
-    });
-
-    const exportedData = shapeCollectionModel.export();
-    const annotationLogs = Logger.getLogs();
-
-    saveButton.prop('disabled', true);
-    saveButton.text('Saving..');
-
-    saveJobRequest(window.cvat.job.id, exportedData, () => {
-        // success
-        saveButton.text('Success!');
-        setTimeout(() => {
-            saveButton.prop('disabled', false);
-            saveButton.text('Save Work');
-        }, 3000);
-    }, (response) => {
-        // error
-        saveButton.prop('disabled', false);
-        saveButton.text('Save Work');
-        let message = `Impossible to save job. Errors was occured. Status: ${response.status}`;
-        showMessage(message + ' ' + 'Please immediately report the problem to support team');
-        throw Error(message);
-    });
 }
 
 
