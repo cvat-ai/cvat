@@ -179,14 +179,22 @@ class AnnotationSaverModel extends Listener {
             this._hash = objectHash(this._shapeCollection.export());
             this.notify('saveDone');
         } catch (error) {
+            this.notify('saveUnlocked');
             this.notify('saveError', error);
-            throw Error(error);
-        } finally {
             this._state = {
                 status: null,
                 message: null,
             }
+            throw Error(error);
         }
+
+        setTimeout(() => {
+            this.notify('saveUnlocked');
+            this._state = {
+                status: null,
+                message: null,
+            }
+        }, 15000);
     }
 
     get state() {
@@ -273,9 +281,6 @@ class AnnotationSaverView {
             this._saveButton.prop('disabled', true).text('Saving..');
         } else if (state.status === 'saveDone') {
             this._saveButton.text('Successful save');
-            setTimeout(() => {
-                this._saveButton.prop('disabled', false).text('Save Work');
-            }, 10000);
             this._overlay.remove();
         } else if (state.status === 'saveError') {
             this._saveButton.prop('disabled', false).text('Save Work');
@@ -289,6 +294,8 @@ class AnnotationSaverView {
             this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Updated objects are being saved..');
         } else if (state.status === 'saveDeleted') {
             this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Deleted objects are being saved..');
+        } else if (state.status === 'saveUnlocked') {
+            this._saveButton.prop('disabled', false).text('Save Work');
         } else {
             const message = `Unknown state has been reached during annotation saving: ${state.status} `
                 + 'Please report the problem to support team immediately.';
