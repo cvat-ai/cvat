@@ -233,23 +233,23 @@ class ShapeCollectionModel extends Listener {
     }
 
     export() {
-        const container = {
-            version: 0,
-            tags: [],
+        const data = {
             shapes: [],
-            tracks: [],
-        }
+            tracks: []
+        };
 
         for (let shape of this._shapes) {
             const exported = shape.export();
-            if (shape.type.split('_')[0] === 'annotation') {
-                container.shapes.push(exported);
-            } else {
-                container.tracks.push(exported);
+            if (!shape.removed) {
+                if (shape.type.split('_')[0] === 'annotation') {
+                    data.shapes.push(exported);
+                } else {
+                    data.tracks.push(exported);
+                }
             }
         }
 
-        return container;
+        return data;
     }
 
     find(direction) {

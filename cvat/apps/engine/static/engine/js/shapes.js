@@ -770,6 +770,7 @@ class BoxModel extends ShapeModel {
             const pos = this._positions[this._frame];
             return Object.assign({}, {
                 points: [pos.xtl, pos.ytl, pos.xbr, pos.ybr],
+                z_order: pos.z_order,
                 id: this._serverID,
                 attributes: objectAttributes,
                 label_id: this._label,
@@ -802,6 +803,7 @@ class BoxModel extends ShapeModel {
                 track.shapes.push({
                     frame: +frame,
                     points: [pos.xtl, pos.ytl, pos.xbr, pos.ybr],
+                    z_order: pos.z_order,
                     type: "rectangle",
                     occluded: Boolean(pos.occluded),
                     outside: Boolean(pos.outside),
@@ -1006,6 +1008,7 @@ class PolyShapeModel extends ShapeModel {
                 group: this._groupId,
                 frame: this._frame,
                 points: _convertToServer(pos.points),
+                z_order: pos.z_order,
                 type: this._type.split('_')[1],
                 occluded: Boolean(pos.occluded),
             });
@@ -1036,6 +1039,7 @@ class PolyShapeModel extends ShapeModel {
                     frame: +frame,
                     attributes: shapeAttributes,
                     points: _convertToServer(pos.points),
+                    z_order: pos.z_order,
                     type: this._type.split('_')[1],
                     occluded: Boolean(pos.occluded),
                     outside: Boolean(pos.outside),

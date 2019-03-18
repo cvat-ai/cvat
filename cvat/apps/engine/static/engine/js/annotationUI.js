@@ -46,6 +46,7 @@
     ShapeMergerView:false
     showMessage:false
     showOverlay:false
+    buildAnnotationSaver:false
 */
 
 "use strict";
@@ -166,6 +167,8 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
     let shapeCollectionModel = new ShapeCollectionModel(jobData.max_shape_id).import(annotationData);
     let shapeCollectionController = new ShapeCollectionController(shapeCollectionModel);
     let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
+
+    buildAnnotationSaver(annotationData, shapeCollectionModel);
 
     window.cvat.data = {
         get: () => shapeCollectionModel.export(),

@@ -1,4 +1,11 @@
-class AnnotationSaver extends Listener {
+/* exported buildAnnotationSaver */
+
+/* global
+    showOverlay:false
+    showMessage:false
+*/
+
+class AnnotationSaverModel extends Listener {
     constructor(initialData, shapeCollection) {
         super('onAnnotationSaverUpdate', () => this._state);
 
@@ -12,21 +19,28 @@ class AnnotationSaver extends Listener {
         this._initialObjects = [];
 
         for (let shape of initialData.shapes) {
-            this._objects[shape.id] = shape;
+            this._initialObjects[shape.id] = shape;
         }
 
         for (let track of initialData.tracks) {
-            this._objects[track.id] = track;
+            this._initialObjects[track.id] = track;
         }
     }
 
     async _request(data, action) {
-        return $.ajax({
-            url: `/api/v1/jobs/${window.cvat.job.id}/annotations`,
-            type: 'PATCH',
-            action: action,
-            data: JSON.stringify(data),
-            contentType: 'application/json',
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: `/api/v1/jobs/${window.cvat.job.id}/annotations?action=${action}`,
+                type: 'PATCH',
+                data: JSON.stringify(data),
+                contentType: 'application/json',
+            }).done((data) => {
+                resolve(data);
+            }).fail((errorData) => {
+                const message = `Could not make ${action} annotation. Code: ${errorData.status}. ` +
+                    `Message: ${errorData.responseText || errorData.statusText}`;
+                reject(new Error(message));
+            });
         });
     }
 
@@ -59,11 +73,14 @@ class AnnotationSaver extends Listener {
         });
 
         const annotationLogs = Logger.getLogs();
+
         // TODO: Save logs
     }
 
     _split(exported) {
-        // TODO: Get actual version from responce
+        const exportedIDs = Array.from(exported.shapes, (shape) => +shape.id)
+            .concat(Array.from(exported.tracks, (track) => +track.id));
+
         const created = {
             version: this._version,
             shapes: [],
@@ -85,7 +102,35 @@ class AnnotationSaver extends Listener {
             tags: [],
         }
 
-        // TODO: split
+        // Compare initial state objects and export state objects
+        // in order to get updated and created objects
+        for (let obj of exported.shapes.concat(exported.tracks)) {
+            if (obj.id in this._initialObjects) {
+                const exportedJSONState = JSON.stringify(obj, Object.keys(obj).sort());
+                const initialJSONState = JSON.stringify(this._initialObjects[obj.id],
+                    Object.keys(this._initialObjects[obj.id]).sort());
+                if (exportedJSONState != initialJSONState) {
+                    const target = 'shapes' in obj ? updated.tracks : updated.shapes;
+                    target.push(obj);
+                }
+            } else if (typeof(obj.id) === 'undefined') {
+                const target = 'shapes' in obj ? created.tracks : created.shapes;
+                target.push(obj);
+            } else {
+                throw Error(`Bad object ID found: ${obj.id}. `
+                    + 'It is not contained in initial state and have server ID');
+            }
+        }
+
+        // Compare initial state indexes and export state indexes
+        // in order to get removed objects
+        for (let shapeID in this._initialObjects) {
+            if (!exportedIDs.includes(+shapeID)) {
+                const initialShape = this._initialObjects[shapeID];
+                const target = 'shapes' in initialShape ? deleted.tracks : deleted.shapes;
+                target.push(initialShape);
+            }
+        }
 
         return [created, updated, deleted];
     }
@@ -99,29 +144,28 @@ class AnnotationSaver extends Listener {
     async save() {
         this.notify('saveStart');
         try {
-            const exported = this._collection.export();
-            [created, updated, deleted] = this._split(exported);
+            const exported = this._shapeCollection.export();
+            const [created, updated, deleted] = this._split(exported);
 
-            this.notify('saveCreate');
-            const createdResponse = await this._create(created);
-            // update created
+            this.notify('saveCreated');
+            await this._create(created);
 
             this.notify('saveUpdated');
-            const updatedResponse = await this._update(updated);
-            // update updated
+            await this._update(updated);
 
-            this.notify('saveDelete');
-            const deletedResponse = await this._delete(deleted);
-            // updated deleted
+            this.notify('saveDeleted');
+            await this._delete(deleted);
+
+            this.notify('saveDone');
         } catch (error) {
             this.notify('saveError', error);
+            throw Error(error);
+        } finally {
+            this._state = {
+                status: null,
+                message: null,
+            }
         }
-
-        this._state = {
-            status: null,
-            message: null,
-        }
-        this.notify('saveDone');
     }
 
     get state() {
@@ -135,6 +179,7 @@ class AnnotationSaverController {
         this._model = model;
         this._autoSaveInterval = null;
 
+        const shortkeys = window.cvat.config.shortkeys;
         Mousetrap.bind(shortkeys["save_work"].value, () => {
             this.save();
             return false;
@@ -167,6 +212,7 @@ class AnnotationSaverView {
         model.subscribe(this);
 
         this._controller = controller;
+        this._overlay = null;
 
         const shortkeys = window.cvat.config.shortkeys;
         const saveHelp = `${shortkeys['save_work'].view_value} - ${shortkeys['save_work'].description}`;
@@ -189,28 +235,37 @@ class AnnotationSaverView {
 
     onAnnotationSaverUpdate(state) {
         if (state.status === 'saveStart') {
+            this._overlay = showOverlay('Annotations are being saved..');
             this._saveButton.prop('disabled', true).text('Saving..');
         } else if (state.status === 'saveDone') {
             this._saveButton.text('Successful save');
             setTimeout(() => {
-                saveButton.prop('disabled', false).text('Save Work');
+                this._saveButton.prop('disabled', false).text('Save Work');
             }, 10000);
+            this._overlay.remove();
         } else if (state.status === 'saveError') {
             this._saveButton.prop('disabled', false).text('Save Work');
             const message = `Couldn't to save the job. Errors occured: ${state.message}. `
                 + 'Please report the problem to support team immediately.';
             showMessage(message);
-            throw Error(message);
-        } else if (state.status === 'saveCreate') {
-            // TODO: add actions
-        } else if (state.status === 'saveUpdate') {
-
-        } else if (state.status === 'saveDelete') {
-
+            this._overlay.remove();
+        } else if (state.status === 'saveCreated') {
+            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Created objects have been saved.');
+        } else if (state.status === 'saveUpdated') {
+            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Updated objects have been saved.');
+        } else if (state.status === 'saveDeleted') {
+            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Deleted objects have been saved.');
         } else {
             const message = `Unknown state has been reached during annotation saving: ${state.status} `
                 + 'Please report the problem to support team immediately.';
-            throw Error(message);
+                showMessage(message);
         }
     }
+}
+
+
+function buildAnnotationSaver(initialData, shapeCollection) {
+    const model = new AnnotationSaverModel(initialData, shapeCollection);
+    const controller = new AnnotationSaverController(model);
+    new AnnotationSaverView(model, controller);
 }

@@ -115,7 +115,11 @@ function showOverlay(message) {
     let overlayWindow = $(template.html()).css('display', 'block');
     let overlayText = overlayWindow.find('.templateMessage');
     overlayWindow[0].setMessage = function(message) {
-        overlayText.text(message);
+        overlayText.html(message);
+    };
+
+    overlayWindow[0].getMessage = function(message) {
+        return overlayText.html();
     };
 
     overlayWindow[0].remove = function() {
