@@ -786,17 +786,19 @@ class BoxModel extends ShapeModel {
                 label_id: this._label,
                 group: this._groupId,
                 frame: this._frame,
-                attributes: immutableAttributes,
+                attributes: objectAttributes,
                 shapes: [],
             };
 
             for (let frame in this._positions) {
                 const shapeAttributes = [];
                 if (frame in this._attributes.mutable) {
-                    shapeAttributes.push({
-                        spec_id: +attrId,
-                        value: String(this._attributes.mutable[frame][attrId]),
-                    });
+                    for (let attrId in this._attributes.mutable) {
+                        shapeAttributes.push({
+                            spec_id: +attrId,
+                            value: String(this._attributes.mutable[frame][attrId]),
+                        });
+                    }
                 }
 
                 const pos = this._positions[frame];
@@ -1027,10 +1029,12 @@ class PolyShapeModel extends ShapeModel {
                 let shapeAttributes = [];
                 if (frame in this._attributes.mutable) {
                     for (let attrId in this._attributes.mutable[frame]) {
-                        shapeAttributes.push({
-                            spec_id: +attrId,
-                            value: String(this._attributes.mutable[frame][attrId]),
-                        });
+                        for (let attrId in this._attributes.mutable) {
+                            shapeAttributes.push({
+                                spec_id: +attrId,
+                                value: String(this._attributes.mutable[frame][attrId]),
+                            });
+                        }
                     }
                 }
 

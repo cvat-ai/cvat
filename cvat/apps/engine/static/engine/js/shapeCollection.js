@@ -307,11 +307,6 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-    hasUnsavedChanges() {
-        // TODO with hash
-        return false;
-    }
-
     empty() {
         this._initialShapes = {};
         this._annotationShapes = {};

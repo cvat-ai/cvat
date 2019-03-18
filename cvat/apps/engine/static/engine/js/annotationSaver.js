@@ -17,6 +17,7 @@ class AnnotationSaverModel extends Listener {
         this._version = initialData.version;
         this._shapeCollection = shapeCollection;
         this._initialObjects = [];
+        this._hash = objectHash(shapeCollection.export());
 
         for (let shape of initialData.shapes) {
             this._initialObjects[shape.id] = shape;
@@ -106,10 +107,9 @@ class AnnotationSaverModel extends Listener {
         // in order to get updated and created objects
         for (let obj of exported.shapes.concat(exported.tracks)) {
             if (obj.id in this._initialObjects) {
-                const exportedJSONState = JSON.stringify(obj, Object.keys(obj).sort());
-                const initialJSONState = JSON.stringify(this._initialObjects[obj.id],
-                    Object.keys(this._initialObjects[obj.id]).sort());
-                if (exportedJSONState != initialJSONState) {
+                const exportedHash = objectHash(obj);
+                const initialSash = objectHash(this._initialObjects[obj.id]);
+                if (exportedHash != initialSash) {
                     const target = 'shapes' in obj ? updated.tracks : updated.shapes;
                     target.push(obj);
                 }
@@ -141,6 +141,10 @@ class AnnotationSaverModel extends Listener {
         Listener.prototype.notify.call(this);
     }
 
+    hasUnsavedChanges() {
+        return objectHash(this._shapeCollection.export()) != this._hash;
+    }
+
     async save() {
         this.notify('saveStart');
         try {
@@ -148,14 +152,29 @@ class AnnotationSaverModel extends Listener {
             const [created, updated, deleted] = this._split(exported);
 
             this.notify('saveCreated');
-            await this._create(created);
+            const savedCreatedObjects = await this._create(created);
+            for (let object of savedCreatedObjects.shapes.concat(savedCreatedObjects.tracks)) {
+                this._initialObjects[object.id] = object;
+            }
 
             this.notify('saveUpdated');
-            await this._update(updated);
+            const savedUpdatedObjects = await this._update(updated);
+            for (let object of savedUpdatedObjects.shapes.concat(savedUpdatedObjects.tracks)) {
+                if (object.id in this._initialObjects) {
+                    this._initialObjects[object.id] = object;
+                }
+            }
 
             this.notify('saveDeleted');
-            await this._delete(deleted);
+            const savedDeletedObjects = await this._delete(deleted);
+            for (let object of savedDeletedObjects.shapes.concat(savedDeletedObjects.tracks)) {
+                if (object.id in this._initialObjects) {
+                    delete this._initialObjects[object.id];
+                }
+            }
 
+            this._version = savedDeletedObjects.version;
+            this._hash = objectHash(this._shapeCollection.export());
             this.notify('saveDone');
         } catch (error) {
             this.notify('saveError', error);
@@ -199,6 +218,10 @@ class AnnotationSaverController {
         }
     }
 
+    hasUnsavedChanges() {
+        return this._model.hasUnsavedChanges();
+    }
+
     save() {
         if (this._model.state.status === null) {
             this._model.save();
@@ -231,6 +254,15 @@ class AnnotationSaverView {
             e.target.value = Math.clamp(+e.target.value, +e.target.min, +e.target.max);
             this._autoSaveBox.trigger('change');
         });
+
+        window.onbeforeunload = (e) => {
+            if (this._controller.hasUnsavedChanges()) {
+                let message = "You have unsaved changes. Leave this page?";
+                e.returnValue = message;
+                return message;
+            }
+            return;
+        };
     }
 
     onAnnotationSaverUpdate(state) {
@@ -250,15 +282,15 @@ class AnnotationSaverView {
             showMessage(message);
             this._overlay.remove();
         } else if (state.status === 'saveCreated') {
-            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Created objects have been saved.');
+            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Created objects are being saved..');
         } else if (state.status === 'saveUpdated') {
-            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Updated objects have been saved.');
+            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Updated objects are being saved..');
         } else if (state.status === 'saveDeleted') {
-            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Deleted objects have been saved.');
+            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Deleted objects are being saved..');
         } else {
             const message = `Unknown state has been reached during annotation saving: ${state.status} `
                 + 'Please report the problem to support team immediately.';
-                showMessage(message);
+            showMessage(message);
         }
     }
 }

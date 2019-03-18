@@ -281,15 +281,6 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
     });
     loadJobEvent.close();
 
-    window.onbeforeunload = function(e) {
-        if (shapeCollectionModel.hasUnsavedChanges()) {
-            let message = "You have unsaved changes. Leave this page?";
-            e.returnValue = message;
-            return message;
-        }
-        return;
-    };
-
     $('#player').on('click', (e) => {
         if (e.target.tagName.toLowerCase() != 'input') {
             blurAllElements();
