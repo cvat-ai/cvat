@@ -139,10 +139,7 @@ class LabelsInfo {
 
     strToValues(type, string) {
         if (type === 'checkbox') {
-            const value =
-                string !== '0' &&
-                string !== false &&
-                String(string).toLowerCase() !== 'false';
+            const value = string !== '0' && String(string).toLowerCase() !== 'false';
             return [value];
         } else if (type === 'text') {
             return [string];
