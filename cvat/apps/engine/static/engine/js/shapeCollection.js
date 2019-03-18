@@ -27,7 +27,7 @@
 "use strict";
 
 class ShapeCollectionModel extends Listener {
-    constructor(initialShapeId) {
+    constructor() {
         super('onCollectionUpdate', () => this);
         this._annotationShapes = {};
         this._groups = {};
@@ -35,7 +35,7 @@ class ShapeCollectionModel extends Listener {
         this._shapes = [];
         this._showAllInterpolation = false;
         this._currentShapes = [];
-        this._idx = initialShapeId;
+        this._idx = 0;
         this._groupIdx = 0;
         this._frame = null;
         this._activeShape = null;
@@ -171,6 +171,16 @@ class ShapeCollectionModel extends Listener {
         return shape;
     }
 
+    cleanupClientObjects() {
+        for (let shape of this._shapes) {
+            if (typeof(shape.serverID) === 'undefined') {
+                shape.removed = true;
+            }
+        }
+
+        this.notify();
+    }
+
     colorsByGroup(groupId) {
         // If group id of shape is 0 (default value), then shape not contained in a group
         if (!groupId) {
@@ -219,6 +229,7 @@ class ShapeCollectionModel extends Listener {
             }
         }
 
+        this._idx = data.shapes.concat(data.tracks).reduce((acc, el) => Math.max(acc, el.id), -1);
 
         for (let shape of data.shapes) {
             _import.call(this, shape, 'annotation');
@@ -696,8 +707,6 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
-
-
     removePointFromActiveShape(idx) {
         if (this._activeShape && !this._activeShape.lock) {
             this._activeShape.removePoint(idx);
@@ -751,6 +760,7 @@ class ShapeCollectionModel extends Listener {
             shape.model.deselect();
         }
     }
+
 
     get activeShape() {
         return this._activeShape;

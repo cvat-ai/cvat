@@ -164,7 +164,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
         image_meta_data: imageMetaData,
     }, window.cvat.labelsInfo);
 
-    let shapeCollectionModel = new ShapeCollectionModel(jobData.max_shape_id).import(annotationData);
+    let shapeCollectionModel = new ShapeCollectionModel().import(annotationData);
     let shapeCollectionController = new ShapeCollectionController(shapeCollectionModel);
     let shapeCollectionView = new ShapeCollectionView(shapeCollectionModel, shapeCollectionController);
 

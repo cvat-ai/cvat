@@ -153,6 +153,8 @@ class AnnotationSaverModel extends Listener {
 
             this.notify('saveCreated');
             const savedCreatedObjects = await this._create(created);
+            this._shapeCollection.cleanupClientObjects();
+            this._shapeCollection.import(savedCreatedObjects).update();
             for (let object of savedCreatedObjects.shapes.concat(savedCreatedObjects.tracks)) {
                 this._initialObjects[object.id] = object;
             }

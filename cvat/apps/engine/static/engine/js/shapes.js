@@ -579,6 +579,10 @@ class ShapeModel extends Listener {
         this._id = value;
     }
 
+    get serverID() {
+        return this._serverID;
+    }
+
     get frame() {
         return this._frame;
     }
