@@ -9,6 +9,7 @@ import rq
 import shlex
 import shutil
 import tempfile
+import numpy as np
 from PIL import Image
 from traceback import print_exception
 from ast import literal_eval
@@ -215,7 +216,15 @@ def _copy_images_to_task(upload_dir, db_task):
             dirname = os.path.dirname(image_dest_path)
             if not os.path.exists(dirname):
                 os.makedirs(dirname)
-            image = Image.open(image_orig_path).convert('RGB')
+            image = Image.open(image_orig_path)
+            # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
+            if image.mode == "I":
+                # Image mode is 32bit integer pixels.
+                # Autoscale pixels by factor 2**8 / im_data.max() to fit into 8bit
+                im_data = np.array(image)
+                im_data = im_data * (2**8 / im_data.max())
+                image = Image.fromarray(im_data.astype(np.int32))
+            image = image.convert('RGB')
             image.save(image_dest_path, quality=db_task.image_quality, optimize=True)
             db_images.append(models.Image(task=db_task, path=image_orig_path,
                 frame=frame, width=image.width, height=image.height))
