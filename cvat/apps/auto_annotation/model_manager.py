@@ -34,7 +34,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
     def _delete_source_files():
         for f in [model_file, weights_file, labelmap_file, interpretation_file]:
             if f:
-                os.remove(model_file)
+                os.remove(f)
 
     def _run_test(model_file, weights_file, labelmap_file, interpretation_file):
         test_image = np.ones((1024, 1980, 3), np.uint8) * 255
@@ -105,7 +105,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
             dl_model.updated_date = timezone.now()
             dl_model.save()
 
-    if not is_local_storage:
+    if is_local_storage:
         _delete_source_files()
 
     if not test_res:
@@ -203,7 +203,7 @@ def get_image_data(path_to_data):
     image_list = []
     for root, _, filenames in os.walk(path_to_data):
         for filename in fnmatch.filter(filenames, "*.jpg"):
-                image_list.append(os.path.join(root, filename))
+            image_list.append(os.path.join(root, filename))
 
     image_list.sort(key=get_image_key)
     return ImageLoader(image_list)
