@@ -220,23 +220,31 @@ class ShapeCollectionModel extends Listener {
     }
 
     import(data) {
-        function _import(shape, mode) {
-            const shape_type = shape.type || shape.shapes[0].type;
-            if (shape_type === 'rectangle') {
-                return this.add(shape, `${mode}_box`);
+        function _convertShape(shape) {
+            if (shape.type === 'rectangle') {
+                Object.assign(shape, window.cvat.translate.box.serverToClient(shape));
+                delete shape.points;
+                shape.type = 'box';
             } else {
-                return this.add(shape, `${mode}_${shape_type}`);
+                Object.assign(shape, window.cvat.translate.points.serverToClient(shape));
             }
         }
 
+        // Make copy of data in order to don't affect original data
+        data = JSON.parse(JSON.stringify(data));
         this._idx = data.shapes.concat(data.tracks).reduce((acc, el) => Math.max(acc, el.id), -1);
 
-        for (let shape of data.shapes) {
-            _import.call(this, shape, 'annotation');
-        }
-
-        for (let shape of data.tracks) {
-            _import.call(this, shape, 'interpolation');
+        for (let imported of data.shapes.concat(data.tracks)) {
+            // Conversion from client object format to server object format
+            if (imported.shapes) {
+                for (let shape of imported.shapes) {
+                    _convertShape(shape);
+                }
+                this.add(imported, `interpolation_${imported.shapes[0].type}`);
+            } else {
+                _convertShape(imported);
+                this.add(imported, `annotation_${imported.type}`);
+            }
         }
 
         this.notify();
@@ -244,6 +252,19 @@ class ShapeCollectionModel extends Listener {
     }
 
     export() {
+        function _convertShape(shape) {
+            if (shape.type === 'box') {
+                Object.assign(shape, window.cvat.translate.box.clientToServer(shape));
+                shape.type = 'rectangle';
+                delete shape.xtl;
+                delete shape.ytl;
+                delete shape.xbr;
+                delete shape.ybr;
+            } else {
+                Object.assign(shape, window.cvat.translate.points.clientToServer(shape));
+            }
+        }
+
         const data = {
             shapes: [],
             tracks: []
@@ -251,7 +272,17 @@ class ShapeCollectionModel extends Listener {
 
         for (let shape of this._shapes) {
             const exported = shape.export();
+
             if (!shape.removed) {
+                // Conversion from client object format to server object format
+                if (exported.shapes) {
+                    for (let shape of exported.shapes) {
+                        _convertShape(shape);
+                    }
+                } else {
+                    _convertShape(exported);
+                }
+
                 if (shape.type.split('_')[0] === 'annotation') {
                     data.shapes.push(exported);
                 } else {

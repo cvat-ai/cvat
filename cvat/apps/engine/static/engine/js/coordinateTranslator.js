@@ -61,6 +61,22 @@ class CoordinateTranslator {
                     height: ymax - ymin
                 };
             },
+
+            serverToClient: function(shape) {
+                return {
+                    xtl: shape.points[0],
+                    ytl: shape.points[1],
+                    xbr: shape.points[2],
+                    ybr: shape.points[3],
+                };
+            },
+
+            clientToServer: function(clientObject) {
+                return {
+                    points: [clientObject.xtl, clientObject.ytl,
+                        clientObject.xbr, clientObject.ybr],
+                };
+            },
         };
 
         this._pointsTranslator = {
@@ -90,7 +106,22 @@ class CoordinateTranslator {
 
             canvasToActual: function(canvasPoints) {
                 return this._convert(canvasPoints, -1);
-            }
+            },
+
+            serverToClient: function(shape) {
+                return {
+                    points: shape.points.reduce((acc, el, idx) => {
+                        idx % 2 ? acc.slice(-1)[0].push(el) : acc.push([el]);
+                        return acc
+                    }, []).map((point) => point.join(',')).join(' '),
+                }
+            },
+
+            clientToServer: function(clientPoints) {
+                return {
+                    points: clientPoints.points.split(' ').join(',').split(',').map((x) => +x),
+                };
+            },
         },
 
         this._pointTranslator = {

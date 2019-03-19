@@ -5,6 +5,7 @@
     showMessage:false
 */
 
+
 class AnnotationSaverModel extends Listener {
     constructor(initialData, shapeCollection) {
         super('onAnnotationSaverUpdate', () => this._state);
