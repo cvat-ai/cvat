@@ -39,7 +39,24 @@ class AnnotationSaverModel extends Listener {
             }).done((data) => {
                 resolve(data);
             }).fail((errorData) => {
-                const message = `Could not make ${action} annotation. Code: ${errorData.status}. ` +
+                const message = `Could not make ${action} annotations. Code: ${errorData.status}. ` +
+                    `Message: ${errorData.responseText || errorData.statusText}`;
+                reject(new Error(message));
+            });
+        });
+    }
+
+    async _put(data) {
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: `/api/v1/jobs/${window.cvat.job.id}/annotations`,
+                type: 'PUT',
+                data: JSON.stringify(data),
+                contentType: 'application/json',
+            }).done((data) => {
+                resolve(data);
+            }).fail((errorData) => {
+                const message = `Could not put annotations. Code: ${errorData.status}. ` +
                     `Message: ${errorData.responseText || errorData.statusText}`;
                 reject(new Error(message));
             });
@@ -150,35 +167,52 @@ class AnnotationSaverModel extends Listener {
         this.notify('saveStart');
         try {
             const exported = this._shapeCollection.export();
-            const [created, updated, deleted] = this._split(exported);
+            const flush = this._shapeCollection.flush;
+            if (flush) {
+                const data = Object.assign({}, exported, {
+                    version: this._version++,
+                    tags: [],
+                });
 
-            this.notify('saveCreated');
-            const savedCreatedObjects = await this._create(created);
-            this._shapeCollection.cleanupClientObjects();
-            this._shapeCollection.import(savedCreatedObjects).update();
-            for (let object of savedCreatedObjects.shapes.concat(savedCreatedObjects.tracks)) {
-                this._initialObjects[object.id] = object;
-            }
-
-            this.notify('saveUpdated');
-            const savedUpdatedObjects = await this._update(updated);
-            for (let object of savedUpdatedObjects.shapes.concat(savedUpdatedObjects.tracks)) {
-                if (object.id in this._initialObjects) {
+                this.notify('saveCreated');
+                const savedObjects = await this._put(data);
+                this._shapeCollection.cleanupClientObjects();
+                this._shapeCollection.import(savedObjects).update();
+                this._shapeCollection.flush = false;
+                for (let object of savedObjects.shapes.concat(savedObjects.tracks)) {
                     this._initialObjects[object.id] = object;
                 }
-            }
 
-            this.notify('saveDeleted');
-            const savedDeletedObjects = await this._delete(deleted);
-            for (let object of savedDeletedObjects.shapes.concat(savedDeletedObjects.tracks)) {
-                if (object.id in this._initialObjects) {
-                    delete this._initialObjects[object.id];
+                this._version = savedObjects.version;
+            } else {
+                const [created, updated, deleted] = this._split(exported);
+
+                this.notify('saveCreated');
+                const savedCreated = await this._create(created);
+                this._shapeCollection.cleanupClientObjects();
+                this._shapeCollection.import(savedCreated).update();
+                for (let object of savedCreated.shapes.concat(savedCreated.tracks)) {
+                    this._initialObjects[object.id] = object;
                 }
-            }
 
-            this._version = savedDeletedObjects.version;
-            this._hash = objectHash(this._shapeCollection.export());
-            this.notify('saveDone');
+                this.notify('saveUpdated');
+                const savedUpdated = await this._update(updated);
+                for (let object of savedUpdated.shapes.concat(savedUpdated.tracks)) {
+                    if (object.id in this._initialObjects) {
+                        this._initialObjects[object.id] = object;
+                    }
+                }
+
+                this.notify('saveDeleted');
+                const savedDeleted = await this._delete(deleted);
+                for (let object of savedDeleted.shapes.concat(savedDeleted.tracks)) {
+                    if (object.id in this._initialObjects) {
+                        delete this._initialObjects[object.id];
+                    }
+                }
+
+                this._version = savedDeleted.version;
+            }
         } catch (error) {
             this.notify('saveUnlocked');
             this.notify('saveError', error);
@@ -188,6 +222,10 @@ class AnnotationSaverModel extends Listener {
             }
             throw Error(error);
         }
+
+
+        this._hash = objectHash(this._shapeCollection.export());
+        this.notify('saveDone');
 
         setTimeout(() => {
             this.notify('saveUnlocked');

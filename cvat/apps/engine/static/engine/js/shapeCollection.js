@@ -39,6 +39,7 @@ class ShapeCollectionModel extends Listener {
         this._groupIdx = 0;
         this._frame = null;
         this._activeShape = null;
+        this._flush = false;
         this._lastPos = {
             x: 0,
             y: 0,
@@ -237,7 +238,7 @@ class ShapeCollectionModel extends Listener {
 
         // Make copy of data in order to don't affect original data
         data = JSON.parse(JSON.stringify(data));
-        this._idx = data.shapes.concat(data.tracks).reduce((acc, el) => Math.max(acc, el.id), -1);
+        this._idx = data.shapes.concat(data.tracks).reduce((acc, el) => Math.max(acc, el.id || 0), -1);
 
         for (let imported of data.shapes.concat(data.tracks)) {
             // Conversion from client object format to server object format
@@ -370,7 +371,7 @@ class ShapeCollectionModel extends Listener {
     }
 
     empty() {
-        this._initialShapes = {};
+        this._flush = true;
         this._annotationShapes = {};
         this._interpolationShapes = [];
         this._shapes = [];
@@ -812,6 +813,13 @@ class ShapeCollectionModel extends Listener {
         }
     }
 
+    get flush() {
+        return this._flush;
+    }
+
+    set flush(value) {
+        this._flush = value;
+    }
 
     get activeShape() {
         return this._activeShape;
