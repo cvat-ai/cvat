@@ -55,7 +55,7 @@ class ShapeModel extends Listener {
     _importAttributes(attributes, positions) {
         let converted = {};
         for (let attr of attributes) {
-            converted[attr.spec_id] = attr.value;
+            converted[attr.id] = attr.value;
         }
         attributes = converted;
 
@@ -756,7 +756,7 @@ class BoxModel extends ShapeModel {
         const objectAttributes = [];
         for (let attributeId in this._attributes.immutable) {
             objectAttributes.push({
-                spec_id: +attributeId,
+                id: +attributeId,
                 value: String(this._attributes.immutable[attributeId]),
             });
         }
@@ -765,7 +765,7 @@ class BoxModel extends ShapeModel {
             if (this._frame in this._attributes.mutable) {
                 for (let attrId in this._attributes.mutable[this._frame]) {
                     objectAttributes.push({
-                        spec_id: +attrId,
+                        id: +attrId,
                         value: String(this._attributes.mutable[this._frame][attrId]),
                     });
                 }
@@ -793,9 +793,9 @@ class BoxModel extends ShapeModel {
             for (let frame in this._positions) {
                 const shapeAttributes = [];
                 if (frame in this._attributes.mutable) {
-                    for (let attrId in this._attributes.mutable) {
+                    for (let attrId in this._attributes.mutable[frame]) {
                         shapeAttributes.push({
-                            spec_id: +attrId,
+                            id: +attrId,
                             value: String(this._attributes.mutable[frame][attrId]),
                         });
                     }
@@ -981,7 +981,7 @@ class PolyShapeModel extends ShapeModel {
         const objectAttributes = [];
         for (let attrId in this._attributes.immutable) {
             objectAttributes.push({
-                spec_id: +attrId,
+                id: +attrId,
                 value: String(this._attributes.immutable[attrId]),
             });
         }
@@ -990,7 +990,7 @@ class PolyShapeModel extends ShapeModel {
             if (this._frame in this._attributes.mutable) {
                 for (let attrId in this._attributes.mutable[this._frame]) {
                     objectAttributes.push({
-                        spec_id: +attrId,
+                        id: +attrId,
                         value: String(this._attributes.mutable[this._frame][attrId]),
                     });
                 }
@@ -1018,19 +1018,18 @@ class PolyShapeModel extends ShapeModel {
             for (let frame in this._positions) {
                 let shapeAttributes = [];
                 if (frame in this._attributes.mutable) {
-                    for (let attrId in this._attributes.mutable[frame]) {
-                        for (let attrId in this._attributes.mutable) {
-                            shapeAttributes.push({
-                                spec_id: +attrId,
-                                value: String(this._attributes.mutable[frame][attrId]),
-                            });
-                        }
+                    for (let attrId in this._attributes.mutable) {
+                        shapeAttributes.push({
+                            id: +attrId,
+                            value: String(this._attributes.mutable[frame][attrId]),
+                        });
                     }
                 }
 
                 track.shapes.push({
                     frame: +frame,
                     attributes: shapeAttributes,
+
                     type: this._type.split('_')[1],
                 }, this._positions[frame]);
             }

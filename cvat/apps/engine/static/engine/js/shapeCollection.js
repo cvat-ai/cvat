@@ -228,6 +228,11 @@ class ShapeCollectionModel extends Listener {
             } else {
                 Object.assign(shape, window.cvat.translate.points.serverToClient(shape));
             }
+
+            for (let attr of shape.attributes) {
+                attr.id = attr.spec_id;
+                delete attr.spec_id;
+            }
         }
 
         // Make copy of data in order to don't affect original data
@@ -237,6 +242,11 @@ class ShapeCollectionModel extends Listener {
         for (let imported of data.shapes.concat(data.tracks)) {
             // Conversion from client object format to server object format
             if (imported.shapes) {
+                for (let attr of imported.attributes) {
+                    attr.id = attr.spec_id;
+                    delete attr.spec_id;
+                }
+
                 for (let shape of imported.shapes) {
                     _convertShape(shape);
                 }
@@ -263,6 +273,11 @@ class ShapeCollectionModel extends Listener {
             } else {
                 Object.assign(shape, window.cvat.translate.points.clientToServer(shape));
             }
+
+            for (let attr of shape.attributes) {
+                attr.spec_id = attr.id;
+                delete attr.id;
+            }
         }
 
         const data = {
@@ -276,6 +291,11 @@ class ShapeCollectionModel extends Listener {
             if (!shape.removed) {
                 // Conversion from client object format to server object format
                 if (exported.shapes) {
+                    for (let attr of exported.attributes) {
+                        attr.spec_id = attr.id;
+                        delete attr.id;
+                    }
+
                     for (let shape of exported.shapes) {
                         _convertShape(shape);
                     }
