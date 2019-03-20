@@ -110,6 +110,9 @@ if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
 if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
     INSTALLED_APPS += ['cvat.apps.reid']
 
+if 'yes' == os.environ.get('WITH_DEXTR', 'no'):
+    INSTALLED_APPS += ['cvat.apps.dextr_segmentation']
+
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 

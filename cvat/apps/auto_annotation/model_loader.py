@@ -8,7 +8,7 @@ import cv2
 import os
 import subprocess
 
-from openvino.inference_engine import IENetwork, IEPlugin
+from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
 
 class ModelLoader():
     def __init__(self, model, weights):
@@ -19,15 +19,9 @@ class ModelLoader():
         if not IE_PLUGINS_PATH:
             raise OSError("Inference engine plugin path env not found in the system.")
 
-        plugin = IEPlugin(device="CPU", plugin_dirs=[IE_PLUGINS_PATH])
-        if (self._check_instruction("avx2")):
-            plugin.add_cpu_extension(os.path.join(IE_PLUGINS_PATH, "libcpu_extension_avx2.so"))
-        elif (self._check_instruction("sse4")):
-            plugin.add_cpu_extension(os.path.join(IE_PLUGINS_PATH, "libcpu_extension_sse4.so"))
-        else:
-            raise Exception("Inference engine requires a support of avx2 or sse4.")
+        plugin = make_plugin()
+        network = make_network(self._model, self._weights)
 
-        network = IENetwork.from_ir(model=self._model, weights=self._weights)
         supported_layers = plugin.get_supported_layers(network)
         not_supported_layers = [l for l in network.layers.keys() if l not in supported_layers]
         if len(not_supported_layers) != 0:
@@ -47,12 +41,6 @@ class ModelLoader():
         in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
         return self._net.infer(inputs={self._input_blob_name: in_frame})[self._output_blob_name].copy()
 
-    @staticmethod
-    def _check_instruction(instruction):
-        return instruction == str.strip(
-            subprocess.check_output(
-                "lscpu | grep -o \"{}\" | head -1".format(instruction), shell=True
-            ).decode("utf-8"))
 
 def load_label_map(labels_path):
         with open(labels_path, "r") as f:

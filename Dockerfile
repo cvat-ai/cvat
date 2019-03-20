@@ -125,6 +125,16 @@ RUN if [ "$OPENVINO_TOOLKIT" = "yes" ]; then \
         wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -O reid/reid.bin; \
     fi
 
+# TODO: CHANGE URL
+ARG WITH_DEXTR
+ENV WITH_DEXTR=${WITH_DEXTR}
+ENV DEXTR_MODEL_DIR=${HOME}/models/dextr
+RUN if [ "$WITH_DEXTR" = "yes" ]; then \
+        mkdir ${DEXTR_MODEL_DIR} -p && \
+        wget https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip -O ${DEXTR_MODEL_DIR}/dextr.zip && \
+        unzip ${DEXTR_MODEL_DIR}/dextr.zip -d ${DEXTR_MODEL_DIR} && rm ${DEXTR_MODEL_DIR}/dextr.zip; \
+    fi
+
 COPY ssh ${HOME}/.ssh
 COPY cvat/ ${HOME}/cvat
 COPY tests ${HOME}/tests
