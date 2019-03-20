@@ -84,7 +84,7 @@ class TaskView {
     _upload(tid) {
         function parse(overlay, e) {
             const xmlText = e.target.result;
-            $.get(`/api/v1/tasks/${tid}/frames/meta`).done((imageMetaCache) => {
+            $.get(`/api/v1/tasks/${this._id}/frames/meta`).done((imageMetaCache) => {
                 const labelsCopy = JSON.parse(JSON.stringify(this._labels));
 
                 const parser = new AnnotationParser({
@@ -108,7 +108,7 @@ class TaskView {
                     function asyncSave() {
                         $.ajax({
                             // TODO: Use REST API
-                            url: '/delete/annotation/task/' + window.cvat.dashboard.taskID,
+                            url: `/api/v1/tasks/${this._id}/annotations`,
                             type: 'DELETE',
                             success: function() {
                                 asyncSaveChunk(0);
@@ -134,13 +134,14 @@ class TaskView {
                         }
 
                         if (next) {
+
                             const exportData = createExportContainer();
                             exportData.create = chunk;
 
                             $.ajax({
                                 // TODO: Use REST API
                                 url: `/save/annotation/task/${tid}`,
-                                type: 'POST',
+                                type: 'PATCH',
                                 data: JSON.stringify(exportData),
                                 contentType: 'application/json',
                             }).done(() => {
@@ -177,6 +178,7 @@ class TaskView {
             const file = this.files[0];
             $(this).remove();
             if (file) {
+                const overlay = showOverlay('File is being parsed..');
                 const fileReader = new FileReader();
                 fileReader.onload = parse.bind(self, overlay);
                 fileReader.readAsText(file);
