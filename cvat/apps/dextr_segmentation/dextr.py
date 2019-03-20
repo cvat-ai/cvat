@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from openvino.inference_engine import IENetwork, IEPlugin
+from cvat.apps.openvino.ir import make_plugin, make_network
 
 import os
 import cv2
@@ -19,28 +19,22 @@ _DEXTR_TRESHOLD = 0.9
 _DEXTR_SIZE = 512
 
 class DEXTR_HANDLER:
-    _plugin = None
-    _network = None
-    _exec_network = None
-    _input_blob = None
-    _output_blob = None
-    _xml = None
-    _bin = None
-
     def __init__(self):
-        if not _IE_PLUGINS_PATH:
-            raise Exception("IE_PLUGINS_PATH is not defined")
+        self._plugin = None
+        self._network = None
+        self._exec_network = None
+        self._input_blob = None
+        self._output_blob = None
         if not _DEXTR_MODEL_DIR:
             raise Exception("DEXTR_MODEL_DIR is not defined")
-        self._xml = os.path.join(_DEXTR_MODEL_DIR, 'dextr.xml')
-        self._bin = os.path.join(_DEXTR_MODEL_DIR, 'dextr.bin')
+
 
     def handle(self, im_path, points):
         # Lazy initialization
         if not self._plugin:
-            self._plugin = IEPlugin(device="CPU", plugin_dirs=[_IE_PLUGINS_PATH])
-            self._plugin.add_cpu_extension(os.path.join(_IE_PLUGINS_PATH, _IE_CPU_EXTENSION))
-            self._network = IENetwork.from_ir(model=self._xml, weights=self._bin)
+            self._plugin = make_plugin()
+            self._network = make_network(os.path.join(_DEXTR_MODEL_DIR, 'dextr.xml'),
+                os.path.join(_DEXTR_MODEL_DIR, 'dextr.bin'))
             self._input_blob = next(iter(self._network.inputs))
             self._output_blob = next(iter(self._network.outputs))
             self._exec_network = self._plugin.load(network=self._network)
