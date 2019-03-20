@@ -327,6 +327,10 @@ class LabeledDataSerializer(serializers.Serializer):
     shapes = LabeledShapeSerializer(many=True)
     tracks = LabeledTrackSerializer(many=True)
 
+class FileInfoSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=1024)
+    type = serializers.ChoiceField(choices=["REG", "DIR"])
+
 class PluginSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Plugin
