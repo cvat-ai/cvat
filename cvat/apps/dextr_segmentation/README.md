@@ -27,4 +27,5 @@ docker-compose -f docker-compose.yml -f components/openvino/docker-compose.openv
 4.  Click four-six (or more if it's need) extreme points of an object
 5.  Close the draw mode as usually (by shortcut or pressing the button "Stop Creation")
 6.  Wait a moment and you will get a class agnostic annotation polygon
-7.  You can close an annotation request if it is too long (in case if it is queued to rq worker and all workers are busy)
+7.  You can close an annotation request if it is too long
+(in case if it is queued to rq worker and all workers are busy)
