@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
+from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
 
 import os
 import cv2
