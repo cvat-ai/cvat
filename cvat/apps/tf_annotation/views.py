@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
-from cvat.apps.openvino.ir import make_plugin, make_network
+from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine import annotation, task
 

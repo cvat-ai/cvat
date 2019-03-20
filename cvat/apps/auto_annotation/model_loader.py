@@ -8,7 +8,7 @@ import cv2
 import os
 import subprocess
 
-from cvat.apps.openvino.ir import make_plugin, make_network
+from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
 
 class ModelLoader():
     def __init__(self, model, weights):
