@@ -267,7 +267,7 @@ class AnnotationParser {
 
             let parsed = {
                 box: Array.from(track.getElementsByTagName('box')),
-                polyhon: Array.from(track.getElementsByTagName('polygon')),
+                polygon: Array.from(track.getElementsByTagName('polygon')),
                 polyline: Array.from(track.getElementsByTagName('polyline')),
                 points: Array.from(track.getElementsByTagName('points')),
             };
