@@ -85,7 +85,6 @@ class TaskView {
         async function saveChunk(parsed, start, version) {
             const CHUNK_SIZE = 100000;
             let end = start + CHUNK_SIZE;
-            let chunk = {};
             let next = false;
 
             let chunk = {
