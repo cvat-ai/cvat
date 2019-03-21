@@ -530,7 +530,6 @@ class UserPartialUpdateAPITestCase(UserUpdateAPITestCase):
         response = self._run_api_v1_users_id(None, self.user.id, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-
 class TaskListAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -940,6 +939,37 @@ class TaskDataAPITestCase(APITestCase):
     def setUpTestData(cls):
         create_db_users(cls)
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        path = os.path.join(settings.SHARE_ROOT, "test_1.jpg")
+        data = generate_image_file("test_1.jpg")
+        with open(path, 'wb') as image:
+            image.write(data.read())
+
+        path = os.path.join(settings.SHARE_ROOT, "test_2.jpg")
+        data = generate_image_file("test_2.jpg")
+        with open(path, 'wb') as image:
+            image.write(data.read())
+
+        path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
+        data = generate_image_file("test_3.jpg")
+        with open(path, 'wb') as image:
+            image.write(data.read())
+
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        path = os.path.join(settings.SHARE_ROOT, "test_1.jpg")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "test_2.jpg")
+        os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
+        os.remove(path)
+
     def _run_api_v1_tasks_id_data(self, tid, user, data):
         with ForceLogin(user, self.client):
             response = self.client.post('/api/v1/tasks/{}/data'.format(tid),
@@ -953,7 +983,7 @@ class TaskDataAPITestCase(APITestCase):
 
         return response
 
-    def test_api_v1_tasks_id_data_admin(self):
+    def _test_api_v1_tasks_id_data(self, user):
         data = {
             "name": "my task #1",
             "owner": self.owner.id,
@@ -967,7 +997,7 @@ class TaskDataAPITestCase(APITestCase):
                 {"name": "person"},
             ]
         }
-        response = self._create_task(self.admin, data)
+        response = self._create_task(user, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         task_id = response.data["id"]
@@ -977,10 +1007,9 @@ class TaskDataAPITestCase(APITestCase):
             "client_files[2]": generate_image_file("test_3.jpg"),
         }
 
-        response = self._run_api_v1_tasks_id_data(task_id, self.admin, data)
+        response = self._run_api_v1_tasks_id_data(task_id, user, data)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
-    def test_api_v1_tasks_id_data_user(self):
         data = {
             "name": "my task #2",
             "overlap": 0,
@@ -991,19 +1020,44 @@ class TaskDataAPITestCase(APITestCase):
                 {"name": "person"},
             ]
         }
-        response = self._create_task(self.user, data)
+        response = self._create_task(user, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         task_id = response.data["id"]
         data = {
-            "client_files[0]": generate_image_file("test_1.jpg"),
-            "client_files[1]": generate_image_file("test_2.jpg"),
-            "client_files[2]": generate_image_file("test_3.jpg"),
+            "server_files[0]": "test_1.jpg",
+            "server_files[1]": "test_2.jpg",
+            "server_files[2]": "test_3.jpg"
         }
 
-        response = self._run_api_v1_tasks_id_data(task_id, self.user, data)
+        response = self._run_api_v1_tasks_id_data(task_id, user, data)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
+    def test_api_v1_tasks_id_data_admin(self):
+        self._test_api_v1_tasks_id_data(self.admin)
+
+    def test_api_v1_tasks_id_data_owner(self):
+        self._test_api_v1_tasks_id_data(self.owner)
+
+    def test_api_v1_tasks_id_data_user(self):
+        self._test_api_v1_tasks_id_data(self.user)
+
+    def test_api_v1_tasks_id_data_no_auth(self):
+        data = {
+            "name": "my task #3",
+            "owner": self.owner.id,
+            "assignee": self.assignee.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "z_order": False,
+            "image_quality": 75,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ]
+        }
+        response = self._create_task(None, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 def compare_object(self, obj1, obj2, ignore_keys=[]):
     if isinstance(obj1, dict):
@@ -1019,7 +1073,6 @@ def compare_object(self, obj1, obj2, ignore_keys=[]):
             compare_object(self, v1, v2, ignore_keys)
     else:
         self.assertEqual(obj1, obj2)
-
 
 class JobAnnotationAPITestCase(APITestCase):
     def setUp(self):
@@ -1390,7 +1443,6 @@ class JobAnnotationAPITestCase(APITestCase):
     def test_api_v1_jobs_id_annotations_no_auth(self):
         self._run_api_v1_jobs_id_annotations(self.user, self.assignee, None)
 
-
 class ServerShareAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
@@ -1491,4 +1543,3 @@ class ServerShareAPITestCase(APITestCase):
     def test_api_v1_server_share_no_auth(self):
         response = self._run_api_v1_server_share(None, "/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
