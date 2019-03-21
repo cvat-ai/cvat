@@ -14,6 +14,17 @@
 
 class LabelsInfo {
     constructor(labels) {
+        function convertAttribute(attribute) {
+            return {
+                mutable: attribute.mutable,
+                type: attribute.input_type,
+                name: attribute.name,
+                values: attribute.input_type === 'checkbox' ?
+                    [attribute.values[0].toLowerCase() !== 'false' && attribute.values[0] !== false] :
+                    attribute.values,
+            }
+        }
+
         this._labels = {};
         this._attributes = {};
         this._colorIdxs = {};
@@ -31,17 +42,6 @@ class LabelsInfo {
             }
 
             this._colorIdxs[label.id] = +label.id;
-        }
-
-        function convertAttribute(attribute) {
-            return {
-                mutable: attribute.mutable,
-                type: attribute.input_type,
-                name: attribute.name,
-                values: attribute.input_type === 'checkbox' ?
-                    [attribute.values[0].toLowerCase() !== 'false' && attribute.values[0] !== false] :
-                    attribute.values,
-            }
         }
 
         return this;

@@ -365,7 +365,7 @@ class ShapeCreatorView {
                     let type = this._type;
 
                     if (area >= AREA_TRESHOLD || type === 'points' && numberOfPoints || type === 'polyline' && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
-                        this._controller.finish({points: actualPoints.split(' ').join(',').split(',')}, type);
+                        this._controller.finish({points: actualPoints}, type);
                     }
                 }
             }
@@ -398,7 +398,10 @@ class ShapeCreatorView {
                 const ybr = Math.clamp(rect.y + rect.height, 0, frameHeight);
                 if ((ybr - ytl) * (xbr - xtl) >= AREA_TRESHOLD) {
                     const box = {
-                        points: [xtl, ytl, xbr, ybr],
+                        xtl,
+                        ytl,
+                        xbr,
+                        ybr,
                     }
 
                     if (this._mode === 'interpolation') {

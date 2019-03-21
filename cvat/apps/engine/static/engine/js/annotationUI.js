@@ -158,8 +158,8 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
 
     // Setup components
     let annotationParser = new AnnotationParser({
-        start: window.cvat.job.start,
-        stop: window.cvat.job.stop,
+        start: window.cvat.player.frames.start,
+        stop: window.cvat.player.frames.stop,
         flipped: taskData.flipped,
         image_meta_data: imageMetaData,
     }, window.cvat.labelsInfo);

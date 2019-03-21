@@ -55,7 +55,7 @@ class ShapeModel extends Listener {
     _importAttributes(attributes, positions) {
         let converted = {};
         for (let attr of attributes) {
-            converted[attr.spec_id] = attr.value;
+            converted[attr.id] = attr.value;
         }
         attributes = converted;
 
@@ -756,7 +756,7 @@ class BoxModel extends ShapeModel {
         const objectAttributes = [];
         for (let attributeId in this._attributes.immutable) {
             objectAttributes.push({
-                spec_id: +attributeId,
+                id: +attributeId,
                 value: String(this._attributes.immutable[attributeId]),
             });
         }
@@ -765,24 +765,20 @@ class BoxModel extends ShapeModel {
             if (this._frame in this._attributes.mutable) {
                 for (let attrId in this._attributes.mutable[this._frame]) {
                     objectAttributes.push({
-                        spec_id: +attrId,
+                        id: +attrId,
                         value: String(this._attributes.mutable[this._frame][attrId]),
                     });
                 }
             }
 
-            const pos = this._positions[this._frame];
             return Object.assign({}, {
-                points: [pos.xtl, pos.ytl, pos.xbr, pos.ybr],
-                z_order: pos.z_order,
                 id: this._serverID,
                 attributes: objectAttributes,
                 label_id: this._label,
                 group: this._groupId,
                 frame: this._frame,
-                type: "rectangle",
-                occluded: pos.occluded,
-            });
+                type: 'box',
+            }, this._positions[this._frame]);
         }
         else {
             const track = {
@@ -797,24 +793,19 @@ class BoxModel extends ShapeModel {
             for (let frame in this._positions) {
                 const shapeAttributes = [];
                 if (frame in this._attributes.mutable) {
-                    for (let attrId in this._attributes.mutable) {
+                    for (let attrId in this._attributes.mutable[frame]) {
                         shapeAttributes.push({
-                            spec_id: +attrId,
+                            id: +attrId,
                             value: String(this._attributes.mutable[frame][attrId]),
                         });
                     }
                 }
 
-                const pos = this._positions[frame];
-                track.shapes.push({
+                track.shapes.push(Object.assign({}, {
                     frame: +frame,
-                    points: [pos.xtl, pos.ytl, pos.xbr, pos.ybr],
-                    z_order: pos.z_order,
-                    type: "rectangle",
-                    occluded: Boolean(pos.occluded),
-                    outside: Boolean(pos.outside),
+                    type: 'box',
                     attributes: shapeAttributes,
-                });
+                }, this._positions[frame]));
             }
 
             return track;
@@ -837,10 +828,10 @@ class BoxModel extends ShapeModel {
 
                 if (frame >= segm_start && frame <= segm_stop) {
                     imported[frame] = {
-                        xtl: pos.points[0],
-                        ytl: pos.points[1],
-                        xbr: pos.points[2],
-                        ybr: pos.points[3],
+                        xtl: pos.xtl,
+                        ytl: pos.ytl,
+                        xbr: pos.xbr,
+                        ybr: pos.ybr,
                         occluded: pos.occluded,
                         outside: pos.outside,
                         z_order: pos.z_order,
@@ -870,10 +861,10 @@ class BoxModel extends ShapeModel {
         }
 
         imported[this._frame] = {
-            xtl: positions.points[0],
-            ytl: positions.points[1],
-            xbr: positions.points[2],
-            ybr: positions.points[3],
+            xtl: positions.xtl,
+            ytl: positions.ytl,
+            xbr: positions.xbr,
+            ybr: positions.ybr,
             occluded: positions.occluded,
             z_order: positions.z_order,
         };
@@ -987,14 +978,10 @@ class PolyShapeModel extends ShapeModel {
     }
 
     export() {
-        function _convertToServer(points) {
-            return points.split(' ').join(',').split(',');
-        }
-
         const objectAttributes = [];
         for (let attrId in this._attributes.immutable) {
             objectAttributes.push({
-                spec_id: +attrId,
+                id: +attrId,
                 value: String(this._attributes.immutable[attrId]),
             });
         }
@@ -1003,24 +990,20 @@ class PolyShapeModel extends ShapeModel {
             if (this._frame in this._attributes.mutable) {
                 for (let attrId in this._attributes.mutable[this._frame]) {
                     objectAttributes.push({
-                        spec_id: +attrId,
+                        id: +attrId,
                         value: String(this._attributes.mutable[this._frame][attrId]),
                     });
                 }
             }
 
-            const pos = this._positions[this._frame];
             return Object.assign({}, {
                 id: this._serverID,
                 attributes: objectAttributes,
                 label_id: this._label,
                 group: this._groupId,
                 frame: this._frame,
-                points: _convertToServer(pos.points),
-                z_order: pos.z_order,
                 type: this._type.split('_')[1],
-                occluded: Boolean(pos.occluded),
-            });
+            }, this._positions[this._frame]);
         }
         else {
             const track = {
@@ -1035,26 +1018,20 @@ class PolyShapeModel extends ShapeModel {
             for (let frame in this._positions) {
                 let shapeAttributes = [];
                 if (frame in this._attributes.mutable) {
-                    for (let attrId in this._attributes.mutable[frame]) {
-                        for (let attrId in this._attributes.mutable) {
-                            shapeAttributes.push({
-                                spec_id: +attrId,
-                                value: String(this._attributes.mutable[frame][attrId]),
-                            });
-                        }
+                    for (let attrId in this._attributes.mutable) {
+                        shapeAttributes.push({
+                            id: +attrId,
+                            value: String(this._attributes.mutable[frame][attrId]),
+                        });
                     }
                 }
 
-                const pos = this._positions[frame];
                 track.shapes.push({
                     frame: +frame,
                     attributes: shapeAttributes,
-                    points: _convertToServer(pos.points),
-                    z_order: pos.z_order,
+
                     type: this._type.split('_')[1],
-                    occluded: Boolean(pos.occluded),
-                    outside: Boolean(pos.outside),
-                });
+                }, this._positions[frame]);
             }
 
             return track;
