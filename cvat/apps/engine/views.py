@@ -37,7 +37,7 @@ from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
 from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
    RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
-   PluginSerializer)
+   PluginSerializer, FileInfoSerializer)
 from django.contrib.auth.models import User
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
@@ -103,12 +103,32 @@ class ServerViewSet(viewsets.ViewSet):
     #     if serializer.is_valid(raise_exception=True):
     #         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    # @action(detail=False, methods=['GET'], serializer_class=ShareSerializer)
-    # def share(self, request):
-    #     serializer = ShareSerializer(data=request.data)
-    #     if serializer.is_valid(raise_exception=True):
-    #         return Response(serializer.data)
+    @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
+    def share(self, request):
+        param = request.query_params.get('directory', '/')
+        if param.startswith("/"):
+            param = param[1:]
+        directory = os.path.abspath(os.path.join(settings.SHARE_ROOT, param))
 
+        if directory.startswith(settings.SHARE_ROOT) and os.path.isdir(directory):
+            data = []
+            with os.scandir(directory) as content:
+                for entry in content:
+                    entry_type = None
+                    if entry.is_file():
+                        entry_type = "REG"
+                    elif entry.is_dir():
+                        entry_type = "DIR"
+
+                    if entry_type:
+                        data.append({"name": entry.name, "type": entry_type})
+
+            serializer = FileInfoSerializer(many=True, data=data)
+            if serializer.is_valid(raise_exception=True):
+                return Response(serializer.data)
+        else:
+            return Response("{} is an invalid directory".format(param),
+                status=status.HTTP_400_BAD_REQUEST)
 
 class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = Task.objects.all().order_by('id')

@@ -10,6 +10,7 @@ import random
 import django_rq
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
+from django.conf import settings
 from django.contrib.auth.models import User, Group
 from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
     AttributeType)
@@ -1003,6 +1004,7 @@ class TaskDataAPITestCase(APITestCase):
         response = self._run_api_v1_tasks_id_data(task_id, self.user, data)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
 
+
 def compare_object(self, obj1, obj2, ignore_keys=[]):
     if isinstance(obj1, dict):
         self.assertTrue(isinstance(obj2, dict), "{} != {}".format(obj1, obj2))
@@ -1387,3 +1389,106 @@ class JobAnnotationAPITestCase(APITestCase):
 
     def test_api_v1_jobs_id_annotations_no_auth(self):
         self._run_api_v1_jobs_id_annotations(self.user, self.assignee, None)
+
+
+class ServerShareAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        path = os.path.join(settings.SHARE_ROOT, "file0.txt")
+        open(path, "w").write("test string")
+        path = os.path.join(settings.SHARE_ROOT, "test1")
+        os.makedirs(path)
+        path = os.path.join(path, "file1.txt")
+        open(path, "w").write("test string")
+        directory = os.path.join(settings.SHARE_ROOT, "test1", "test3")
+        os.makedirs(directory)
+        path = os.path.join(settings.SHARE_ROOT, "test2")
+        os.makedirs(path)
+        path = os.path.join(path, "file2.txt")
+        open(path, "w").write("test string")
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        path = os.path.join(settings.SHARE_ROOT, "file0.txt")
+        os.remove(path)
+        path = os.path.join(settings.SHARE_ROOT, "test1")
+        shutil.rmtree(path)
+        path = os.path.join(settings.SHARE_ROOT, "test2")
+        shutil.rmtree(path)
+
+    def _run_api_v1_server_share(self, user, directory):
+        with ForceLogin(user, self.client):
+            response = self.client.get(
+                '/api/v1/server/share?directory={}'.format(directory))
+
+        return response
+
+    def _test_api_v1_server_share(self, user):
+        data = [
+            {"name": "test1", "type": "DIR"},
+            {"name": "test2", "type": "DIR"},
+            {"name": "file0.txt", "type": "REG"},
+        ]
+
+        response = self._run_api_v1_server_share(user, "/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        compare_object(self, sorted(data, key=lambda d: d["name"]),
+            sorted(response.data, key=lambda d: d["name"]))
+
+        data = [
+            {"name": "file1.txt", "type": "REG"},
+            {"name": "test3", "type": "DIR"},
+        ]
+        response = self._run_api_v1_server_share(user, "/test1")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        compare_object(self, sorted(data, key=lambda d: d["name"]),
+            sorted(response.data, key=lambda d: d["name"]))
+
+        data = []
+        response = self._run_api_v1_server_share(user, "/test1/test3")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        compare_object(self, sorted(data, key=lambda d: d["name"]),
+            sorted(response.data, key=lambda d: d["name"]))
+
+        data = [
+            {"name": "file2.txt", "type": "REG"},
+        ]
+        response = self._run_api_v1_server_share(user, "/test2")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        compare_object(self, sorted(data, key=lambda d: d["name"]),
+            sorted(response.data, key=lambda d: d["name"]))
+
+        response = self._run_api_v1_server_share(user, "/test4")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_api_v1_server_share_admin(self):
+        self._test_api_v1_server_share(self.admin)
+
+    def test_api_v1_server_share_owner(self):
+        self._test_api_v1_server_share(self.owner)
+
+    def test_api_v1_server_share_assignee(self):
+        self._test_api_v1_server_share(self.assignee)
+
+    def test_api_v1_server_share_user(self):
+        self._test_api_v1_server_share(self.user)
+
+    def test_api_v1_server_share_annotator(self):
+        self._test_api_v1_server_share(self.annotator)
+
+    def test_api_v1_server_share_observer(self):
+        self._test_api_v1_server_share(self.observer)
+
+    def test_api_v1_server_share_no_auth(self):
+        response = self._run_api_v1_server_share(None, "/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
