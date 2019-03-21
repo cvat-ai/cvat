@@ -82,6 +82,7 @@ docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml 
 -   [Analytics: management and monitoring of data annotation team](components/analytics/README.md)
 -   [TF Object Detection API: auto annotation](components/tf_annotation/README.md)
 -   [Support for NVIDIA GPUs](components/cuda/README.md)
+-   [Semi-automatic segmentation with Deep Extreme Cut](cvat/apps/dextr_segmentation/README.md)
 
 ### Create superuser account
 
