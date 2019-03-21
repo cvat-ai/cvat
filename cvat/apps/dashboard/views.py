@@ -14,45 +14,6 @@ from cvat.settings.base import JS_3RDPARTY, CSS_3RDPARTY
 
 import os
 
-def ScanNode(directory):
-    if '..' in directory.split(os.path.sep):
-        return HttpResponseBadRequest('Permission Denied')
-
-    act_dir = os.path.normpath(settings.SHARE_ROOT + directory)
-    result = []
-
-    nodes = os.listdir(act_dir)
-    files = filter(os.path.isfile, map(lambda f: os.path.join(act_dir, f), nodes))
-    dirs = filter(os.path.isdir, map(lambda d: os.path.join(act_dir, d), nodes))
-
-    for d in dirs:
-        name = os.path.basename(d)
-        children = len(os.listdir(d)) > 0
-        node = {'id': directory + name + '/', 'text': name, 'children': children}
-        result.append(node)
-
-    for f in files:
-        name = os.path.basename(f)
-        node = {'id': directory + name, 'text': name, "icon" : "jstree-file"}
-        result.append(node)
-
-    return result
-
-@login_required
-def JsTreeView(request):
-    node_id = None
-    if 'id' in request.GET:
-        node_id = request.GET['id']
-
-    if node_id is None or node_id == '#':
-        node_id = '/'
-        response = [{"id": node_id, "text": node_id, "children": ScanNode(node_id)}]
-    else:
-        response = ScanNode(node_id)
-
-    return JsonResponse(response, safe=False,
-        json_dumps_params=dict(ensure_ascii=False))
-
 @login_required
 def DashboardView(request):
     return render(request, 'dashboard/dashboard.html', {
