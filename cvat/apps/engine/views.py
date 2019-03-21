@@ -112,16 +112,16 @@ class ServerViewSet(viewsets.ViewSet):
 
         if directory.startswith(settings.SHARE_ROOT) and os.path.isdir(directory):
             data = []
-            with os.scandir(directory) as content:
-                for entry in content:
-                    entry_type = None
-                    if entry.is_file():
-                        entry_type = "REG"
-                    elif entry.is_dir():
-                        entry_type = "DIR"
+            content = os.scandir(directory)
+            for entry in content:
+                entry_type = None
+                if entry.is_file():
+                    entry_type = "REG"
+                elif entry.is_dir():
+                    entry_type = "DIR"
 
-                    if entry_type:
-                        data.append({"name": entry.name, "type": entry_type})
+                if entry_type:
+                    data.append({"name": entry.name, "type": entry_type})
 
             serializer = FileInfoSerializer(many=True, data=data)
             if serializer.is_valid(raise_exception=True):

@@ -78,6 +78,13 @@ class ServerFileSerializer(serializers.ModelSerializer):
         model = models.ServerFile
         fields = ('file', )
 
+    def to_internal_value(self, data):
+        return {'file': data}
+
+    def to_representation(self, instance):
+        return instance.file
+
+
 class RemoteFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.RemoteFile
