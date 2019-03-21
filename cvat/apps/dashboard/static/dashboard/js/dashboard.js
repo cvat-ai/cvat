@@ -114,7 +114,7 @@ class TaskView {
             }
         }
 
-        async function save(parsed) {
+        async function save(parsed) {3
             const response = await $.ajax({
                 url: `/api/v1/tasks/${this._id}/annotations`,
                 type: 'DELETE',
@@ -460,9 +460,23 @@ class DashboardView {
                 shareFileSelector.removeClass('hidden');
                 shareBrowseTree.jstree({
                     core: {
-                        data: {
-                            url: 'get_share_nodes',
-                            data: (node) => { return {'id' : node.id}; }
+                        data: async function (obj, callback) {
+                            let url = '/api/v1/server/share';
+
+                            if (obj.id != '#') {
+                                url += `?directory=${obj.id.substr(2)}`;
+                            }
+
+                            const response = await $.get(url);
+                            const files = Array.from(response, (element) => {
+                                return {
+                                    id: `${obj.id}/${element.name}`,
+                                    children: element.type === 'DIR',
+                                    text: element.name}
+                                }
+                            );
+
+                            callback.call(this, files);
                         }
                     },
                     plugins: ['checkbox', 'sort'],
