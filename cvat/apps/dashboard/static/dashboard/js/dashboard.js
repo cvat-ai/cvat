@@ -492,7 +492,7 @@ class DashboardView {
         cancelBrowseServer.on('click', () => shareFileSelector.addClass('hidden'));
         submitBrowseServer.on('click', () => {
             if (!createModal.hasClass('hidden')) {
-                files = shareBrowseTree.jstree(true).get_selected();
+                files = Array.from(shareBrowseTree.jstree(true).get_selected(), (el) => el.substr(2));
                 cancelBrowseServer.click();
                 updateSelectedFiles();
             }
