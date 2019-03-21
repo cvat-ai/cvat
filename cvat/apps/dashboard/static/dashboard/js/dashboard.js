@@ -81,106 +81,91 @@ class TaskView {
         });
     }
 
-    _upload(tid) {
-        function parse(overlay, e) {
-            const xmlText = e.target.result;
-            $.get(`/api/v1/tasks/${this._id}/frames/meta`).done((imageMetaCache) => {
-                const labelsCopy = JSON.parse(JSON.stringify(this._labels));
+    _upload() {
+        async function saveChunk(parsed, start, version) {
+            const CHUNK_SIZE = 100000;
+            let end = start + CHUNK_SIZE;
+            let chunk = {};
+            let next = false;
 
+            let chunk = {
+                shapes: [],
+                tracks: [],
+                tags: [],
+                version,
+            }
+
+            for (let prop in parsed) {
+                if (parsed.hasOwnProperty(prop)) {
+                    chunk[prop] = parsed[prop].slice(start, end);
+                    next |= chunk[prop].length > 0;
+                }
+            }
+
+            if (next) {
+                const response = await $.ajax({
+                    url: `/api/v1/tasks/${this._id}/annotations`,
+                    type: 'PATCH',
+                    data: JSON.stringify(chunk),
+                    contentType: 'application/json',
+                });
+
+                saveChunk.call(this, parsed, end, response.version);
+            }
+        }
+
+        async function save(parsed) {
+            const response = await $.ajax({
+                url: `/api/v1/tasks/${this._id}/annotations`,
+                type: 'DELETE',
+            });
+
+            await saveChunk.call(this, parsed, 0, response.version);
+        }
+
+        async function onload(overlay, text) {
+            try {
+                overlay.setMessage('Required data are being downloaded from the server..');
+                const imageCache = await $.get(`/api/v1/tasks/${this._id}/frames/meta`);
+                const labelsCopy = JSON.parse(JSON.stringify(this._labels));
                 const parser = new AnnotationParser({
                     start: 0,
                     stop: this._size,
                     flipped: this._flipped,
-                    image_meta_data: imageMetaCache,
+                    image_meta_data: imageCache,
                 }, new LabelsInfo(labelsCopy));
 
-                function asyncParse() {
-                    let parsed = null;
-                    try {
-                        parsed = parser.parse(xmlText);
-                    }
-                    catch(error) {
-                        overlay.remove();
-                        showMessage('Parsing errors occured. '  + error);
-                        return;
-                    }
-
-                    function asyncSave() {
-                        $.ajax({
-                            // TODO: Use REST API
-                            url: `/api/v1/tasks/${this._id}/annotations`,
-                            type: 'DELETE',
-                            success: function() {
-                                asyncSaveChunk(0);
-                            },
-                            error: function(errorData) {
-                                const message = `Could not remove current annotation. Code: ${errorData.status}. ` +
-                                    `Message: ${errorData.responseText || errorData.statusText}`;
-                                showMessage(message);
-                            },
-                        });
-                    };
-
-                    function asyncSaveChunk(start) {
-                        const CHUNK_SIZE = 100000;
-                        let end = start + CHUNK_SIZE;
-                        let chunk = {};
-                        let next = false;
-                        for (let prop in parsed) {
-                            if (parsed.hasOwnProperty(prop)) {
-                                chunk[prop] = parsed[prop].slice(start, end);
-                                next |= chunk[prop].length > 0;
-                            }
-                        }
-
-                        if (next) {
-
-                            const exportData = createExportContainer();
-                            exportData.create = chunk;
-
-                            $.ajax({
-                                // TODO: Use REST API
-                                url: `/save/annotation/task/${tid}`,
-                                type: 'PATCH',
-                                data: JSON.stringify(exportData),
-                                contentType: 'application/json',
-                            }).done(() => {
-                                asyncSaveChunk(end);
-                            }).fail((errorData) => {
-                                const message = `Annotation uploading errors occurred. Code: ${errorData.status}. ` +
-                                    `Message: ${errorData.responseText || errorData.statusText}`;
-                                showMessage(message);
-                            });
-                        } else {
-                            const message = 'Annotation have been successfully uploaded';
-                            showMessage(message);
-                            overlay.remove();
-                        }
-                    }
-
-                    overlay.setMessage('The annotation is being saved..');
-                    setTimeout(asyncSave);
-                }
-
                 overlay.setMessage('The annotation file is being parsed..');
-                setTimeout(asyncParse);
-            }).fail((errorData) => {
-                const message = `Can not get required data from the server. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.responseText || errorData.statusText}`;
-                showMessage(message);
-            });
+                const parsed = parser.parse(text);
 
-            overlay.setMessage('Required data are being downloaded from the server..');
+                overlay.setMessage('The annotation is being saved..');
+                await save.call(this, parsed);
+
+                const message = 'Annotation have been successfully uploaded';
+                showMessage(message);
+            } catch(errorData) {
+                let message = null;
+                if (typeof(errorData) === 'string') {
+                    message = `Can not upload annotations. ${errorData}`;
+                } else {
+                    message = `Can not upload annotations. Code: ${errorData.status}. ` +
+                        `Message: ${errorData.responseText || errorData.statusText}`;
+                }
+                showMessage(message);
+            } finally {
+                overlay.remove();
+            }
         }
 
-        self = this;
-        $('<input type="file" accept="text/xml">').on('change', function() {
-            const file = this.files[0];
-            $(this).remove();
+        $('<input type="file" accept="text/xml">').on('change', (e) => {
+            const file = e.target.files[0];
+            $(e.target).remove();
             if (file) {
                 const overlay = showOverlay('File is being parsed..');
                 const fileReader = new FileReader();
-                fileReader.onload = parse.bind(self, overlay);
+                fileReader.onload = (e) => {
+                    onload.call(this, overlay, e.target.result);
+                }
                 fileReader.readAsText(file);
             }
         }).click();
