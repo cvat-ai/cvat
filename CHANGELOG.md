@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard shortcuts to switch next/previous default shape type (box, polygon etc) [Alt + <, Alt + >] (#316)
 - Converter for VOC now supports interpolation tracks
 - REST API (/api/v1/*, /api/docs)
+- Semi-automatic semantic segmentation with the [Deep Extreme Cut](http://www.vision.ee.ethz.ch/~cvlsegmentation/dextr/) work
 
 ### Changed
 - Propagation setup has been moved from settings to bottom player panel

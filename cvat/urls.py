@@ -46,6 +46,9 @@ if apps.is_installed('cvat.apps.reid'):
 if apps.is_installed('cvat.apps.auto_annotation'):
     urlpatterns.append(path('auto_annotation/', include('cvat.apps.auto_annotation.urls')))
 
+if apps.is_installed('cvat.apps.dextr_segmentation'):
+    urlpatterns.append(path('dextr/', include('cvat.apps.dextr_segmentation.urls')))
+
 if apps.is_installed('cvat.apps.log_viewer'):
     urlpatterns.append(path('analytics/', include('cvat.apps.log_viewer.urls')))
 

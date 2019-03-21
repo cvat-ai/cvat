@@ -141,14 +141,14 @@ def save_task(tid, data):
         splitted_data[jid] = {}
         for action in ['create', 'update', 'delete']:
             splitted_data[jid][action] = {
-                "boxes": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['boxes'])),
-                "polygons": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['polygons'])),
-                "polylines": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['polylines'])),
-                "points": list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['points'])),
-                "box_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['box_paths'])),
-                "polygon_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['polygon_paths'])),
-                "polyline_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['polyline_paths'])),
-                "points_paths": list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['points_paths'])),
+                "boxes": copy.deepcopy(list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['boxes']))),
+                "polygons": copy.deepcopy(list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['polygons']))),
+                "polylines": copy.deepcopy(list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['polylines']))),
+                "points": copy.deepcopy(list(filter(lambda x: start <= int(x['frame']) <= stop, data[action]['points']))),
+                "box_paths": copy.deepcopy(list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['box_paths']))),
+                "polygon_paths": copy.deepcopy(list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['polygon_paths']))),
+                "polyline_paths": copy.deepcopy(list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['polyline_paths']))),
+                "points_paths": copy.deepcopy(list(filter(lambda x: len(list(filter(lambda y: (start <= int(y['frame']) <= stop) and (not y['outside']), x['shapes']))), data[action]['points_paths']))),
             }
 
     for jid, _data in splitted_data.items():

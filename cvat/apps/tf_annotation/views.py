@@ -8,11 +8,12 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
+from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine import annotation, task
 
+
 import django_rq
-import subprocess
 import fnmatch
 import logging
 import json
@@ -25,8 +26,6 @@ import numpy as np
 from PIL import Image
 from cvat.apps.engine.log import slogger
 
-if os.environ.get('OPENVINO_TOOLKIT') == 'yes':
-    from openvino.inference_engine import IENetwork, IEPlugin
 
 def load_image_into_numpy(image):
     (im_width, im_height) = image.size
@@ -34,13 +33,6 @@ def load_image_into_numpy(image):
 
 
 def run_inference_engine_annotation(image_list, labels_mapping, treshold):
-    def _check_instruction(instruction):
-        return instruction == str.strip(
-            subprocess.check_output(
-                'lscpu | grep -o "{}" | head -1'.format(instruction), shell=True
-            ).decode('utf-8')
-        )
-
     def _normalize_box(box, w, h, dw, dh):
         xmin = min(int(box[0] * dw * w), w)
         ymin = min(int(box[1] * dh * h), h)
@@ -53,19 +45,8 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
     if MODEL_PATH is None:
         raise OSError('Model path env not found in the system.')
 
-    IE_PLUGINS_PATH = os.getenv('IE_PLUGINS_PATH')
-    if IE_PLUGINS_PATH is None:
-        raise OSError('Inference engine plugin path env not found in the system.')
-
-    plugin = IEPlugin(device='CPU', plugin_dirs=[IE_PLUGINS_PATH])
-    if (_check_instruction('avx2')):
-        plugin.add_cpu_extension(os.path.join(IE_PLUGINS_PATH, 'libcpu_extension_avx2.so'))
-    elif (_check_instruction('sse4')):
-        plugin.add_cpu_extension(os.path.join(IE_PLUGINS_PATH, 'libcpu_extension_sse4.so'))
-    else:
-        raise Exception('Inference engine requires a support of avx2 or sse4.')
-
-    network = IENetwork.from_ir(model = MODEL_PATH + '.xml', weights = MODEL_PATH + '.bin')
+    plugin = make_plugin()
+    network = make_network('{}.xml'.format(MODEL_PATH), '{}.bin'.format(MODEL_PATH))
     input_blob_name = next(iter(network.inputs))
     output_blob_name = next(iter(network.outputs))
     executable_network = plugin.load(network=network)
