@@ -96,23 +96,59 @@ def delete_job_data(pk):
 @silk_profile(name="GET task data")
 @transaction.atomic
 def get_task_data(pk):
-    return {}
+    return []
 
 @silk_profile(name="POST task data")
 @transaction.atomic
 def put_task_data(pk, data):
-    pass
+    delete_task_data(pk)
+    return patch_task_data(pk, data, PatchAction.CREATE)
 
 @silk_profile(name="UPDATE task data")
 @transaction.atomic
 def patch_task_data(pk, data, action):
-    pass
+    slogger.task[pk].info("Enter patch_task_data API: tid = {}".format(pk))
+    db_task = models.Task.objects.get(id=pk)
+    db_segments = db_task.segment_set.prefetch_related('job_set').all()
+
+    splitted_data = {}
+    for segment in db_segments:
+        jid = segment.job_set.first().id
+        start = segment.start_frame
+        stop = segment.stop_frame
+        is_shape_inside = lambda y: (start <= int(y['frame']) <= stop) and (not y['outside'])
+        splitted_data[jid] = {
+            "tags":   list(filter(lambda x: start <= int(x['frame']) <= stop, data['tags'])),
+            "shapes": list(filter(lambda x: start <= int(x['frame']) <= stop, data['shapes'])),
+            "tracks": list(filter(lambda x: len(list(filter(is_shape_inside, x['shapes']))), data['tracks']))
+        }
+
+    for jid, job_data in splitted_data.items():
+        # if an item inside _data isn't empty need to call save_job
+        is_non_empty = False
+        for objects in job_data.values():
+            if objects:
+                is_non_empty = True
+                break
+
+        if is_non_empty:
+            patch_job_data(jid, job_data, action)
+
+    response = get_task_data(pk)
+    slogger.task[pk].info("Leave save_task API: tid = {}".format(pk))
+
+    return response
 
 @silk_profile(name="DELETE task data")
 @transaction.atomic
-def delete_task_data(pk, data=None):
-    pass
+def delete_task_data(pk):
+    slogger.task[pk].info("Enter delete_task_data API: tid = {}".format(pk))
+    db_jobs = models.Job.objects.filter(segment__task_id=pk)
 
+    for db_job in db_jobs:
+        delete_job_data(db_job.id)
+
+    slogger.task[pk].info("Leave delete_task_data API: tid = {}".format(pk))
 
 
 ######

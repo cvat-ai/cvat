@@ -208,19 +208,17 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 annotation_v2.put_task_data(pk, serializer.data)
                 return Response(status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
-            serializer = LabeledDataSerializer()
-            if serializer.is_valid(raise_exception=True):
-                annotation_v2.delete_task_data(pk)
-                return Response()
+            annotation_v2.delete_task_data(pk)
+            return Response(status=status.HTTP_204_NO_CONTENT)
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
-            if action not in annotation_v2.PatchAction:
+            if action not in annotation_v2.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                annotation_v2.patch_task_data(pk, serializer.data, action)
-                return Response()
+                data = annotation_v2.patch_task_data(pk, serializer.data, action)
+                return Response(data)
 
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
@@ -278,7 +276,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             slogger.task[pk].error(
                 "cannot get frame #{}".format(frame), exc_info=True)
             return HttpResponseBadRequest(str(e))
-
 
 class JobViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
@@ -372,7 +369,6 @@ class PluginViewSet(viewsets.ModelViewSet):
         serializer_class=RqStatusSerializer, url_path='requests/(?P<id>\d+)')
     def request_detail(self, request, name, id):
         pass
-
 
 # FIXME: need to update the handler
 def rq_handler(job, exc_type, exc_value, tb):
