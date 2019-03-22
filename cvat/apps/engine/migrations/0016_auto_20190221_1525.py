@@ -339,7 +339,6 @@ def process_paths(db_job, apps, db_labels, db_attributes, db_alias):
             for attr in shape.attributes:
                 db_attrspec = db_attributes[attr.spec_id]
                 db_attrval = TrackedShapeAttributeVal()
-                db_attrval.id = len(new_db_shapes)
                 db_attrval.shape_id = len(new_db_shapes)
                 db_attrval.spec = db_attrspec
                 db_attrval.value = attr.value
