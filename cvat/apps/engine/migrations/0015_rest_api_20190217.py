@@ -154,7 +154,11 @@ class Migration(migrations.Migration):
             name='status',
             field=models.CharField(choices=[('ANNOTATION', 'annotation'), ('VALIDATION', 'validation'), ('COMPLETED', 'completed')], default=cvat.apps.engine.models.StatusChoice('annotation'), max_length=32),
         ),
-
+        migrations.AlterField(
+            model_name='attributespec',
+            name='text',
+            field=models.CharField(default='', max_length=1024),
+        ),
         migrations.AlterField(
             model_name='attributespec',
             name='input_type',
