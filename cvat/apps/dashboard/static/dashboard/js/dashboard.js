@@ -471,9 +471,10 @@ class DashboardView {
                                 return {
                                     id: `${obj.id}/${element.name}`,
                                     children: element.type === 'DIR',
-                                    text: element.name}
+                                    text: element.name,
+                                    icon: element.type === 'DIR' ? 'jstree-folder' : 'jstree-file',
                                 }
-                            );
+                            });
 
                             callback.call(this, files);
                         }
