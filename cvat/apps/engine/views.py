@@ -135,7 +135,7 @@ class TaskFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     owner = filters.CharFilter(field_name="owner__username", lookup_expr="icontains")
     mode = filters.CharFilter(field_name="mode", lookup_expr="icontains")
-    status = filters.CharFilter(field_name="mode", lookup_expr="icontains")
+    status = filters.CharFilter(field_name="status", lookup_expr="icontains")
     assignee = filters.CharFilter(field_name="assignee__username", lookup_expr="icontains")
 
     class Meta:
