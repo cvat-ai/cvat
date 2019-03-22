@@ -549,22 +549,22 @@ class TaskListAPITestCase(APITestCase):
         response = self._run_api_v1_tasks(self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
-            [task.name for task in self.tasks],
-            [res["name"] for res in response.data["results"]])
+            sorted([task.name for task in self.tasks]),
+            sorted([res["name"] for res in response.data["results"]]))
 
     def test_api_v1_tasks_user(self):
         response = self._run_api_v1_tasks(self.user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
-            [task.name for task in self.tasks if task.owner == self.user],
-            [res["name"] for res in response.data["results"]])
+            sorted([task.name for task in self.tasks if task.owner == self.user]),
+            sorted([res["name"] for res in response.data["results"]]))
 
     def test_api_v1_tasks_observer(self):
         response = self._run_api_v1_tasks(self.observer)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
-            [task.name for task in self.tasks],
-            [res["name"] for res in response.data["results"]])
+            sorted([task.name for task in self.tasks]),
+            sorted([res["name"] for res in response.data["results"]]))
 
     def test_api_v1_tasks_no_auth(self):
         response = self._run_api_v1_tasks(None)
@@ -957,6 +957,12 @@ class TaskDataAPITestCase(APITestCase):
         with open(path, 'wb') as image:
             image.write(data.read())
 
+        path = os.path.join(settings.SHARE_ROOT, "data", "test_3.jpg")
+        os.makedirs(os.path.dirname(path))
+        data = generate_image_file("test_3.jpg")
+        with open(path, 'wb') as image:
+            image.write(data.read())
+
 
     @classmethod
     def tearDownClass(cls):
@@ -969,6 +975,10 @@ class TaskDataAPITestCase(APITestCase):
 
         path = os.path.join(settings.SHARE_ROOT, "test_3.jpg")
         os.remove(path)
+
+        path = os.path.join(settings.SHARE_ROOT, "data", "test_3.jpg")
+        os.remove(path)
+
 
     def _run_api_v1_tasks_id_data(self, tid, user, data):
         with ForceLogin(user, self.client):
@@ -1027,7 +1037,8 @@ class TaskDataAPITestCase(APITestCase):
         data = {
             "server_files[0]": "test_1.jpg",
             "server_files[1]": "test_2.jpg",
-            "server_files[2]": "test_3.jpg"
+            "server_files[2]": "test_3.jpg",
+            "server_files[3]": "data/test_3.jpg",
         }
 
         response = self._run_api_v1_tasks_id_data(task_id, user, data)

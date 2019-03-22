@@ -163,7 +163,7 @@ def _copy_data_from_share(server_files, upload_dir):
         if os.path.isdir(source_path):
             copy_tree(source_path, target_path)
         else:
-            target_dir = os.path.exists(target_path)
+            target_dir = os.path.dirname(target_path)
             if not os.path.exists(target_dir):
                 os.makedirs(target_dir)
             shutil.copyfile(source_path, target_path)
