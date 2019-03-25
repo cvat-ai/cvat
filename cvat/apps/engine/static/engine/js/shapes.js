@@ -1026,12 +1026,11 @@ class PolyShapeModel extends ShapeModel {
                     }
                 }
 
-                track.shapes.push({
+                track.shapes.push(Object.assign({
                     frame: +frame,
                     attributes: shapeAttributes,
-
                     type: this._type.split('_')[1],
-                }, this._positions[frame]);
+                }, this._positions[frame]));
             }
 
             return track;
