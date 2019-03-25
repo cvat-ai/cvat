@@ -32,7 +32,7 @@ class ShapeModel extends Listener {
         super('onShapeUpdate', () => this );
         this._serverID = data.id;
         this._id = clientID;
-        this._groupId = data.group;
+        this._groupId = data.group || 0;
         this._type = type;
         this._color = color;
         this._label = data.label_id;
