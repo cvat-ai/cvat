@@ -71,8 +71,7 @@ class ShapeModel extends Listener {
             if (attrInfo.mutable) {
                 this._attributes.mutable[this._frame] = this._attributes.mutable[this._frame] || {};
                 this._attributes.mutable[this._frame][attrId] = attrInfo.values[0];
-            }
-            else {
+            } else {
                 this._attributes.immutable[attrId] = attrInfo.values[0];
             }
         }
@@ -80,10 +79,9 @@ class ShapeModel extends Listener {
         for (let attrId in attributes) {
             let attrInfo = labelsInfo.attrInfo(attrId);
             if (attrInfo.mutable) {
-                this._attributes.mutable[this._frame][attrId] = labelsInfo.strToValues(attrInfo.type, attributes[attrId])[0];
-            }
-            else {
-                this._attributes.immutable[attrId] = labelsInfo.strToValues(attrInfo.type, attributes[attrId])[0];
+                this._attributes.mutable[this._frame][attrId] = labelsInfo.normalize(attrInfo.type, attributes[attrId]);
+            } else {
+                this._attributes.immutable[attrId] = labelsInfo.normalize(attrInfo.type, attributes[attrId]);
             }
         }
 
@@ -94,7 +92,7 @@ class ShapeModel extends Listener {
                 let attrInfo = labelsInfo.attrInfo(attr.id);
                 if (attrInfo.mutable) {
                     this._attributes.mutable[frame] = this._attributes.mutable[frame] || {};
-                    this._attributes.mutable[frame][attr.id] = labelsInfo.strToValues(attrInfo.type, attr.value)[0];
+                    this._attributes.mutable[frame][attr.id] = labelsInfo.normalize(attrInfo.type, attr.value);
                 }
             }
         }
@@ -265,11 +263,10 @@ class ShapeModel extends Listener {
 
         if (attrInfo.mutable) {
             this._attributes.mutable[frame] = this._attributes.mutable[frame]|| {};
-            this._attributes.mutable[frame][attrId] = labelsInfo.strToValues(attrInfo.type, value)[0];
+            this._attributes.mutable[frame][attrId] = labelsInfo.normalize(attrInfo.type, value);
             this._setupKeyFrames();
-        }
-        else {
-            this._attributes.immutable[attrId] = labelsInfo.strToValues(attrInfo.type, value)[0];
+        } else {
+            this._attributes.immutable[attrId] = labelsInfo.normalize(attrInfo.type, value);
         }
 
         this.notify('attributes');

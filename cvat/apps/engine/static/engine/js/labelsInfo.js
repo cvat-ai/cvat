@@ -20,8 +20,7 @@ class LabelsInfo {
                 type: attribute.input_type,
                 name: attribute.name,
                 values: attribute.input_type === 'checkbox' ?
-                    [attribute.values[0].toLowerCase() !== 'false' && attribute.values[0] !== false] :
-                    attribute.values,
+                    [attribute.values[0].toLowerCase() !== 'false'] : attribute.values,
             }
         }
 
@@ -47,9 +46,11 @@ class LabelsInfo {
         return this;
     }
 
+
     labelColorIdx(labelId) {
         return this._colorIdxs[labelId];
     }
+
 
     updateLabelColorIdx(labelId) {
         if (labelId in this._colorIdxs) {
@@ -57,23 +58,6 @@ class LabelsInfo {
         }
     }
 
-    normalize() {
-        let labels = "";
-        for (let labelId in this._labels) {
-            labels += " " + this._labels[labelId].name;
-            for (let attrId in this._labels[labelId].attributes) {
-                let attr = this._labels[labelId].attributes[attrId];
-                labels += ' ' + (attr.mutable? "~":"@");
-                labels += attr.type + '=' + attr.name + ':';
-                labels += attr.values.map(function(val) {
-                    val = String(val);
-                    return val.search(' ') != -1? "'" + val + "'": val;
-                }).join(',');
-            }
-        }
-
-        return labels.trim();
-    }
 
     labels() {
         let tempLabels = new Object();
@@ -137,18 +121,24 @@ class LabelsInfo {
         return null;
     }
 
-    strToValues(type, string) {
+    normalize(type, attrValue) {
+        attrValue = String(attrValue);
         if (type === 'checkbox') {
-            const value = string !== '0' && String(string).toLowerCase() !== 'false';
-            return [value];
+            const value = attrValue !== '0' && attrValue.toLowerCase() !== 'false';
+            return value;
         } else if (type === 'text') {
-            return [string];
+            return attrValue;
         } else if (type === 'number') {
-            return String(string).split(',');
+            if (isNaN(+attrValue)) {
+                throw Error(`Can not convert ${attrValue} to number.`);
+            } else {
+                return +attrValue;
+            }
         } else {
-            return string.split(',');
+            return attrValue;
         }
     }
+
 
     static serialize(deserialized) {
         let serialized = "";
@@ -164,14 +154,15 @@ class LabelsInfo {
         return serialized.trim();
     }
 
+
     static deserialize(serialized) {
-        const normalized = serialized.replace(/'+/g, `'`).replace(/"+/g, `"`).replace(/\s+/g, ` `).trim();
+        const normalized = serialized.replace(/'+/g, `'`).replace(/"+/g, '"').replace(/\s+/g, ' ').trim();
         const fragments = String.customSplit(normalized, ' ');
 
         const deserialized = [];
         let latest = null;
         for (let fragment of fragments) {
-            fragment = fragment.replace(/\+/g, ' ').trim();
+            fragment = fragment.trim();
             if ((fragment.startsWith('~')) || (fragment.startsWith('@'))) {
                 const regex = /(@|~)(checkbox|select|number|text|radio)=([,?!-_0-9a-zA-Z()\s"]+):([,?!-_0-9a-zA-Z()"\s]+)/g;
                 const result = regex.exec(fragment);
@@ -181,15 +172,15 @@ class LabelsInfo {
 
                 const values = String.customSplit(result[4], ',');
                 latest.attributes.push({
-                    name: result[3],
+                    name: result[3].replace(/^"/, '').replace(/"$/, ''),
                     mutable: result[1] === '~',
                     input_type: result[2],
-                    default_value: values[0],
-                    values: values,
+                    default_value: values[0].replace(/^"/, '').replace(/"$/, ''),
+                    values: values.map((val) => val.replace(/^"/, '').replace(/"$/, '')),
                 });
             } else {
                 latest = {
-                    name: fragment,
+                    name: fragment.replace(/^"/, '').replace(/"$/, ''),
                     attributes: []
                 };
 
