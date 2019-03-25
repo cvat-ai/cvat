@@ -248,7 +248,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
 
     setupHelpWindow(shortkeys);
     setupSettingsWindow();
-    setupMenu(taskData, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel);
+    setupMenu(jobData, taskData, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel);
     setupFrameFilters();
     setupShortkeys(shortkeys, {
         aam: aamModel,
@@ -457,7 +457,7 @@ function setupSettingsWindow() {
 }
 
 
-function setupMenu(task, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel) {
+function setupMenu(job, task, shapeCollectionModel, annotationParser, aamModel, playerModel, historyModel) {
     let annotationMenu = $('#annotationMenu');
     let menuButton = $('#menuButton');
 
@@ -537,18 +537,20 @@ function setupMenu(task, shapeCollectionModel, annotationParser, aamModel, playe
     $('#statOverlap').text(task.overlap);
     $('#statZOrder').text(task.z_order);
     $('#statFlipped').text(task.flipped);
-    $('#statTaskStatus').prop("value", task.status).on('change', (e) => {
-        $.ajax({
-            type: 'PATCH',
-            url: '/api/v1/jobs/' + window.cvat.job.id,
-            data: JSON.stringify({
-                status: e.target.value
-            }),
-            contentType: "application/json; charset=utf-8",
-            error: (data) => {
-                showMessage(`Can not change job status. Code: ${data.status}. Message: ${data.responeText || data.statusText}`);
-            }
-        });
+    $('#statTaskStatus').prop('value', job.status).on('change', async function(e) {
+        try {
+            job.status = e.target.value;
+            await $.ajax({
+                url: `/api/v1/jobs/${window.cvat.job.id}`,
+                type: 'PATCH',
+                data: JSON.stringify(job),
+                contentType: 'application/json',
+            });
+        } catch (errorData) {
+            const message = `Can not update a job status. Code: ${errorData.status}. ` +
+                `Message: ${errorData.responseText || errorData.statusText}`;
+            showMessage(message);
+        }
     });
 
     let shortkeys = window.cvat.config.shortkeys;

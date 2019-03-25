@@ -287,9 +287,8 @@ class ShapeCollectionModel extends Listener {
         };
 
         for (let shape of this._shapes) {
-            const exported = shape.export();
-
             if (!shape.removed) {
+                const exported = shape.export();
                 // Conversion from client object format to server object format
                 if (exported.shapes) {
                     for (let attr of exported.attributes) {

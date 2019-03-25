@@ -294,17 +294,41 @@ class DashboardView {
     }
 
     _setupTaskSearch() {
-        function getUrlParameter(name) {
-            let regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-            let results = regex.exec(window.location.search);
-            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-        }
+        const searchInput = $('#dashboardSearchInput');
+        const searchSubmit = $('#dashboardSearchSubmit');
 
-        let searchInput = $('#dashboardSearchInput');
-        let searchSubmit = $('#dashboardSearchSubmit');
+        searchInput.on('keypress', (e) => {
+            if (e.keyCode != 13) {
+                return;
+            }
 
-        let line = getUrlParameter('search') || '';
-        searchInput.val(line);
+            const params = {};
+            const search = e.target.value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim();
+            for (let field of ['name', 'mode', 'owner', 'assignee', 'status']) {
+                for (let param of search.split(' and ')) {
+                    if (param.includes(':')) {
+                        param = param.split(':');
+                        if (param[0] === field && param[1]) {
+                            params[field] = param[1];
+                        }
+                    }
+                }
+            }
+
+            if (!Object.keys(params).length && search.length) {
+                params['search'] = search;
+            }
+
+            if (Object.keys(params).length) {
+                const searchParams = new URLSearchParams();
+                for (let key in params) {
+                    searchParams.set(key, params[key]);
+                }
+                window.location.search = searchParams.toString();
+            } else {
+                window.location.search = '';
+            }
+        });
 
         searchSubmit.on('click', function() {
             let e = $.Event('keypress');
@@ -312,12 +336,19 @@ class DashboardView {
             searchInput.trigger(e);
         });
 
-        searchInput.on('keypress', function(e) {
-            if (e.keyCode !== 13) return;
-            let filter = e.target.value;
-            if (!filter) window.location.search = '';
-            else window.location.search = `search=${filter}`;
-        });
+        const searchParams = new URLSearchParams(window.location.search.substring(1));
+        if (searchParams.get('all')) {
+            searchInput.prop('value', searchParams.get('all'));
+        } else {
+            let search = '';
+            for (let field of ['name', 'mode', 'owner', 'assignee', 'status']) {
+                const fieldVal = searchParams.get(field);
+                if (fieldVal) {
+                    search += `${field}: ${fieldVal} and `;
+                }
+            }
+            searchInput.prop('value', search.slice(0, -5));
+        }
     }
 
     _setupCreateDialog() {
@@ -471,9 +502,10 @@ class DashboardView {
                                 return {
                                     id: `${obj.id}/${element.name}`,
                                     children: element.type === 'DIR',
-                                    text: element.name}
+                                    text: element.name,
+                                    icon: element.type === 'DIR' ? 'jstree-folder' : 'jstree-file',
                                 }
-                            );
+                            });
 
                             callback.call(this, files);
                         }
