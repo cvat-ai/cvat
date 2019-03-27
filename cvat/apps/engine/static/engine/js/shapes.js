@@ -1478,9 +1478,9 @@ class ShapeView extends Listener {
 
     _makeEditable() {
         if (this._uis.shape && this._uis.shape.node.parentElement && !this._flags.editable) {
-            let events = {
+            const events = {
                 drag: null,
-                resize: null
+                resize: null,
             };
 
             this._uis.shape.front();
@@ -1498,7 +1498,7 @@ class ShapeView extends Listener {
                     events.drag.close();
                     events.drag = null;
                     this._flags.dragging = false;
-                    if (Math.sqrt(((p1.x - p2.x) ** 2) + ((p1.y - p2.y) ** 2)) > 1) {
+                    if (Math.sqrt(Math.pow((p1.x - p2.x), 2) + Math.pow((p1.y - p2.y), 2)) > 1) {
                         const frame = window.cvat.player.frames.current;
                         this._controller.updatePosition(frame, this._buildPosition());
                     }
