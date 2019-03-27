@@ -18,7 +18,6 @@
     HistoryController:false
     HistoryModel:false
     HistoryView:false
-    IncrementIdGenerator:false,
     Logger:false
     Mousetrap:false
     PlayerController:false
@@ -49,7 +48,6 @@
     buildAnnotationSaver:false
 */
 
-"use strict";
 
 function callAnnotationUI(jid) {
     function onError(errorData) {

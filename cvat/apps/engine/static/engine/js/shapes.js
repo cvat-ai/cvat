@@ -15,6 +15,7 @@
     Mousetrap:false
     ShapeCollectionView:false
     SVG:false
+    LabelsInfo:false
 */
 
 "use strict";
@@ -79,9 +80,9 @@ class ShapeModel extends Listener {
         for (let attrId in attributes) {
             let attrInfo = labelsInfo.attrInfo(attrId);
             if (attrInfo.mutable) {
-                this._attributes.mutable[this._frame][attrId] = labelsInfo.normalize(attrInfo.type, attributes[attrId]);
+                this._attributes.mutable[this._frame][attrId] = LabelsInfo.normalize(attrInfo.type, attributes[attrId]);
             } else {
-                this._attributes.immutable[attrId] = labelsInfo.normalize(attrInfo.type, attributes[attrId]);
+                this._attributes.immutable[attrId] = LabelsInfo.normalize(attrInfo.type, attributes[attrId]);
             }
         }
 
@@ -92,7 +93,7 @@ class ShapeModel extends Listener {
                 let attrInfo = labelsInfo.attrInfo(attr.id);
                 if (attrInfo.mutable) {
                     this._attributes.mutable[frame] = this._attributes.mutable[frame] || {};
-                    this._attributes.mutable[frame][attr.id] = labelsInfo.normalize(attrInfo.type, attr.value);
+                    this._attributes.mutable[frame][attr.id] = LabelsInfo.normalize(attrInfo.type, attr.value);
                 }
             }
         }
@@ -263,10 +264,10 @@ class ShapeModel extends Listener {
 
         if (attrInfo.mutable) {
             this._attributes.mutable[frame] = this._attributes.mutable[frame]|| {};
-            this._attributes.mutable[frame][attrId] = labelsInfo.normalize(attrInfo.type, value);
+            this._attributes.mutable[frame][attrId] = LabelsInfo.normalize(attrInfo.type, value);
             this._setupKeyFrames();
         } else {
-            this._attributes.immutable[attrId] = labelsInfo.normalize(attrInfo.type, value);
+            this._attributes.immutable[attrId] = LabelsInfo.normalize(attrInfo.type, value);
         }
 
         this.notify('attributes');

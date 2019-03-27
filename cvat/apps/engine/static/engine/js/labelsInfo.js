@@ -6,12 +6,6 @@
 
 /* exported LabelsInfo */
 
-/* global
-    showMessage:false
-*/
-
-"use strict";
-
 class LabelsInfo {
     constructor(labels) {
         function convertAttribute(attribute) {
@@ -19,25 +13,24 @@ class LabelsInfo {
                 mutable: attribute.mutable,
                 type: attribute.input_type,
                 name: attribute.name,
-                values: attribute.input_type === 'checkbox' ?
-                    [attribute.values[0].toLowerCase() !== 'false'] : attribute.values,
-            }
+                values: attribute.input_type === 'checkbox'
+                    ? [attribute.values[0].toLowerCase() !== 'false'] : attribute.values,
+            };
         }
 
         this._labels = {};
         this._attributes = {};
         this._colorIdxs = {};
 
-        for (let label of labels) {
+        for (const label of labels) {
             this._labels[label.id] = {
                 name: label.name,
                 attributes: {},
-            }
+            };
 
-            for (let attr of label.attributes) {
+            for (const attr of label.attributes) {
                 this._attributes[attr.id] = convertAttribute(attr);
                 this._labels[label.id].attributes[attr.id] = this._attributes[attr.id];
-
             }
 
             this._colorIdxs[label.id] = +label.id;
@@ -60,49 +53,52 @@ class LabelsInfo {
 
 
     labels() {
-        let tempLabels = new Object();
-        for (let labelId in this._labels) {
-            tempLabels[labelId] = this._labels[labelId].name;
+        const labels = {};
+        for (const labelId in this._labels) {
+            if (Object.prototype.hasOwnProperty.call(this._labels, labelId)) {
+                labels[labelId] = this._labels[labelId].name;
+            }
         }
-        return tempLabels;
+        return labels;
     }
 
 
     labelAttributes(labelId) {
-        let attributes = new Object();
         if (labelId in this._labels) {
-            for (let attrId in this._labels[labelId].attributes) {
-                attributes[attrId] = this._labels[labelId].attributes[attrId].name;
+            const attributes = {};
+            const labelAttributes = this._labels[labelId].attributes;
+            for (const attrId in labelAttributes) {
+                if (Object.prototype.hasOwnProperty.call(labelAttributes, attrId)) {
+                    attributes[attrId] = labelAttributes[attrId].name;
+                }
+            }
+            return attributes;
+        }
+        throw Error('Unknown label ID');
+    }
+
+
+    attributes() {
+        const attributes = {};
+        for (const attrId in this._attributes) {
+            if (Object.prototype.hasOwnProperty.call(this._attributes, attrId)) {
+                attributes[attrId] = this._attributes[attrId].name;
             }
         }
         return attributes;
     }
 
 
-    attributes() {
-        let attributes = new Object();
-        for (let attrId in this._attributes) {
-            attributes[attrId] = this._attributes[attrId].name;
-        }
-        return attributes;
-    }
-
-
     attrInfo(attrId) {
-        let info = new Object();
         if (attrId in this._attributes) {
-            let object = this._attributes[attrId];
-            info.name = object.name;
-            info.type = object.type;
-            info.mutable = object.mutable;
-            info.values = object.values.slice();
+            return JSON.parse(JSON.stringify(this._attributes[attrId]));
         }
-        return info;
+        throw Error('Unknown attribute ID');
     }
 
 
     labelIdOf(name) {
-        for (let labelId in this._labels) {
+        for (const labelId in this._labels) {
             if (this._labels[labelId].name === name) {
                 return +labelId;
             }
@@ -112,8 +108,8 @@ class LabelsInfo {
 
 
     attrIdOf(labelId, name) {
-        let attributes = this.labelAttributes(labelId);
-        for (let attrId in attributes) {
+        const attributes = this.labelAttributes(labelId);
+        for (const attrId in attributes) {
             if (this._attributes[attrId].name === name) {
                 return +attrId;
             }
@@ -121,32 +117,36 @@ class LabelsInfo {
         return null;
     }
 
-    normalize(type, attrValue) {
-        attrValue = String(attrValue);
+
+    static normalize(type, attrValue) {
+        const value = String(attrValue);
         if (type === 'checkbox') {
-            const value = attrValue !== '0' && attrValue.toLowerCase() !== 'false';
-            return value;
-        } else if (type === 'text') {
-            return attrValue;
-        } else if (type === 'number') {
-            if (isNaN(+attrValue)) {
-                throw Error(`Can not convert ${attrValue} to number.`);
-            } else {
-                return +attrValue;
-            }
-        } else {
-            return attrValue;
+            return value !== '0' && value.toLowerCase() !== 'false';
         }
+
+        if (type === 'text') {
+            return value;
+        }
+
+        if (type === 'number') {
+            if (Number.isNaN(+value)) {
+                throw Error(`Can not convert ${value} to number.`);
+            } else {
+                return +value;
+            }
+        }
+
+        return value;
     }
 
 
     static serialize(deserialized) {
-        let serialized = "";
-        for (let label of deserialized) {
-            serialized += " " + label.name;
-            for (let attr of label.attributes) {
-                serialized += ' ' + (attr.mutable? "~":"@");
-                serialized += attr.input_type + '=' + attr.name + ':';
+        let serialized = '';
+        for (const label of deserialized) {
+            serialized += ` ${label.name}`;
+            for (const attr of label.attributes) {
+                serialized += ` ${attr.mutable ? '~' : '@'}`;
+                serialized += `${attr.input_type}=${attr.name}:`;
                 serialized += attr.values.join(',');
             }
         }
@@ -156,7 +156,7 @@ class LabelsInfo {
 
 
     static deserialize(serialized) {
-        const normalized = serialized.replace(/'+/g, `'`).replace(/"+/g, '"').replace(/\s+/g, ' ').trim();
+        const normalized = serialized.replace(/'+/g, '\'').replace(/"+/g, '"').replace(/\s+/g, ' ').trim();
         const fragments = String.customSplit(normalized, ' ');
 
         const deserialized = [];
@@ -176,12 +176,12 @@ class LabelsInfo {
                     mutable: result[1] === '~',
                     input_type: result[2],
                     default_value: values[0].replace(/^"/, '').replace(/"$/, ''),
-                    values: values.map((val) => val.replace(/^"/, '').replace(/"$/, '')),
+                    values: values.map(val => val.replace(/^"/, '').replace(/"$/, '')),
                 });
             } else {
                 latest = {
                     name: fragment.replace(/^"/, '').replace(/"$/, ''),
-                    attributes: []
+                    attributes: [],
                 };
 
                 deserialized.push(latest);
