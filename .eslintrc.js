@@ -27,6 +27,7 @@
         "airbnb",
     ],
     "rules": {
+        "no-underscore-dangle": ["error", { "allowAfterThis": true }],
         "no-unsafe-innerhtml/no-unsafe-innerhtml": 1,
         // This rule actual for user input data on the node.js environment mainly.
         "security/detect-object-injection": 0,
