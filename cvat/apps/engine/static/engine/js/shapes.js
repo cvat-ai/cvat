@@ -522,7 +522,7 @@ class ShapeModel extends Listener {
 
     set active(value) {
         this._active = value;
-        if (!this._removed) {
+        if (!this._removed && !['drag', 'resize'].includes(window.cvat.mode)) {
             this.notify('activation');
         }
     }
@@ -1478,9 +1478,9 @@ class ShapeView extends Listener {
 
     _makeEditable() {
         if (this._uis.shape && this._uis.shape.node.parentElement && !this._flags.editable) {
-            let events = {
+            const events = {
                 drag: null,
-                resize: null
+                resize: null,
             };
 
             this._uis.shape.front();
@@ -1493,15 +1493,15 @@ class ShapeView extends Listener {
                     this._hideShapeText();
                     this.notify('drag');
                 }).on('dragend', (e) => {
-                    let p1 = e.detail.handler.startPoints.point;
-                    let p2 = e.detail.p;
-                    if (Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2)) > 1) {
-                        let frame = window.cvat.player.frames.current;
-                        this._controller.updatePosition(frame, this._buildPosition());
-                    }
+                    const p1 = e.detail.handler.startPoints.point;
+                    const p2 = e.detail.p;
                     events.drag.close();
                     events.drag = null;
                     this._flags.dragging = false;
+                    if (Math.sqrt(Math.pow((p1.x - p2.x), 2) + Math.pow((p1.y - p2.y), 2)) > 1) {
+                        const frame = window.cvat.player.frames.current;
+                        this._controller.updatePosition(frame, this._buildPosition());
+                    }
                     this._showShapeText();
                     this.notify('drag');
                 });
@@ -1522,27 +1522,17 @@ class ShapeView extends Listener {
                     blurAllElements();
                     this._hideShapeText();
                     this.notify('resize');
-
-                    Logger.addEvent(Logger.EventType.debugInfo, {
-                        debugMessage: "Resize has started",
-                        resizeEventInitialized: Boolean(events.resize)
-                    });
                 }).on('resizing', () => {
                     objWasResized = true;
                 }).on('resizedone', () => {
-                    Logger.addEvent(Logger.EventType.debugInfo, {
-                        debugMessage: "Resize has done",
-                        resizeEventInitialized: Boolean(events.resize)
-                    });
-
-                    if (objWasResized) {
-                        let frame = window.cvat.player.frames.current;
-                        this._controller.updatePosition(frame, this._buildPosition());
-                        objWasResized = false;
-                    }
                     events.resize.close();
                     events.resize = null;
                     this._flags.resizing = false;
+                    if (objWasResized) {
+                        const frame = window.cvat.player.frames.current;
+                        this._controller.updatePosition(frame, this._buildPosition());
+                        objWasResized = false;
+                    }
                     this._showShapeText();
                     this.notify('resize');
                 });
@@ -2547,6 +2537,13 @@ class ShapeView extends Listener {
         let activeAttribute = model.activeAttribute;
         let hiddenText = model.hiddenText && activeAttribute === null;
         let hiddenShape = model.hiddenShape && activeAttribute === null;
+
+        if (this._flags.resizing || this._flags.dragging) {
+            Logger.addEvent(Logger.EventType.debugInfo, {
+                debugMessage: "Object has been updated during resizing/dragging",
+                updateReason: model.updateReason,
+            });
+        }
 
         this._makeNotEditable();
         this._deselect();
