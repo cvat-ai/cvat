@@ -1067,27 +1067,27 @@ class ShapeCollectionController {
     }
 
     switchActiveColor() {
-        let colorByInstanceInput = $('#colorByInstanceRadio');
-        let colorByGroupInput = $('#colorByGroupRadio');
-        let colorByLabelInput = $('#colorByLabelRadio');
+        if (!window.cvat.mode || window.cvat.mode === 'aam') {
+            const colorByInstanceInput = $('#colorByInstanceRadio');
+            const colorByGroupInput = $('#colorByGroupRadio');
+            const colorByLabelInput = $('#colorByLabelRadio');
 
-        let activeShape = this._model.activeShape;
-        if (activeShape) {
-            if (colorByInstanceInput.prop('checked')) {
-                activeShape.changeColor(this._model.nextColor());
-            }
-            else if (colorByGroupInput.prop('checked')) {
-                if (activeShape.groupId) {
-                    this._model.updateGroupIdx(activeShape.groupId);
-                    colorByGroupInput.trigger('change');
+            const { activeShape } = this._model;
+            if (activeShape) {
+                if (colorByInstanceInput.prop('checked')) {
+                    activeShape.changeColor(this._model.nextColor());
+                } else if (colorByGroupInput.prop('checked')) {
+                    if (activeShape.groupId) {
+                        this._model.updateGroupIdx(activeShape.groupId);
+                        colorByGroupInput.trigger('change');
+                    }
+                } else {
+                    const labelId = +activeShape.label;
+                    window.cvat.labelsInfo.updateLabelColorIdx(labelId);
+                    $(`.labelContentElement[label_id="${labelId}"`).css('background-color',
+                        this._model.colorsByGroup(window.cvat.labelsInfo.labelColorIdx(labelId)));
+                    colorByLabelInput.trigger('change');
                 }
-            }
-            else {
-                let labelId = +activeShape.label;
-                window.cvat.labelsInfo.updateLabelColorIdx(labelId);
-                $(`.labelContentElement[label_id="${labelId}"`).css('background-color',
-                    this._model.colorsByGroup(window.cvat.labelsInfo.labelColorIdx(labelId)));
-                colorByLabelInput.trigger('change');
             }
         }
     }
