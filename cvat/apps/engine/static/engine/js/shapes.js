@@ -522,7 +522,7 @@ class ShapeModel extends Listener {
 
     set active(value) {
         this._active = value;
-        if (!this._removed && !window.cvat.mode) {
+        if (!this._removed && !['drag', 'resize'].includes(window.cvat.mode)) {
             this.notify('activation');
         }
     }
