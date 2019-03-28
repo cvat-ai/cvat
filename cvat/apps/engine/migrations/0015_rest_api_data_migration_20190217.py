@@ -49,9 +49,6 @@ def join_text_attribute(apps, schema_editor):
         attribute.text += ",".join(attribute.values.split('\n'))
         attribute.save()
 
-
-
-
 class Migration(migrations.Migration):
 
     dependencies = [

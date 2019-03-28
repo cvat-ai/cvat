@@ -600,7 +600,7 @@ def copy_annotations_backward(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0015_1_rest_api_20190217'),
+        ('engine', '0015_rest_api_data_migration_20190217'),
     ]
 
     operations = [
