@@ -370,14 +370,14 @@ tests.push(() => {
         assert.equal(labelsInfo.labelIdOf('motorcycle'), 18);
         assert.equal(labelsInfo.labelIdOf('person, pedestrian'), 14);
         assert.equal(labelsInfo.labelIdOf('road'), 19);
-        assert.throws(labelsInfo.labelIdOf.bind(labelsInfo, 'road'));
+        assert.throws(labelsInfo.labelIdOf.bind(labelsInfo, 'unknown_label'));
     });
 
     QUnit.test('attrIdOf', (assert) => {
         assert.equal(labelsInfo.attrIdOf(14, 'action'), labelsInfo.attrIdOf('14', 'action'));
         assert.equal(labelsInfo.attrIdOf(18, 'model'), 30);
         assert.equal(labelsInfo.attrIdOf(15, 'age'), 21);
-        assert.equal(labelsInfo.attrIdOf(15, 'unknown_attribute'), null);
+        assert.throws(labelsInfo.attrIdOf.bind(labelsInfo, 15, 'unknown_attribute'));
         assert.throws(labelsInfo.attrIdOf.bind(labelsInfo, 99, 'age'));
         assert.throws(labelsInfo.attrIdOf.bind(labelsInfo, undefined, 'driver'));
         assert.throws(labelsInfo.attrIdOf.bind(labelsInfo, '15', undefined));
@@ -482,10 +482,10 @@ tests.push(() => {
         });
 
         assert.deepEqual(labelsInfo.attrInfo(23), labelsInfo.attrInfo('23'));
-        assert.throws(labelsInfo.attrInfo.bind(labelsInfo, 100), {});
-        assert.throws(labelsInfo.attrInfo.bind(labelsInfo), {});
-        assert.throws(labelsInfo.attrInfo.bind(labelsInfo, 'clother'), {});
-        assert.throws(labelsInfo.attrInfo.bind(labelsInfo, null), {});
+        assert.throws(labelsInfo.attrInfo.bind(labelsInfo, 100));
+        assert.throws(labelsInfo.attrInfo.bind(labelsInfo));
+        assert.throws(labelsInfo.attrInfo.bind(labelsInfo, 'clother'));
+        assert.throws(labelsInfo.attrInfo.bind(labelsInfo, null));
     });
 });
 
@@ -551,7 +551,7 @@ tests.push(() => {
         listenerInterface.unsubscribe(dummyListener3);
     });
 
-    QUnit.test('unsubscribeAll', () => {
+    QUnit.test('unsubscribeAll', (assert) => {
         const listenerInterface = new Listener('onUpdate', () => {});
         const dummyListener1 = {
             onUpdate() {},
@@ -565,6 +565,8 @@ tests.push(() => {
         listenerInterface.subscribe(dummyListener2);
 
         listenerInterface.unsubscribeAll();
+
+        assert.expect(0);
     });
 });
 
