@@ -42,7 +42,8 @@ class Migration(migrations.Migration):
             name='ClientFile',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('file', models.FileField(storage=cvat.apps.engine.models.MyFileSystemStorage(), upload_to=cvat.apps.engine.models.upload_path_handler)),
+                ('file', models.FileField(max_length=1024, storage=cvat.apps.engine.models.MyFileSystemStorage(),
+                    upload_to=cvat.apps.engine.models.upload_path_handler)),
                 ('task', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.Task')),
             ],
             options={

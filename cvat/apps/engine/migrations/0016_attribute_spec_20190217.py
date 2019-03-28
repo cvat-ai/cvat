@@ -52,7 +52,7 @@ def join_text_attribute(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0015_rest_api_20190217'),
+        ('engine', '0015_db_redesign_20190217'),
     ]
 
     operations = [

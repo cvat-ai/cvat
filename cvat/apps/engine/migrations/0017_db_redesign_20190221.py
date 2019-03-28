@@ -600,7 +600,7 @@ def copy_annotations_backward(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0015_rest_api_data_migration_20190217'),
+        ('engine', '0016_attribute_spec_20190217'),
     ]
 
     operations = [
@@ -758,7 +758,6 @@ class Migration(migrations.Migration):
             name='image',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='engine.LabeledImage'),
         ),
-
 
         migrations.RunPython(
             code=copy_annotations_forward,
