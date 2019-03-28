@@ -76,10 +76,10 @@ class Migration(migrations.Migration):
             name='status',
             field=models.CharField(choices=[('ANNOTATION', 'annotation'), ('VALIDATION', 'validation'), ('COMPLETED', 'completed')], default=cvat.apps.engine.models.StatusChoice('annotation'), max_length=32),
         ),
-        # migrations.RemoveField(
-        #     model_name='task',
-        #     name='path',
-        # ),
+        migrations.RemoveField(
+            model_name='task',
+            name='path',
+        ),
         migrations.AddField(
             model_name='task',
             name='image_quality',
@@ -115,10 +115,10 @@ class Migration(migrations.Migration):
             name='clientfile',
             unique_together={('task', 'file')},
         ),
-        # migrations.RemoveField(
-        #     model_name='task',
-        #     name='source',
-        # ),
+        migrations.RemoveField(
+            model_name='task',
+            name='source',
+        ),
         migrations.AddField(
             model_name='attributespec',
             name='default_value',

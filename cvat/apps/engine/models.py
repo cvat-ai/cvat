@@ -54,8 +54,6 @@ class Task(models.Model):
     image_quality = models.PositiveSmallIntegerField(default=50)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
-    path = models.CharField(max_length=256)
-    source = SafeCharField(max_length=256, default="unknown")
 
     # Extend default permission model
     class Meta:
