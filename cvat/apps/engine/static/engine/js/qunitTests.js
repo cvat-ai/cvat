@@ -7,6 +7,8 @@
 /* global
     LabelsInfo:false
     AnnotationParser:false
+    Listener:false
+    PlayerModel:false
 */
 
 const tests = [];
@@ -19,6 +21,18 @@ const jobData = {
     stop_frame: 7,
     max_shape_id: -1,
     task_id: 3,
+};
+
+window.cvat = {
+    player: {
+        frames: {
+            start: jobData.start_frame,
+            stop: jobData.stop_frame,
+            current: 0,
+        },
+        geometry: {},
+    },
+    translate: {},
 };
 
 const framesMeta = [
@@ -323,6 +337,17 @@ function makeAnnotationParser() {
     }, makeLabelsInfo());
 }
 
+function makePlayerModel() {
+    const dummyPlayerGeometry = {
+        width: 800,
+        height: 600,
+        left: 10,
+        top: 10,
+    };
+
+    return new PlayerModel(taskData, dummyPlayerGeometry);
+}
+
 // Run all tests
 window.addEventListener('DOMContentLoaded', () => {
     for (const test of tests) {
@@ -368,7 +393,7 @@ tests.push(() => {
         assert.equal(LabelsInfo.normalize('radio', 'value'), 'value');
         assert.equal(LabelsInfo.normalize('number', '1'), 1);
         assert.equal(LabelsInfo.normalize('number', 1), 1);
-        assert.throws(LabelsInfo.normalize('number', 'abrakadabra'), 1);
+        assert.throws(LabelsInfo.normalize.bind(LabelsInfo, 'number', 'abrakadabra'));
     });
 
     QUnit.test('labels', (assert) => {
@@ -424,9 +449,9 @@ tests.push(() => {
 
         assert.deepEqual(labelsInfo.labelAttributes(19), {});
         assert.deepEqual(labelsInfo.labelAttributes(14), labelsInfo.labelAttributes('14'));
-        assert.throws(labelsInfo.labelAttributes(100));
-        assert.throws(labelsInfo.labelAttributes());
-        assert.throws(labelsInfo.labelAttributes(null));
+        assert.throws(labelsInfo.labelAttributes.bind(labelsInfo, 100));
+        assert.throws(labelsInfo.labelAttributes.bind(labelsInfo));
+        assert.throws(labelsInfo.labelAttributes.bind(labelsInfo, null));
     });
 
     QUnit.test('attrInfo', (assert) => {
@@ -456,22 +481,112 @@ tests.push(() => {
         });
 
         assert.deepEqual(labelsInfo.attrInfo(23), labelsInfo.attrInfo('23'));
-        assert.throws(labelsInfo.attrInfo(100), {});
-        assert.throws(labelsInfo.attrInfo(), {});
-        assert.throws(labelsInfo.attrInfo('clother'), {});
-        assert.throws(labelsInfo.attrInfo(null), {});
+        assert.throws(labelsInfo.attrInfo.bind(labelsInfo, 100), {});
+        assert.throws(labelsInfo.attrInfo.bind(labelsInfo), {});
+        assert.throws(labelsInfo.attrInfo.bind(labelsInfo, 'clother'), {});
+        assert.throws(labelsInfo.attrInfo.bind(labelsInfo, null), {});
     });
 });
 
 
 tests.push(() => {
-    let annotationParser = null;
+    QUnit.module('Listener');
 
-    QUnit.module('AnnotatinParser', {
+    QUnit.test('subscribe', (assert) => {
+        const listenerInterface = new Listener('onUpdate', () => {});
+        const dummyListener1 = {
+            onUpdate() {},
+        };
+        const dummyListener2 = {
+            onUpdate: 'someProp',
+        };
+        const dummyListener3 = {};
+        const dummyListener4 = {
+            onUpdate() {},
+        };
+        const dummyListener5 = {
+            onUpdate() {},
+        };
+
+        listenerInterface.subscribe(dummyListener1); // no exceptions, listener added
+        listenerInterface.subscribe(dummyListener4); // no exceptions, listener added
+        listenerInterface.subscribe(dummyListener5); // no exceptions, listener added
+
+        assert.throws(listenerInterface.subscribe.bind(listenerInterface, dummyListener2));
+        assert.throws(listenerInterface.subscribe.bind(listenerInterface, dummyListener3));
+    });
+
+    QUnit.test('unsubscribe', (assert) => {
+        const listenerInterface = new Listener('onUpdate', () => {});
+
+        const dummyListener1 = {
+            onUpdate() {},
+        };
+
+        const dummyListener2 = {
+            onUpdate() {},
+        };
+
+        const dummyListener3 = {
+            onUpdate() {},
+        };
+
+        const dummyListener4 = {
+            onUpdate() {},
+        };
+
+        listenerInterface.subscribe(dummyListener1);
+        listenerInterface.subscribe(dummyListener2);
+        listenerInterface.subscribe(dummyListener3);
+        listenerInterface.subscribe(dummyListener4);
+
+        listenerInterface.unsubscribe(dummyListener2);
+        listenerInterface.unsubscribe(dummyListener4);
+
+        assert.throws(listenerInterface.unsubscribe.bind(listenerInterface, null));
+        assert.throws(listenerInterface.unsubscribe.bind(listenerInterface));
+
+        listenerInterface.unsubscribe(dummyListener1);
+        listenerInterface.unsubscribe(dummyListener3);
+    });
+
+    QUnit.test('unsubscribeAll', () => {
+        const listenerInterface = new Listener('onUpdate', () => {});
+        const dummyListener1 = {
+            onUpdate() {},
+        };
+
+        const dummyListener2 = {
+            onUpdate() {},
+        };
+
+        listenerInterface.subscribe(dummyListener1);
+        listenerInterface.subscribe(dummyListener2);
+
+        listenerInterface.unsubscribeAll();
+    });
+});
+
+tests.push(() => {
+    let playerModel = null;
+    QUnit.module('PlayerModel', {
         before() {
-            annotationParser = makeAnnotationParser();
+            playerModel = makePlayerModel();
         },
     });
 
+    QUnit.test('scale', (assert) => {
+        // Scale when player is not ready
+        assert.expect(0);
+        playerModel.scale(20, 20, 1);
+    });
 
+
+    QUnit.test('fit', (assert) => {
+        // Fit when player is not ready
+        assert.expect(0);
+        playerModel.fit();
+    });
 });
+
+// TODO TESTS FOR ANNOTATIONS PARSER
