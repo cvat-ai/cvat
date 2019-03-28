@@ -110,7 +110,7 @@ def upload_path_handler(instance, filename):
 class ClientFile(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     file = models.FileField(upload_to=upload_path_handler,
-        storage=MyFileSystemStorage())
+        max_length=1024, storage=MyFileSystemStorage())
 
     class Meta:
         default_permissions = ()
