@@ -370,6 +370,7 @@ tests.push(() => {
         assert.equal(labelsInfo.labelIdOf('motorcycle'), 18);
         assert.equal(labelsInfo.labelIdOf('person, pedestrian'), 14);
         assert.equal(labelsInfo.labelIdOf('road'), 19);
+        assert.throws(labelsInfo.labelIdOf.bind(labelsInfo, 'road'));
     });
 
     QUnit.test('attrIdOf', (assert) => {
@@ -377,9 +378,9 @@ tests.push(() => {
         assert.equal(labelsInfo.attrIdOf(18, 'model'), 30);
         assert.equal(labelsInfo.attrIdOf(15, 'age'), 21);
         assert.equal(labelsInfo.attrIdOf(15, 'unknown_attribute'), null);
-        assert.equal(labelsInfo.attrIdOf(99, 'age'), null);
-        assert.equal(labelsInfo.attrIdOf(undefined, 'driver'), null);
-        assert.equal(labelsInfo.attrIdOf('15', undefined), null);
+        assert.throws(labelsInfo.attrIdOf.bind(labelsInfo, 99, 'age'));
+        assert.throws(labelsInfo.attrIdOf.bind(labelsInfo, undefined, 'driver'));
+        assert.throws(labelsInfo.attrIdOf.bind(labelsInfo, '15', undefined));
     });
 
     QUnit.test('normalize', (assert) => {

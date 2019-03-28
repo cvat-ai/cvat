@@ -103,7 +103,7 @@ class LabelsInfo {
                 return +labelId;
             }
         }
-        return null;
+        throw Error('Unknown label name');
     }
 
 
@@ -114,7 +114,7 @@ class LabelsInfo {
                 return +attrId;
             }
         }
-        return null;
+        throw Error('Unknown attribute name');
     }
 
 
