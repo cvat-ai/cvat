@@ -11,8 +11,6 @@
     LabelsInfo:false
 */
 
-"use strict";
-
 class AnnotationParser {
     constructor(job, labelsInfo) {
         this._parser = new DOMParser();

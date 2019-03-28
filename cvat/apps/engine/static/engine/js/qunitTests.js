@@ -6,6 +6,7 @@
 
 /* global
     LabelsInfo:false
+    AnnotationParser:false
 */
 
 const tests = [];
@@ -313,6 +314,15 @@ function makeLabelsInfo() {
     return new LabelsInfo(taskData.labels);
 }
 
+function makeAnnotationParser() {
+    return new AnnotationParser({
+        start: jobData.start,
+        stop: jobData.stop,
+        flipped: taskData.flipped,
+        image_meta_data: framesMeta,
+    }, makeLabelsInfo());
+}
+
 // Run all tests
 window.addEventListener('DOMContentLoaded', () => {
     for (const test of tests) {
@@ -451,4 +461,17 @@ tests.push(() => {
         assert.throws(labelsInfo.attrInfo('clother'), {});
         assert.throws(labelsInfo.attrInfo(null), {});
     });
+});
+
+
+tests.push(() => {
+    let annotationParser = null;
+
+    QUnit.module('AnnotatinParser', {
+        before() {
+            annotationParser = makeAnnotationParser();
+        },
+    });
+
+
 });
