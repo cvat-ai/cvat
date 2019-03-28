@@ -339,7 +339,6 @@ def process_paths(db_job, apps, db_labels, db_attributes, db_alias):
             for attr in shape.attributes:
                 db_attrspec = db_attributes[attr.spec_id]
                 db_attrval = TrackedShapeAttributeVal()
-                db_attrval.id = len(new_db_shapes)
                 db_attrval.shape_id = len(new_db_shapes)
                 db_attrval.spec = db_attrspec
                 db_attrval.value = attr.value
@@ -537,7 +536,7 @@ def _save_old_tracks_to_db(apps, db_shapes, db_attributes, db_alias, db_job):
                 db_shape.outside = shape.outside
 
                 for attr in list(shape.trackedshapeattributeval_set.all()):
-                    db_attrspec = db_attributes[attr.id]
+                    db_attrspec = db_attributes[attr.spec_id]
                     db_attrval = _get_shape_attr_class(shape_type)()
                     if shape_type == 'polygon_paths':
                         db_attrval.polygon_id = len(new_db_shapes)
@@ -601,7 +600,7 @@ def copy_annotations_backward(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0015_rest_api_20190217'),
+        ('engine', '0015_rest_api_data_migration_20190217'),
     ]
 
     operations = [
