@@ -27,6 +27,8 @@
         "airbnb",
     ],
     "rules": {
+        "no-new": [0],
+        "class-methods-use-this": [0],
         "no-restricted-properties": [0, {
             "object": "Math",
             "property": "pow",

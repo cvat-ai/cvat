@@ -110,6 +110,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
         job: {
             z_order: taskData.z_order,
             id: jobData.id,
+            task_id: taskData.id,
             images: imageMetaData,
         },
         search: {
