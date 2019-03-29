@@ -171,12 +171,6 @@ class AnnotationSaverModel extends Listener {
 
     _getHash() {
         const exported = this._shapeCollection.export()[0];
-        Object.keys(exported).forEach((key) => {
-            for (const shape of exported[key]) {
-                delete shape.backLink;
-            }
-        });
-
         return objectHash(exported);
     }
 
