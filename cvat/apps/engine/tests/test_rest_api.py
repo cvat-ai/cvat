@@ -326,8 +326,11 @@ class ServerExceptionAPITestCase(APITestCase):
         cls.data = {
             "system": "Linux",
             "client": "rest_framework.APIClient",
-            "task": None,
-            "job": None,
+            "time": "2019-01-29T12:34:56.000000Z",
+            "task_id": 1,
+            "job_id": 1,
+            "proj_id": 2,
+            "client_id": 12321235123,
             "message": "just test message",
             "filename": "http://localhost/my_file.js",
             "line": 1,
@@ -353,6 +356,53 @@ class ServerExceptionAPITestCase(APITestCase):
     def test_api_v1_server_exception_no_auth(self):
         response = self._run_api_v1_server_exception(None)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class ServerLogsAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.data = [
+        {
+            "time": "2019-01-29T12:34:56.000000Z",
+            "task_id": 1,
+            "job_id": 1,
+            "proj_id": 2,
+            "client_id": 12321235123,
+            "message": "just test message",
+            "name": "add point",
+            "is_active": True,
+            "payload": {"count": 1}
+        },
+        {
+            "time": "2019-02-24T12:34:56.000000Z",
+            "client_id": 12321235123,
+            "name": "add point",
+            "is_active": True,
+        }]
+
+    @mock.patch("cvat.apps.engine.views.clogger")
+    def _run_api_v1_server_logs(self, user, clogger):
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/server/logs', self.data, format='json')
+
+        return response
+
+    def test_api_v1_server_logs_admin(self):
+        response = self._run_api_v1_server_logs(self.admin)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_api_v1_server_logs_user(self):
+        response = self._run_api_v1_server_logs(self.user)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_api_v1_server_logs_no_auth(self):
+        response = self._run_api_v1_server_logs(None)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
 class UserListAPITestCase(APITestCase):
     def setUp(self):

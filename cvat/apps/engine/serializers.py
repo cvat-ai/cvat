@@ -29,7 +29,6 @@ class AttributeSerializer(serializers.ModelSerializer):
         attribute['values'] = attribute['values'].split('\n')
         return attribute
 
-
 class LabelSerializer(serializers.ModelSerializer):
     attributes = AttributeSerializer(many=True, source='attributespec_set',
         default=[])
@@ -83,7 +82,6 @@ class ServerFileSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return instance.file
-
 
 class RemoteFileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -247,7 +245,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return instance
 
-
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True,
         slug_field='name', queryset=Group.objects.all())
@@ -264,9 +261,12 @@ class UserSerializer(serializers.ModelSerializer):
 class ExceptionSerializer(serializers.Serializer):
     system = serializers.CharField(max_length=255)
     client = serializers.CharField(max_length=255)
+    time = serializers.DateTimeField()
 
-    task = serializers.IntegerField(allow_null=True)
-    job = serializers.IntegerField(allow_null=True)
+    job_id = serializers.IntegerField(required=False)
+    task_id = serializers.IntegerField(required=False)
+    proj_id = serializers.IntegerField(required=False)
+    client_id = serializers.IntegerField()
 
     message = serializers.CharField(max_length=4096)
     filename = serializers.URLField()
@@ -274,7 +274,6 @@ class ExceptionSerializer(serializers.Serializer):
     column = serializers.IntegerField()
     stack = serializers.CharField(max_length=8192,
         style={'base_template': 'textarea.html'}, allow_null=True)
-
 
 class AboutSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)
@@ -284,7 +283,6 @@ class AboutSerializer(serializers.Serializer):
 class ImageMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField()
     height = serializers.IntegerField()
-
 
 class AttributeValSerializer(serializers.Serializer):
     spec_id = serializers.IntegerField()
@@ -299,7 +297,6 @@ class AnnotationSerializer(serializers.Serializer):
 class LabeledImageSerializer(AnnotationSerializer):
     attributes = AttributeValSerializer(many=True,
         source="labeledimageattributeval_set")
-
 
 class ShapeSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=models.ShapeType.choices())
@@ -320,13 +317,11 @@ class TrackedShapeSerializer(ShapeSerializer):
     attributes = AttributeValSerializer(many=True,
         source="trackedshapeattributeval_set")
 
-
 class LabeledTrackSerializer(AnnotationSerializer):
     shapes = TrackedShapeSerializer(many=True, allow_empty=False,
         source="trackedshape_set")
     attributes = AttributeValSerializer(many=True,
         source="labeledtrackattributeval_set")
-
 
 class LabeledDataSerializer(serializers.Serializer):
     version = serializers.IntegerField()
@@ -343,3 +338,16 @@ class PluginSerializer(serializers.ModelSerializer):
         model = models.Plugin
         fields = ('name', 'description', 'maintainer', 'created_at',
             'updated_at')
+
+class LogEventSerializer(serializers.Serializer):
+    job_id = serializers.IntegerField(required=False)
+    task_id = serializers.IntegerField(required=False)
+    proj_id = serializers.IntegerField(required=False)
+    client_id = serializers.IntegerField()
+
+    name = serializers.CharField(max_length=64)
+    time = serializers.DateTimeField()
+    message = serializers.CharField(max_length=4096, required=False)
+    payload = serializers.DictField(required=False)
+    is_active = serializers.BooleanField()
+ 

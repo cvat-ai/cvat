@@ -38,7 +38,7 @@ from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
 from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
    RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
-   PluginSerializer, FileInfoSerializer)
+   PluginSerializer, FileInfoSerializer, LogEventSerializer)
 from django.contrib.auth.models import User
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
@@ -84,11 +84,13 @@ class ServerViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
     def exception(self, request):
+        # FIXME: update Logstash to handle the event correctly
         serializer = ExceptionSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            message = JSONRenderer().render(serializer.data)
-            jid = serializer.data["job"]
-            tid = serializer.data["task"]
+            user = { "username": request.user.username }
+            message = JSONRenderer().render({**serializer.data, **user})
+            jid = serializer.data.get("job_id")
+            tid = serializer.data.get("task_id")
             if jid:
                 clogger.job[jid].error(message)
             elif tid:
@@ -98,11 +100,23 @@ class ServerViewSet(viewsets.ViewSet):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    # @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
-    # def logs(self, request):
-    #     serializer = LogEventSerializer(many=True, data=request.data)
-    #     if serializer.is_valid(raise_exception=True):
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
+    def logs(self, request):
+        # FIXME: update Logstash to handle the event correctly
+        serializer = LogEventSerializer(many=True, data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            user = { "username": request.user.username }
+            for event in serializer.data:
+                message = JSONRenderer().render({**event, **user})
+                jid = event.get("job_id")
+                tid = event.get("task_id") 
+                if jid:
+                    clogger.job[jid].info(message)
+                elif tid:
+                    clogger.task[tid].info(message)
+                else:
+                    clogger.glob.info(message)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
     def share(self, request):
