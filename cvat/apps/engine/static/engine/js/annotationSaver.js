@@ -3,6 +3,10 @@
 /* global
     showOverlay:false
     showMessage:false
+    Listener:false
+    objectHash:false
+    Logger:false
+    Mousetrap:false
 */
 
 
@@ -20,11 +24,11 @@ class AnnotationSaverModel extends Listener {
         this._initialObjects = [];
         this._hash = objectHash(shapeCollection.export());
 
-        for (let shape of initialData.shapes) {
+        for (const shape of initialData.shapes) {
             this._initialObjects[shape.id] = shape;
         }
 
-        for (let track of initialData.tracks) {
+        for (const track of initialData.tracks) {
             this._initialObjects[track.id] = track;
         }
     }
@@ -36,11 +40,11 @@ class AnnotationSaverModel extends Listener {
                 type: 'PATCH',
                 data: JSON.stringify(data),
                 contentType: 'application/json',
-            }).done((data) => {
-                resolve(data);
+            }).done((savedData) => {
+                resolve(savedData);
             }).fail((errorData) => {
-                const message = `Could not make ${action} annotations. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.responseText || errorData.statusText}`;
+                const message = `Could not make ${action} annotations. Code: ${errorData.status}. `
+                    + `Message: ${errorData.responseText || errorData.statusText}`;
                 reject(new Error(message));
             });
         });
@@ -53,11 +57,11 @@ class AnnotationSaverModel extends Listener {
                 type: 'PUT',
                 data: JSON.stringify(data),
                 contentType: 'application/json',
-            }).done((data) => {
-                resolve(data);
+            }).done((savedData) => {
+                resolve(savedData);
             }).fail((errorData) => {
-                const message = `Could not put annotations. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.responseText || errorData.statusText}`;
+                const message = `Could not put annotations. Code: ${errorData.status}. `
+                    + `Message: ${errorData.responseText || errorData.statusText}`;
                 reject(new Error(message));
             });
         });
@@ -79,10 +83,10 @@ class AnnotationSaverModel extends Listener {
         Logger.addEvent(Logger.EventType.saveJob);
         const totalStat = this._shapeCollection.collectStatistic()[1];
         Logger.addEvent(Logger.EventType.sendTaskInfo, {
-            'track count': totalStat.boxes.annotation + totalStat.boxes.interpolation +
-                totalStat.polygons.annotation + totalStat.polygons.interpolation +
-                totalStat.polylines.annotation + totalStat.polylines.interpolation +
-                totalStat.points.annotation + totalStat.points.interpolation,
+            'track count': totalStat.boxes.annotation + totalStat.boxes.interpolation
+                + totalStat.polygons.annotation + totalStat.polygons.interpolation
+                + totalStat.polylines.annotation + totalStat.polylines.interpolation
+                + totalStat.points.annotation + totalStat.points.interpolation,
             'frame count': window.cvat.player.frames.stop - window.cvat.player.frames.start + 1,
             'object count': totalStat.total,
             'box count': totalStat.boxes.annotation + totalStat.boxes.interpolation,
@@ -91,47 +95,46 @@ class AnnotationSaverModel extends Listener {
             'points count': totalStat.points.annotation + totalStat.points.interpolation,
         });
 
-        const annotationLogs = Logger.getLogs();
-
+        // const annotationLogs = Logger.getLogs();
         // TODO: Save logs
     }
 
     _split(exported) {
-        const exportedIDs = Array.from(exported.shapes, (shape) => +shape.id)
-            .concat(Array.from(exported.tracks, (track) => +track.id));
+        const exportedIDs = Array.from(exported.shapes, shape => +shape.id)
+            .concat(Array.from(exported.tracks, track => +track.id));
 
         const created = {
             version: this._version,
             shapes: [],
             tracks: [],
             tags: [],
-        }
+        };
 
         const updated = {
             version: this._version + 1,
             shapes: [],
             tracks: [],
             tags: [],
-        }
+        };
 
         const deleted = {
             version: this._version + 2,
             shapes: [],
             tracks: [],
             tags: [],
-        }
+        };
 
         // Compare initial state objects and export state objects
         // in order to get updated and created objects
-        for (let obj of exported.shapes.concat(exported.tracks)) {
+        for (const obj of exported.shapes.concat(exported.tracks)) {
             if (obj.id in this._initialObjects) {
                 const exportedHash = objectHash(obj);
                 const initialSash = objectHash(this._initialObjects[obj.id]);
-                if (exportedHash != initialSash) {
+                if (exportedHash !== initialSash) {
                     const target = 'shapes' in obj ? updated.tracks : updated.shapes;
                     target.push(obj);
                 }
-            } else if (typeof(obj.id) === 'undefined') {
+            } else if (typeof obj.id === 'undefined') {
                 const target = 'shapes' in obj ? created.tracks : created.shapes;
                 target.push(obj);
             } else {
@@ -142,7 +145,7 @@ class AnnotationSaverModel extends Listener {
 
         // Compare initial state indexes and export state indexes
         // in order to get removed objects
-        for (let shapeID in this._initialObjects) {
+        for (const shapeID in this._initialObjects) {
             if (!exportedIDs.includes(+shapeID)) {
                 const initialShape = this._initialObjects[shapeID];
                 const target = 'shapes' in initialShape ? deleted.tracks : deleted.shapes;
@@ -160,17 +163,17 @@ class AnnotationSaverModel extends Listener {
     }
 
     hasUnsavedChanges() {
-        return objectHash(this._shapeCollection.export()) != this._hash;
+        return objectHash(this._shapeCollection.export()) !== this._hash;
     }
 
     async save() {
         this.notify('saveStart');
         try {
             const exported = this._shapeCollection.export();
-            const flush = this._shapeCollection.flush;
+            const { flush } = this._shapeCollection;
             if (flush) {
                 const data = Object.assign({}, exported, {
-                    version: this._version++,
+                    version: this._version += 1,
                     tags: [],
                 });
 
@@ -179,7 +182,7 @@ class AnnotationSaverModel extends Listener {
                 this._shapeCollection.cleanupClientObjects();
                 this._shapeCollection.import(savedObjects).update();
                 this._shapeCollection.flush = false;
-                for (let object of savedObjects.shapes.concat(savedObjects.tracks)) {
+                for (const object of savedObjects.shapes.concat(savedObjects.tracks)) {
                     this._initialObjects[object.id] = object;
                 }
 
@@ -191,13 +194,13 @@ class AnnotationSaverModel extends Listener {
                 const savedCreated = await this._create(created);
                 this._shapeCollection.cleanupClientObjects();
                 this._shapeCollection.import(savedCreated).update();
-                for (let object of savedCreated.shapes.concat(savedCreated.tracks)) {
+                for (const object of savedCreated.shapes.concat(savedCreated.tracks)) {
                     this._initialObjects[object.id] = object;
                 }
 
                 this.notify('saveUpdated');
                 const savedUpdated = await this._update(updated);
-                for (let object of savedUpdated.shapes.concat(savedUpdated.tracks)) {
+                for (const object of savedUpdated.shapes.concat(savedUpdated.tracks)) {
                     if (object.id in this._initialObjects) {
                         this._initialObjects[object.id] = object;
                     }
@@ -205,7 +208,7 @@ class AnnotationSaverModel extends Listener {
 
                 this.notify('saveDeleted');
                 const savedDeleted = await this._delete(deleted);
-                for (let object of savedDeleted.shapes.concat(savedDeleted.tracks)) {
+                for (const object of savedDeleted.shapes.concat(savedDeleted.tracks)) {
                     if (object.id in this._initialObjects) {
                         delete this._initialObjects[object.id];
                     }
@@ -219,7 +222,7 @@ class AnnotationSaverModel extends Listener {
             this._state = {
                 status: null,
                 message: null,
-            }
+            };
             throw Error(error);
         }
 
@@ -232,7 +235,7 @@ class AnnotationSaverModel extends Listener {
             this._state = {
                 status: null,
                 message: null,
-            }
+            };
         }, 15000);
     }
 
@@ -247,8 +250,8 @@ class AnnotationSaverController {
         this._model = model;
         this._autoSaveInterval = null;
 
-        const shortkeys = window.cvat.config.shortkeys;
-        Mousetrap.bind(shortkeys["save_work"].value, () => {
+        const { shortkeys } = window.cvat.config;
+        Mousetrap.bind(shortkeys.save_work.value, () => {
             this.save();
             return false;
         }, 'keydown');
@@ -286,8 +289,8 @@ class AnnotationSaverView {
         this._controller = controller;
         this._overlay = null;
 
-        const shortkeys = window.cvat.config.shortkeys;
-        const saveHelp = `${shortkeys['save_work'].view_value} - ${shortkeys['save_work'].description}`;
+        const { shortkeys } = window.cvat.config;
+        const saveHelp = `${shortkeys.save_work.view_value} - ${shortkeys.save_work.description}`;
 
         this._saveButton = $('#saveButton').on('click', () => {
             this._controller.save();
@@ -306,11 +309,11 @@ class AnnotationSaverView {
 
         window.onbeforeunload = (e) => {
             if (this._controller.hasUnsavedChanges()) {
-                let message = "You have unsaved changes. Leave this page?";
+                const message = 'You have unsaved changes. Leave this page?';
                 e.returnValue = message;
                 return message;
             }
-            return;
+            return null;
         };
     }
 
@@ -328,11 +331,11 @@ class AnnotationSaverView {
             showMessage(message);
             this._overlay.remove();
         } else if (state.status === 'saveCreated') {
-            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Created objects are being saved..');
+            this._overlay.setMessage(`${this._overlay.getMessage()} <br /> - Created objects are being saved..`);
         } else if (state.status === 'saveUpdated') {
-            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Updated objects are being saved..');
+            this._overlay.setMessage(`${this._overlay.getMessage()} <br /> - Updated objects are being saved..`);
         } else if (state.status === 'saveDeleted') {
-            this._overlay.setMessage(`${this._overlay.getMessage()}` + '<br /> - Deleted objects are being saved..');
+            this._overlay.setMessage(`${this._overlay.getMessage()} <br /> - Deleted objects are being saved..`);
         } else if (state.status === 'saveUnlocked') {
             this._saveButton.prop('disabled', false).text('Save Work');
         } else {

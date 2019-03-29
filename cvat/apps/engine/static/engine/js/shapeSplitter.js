@@ -16,7 +16,7 @@ class ShapeSplitter {
             let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
             if (attrInfo.mutable) {
                 result.push({
-                    spec_id: +attrId,
+                    id: +attrId,
                     value: attributes[attrId].value
                 });
             }
@@ -26,8 +26,9 @@ class ShapeSplitter {
     }
 
     split(track, frame) {
-        const keyFrames = track.keyframes.sort((a,b) => a - b);
+        const keyFrames = track.keyframes.map((frame) => +frame).sort((a,b) => a - b);
         const exported = track.export();
+
         if (frame > +keyFrames[0]) {
             const curInterpolation = track.interpolate(frame);
             const prevInterpolation = track.interpolate(frame - 1);
@@ -37,55 +38,40 @@ class ShapeSplitter {
             const prevPositionList = [];
 
             for (let shape of exported.shapes) {
-                if (shape.frame < frame) {
+                if (shape.frame < frame - 1) {
                     prevPositionList.push(shape);
-                }
-                else if (shape.frame > frame) {
+                } else if (shape.frame > frame) {
                     curPositionList.push(shape);
                 }
             }
 
             if (track.type.split('_')[1] === 'box') {
                 const prevPos = prevInterpolation.position;
-                prevPositionList.push({
+                prevPositionList.push(Object.assign({}, {
                     frame: frame - 1,
                     attributes: prevAttrributes,
-                    points: [prevPos.xtl, prevPos.xbr, prevPos.ytl, prevPos.ybr],
-                    type: "rectangle",
-                    occluded: Boolean(prevPos.occluded),
-                    outside: Boolean(prevPos.outside),
-                });
-
-                if (!prevPos.outside) {
-                    prevPositionList.push({
-                        frame: frame - 1,
-                        attributes: [],
-                        points: [prevPos.xtl, prevPos.xbr, prevPos.ytl, prevPos.ybr],
-                        type: "rectangle",
-                        occluded: Boolean(prevPos.occluded),
-                        outside: true,
-                    });
-                }
+                    type: 'box',
+                }, prevPos));
 
                 const curPos = curInterpolation.position;
-                curPositionList.push({
+                prevPositionList.push(Object.assign({}, {
                     frame: frame,
                     attributes: curAttributes,
-                    points: [curPos.xtl, curPos.xbr, curPos.ytl, curPos.ybr],
-                    type: "rectangle",
-                    occluded: Boolean(curPos.occluded),
-                    outside: Boolean(curPos.outside),
-                });
+                    type: 'box',
+                }, curPos, {outside: true}));
+
+                curPositionList.push(Object.assign({}, {
+                    frame: frame,
+                    attributes: curAttributes,
+                    type: 'box',
+                }, curPos));
             } else {
                 const curPos = curInterpolation.position;
-                curPositionList.push({
+                curPositionList.push(Object.assign({
                     frame: frame,
                     attributes: curAttributes,
-                    points: curPos.points.split(' ').join(','),
                     type: track.type.split('_')[1],
-                    occluded: Boolean(curPos.occluded),
-                    outside: Boolean(curPos.outside),
-                });
+                }, curPos));
             }
 
             // don't clone id of splitted object
@@ -99,8 +85,7 @@ class ShapeSplitter {
             curExported.shapes = curPositionList;
             curExported.frame = frame;
             return [prevExported, curExported];
-        }
-        else {
+        } else {
             return [exported];
         }
     }

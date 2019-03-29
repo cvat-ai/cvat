@@ -42,7 +42,7 @@ class FilterModel {
         function convertAttributes(attributes) {
             let converted = {};
             for (let attrId in attributes) {
-                converted[attributes[attrId].name.toLowerCase().replace(/-/g, "_")] = ("" + attributes[attrId].value).toLowerCase();
+                converted[attributes[attrId].name.toLowerCase().replace(/[-,\s]+/g, "_")] = ("" + attributes[attrId].value).toLowerCase();
             }
             return converted;
         }
@@ -51,11 +51,11 @@ class FilterModel {
     _convertCollection(collection) {
         let converted = {};
         for (let labelId in this._labels) {
-            converted[this._labels[labelId].replace(/-/g, "_")] = [];
+            converted[this._labels[labelId].replace(/[-,\s]+/g, "_")] = [];
         }
 
         for (let shape of collection) {
-            converted[this._labels[shape.model.label].toLowerCase().replace(/-/g, "_")].push(this._convertShape(shape));
+            converted[this._labels[shape.model.label].toLowerCase().replace(/[-,\s]+/g, "_")].push(this._convertShape(shape));
         }
         return converted;
     }
@@ -64,7 +64,7 @@ class FilterModel {
         if (this._filter.length) {
             // Get shape indexes
             try {
-                let idxs = JSON.search(this._convertCollection(interpolation), `(${this._filter})/id`);
+                let idxs = defiant.search(this._convertCollection(interpolation), `(${this._filter})/id`);
                 return interpolation.filter(x => idxs.indexOf(x.model.id) != -1);
             }
             catch(ignore) {
@@ -91,7 +91,7 @@ class FilterController {
 
     updateFilter(value, silent) {
         if (value.length) {
-            value = value.split("|").map(x => "/d:data/" + x).join("|").toLowerCase().replace(/-/g, "_");
+            value = value.split("|").map(x => "/d:data/" + x).join("|").toLowerCase().replace(/[-,\s]+/g, "_");
             try {
                 document.evaluate(value, document, () => "ns");
             }
