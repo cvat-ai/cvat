@@ -380,6 +380,10 @@ class DashboardView {
             }
         }
 
+        function validateBugTracker(bugTracker) {
+            return !bugTracker || !!bugTracker.match(/^http[s]?/);
+        }
+
         function validateSegmentSize(segmentSize) {
             return (segmentSize >= 100 && segmentSize <= 50000);
         }
@@ -586,6 +590,12 @@ class DashboardView {
             if (!validateSegmentSize(segmentSize)) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Segment size out of range');
+                return;
+            }
+
+            if (!validateBugTracker(bugTrackerLink)) {
+                taskMessage.css('color', 'red');
+                taskMessage.text('Bad bag tracker link');
                 return;
             }
 
