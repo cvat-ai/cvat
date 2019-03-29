@@ -22,7 +22,8 @@ class AnnotationSaverModel extends Listener {
         this._version = initialData.version;
         this._shapeCollection = shapeCollection;
         this._initialObjects = [];
-        this._hash = objectHash(shapeCollection.export());
+
+        this._hash = this._getHash();
 
         for (const shape of initialData.shapes) {
             this._initialObjects[shape.id] = shape;
@@ -156,6 +157,32 @@ class AnnotationSaverModel extends Listener {
         return [created, updated, deleted];
     }
 
+    _getHash() {
+        const exported = this._shapeCollection.export()[0];
+        Object.keys(exported).forEach((key) => {
+            for (const shape of exported[key]) {
+                delete shape.backLink;
+            }
+        });
+
+        return objectHash(exported);
+    }
+
+    _updateCreatedObjects(objectsToSave, savedObjects, mapping) {
+        const allSavedObjects = savedObjects.shapes.concat(savedObjects.tracks);
+        const allObjectsToSave = objectsToSave.shapes.concat(objectsToSave.tracks);
+        if (allSavedObjects.length !== allObjectsToSave.length) {
+            throw Error('Number of saved objects and objects to save is not match');
+        }
+
+        for (let idx = 0; idx < allSavedObjects.length; idx += 1) {
+            const objectModel = mapping.filter(el => el[0] === allObjectsToSave[idx])[0][1];
+            objectModel.serverID = allSavedObjects[idx].id;
+        }
+
+        this._shapeCollection.update();
+    }
+
     notify(status, message = null) {
         this._state.status = status;
         this._state.message = message;
@@ -163,24 +190,25 @@ class AnnotationSaverModel extends Listener {
     }
 
     hasUnsavedChanges() {
-        return objectHash(this._shapeCollection.export()) !== this._hash;
+        return this._getHash() !== this._hash;
     }
 
     async save() {
         this.notify('saveStart');
         try {
-            const exported = this._shapeCollection.export();
+            const [exported, mapping] = this._shapeCollection.export();
             const { flush } = this._shapeCollection;
             if (flush) {
                 const data = Object.assign({}, exported, {
-                    version: this._version += 1,
+                    version: this._version,
                     tags: [],
                 });
 
+                this._version += 1;
+
                 this.notify('saveCreated');
                 const savedObjects = await this._put(data);
-                this._shapeCollection.cleanupClientObjects();
-                this._shapeCollection.import(savedObjects).update();
+                this._updateCreatedObjects(exported, savedObjects, mapping);
                 this._shapeCollection.flush = false;
                 for (const object of savedObjects.shapes.concat(savedObjects.tracks)) {
                     this._initialObjects[object.id] = object;
@@ -189,11 +217,9 @@ class AnnotationSaverModel extends Listener {
                 this._version = savedObjects.version;
             } else {
                 const [created, updated, deleted] = this._split(exported);
-
                 this.notify('saveCreated');
                 const savedCreated = await this._create(created);
-                this._shapeCollection.cleanupClientObjects();
-                this._shapeCollection.import(savedCreated).update();
+                this._updateCreatedObjects(created, savedCreated, mapping);
                 for (const object of savedCreated.shapes.concat(savedCreated.tracks)) {
                     this._initialObjects[object.id] = object;
                 }
@@ -226,8 +252,7 @@ class AnnotationSaverModel extends Listener {
             throw Error(error);
         }
 
-
-        this._hash = objectHash(this._shapeCollection.export());
+        this._hash = this._getHash();
         this.notify('saveDone');
 
         setTimeout(() => {

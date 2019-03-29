@@ -238,7 +238,6 @@ class ShapeCollectionModel extends Listener {
 
         // Make copy of data in order to don't affect original data
         data = JSON.parse(JSON.stringify(data));
-        this._idx = data.shapes.concat(data.tracks).reduce((acc, el) => Math.max(acc, el.id || 0), -1);
 
         for (let imported of data.shapes.concat(data.tracks)) {
             // Conversion from client object format to server object format
@@ -286,6 +285,8 @@ class ShapeCollectionModel extends Listener {
             tracks: []
         };
 
+        const mapping = [];
+
         for (let shape of this._shapes) {
             if (!shape.removed) {
                 const exported = shape.export();
@@ -308,10 +309,12 @@ class ShapeCollectionModel extends Listener {
                 } else {
                     data.tracks.push(exported);
                 }
+
+                mapping.push([exported, shape]);
             }
         }
 
-        return data;
+        return [data, mapping];
     }
 
     find(direction) {
@@ -380,7 +383,8 @@ class ShapeCollectionModel extends Listener {
     }
 
     add(data, type) {
-        const id = data.id || ++this._idx;
+        this._idx += 1;
+        const id = this._idx;
         const model = buildShapeModel(data, type, id, this.nextColor());
         if (type.startsWith('interpolation')) {
             this._interpolationShapes.push(model);
@@ -1253,11 +1257,15 @@ class ShapeCollectionView {
             case "object_url": {
                 let active = this._controller.activeShape;
                 if (active) {
-                    window.cvat.search.set('frame', window.cvat.player.frames.current);
-                    window.cvat.search.set('filter', `*[id="${active.id}"]`);
-                    copyToClipboard(window.cvat.search.toString());
-                    window.cvat.search.set('frame', null);
-                    window.cvat.search.set('filter', null);
+                    if (typeof active.serverID !== 'undefined') {
+                        window.cvat.search.set('frame', window.cvat.player.frames.current);
+                        window.cvat.search.set('filter', `*[serverID="${active.serverID}"]`);
+                        copyToClipboard(window.cvat.search.toString());
+                        window.cvat.search.set('frame', null);
+                        window.cvat.search.set('filter', null);
+                    } else {
+                        showMessage('First save job in order to get static object URL');
+                    }
                 }
                 break;
             }
@@ -1444,7 +1452,7 @@ class ShapeCollectionView {
         let newShapes = collection.currentShapes;
         let newModels = newShapes.map((el) => el.model);
 
-        let frameChanged = this._frameMarker != window.cvat.player.frames.current;
+        const frameChanged = this._frameMarker !== window.cvat.player.frames.current;
 
         if (frameChanged) {
             this._frameContent.node.parent = null;
