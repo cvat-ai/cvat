@@ -96,8 +96,20 @@ class AnnotationSaverModel extends Listener {
             'points count': totalStat.points.annotation + totalStat.points.interpolation,
         });
 
-        // const annotationLogs = Logger.getLogs();
-        // TODO: Save logs
+        const annotationLogs = Logger.getLogs();
+
+        try {
+            await $.ajax({
+                url: 'api/v1/server/logs',
+                type: 'POST',
+                data: JSON.stringify(annotationLogs),
+            });
+        } catch (errorData) {
+            annotationLogs.save();
+            const message = `Can not send logs. Code: ${errorData.status}. `
+                + `Message: ${errorData.responseText || errorData.statusText}`;
+            throw Error(message);
+        }
     }
 
     _split(exported) {
@@ -242,6 +254,8 @@ class AnnotationSaverModel extends Listener {
 
                 this._version = savedDeleted.version;
             }
+
+            await this._logs();
         } catch (error) {
             this.notify('saveUnlocked');
             this.notify('saveError', error);

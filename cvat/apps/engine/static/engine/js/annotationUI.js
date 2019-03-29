@@ -27,7 +27,6 @@
     PolyshapeEditorModel:false
     PolyshapeEditorView:false
     PolyShapeView:false
-    serverRequest:false
     ShapeBufferController:false
     ShapeBufferModel:false
     ShapeBufferView:false
@@ -46,6 +45,7 @@
     showMessage:false
     showOverlay:false
     buildAnnotationSaver:false
+    LabelsInfo:false
 */
 
 
@@ -75,20 +75,25 @@ function callAnnotationUI(jid) {
     }).fail(onError);
 }
 
-function initLogger(jobID) {
-    if (!Logger.initializeLogger('CVAT', jobID))
-    {
-        let message = 'Could not initialize Logger. Please immediately report the problem to support team';
+async function initLogger(jobID) {
+    if (!Logger.initializeLogger('CVAT', jobID)) {
+        const message = 'Could not initialize Logger. Please immediately report the problem to support team';
         console.error(message);
         showMessage(message);
         return;
     }
 
     Logger.setTimeThreshold(Logger.EventType.zoomImage);
+    let user = null;
+    try {
+        user = await $.get('/api/v1/users/self');
+    } catch (errorData) {
+        const message = `Could not get username. Code: ${errorData.status}. `
+            + `Message: ${errorData.responseText || errorData.statusText}`;
+        showMessage(message);
+    }
 
-    serverRequest('/api/v1/users/self', function(response) {
-        Logger.setUsername(response.username);
-    });
+    Logger.setUsername(user.username);
 }
 
 function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loadJobEvent) {

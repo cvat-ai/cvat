@@ -7,8 +7,6 @@
 /* exported FilterModel FilterController FilterView */
 /* eslint no-unused-vars: ["error", { "caughtErrors": "none" }] */
 
-"use strict";
-
 class FilterModel {
     constructor(update) {
         this._filter = '';
