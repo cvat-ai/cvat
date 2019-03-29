@@ -275,6 +275,7 @@ def _validate_data(data):
     archive = None
     video = None
     for path in data["client_files"] + data["server_files"]:
+        path = os.path.abspath(os.path.join(share_root, path))
         mime = _get_mime(path)
         counter[mime] += 1
         if mime == "archive":
