@@ -62,7 +62,7 @@ class LogCollection extends Array {
 var LoggerHandler = function(applicationName, jobId)
 {
     this._application = applicationName;
-    this._tabId = Date.now().toString().substr(-6);
+    this._clientID = Date.now().toString().substr(-6);
     this._jobId = jobId;
     this._username = null;
     this._userActivityHandler = null;
@@ -83,20 +83,18 @@ var LoggerHandler = function(applicationName, jobId)
         return event;
     };
 
-    this.sendExceptions = function(exceptions)
+    this.sendExceptions = function(exception)
     {
-        for (let e of exceptions) {
-            this._extendEvent(e);
-        }
+        this._extendEvent(exception);
 
         return new Promise( (resolve, reject) => {
             let xhr = new XMLHttpRequest();
-            xhr.open('POST', '/save/exception/' + this._jobId);
+            xhr.open('POST', '/api/v1/server/exception');
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
 
             let onreject = () => {
-                Array.prototype.push.apply(this._logEvents, exceptions);
+                this._logEvents.push(exception);
                 reject({
                     status: xhr.status,
                     statusText: xhr.statusText,
@@ -117,8 +115,7 @@ var LoggerHandler = function(applicationName, jobId)
                 onreject();
             };
 
-            const data = {'exceptions': Array.from(exceptions, log => log.toString())};
-            xhr.send(JSON.stringify(data));
+            xhr.send(JSON.stringify(exception.toString()));
         });
     };
 
@@ -140,8 +137,8 @@ var LoggerHandler = function(applicationName, jobId)
             application: this._application,
             task: this._jobId,
             userid: this._username,
-            tabid: this._tabId,
-            focus: document.hasFocus()
+            client_id: this._clientID,
+            focus: document.hasFocus(),
         });
     };
 
@@ -258,6 +255,9 @@ var Logger = {
      */
     LogEvent: function(type, values, closeCallback=null)
     {
+        const d = new Date();
+        const time = `${d.getFullYear() + 1}-${d.getMonth() + 1}-${d.getDay()}`
+            + `T${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}.${d.getMilliseconds()}`;
         this._type = type;
         this._timestamp = Date.now();
         this.onCloseCallback = closeCallback;
@@ -268,7 +268,7 @@ var Logger = {
         {
             return Object.assign({
                 event: Logger.eventTypeToString(this._type),
-                timestamp: this._timestamp,
+                time,
             }, this._values);
         };
 
@@ -439,7 +439,7 @@ var Logger = {
      */
     sendException: function(exceptionData)
     {
-        return this._logger.sendExceptions([new Logger.LogEvent(Logger.EventType.sendException, exceptionData)]);
+        return this._logger.sendExceptions(new Logger.LogEvent(Logger.EventType.sendException, exceptionData));
     },
 
     /**

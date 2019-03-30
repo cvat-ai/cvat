@@ -7,25 +7,24 @@
 /* exported FilterModel FilterController FilterView */
 /* eslint no-unused-vars: ["error", { "caughtErrors": "none" }] */
 
-"use strict";
-
 class FilterModel {
     constructor(update) {
-        this._filter = "";
+        this._filter = '';
         this._update = update;
         this._labels = window.cvat.labelsInfo.labels();
         this._attributes = window.cvat.labelsInfo.attributes();
     }
 
     _convertShape(shape) {
-        let converted = {
+        const converted = {
             id: shape.model.id,
+            serverid: shape.model.serverID,
             label: shape.model.label,
-            type: shape.model.type.split("_")[1],
-            mode: shape.model.type.split("_")[0],
-            occluded: shape.interpolation.position.occluded ? true : false,
+            type: shape.model.type.split('_')[1],
+            mode: shape.model.type.split('_')[0],
+            occluded: Boolean(shape.interpolation.position.occluded),
             attr: convertAttributes(shape.interpolation.attributes),
-            lock: shape.model.lock
+            lock: shape.model.lock,
         };
 
         if (shape.model.type.split('_')[1] === 'box') {
