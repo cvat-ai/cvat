@@ -100,7 +100,8 @@ INSTALLED_APPS = [
     'revproxy',
     'rules',
     'rest_framework',
-    'django_filters'
+    'django_filters',
+    'rest_framework_swagger',
 ]
 
 REST_FRAMEWORK = {

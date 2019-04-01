@@ -347,7 +347,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
             pass
         else:
             user = self.request.user
-            if self.action != "retrieve" or int(self.kwargs["pk"]) != user.id:
+            if self.action != "retrieve" or int(self.kwargs.get("pk", 0)) != user.id:
                 permissions.append(auth.AdminRolePermission)
 
         return [perm() for perm in permissions]
