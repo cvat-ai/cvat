@@ -26,6 +26,7 @@ from rest_framework.decorators import action
 from rest_framework import mixins
 from django_filters import rest_framework as filters
 import django_rq
+from django.db import IntegrityError
 
 
 from . import annotation_v2, task, models
@@ -320,7 +321,10 @@ class JobViewSet(viewsets.GenericViewSet,
         elif request.method == 'PUT':
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                data = annotation_v2.put_job_data(pk, serializer.data)
+                try:
+                    data = annotation_v2.put_job_data(pk, serializer.data)
+                except (AttributeError, IntegrityError) as e:
+                    return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
         elif request.method == 'DELETE':
             annotation_v2.delete_job_data(pk)
@@ -332,8 +336,12 @@ class JobViewSet(viewsets.GenericViewSet,
                     "Please specify a correct 'action' for the request")
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                data = annotation_v2.patch_job_data(pk, serializer.data, action)
+                try:
+                    data = annotation_v2.patch_job_data(pk, serializer.data, action)
+                except (AttributeError, IntegrityError) as e:
+                    return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
+
 
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
