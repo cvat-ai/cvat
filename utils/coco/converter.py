@@ -49,14 +49,19 @@ def parse_args():
         '--use_background_label', action='store_true',
         help='insert in output annotation objects with label \'background\'. By default is false'
     )
+    parser.add_argument(
+        '--polygon-area-threshold', type=int, default=1,
+        help='polygons with area less than this value will be ignored. By default set to 1'
+    )
     return parser.parse_args()
 
 
-def mask_to_polygon(mask, tolerance=1.0):
+def mask_to_polygon(mask, tolerance=1.0, area_threshold=1):
     """Convert object's mask to polygon [[x1,y1, x2,y2 ...], [...]]
     Args:
         mask: object's mask presented as 2D array of 0 and 1
         tolerance: maximum distance from original points of polygon to approximated
+        area_threshold: if area of a polygon is less than this value, remove this small object
     """
     polygons = []
     # pad mask with 0 around borders
@@ -77,7 +82,11 @@ def mask_to_polygon(mask, tolerance=1.0):
             for i in range(0, len(reshaped_contour)):
                 if reshaped_contour[i] < 0:
                     reshaped_contour[i] = 0
-            polygons.append(reshaped_contour)
+            # Check if area of a polygon is enough
+            rle = mask_util.frPyObjects([reshaped_contour], mask.shape[0], mask.shape[1])
+            area = mask_util.area(rle)
+            if sum(area) > area_threshold:
+                polygons.append(reshaped_contour)
     return polygons
 
 def draw_polygons(polygons, img_name, input_dir, output_dir, draw_labels):
@@ -115,7 +124,7 @@ def draw_polygons(polygons, img_name, input_dir, output_dir, draw_labels):
     cv2.imwrite(output_file, img)
 
 def fix_segments_intersections(polygons, height, width, img_name, use_background_label,
-                               threshold=0.0, ratio_tolerance=0.001):
+                               threshold=0.0, ratio_tolerance=0.001, area_threshold=1):
     """Find all intersected regions and crop contour for back object by objects which
         are in front of the first one. It is related to a specialty of segmentation
         in CVAT annotation. Intersection is calculated via function 'iou' from cocoapi
@@ -175,7 +184,7 @@ def fix_segments_intersections(polygons, height, width, img_name, use_background
 
                 bottom_mask = np.sum(bottom_mask, axis=2)
                 bottom_mask = np.array(bottom_mask > 0, dtype=np.uint8)
-                converted_polygons[i]['points'] = mask_to_polygon(bottom_mask)
+                converted_polygons[i]['points'] = mask_to_polygon(bottom_mask, area_threshold=area_threshold)
                 # If some segment is empty, do small fix to avoid error in cocoapi function
                 if len(converted_polygons[i]['points']) == 0:
                     converted_polygons[i]['points'] = [empty_polygon]
@@ -402,7 +411,8 @@ def main():
         height = result_annotation['images'][-1]['height']
         width = result_annotation['images'][-1]['width']
         image['polygon'] = fix_segments_intersections(image['polygon'], height, width,
-                                                      image['name'], args.use_background_label)
+                                                      image['name'], args.use_background_label,
+                                                      area_threshold=args.polygon_area_threshold)
 
         # Create new annotation for this image
         for poly in image['polygon']:
