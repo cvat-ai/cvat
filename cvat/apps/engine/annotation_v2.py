@@ -345,10 +345,10 @@ class JobAnnotation:
             labeledtrack_set = self.db_job.labeledtrack_set
             labeledtrack_set = labeledtrack_set.filter(pk__in=labeledtrack_ids)
 
-            self.init_from_queries(
-                labeledimage_set,
-                labeledshape_set,
-                labeledtrack_set)
+            # It is not important for us that data had some "invalid" objects
+            # which were skipped (not acutally deleted). The main idea is to
+            # say that all requested objects are absent in DB after the method.
+            self.data = data
 
             labeledimage_set.delete()
             labeledshape_set.delete()
