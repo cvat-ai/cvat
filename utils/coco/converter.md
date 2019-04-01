@@ -24,13 +24,13 @@ $ cat ../requirements.txt requirements.txt | xargs -n 1 -L 1 pip install
 Run the script inside the virtual environment.
 
 ```bash
-python converter.py --cvat-xml </path/to/cvat/annotation.xml> --output </path/to/output/coco/annotation.json> --image-dir </path/to/directory/with/images> --draw </path/to/save/directory> --draw_labels --use_background_label
+python converter.py --cvat-xml </path/to/cvat/annotation.xml> --output </path/to/output/coco/annotation.json> --image-dir </path/to/directory/with/images> --labels </path/to/file/with/labels.txt> --draw </path/to/save/directory> --draw_labels --use_background_label
 ```
 
 Please run `python converter.py --help` for more details.
 
 #### Labels
-The script parses input annotation and find field `labels` to find which labels are presented. If were not found any labels in annotation, script try to parse text file `labels.txt` in the same directory as annotation. This file should include labels in one string separated by spaces or one label per string and also their combinations. For example:
+If '--labels' argument is used, the script gets names of labels from a file. If file with labels is not defined, the script parses input annotation and find field `labels` to find which labels are presented. File with labels should include labels in one string separated by spaces or one label per string and also their combinations. For example:
 ```
 label1 label2
 label3
