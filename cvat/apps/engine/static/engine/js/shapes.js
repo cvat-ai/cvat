@@ -1020,7 +1020,7 @@ class PolyShapeModel extends ShapeModel {
             for (let frame in this._positions) {
                 let shapeAttributes = [];
                 if (frame in this._attributes.mutable) {
-                    for (let attrId in this._attributes.mutable) {
+                    for (let attrId in this._attributes.mutable[frame]) {
                         shapeAttributes.push({
                             id: +attrId,
                             value: String(this._attributes.mutable[frame][attrId]),
