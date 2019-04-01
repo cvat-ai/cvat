@@ -19,7 +19,6 @@ const jobData = {
     status: 'annotation',
     start_frame: 0,
     stop_frame: 7,
-    max_shape_id: -1,
     task_id: 3,
 };
 
