@@ -284,22 +284,31 @@ def _validate_data(data):
     data['server_files'] = server_files['files'] + [ dir_name for dir_name in server_files['dirs']
         if not [ f_name for f_name in server_files['files'] if f_name.startswith(dir_name)]]
 
-    counter = {"image": 0, "video": 0, "archive": 0, "directory": 0}
-    archive = None
-    video = None
-
-    def count_files(files, _get_abs_path=lambda p : p):
-        nonlocal archive, video
+    def count_files(files, file_mapping, counter):
+        archive = None
+        video = None
         for path in files:
-            mime = _get_mime(_get_abs_path(path))
+            mime = _get_mime(file_mapping[path])
             counter[mime] += 1
             if mime == "archive":
                 archive = path
             elif mime == "video":
                 video = path
+        return video, archive
 
-    count_files(files=data['client_files'])
-    count_files(files=data['server_files'], _get_abs_path=lambda p: os.path.abspath(os.path.join(share_root, p)))
+    counter = {"image": 0, "video": 0, "archive": 0, "directory": 0}
+
+    client_video, client_archive = count_files(
+        files=data['client_files'],
+        file_mapping={f:f for f in data['client_files']},
+        counter=counter,
+    )
+
+    server_video, server_archive = count_files(
+        files=data['server_files'],
+        file_mapping={ f:os.path.abspath(os.path.join(share_root, f)) for f in data['server_files']},
+        counter=counter,
+    )
 
     num_videos = counter["video"]
     num_archives = counter["archive"]
@@ -314,7 +323,7 @@ def _validate_data(data):
             archive(s) found".format(counter['image'], counter['directory'],
                 counter['video'], counter['archive']))
 
-    return (video, archive)
+    return client_video or server_video, client_archive or server_archive
 
 @transaction.atomic
 def _create_thread(tid, data):
