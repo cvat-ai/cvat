@@ -103,7 +103,7 @@ class LoggerHandler {
             xhr.onerror = () => {
                 onreject();
             };
-            xhr.send(JSON.stringify(exception.toString()));
+            xhr.send(JSON.stringify(exception.serialize()));
         });
     }
 
@@ -251,7 +251,6 @@ var Logger = {
         }
 
         serialize() {
-            const q = super.serialize();
             return Object.assign(super.serialize(), {
                 payload: this._values,
                 is_active: this._is_active,
@@ -272,9 +271,8 @@ var Logger = {
         };
     },
 
-    ExceptionEvent: class extends Event
-    {
-        constructor(message, client, column, filename, line, stack, system) {
+    ExceptionEvent: class extends Event {
+        constructor(message, filename, line, column, stack, client, system) {
             super(Logger.EventType.sendException, message);
 
             this._client = client;
@@ -286,7 +284,6 @@ var Logger = {
         }
 
         serialize() {
-            const q = super.serialize();
             return Object.assign(super.serialize(), {
                 client: this._client,
                 column: this._column,
@@ -446,8 +443,19 @@ var Logger = {
      * @param {LogEvent} exceptionEvent
      * @static
      */
-    sendException: function(exceptionData) {
-        return this._logger.sendExceptions(new Logger.ExceptionEvent(exceptionData));
+
+    sendException: function(message, filename, line, column, stack, client, system) {
+        return this._logger.sendExceptions(
+            new Logger.ExceptionEvent(
+                message,
+                filename,
+                line,
+                column,
+                stack,
+                client,
+                system
+            )
+        );
     },
 
     /**

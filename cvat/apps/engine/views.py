@@ -87,8 +87,11 @@ class ServerViewSet(viewsets.ViewSet):
         # FIXME: update Logstash to handle the event correctly
         serializer = ExceptionSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            user = { "username": request.user.username }
-            message = JSONRenderer().render({**serializer.data, **user}).decode('UTF-8')
+            additional_info = {
+                "username": request.user.username,
+                "name": "Send exception",
+            }
+            message = JSONRenderer().render({**serializer.data, **additional_info}).decode('UTF-8')
             jid = serializer.data.get("job_id")
             tid = serializer.data.get("task_id")
             if jid:
