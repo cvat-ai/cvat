@@ -1233,9 +1233,11 @@ class JobAnnotationAPITestCase(APITestCase):
         if annotator:
             HTTP_200_OK = status.HTTP_200_OK
             HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
+            HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
         else:
             HTTP_200_OK = status.HTTP_403_FORBIDDEN
             HTTP_204_NO_CONTENT = status.HTTP_403_FORBIDDEN
+            HTTP_400_BAD_REQUEST = status.HTTP_403_FORBIDDEN
 
         job = jobs[0]
         data = {
@@ -1491,6 +1493,101 @@ class JobAnnotationAPITestCase(APITestCase):
         response = self._get_api_v1_jobs_id_data(job["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
+
+        data = {
+            "version": 0,
+            "tags": [
+                {
+                    "frame": 0,
+                    "label_id": 11010101,
+                    "group": None,
+                    "attributes": []
+                }
+            ],
+            "shapes": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "attributes": [
+                        {
+                            "spec_id": 32234234,
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][0]["default_value"]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 100, 300.222],
+                    "type": "rectangle",
+                    "occluded": False
+                },
+                {
+                    "frame": 1,
+                    "label_id": 1212121,
+                    "group": None,
+                    "attributes": [],
+                    "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
+                    "type": "polygon",
+                    "occluded": False
+                },
+            ],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": 0,
+                    "group": None,
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False,
+                            "attributes": [
+                                {
+                                    "spec_id": 10000,
+                                    "value": task["labels"][0]["attributes"][0]["values"][0]
+                                },
+                                {
+                                    "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                    "value": task["labels"][0]["attributes"][0]["default_value"]
+                                }
+                            ]
+                        },
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [2.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": True,
+                            "outside": True
+                        },
+                    ]
+                },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False
+                        }
+                    ]
+                },
+            ]
+        }
+        response = self._patch_api_v1_jobs_id_data(job["id"], annotator,
+            "create", data)
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
 
     def test_api_v1_jobs_id_annotations_admin(self):
