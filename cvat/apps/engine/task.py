@@ -338,7 +338,8 @@ def _create_thread(tid, data):
         _copy_data_from_share(data['server_files'], upload_dir)
 
     if archive:
-        _unpack_archive(archive)
+        archive = os.path.join(upload_dir, archive)
+        _unpack_archive(archive, upload_dir)
 
     if video:
         db_task.mode = "interpolation"
