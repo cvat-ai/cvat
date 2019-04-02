@@ -81,29 +81,44 @@ class LoggerHandler {
     sendExceptions(exception) {
         this._extendEvent(exception);
         return new Promise((resolve, reject) => {
-            let xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/v1/server/exception');
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
-            let onreject = () => {
-                this._logEvents.push(exception);
-                reject({
-                    status: xhr.status,
-                    statusText: xhr.statusText,
-                });
-            };
-            xhr.onload = () => {
-                if (xhr.status == 200) {
-                    resolve(xhr.response);
-                }
-                else {
+            let retries = 3;
+            let makeRequest = () => {
+                let xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/v1/server/exception');
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                let onreject = () => {
+                    if (--retries) {
+                        setTimeout(() => makeRequest(), 30000); //30 sec delay
+                    } else {
+                        let payload = exception.serialize();
+                        delete Object.assign(payload, {origin_message: payload.message }).message;
+                        this.addEvent(new Logger.LogEvent(
+                            Logger.EventType.sendException,
+                            payload,
+                            "Can't send exception",
+                        ));
+                        reject({
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                        });
+                    }
+                };
+                xhr.onload = () => {
+                    if (xhr.status == 200) {
+                        resolve(xhr.response);
+                    }
+                    else {
+                        onreject();
+                    }
+                };
+                xhr.onerror = () => {
                     onreject();
-                }
+                };
+                xhr.send(JSON.stringify(exception.serialize()));
             };
-            xhr.onerror = () => {
-                onreject();
-            };
-            xhr.send(JSON.stringify(exception.serialize()));
+            makeRequest();
+
         });
     }
 
@@ -225,9 +240,7 @@ class Event {
     }
 }
 
-
 var Logger = {
-
     /**
      * @private
      */
@@ -519,7 +532,7 @@ var Logger = {
         case this.EventType.drawObject: return 'Draw object';
         case this.EventType.changeLabel: return 'Change label';
         case this.EventType.sendTaskInfo: return 'Send task info';
-        case this.EventType.loadJob: return 'Load job'; // FIXME add track count, object count, fields
+        case this.EventType.loadJob: return 'Load job';
         case this.EventType.moveImage: return 'Move image';
         case this.EventType.zoomImage: return 'Zoom image';
         case this.EventType.lockObject: return 'Lock object';

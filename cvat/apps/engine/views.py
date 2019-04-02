@@ -84,7 +84,6 @@ class ServerViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
     def exception(self, request):
-        # FIXME: update Logstash to handle the event correctly
         serializer = ExceptionSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             additional_info = {
@@ -105,7 +104,6 @@ class ServerViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
     def logs(self, request):
-        # FIXME: update Logstash to handle the event correctly
         serializer = LogEventSerializer(many=True, data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = { "username": request.user.username }
