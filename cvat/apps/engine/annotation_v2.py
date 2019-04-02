@@ -205,9 +205,13 @@ class JobAnnotation:
             attributes = track.pop("attributes", [])
             shapes = track.pop("shapes")
             db_track = models.LabeledTrack(job=self.db_job, **track)
+            if db_track.label_id not in self.db_labels:
+                raise AttributeError("label_id `{}` is invalid".format(db_track.label_id))
 
             for attr in attributes:
                 db_attrval = models.LabeledTrackAttributeVal(**attr)
+                if db_attrval.spec_id not in self.db_attributes:
+                    raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
                 db_attrval.track_id = len(db_tracks)
                 db_track_attrvals.append(db_attrval)
 
@@ -219,6 +223,8 @@ class JobAnnotation:
 
                 for attr in attributes:
                     db_attrval = models.TrackedShapeAttributeVal(**attr)
+                    if db_attrval.spec_id not in self.db_attributes:
+                        raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
                     db_attrval.shape_id = len(db_shapes)
                     db_shape_attrvals.append(db_attrval)
 
@@ -254,9 +260,13 @@ class JobAnnotation:
         for shape in self.data["shapes"]:
             attributes = shape.pop("attributes", [])
             db_shape = models.LabeledShape(job=self.db_job, **shape)
+            if db_shape.label_id not in self.db_labels:
+                raise AttributeError("label_id `{}` is invalid".format(db_shape.label_id))
 
             for attr in attributes:
                 db_attrval = models.LabeledShapeAttributeVal(**attr)
+                if db_attrval.spec_id not in self.db_attributes:
+                    raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
                 db_attrval.shape_id = len(db_shapes)
                 db_attrvals.append(db_attrval)
 
@@ -280,9 +290,13 @@ class JobAnnotation:
         for tag in self.data["tags"]:
             attributes = tag.pop("attributes", [])
             db_tag = models.LabeledImage(job=self.db_job, **tag)
+            if db_tag.label_id not in self.db_labels:
+                raise AttributeError("label_id `{}` is invalid".format(db_tag.label_id))
 
             for attr in attributes:
                 db_attrval = models.LabeledImageAttributeVal(**attr)
+                if db_attrval.spec_id not in self.db_attributes:
+                    raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
                 db_attrval.tag_id = len(db_tags)
                 db_attrvals.append(db_attrval)
 
@@ -331,10 +345,10 @@ class JobAnnotation:
             labeledtrack_set = self.db_job.labeledtrack_set
             labeledtrack_set = labeledtrack_set.filter(pk__in=labeledtrack_ids)
 
-            self.init_from_queries(
-                labeledimage_set,
-                labeledshape_set,
-                labeledtrack_set)
+            # It is not important for us that data had some "invalid" objects
+            # which were skipped (not acutally deleted). The main idea is to
+            # say that all requested objects are absent in DB after the method.
+            self.data = data
 
             labeledimage_set.delete()
             labeledshape_set.delete()

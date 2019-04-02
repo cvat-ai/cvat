@@ -10,7 +10,8 @@ from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine import annotation, task
-
+from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.engine.annotation_v2 import put_task_data
 
 import django_rq
 import fnmatch
@@ -168,39 +169,25 @@ def make_image_list(path_to_data):
 
 
 def convert_to_cvat_format(data):
-    def create_anno_container():
-        return {
-            "boxes": [],
-            "polygons": [],
-            "polylines": [],
-            "points": [],
-            "box_paths": [],
-            "polygon_paths": [],
-            "polyline_paths": [],
-            "points_paths": [],
-        }
-
     result = {
-        'create': create_anno_container(),
-        'update': create_anno_container(),
-        'delete': create_anno_container(),
+        "tracks": [],
+        "shapes": [],
+        "tags": [],
+        "version": 0,
     }
 
     for label in data:
         boxes = data[label]
         for box in boxes:
-            result['create']['boxes'].append({
+            result['shapes'].append({
+                "type": "rectangle",
                 "label_id": label,
                 "frame": box[0],
-                "xtl": box[1],
-                "ytl": box[2],
-                "xbr": box[3],
-                "ybr": box[4],
+                "points": [box[1], box[2], box[3], box[4]],
                 "z_order": 0,
-                "group_id": 0,
+                "group": None,
                 "occluded": False,
                 "attributes": [],
-                "id": -1,
             })
 
     return result
@@ -232,8 +219,9 @@ def create_thread(tid, labels_mapping):
 
         # Modify data format and save
         result = convert_to_cvat_format(result)
-        annotation.clear_task(tid)
-        annotation.save_task(tid, result)
+        serializer = LabeledDataSerializer(data = result)
+        if serializer.is_valid(raise_exception=True):
+            put_task_data(tid, result)
         slogger.glob.info('tf annotation for task {} done'.format(tid))
     except Exception as ex:
         try:

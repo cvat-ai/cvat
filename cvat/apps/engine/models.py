@@ -167,7 +167,6 @@ class Job(models.Model):
     assignee = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
-    max_shape_id = models.BigIntegerField(default=-1)
 
     class Meta:
         default_permissions = ()

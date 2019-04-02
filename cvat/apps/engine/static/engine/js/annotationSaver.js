@@ -98,19 +98,21 @@ class AnnotationSaverModel extends Listener {
 
         const annotationLogs = Logger.getLogs();
 
-        try {
-            await $.ajax({
-                url: 'api/v1/server/logs',
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: '/api/v1/server/logs',
                 type: 'POST',
-                data: JSON.stringify(annotationLogs.export()),
-                contentType: 'application/json',
+                data: JSON.stringify(annotationLogs),
+		contentType: 'application/json',
+            }).done(() => {
+                resolve();
+            }).fail((errorData) => {
+                annotationLogs.save();
+                const message = `Could not send logs. Code: ${errorData.status}. `
+                    + `Message: ${errorData.responseText || errorData.statusText}`;
+                reject(new Error(message));
             });
-        } catch (errorData) {
-            annotationLogs.save();
-            const message = `Can not send logs. Code: ${errorData.status}. `
-                + `Message: ${errorData.responseText || errorData.statusText}`;
-            throw Error(message);
-        }
+        });
     }
 
     _split(exported) {
@@ -253,7 +255,7 @@ class AnnotationSaverModel extends Listener {
             await this._logs();
         } catch (error) {
             this.notify('saveUnlocked');
-            this.notify('saveError', error);
+            this.notify('saveError', error.message);
             this._state = {
                 status: null,
                 message: null,
@@ -309,7 +311,11 @@ class AnnotationSaverController {
 
     save() {
         if (this._model.state.status === null) {
-            this._model.save();
+            this._model.save().catch((error) => {
+                setTimeout(() => {
+                    throw error;
+                });
+            });
         }
     }
 }

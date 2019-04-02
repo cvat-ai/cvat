@@ -191,7 +191,7 @@ def start_annotation(request, mid, tid):
 
         db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
         db_attributes = {db_label.id:
-            {db_attr.get_name(): db_attr.id for db_attr in db_label.attributespec_set.all()} for db_label in db_labels}
+            {db_attr.name: db_attr.id for db_attr in db_label.attributespec_set.all()} for db_label in db_labels}
         db_labels = {db_label.name:db_label.id for db_label in db_labels}
 
         model_labels = {value: key for key, value in load_label_map(labelmap_file).items()}
