@@ -263,25 +263,50 @@ def _save_task_to_db(db_task):
 
 def _validate_data(data):
     share_root = settings.SHARE_ROOT
+    server_files = {
+        'dirs': [],
+        'files': [],
+    }
+
     for path in data["server_files"]:
         path = os.path.normpath(path).lstrip('/')
         if '..' in path.split(os.path.sep):
             raise ValueError("Don't use '..' inside file paths")
-        path = os.path.abspath(os.path.join(share_root, path))
-        if os.path.commonprefix([share_root, path]) != share_root:
+        full_path = os.path.abspath(os.path.join(share_root, path))
+        if 'directory' == _get_mime(full_path):
+            server_files['dirs'].append(path)
+        else:
+            server_files['files'].append(path)
+        if os.path.commonprefix([share_root, full_path]) != share_root:
             raise ValueError("Bad file path: " + path)
 
+    # Remove directories if other files from them exists in server files
+    data['server_files'] = server_files['files'] + [ dir_name for dir_name in server_files['dirs']
+        if not [ f_name for f_name in server_files['files'] if f_name.startswith(dir_name)]]
+
+    def count_files(file_mapping, counter):
+        archive = None
+        video = None
+        for rel_path, full_path in file_mapping.items():
+            mime = _get_mime(full_path)
+            counter[mime] += 1
+            if mime == "archive":
+                archive = rel_path
+            elif mime == "video":
+                video = rel_path
+        return video, archive
+
     counter = {"image": 0, "video": 0, "archive": 0, "directory": 0}
-    archive = None
-    video = None
-    for path in data["client_files"] + data["server_files"]:
-        path = os.path.abspath(os.path.join(share_root, path))
-        mime = _get_mime(path)
-        counter[mime] += 1
-        if mime == "archive":
-            archive = path
-        elif mime == "video":
-            video = path
+
+    client_video, client_archive = count_files(
+        file_mapping={ f:f for f in data['client_files']},
+        counter=counter,
+    )
+
+    server_video, server_archive = count_files(
+        file_mapping={ f:os.path.abspath(os.path.join(share_root, f)) for f in data['server_files']},
+        counter=counter,
+    )
 
     num_videos = counter["video"]
     num_archives = counter["archive"]
@@ -296,7 +321,7 @@ def _validate_data(data):
             archive(s) found".format(counter['image'], counter['directory'],
                 counter['video'], counter['archive']))
 
-    return (video, archive)
+    return client_video or server_video, client_archive or server_archive
 
 @transaction.atomic
 def _create_thread(tid, data):
@@ -325,3 +350,4 @@ def _create_thread(tid, data):
 
     slogger.glob.info("Founded frames {} for task #{}".format(db_task.size, tid))
     _save_task_to_db(db_task)
+
