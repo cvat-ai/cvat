@@ -284,28 +284,26 @@ def _validate_data(data):
     data['server_files'] = server_files['files'] + [ dir_name for dir_name in server_files['dirs']
         if not [ f_name for f_name in server_files['files'] if f_name.startswith(dir_name)]]
 
-    def count_files(files, file_mapping, counter):
+    def count_files(file_mapping, counter):
         archive = None
         video = None
-        for path in files:
-            mime = _get_mime(file_mapping[path])
+        for rel_path, full_path in file_mapping.items():
+            mime = _get_mime(full_path)
             counter[mime] += 1
             if mime == "archive":
-                archive = path
+                archive = rel_path
             elif mime == "video":
-                video = path
+                video = rel_path
         return video, archive
 
     counter = {"image": 0, "video": 0, "archive": 0, "directory": 0}
 
     client_video, client_archive = count_files(
-        files=data['client_files'],
-        file_mapping={f:f for f in data['client_files']},
+        file_mapping={ f:f for f in data['client_files']},
         counter=counter,
     )
 
     server_video, server_archive = count_files(
-        files=data['server_files'],
         file_mapping={ f:os.path.abspath(os.path.join(share_root, f)) for f in data['server_files']},
         counter=counter,
     )
