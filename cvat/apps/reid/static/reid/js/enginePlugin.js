@@ -8,97 +8,96 @@
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    function run(overlay, cancelButton, thresholdInput, distanceInput) {
+    async function run(overlay, cancelButton, thresholdInput, distanceInput) {
         const collection = window.cvat.data.get();
         const data = {
             threshold: +thresholdInput.prop('value'),
             maxDistance: +distanceInput.prop('value'),
-            boxes: collection.boxes,
+            boxes: collection.shapes.filter(el => el.type === 'rectangle'),
         };
 
         overlay.removeClass('hidden');
         cancelButton.prop('disabled', true);
-        $.ajax({
-            url: `reid/start/job/${window.cvat.job.id}`,
-            type: 'POST',
-            data: JSON.stringify(data),
-            contentType: 'application/json',
-            success: () => {
-                function checkCallback() {
-                    $.ajax({
-                        url: `/reid/check/${window.cvat.job.id}`,
-                        type: 'GET',
-                        success: (jobData) => {
-                            if (jobData.progress) {
-                                cancelButton.text(`Cancel ReID Merge (${jobData.progress.toString().slice(0, 4)}%)`);
-                            }
 
-                            if (['queued', 'started'].includes(jobData.status)) {
-                                setTimeout(checkCallback, 1000);
-                            } else {
-                                overlay.addClass('hidden');
-
-                                if (jobData.status === 'finished') {
-                                    if (jobData.result) {
-                                        collection.boxes = [];
-                                        collection.box_paths = collection.box_paths
-                                            .concat(JSON.parse(jobData.result));
-                                        window.cvat.data.clear();
-                                        window.cvat.data.set(collection);
-                                        showMessage('ReID merge has done.');
-                                    } else {
-                                        showMessage('ReID merge been canceled.');
-                                    }
-                                } else if (jobData.status === 'failed') {
-                                    const message = `ReID merge has fallen. Error: '${jobData.stderr}'`;
-                                    showMessage(message);
-                                } else {
-                                    let message = `Check request returned "${jobData.status}" status.`;
-                                    if (jobData.stderr) {
-                                        message += ` Error: ${jobData.stderr}`;
-                                    }
-                                    showMessage(message);
-                                }
-                            }
-                        },
-                        error: (errorData) => {
-                            overlay.addClass('hidden');
-                            const message = `Can not check ReID merge. Code: ${errorData.status}. Message: ${errorData.responseText || errorData.statusText}`;
-                            showMessage(message);
-                        },
-                    });
-                }
-
-                setTimeout(checkCallback, 1000);
-            },
-            error: (errorData) => {
+        async function checkCallback() {
+            let jobData = null;
+            try {
+                jobData = await $.get(`/reid/check/${window.cvat.job.id}`);
+            } catch (errorData) {
                 overlay.addClass('hidden');
-                const message = `Can not start ReID merge. Code: ${errorData.status}. Message: ${errorData.responseText || errorData.statusText}`;
+                const message = `Can not check ReID merge. Code: ${errorData.status}. `
+                    + `Message: ${errorData.responseText || errorData.statusText}`;
                 showMessage(message);
-            },
-            complete: () => {
-                cancelButton.prop('disabled', false);
-            },
-        });
+            }
+
+            if (jobData.progress) {
+                cancelButton.text(`Cancel ReID Merge (${jobData.progress.toString().slice(0, 4)}%)`);
+            }
+
+            if (['queued', 'started'].includes(jobData.status)) {
+                setTimeout(checkCallback, 1000);
+            } else {
+                overlay.addClass('hidden');
+
+                if (jobData.status === 'finished') {
+                    if (jobData.result) {
+                        const result = JSON.parse(jobData.result);
+                        collection.shapes = collection.shapes
+                            .filter(el => el.type !== 'rectangle');
+                        collection.tracks = collection.tracks
+                            .concat(result);
+
+                        window.cvat.data.clear();
+                        window.cvat.data.set(collection);
+
+                        showMessage('ReID merge has done.');
+                    } else {
+                        showMessage('ReID merge been canceled.');
+                    }
+                } else if (jobData.status === 'failed') {
+                    const message = `ReID merge has fallen. Error: '${jobData.stderr}'`;
+                    showMessage(message);
+                } else {
+                    let message = `Check request returned "${jobData.status}" status.`;
+                    if (jobData.stderr) {
+                        message += ` Error: ${jobData.stderr}`;
+                    }
+                    showMessage(message);
+                }
+            }
+        }
+
+        try {
+            await $.ajax({
+                url: `/reid/start/job/${window.cvat.job.id}`,
+                type: 'POST',
+                data: JSON.stringify(data),
+                contentType: 'application/json',
+            });
+
+            setTimeout(checkCallback, 1000);
+        } catch (errorData) {
+            overlay.addClass('hidden');
+            const message = `Can not start ReID merge. Code: ${errorData.status}. `
+                + `Message: ${errorData.responseText || errorData.statusText}`;
+            showMessage(message);
+        } finally {
+            cancelButton.prop('disabled', false);
+        }
     }
 
-    function cancel(overlay, cancelButton) {
+    async function cancel(overlay, cancelButton) {
         cancelButton.prop('disabled', true);
-        $.ajax({
-            url: `/reid/cancel/${window.cvat.job.id}`,
-            type: 'GET',
-            success: () => {
-                overlay.addClass('hidden');
-                cancelButton.text('Cancel ReID Merge (0%)');
-            },
-            error: (errorData) => {
-                const message = `Can not cancel ReID process. Code: ${errorData.status}. Message: ${errorData.responseText || errorData.statusText}`;
-                showMessage(message);
-            },
-            complete: () => {
-                cancelButton.prop('disabled', false);
-            }
-        });
+        try {
+            await $.get(`/reid/cancel/${window.cvat.job.id}`);
+            overlay.addClass('hidden');
+            cancelButton.text('Cancel ReID Merge (0%)');
+        } catch (errorData) {
+            const message = `Can not cancel ReID process. Code: ${errorData.status}. Message: ${errorData.responseText || errorData.statusText}`;
+            showMessage(message);
+        } finally {
+            cancelButton.prop('disabled', false);
+        }
     }
 
     const buttonsUI = $('#engineMenuButtons');
@@ -121,13 +120,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <table>
                     <tr>
                         <td> <label class="regular h2"> Threshold: </label> </td>
-                        <td> <input id="${reidThresholdValueId}" class="regular h1" type="number"` +
-                        `title="Maximum cosine distance between embeddings of objects" min="0.05" max="0.95" value="0.5" step="0.05"> </td>
+                        <td> <input id="${reidThresholdValueId}" class="regular h1" type="number"`
+                        + `title="Maximum cosine distance between embeddings of objects" min="0.05" max="0.95" value="0.5" step="0.05"> </td>
                     </tr>
                     <tr>
                         <td> <label class="regular h2"> Max Pixel Distance </label> </td>
-                        <td> <input id="${reidDistanceValueId}" class="regular h1" type="number"` +
-                        `title="Maximum radius that an object can diverge between neighbor frames" min="10" max="1000" value="50" step="10"> </td>
+                        <td> <input id="${reidDistanceValueId}" class="regular h1" type="number"`
+                        + `title="Maximum radius that an object can diverge between neighbor frames" min="10" max="1000" value="50" step="10"> </td>
                     </tr>
                     <tr>
                         <td colspan="2"> <label class="regular h2" style="color: red;"> All boxes will be translated to box paths. Continue? </label> </td>
@@ -165,6 +164,11 @@ document.addEventListener('DOMContentLoaded', () => {
     $(`#${reidSubmitMergeId}`).on('click', () => {
         $(`#${reidWindowId}`).addClass('hidden');
         run($(`#${reidOverlay}`), $(`#${reidCancelButtonId}`),
-            $(`#${reidThresholdValueId}`), $(`#${reidDistanceValueId}`));
+            $(`#${reidThresholdValueId}`), $(`#${reidDistanceValueId}`))
+            .catch((error) => {
+                setTimeout(() => {
+                    throw error;
+                });
+            });
     });
 });
