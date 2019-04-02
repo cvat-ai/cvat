@@ -88,7 +88,7 @@ class ServerViewSet(viewsets.ViewSet):
         serializer = ExceptionSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = { "username": request.user.username }
-            message = JSONRenderer().render({**serializer.data, **user})
+            message = JSONRenderer().render({**serializer.data, **user}).decode('UTF-8')
             jid = serializer.data.get("job_id")
             tid = serializer.data.get("task_id")
             if jid:
@@ -107,9 +107,9 @@ class ServerViewSet(viewsets.ViewSet):
         if serializer.is_valid(raise_exception=True):
             user = { "username": request.user.username }
             for event in serializer.data:
-                message = JSONRenderer().render({**event, **user})
+                message = JSONRenderer().render({**event, **user}).decode('UTF-8')
                 jid = event.get("job_id")
-                tid = event.get("task_id") 
+                tid = event.get("task_id")
                 if jid:
                     clogger.job[jid].info(message)
                 elif tid:
