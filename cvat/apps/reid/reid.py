@@ -82,10 +82,10 @@ class ReID:
 
 
     def __boxes_are_compatible(self, cur_box, next_box):
-        cur_c_x = (cur_box["xtl"] + cur_box["xbr"]) / 2
-        cur_c_y = (cur_box["ytl"] + cur_box["ybr"]) / 2
-        next_c_x = (next_box["xtl"] + next_box["xbr"]) / 2
-        next_c_y = (next_box["ytl"] + next_box["ybr"]) / 2
+        cur_c_x = (cur_box["points"][0] + cur_box["points"][2]) / 2
+        cur_c_y = (cur_box["points"][1] + cur_box["points"][3]) / 2
+        next_c_x = (next_box["points"][0] + next_box["points"][2]) / 2
+        next_c_y = (next_box["points"][1] + next_box["points"][3]) / 2
         compatible_distance = euclidean([cur_c_x, cur_c_y], [next_c_x, next_c_y]) <= self.__max_distance
         compatible_label = cur_box["label_id"] == next_box["label_id"]
         return compatible_distance and compatible_label and "path_id" not in next_box
@@ -123,8 +123,8 @@ class ReID:
             cur_width = cur_image.shape[1]
             cur_height = cur_image.shape[0]
             cur_xtl, cur_xbr, cur_ytl, cur_ybr = (
-                _int(cur_box["xtl"], cur_width), _int(cur_box["xbr"], cur_width),
-                _int(cur_box["ytl"], cur_height), _int(cur_box["ybr"], cur_height)
+                _int(cur_box["points"][0], cur_width), _int(cur_box["points"][2], cur_width),
+                _int(cur_box["points"][1], cur_height), _int(cur_box["points"][3], cur_height)
             )
 
             for col, next_box in enumerate(next_boxes):
@@ -132,8 +132,8 @@ class ReID:
                 next_width = next_image.shape[1]
                 next_height = next_image.shape[0]
                 next_xtl, next_xbr, next_ytl, next_ybr = (
-                    _int(next_box["xtl"], next_width), _int(next_box["xbr"], next_width),
-                    _int(next_box["ytl"], next_height), _int(next_box["ybr"], next_height)
+                    _int(next_box["points"][0], next_width), _int(next_box["points"][2], next_width),
+                    _int(next_box["points"][1], next_height), _int(next_box["points"][3], next_height)
                 )
 
                 if not self.__boxes_are_compatible(cur_box, next_box):
@@ -149,7 +149,7 @@ class ReID:
     def __apply_matching(self):
         frames = sorted(list(self.__frame_boxes.keys()))
         job = rq.get_current_job()
-        box_paths = {}
+        box_tracks = {}
 
         for idx, (cur_frame, next_frame) in enumerate(list(zip(frames[:-1], frames[1:]))):
             job.refresh()
@@ -164,8 +164,8 @@ class ReID:
 
             for box in cur_boxes:
                 if "path_id" not in box:
-                    path_id = len(box_paths)
-                    box_paths[path_id] = [box]
+                    path_id = len(box_tracks)
+                    box_tracks[path_id] = [box]
                     box["path_id"] = path_id
 
             if not (len(cur_boxes) and len(next_boxes)):
@@ -180,38 +180,39 @@ class ReID:
                     cur_box = cur_boxes[cur_idx]
                     next_box = next_boxes[next_idxs[idx]]
                     next_box["path_id"] = cur_box["path_id"]
-                    box_paths[cur_box["path_id"]].append(next_box)
+                    box_tracks[cur_box["path_id"]].append(next_box)
 
         for box in self.__frame_boxes[frames[-1]]:
             if "path_id" not in box:
-                path_id = len(box_paths)
+                path_id = len(box_tracks)
                 box["path_id"] = path_id
-                box_paths[path_id] = [box]
+                box_tracks[path_id] = [box]
 
-        return box_paths
+        return box_tracks
 
 
     def run(self):
-        box_paths = self.__apply_matching()
+        box_tracks = self.__apply_matching()
         output = []
 
         # ReID process has been canceled
-        if box_paths is None:
+        if box_tracks is None:
             return
 
-        for path_id in box_paths:
+        for path_id in box_tracks:
             output.append({
-                "label_id": box_paths[path_id][0]["label_id"],
-                "group_id": 0,
+                "label_id": box_tracks[path_id][0]["label_id"],
+                "group": None,
                 "attributes": [],
-                "frame": box_paths[path_id][0]["frame"],
-                "shapes": box_paths[path_id]
+                "frame": box_tracks[path_id][0]["frame"],
+                "shapes": box_tracks[path_id]
             })
 
             for box in output[-1]["shapes"]:
-                del box["id"]
+                if "id" in box:
+                    del box["id"]
                 del box["path_id"]
-                del box["group_id"]
+                del box["group"]
                 del box["label_id"]
                 box["outside"] = False
                 box["attributes"] = []
