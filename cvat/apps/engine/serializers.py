@@ -345,7 +345,7 @@ class LogEventSerializer(serializers.Serializer):
 
     name = serializers.CharField(max_length=64)
     time = serializers.DateTimeField()
-    message = serializers.CharField(max_length=4096, required=False)
+    message = serializers.CharField(max_length=4096, required=False, allow_blank=True)
     payload = serializers.DictField(required=False)
     is_active = serializers.BooleanField()
  

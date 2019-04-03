@@ -410,8 +410,7 @@ var Logger = {
      * @param {String} message Any string message. Empty by default.
      * @static
      */
-    //FIXME what should be in the message arg?
-    addEvent: function(type, values, message='empty message') {
+    addEvent: function(type, values, message='') {
         this._logger.addEvent(new Logger.LogEvent(type, values, message));
     },
 
@@ -427,8 +426,7 @@ var Logger = {
      * @return {LogEvent} instance of LogEvent
      * @static
      */
-    //FIXME what should be in the message arg?
-    addContinuedEvent: function(type, values, message='empty message') {
+    addContinuedEvent: function(type, values, message='') {
         return this._logger.addContinuedEvent(new Logger.LogEvent(type, values, message));
     },
 
