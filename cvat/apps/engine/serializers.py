@@ -271,7 +271,7 @@ class ExceptionSerializer(serializers.Serializer):
     line = serializers.IntegerField()
     column = serializers.IntegerField()
     stack = serializers.CharField(max_length=8192,
-        style={'base_template': 'textarea.html'}, allow_null=True)
+        style={'base_template': 'textarea.html'}, allow_blank=True)
 
 class AboutSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=128)
@@ -348,4 +348,4 @@ class LogEventSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=4096, required=False, allow_blank=True)
     payload = serializers.DictField(required=False)
     is_active = serializers.BooleanField()
- 
+

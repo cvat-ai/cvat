@@ -23,7 +23,7 @@ window.onload = function boot() {
             url,
             lineNumber,
             colNumber ? String(colNumber) : '',
-            error && error.stack ? error.stack : 'empty stack',
+            error && error.stack ? error.stack : '',
             `${platform.name} ${platform.version}`,
             platform.os.toString(),
         ).catch(() => {});
