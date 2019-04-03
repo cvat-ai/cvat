@@ -169,10 +169,11 @@ class LoggerHandler {
             _timestamp: 0,
             _event: null,
             _logEvents: this._logEvents,
-            wait: function (event) {
+            wait: function(event) {
                 if (this._event) {
-                    if (this._timeoutHandler)
+                    if (this._timeoutHandler) {
                         clearTimeout(this._timeoutHandler);
+                    }
                 }
                 else {
                     this._timestamp = event._timestamp;
