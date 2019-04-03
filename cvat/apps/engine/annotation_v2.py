@@ -110,6 +110,18 @@ def delete_task_data(pk):
     annotation = TaskAnnotation(pk)
     annotation.delete()
 
+def dump_task_data(pk, file_path, scheme, host, query_params):
+    # For big tasks dump function may run for a long time and
+    # we dont need to acquire lock after _AnnotationForTask instance
+    # has been initialized from DB.
+    # But there is the bug with corrupted dump file in case 2 or more dump request received at the same time.
+    # https://github.com/opencv/cvat/issues/217
+    with transaction.atomic():
+        annotation = TaskAnnotation(pk)
+        annotation.init_from_db()
+
+    annotation.dump(file_path, scheme, host, query_params)
+
 ######
 
 def bulk_create(db_model, objects, flt_param = {}):
@@ -334,6 +346,202 @@ class JobAnnotation:
         tracks = serializers.LabeledTrackSerializer(db_tracks, many=True)
         self.data["tracks"] = tracks.data
 
+class AnnotationWriter:
+    __metaclass__ = ABCMeta
+
+    def __init__(self, file, version):
+        self.version = version
+        self.file = file
+
+    @abstractmethod
+    def open_root(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_meta(self, meta):
+        raise NotImplementedError
+
+    @abstractmethod
+    def open_track(self, track):
+        raise NotImplementedError
+
+    @abstractmethod
+    def open_image(self, image):
+        raise NotImplementedError
+
+    @abstractmethod
+    def open_box(self, box):
+        raise NotImplementedError
+
+    @abstractmethod
+    def open_polygon(self, polygon):
+        raise NotImplementedError
+
+    @abstractmethod
+    def open_polyline(self, polyline):
+        raise NotImplementedError
+
+    @abstractmethod
+    def open_points(self, points):
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_attribute(self, attribute):
+        raise NotImplementedError
+
+    @abstractmethod
+    def close_box(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def close_polygon(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def close_polyline(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def close_points(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def close_image(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def close_track(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def close_root(self):
+        raise NotImplementedError
+
+class XmlAnnotationWriter(AnnotationWriter):
+    def __init__(self, file):
+        super().__init__(file, "1.1")
+        self.xmlgen = XMLGenerator(self.file, 'utf-8')
+        self._level = 0
+
+    def _indent(self, newline = True):
+        if newline:
+            self.xmlgen.ignorableWhitespace("\n")
+        self.xmlgen.ignorableWhitespace("  " * self._level)
+
+    def _add_version(self):
+        self._indent()
+        self.xmlgen.startElement("version", {})
+        self.xmlgen.characters(self.version)
+        self.xmlgen.endElement("version")
+
+    def open_root(self):
+        self.xmlgen.startDocument()
+        self.xmlgen.startElement("annotations", {})
+        self._level += 1
+        self._add_version()
+
+    def _add_meta(self, meta):
+        self._level += 1
+        for k, v in meta.items():
+            if isinstance(v, OrderedDict):
+                self._indent()
+                self.xmlgen.startElement(k, {})
+                self._add_meta(v)
+                self._indent()
+                self.xmlgen.endElement(k)
+            elif type(v) == list:
+                self._indent()
+                self.xmlgen.startElement(k, {})
+                for tup in v:
+                    self._add_meta(OrderedDict([tup]))
+                self._indent()
+                self.xmlgen.endElement(k)
+            else:
+                self._indent()
+                self.xmlgen.startElement(k, {})
+                self.xmlgen.characters(v)
+                self.xmlgen.endElement(k)
+        self._level -= 1
+
+    def add_meta(self, meta):
+        self._indent()
+        self.xmlgen.startElement("meta", {})
+        self._add_meta(meta)
+        self._indent()
+        self.xmlgen.endElement("meta")
+
+    def open_track(self, track):
+        self._indent()
+        self.xmlgen.startElement("track", track)
+        self._level += 1
+
+    def open_image(self, image):
+        self._indent()
+        self.xmlgen.startElement("image", image)
+        self._level += 1
+
+    def open_box(self, box):
+        self._indent()
+        self.xmlgen.startElement("box", box)
+        self._level += 1
+
+    def open_polygon(self, polygon):
+        self._indent()
+        self.xmlgen.startElement("polygon", polygon)
+        self._level += 1
+
+    def open_polyline(self, polyline):
+        self._indent()
+        self.xmlgen.startElement("polyline", polyline)
+        self._level += 1
+
+    def open_points(self, points):
+        self._indent()
+        self.xmlgen.startElement("points", points)
+        self._level += 1
+
+    def add_attribute(self, attribute):
+        self._indent()
+        self.xmlgen.startElement("attribute", {"name": attribute["name"]})
+        self.xmlgen.characters(attribute["value"])
+        self.xmlgen.endElement("attribute")
+
+    def close_box(self):
+        self._level -= 1
+        self._indent()
+        self.xmlgen.endElement("box")
+
+    def close_polygon(self):
+        self._level -= 1
+        self._indent()
+        self.xmlgen.endElement("polygon")
+
+    def close_polyline(self):
+        self._level -= 1
+        self._indent()
+        self.xmlgen.endElement("polyline")
+
+    def close_points(self):
+        self._level -= 1
+        self._indent()
+        self.xmlgen.endElement("points")
+
+    def close_image(self):
+        self._level -= 1
+        self._indent()
+        self.xmlgen.endElement("image")
+
+    def close_track(self):
+        self._level -= 1
+        self._indent()
+        self.xmlgen.endElement("track")
+
+    def close_root(self):
+        self._level -= 1
+        self._indent()
+        self.xmlgen.endElement("annotations")
+        self.xmlgen.endDocument()
+
 
 class TaskAnnotation:
     def __init__(self, pk):
@@ -411,3 +619,282 @@ class TaskAnnotation:
     def _merge_tracks(tracks, start_frame, overlap):
         # FIXME: implement merge algorithm here
         self.data["tracks"].extend(tracks)
+
+    def dump(self, file_path, scheme, host, query_params):
+        def _flip_box(box, im_w, im_h):
+            box.xbr, box.xtl = im_w - box.xtl, im_w - box.xbr
+            box.ybr, box.ytl = im_h - box.ytl, im_h - box.ybr
+
+        def _flip_shape(shape, im_w, im_h):
+            points = []
+            for p in shape.points.split(' '):
+                p = p.split(',')
+                points.append({
+                    'x': p[0],
+                    'y': p[1]
+                })
+
+            for p in points:
+                p['x'] = im_w - (float(p['x']) + 1)
+                p['y'] = im_h - (float(p['y']) + 1)
+
+            shape.points = ' '.join(['{},{}'.format(point['x'], point['y']) for point in points])
+
+        db_task = self.db_task
+        db_segments = db_task.segment_set.all().prefetch_related('job_set')
+        db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
+        im_meta_data = get_image_meta_cache(db_task)
+
+        meta = OrderedDict([
+            ("task", OrderedDict([
+                ("id", str(db_task.id)),
+                ("name", db_task.name),
+                ("size", str(db_task.size)),
+                ("mode", db_task.mode),
+                ("overlap", str(db_task.overlap)),
+                ("bugtracker", db_task.bug_tracker),
+                ("flipped", str(db_task.flipped)),
+                ("created", str(timezone.localtime(db_task.created_date))),
+                ("updated", str(timezone.localtime(db_task.updated_date))),
+
+                ("labels", [
+                    ("label", OrderedDict([
+                        ("name", db_label.name),
+                        ("attributes", [("attribute", db_attr.text)
+                            for db_attr in db_label.attributespec_set.all()])
+                    ])) for db_label in db_labels
+                ]),
+
+                ("segments", [
+                    ("segment", OrderedDict([
+                        ("id", str(db_segment.id)),
+                        ("start", str(db_segment.start_frame)),
+                        ("stop", str(db_segment.stop_frame)),
+                        ("url", "{0}://{1}/?id={2}".format(
+                            scheme, host, db_segment.job_set.all()[0].id))
+                    ])) for db_segment in db_segments
+                ]),
+
+                ("owner", OrderedDict([
+                    ("username", db_task.owner.username),
+                    ("email", db_task.owner.email)
+                ]) if db_task.owner else ""),
+            ])),
+            ("dumped", str(timezone.localtime(timezone.now())))
+        ])
+
+        if db_task.mode == "interpolation":
+            meta["task"]["original_size"] = OrderedDict([
+                ("width", str(im_meta_data[0]["width"])),
+                ("height", str(im_meta_data[0]["height"]))
+            ])
+
+        with open(file_path, "w") as dump_file:
+            dumper = XmlAnnotationWriter(dump_file)
+            dumper.open_root()
+            dumper.add_meta(meta)
+
+            if db_task.mode == "annotation":
+                shapes = {}
+                shapes["boxes"] = {}
+                shapes["polygons"] = {}
+                shapes["polylines"] = {}
+                shapes["points"] = {}
+                boxes = self.to_boxes()
+                for box in boxes:
+                    if box.frame not in shapes["boxes"]:
+                        shapes["boxes"][box.frame] = []
+                    shapes["boxes"][box.frame].append(box)
+
+                polygons = self.to_polygons()
+                for polygon in polygons:
+                    if polygon.frame not in shapes["polygons"]:
+                        shapes["polygons"][polygon.frame] = []
+                    shapes["polygons"][polygon.frame].append(polygon)
+
+                polylines = self.to_polylines()
+                for polyline in polylines:
+                    if polyline.frame not in shapes["polylines"]:
+                        shapes["polylines"][polyline.frame] = []
+                    shapes["polylines"][polyline.frame].append(polyline)
+
+                points = self.to_points()
+                for points in points:
+                    if points.frame not in shapes["points"]:
+                        shapes["points"][points.frame] = []
+                    shapes["points"][points.frame].append(points)
+
+                for frame in sorted(set(list(shapes["boxes"].keys()) +
+                    list(shapes["polygons"].keys()) +
+                    list(shapes["polylines"].keys()) +
+                    list(shapes["points"].keys()))):
+
+                    link = db_task.get_frame_path(frame)
+                    path = os.readlink(link)
+
+                    rpath = path.split(os.path.sep)
+                    rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
+
+                    im_w = im_meta_data[frame]['width']
+                    im_h = im_meta_data[frame]['height']
+
+                    dumper.open_image(OrderedDict([
+                        ("id", str(frame)),
+                        ("name", rpath),
+                        ("width", str(im_meta_data[frame]["width"])),
+                        ("height", str(im_meta_data[frame]["height"]))
+                    ]))
+
+                    for shape_type in ["boxes", "polygons", "polylines", "points"]:
+                        shape_dict = shapes[shape_type]
+                        if frame in shape_dict:
+                            for shape in shape_dict[frame]:
+                                if shape_type == "boxes":
+                                    if db_task.flipped:
+                                        _flip_box(shape, im_w, im_h)
+
+                                    dump_dict = OrderedDict([
+                                        ("label", shape.label.name),
+                                        ("xtl", "{:.2f}".format(shape.xtl)),
+                                        ("ytl", "{:.2f}".format(shape.ytl)),
+                                        ("xbr", "{:.2f}".format(shape.xbr)),
+                                        ("ybr", "{:.2f}".format(shape.ybr)),
+                                        ("occluded", str(int(shape.occluded))),
+                                    ])
+                                    if db_task.z_order:
+                                        dump_dict['z_order'] = str(shape.z_order)
+                                    if shape.group_id:
+                                        dump_dict['group_id'] = str(shape.group_id)
+                                    dumper.open_box(dump_dict)
+                                else:
+                                    if db_task.flipped:
+                                        _flip_shape(shape, im_w, im_h)
+
+                                    dump_dict = OrderedDict([
+                                        ("label", shape.label.name),
+                                        ("points", ';'.join((
+                                            ','.join((
+                                                "{:.2f}".format(float(p.split(',')[0])),
+                                                "{:.2f}".format(float(p.split(',')[1]))
+                                            )) for p in shape.points.split(' '))
+                                        )),
+                                        ("occluded", str(int(shape.occluded))),
+                                    ])
+
+                                    if db_task.z_order:
+                                        dump_dict['z_order'] = str(shape.z_order)
+                                    if shape.group_id:
+                                        dump_dict['group_id'] = str(shape.group_id)
+
+                                    if shape_type == "polygons":
+                                        dumper.open_polygon(dump_dict)
+                                    elif shape_type == "polylines":
+                                        dumper.open_polyline(dump_dict)
+                                    else:
+                                        dumper.open_points(dump_dict)
+
+                                for attr in shape.attributes:
+                                    dumper.add_attribute(OrderedDict([
+                                        ("name", attr.name),
+                                        ("value", attr.value)
+                                    ]))
+
+                                if shape_type == "boxes":
+                                    dumper.close_box()
+                                elif shape_type == "polygons":
+                                    dumper.close_polygon()
+                                elif shape_type == "polylines":
+                                    dumper.close_polyline()
+                                else:
+                                    dumper.close_points()
+
+                    dumper.close_image()
+            else:
+                paths = {}
+                paths["boxes"] = self.to_box_paths()
+                paths["polygons"] = self.to_polygon_paths()
+                paths["polylines"] = self.to_polyline_paths()
+                paths["points"] = self.to_points_paths()
+
+                im_w = im_meta_data[0]['width']
+                im_h = im_meta_data[0]['height']
+
+                counter = 0
+                for shape_type in ["boxes", "polygons", "polylines", "points"]:
+                    path_list = paths[shape_type]
+                    for path in path_list:
+                        path_id = path.client_id if path.client_id != -1 else counter
+                        counter += 1
+                        dump_dict = OrderedDict([
+                            ("id", str(path_id)),
+                            ("label", path.label.name),
+                        ])
+                        if path.group_id:
+                            dump_dict['group_id'] = str(path.group_id)
+                        dumper.open_track(dump_dict)
+                        if shape_type == "boxes":
+                            for box in path.get_interpolated_boxes():
+                                if db_task.flipped:
+                                    _flip_box(box, im_w, im_h)
+                                dump_dict = OrderedDict([
+                                    ("frame", str(box.frame)),
+                                    ("xtl", "{:.2f}".format(box.xtl)),
+                                    ("ytl", "{:.2f}".format(box.ytl)),
+                                    ("xbr", "{:.2f}".format(box.xbr)),
+                                    ("ybr", "{:.2f}".format(box.ybr)),
+                                    ("outside", str(int(box.outside))),
+                                    ("occluded", str(int(box.occluded))),
+                                    ("keyframe", str(int(box.keyframe)))
+                                ])
+
+                                if db_task.z_order:
+                                    dump_dict["z_order"] = str(box.z_order)
+
+                                dumper.open_box(dump_dict)
+                                for attr in path.attributes + box.attributes:
+                                    dumper.add_attribute(OrderedDict([
+                                        ("name", attr.name),
+                                        ("value", attr.value)
+                                    ]))
+                                dumper.close_box()
+                        else:
+                            for shape in path.get_interpolated_shapes():
+                                if db_task.flipped:
+                                    _flip_shape(shape, im_w, im_h)
+                                dump_dict = OrderedDict([
+                                    ("frame", str(shape.frame)),
+                                    ("points", ';'.join((
+                                        ','.join((
+                                            "{:.2f}".format(float(p.split(',')[0])),
+                                            "{:.2f}".format(float(p.split(',')[1]))
+                                        )) for p in shape.points.split(' '))
+                                    )),
+                                    ("outside", str(int(shape.outside))),
+                                    ("occluded", str(int(shape.occluded))),
+                                    ("keyframe", str(int(shape.keyframe)))
+                                ])
+
+                                if db_task.z_order:
+                                    dump_dict["z_order"] = str(shape.z_order)
+
+                                if shape_type == "polygons":
+                                    dumper.open_polygon(dump_dict)
+                                elif shape_type == "polylines":
+                                    dumper.open_polyline(dump_dict)
+                                else:
+                                    dumper.open_points(dump_dict)
+
+                                for attr in path.attributes + shape.attributes:
+                                    dumper.add_attribute(OrderedDict([
+                                        ("name", attr.name),
+                                        ("value", attr.value)
+                                    ]))
+
+                                if shape_type == "polygons":
+                                    dumper.close_polygon()
+                                elif shape_type == "polylines":
+                                    dumper.close_polyline()
+                                else:
+                                    dumper.close_points()
+                        dumper.close_track()
+            dumper.close_root()

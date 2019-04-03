@@ -73,10 +73,6 @@ class Task(models.Model):
     def get_data_dirname(self):
         return os.path.join(self.get_task_dirname(), "data")
 
-    def get_dump_path(self):
-        name = re.sub(r'[\\/*?:"<>|]', '_', self.name)
-        return os.path.join(self.get_task_dirname(), "{}.xml".format(name))
-
     def get_log_path(self):
         return os.path.join(self.get_task_dirname(), "task.log")
 
