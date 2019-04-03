@@ -41,9 +41,7 @@ class PatchAction(str, Enum):
 @silk_profile(name="GET job data")
 @transaction.atomic
 def get_job_data(pk):
-    db_job = models.Job.objects.select_for_update().get(id=pk)
-
-    annotation = JobAnnotation(db_job)
+    annotation = JobAnnotation(pk)
     annotation.init_from_db()
 
     return annotation.data
@@ -51,105 +49,66 @@ def get_job_data(pk):
 @silk_profile(name="POST job data")
 @transaction.atomic
 def put_job_data(pk, data):
-    slogger.job[pk].info("Enter put_job_data API: jid = {}".format(pk))
-
-    db_job = models.Job.objects.select_related('segment__task') \
-        .select_for_update().get(id=pk)
-
-    annotation = JobAnnotation(db_job)
+    annotation = JobAnnotation(pk)
     annotation.delete()
     annotation.create(data)
 
-    slogger.job[pk].info("Leave put_job_data API: jid = {}".format(pk))
     return annotation.data
 
 @silk_profile(name="UPDATE job data")
 @transaction.atomic
 def patch_job_data(pk, data, action):
-    slogger.job[pk].info("Enter patch_job_data API: jid = {}, action = {}"
-        .format(pk, action))
-
-    db_job = models.Job.objects.select_related('segment__task') \
-        .select_for_update().get(id=pk)
-
-    annotation = JobAnnotation(db_job)
+    annotation = JobAnnotation(pk)
     if action == PatchAction.CREATE:
         annotation.create(data)
     elif action == PatchAction.UPDATE:
-        annotation.delete(data)
-        annotation.create(data)
+        annotation.update(data)
     elif action == PatchAction.DELETE:
         annotation.delete(data)
 
-    slogger.job[pk].info("Leave patch_job_data API: jid = {}, action = {}"
-        .format(pk, action))
     return annotation.data
 
 @silk_profile(name="DELETE job data")
 @transaction.atomic
 def delete_job_data(pk):
-    db_job = models.Job.objects.select_for_update().get(id=pk)
-
-    annotation = JobAnnotation(db_job)
+    annotation = JobAnnotation(pk)
     annotation.delete()
 
 @silk_profile(name="GET task data")
 @transaction.atomic
 def get_task_data(pk):
-    return []
+    annotation = TaskAnnotation(pk)
+    annotation.init_from_db()
+
+    return annotation.data
 
 @silk_profile(name="POST task data")
 @transaction.atomic
 def put_task_data(pk, data):
-    delete_task_data(pk)
-    return patch_task_data(pk, data, PatchAction.CREATE)
+    annotation = TaskAnnotation(pk)
+    annotation.delete()
+    annotation.create(data)
+
+    return annotation.data
 
 @silk_profile(name="UPDATE task data")
 @transaction.atomic
 def patch_task_data(pk, data, action):
-    slogger.task[pk].info("Enter patch_task_data API: tid = {}".format(pk))
-    db_task = models.Task.objects.get(id=pk)
-    db_segments = db_task.segment_set.prefetch_related('job_set').all()
+    annotation = TaskAnnotation(pk)
+    if action == PatchAction.CREATE:
+        annotation.create(data)
+    elif action == PatchAction.UPDATE:
+        annotation.update(data)
+    elif action == PatchAction.DELETE:
+        annotation.delete(data)
 
-    splitted_data = {}
-    for segment in db_segments:
-        jid = segment.job_set.first().id
-        start = segment.start_frame
-        stop = segment.stop_frame
-        is_shape_inside = lambda y: (start <= int(y['frame']) <= stop) and (not y['outside'])
-        splitted_data[jid] = {
-            "tags":   list(filter(lambda x: start <= int(x['frame']) <= stop, data['tags'])),
-            "shapes": list(filter(lambda x: start <= int(x['frame']) <= stop, data['shapes'])),
-            "tracks": list(filter(lambda x: len(list(filter(is_shape_inside, x['shapes']))), data['tracks']))
-        }
-
-    for jid, job_data in splitted_data.items():
-        # if an item inside _data isn't empty need to call save_job
-        is_non_empty = False
-        for objects in job_data.values():
-            if objects:
-                is_non_empty = True
-                break
-
-        if is_non_empty:
-            patch_job_data(jid, job_data, action)
-
-    response = get_task_data(pk)
-    slogger.task[pk].info("Leave save_task API: tid = {}".format(pk))
-
-    return response
+    return annotation.data
 
 @silk_profile(name="DELETE task data")
 @transaction.atomic
 def delete_task_data(pk):
-    slogger.task[pk].info("Enter delete_task_data API: tid = {}".format(pk))
-    db_jobs = models.Job.objects.filter(segment__task_id=pk)
-
-    for db_job in db_jobs:
-        delete_job_data(db_job.id)
-
-    slogger.task[pk].info("Leave delete_task_data API: tid = {}".format(pk))
-
+    annotation = TaskAnnotation(pk)
+    annotation.delete()
 
 ######
 
@@ -168,24 +127,22 @@ def bulk_create(db_model, objects, flt_param = {}):
 
 
 class JobAnnotation:
-    def __init__(self, db_job):
-        db_segment = db_job.segment
+    def __init__(self, pk):
+        self.db_job = models.Job.objects.select_related('segment__task') \
+            .select_for_update().get(id=pk)
+
+        db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
         self.stop_frame = db_segment.stop_frame
         self.reset()
 
         # pylint: disable=bad-continuation
-        self.db_job = db_job
-        self.logger = slogger.job[db_job.id]
+        self.logger = slogger.job[self.db_job.id]
         self.db_labels = {db_label.id:db_label
-            for db_label in db_job.segment.task.label_set.all()}
+            for db_label in db_segment.task.label_set.all()}
         self.db_attributes = {db_attr.id:db_attr
             for db_attr in models.AttributeSpec.objects.filter(
-                label__task__id=db_job.segment.task.id)}
-
-    def has_data(self):
-        return self.data and (self.data["tags"] or self.data["shapes"] or
-            self.data["tracks"])
+                label__task__id=db_segment.task.id)}
 
     def reset(self):
         self.data = {
@@ -195,13 +152,13 @@ class JobAnnotation:
             "tracks": []
         }
 
-    def _save_tracks_to_db(self):
+    def _save_tracks_to_db(self, tracks):
         db_tracks = []
         db_track_attrvals = []
         db_shapes = []
         db_shape_attrvals = []
 
-        for track in self.data["tracks"]:
+        for track in tracks:
             attributes = track.pop("attributes", [])
             shapes = track.pop("shapes")
             db_track = models.LabeledTrack(job=self.db_job, **track)
@@ -253,11 +210,11 @@ class JobAnnotation:
         tracks = serializers.LabeledTrackSerializer(db_tracks, many=True)
         self.data["tracks"] = tracks.data
 
-    def _save_shapes_to_db(self):
+    def _save_shapes_to_db(self, shapes):
         db_shapes = []
         db_attrvals = []
 
-        for shape in self.data["shapes"]:
+        for shape in shapes:
             attributes = shape.pop("attributes", [])
             db_shape = models.LabeledShape(job=self.db_job, **shape)
             if db_shape.label_id not in self.db_labels:
@@ -283,11 +240,11 @@ class JobAnnotation:
         shapes = serializers.LabeledShapeSerializer(db_shapes, many=True)
         self.data["shapes"] = shapes.data
 
-    def _save_tags_to_db(self):
+    def _save_tags_to_db(self, tags):
         db_tags = []
         db_attrvals = []
 
-        for tag in self.data["tags"]:
+        for tag in tags:
             attributes = tag.pop("attributes", [])
             db_tag = models.LabeledImage(job=self.db_job, **tag)
             if db_tag.label_id not in self.db_labels:
@@ -313,21 +270,24 @@ class JobAnnotation:
         tags = serializers.LabeledImageSerializer(db_tags, many=True)
         self.data["tags"] = tags.data
 
+    def _save_to_db(self, data):
+        self.reset()
+        self._save_tags_to_db(data["tags"])
+        self._save_shapes_to_db(data["shapes"])
+        self._save_tracks_to_db(data["tracks"])
 
-    def save_to_db(self, data):
-        self.data = data
-        self._save_tags_to_db()
-        self._save_shapes_to_db()
-        self._save_tracks_to_db()
-
-        return self.has_data()
+        return self.data["tags"] or self.data["shapes"] or self.data["tracks"]
 
     def create(self, data):
-        if self.save_to_db(data):
+        if self._save_to_db(data):
             db_task = self.db_job.segment.task
             db_task.updated_date = timezone.now()
             db_task.save()
             self.db_job.save()
+
+    def update(self, data):
+        self.delete(data)
+        self.create(data)
 
     def delete(self, data=None):
         if data is None:
@@ -354,21 +314,20 @@ class JobAnnotation:
             labeledshape_set.delete()
             labeledtrack_set.delete()
 
-    def init_from_queries(self, labeledimage_set, labeledshape_set,
-        labeledtrack_set):
-        db_tags = list(labeledimage_set
+    def init_from_db(self):
+        db_tags = list(self.db_job.labeledimage_set
             .prefetch_related("label")
             .prefetch_related("labeledimageattributeval_set"))
         tags = serializers.LabeledImageSerializer(db_tags, many=True)
         self.data["tags"] = tags.data
 
-        db_shapes = list(labeledshape_set
+        db_shapes = list(self.db_job.labeledshape_set
             .prefetch_related("label")
             .prefetch_related("labeledshapeattributeval_set"))
         shapes = serializers.LabeledShapeSerializer(db_shapes, many=True)
         self.data["shapes"] = shapes.data
 
-        db_tracks = list(labeledtrack_set
+        db_tracks = list(self.db_job.labeledtrack_set
             .select_related("label")
             .prefetch_related("labeledtrackattributeval_set")
             .prefetch_related("trackedshape_set__trackedshapeattributeval_set"))
@@ -376,8 +335,79 @@ class JobAnnotation:
         self.data["tracks"] = tracks.data
 
 
+class TaskAnnotation:
+    def __init__(self, pk):
+        self.db_task = models.Task.objects.get(id=pk)
+        self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk)
+
+    def reset(self):
+        self.data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
+
+    def _patch_data(self, data, action):
+        splitted_data = {}
+        for db_job in self.db_jobs:
+            jid = db_job.id
+            start = db_job.segment.start_frame
+            stop = db_job.segment.stop_frame
+            is_frame_inside = lambda x: (start <= int(x['frame']) <= stop)
+            splitted_data[jid] = {
+                "tags":   list(filter(is_frame_inside, data['tags'])),
+                "shapes": list(filter(is_frame_inside, data['shapes'])),
+                "tracks": list(filter(lambda y: len(list(filter(is_frame_inside, y['shapes']))), data['tracks']))
+            }
+
+        for jid, job_data in splitted_data.items():
+            # if an item inside _data isn't empty need to call save_job
+            is_non_empty = False
+            for objects in job_data.values():
+                if objects:
+                    is_non_empty = True
+                    break
+
+            if is_non_empty:
+                patch_job_data(jid, job_data, action)
+
+        self.init_from_db()
+
+    def create(self, data):
+        self._patch_data(data, PatchAction.CREATE)
+
+    def update(self, data):
+        self._patch_data(data, PatchAction.UPDATE)
+
+    def delete(self, data=None):
+        if data:
+            self._patch_data(data, PatchAction.DELETE)
+        else:
+            for db_job in self.db_jobs:
+                delete_job_data(db_job.id)
+
     def init_from_db(self):
-        self.init_from_queries(
-            self.db_job.labeledimage_set,
-            self.db_job.labeledshape_set,
-            self.db_job.labeledtrack_set)
+        self.reset()
+
+        for db_job in self.db_jobs:
+            annotation = JobAnnotation(db_job)
+            annotation.init_from_db()
+            self._merge_tags(annotation.data["tags"], db_segment.start_frame,
+                self.db_task.overlap)
+            self._merge_shapes(annotation.data["shapes"], db_segment.start_frame,
+                self.db_task.overlap)
+            self._merge_tracks(annotation.data["tracks"], db_segment.start_frame,
+                self.db_task.overlap)
+    
+    def _merge_tags(tags, start_frame, overlap):
+        # FIXME: implement merge algorithm here
+        self.data["tags"].extend(tags)
+
+    def _merge_shapes(shapes, start_frame, overlap):
+        # FIXME: implement merge algorithm here
+        self.data["shapes"].extend(shapes)
+
+    def _merge_tracks(tracks, start_frame, overlap):
+        # FIXME: implement merge algorithm here
+        self.data["tracks"].extend(tracks)
