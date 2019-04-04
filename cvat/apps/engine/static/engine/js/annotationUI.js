@@ -49,24 +49,14 @@
 */
 
 async function initLogger(jobID) {
-    if (!Logger.initializeLogger('CVAT', jobID)) {
-        const message = 'Could not initialize Logger. Please immediately report the problem to support team';
+    if (!Logger.initializeLogger(jobID)) {
+        const message = 'Logger has been already initialized';
         console.error(message);
         showMessage(message);
         return;
     }
 
     Logger.setTimeThreshold(Logger.EventType.zoomImage);
-    let user = null;
-    try {
-        user = await $.get('/api/v1/users/self');
-    } catch (errorData) {
-        const message = `Could not get username. Code: ${errorData.status}. `
-            + `Message: ${errorData.responseText || errorData.statusText}`;
-        showMessage(message);
-    }
-
-    Logger.setUsername(user.username);
 }
 
 

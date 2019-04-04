@@ -18,15 +18,15 @@ String.prototype.normalize = function() {
 
 window.onload = function boot() {
     window.onerror = function exception(errorMsg, url, lineNumber, colNumber, error) {
-        Logger.sendException({
-            message: errorMsg,
-            filename: url,
-            line: lineNumber,
-            column: colNumber ? String(colNumber) : '',
-            stack: error && error.stack ? error.stack : '',
-            client: `${platform.name} ${platform.version}`,
-            system: platform.os.toString(),
-        }).catch(() => {});
+        Logger.sendException(
+            errorMsg,
+            url,
+            lineNumber,
+            colNumber ? String(colNumber) : '',
+            error && error.stack ? error.stack : '',
+            `${platform.name} ${platform.version}`,
+            platform.os.toString(),
+        ).catch(() => {});
     };
 
     const id = window.location.href.match('id=[0-9]+')[0].slice(3);
