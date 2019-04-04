@@ -73,7 +73,6 @@ def get(jid):
     return annotation.to_client()
 
 @silk_profile(name="Save job")
-@plugin_decorator
 @transaction.atomic
 def save_job(jid, data):
     """

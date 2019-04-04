@@ -64,6 +64,7 @@ def put_job_data(pk, data):
     return annotation.data
 
 @silk_profile(name="UPDATE job data")
+@plugin_decorator
 @transaction.atomic
 def patch_job_data(pk, data, action):
     slogger.job[pk].info("Enter patch_job_data API: jid = {}, action = {}"
