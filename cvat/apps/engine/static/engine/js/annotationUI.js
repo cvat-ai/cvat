@@ -50,7 +50,7 @@
 
 async function initLogger(jobID) {
     if (!Logger.initializeLogger(jobID)) {
-        const message = 'Could not initialize Logger. Please immediately report the problem to support team';
+        const message = 'Logger has been already initialized';
         console.error(message);
         showMessage(message);
         return;

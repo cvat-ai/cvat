@@ -60,11 +60,9 @@ class LoggerHandler {
     constructor(jobId) {
         this._clientID = Date.now().toString().substr(-6);
         this._jobId = jobId;
-        this._userActivityHandler = null;
         this._logEvents = [];
         this._userActivityHandler = new UserActivityHandler();
         this._timeThresholds = {};
-        this.isInitialized = Boolean(this._userActivityHandler);
     }
 
     addEvent(event) {
@@ -87,7 +85,7 @@ class LoggerHandler {
                 xhr.setRequestHeader('Content-Type', 'application/json');
                 xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
                 let onreject = () => {
-                    if (--retries) {
+                    if (retries--) {
                         setTimeout(() => makeRequest(), 30000); //30 sec delay
                     } else {
                         let payload = exception.serialize();
@@ -117,7 +115,6 @@ class LoggerHandler {
                 xhr.send(JSON.stringify(exception.serialize()));
             };
             makeRequest();
-
         });
     }
 
@@ -401,7 +398,7 @@ var Logger = {
         if (!this._logger)
         {
             this._logger = new LoggerHandler(jobId);
-            return this._logger.isInitialized;
+            return true;
         }
         return false;
     },
