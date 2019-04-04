@@ -335,7 +335,7 @@ class ServerExceptionAPITestCase(APITestCase):
             "filename": "http://localhost/my_file.js",
             "line": 1,
             "column": 1,
-            "stack": None
+            "stack": ""
         }
 
     @mock.patch("cvat.apps.engine.views.clogger")

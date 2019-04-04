@@ -137,7 +137,7 @@ function dumpAnnotationRequest(dumpButton, taskID) {
     dumpButton.attr('disabled', true);
 
     $.ajax({
-        url: '/dump/annotation/task/' + taskID,
+        url: '/api/v1/tasks/' + taskID + '/annotations/' + 'my_task_' + taskID,
         success: onDumpRequestSuccess,
         error: onDumpRequestError,
     });
@@ -150,7 +150,7 @@ function dumpAnnotationRequest(dumpButton, taskID) {
             if (requestSended) return;
             requestSended = true;
             $.ajax({
-                url: '/check/annotation/task/' + taskID,
+                url: '/api/v1/tasks/' + taskID + '/annotations/' + 'my_task_' + taskID,
                 success: onDumpCheckSuccess,
                 error: onDumpCheckError,
                 complete: () => requestSended = false,
@@ -158,32 +158,32 @@ function dumpAnnotationRequest(dumpButton, taskID) {
         }, requestInterval);
 
         function onDumpCheckSuccess(data) {
-            if (data.state === 'created') {
-                clearInterval(checkInterval);
-                getDumpedFile();
-            }
-            else if (data.state != 'started' ) {
-                clearInterval(checkInterval);
-                let message = 'Dump process completed with an error. ' + data.stderr;
-                dumpButton.attr('disabled', false);
-                showMessage(message);
-                throw Error(message);
-            }
+            // if (data.state === 'created') {
+            //     clearInterval(checkInterval);
+            //     getDumpedFile();
+            // }
+            // else if (data.state != 'started' ) {
+            //     clearInterval(checkInterval);
+            //     let message = 'Dump process completed with an error. ' + data.stderr;
+            //     dumpButton.attr('disabled', false);
+            //     showMessage(message);
+            //     throw Error(message);
+            // }
 
-            function getDumpedFile() {
-                $.ajax({
-                    url: '/download/annotation/task/' + taskID,
-                    error: onGetDumpError,
-                    success: () => window.location = '/download/annotation/task/' + taskID,
-                    complete: () => dumpButton.attr('disabled', false)
-                });
+            // function getDumpedFile() {
+            //     $.ajax({
+            //         url: '/download/annotation/task/' + taskID,
+            //         error: onGetDumpError,
+            //         success: () => window.location = '/download/annotation/task/' + taskID,
+            //         complete: () => dumpButton.attr('disabled', false)
+            //     });
 
-                function onGetDumpError(response) {
-                    let message = 'Get the dump request error: ' + response.responseText;
-                    showMessage(message);
-                    throw Error(message);
-                }
-            }
+            //     function onGetDumpError(response) {
+            //         let message = 'Get the dump request error: ' + response.responseText;
+            //         showMessage(message);
+            //         throw Error(message);
+            //     }
+            // }
         }
 
         function onDumpCheckError(response) {
