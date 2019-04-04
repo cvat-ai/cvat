@@ -103,7 +103,7 @@ class TaskView {
 
             if (next) {
                 const response = await $.ajax({
-                    url: `/api/v1/tasks/${this._id}/annotations`,
+                    url: `/api/v1/tasks/${this._id}/annotations?action=create`,
                     type: 'PATCH',
                     data: JSON.stringify(chunk),
                     contentType: 'application/json',
@@ -114,12 +114,12 @@ class TaskView {
         }
 
         async function save(parsed) {3
-            const response = await $.ajax({
+            await $.ajax({
                 url: `/api/v1/tasks/${this._id}/annotations`,
                 type: 'DELETE',
             });
 
-            await saveChunk.call(this, parsed, 0, response.version);
+            await saveChunk.call(this, parsed, 0, 0);
         }
 
         async function onload(overlay, text) {

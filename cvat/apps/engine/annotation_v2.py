@@ -56,6 +56,7 @@ def put_job_data(pk, data):
     return annotation.data
 
 @silk_profile(name="UPDATE job data")
+@plugin_decorator
 @transaction.atomic
 def patch_job_data(pk, data, action):
     annotation = JobAnnotation(pk)
@@ -109,6 +110,7 @@ def patch_task_data(pk, data, action):
 def delete_task_data(pk):
     annotation = TaskAnnotation(pk)
     annotation.delete()
+
 
 def dump_task_data(pk, file_path, scheme, host, query_params):
     # For big tasks dump function may run for a long time and
@@ -608,7 +610,7 @@ class TaskAnnotation:
                 self.db_task.overlap)
             self._merge_tracks(annotation.data["tracks"], db_segment.start_frame,
                 self.db_task.overlap)
-    
+
     def _merge_tags(self, tags, start_frame, overlap):
         # FIXME: implement merge algorithm here
         self.data["tags"].extend(tags)

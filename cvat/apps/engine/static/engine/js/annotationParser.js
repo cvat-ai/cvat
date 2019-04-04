@@ -117,7 +117,7 @@ class AnnotationParser {
     _getAttributeList(shape, labelId) {
         let attributeDict = {};
         let attributes = shape.getElementsByTagName('attribute');
-        for (let attribute of attributes ) {
+        for (let attribute of attributes) {
             let [id, value] = this._getAttribute(labelId, attribute);
             attributeDict[id] = value;
         }
@@ -314,6 +314,10 @@ class AnnotationParser {
                 shapes: [],
             };
 
+            if (path.frame < this._startFrame || path.frame > this._stopFrame) {
+                continue;
+            }
+
             for (let shape of parsed[type]) {
                 const keyFrame = +shape.getAttribute('keyframe');
                 const outside = +shape.getAttribute('outside');
@@ -325,7 +329,8 @@ class AnnotationParser {
                     Ignore all frames less then start.
                     Ignore all frames more then stop.
                 */
-               const significant = keyFrame || frame === this._startFrame;
+                const significant = (keyFrame || frame === this._startFrame)
+                    && frame >= this._startFrame && frame <= this._stopFrame;
 
                 if (significant) {
                     const attributeList = this._getAttributeList(shape, labelId);
@@ -333,23 +338,23 @@ class AnnotationParser {
                     const pathAttributes = [];
 
                     for (let attr of attributeList) {
-                        const attrInfo = this._labelsInfo.attrInfo(attr.id);
+                        const attrInfo = this._labelsInfo.attrInfo(attr.spec_id);
                         if (attrInfo.mutable) {
                             shapeAttributes.push({
-                                id: attr.id,
+                                spec_id: attr.spec_id,
                                 value: attr.value,
                             });
                         }
                         else {
                             pathAttributes.push({
-                                id: attr.id,
+                                spec_id: attr.spec_id,
                                 value: attr.value,
                             });
                         }
                     }
                     path.attributes = pathAttributes;
 
-                    if (type === 'boxes') {
+                    if (type === 'box') {
                         let [points, occluded, z_order] = this._getBoxPosition(shape, Math.clamp(frame, this._startFrame, this._stopFrame));
                         path.shapes.push({
                             attributes: shapeAttributes,

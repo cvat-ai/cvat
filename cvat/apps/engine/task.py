@@ -239,11 +239,16 @@ def _save_task_to_db(db_task):
     job.meta['status'] = 'Task is being saved in database'
     job.save_meta()
 
+    default_overlap = 5 if db_task.mode == 'interpolation' else 0
+    if db_task.overlap is None:
+        db_task.overlap = default_overlap
+    db_task.overlap = min(db_task.overlap, db_task.size - 1)
+
     segment_size = db_task.segment_size
     if segment_size == 0:
         segment_size = db_task.size
 
-    for x in range(0, db_task.size, segment_size):
+    for x in range(0, db_task.size, segment_size - db_task.overlap):
         start_frame = x
         stop_frame = min(x + segment_size - 1, db_task.size - 1)
         slogger.glob.info("New segment for task #{}: start_frame = {}, \

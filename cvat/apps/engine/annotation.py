@@ -73,7 +73,6 @@ def get(jid):
     return annotation.to_client()
 
 @silk_profile(name="Save job")
-@plugin_decorator
 @transaction.atomic
 def save_job(jid, data):
     """
@@ -1504,7 +1503,6 @@ class _AnnotationForSegment(_Annotation):
         self.points = annotation.points
         self.points_paths = annotation.points_paths
 
-@plugin_decorator
 def _dump(tid, data_format, scheme, host, plugin_meta_data):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after _AnnotationForTask instance
