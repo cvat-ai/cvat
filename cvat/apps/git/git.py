@@ -472,4 +472,6 @@ def _ondump(tid, data_format, scheme, host, plugin_meta_data):
         pass
 
 add_plugin("patch_job_data", _onsave, "after", exc_ok = False)
-add_plugin("_dump", _ondump, "before", exc_ok = False)
+
+# TODO: Append git repository into dump file
+# add_plugin("_dump", _ondump, "before", exc_ok = False)
