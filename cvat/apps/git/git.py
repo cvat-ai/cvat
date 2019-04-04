@@ -7,18 +7,19 @@ from django.utils import timezone
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task, Job, User
-from cvat.apps.engine.annotation import _dump as dump, FORMAT_XML
+from cvat.apps.engine.annotation_v2 import dump_task_data
 from cvat.apps.engine.plugins import add_plugin
 from cvat.apps.git.models import GitStatusChoice
 
 from cvat.apps.git.models import GitData
 from collections import OrderedDict
 
-
 import subprocess
 import django_rq
+import datetime
 import shutil
 import json
+import math
 import git
 import os
 import re
@@ -215,7 +216,7 @@ class Git:
 
 
     # Method prepares an annotation, merges diffs and pushes it to remote repository to user branch
-    def push(self, scheme, host, format, last_save):
+    def push(self, scheme, host, db_task, last_save):
         # Update local repository
         self._pull()
 
@@ -247,8 +248,11 @@ class Git:
                 self._rep.git.add(['.gitattributes'])
 
         # Dump an annotation
-        dump(self._tid, format, scheme, host, OrderedDict())
-        dump_name = Task.objects.get(pk = self._tid).get_dump_path()
+        # TODO: Fix dump, query params
+        timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        dump_name = os.path.join(db_task.get_task_dirname(),
+            "git_annotation_{}.".format(timestamp) + "dump")
+        dump_task_data(self._tid, dump_name, scheme, host, {})
 
         ext = os.path.splitext(self._path)[1]
         if ext == '.zip':
@@ -258,6 +262,7 @@ class Git:
         else:
             raise Exception("Got unknown annotation file type")
 
+        os.remove(dump_name)
         self._rep.git.add(self._annotation_file)
 
         # Merge diffs
@@ -270,7 +275,18 @@ class Git:
                         summary_diff[key] = 0
                 summary_diff[key] += diff[key]
 
-        self._rep.index.commit("CVAT Annotation updated by {}. Summary: {}".format(self._user["name"], str(summary_diff)))
+        message = "CVAT Annotation updated by {}. \n".format(self._user["name"])
+        message += 'Task URL: {}://{}/dashboard?id={}\n'.format(scheme, host, db_task.id)
+        if db_task.bug_tracker:
+            message += 'Bug Tracker URL: {}\n'.format(db_task.bug_tracker)
+        message += "Created: {}, updated: {}, deleted: {}\n".format(
+            summary_diff["create"],
+            summary_diff["update"],
+            summary_diff["delete"]
+        )
+        message += "Annotation time: {} hours".format(math.ceil((last_save - db_task.created_date).seconds / 3600))
+
+        self._rep.index.commit(message)
         self._rep.git.push("origin", self._branch_name, "--force")
 
         shutil.rmtree(self._diffs_dir, True)
@@ -343,7 +359,7 @@ def push(tid, user, scheme, host):
         try:
             _git = Git(db_git, tid, user)
             _git.init_repos()
-            _git.push(scheme, host, FORMAT_XML, db_task.updated_date)
+            _git.push(scheme, host, db_task, db_task.updated_date)
 
             # Update timestamp
             db_git.sync_date = db_task.updated_date

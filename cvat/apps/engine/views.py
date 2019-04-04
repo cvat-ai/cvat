@@ -111,7 +111,7 @@ class ServerViewSet(viewsets.ViewSet):
             for event in serializer.data:
                 message = JSONRenderer().render({**event, **user})
                 jid = event.get("job_id")
-                tid = event.get("task_id") 
+                tid = event.get("task_id")
                 if jid:
                     clogger.job[jid].info(message)
                 elif tid:

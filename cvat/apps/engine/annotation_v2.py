@@ -111,6 +111,7 @@ def delete_task_data(pk):
     annotation = TaskAnnotation(pk)
     annotation.delete()
 
+
 def dump_task_data(pk, file_path, scheme, host, query_params):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after _AnnotationForTask instance
@@ -608,7 +609,7 @@ class TaskAnnotation:
                 self.db_task.overlap)
             self._merge_tracks(annotation.data["tracks"], db_segment.start_frame,
                 self.db_task.overlap)
-    
+
     def _merge_tags(tags, start_frame, overlap):
         # FIXME: implement merge algorithm here
         self.data["tags"].extend(tags)
