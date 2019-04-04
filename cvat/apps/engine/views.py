@@ -8,6 +8,7 @@ import traceback
 from ast import literal_eval
 import shutil
 import glob
+from datetime import datetime
 
 from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render, get_object_or_404
@@ -241,10 +242,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         url_path='annotations/(?P<filename>[-\w]+)')
     def dump(self, request, pk, filename):
         queue = django_rq.get_queue("default")
-        timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        username = request.user.username
+        db_task = self.get_object()
+        timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         file_ext = request.query_params.get("format", "xml")
         file_path = os.path.join(db_task.get_task_dirname(),
-            filename + "_{}.".format(timestamp) + "dump")
+            filename + ".{}.{}.".format(username, timestamp) + "dump")
 
         # Cleanup (remove old dump files)
         good_files = [rq_job.meta["file_path"] for rq_job in queue.get_jobs()
@@ -253,31 +256,30 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         for f in set(glob_files) - set(good_files):
             os.remove(f)
 
-        rq_id = "/api/v1/jobs/{}/annotations/{}".format(pk, filename)
+        rq_id = "{}@/api/v1/jobs/{}/annotations/{}".format(username, pk, filename)
         rq_job = queue.fetch_job(rq_id)
 
         if rq_job:
-            if rq_job.is_finished():
-                # Different users can get the same dump file.
-                meta_id = "{}/sendfile".format(request.user.username)
-                if not rq_job.meta.get(meta_id):
-                    rq_job.meta[meta_id] = True
+            if rq_job.is_finished:
+                if not rq_job.meta.get(rq_id):
+                    rq_job.meta[rq_id] = True
                     rq_job.save_meta()
-                    db_task = self.get_object()
                     return sendfile(request, rq_job.meta["file_path"], attachment=True,
                         attachment_filename=filename + "." + file_ext)
-            elif rq_job.is_failed():
+            elif rq_job.is_failed:
                 rq_job.delete()
                 return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
                 return Response(status=status.HTTP_100_CONTINUE)
         else:
-            rq_job = queue.enqueue_call(func=annotation.dump,
+            rq_job = queue.enqueue_call(func=annotation_v2.dump_task_data,
                 args=(pk, file_path, request.scheme, request.get_host(),
                     request.query_params),
                 job_id=rq_id)
             rq_job.meta["file_path"] = file_path
             rq_job.save_meta()
+
+            return Response(status=status.HTTP_100_CONTINUE)
 
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
