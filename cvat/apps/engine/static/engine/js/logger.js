@@ -60,7 +60,6 @@ class LoggerHandler {
     constructor(jobId) {
         this._clientID = Date.now().toString().substr(-6);
         this._jobId = jobId;
-        this._username = null;
         this._userActivityHandler = null;
         this._logEvents = [];
         this._userActivityHandler = new UserActivityHandler();
@@ -231,13 +230,16 @@ class Event {
         this._message = message;
     }
     serialize() {
-        return {
+        let serializedObj = {
             job_id: this._jobId,
             client_id: this._clientId,
             name: Logger.eventTypeToString(this._type),
             time: this._time,
-            message: this._message,
         };
+        if (this._message) {
+            Object.assign(serializedObj, { message: this._message,});
+        }
+        return serializedObj;
     }
 }
 
