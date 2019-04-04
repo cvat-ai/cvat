@@ -329,7 +329,8 @@ class AnnotationParser {
                     Ignore all frames less then start.
                     Ignore all frames more then stop.
                 */
-               const significant = keyFrame || frame === this._startFrame;
+                const significant = (keyFrame || frame === this._startFrame)
+                    && frame >= this._startFrame && frame <= this._stopFrame;
 
                 if (significant) {
                     const attributeList = this._getAttributeList(shape, labelId);
