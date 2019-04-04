@@ -102,7 +102,8 @@ class AnnotationSaverModel extends Listener {
             $.ajax({
                 url: '/api/v1/server/logs',
                 type: 'POST',
-                data: JSON.stringify(annotationLogs),
+                data: JSON.stringify(annotationLogs.export()),
+                contentType: 'application/json',
             }).done(() => {
                 resolve();
             }).fail((errorData) => {
@@ -278,7 +279,6 @@ class AnnotationSaverModel extends Listener {
         return JSON.parse(JSON.stringify(this._state));
     }
 }
-
 
 class AnnotationSaverController {
     constructor(model) {

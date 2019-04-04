@@ -86,11 +86,13 @@ class ServerViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
     def exception(self, request):
-        # FIXME: update Logstash to handle the event correctly
         serializer = ExceptionSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            user = { "username": request.user.username }
-            message = JSONRenderer().render({**serializer.data, **user})
+            additional_info = {
+                "username": request.user.username,
+                "name": "Send exception",
+            }
+            message = JSONRenderer().render({**serializer.data, **additional_info}).decode('UTF-8')
             jid = serializer.data.get("job_id")
             tid = serializer.data.get("task_id")
             if jid:
@@ -104,12 +106,11 @@ class ServerViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
     def logs(self, request):
-        # FIXME: update Logstash to handle the event correctly
         serializer = LogEventSerializer(many=True, data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = { "username": request.user.username }
             for event in serializer.data:
-                message = JSONRenderer().render({**event, **user})
+                message = JSONRenderer().render({**event, **user}).decode('UTF-8')
                 jid = event.get("job_id")
                 tid = event.get("task_id")
                 if jid:
