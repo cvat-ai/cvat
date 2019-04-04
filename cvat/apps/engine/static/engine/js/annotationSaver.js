@@ -103,7 +103,7 @@ class AnnotationSaverModel extends Listener {
                 url: '/api/v1/server/logs',
                 type: 'POST',
                 data: JSON.stringify(annotationLogs.export()),
-		contentType: 'application/json',
+                contentType: 'application/json',
             }).done(() => {
                 resolve();
             }).fail((errorData) => {
