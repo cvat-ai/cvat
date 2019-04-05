@@ -55,7 +55,7 @@ def create(request, tid):
 
 
 @login_required
-@permission_required(perm=['engine.task.delete'],
+@permission_required(perm=['engine.task.access'],
     fn=objectgetter(models.Task, 'tid'), raise_exception=True)
 def push_repository(request, tid):
     try:
