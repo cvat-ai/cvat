@@ -128,75 +128,11 @@ function showOverlay(message) {
 }
 
 
-function dumpAnnotationRequest(dumpButton, taskID) {
+async function dumpAnnotationRequest(dumpButton, tid) {
     dumpButton = $(dumpButton);
     dumpButton.attr('disabled', true);
 
-    $.ajax({
-        url: '/api/v1/tasks/' + taskID + '/annotations/' + 'my_task_' + taskID,
-        success: onDumpRequestSuccess,
-        error: onDumpRequestError,
-    });
-
-    function onDumpRequestSuccess() {
-        let requestInterval = 3000;
-        let requestSended = false;
-
-        let checkInterval = setInterval(function() {
-            if (requestSended) return;
-            requestSended = true;
-            $.ajax({
-                url: '/api/v1/tasks/' + taskID + '/annotations/' + 'my_task_' + taskID,
-                success: onDumpCheckSuccess,
-                error: onDumpCheckError,
-                complete: () => requestSended = false,
-            });
-        }, requestInterval);
-
-        function onDumpCheckSuccess(data) {
-            // if (data.state === 'created') {
-            //     clearInterval(checkInterval);
-            //     getDumpedFile();
-            // }
-            // else if (data.state != 'started' ) {
-            //     clearInterval(checkInterval);
-            //     let message = 'Dump process completed with an error. ' + data.stderr;
-            //     dumpButton.attr('disabled', false);
-            //     showMessage(message);
-            //     throw Error(message);
-            // }
-
-            // function getDumpedFile() {
-            //     $.ajax({
-            //         url: '/download/annotation/task/' + taskID,
-            //         error: onGetDumpError,
-            //         success: () => window.location = '/download/annotation/task/' + taskID,
-            //         complete: () => dumpButton.attr('disabled', false)
-            //     });
-
-            //     function onGetDumpError(response) {
-            //         let message = 'Get the dump request error: ' + response.responseText;
-            //         showMessage(message);
-            //         throw Error(message);
-            //     }
-            // }
-        }
-
-        function onDumpCheckError(response) {
-            clearInterval(checkInterval);
-            let message = 'Check the dump request error: ' + response.responseText;
-            dumpButton.attr('disabled', false);
-            showMessage(message);
-            throw Error(message);
-        }
-    }
-
-    function onDumpRequestError(response) {
-        let message = "Dump request error: " + response.responseText;
-        dumpButton.attr('disabled', false);
-        showMessage(message);
-        throw Error(message);
-    }
+    // TODO
 }
 
 
@@ -211,7 +147,7 @@ $.ajaxSetup({
         if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
             xhr.setRequestHeader('X-CSRFToken', Cookies.get('csrftoken'));
         }
-    }
+    },
 });
 
 
