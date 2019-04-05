@@ -559,11 +559,14 @@ class TaskAnnotation:
         }
 
     def _patch_data(self, data, action):
+        self.reset()
         splitted_data = {}
+        jobs = {}
         for db_job in self.db_jobs:
             jid = db_job.id
             start = db_job.segment.start_frame
             stop = db_job.segment.stop_frame
+            jobs[jid] = { "start": start, "stop": stop }
             is_frame_inside = lambda x: (start <= int(x['frame']) <= stop)
             splitted_data[jid] = {
                 "tags":   list(filter(is_frame_inside, data['tags'])),
@@ -580,9 +583,9 @@ class TaskAnnotation:
                     break
 
             if is_non_empty:
-                patch_job_data(jid, job_data, action)
+                _data = patch_job_data(jid, job_data, action)
+                self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
 
-        self.init_from_db()
 
     def create(self, data):
         self._patch_data(data, PatchAction.CREATE)
@@ -594,6 +597,7 @@ class TaskAnnotation:
         if data:
             self._patch_data(data, PatchAction.DELETE)
         else:
+            self.reset()
             for db_job in self.db_jobs:
                 delete_job_data(db_job.id)
 
@@ -604,12 +608,14 @@ class TaskAnnotation:
             annotation = JobAnnotation(db_job.id)
             annotation.init_from_db()
             db_segment = db_job.segment
-            self._merge_tags(annotation.data["tags"], db_segment.start_frame,
+            self._merge_data(annotation.data, db_segment.start_frame,
                 self.db_task.overlap)
-            self._merge_shapes(annotation.data["shapes"], db_segment.start_frame,
-                self.db_task.overlap)
-            self._merge_tracks(annotation.data["tracks"], db_segment.start_frame,
-                self.db_task.overlap)
+
+    def _merge_data(self, data, start_frame, overlap):
+        self._merge_tags(data["tags"], start_frame, overlap)
+        self._merge_shapes(data["shapes"], start_frame, overlap)
+        self._merge_tracks(data["tracks"], start_frame, overlap)
+
 
     def _merge_tags(self, tags, start_frame, overlap):
         # FIXME: implement merge algorithm here

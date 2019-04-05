@@ -223,8 +223,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         elif request.method == 'PUT':
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                annotation_v2.put_task_data(pk, serializer.data)
-                return Response(status=status.HTTP_201_CREATED)
+                data = annotation_v2.put_task_data(pk, serializer.data)
+                return Response(data)
         elif request.method == 'DELETE':
             annotation_v2.delete_task_data(pk)
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -235,7 +235,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     "Please specify a correct 'action' for the request")
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                data = annotation_v2.patch_task_data(pk, serializer.data, action)
+                try:
+                    data = annotation_v2.patch_task_data(pk, serializer.data, action)
+                except (AttributeError, IntegrityError) as e:
+                    return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
     @action(detail=True, methods=['GET'], serializer_class=None,

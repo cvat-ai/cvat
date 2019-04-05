@@ -1589,7 +1589,6 @@ class JobAnnotationAPITestCase(APITestCase):
             "create", data)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
-
     def test_api_v1_jobs_id_annotations_admin(self):
         self._run_api_v1_jobs_id_annotations(self.admin, self.assignee,
             self.assignee)
@@ -1600,6 +1599,412 @@ class JobAnnotationAPITestCase(APITestCase):
 
     def test_api_v1_jobs_id_annotations_no_auth(self):
         self._run_api_v1_jobs_id_annotations(self.user, self.assignee, None)
+
+class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
+    def _put_api_v1_tasks_id_data(self, pk, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.put("/api/v1/tasks/{}/annotations".format(pk),
+                data=data, format="json")
+
+        return response
+
+    def _get_api_v1_tasks_id_data(self, pk, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get("/api/v1/tasks/{}/annotations".format(pk))
+
+        return response
+
+    def _delete_api_v1_tasks_id_data(self, pk, user):
+        with ForceLogin(user, self.client):
+            response = self.client.delete("/api/v1/tasks/{}/annotations".format(pk),
+            format="json")
+
+        return response
+
+    def _patch_api_v1_tasks_id_data(self, pk, user, action, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch(
+                "/api/v1/tasks/{}/annotations?action={}".format(pk, action),
+                data=data, format="json")
+
+        return response
+
+    def _check_response(self, response, data):
+        if response.status_code != status.HTTP_403_FORBIDDEN:
+            compare_object(self, data, response.data, ignore_keys=["id"])
+
+    def _run_api_v1_tasks_id_annotations(self, owner, assignee, annotator):
+        task, jobs = self._create_task(owner, assignee)
+        if annotator:
+            HTTP_200_OK = status.HTTP_200_OK
+            HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
+            HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
+        else:
+            HTTP_200_OK = status.HTTP_403_FORBIDDEN
+            HTTP_204_NO_CONTENT = status.HTTP_403_FORBIDDEN
+            HTTP_400_BAD_REQUEST = status.HTTP_403_FORBIDDEN
+
+        data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
+        response = self._put_api_v1_tasks_id_data(task["id"], annotator, data)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
+        data = {
+            "version": 0,
+            "tags": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "attributes": []
+                }
+            ],
+            "shapes": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][0]["default_value"]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 100, 300.222],
+                    "type": "rectangle",
+                    "occluded": False
+                },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
+                    "type": "polygon",
+                    "occluded": False
+                },
+            ],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False,
+                            "attributes": [
+                                {
+                                    "spec_id": task["labels"][0]["attributes"][0]["id"],
+                                    "value": task["labels"][0]["attributes"][0]["values"][0]
+                                },
+                                {
+                                    "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                    "value": task["labels"][0]["attributes"][0]["default_value"]
+                                }
+                            ]
+                        },
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [2.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": True,
+                            "outside": True
+                        },
+                    ]
+                },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False
+                        }
+                    ]
+                },
+            ]
+        }
+        response = self._put_api_v1_tasks_id_data(task["id"], annotator, data)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
+
+        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
+
+        response = self._delete_api_v1_tasks_id_data(task["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
+
+        data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
+        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
+
+        data = {
+            "version": 0,
+            "tags": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "attributes": []
+                }
+            ],
+            "shapes": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][0]["default_value"]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 100, 300.222],
+                    "type": "rectangle",
+                    "occluded": False
+                },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
+                    "type": "polygon",
+                    "occluded": False
+                },
+            ],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False,
+                            "attributes": [
+                                {
+                                    "spec_id": task["labels"][0]["attributes"][0]["id"],
+                                    "value": task["labels"][0]["attributes"][0]["values"][0]
+                                },
+                                {
+                                    "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                    "value": task["labels"][0]["attributes"][0]["default_value"]
+                                }
+                            ]
+                        },
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [2.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": True,
+                            "outside": True
+                        },
+                    ]
+                },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False
+                        }
+                    ]
+                },
+            ]
+        }
+        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+            "create", data)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
+
+        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
+
+        data = response.data
+        if response.status_code != status.HTTP_403_FORBIDDEN:
+            data["tags"][0]["label_id"] = task["labels"][0]["id"]
+            data["shapes"][0]["points"] = [1, 2, 3.0, 100, 120, 1, 2, 4.0]
+            data["shapes"][0]["type"] = "polygon"
+            data["tracks"][0]["group"] = 10
+            data["tracks"][0]["shapes"][0]["outside"] = False
+            data["tracks"][0]["shapes"][0]["occluded"] = False
+
+        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+            "update", data)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
+
+        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
+
+        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+            "delete", data)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
+
+        data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
+        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_response(response, data)
+
+        data = {
+            "version": 0,
+            "tags": [
+                {
+                    "frame": 0,
+                    "label_id": 11010101,
+                    "group": None,
+                    "attributes": []
+                }
+            ],
+            "shapes": [
+                {
+                    "frame": 0,
+                    "label_id": task["labels"][0]["id"],
+                    "group": None,
+                    "attributes": [
+                        {
+                            "spec_id": 32234234,
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                        {
+                            "spec_id": task["labels"][0]["attributes"][1]["id"],
+                            "value": task["labels"][0]["attributes"][0]["default_value"]
+                        }
+                    ],
+                    "points": [1.0, 2.1, 100, 300.222],
+                    "type": "rectangle",
+                    "occluded": False
+                },
+                {
+                    "frame": 1,
+                    "label_id": 1212121,
+                    "group": None,
+                    "attributes": [],
+                    "points": [2.0, 2.1, 100, 300.222, 400, 500, 1, 3],
+                    "type": "polygon",
+                    "occluded": False
+                },
+            ],
+            "tracks": [
+                {
+                    "frame": 0,
+                    "label_id": 0,
+                    "group": None,
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 0,
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False,
+                            "attributes": [
+                                {
+                                    "spec_id": 10000,
+                                    "value": task["labels"][0]["attributes"][0]["values"][0]
+                                },
+                                {
+                                    "spec_id": task["labels"][0]["attributes"][1]["id"],
+                                    "value": task["labels"][0]["attributes"][0]["default_value"]
+                                }
+                            ]
+                        },
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [2.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": True,
+                            "outside": True
+                        },
+                    ]
+                },
+                {
+                    "frame": 1,
+                    "label_id": task["labels"][1]["id"],
+                    "group": None,
+                    "attributes": [],
+                    "shapes": [
+                        {
+                            "frame": 1,
+                            "attributes": [],
+                            "points": [1.0, 2.1, 100, 300.222],
+                            "type": "rectangle",
+                            "occluded": False,
+                            "outside": False
+                        }
+                    ]
+                },
+            ]
+        }
+        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+            "create", data)
+        self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+
+    def test_api_v1_tasks_id_annotations_admin(self):
+        self._run_api_v1_tasks_id_annotations(self.admin, self.assignee,
+            self.assignee)
+
+    def test_api_v1_tasks_id_annotations_user(self):
+        self._run_api_v1_tasks_id_annotations(self.user, self.assignee,
+            self.assignee)
+
+    def test_api_v1_tasks_id_annotations_no_auth(self):
+        self._run_api_v1_tasks_id_annotations(self.user, self.assignee, None)
+
+
 
 class ServerShareAPITestCase(APITestCase):
     def setUp(self):
