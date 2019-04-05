@@ -139,6 +139,7 @@ def bulk_create(db_model, objects, flt_param = {}):
         else:
             return db_model.objects.bulk_create(objects)
 
+    return []
 
 class JobAnnotation:
     def __init__(self, pk):
@@ -221,6 +222,14 @@ class JobAnnotation:
 
         bulk_create(models.TrackedShapeAttributeVal, db_shape_attrvals)
 
+        db_tracks = models.LabeledTrack.objects.filter(
+            id__in=[obj.id for obj in db_tracks],
+        ).prefetch_related(
+            "label",
+            "labeledtrackattributeval_set",
+            "trackedshape_set__trackedshapeattributeval_set",
+        )
+
         tracks = serializers.LabeledTrackSerializer(db_tracks, many=True)
         self.data["tracks"] = tracks.data
 
@@ -251,6 +260,13 @@ class JobAnnotation:
 
         bulk_create(models.LabeledShapeAttributeVal, db_attrvals)
 
+        db_shapes = models.LabeledShape.objects.filter(
+            id__in=[obj.id for obj in db_shapes],
+        ).prefetch_related(
+            "label",
+            "labeledshapeattributeval_set",
+        )
+
         shapes = serializers.LabeledShapeSerializer(db_shapes, many=True)
         self.data["shapes"] = shapes.data
 
@@ -280,6 +296,13 @@ class JobAnnotation:
             db_attrval.tag_id = db_tags[db_attrval.tag_id].id
 
         bulk_create(models.LabeledImageAttributeVal, db_attrvals)
+
+        db_tags = models.LabeledImage.objects.filter(
+            id__in=[obj.id for obj in db_tags]
+        ).prefetch_related(
+            "label",
+            "labeledimageattributeval_set",
+        )
 
         tags = serializers.LabeledImageSerializer(db_tags, many=True)
         self.data["tags"] = tags.data
