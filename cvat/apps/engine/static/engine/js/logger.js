@@ -217,15 +217,15 @@ are Logger.EventType.addObject, Logger.EventType.deleteObject and
 Logger.EventType.sendTaskInfo. Value of "count" property should be a number.
 */
 
-class Event {
+class LoggerEvent {
     constructor(type, message) {
         this._time = new Date().toISOString();
-
         this._clientId = null;
         this._jobId = null;
         this._type = type;
         this._message = message;
     }
+
     serialize() {
         let serializedObj = {
             job_id: this._jobId,
@@ -253,7 +253,7 @@ var Logger = {
      * @param {Object} values Any event values, for example {count: 1, label: 'vehicle'}
      * @param {Function} closeCallback callback function which will be called by close method. Setted by
      */
-    LogEvent: class extends Event {
+    LogEvent: class extends LoggerEvent {
         constructor(type, values, message) {
             super(type, message);
 
@@ -284,7 +284,7 @@ var Logger = {
         };
     },
 
-    ExceptionEvent: class extends Event {
+    ExceptionEvent: class extends LoggerEvent {
         constructor(message, filename, line, column, stack, client, system) {
             super(Logger.EventType.sendException, message);
 
