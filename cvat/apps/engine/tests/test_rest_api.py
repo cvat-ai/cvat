@@ -899,7 +899,7 @@ class TaskCreateAPITestCase(APITestCase):
         self.assertEqual(response.data["owner"], data.get("owner", user.id))
         self.assertEqual(response.data["assignee"], data.get("assignee"))
         self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", ""))
-        self.assertEqual(response.data["overlap"], data.get("overlap", 0))
+        self.assertEqual(response.data["overlap"], data.get("overlap", None))
         self.assertEqual(response.data["segment_size"], data.get("segment_size", 0))
         self.assertEqual(response.data["z_order"], data.get("z_order", False))
         self.assertEqual(response.data["image_quality"], data.get("image_quality", 50))
