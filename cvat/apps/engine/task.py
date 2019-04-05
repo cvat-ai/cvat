@@ -243,7 +243,10 @@ def _save_task_to_db(db_task):
     segment_step = segment_size
     if segment_size == 0:
         segment_size = db_task.size
-        segment_step = db_task.size * 2
+
+        # Segment step must be more than segment_size + overlap in single-segment tasks
+        # Otherwise a task contains an extra segment
+        segment_step = sys.maxsize
 
     default_overlap = 5 if db_task.mode == 'interpolation' else 0
     if db_task.overlap is None:
