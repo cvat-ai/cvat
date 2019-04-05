@@ -15,25 +15,23 @@
     Cookies:false
 */
 
-"use strict";
 
-Math.clamp = function(x, min, max) {
-    return Math.min(Math.max(x, min), max);
-};
+Math.clamp = (x, min, max) => Math.min(Math.max(x, min), max);
 
-String.customSplit = function(string, separator) {
+String.customSplit = (string, separator) => {
     const regex = /"/gi;
     const occurences = [];
-    let occurence = null;
-    while ( (occurence = regex.exec(string)) ) {
+    let occurence = regex.exec(string);
+    while (occurence) {
         occurences.push(occurence.index);
+        occurence = regex.exec(string);
     }
 
     if (occurences.length % 2) {
         occurences.pop();
     }
 
-    let copy = "";
+    let copy = '';
     if (occurences.length) {
         let start = 0;
         for (let idx = 0; idx < occurences.length; idx += 2) {
@@ -47,51 +45,54 @@ String.customSplit = function(string, separator) {
         copy = string;
     }
 
-    return copy.split(new RegExp(separator, 'g')).map((x) => x.replace(/\0/g, separator));
+    return copy.split(new RegExp(separator, 'g')).map(x => x.replace(/\0/g, separator));
 };
 
 
 function userConfirm(message, onagree, ondisagree) {
-    let template = $('#confirmTemplate');
-    let confirmWindow = $(template.html()).css('display', 'block');
+    const template = $('#confirmTemplate');
+    const confirmWindow = $(template.html()).css('display', 'block');
 
-    let annotationConfirmMessage = confirmWindow.find('.templateMessage');
-    let agreeConfirm = confirmWindow.find('.templateAgreeButton');
-    let disagreeConfirm = confirmWindow.find('.templateDisagreeButton');
-
-    annotationConfirmMessage.text(message);
-    $('body').append(confirmWindow);
-
-    agreeConfirm.on('click', function() {
-        hideConfirm();
-        if (onagree) onagree();
-    });
-
-    disagreeConfirm.on('click', function() {
-        hideConfirm();
-        if (ondisagree) ondisagree();
-    });
-
-    disagreeConfirm.focus();
-
-    confirmWindow.on('keydown', (e) => {
-        e.stopPropagation();
-    });
+    const annotationConfirmMessage = confirmWindow.find('.templateMessage');
+    const agreeConfirm = confirmWindow.find('.templateAgreeButton');
+    const disagreeConfirm = confirmWindow.find('.templateDisagreeButton');
 
     function hideConfirm() {
         agreeConfirm.off('click');
         disagreeConfirm.off('click');
         confirmWindow.remove();
     }
+
+    annotationConfirmMessage.text(message);
+    $('body').append(confirmWindow);
+
+    agreeConfirm.on('click', () => {
+        hideConfirm();
+        if (onagree) {
+            onagree();
+        }
+    });
+
+    disagreeConfirm.on('click', () => {
+        hideConfirm();
+        if (ondisagree) {
+            ondisagree();
+        }
+    });
+
+    disagreeConfirm.focus();
+    confirmWindow.on('keydown', (e) => {
+        e.stopPropagation();
+    });
 }
 
 
 function showMessage(message) {
-    let template = $('#messageTemplate');
-    let messageWindow = $(template.html()).css('display', 'block');
+    const template = $('#messageTemplate');
+    const messageWindow = $(template.html()).css('display', 'block');
 
-    let messageText = messageWindow.find('.templateMessage');
-    let okButton = messageWindow.find('.templateOKButton');
+    const messageText = messageWindow.find('.templateMessage');
+    const okButton = messageWindow.find('.templateOKButton');
 
     messageText.text(message);
     $('body').append(messageWindow);
@@ -100,7 +101,7 @@ function showMessage(message) {
         e.stopPropagation();
     });
 
-    okButton.on('click', function() {
+    okButton.on('click', () => {
         okButton.off('click');
         messageWindow.remove();
     });
@@ -111,19 +112,14 @@ function showMessage(message) {
 
 
 function showOverlay(message) {
-    let template = $('#overlayTemplate');
-    let overlayWindow = $(template.html()).css('display', 'block');
-    let overlayText = overlayWindow.find('.templateMessage');
-    overlayWindow[0].setMessage = function(message) {
-        overlayText.html(message);
-    };
+    const template = $('#overlayTemplate');
+    const overlayWindow = $(template.html()).css('display', 'block');
+    const overlayText = overlayWindow.find('.templateMessage');
 
-    overlayWindow[0].getMessage = function(message) {
-        return overlayText.html();
-    };
-
-    overlayWindow[0].remove = function() {
-        overlayWindow.remove();
+    overlayWindow[0].getMessage = () => overlayText.html();
+    overlayWindow[0].remove = () => overlayWindow.remove();
+    overlayWindow[0].setMessage = (msg) => {
+        overlayText.html(msg);
     };
 
     $('body').append(overlayWindow);
@@ -211,17 +207,17 @@ function csrfSafeMethod(method) {
 
 
 $.ajaxSetup({
-    beforeSend: function(xhr, settings) {
+    beforeSend(xhr, settings) {
         if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-            xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+            xhr.setRequestHeader('X-CSRFToken', Cookies.get('csrftoken'));
         }
     }
 });
 
 
-$(document).ready(function(){
+$(document).ready(() => {
     $('body').css({
-        width: window.screen.width + 'px',
-        height: window.screen.height * 0.95 + 'px'
+        width: `${window.screen.width}px`,
+        height: `${window.screen.height * 0.95}px`,
     });
 });

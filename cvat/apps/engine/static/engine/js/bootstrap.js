@@ -10,7 +10,7 @@
     platform:false
 */
 
-String.prototype.normalize = function() {
+String.normalize = () => {
     let target = this;
     target = target.charAt(0).toUpperCase() + target.substr(1);
     return target;
