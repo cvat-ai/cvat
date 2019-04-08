@@ -161,7 +161,10 @@ class TaskFilter(filters.FilterSet):
         fields = ("id", "name", "owner", "mode", "status", "assignee")
 
 class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
-    queryset = Task.objects.all().order_by('-id')
+    queryset = Task.objects.all().prefetch_related(
+            "label_set__attributespec_set",
+            "segment_set__job_set",
+        ).order_by('-id')
     serializer_class = TaskSerializer
     search_fields = ("name", "owner__username", "mode", "status")
     filterset_class = TaskFilter
