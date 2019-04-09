@@ -692,12 +692,13 @@ class TaskAnnotation:
                 ("labels", [
                     ("label", OrderedDict([
                         ("name", db_label.name),
-                        ("attributes", [OrderedDict([
-                            ("name", db_attr.name),
-                            ("mutable", db_attr.mutable),
-                            ("input_type", db_attr.input_type),
-                            ("default_value", db_attr.default_value),
-                            ("values", db_attr.values)])
+                        ("attributes", [
+                            ("attribute", OrderedDict([
+                                ("name", db_attr.name),
+                                ("mutable", str(db_attr.mutable)),
+                                ("input_type", db_attr.input_type),
+                                ("default_value", db_attr.default_value),
+                                ("values", db_attr.values)]))
                             for db_attr in db_label.attributespec_set.all()])
                     ])) for db_label in db_labels
                 ]),
@@ -708,8 +709,8 @@ class TaskAnnotation:
                         ("start", str(db_segment.start_frame)),
                         ("stop", str(db_segment.stop_frame)),
                         ("url", "{0}://{1}/?id={2}".format(
-                            scheme, host, db_segment.job_set.all()[0].id))
-                    ])) for db_segment in db_segments
+                            scheme, host, db_segment.job_set.all()[0].id))]
+                    )) for db_segment in db_segments
                 ]),
 
                 ("owner", OrderedDict([

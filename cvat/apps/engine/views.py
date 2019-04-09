@@ -255,12 +255,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         file_path = os.path.join(db_task.get_task_dirname(),
             filename + ".{}.{}.".format(username, timestamp) + "dump")
 
-        # Cleanup (remove old dump files)
-        good_files = [rq_job.meta["file_path"] for rq_job in queue.get_jobs()
-            if "file_path" in rq_job.meta]
-        glob_files = glob.glob(os.path.join(db_task.get_task_dirname(), "*.dump"))
-        for f in set(glob_files) - set(good_files):
-            os.remove(f)
+        # FIXME: Cleanup (remove old dump files)
+        # good_files = [rq_job.meta["file_path"] for rq_job in queue.get_jobs()
+        #     if "file_path" in rq_job.meta]
+        # glob_files = glob.glob(os.path.join(db_task.get_task_dirname(), "*.dump"))
+        # for f in set(glob_files) - set(good_files):
+        #     os.remove(f)
 
         rq_id = "{}@/api/v1/jobs/{}/annotations/{}".format(username, pk, filename)
         rq_job = queue.fetch_job(rq_id)
@@ -277,15 +277,15 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
                 return Response(status=status.HTTP_100_CONTINUE)
-        else:
-            rq_job = queue.enqueue_call(func=annotation_v2.dump_task_data,
-                args=(pk, file_path, request.scheme, request.get_host(),
-                    request.query_params),
-                job_id=rq_id)
-            rq_job.meta["file_path"] = file_path
-            rq_job.save_meta()
 
-            return Response(status=status.HTTP_100_CONTINUE)
+        rq_job = queue.enqueue_call(func=annotation_v2.dump_task_data,
+            args=(pk, file_path, request.scheme, request.get_host(),
+                request.query_params),
+            job_id=rq_id)
+        rq_job.meta["file_path"] = file_path
+        rq_job.save_meta()
+
+        return Response(status=status.HTTP_100_CONTINUE)
 
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):

@@ -1601,27 +1601,33 @@ class JobAnnotationAPITestCase(APITestCase):
         self._run_api_v1_jobs_id_annotations(self.user, self.assignee, None)
 
 class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
-    def _put_api_v1_tasks_id_data(self, pk, user, data):
+    def _put_api_v1_tasks_id_annotations(self, pk, user, data):
         with ForceLogin(user, self.client):
             response = self.client.put("/api/v1/tasks/{}/annotations".format(pk),
                 data=data, format="json")
 
         return response
 
-    def _get_api_v1_tasks_id_data(self, pk, user):
+    def _get_api_v1_tasks_id_annotations(self, pk, user):
         with ForceLogin(user, self.client):
             response = self.client.get("/api/v1/tasks/{}/annotations".format(pk))
 
         return response
 
-    def _delete_api_v1_tasks_id_data(self, pk, user):
+    def _delete_api_v1_tasks_id_annotations(self, pk, user):
         with ForceLogin(user, self.client):
             response = self.client.delete("/api/v1/tasks/{}/annotations".format(pk),
             format="json")
 
         return response
 
-    def _patch_api_v1_tasks_id_data(self, pk, user, action, data):
+    def _dump_api_v1_tasks_id_annotations(self, pk, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get("/api/v1/tasks/{0}/annotations/my_task_{0}".format(pk))
+
+        return response
+
+    def _patch_api_v1_tasks_id_annotations(self, pk, user, action, data):
         with ForceLogin(user, self.client):
             response = self.client.patch(
                 "/api/v1/tasks/{}/annotations?action={}".format(pk, action),
@@ -1639,10 +1645,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             HTTP_200_OK = status.HTTP_200_OK
             HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
             HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
+            HTTP_100_CONTINUE = status.HTTP_100_CONTINUE
         else:
             HTTP_200_OK = status.HTTP_403_FORBIDDEN
             HTTP_204_NO_CONTENT = status.HTTP_403_FORBIDDEN
             HTTP_400_BAD_REQUEST = status.HTTP_403_FORBIDDEN
+            HTTP_100_CONTINUE = status.HTTP_403_FORBIDDEN
 
         data = {
             "version": 0,
@@ -1650,7 +1658,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._put_api_v1_tasks_id_data(task["id"], annotator, data)
+        response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
         self.assertEqual(response.status_code, HTTP_200_OK)
 
         data = {
@@ -1744,15 +1752,15 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._put_api_v1_tasks_id_data(task["id"], annotator, data)
+        response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._delete_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._delete_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
 
         data = {
@@ -1761,7 +1769,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1856,12 +1864,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
             "create", data)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1874,16 +1882,16 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             data["tracks"][0]["shapes"][0]["outside"] = False
             data["tracks"][0]["shapes"][0]["occluded"] = False
 
-        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
             "update", data)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
             "delete", data)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
@@ -1894,7 +1902,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1989,9 +1997,16 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
             "create", data)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+
+        response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_100_CONTINUE)
+
+        response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
 
     def test_api_v1_tasks_id_annotations_admin(self):
         self._run_api_v1_tasks_id_annotations(self.admin, self.assignee,
