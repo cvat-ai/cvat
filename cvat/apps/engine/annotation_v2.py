@@ -141,6 +141,43 @@ def bulk_create(db_model, objects, flt_param = {}):
 
     return []
 
+def _merge_table_rows(rows, keys_for_merge, field_id):
+    """dot.notation access to dictionary attributes"""
+    from collections import OrderedDict
+    class dotdict(OrderedDict):
+        __getattr__ = OrderedDict.get
+        __setattr__ = OrderedDict.__setitem__
+        __delattr__ = OrderedDict.__delitem__
+        __eq__ = lambda self, other: self.id == other.id
+        __hash__ = lambda self: self.id
+
+    # It is necessary to keep a stable order of original rows
+    # (e.g. for tracked boxes). Otherwise prev_box.frame can be bigger
+    # than next_box.frame.
+    merged_rows = OrderedDict()
+
+    # Group all rows by field_id. In grouped rows replace fields in
+    # accordance with keys_for_merge structure.
+    for row in rows:
+        row_id = row[field_id]
+        if not row_id in merged_rows:
+            merged_rows[row_id] = dotdict(row)
+            for key in keys_for_merge:
+                merged_rows[row_id][key] = []
+
+        for key in keys_for_merge:
+            item = dotdict({v.split('__', 1)[-1]:row[v] for v in keys_for_merge[key]})
+            if item.id:
+                merged_rows[row_id][key].append(item)
+
+    # Remove redundant keys from final objects
+    redundant_keys = [item for values in keys_for_merge.values() for item in values]
+    for i in merged_rows:
+        for j in redundant_keys:
+            del merged_rows[i][j]
+
+    return list(merged_rows.values())
+
 class JobAnnotation:
     def __init__(self, pk):
         self.db_job = models.Job.objects.select_related('segment__task') \
@@ -351,25 +388,135 @@ class JobAnnotation:
             labeledshape_set.delete()
             labeledtrack_set.delete()
 
+    def _init_tags_from_db(self):
+        db_tags = self.db_job.labeledimage_set.prefetch_related(
+            "label",
+            "labeledimageattributeval_set"
+        ).values(
+            'id',
+            'frame',
+            'label_id',
+            'group',
+            'labeledimageattributeval__spec_id',
+            'labeledimageattributeval__value',
+            'labeledimageattributeval__id',
+        )
+        db_tags = _merge_table_rows(
+            rows=db_tags,
+            keys_for_merge={
+                "labeledshapeattributeval_set": [
+                    'labeledimageattributeval__spec_id',
+                    'labeledimageattributeval__value',
+                    'labeledimageattributeval__id',
+                ],
+            },
+            field_id='id',
+        )
+
+        return serializers.LabeledImageSerializer(db_tags, many=True).data
+        # return db_tags
+
+    def _init_shapes_from_db(self):
+        db_shapes = self.db_job.labeledshape_set.prefetch_related(
+            "label",
+            "labeledshapeattributeval_set"
+        ).values(
+            'id',
+            # 'job_id',
+            'label_id',
+            'type',
+            'frame',
+            'group',
+            'occluded',
+            'z_order',
+            'points',
+            'labeledshapeattributeval__spec_id',
+            'labeledshapeattributeval__value',
+            'labeledshapeattributeval__id',
+            )
+
+        db_shapes = _merge_table_rows(
+            rows=db_shapes,
+            keys_for_merge={
+                'labeledshapeattributeval_set': [
+                    'labeledshapeattributeval__spec_id',
+                    'labeledshapeattributeval__value',
+                    'labeledshapeattributeval__id',
+                ],
+            },
+            field_id='id',
+        )
+
+        return serializers.LabeledShapeSerializer(db_shapes, many=True).data
+        # return db_shapes
+
+    def _init_tracks_from_db(self):
+        db_tracks = self.db_job.labeledtrack_set.prefetch_related(
+            "label",
+            "labeledtrackattributeval_set",
+            "trackedshape_set__trackedshapeattributeval_set"
+        ).values(
+            "id",
+            "frame",
+            "label_id",
+            "group",
+            # source labeledtrackattributeval_set
+            "labeledtrackattributeval__spec_id",
+            "labeledtrackattributeval__value",
+            "labeledtrackattributeval__id",
+            # source trackedshape_set
+            "trackedshape__type",
+            "trackedshape__occluded",
+            "trackedshape__z_order",
+            "trackedshape__points",
+            "trackedshape__id",
+            "trackedshape__frame",
+            "trackedshape__outside",
+            "trackedshape__trackedshapeattributeval__spec_id",
+            "trackedshape__trackedshapeattributeval__value",
+            "trackedshape__trackedshapeattributeval__id",
+        )
+
+        db_tracks = _merge_table_rows(
+            rows=db_tracks,
+            keys_for_merge={
+                "labeledtrackattributeval_set": [
+                    "labeledtrackattributeval__spec_id",
+                    "labeledtrackattributeval__value",
+                    "labeledtrackattributeval__id",
+                ],
+                "trackedshape_set":[
+                    "trackedshape__type",
+                    "trackedshape__occluded",
+                    "trackedshape__z_order",
+                    "trackedshape__points",
+                    "trackedshape__id",
+                    "trackedshape__frame",
+                    "trackedshape__outside",
+                    "trackedshape__trackedshapeattributeval__spec_id",
+                    "trackedshape__trackedshapeattributeval__value",
+                    "trackedshape__trackedshapeattributeval__id",
+                ],
+            },
+            field_id="id",
+        )
+
+        for db_track in db_tracks:
+            db_track["trackedshape_set"] = _merge_table_rows(db_track["trackedshape_set"], {
+                'trackedshapeattributeval_set': [
+                    'trackedshapeattributeval__value',
+                    'trackedshapeattributeval__spec_id',
+                    'trackedshapeattributeval__id',
+                ]
+            }, 'id')
+
+        return serializers.LabeledTrackSerializer(db_tracks, many=True).data
+        # return db_tracks
+
     def init_from_db(self):
-        db_tags = list(self.db_job.labeledimage_set
-            .prefetch_related("label")
-            .prefetch_related("labeledimageattributeval_set"))
-        tags = serializers.LabeledImageSerializer(db_tags, many=True)
-        self.data["tags"] = tags.data
-
-        db_shapes = list(self.db_job.labeledshape_set
-            .prefetch_related("label")
-            .prefetch_related("labeledshapeattributeval_set"))
-        shapes = serializers.LabeledShapeSerializer(db_shapes, many=True)
-        self.data["shapes"] = shapes.data
-
-        db_tracks = list(self.db_job.labeledtrack_set
-            .select_related("label")
-            .prefetch_related("labeledtrackattributeval_set")
-            .prefetch_related("trackedshape_set__trackedshapeattributeval_set"))
-        tracks = serializers.LabeledTrackSerializer(db_tracks, many=True)
-        self.data["tracks"] = tracks.data
+        self.data["tags"] = self._init_tags_from_db()
+        self.data["shapes"] = self._init_shapes_from_db()
+        self.data["tracks"] = self._init_tracks_from_db()
 
 class AnnotationWriter:
     __metaclass__ = ABCMeta
