@@ -167,9 +167,8 @@ async function showInput(messageValue, defaultValue = '') {
 
 
 function validateDumpName(dumpName) {
-    const restrictPattern = /[/-/w]+/g;
-    const newName = dumpName.replace(restrictPattern, '');
-    return dumpName === newName;
+    const restrictPattern = /[/-\w]+/g;
+    return !dumpName.replace(restrictPattern, '');
 }
 
 async function dumpAnnotationRequest(tid) {
