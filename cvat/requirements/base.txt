@@ -32,3 +32,4 @@ Markdown==3.0.1
 djangorestframework==3.9.0
 Pygments==2.3.1
 drf-yasg==1.15.0
+Shapely==1.6.4.post2

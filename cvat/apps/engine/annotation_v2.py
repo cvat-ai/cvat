@@ -14,6 +14,7 @@ from distutils.util import strtobool
 from xml.sax.saxutils import XMLGenerator
 from abc import ABCMeta, abstractmethod
 from PIL import Image
+from shapely import geometry
 
 import django_rq
 from django.conf import settings
@@ -567,11 +568,55 @@ class XmlAnnotationWriter(AnnotationWriter):
         self.xmlgen.endElement("annotations")
         self.xmlgen.endDocument()
 
+def _calc_shape_area(shape):
+    return shape.area
+
+def _calc_overlap_shape_area(shape0, shape1):
+    shape = shape0.intersection(shape1)
+    return shape.area
+
+def _calc_similarity(p0, p1):
+    overlap_area = _calc_overlap_shape_area(p0, p1)
+    shape0_area = _calc_shape_area(p0)
+    shape1_area = _calc_shape_area(p1)
+
+    return overlap_area / (shape0_area + shape1_area - overlap_area)
+
+def _pairwise(iterable):
+    a = iter(iterable)
+    return zip(a, a)
+
+def _calc_shapes_similarity(shape0, shape1):
+    if shape0["type"] == shape1["type"]:
+        if shape0["type"] == models.ShapeType.RECTANGLE:
+            p0 = geometry.box(*shape0["points"])
+            p1 = geometry.box(*shape1["points"])
+
+            return _calc_similarity(p0, p1)
+        elif shape0["type"] == models.ShapeType.POLYGON:
+            p0 = geometry.Polygon(_pairwise(shape0["points"]))
+            p1 = geometry.Polygon(_pairwise(shape0["points"]))
+
+            return _calc_similarity(p0, p1)
+        else:
+            return 0 # FIXME: need some similarity for points and polylines
+    return 0
+
+def _calc_avg_shape(shape0, shape1):
+    # FIXME: need to calculate an average shape here
+    if shape0["type"] == shape1["type"]:
+        if shape0["type"] == models.ShapeType.RECTANGLE:
+            return shape0
+        elif shape0["type"] == models.ShapeType.POLYGON:
+            return shape0
+        else:
+            return shape0
 
 class TaskAnnotation:
     def __init__(self, pk):
         self.db_task = models.Task.objects.get(id=pk)
         self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk)
+        self.reset()
 
     def reset(self):
         self.data = {
@@ -582,7 +627,6 @@ class TaskAnnotation:
         }
 
     def _patch_data(self, data, action):
-        self.reset()
         splitted_data = {}
         jobs = {}
         for db_job in self.db_jobs:
@@ -620,7 +664,6 @@ class TaskAnnotation:
         if data:
             self._patch_data(data, PatchAction.DELETE)
         else:
-            self.reset()
             for db_job in self.db_jobs:
                 delete_job_data(db_job.id)
 
@@ -645,8 +688,74 @@ class TaskAnnotation:
         self.data["tags"].extend(tags)
 
     def _merge_shapes(self, shapes, start_frame, overlap):
-        # FIXME: implement merge algorithm here
-        self.data["shapes"].extend(shapes)
+        # 1. Split shapes on two parts: new and which can be intersected
+        # with existing boxes.
+        new_shapes = [shape for shape in shapes
+            if shape["frame"] >= start_frame + overlap]
+        int_shapes = [shape for shape in shapes
+            if shape["frame"] < start_frame + overlap]
+        assert len(new_shapes) + len(int_shapes) == len(shapes)
+
+        # 2. Convert to more convenient data structure (shapes by frame)
+        int_shapes_by_frame = {}
+        for shape in int_shapes:
+            if shape["frame"] in int_shapes_by_frame:
+                int_shapes_by_frame[shape["frame"]].append(shape)
+            else:
+                int_shapes_by_frame[shape["frame"]] = [shape]
+
+        old_shapes_by_frame = {}
+        for shape in self.data["shapes"]:
+            if shape["frame"] >= start_frame:
+                if shape["frame"] in old_shapes_by_frame:
+                    old_shapes_by_frame[shape["frame"]].append(shape)
+                else:
+                    old_shapes_by_frame[shape["frame"]] = [shape]
+
+        # 3. Add new shapes as is. It should be done only after old_shapes_by_frame
+        # variable is initialized.
+        self.data["shapes"].extend(new_shapes)
+
+        # Nothing to merge here. Just add all int_shapes if any.
+        if not old_shapes_by_frame or not int_shapes_by_frame:
+            self.data["shapes"].extend(int_shapes)
+            return
+
+        # 4. Build cost matrix for each frame and find correspondence using
+        # Hungarian algorithm. In this case min_cost_thresh is stronger
+        # because we compare only on one frame.
+        min_cost_thresh = 0.25
+        for frame in int_shapes_by_frame:
+            if frame in old_shapes_by_frame:
+                int_shapes = int_shapes_by_frame[frame]
+                old_shapes = old_shapes_by_frame[frame]
+                cost_matrix = np.empty(shape=(len(int_shapes), len(old_shapes)),
+                    dtype=float)
+                # 5.1 Construct cost matrix for the frame.
+                for i, shape0 in enumerate(int_shapes):
+                    for j, shape1 in enumerate(old_shapes):
+                        if shape0["label_id"] == shape1["label_id"]:
+                            cost_matrix[i][j] = 1 - _calc_shapes_similarity(shape0, shape1)
+                        else:
+                            cost_matrix[i][j] = 1
+
+                # 6. Find optimal solution using Hungarian algorithm.
+                row_ind, col_ind = linear_sum_assignment(cost_matrix)
+                int_shapes_indexes = list(range(0, len(int_shapes)))
+                for i, j in zip(row_ind, col_ind):
+                    # Reject the solution if the cost is too high. Remember
+                    # inside int_boxes_indexes boxes which were handled.
+                    if cost_matrix[i][j] <= min_cost_thresh:
+                        old_shapes[j] = _calc_avg_shape(old_shapes[j], int_shapes[i])
+                        int_shapes_indexes[i] = -1
+
+                # 7. Add all boxes which were not processed.
+                for i in int_shapes_indexes:
+                    if i != -1:
+                        self.data["shapes"].append(int_shapes[i])
+            else:
+                # We don't have old boxes on the frame. Let's add all new ones.
+                self.data["shapes"].extend(int_shapes_by_frame[frame])
 
     def _merge_tracks(self, tracks, start_frame, overlap):
         # FIXME: implement merge algorithm here
