@@ -15,6 +15,9 @@ from django.contrib.auth.models import User, Group
 from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
     AttributeType)
 from unittest import mock
+import io
+import xml.etree.ElementTree as ET
+from collections import defaultdict
 
 def create_db_users(cls):
     (group_admin, _) = Group.objects.get_or_create(name="admin")
@@ -1120,18 +1123,18 @@ class TaskDataAPITestCase(APITestCase):
         response = self._create_task(None, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-def compare_object(self, obj1, obj2, ignore_keys=[]):
+def compare_objects(self, obj1, obj2, ignore_keys=[]):
     if isinstance(obj1, dict):
         self.assertTrue(isinstance(obj2, dict), "{} != {}".format(obj1, obj2))
         for k, v in obj1.items():
             if k in ignore_keys:
                 continue
-            compare_object(self, obj1[k], obj2.get(k), ignore_keys)
+            compare_objects(self, obj1[k], obj2.get(k), ignore_keys)
     elif isinstance(obj1, list):
         self.assertTrue(isinstance(obj2, list), "{} != {}".format(obj1, obj2))
         self.assertEqual(len(obj1), len(obj2), "{} != {}".format(obj1, obj2))
         for v1, v2 in zip(obj1, obj2):
-            compare_object(self, v1, v2, ignore_keys)
+            compare_objects(self, v1, v2, ignore_keys)
     else:
         self.assertEqual(obj1, obj2)
 
@@ -1226,7 +1229,7 @@ class JobAnnotationAPITestCase(APITestCase):
 
     def _check_response(self, response, data):
         if response.status_code != status.HTTP_403_FORBIDDEN:
-            compare_object(self, data, response.data, ignore_keys=["id"])
+            compare_objects(self, data, response.data, ignore_keys=["id"])
 
     def _run_api_v1_jobs_id_annotations(self, owner, assignee, annotator):
         task, jobs = self._create_task(owner, assignee)
@@ -1601,27 +1604,33 @@ class JobAnnotationAPITestCase(APITestCase):
         self._run_api_v1_jobs_id_annotations(self.user, self.assignee, None)
 
 class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
-    def _put_api_v1_tasks_id_data(self, pk, user, data):
+    def _put_api_v1_tasks_id_annotations(self, pk, user, data):
         with ForceLogin(user, self.client):
             response = self.client.put("/api/v1/tasks/{}/annotations".format(pk),
                 data=data, format="json")
 
         return response
 
-    def _get_api_v1_tasks_id_data(self, pk, user):
+    def _get_api_v1_tasks_id_annotations(self, pk, user):
         with ForceLogin(user, self.client):
             response = self.client.get("/api/v1/tasks/{}/annotations".format(pk))
 
         return response
 
-    def _delete_api_v1_tasks_id_data(self, pk, user):
+    def _delete_api_v1_tasks_id_annotations(self, pk, user):
         with ForceLogin(user, self.client):
             response = self.client.delete("/api/v1/tasks/{}/annotations".format(pk),
             format="json")
 
         return response
 
-    def _patch_api_v1_tasks_id_data(self, pk, user, action, data):
+    def _dump_api_v1_tasks_id_annotations(self, pk, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get("/api/v1/tasks/{0}/annotations/my_task_{0}".format(pk))
+
+        return response
+
+    def _patch_api_v1_tasks_id_annotations(self, pk, user, action, data):
         with ForceLogin(user, self.client):
             response = self.client.patch(
                 "/api/v1/tasks/{}/annotations?action={}".format(pk, action),
@@ -1631,7 +1640,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
     def _check_response(self, response, data):
         if response.status_code != status.HTTP_403_FORBIDDEN:
-            compare_object(self, data, response.data, ignore_keys=["id"])
+            compare_objects(self, data, response.data, ignore_keys=["id"])
 
     def _run_api_v1_tasks_id_annotations(self, owner, assignee, annotator):
         task, jobs = self._create_task(owner, assignee)
@@ -1639,10 +1648,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             HTTP_200_OK = status.HTTP_200_OK
             HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
             HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
+            HTTP_100_CONTINUE = status.HTTP_100_CONTINUE
         else:
             HTTP_200_OK = status.HTTP_403_FORBIDDEN
             HTTP_204_NO_CONTENT = status.HTTP_403_FORBIDDEN
             HTTP_400_BAD_REQUEST = status.HTTP_403_FORBIDDEN
+            HTTP_100_CONTINUE = status.HTTP_403_FORBIDDEN
 
         data = {
             "version": 0,
@@ -1650,7 +1661,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._put_api_v1_tasks_id_data(task["id"], annotator, data)
+        response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
         self.assertEqual(response.status_code, HTTP_200_OK)
 
         data = {
@@ -1744,15 +1755,15 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._put_api_v1_tasks_id_data(task["id"], annotator, data)
+        response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._delete_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._delete_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
 
         data = {
@@ -1761,7 +1772,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1856,12 +1867,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
             "create", data)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1874,16 +1885,16 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             data["tracks"][0]["shapes"][0]["outside"] = False
             data["tracks"][0]["shapes"][0]["occluded"] = False
 
-        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
             "update", data)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
-        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
             "delete", data)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
@@ -1894,7 +1905,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "shapes": [],
             "tracks": []
         }
-        response = self._get_api_v1_tasks_id_data(task["id"], annotator)
+        response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1989,9 +2000,47 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 },
             ]
         }
-        response = self._patch_api_v1_tasks_id_data(task["id"], annotator,
+        response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
             "create", data)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
+
+        response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_100_CONTINUE)
+
+        response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+        self._check_dump_response(response, task, jobs, data)
+
+    def _check_dump_response(self, response, task, jobs, data):
+        if response.status_code == status.HTTP_200_OK:
+            def etree_to_dict(t):
+                d = {t.tag: {} if t.attrib else None}
+                children = list(t)
+                if children:
+                    dd = defaultdict(list)
+                    for dc in map(etree_to_dict, children):
+                        for k, v in dc.items():
+                            dd[k].append(v)
+                    d = {t.tag: {k: v[0] if len(v) == 1 else v
+                        for k, v in dd.items()}}
+                if t.attrib:
+                    d[t.tag].update(('@' + k, v) for k, v in t.attrib.items())
+                if t.text:
+                    text = t.text.strip()
+                    if not (children or t.attrib):
+                        d[t.tag] = text
+                return d
+
+            self.assertTrue(response.streaming)
+            content = io.BytesIO(b''.join(response.streaming_content))
+            xmldump = ET.fromstring(content.read())
+
+            self.assertEqual(xmldump.tag, "annotations")
+            tags = xmldump.findall("./meta")
+            self.assertEqual(len(tags), 1)
+            meta = etree_to_dict(tags[0])["meta"]
+            self.assertEqual(meta["task"]["name"], task["name"])
+
 
     def test_api_v1_tasks_id_annotations_admin(self):
         self._run_api_v1_tasks_id_annotations(self.admin, self.assignee,
@@ -2056,7 +2105,7 @@ class ServerShareAPITestCase(APITestCase):
 
         response = self._run_api_v1_server_share(user, "/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        compare_object(self, sorted(data, key=lambda d: d["name"]),
+        compare_objects(self, sorted(data, key=lambda d: d["name"]),
             sorted(response.data, key=lambda d: d["name"]))
 
         data = [
@@ -2065,13 +2114,13 @@ class ServerShareAPITestCase(APITestCase):
         ]
         response = self._run_api_v1_server_share(user, "/test1")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        compare_object(self, sorted(data, key=lambda d: d["name"]),
+        compare_objects(self, sorted(data, key=lambda d: d["name"]),
             sorted(response.data, key=lambda d: d["name"]))
 
         data = []
         response = self._run_api_v1_server_share(user, "/test1/test3")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        compare_object(self, sorted(data, key=lambda d: d["name"]),
+        compare_objects(self, sorted(data, key=lambda d: d["name"]),
             sorted(response.data, key=lambda d: d["name"]))
 
         data = [
@@ -2079,7 +2128,7 @@ class ServerShareAPITestCase(APITestCase):
         ]
         response = self._run_api_v1_server_share(user, "/test2")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        compare_object(self, sorted(data, key=lambda d: d["name"]),
+        compare_objects(self, sorted(data, key=lambda d: d["name"]),
             sorted(response.data, key=lambda d: d["name"]))
 
         response = self._run_api_v1_server_share(user, "/test4")
