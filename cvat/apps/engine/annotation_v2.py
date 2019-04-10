@@ -211,13 +211,13 @@ class JobAnnotation:
         db_shape_attrvals = []
 
         for track in tracks:
-            attributes = track.pop("attributes", [])
+            track_attributes = track.pop("attributes", [])
             shapes = track.pop("shapes")
             db_track = models.LabeledTrack(job=self.db_job, **track)
             if db_track.label_id not in self.db_labels:
                 raise AttributeError("label_id `{}` is invalid".format(db_track.label_id))
 
-            for attr in attributes:
+            for attr in track_attributes:
                 db_attrval = models.LabeledTrackAttributeVal(**attr)
                 if db_attrval.spec_id not in self.db_attributes:
                     raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
@@ -225,12 +225,12 @@ class JobAnnotation:
                 db_track_attrvals.append(db_attrval)
 
             for shape in shapes:
-                attributes = shape.pop("attributes", [])
+                shape_attributes = shape.pop("attributes", [])
 
                 db_shape = models.TrackedShape(**shape)
                 db_shape.track_id = len(db_tracks)
 
-                for attr in attributes:
+                for attr in shape_attributes:
                     db_attrval = models.TrackedShapeAttributeVal(**attr)
                     if db_attrval.spec_id not in self.db_attributes:
                         raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
@@ -238,8 +238,11 @@ class JobAnnotation:
                     db_shape_attrvals.append(db_attrval)
 
                 db_shapes.append(db_shape)
+                shape["attributes"] = shape_attributes
 
             db_tracks.append(db_track)
+            track["attributes"] = track_attributes
+            track["shapes"] = shapes
 
         db_tracks = bulk_create(models.LabeledTrack, db_tracks,
             {"job_id": self.db_job.id})
@@ -259,16 +262,14 @@ class JobAnnotation:
 
         bulk_create(models.TrackedShapeAttributeVal, db_shape_attrvals)
 
-        db_tracks = models.LabeledTrack.objects.filter(
-            id__in=[obj.id for obj in db_tracks],
-        ).prefetch_related(
-            "label",
-            "labeledtrackattributeval_set",
-            "trackedshape_set__trackedshapeattributeval_set",
-        )
+        shape_idx = 0
+        for track, db_track in zip(tracks, db_tracks):
+            track["id"] = db_track.id
+            for shape in track["shapes"]:
+                shape["id"] = db_shapes[shape_idx].id
+                shape_idx += 1
 
-        tracks = serializers.LabeledTrackSerializer(db_tracks, many=True)
-        self.data["tracks"] = tracks.data
+        self.data["tracks"] = tracks
 
     def _save_shapes_to_db(self, shapes):
         db_shapes = []
@@ -288,6 +289,7 @@ class JobAnnotation:
                 db_attrvals.append(db_attrval)
 
             db_shapes.append(db_shape)
+            shape["attributes"] = attributes
 
         db_shapes = bulk_create(models.LabeledShape, db_shapes,
             {"job_id": self.db_job.id})
@@ -297,15 +299,10 @@ class JobAnnotation:
 
         bulk_create(models.LabeledShapeAttributeVal, db_attrvals)
 
-        db_shapes = models.LabeledShape.objects.filter(
-            id__in=[obj.id for obj in db_shapes],
-        ).prefetch_related(
-            "label",
-            "labeledshapeattributeval_set",
-        )
+        for shape, db_shape in zip(shapes, db_shapes):
+            shape["id"] = db_shape.id
 
-        shapes = serializers.LabeledShapeSerializer(db_shapes, many=True)
-        self.data["shapes"] = shapes.data
+        self.data["shapes"] = shapes
 
     def _save_tags_to_db(self, tags):
         db_tags = []
@@ -325,6 +322,7 @@ class JobAnnotation:
                 db_attrvals.append(db_attrval)
 
             db_tags.append(db_tag)
+            tag["attributes"] = attributes
 
         db_tags = bulk_create(models.LabeledImage, db_tags,
             {"job_id": self.db_job.id})
@@ -334,15 +332,10 @@ class JobAnnotation:
 
         bulk_create(models.LabeledImageAttributeVal, db_attrvals)
 
-        db_tags = models.LabeledImage.objects.filter(
-            id__in=[obj.id for obj in db_tags]
-        ).prefetch_related(
-            "label",
-            "labeledimageattributeval_set",
-        )
+        for tag, db_tag in zip(tags, db_tags):
+            tag["id"] = db_tag.id
 
-        tags = serializers.LabeledImageSerializer(db_tags, many=True)
-        self.data["tags"] = tags.data
+        self.data["tags"] = tags
 
     def _save_to_db(self, data):
         self.reset()
@@ -413,8 +406,7 @@ class JobAnnotation:
             field_id='id',
         )
 
-        return serializers.LabeledImageSerializer(db_tags, many=True).data
-        # return db_tags
+        return serializers.LabeledImageSerializer(db_tags, many=True)
 
     def _init_shapes_from_db(self):
         db_shapes = self.db_job.labeledshape_set.prefetch_related(
@@ -422,7 +414,6 @@ class JobAnnotation:
             "labeledshapeattributeval_set"
         ).values(
             'id',
-            # 'job_id',
             'label_id',
             'type',
             'frame',
@@ -447,8 +438,7 @@ class JobAnnotation:
             field_id='id',
         )
 
-        return serializers.LabeledShapeSerializer(db_shapes, many=True).data
-        # return db_shapes
+        return serializers.LabeledShapeSerializer(db_shapes, many=True)
 
     def _init_tracks_from_db(self):
         db_tracks = self.db_job.labeledtrack_set.prefetch_related(
@@ -460,11 +450,9 @@ class JobAnnotation:
             "frame",
             "label_id",
             "group",
-            # source labeledtrackattributeval_set
             "labeledtrackattributeval__spec_id",
             "labeledtrackattributeval__value",
             "labeledtrackattributeval__id",
-            # source trackedshape_set
             "trackedshape__type",
             "trackedshape__occluded",
             "trackedshape__z_order",
@@ -510,13 +498,12 @@ class JobAnnotation:
                 ]
             }, 'id')
 
-        return serializers.LabeledTrackSerializer(db_tracks, many=True).data
-        # return db_tracks
+        return serializers.LabeledTrackSerializer(db_tracks, many=True)
 
     def init_from_db(self):
-        self.data["tags"] = self._init_tags_from_db()
-        self.data["shapes"] = self._init_shapes_from_db()
-        self.data["tracks"] = self._init_tracks_from_db()
+        self.data["tags"]   = self._init_tags_from_db().data
+        self.data["shapes"] = self._init_shapes_from_db().data
+        self.data["tracks"] = self._init_tracks_from_db().data
 
 class AnnotationWriter:
     __metaclass__ = ABCMeta

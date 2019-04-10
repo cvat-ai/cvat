@@ -367,8 +367,6 @@ class JobViewSet(viewsets.GenericViewSet,
     def annotations(self, request, pk):
         if request.method == 'GET':
             data = annotation_v2.get_job_data(pk)
-            # serializer = LabeledDataSerializer(data=data)
-            # if serializer.is_valid(raise_exception=True):
             return Response(data)
         elif request.method == 'PUT':
             serializer = LabeledDataSerializer(data=request.data)
