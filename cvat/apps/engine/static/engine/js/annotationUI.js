@@ -407,8 +407,15 @@ function setupMenu(job, task, shapeCollectionModel,
     $('#settingsButton').attr('title', `
         ${shortkeys.open_settings.view_value} - ${shortkeys.open_settings.description}`);
 
-    $('#downloadAnnotationButton').on('click', (e) => {
-        dumpAnnotationRequest(e.target, task.id, task.name);
+    $('#downloadAnnotationButton').on('click', async (e) => {
+        e.target.disabled = true;
+        try {
+            await dumpAnnotationRequest(task.id);
+        } catch (error) {
+            showMessage(error.message);
+        } finally {
+            e.target.disabled = false;
+        }
     });
 
     $('#uploadAnnotationButton').on('click', () => {

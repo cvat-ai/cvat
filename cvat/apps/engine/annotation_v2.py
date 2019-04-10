@@ -784,7 +784,7 @@ class TaskAnnotation:
         db_task = self.db_task
         db_segments = db_task.segment_set.all().prefetch_related('job_set')
         db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
-        im_meta_data = get_image_meta_cache(db_task)
+        im_meta_data = get_image_meta_cache(db_task)['original_size']
 
         meta = OrderedDict([
             ("task", OrderedDict([

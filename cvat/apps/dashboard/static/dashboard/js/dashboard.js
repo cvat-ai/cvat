@@ -170,8 +170,15 @@ class TaskView {
         }).click();
     }
 
-    _dump(button) {
-        dumpAnnotationRequest(button, this._id, this._name);
+    async _dump(button) {
+        button.disabled = true;
+        try {
+            await dumpAnnotationRequest(this._id);
+        } catch (error) {
+            showMessage(error.message);
+        } finally {
+            button.disabled = false;
+        }
     }
 
     init(details) {
