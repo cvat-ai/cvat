@@ -253,12 +253,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         file_ext = request.query_params.get("format", "xml")
         file_path = os.path.join(db_task.get_task_dirname(),
-            filename + ".{}.{}.".format(username, timestamp) + "dump")
+            filename + ".{}.{}.".format(username, timestamp) + "xml")
 
         # FIXME: Cleanup (remove old dump files)
         # good_files = [rq_job.meta["file_path"] for rq_job in queue.get_jobs()
         #     if "file_path" in rq_job.meta]
-        # glob_files = glob.glob(os.path.join(db_task.get_task_dirname(), "*.dump"))
+        # glob_files = glob.glob(os.path.join(db_task.get_task_dirname(), "*.xml"))
         # for f in set(glob_files) - set(good_files):
         #     os.remove(f)
 
