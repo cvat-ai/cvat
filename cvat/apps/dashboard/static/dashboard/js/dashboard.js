@@ -170,8 +170,15 @@ class TaskView {
         }).click();
     }
 
-    _dump(button) {
-        dumpAnnotationRequest(button, this._id, this._name);
+    async _dump(button) {
+        button.disabled = true;
+        try {
+            await dumpAnnotationRequest(this._id);
+        } catch (error) {
+            showMessage(error.message);
+        } finally {
+            button.disabled = false;
+        }
     }
 
     init(details) {
@@ -708,7 +715,7 @@ class DashboardView {
                         cleanupTask(taskData.id);
                     });
                 }).fail((errorData) => {
-                    const message = `Can not put the data for the task. Code: ${errorData.status}. ` +
+                    const message = `Can not dump the annotations for the task. Code: ${errorData.status}. ` +
                         `Message: ${errorData.responseText || errorData.statusText}`;
                     taskMessage.css('color', 'red');
                     taskMessage.text(message);

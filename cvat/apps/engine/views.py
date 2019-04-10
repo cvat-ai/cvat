@@ -252,6 +252,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         db_task = self.get_object()
         timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         file_ext = request.query_params.get("format", "xml")
+        action = request.query_params.get("action")
         file_path = os.path.join(db_task.get_task_dirname(),
             filename + ".{}.{}.".format(username, timestamp) + "xml")
 
@@ -268,15 +269,18 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if rq_job:
             if rq_job.is_finished:
                 if not rq_job.meta.get(rq_id):
-                    rq_job.meta[rq_id] = True
-                    rq_job.save_meta()
-                    return sendfile(request, rq_job.meta["file_path"], attachment=True,
-                        attachment_filename=filename + "." + file_ext)
+                    if action == "download":
+                        rq_job.meta[rq_id] = True
+                        rq_job.save_meta()
+                        return sendfile(request, rq_job.meta["file_path"], attachment=True,
+                            attachment_filename=filename + "." + file_ext)
+                    else:
+                        return Response(status=status.HTTP_200_OK)
             elif rq_job.is_failed:
                 rq_job.delete()
                 return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
-                return Response(status=status.HTTP_100_CONTINUE)
+                return Response(status=status.HTTP_202_ACCEPTED)
 
         rq_job = queue.enqueue_call(func=annotation_v2.dump_task_data,
             args=(pk, file_path, request.scheme, request.get_host(),
@@ -285,7 +289,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         rq_job.meta["file_path"] = file_path
         rq_job.save_meta()
 
-        return Response(status=status.HTTP_100_CONTINUE)
+        return Response(status=status.HTTP_202_ACCEPTED)
 
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):

@@ -128,11 +128,84 @@ function showOverlay(message) {
 }
 
 
-async function dumpAnnotationRequest(dumpButton, tid) {
-    dumpButton = $(dumpButton);
-    dumpButton.attr('disabled', true);
+async function showInput(messageValue, defaultValue = '') {
+    return new Promise((resolve) => {
+        const template = $('#inputTemplate');
+        const inputWindow = $(template.html()).css('display', 'block');
+        const message = inputWindow.find('.templateMessage');
+        const input = inputWindow.find('.templateInputText');
+        const agreeConfirm = inputWindow.find('.templateAgreeButton');
+        const disagreeConfirm = inputWindow.find('.templateDisagreeButton');
 
-    // TODO
+        message.text(messageValue);
+        input.prop('value', defaultValue);
+
+        function hideInput() {
+            agreeConfirm.off('click');
+            disagreeConfirm.off('click');
+            input.off('keydown');
+            inputWindow.remove();
+        }
+
+        agreeConfirm.on('click', () => {
+            hideInput();
+            resolve(input.prop('value'));
+        });
+
+        disagreeConfirm.on('click', () => {
+            hideInput();
+            resolve(null);
+        });
+
+        input.on('keydown', (e) => {
+            e.stopPropagation();
+        });
+
+        $('body').append(inputWindow);
+    });
+}
+
+
+function validateDumpName(dumpName) {
+    const restrictPattern = /[/-/w]+/g;
+    const newName = dumpName.replace(restrictPattern, '');
+    return dumpName === newName;
+}
+
+async function dumpAnnotationRequest(tid) {
+    const name = await showInput('Please enter a file name');
+
+    return new Promise((resolve, reject) => {
+        const url = `/api/v1/tasks/${tid}/annotations/${name}`;
+        async function request() {
+            $.get(url)
+                .done((...args) => {
+                    if (args[2].status === 202) {
+                        setTimeout(request, 3000);
+                    } else {
+                        const a = document.createElement('a');
+                        a.href = `${url}?action=download`;
+                        a.download = `${name}.xml`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        resolve();
+                    }
+                }).fail((errorData) => {
+                    const message = `Can not put the data for the task. Code: ${errorData.status}. `
+                        + `Message: ${errorData.responseText || errorData.statusText}`;
+                    reject(new Error(message));
+                });
+        }
+
+        if (name === null) {
+            resolve();
+        } else if (validateDumpName(name)) {
+            setTimeout(request);
+        } else {
+            reject(new Error('Invalid dump file name. Only latin characters and "-" are allowed'));
+        }
+    });
 }
 
 
