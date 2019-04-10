@@ -273,7 +273,7 @@ class Git:
                 for key in diff:
                     if key not in summary_diff:
                         summary_diff[key] = 0
-                summary_diff[key] += diff[key]
+                    summary_diff[key] += diff[key]
 
         message = "CVAT Annotation updated by {}. \n".format(self._user["name"])
         message += 'Task URL: {}://{}/dashboard?id={}\n'.format(scheme, host, db_task.id)
@@ -284,7 +284,8 @@ class Git:
             summary_diff["update"],
             summary_diff["delete"]
         )
-        message += "Annotation time: {} hours".format(math.ceil((last_save - db_task.created_date).seconds / 3600))
+        message += "Annotation time: {} hours\n".format(math.ceil((last_save - self._sync_date).total_seconds() / 3600))
+        message += "Total annotation time: {} hours".format(math.ceil((last_save - db_task.created_date).total_seconds() / 3600))
 
         self._rep.index.commit(message)
         self._rep.git.push("origin", self._branch_name, "--force")
