@@ -286,6 +286,10 @@ class AttributeValSerializer(serializers.Serializer):
     spec_id = serializers.IntegerField()
     value = serializers.CharField(max_length=64, allow_blank=True)
 
+    def to_internal_value(self, data):
+        data['value'] = str(data['value'])
+        return super().to_internal_value(data)
+
 class AnnotationSerializer(serializers.Serializer):
     id = serializers.IntegerField(default=None, allow_null=True)
     frame = serializers.IntegerField(min_value=0)
