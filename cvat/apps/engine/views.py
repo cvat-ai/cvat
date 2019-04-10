@@ -253,29 +253,33 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         file_ext = request.query_params.get("format", "xml")
         action = request.query_params.get("action")
+        if action not in [None, "download"]:
+            raise serializers.ValidationError(
+                "Please specify a correct 'action' for the request")
+
         file_path = os.path.join(db_task.get_task_dirname(),
             filename + ".{}.{}.".format(username, timestamp) + "xml")
-
-        # FIXME: Cleanup (remove old dump files)
-        # good_files = [rq_job.meta["file_path"] for rq_job in queue.get_jobs()
-        #     if "file_path" in rq_job.meta]
-        # glob_files = glob.glob(os.path.join(db_task.get_task_dirname(), "*.xml"))
-        # for f in set(glob_files) - set(good_files):
-        #     os.remove(f)
 
         rq_id = "{}@/api/v1/jobs/{}/annotations/{}".format(username, pk, filename)
         rq_job = queue.fetch_job(rq_id)
 
         if rq_job:
             if rq_job.is_finished:
-                if not rq_job.meta.get(rq_id):
+                if not rq_job.meta.get("download"):
                     if action == "download":
-                        rq_job.meta[rq_id] = True
+                        rq_job.meta[action] = True
                         rq_job.save_meta()
                         return sendfile(request, rq_job.meta["file_path"], attachment=True,
                             attachment_filename=filename + "." + file_ext)
                     else:
-                        return Response(status=status.HTTP_200_OK)
+                        return Response(status=status.HTTP_201_CREATED)
+                else: # Remove the old dump file
+                    try:
+                        os.remove(rq_job.meta["file_path"])
+                    except OSError:
+                        pass
+                    finally:
+                        rq_job.delete()
             elif rq_job.is_failed:
                 rq_job.delete()
                 return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)

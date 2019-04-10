@@ -1624,9 +1624,10 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         return response
 
-    def _dump_api_v1_tasks_id_annotations(self, pk, user):
+    def _dump_api_v1_tasks_id_annotations(self, pk, user, query_params=""):
         with ForceLogin(user, self.client):
-            response = self.client.get("/api/v1/tasks/{0}/annotations/my_task_{0}".format(pk))
+            response = self.client.get(
+                "/api/v1/tasks/{0}/annotations/my_task_{0}{1}".format(pk, query_params))
 
         return response
 
@@ -1648,12 +1649,14 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             HTTP_200_OK = status.HTTP_200_OK
             HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
             HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
-            HTTP_100_CONTINUE = status.HTTP_100_CONTINUE
+            HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
+            HTTP_201_CREATED = status.HTTP_201_CREATED
         else:
             HTTP_200_OK = status.HTTP_403_FORBIDDEN
             HTTP_204_NO_CONTENT = status.HTTP_403_FORBIDDEN
             HTTP_400_BAD_REQUEST = status.HTTP_403_FORBIDDEN
-            HTTP_100_CONTINUE = status.HTTP_403_FORBIDDEN
+            HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
+            HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
 
         data = {
             "version": 0,
@@ -2005,9 +2008,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
         response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator)
-        self.assertEqual(response.status_code, HTTP_100_CONTINUE)
+        self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
         response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator)
+        self.assertEqual(response.status_code, HTTP_201_CREATED)
+
+        response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "?action=download")
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_dump_response(response, task, jobs, data)
 
