@@ -397,7 +397,7 @@ class JobAnnotation:
         db_tags = _merge_table_rows(
             rows=db_tags,
             keys_for_merge={
-                "labeledshapeattributeval_set": [
+                "labeledimageattributeval_set": [
                     'labeledimageattributeval__spec_id',
                     'labeledimageattributeval__value',
                     'labeledimageattributeval__id',
