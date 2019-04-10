@@ -715,7 +715,7 @@ class DashboardView {
                         cleanupTask(taskData.id);
                     });
                 }).fail((errorData) => {
-                    const message = `Can not dump the annotations for the task. Code: ${errorData.status}. ` +
+                    const message = `Can not put the data for the task. Code: ${errorData.status}. ` +
                         `Message: ${errorData.responseText || errorData.statusText}`;
                     taskMessage.css('color', 'red');
                     taskMessage.text(message);

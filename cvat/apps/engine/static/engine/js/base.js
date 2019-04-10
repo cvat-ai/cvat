@@ -191,7 +191,7 @@ async function dumpAnnotationRequest(tid) {
                         resolve();
                     }
                 }).fail((errorData) => {
-                    const message = `Can not put the data for the task. Code: ${errorData.status}. `
+                    const message = `Can not dump annotations for the task. Code: ${errorData.status}. `
                         + `Message: ${errorData.responseText || errorData.statusText}`;
                     reject(new Error(message));
                 });
