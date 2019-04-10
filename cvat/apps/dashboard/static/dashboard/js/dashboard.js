@@ -331,6 +331,8 @@ function setupTaskCreator() {
     let customOverlapSize = $("#dashboardCustomOverlap");
     let imageQualityInput = $("#dashboardImageQuality");
     let customCompressQuality = $("#dashboardCustomQuality");
+    let frameRateInput = $("#dashboardFrameRate");
+    let customFrameRate = $("#dashboardCustomFrameRate");
 
     let taskMessage = $("#dashboardCreateTaskMessage");
     let submitCreate = $("#dashboardSubmitTask");
@@ -345,6 +347,7 @@ function setupTaskCreator() {
     let segmentSize = 5000;
     let overlapSize = 0;
     let compressQuality = 50;
+    let frameRate = 0;
     let files = [];
 
     dashboardCreateTaskButton.on("click", function() {
@@ -417,6 +420,7 @@ function setupTaskCreator() {
     customSegmentSize.on("change", (e) => segmentSizeInput.prop("disabled", !e.target.checked));
     customOverlapSize.on("change", (e) => overlapSizeInput.prop("disabled", !e.target.checked));
     customCompressQuality.on("change", (e) => imageQualityInput.prop("disabled", !e.target.checked));
+    customFrameRate.on("change", (e) => frameRateInput.prop("disabled", !e.target.checked));
 
     segmentSizeInput.on("change", function() {
         let value = Math.clamp(
@@ -449,6 +453,17 @@ function setupTaskCreator() {
 
         imageQualityInput.prop("value", value);
         compressQuality = value;
+    });
+
+    frameRateInput.on("change", function() {
+        let value = Math.clamp(
+            +frameRateInput.prop("value"),
+            +frameRateInput.prop("min"),
+            +frameRateInput.prop("max")
+        );
+
+        frameRateInput.prop("value", value);
+        frameRate = value;
     });
 
     submitCreate.on("click", function() {
@@ -514,6 +529,9 @@ function setupTaskCreator() {
         }
         if (customCompressQuality.prop("checked")) {
             taskData.append("compress_quality", compressQuality);
+        }
+        if (customFrameRate.prop("checked")) {
+            taskData.append("frame_rate", frameRate);
         }
 
         for (let file of files) {

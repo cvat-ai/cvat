@@ -272,13 +272,17 @@ def rq_handler(job, exc_type, exc_value, traceback):
 ############################# Internal implementation for server API
 
 class _FrameExtractor:
-    def __init__(self, source_path, compress_quality, flip_flag=False):
+    def __init__(self, source_path, compress_quality, flip_flag=False, frame_rate=0):
         # translate inversed range 1:95 to 2:32
         translated_quality = 96 - compress_quality
         translated_quality = round((((translated_quality - 1) * (31 - 2)) / (95 - 1)) + 2)
         self.output = tempfile.mkdtemp(prefix='cvat-', suffix='.data')
         target_path = os.path.join(self.output, '%d.jpg')
-        output_opts = '-start_number 0 -b:v 10000k -vsync 0 -an -y -q:v ' + str(translated_quality)
+        output_opts = '-start_number 0 -b:v 10000k -an -y -q:v ' + str(translated_quality)
+        if frame_rate > 0:
+            output_opts += ' -r ' + str(frame_rate)
+        else:
+            output_opts += ' -vsync 0'
         if flip_flag:
             output_opts += ' -vf "transpose=2,transpose=2"'
         ff = FFmpeg(
@@ -536,7 +540,7 @@ def _find_and_unpack_archive(upload_dir):
 '''
     Search a video in upload dir and split it by frames. Copy frames to target dirs
 '''
-def _find_and_extract_video(upload_dir, output_dir, db_task, compress_quality, flip_flag, job):
+def _find_and_extract_video(upload_dir, output_dir, db_task, compress_quality, flip_flag, frame_rate, job):
     video = None
     for root, _, files in os.walk(upload_dir):
         fullnames = map(lambda f: os.path.join(root, f), files)
@@ -548,7 +552,7 @@ def _find_and_extract_video(upload_dir, output_dir, db_task, compress_quality, f
     if video:
         job.meta['status'] = 'Video is being extracted..'
         job.save_meta()
-        extractor = _FrameExtractor(video, compress_quality, flip_flag)
+        extractor = _FrameExtractor(video, compress_quality, flip_flag, frame_rate)
         for frame, image_orig_path in enumerate(extractor):
             image_dest_path = _get_frame_path(frame, output_dir)
             db_task.size += 1
@@ -696,6 +700,7 @@ def _create_thread(tid, params):
         'compress': int(params.get('compress_quality', 50)),
         'segment': int(params.get('segment_size', sys.maxsize)),
         'labels': params['labels'],
+        'frame_rate': int(params.get('frame_rate', 0)),
     }
     task_params['overlap'] = int(params.get('overlap_size', 5 if task_params['mode'] == 'interpolation' else 0))
     task_params['overlap'] = min(task_params['overlap'], task_params['segment'] - 1)
@@ -703,7 +708,7 @@ def _create_thread(tid, params):
 
     if task_params['mode'] == 'interpolation':
         video = _find_and_extract_video(upload_dir, output_dir, db_task,
-            task_params['compress'], task_params['flip'], job)
+            task_params['compress'], task_params['flip'], task_params['frame_rate'], job)
         task_params['data'] = os.path.relpath(video, upload_dir)
     else:
         files =_find_and_compress_images(upload_dir, output_dir, db_task,
