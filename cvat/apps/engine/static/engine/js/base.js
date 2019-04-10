@@ -149,7 +149,7 @@ async function showInput(messageValue, defaultValue = '') {
 
         agreeConfirm.on('click', () => {
             hideInput();
-            resolve(input.prop('value'));
+            resolve(input.prop('value') || null);
         });
 
         disagreeConfirm.on('click', () => {
