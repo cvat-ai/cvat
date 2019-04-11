@@ -4,7 +4,6 @@
     showOverlay:false
     showMessage:false
     Listener:false
-    objectHash:false
     Logger:false
     Mousetrap:false
 */
@@ -144,8 +143,8 @@ class AnnotationSaverModel extends Listener {
         // in order to get updated and created objects
         for (const obj of exported.shapes.concat(exported.tracks)) {
             if (obj.id in this._initialObjects) {
-                const exportedHash = objectHash(obj);
-                const initialSash = objectHash(this._initialObjects[obj.id]);
+                const exportedHash = JSON.stringify(obj);
+                const initialSash = JSON.stringify(this._initialObjects[obj.id]);
                 if (exportedHash !== initialSash) {
                     const target = 'shapes' in obj ? updated.tracks : updated.shapes;
                     target.push(obj);
@@ -174,7 +173,7 @@ class AnnotationSaverModel extends Listener {
 
     _getHash() {
         const exported = this._shapeCollection.export()[0];
-        return objectHash(exported);
+        return JSON.stringify(exported);
     }
 
     _updateCreatedObjects(objectsToSave, savedObjects, mapping) {
@@ -272,7 +271,7 @@ class AnnotationSaverModel extends Listener {
                 status: null,
                 message: null,
             };
-        }, 15000);
+        }, 1000);
     }
 
     get state() {
