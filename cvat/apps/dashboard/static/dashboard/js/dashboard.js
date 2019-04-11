@@ -173,7 +173,7 @@ class TaskView {
     async _dump(button) {
         button.disabled = true;
         try {
-            await dumpAnnotationRequest(this._id);
+            await dumpAnnotationRequest(this._id, this._name);
         } catch (error) {
             showMessage(error.message);
         } finally {
