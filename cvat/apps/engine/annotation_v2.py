@@ -406,8 +406,8 @@ class JobAnnotation:
             },
             field_id='id',
         )
-
-        return serializers.LabeledImageSerializer(db_tags, many=True).data
+        serializer = serializers.LabeledImageSerializer(db_tags, many=True)
+        self.data["tags"] = serializer.data
 
     def _init_shapes_from_db(self):
         db_shapes = self.db_job.labeledshape_set.prefetch_related(
@@ -439,7 +439,8 @@ class JobAnnotation:
             field_id='id',
         )
 
-        return serializers.LabeledShapeSerializer(db_shapes, many=True).data
+        serializer = serializers.LabeledShapeSerializer(db_shapes, many=True)
+        self.data["shapes"] = serializer.data
 
     def _init_tracks_from_db(self):
         db_tracks = self.db_job.labeledtrack_set.prefetch_related(
@@ -499,12 +500,13 @@ class JobAnnotation:
                 ]
             }, 'id')
 
-        return serializers.LabeledTrackSerializer(db_tracks, many=True).data
+        serializer = serializers.LabeledTrackSerializer(db_tracks, many=True)
+        self.data["tracks"] = serializer.data
 
     def init_from_db(self):
-        self.data["tags"]   = self._init_tags_from_db()
-        self.data["shapes"] = self._init_shapes_from_db()
-        self.data["tracks"] = self._init_tracks_from_db()
+        self._init_tags_from_db()
+        self._init_shapes_from_db()
+        self._init_tracks_from_db()
 
 class AnnotationWriter:
     __metaclass__ = ABCMeta

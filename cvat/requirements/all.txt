@@ -1,4 +1,4 @@
--f development.txt
--f production.txt
--f staging.txt
--f testing.txt
+-r development.txt
+-r production.txt
+-r staging.txt
+-r testing.txt
