@@ -4,6 +4,7 @@ import cvat.apps.engine.models
 from django.db import migrations, models
 import django.db.models.deletion
 from django.conf import settings
+from cvat.apps.engine.annotation_v2 import _merge_table_rows
 
 # some modified functions to transer annotation
 def _bulk_create(db_model, db_alias, objects, flt_param = {}):
@@ -18,43 +19,6 @@ def _bulk_create(db_model, db_alias, objects, flt_param = {}):
                 return list(db_model.objects.using(db_alias).exclude(id__in=ids).filter(**flt_param))
         else:
             return db_model.objects.using(db_alias).bulk_create(objects)
-
-def _merge_table_rows(rows, keys_for_merge, field_id):
-    """dot.notation access to dictionary attributes"""
-    from collections import OrderedDict
-    class dotdict(OrderedDict):
-        __getattr__ = OrderedDict.get
-        __setattr__ = OrderedDict.__setitem__
-        __delattr__ = OrderedDict.__delitem__
-        __eq__ = lambda self, other: self.id == other.id
-        __hash__ = lambda self: self.id
-
-    # It is necessary to keep a stable order of original rows
-    # (e.g. for tracked boxes). Otherwise prev_box.frame can be bigger
-    # than next_box.frame.
-    merged_rows = OrderedDict()
-
-    # Group all rows by field_id. In grouped rows replace fields in
-    # accordance with keys_for_merge structure.
-    for row in rows:
-        row_id = row[field_id]
-        if not row_id in merged_rows:
-            merged_rows[row_id] = dotdict(row)
-            for key in keys_for_merge:
-                merged_rows[row_id][key] = []
-
-        for key in keys_for_merge:
-            item = dotdict({v.split('__', 1)[-1]:row[v] for v in keys_for_merge[key]})
-            if item.id:
-                merged_rows[row_id][key].append(item)
-
-    # Remove redundant keys from final objects
-    redundant_keys = [item for values in keys_for_merge.values() for item in values]
-    for i in merged_rows:
-        for j in redundant_keys:
-            del merged_rows[i][j]
-
-    return list(merged_rows.values())
 
 def get_old_db_shapes(shape_type, db_job):
     def _get_shape_set(db_job, shape_type):
