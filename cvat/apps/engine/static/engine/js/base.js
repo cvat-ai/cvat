@@ -128,7 +128,7 @@ function showOverlay(message) {
 }
 
 async function dumpAnnotationRequest(tid, taskName) {
-    const name = taskName.replace(/[\s]+/g, '-').replace(/[^-\w]/g, '');
+    const name = encodeURIComponent(`${tid}_${taskName}`);
     return new Promise((resolve, reject) => {
         const url = `/api/v1/tasks/${tid}/annotations/${name}`;
         async function request() {
@@ -139,7 +139,6 @@ async function dumpAnnotationRequest(tid, taskName) {
                     } else {
                         const a = document.createElement('a');
                         a.href = `${url}?action=download`;
-                        a.download = `${name}.xml`;
                         document.body.appendChild(a);
                         a.click();
                         a.remove();
