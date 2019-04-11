@@ -410,7 +410,7 @@ function setupMenu(job, task, shapeCollectionModel,
     $('#downloadAnnotationButton').on('click', async (e) => {
         e.target.disabled = true;
         try {
-            await dumpAnnotationRequest(task.id);
+            await dumpAnnotationRequest(task.id, task.name);
         } catch (error) {
             showMessage(error.message);
         } finally {
