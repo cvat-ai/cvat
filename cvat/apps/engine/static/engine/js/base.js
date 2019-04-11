@@ -127,12 +127,6 @@ function showOverlay(message) {
     return overlayWindow[0];
 }
 
-
-function validateDumpName(dumpName) {
-    const restrictPattern = /[/-\w]+/g;
-    return !dumpName.replace(restrictPattern, '');
-}
-
 async function dumpAnnotationRequest(tid, taskName) {
     const name = taskName.replace(/[\s]+/g, '-').replace(/[^-\w]/g, '');
     return new Promise((resolve, reject) => {
@@ -158,13 +152,7 @@ async function dumpAnnotationRequest(tid, taskName) {
                 });
         }
 
-        if (name === null) {
-            resolve();
-        } else if (validateDumpName(name)) {
-            setTimeout(request);
-        } else {
-            reject(new Error('Invalid dump file name. Only latin characters and "-" are allowed'));
-        }
+        setTimeout(request);
     });
 }
 
