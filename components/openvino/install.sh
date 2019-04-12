@@ -12,7 +12,7 @@ if [[ `lscpu | grep -o "GenuineIntel"` != "GenuineIntel" ]]; then
 fi
 
 if [[ `lscpu | grep -o "sse4" | head -1` != "sse4" ]] && [[ `lscpu | grep -o "avx2" | head -1` != "avx2" ]]; then
-    echo "OpenVINO expects your CPU supports SSE4 or AVX2 instructions"
+    echo "OpenVINO expects your CPU to support SSE4 or AVX2 instructions"
     exit 1
 fi
 
