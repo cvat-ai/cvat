@@ -716,6 +716,18 @@ class DataManager:
         tracks = TrackManager(self.data["tracks"])
         tracks.merge(data["tracks"], start_frame, overlap)
 
+    def to_shapes(self):
+        shapes = self.data["shapes"]
+        tracks = TrackManager(self.data["tracks"])
+
+        return shapes + tracks.to_shapes()
+
+    def to_tracks(self):
+        tracks = self.data["tracks"]
+        shapes = ShapeManager(self.data["shapes"])
+
+        return tracks + shapes.to_tracks()
+
 class ObjectManager:
     def __init__(self, objects):
         self.objects = objects
@@ -815,17 +827,40 @@ class TagManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
+def pairwise(iterable):
+    a = iter(iterable)
+    return zip(a, a)
+
 class ShapeManager(ObjectManager):
+    def to_tracks(self):
+        tracks = []
+        for shape in self.data["shapes"]:
+            shape0 = copy.copy(shape)
+            shape0["keyframe"] = True
+            shape0["outside"] = False
+            shape0.pop("group", None)
+            shape0.pop("attributes")
+            shape1 = copy.copy(shape0)
+            shape1["outside"] = True
+            shape1["frame"] += 1
+
+            track = {
+                "label_id": shape["label_id"],
+                "frame": shape["frame"],
+                "group": shape.get(group, None),
+                "attributes": shape["attributes"],
+                "shapes": [shape0, shape1]
+            }
+            tracks.append(path)
+
+        return tracks
+
     @staticmethod
     def _get_cost_threshold():
         raise 0.25
 
     @staticmethod
     def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
-        def pairwise(iterable):
-            a = iter(iterable)
-            return zip(a, a)
-
         def _calc_polygons_similarity(p0, p1):
             overlap_area = p0.intersection(p1).area
             return overlap_area / (p0.area + p1.area - overlap_area)
@@ -853,6 +888,20 @@ class ShapeManager(ObjectManager):
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
 class TrackManager(ObjectManager):
+    def to_shapes(self):
+        shapes = []
+        for track in self.data["tracks"]:
+            for shape in TrackManager.get_interpolated_shapes(track):
+                if not shape["outside"]:
+                    shape.pop("outside")
+                    shape["label_id"] = track["label_id"]
+                    shape["group"] = track["group"]
+                    shape["attributes"] += track["attributes"]
+
+                    shapes.append(shape)
+
+        return shapes
+
     @staticmethod
     def _get_objects_by_frame(objects, start_frame):
         # Just for unification. All tracks are assigned on the same frame
@@ -908,8 +957,6 @@ class TrackManager(ObjectManager):
 
         if stop_frame is None:
             stop_frame = obj0["shapes"][-1]["frame"]
-
-
 
     @staticmethod
     def _unite_objects(obj0, obj1):
@@ -997,26 +1044,14 @@ class TaskAnnotation:
             overlap = self.db_task.overlap
             self._merge_data(annotation.data, start_frame, overlap)
 
+    @staticmethod
+    def _flip_shape(shape, im_w, im_h):
+        for x in range(0, len(shape["points"]), 2):
+            y = x + 1
+            shape["points"][x] = im_w - shape["points"][x]
+            shape["points"][y] = im_w - shape["points"][y]
+
     def dump(self, file_path, scheme, host, query_params):
-        def pairwise(iterable):
-            a = iter(iterable)
-            return zip(a, a)
-
-        def _flip_shape(shape, im_w, im_h):
-            points = []
-            for p in shape.points.split(' '):
-                p = p.split(',')
-                points.append({
-                    'x': p[0],
-                    'y': p[1]
-                })
-
-            for p in points:
-                p['x'] = im_w - (float(p['x']) + 1)
-                p['y'] = im_h - (float(p['y']) + 1)
-
-            shape.points = ' '.join(['{},{}'.format(point['x'], point['y']) for point in points])
-
         db_task = self.db_task
         db_segments = db_task.segment_set.all().prefetch_related('job_set')
         db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
@@ -1105,7 +1140,7 @@ class TaskAnnotation:
 
                     for shape in shapes.get(frame, []):
                         if db_task.flipped:
-                            _flip_shape(shape, im_w, im_h)
+                            self._flip_shape(shape, im_w, im_h)
 
                         db_label = db_labels.get(shape["label_id"])
 
@@ -1187,7 +1222,7 @@ class TaskAnnotation:
                     dumper.open_track(dump_data)
                     for shape in TrackManager.get_interpolated_shapes(track):
                         if db_task.flipped:
-                            _flip_shape(shape, im_w, im_h)
+                            self._flip_shape(shape, im_w, im_h)
 
                         dump_data = OrderedDict([
                             ("frame", str(shape["frame"])),
