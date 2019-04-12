@@ -82,44 +82,88 @@ class TaskView {
     }
 
     _upload() {
-        async function saveChunk(parsed, start, version) {
-            const CHUNK_SIZE = 100000;
-            let end = start + CHUNK_SIZE;
-            let next = false;
+        async function saveChunk(parsed) {
+            const CHUNK_SIZE = 30000;
 
-            let chunk = {
-                shapes: [],
-                tracks: [],
-                tags: [],
-                version,
-            }
+            class Chunk {
+                constructor() {
+                    this.shapes = [];
+                    this.tracks = [];
+                    this.tags   = [];
+                    this.capasity = CHUNK_SIZE;
+                    this.version = 0;
+                }
 
-            for (let prop in parsed) {
-                if (parsed.hasOwnProperty(prop)) {
-                    chunk[prop] = parsed[prop].slice(start, end);
-                    next |= chunk[prop].length > 0;
+                length() {
+                    return this.tags.length +
+                           this.shapes.length +
+                           this.tracks.reduce((sum, track) => sum + track.shapes.length, 0);
+                }
+
+                isFull() {
+                    return this.length() >= this.capasity;
+                }
+
+                isEmpty() {
+                    return this.length() === 0;
+                }
+
+                clear() {
+                    this.shapes = [];
+                    this.tracks = [];
+                    this.tags   = [];
+                }
+                export() {
+                    return {
+                        shapes: this.shapes,
+                        tracks: this.tracks,
+                        tags: this.tags,
+                        version: this.version,
+                    };
+                }
+                async save(taskID) {
+                    try {
+                        const response = await $.ajax({
+                            url: `/api/v1/tasks/${taskID}/annotations?action=create`,
+                            type: 'PATCH',
+                            data: JSON.stringify(chunk.export()),
+                            contentType: 'application/json',
+                        });
+                        this.version = response.version;
+                        this.clear();
+                    } catch (error) {
+                        throw error;
+                    }
                 }
             }
 
-            if (next) {
-                const response = await $.ajax({
-                    url: `/api/v1/tasks/${this._id}/annotations?action=create`,
-                    type: 'PATCH',
-                    data: JSON.stringify(chunk),
-                    contentType: 'application/json',
-                });
+            const splitAndSave = async (chunk, prop, splitStep) => {
+                for(let start = 0; start < parsed[prop].length; start += splitStep) {
+                    Array.prototype.push.apply(chunk[prop], parsed[prop].slice(start, start + splitStep));
+                    if (chunk.isFull()) {
+                        await chunk.save(this._id);
+                    }
+                }
+                // save tail
+                if (!chunk.isEmpty()) {
+                    await chunk.save(this._id);
+                }
+            };
 
-                saveChunk.call(this, parsed, end, response.version);
-            }
+            let chunk = new Chunk();
+            // FIXME tags aren't supported by parser
+            // await split(chunk, "tags", CHUNK_SIZE);
+            await splitAndSave(chunk, "shapes", CHUNK_SIZE);
+            await splitAndSave(chunk, "tracks", 1);
         }
 
-        async function save(parsed) {3
+        async function save(parsed) {
             await $.ajax({
                 url: `/api/v1/tasks/${this._id}/annotations`,
                 type: 'DELETE',
             });
 
-            await saveChunk.call(this, parsed, 0, 0);
+            await saveChunk.call(this, parsed);
         }
 
         async function onload(overlay, text) {
