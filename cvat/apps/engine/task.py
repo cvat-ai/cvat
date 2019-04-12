@@ -6,7 +6,6 @@
 import os
 import sys
 import rq
-import shlex
 import shutil
 import tempfile
 import numpy as np
@@ -19,16 +18,12 @@ _SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 _MEDIA_MIMETYPES_FILE = os.path.join(_SCRIPT_DIR, "media.mimetypes")
 mimetypes.init(files=[_MEDIA_MIMETYPES_FILE])
 
-from cvat.apps.engine.models import StatusChoice
-from cvat.apps.engine.plugins import plugin_decorator
-
 import django_rq
 from django.conf import settings
 from django.db import transaction
 from ffmpy import FFmpeg
 from pyunpack import Archive
 from distutils.dir_util import copy_tree
-from collections import OrderedDict
 
 from . import models
 from .log import slogger

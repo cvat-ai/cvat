@@ -6,7 +6,7 @@ from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
 from cvat.apps.authentication.decorators import login_required
 from rules.contrib.views import permission_required, objectgetter
 
-from cvat.apps.engine.models import Job, Task
+from cvat.apps.engine.models import Job
 from cvat.apps.engine.log import slogger
 from cvat.apps.dextr_segmentation.dextr import DEXTR_HANDLER
 

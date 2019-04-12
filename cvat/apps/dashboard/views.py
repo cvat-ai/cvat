@@ -9,7 +9,6 @@ from django.shortcuts import render
 from django.conf import settings
 from cvat.apps.authentication.decorators import login_required
 
-from cvat.apps.engine.models import Task as TaskModel, Job as JobModel
 from cvat.settings.base import JS_3RDPARTY, CSS_3RDPARTY
 
 import os

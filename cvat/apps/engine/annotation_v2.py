@@ -21,6 +21,7 @@ from django.conf import settings
 from django.db import transaction
 
 from cvat.apps.profiler import silk_profile
+from cvat.apps.engine.plugins import plugin_decorator
 from . import models
 from .task import get_image_meta_cache
 from .log import slogger
@@ -126,7 +127,7 @@ def dump_task_data(pk, file_path, scheme, host, query_params):
 
 ######
 
-def bulk_create(db_model, objects, flt_param = {}):
+def bulk_create(db_model, objects, flt_param):
     if objects:
         if flt_param:
             if 'postgresql' in settings.DATABASES["default"]["ENGINE"]:
@@ -226,8 +227,7 @@ class JobAnnotation:
 
             for shape in shapes:
                 shape_attributes = shape.pop("attributes", [])
-                # FIXME: need to clamp points (be sure that all of them inside the image)
-                # Should we check here or implement a validator?
+
                 db_shape = models.TrackedShape(**shape)
                 db_shape.track_id = len(db_tracks)
 
@@ -245,23 +245,37 @@ class JobAnnotation:
             track["attributes"] = track_attributes
             track["shapes"] = shapes
 
-        db_tracks = bulk_create(models.LabeledTrack, db_tracks,
-            {"job_id": self.db_job.id})
+        db_tracks = bulk_create(
+            db_model=models.LabeledTrack,
+            objects=db_tracks,
+            flt_param={"job_id": self.db_job.id}
+        )
 
         for db_attrval in db_track_attrvals:
             db_attrval.track_id = db_tracks[db_attrval.track_id].id
-        bulk_create(models.LabeledTrackAttributeVal, db_track_attrvals)
+        bulk_create(
+            db_model=models.LabeledTrackAttributeVal,
+            objects=db_track_attrvals,
+            flt_param={}
+        )
 
         for db_shape in db_shapes:
             db_shape.track_id = db_tracks[db_shape.track_id].id
 
-        db_shapes = bulk_create(models.TrackedShape, db_shapes,
-            {"track__job_id": self.db_job.id})
+        db_shapes = bulk_create(
+            db_model=models.TrackedShape,
+            objects=db_shapes,
+            flt_param={"track__job_id": self.db_job.id}
+        )
 
         for db_attrval in db_shape_attrvals:
             db_attrval.shape_id = db_shapes[db_attrval.shape_id].id
 
-        bulk_create(models.TrackedShapeAttributeVal, db_shape_attrvals)
+        bulk_create(
+            db_model=models.TrackedShapeAttributeVal,
+            objects=db_shape_attrvals,
+            flt_param={}
+        )
 
         shape_idx = 0
         for track, db_track in zip(tracks, db_tracks):
@@ -278,8 +292,6 @@ class JobAnnotation:
 
         for shape in shapes:
             attributes = shape.pop("attributes", [])
-            # FIXME: need to clamp points (be sure that all of them inside the image)
-            # Should we check here or implement a validator?
             db_shape = models.LabeledShape(job=self.db_job, **shape)
             if db_shape.label_id not in self.db_labels:
                 raise AttributeError("label_id `{}` is invalid".format(db_shape.label_id))
@@ -294,13 +306,20 @@ class JobAnnotation:
             db_shapes.append(db_shape)
             shape["attributes"] = attributes
 
-        db_shapes = bulk_create(models.LabeledShape, db_shapes,
-            {"job_id": self.db_job.id})
+        db_shapes = bulk_create(
+            db_model=models.LabeledShape,
+            objects=db_shapes,
+            flt_param={"job_id": self.db_job.id}
+        )
 
         for db_attrval in db_attrvals:
             db_attrval.shape_id = db_shapes[db_attrval.shape_id].id
 
-        bulk_create(models.LabeledShapeAttributeVal, db_attrvals)
+        bulk_create(
+            db_model=models.LabeledShapeAttributeVal,
+            objects=db_attrvals,
+            flt_param={}
+        )
 
         for shape, db_shape in zip(shapes, db_shapes):
             shape["id"] = db_shape.id
@@ -327,13 +346,20 @@ class JobAnnotation:
             db_tags.append(db_tag)
             tag["attributes"] = attributes
 
-        db_tags = bulk_create(models.LabeledImage, db_tags,
-            {"job_id": self.db_job.id})
+        db_tags = bulk_create(
+            db_model=models.LabeledImage,
+            objects=db_tags,
+            flt_param={"job_id": self.db_job.id}
+        )
 
         for db_attrval in db_attrvals:
             db_attrval.tag_id = db_tags[db_attrval.tag_id].id
 
-        bulk_create(models.LabeledImageAttributeVal, db_attrvals)
+        bulk_create(
+            db_model=models.LabeledImageAttributeVal,
+            objects=db_attrvals,
+            flt_param={}
+        )
 
         for tag, db_tag in zip(tags, db_tags):
             tag["id"] = db_tag.id
@@ -613,7 +639,7 @@ class XmlAnnotationWriter(AnnotationWriter):
                 self._add_meta(v)
                 self._indent()
                 self.xmlgen.endElement(k)
-            elif type(v) == list:
+            elif isinstance(v, list):
                 self._indent()
                 self.xmlgen.startElement(k, {})
                 for tup in v:
@@ -706,372 +732,53 @@ class XmlAnnotationWriter(AnnotationWriter):
         self.xmlgen.endElement("annotations")
         self.xmlgen.endDocument()
 
-class DataManager:
-    def __init__(self, data):
-        self.data = data
+def _calc_shape_area(shape):
+    return shape.area
 
-    def merge(self, data, start_frame, overlap):
-        tags = TagManager(self.data["tags"])
-        tags.merge(data["tags"], start_frame, overlap)
+def _calc_overlap_shape_area(shape0, shape1):
+    shape = shape0.intersection(shape1)
+    return shape.area
 
-        shapes = ShapeManager(self.data["shapes"])
-        shapes.merge(data["shapes"], start_frame, overlap)
+def _calc_similarity(p0, p1):
+    overlap_area = _calc_overlap_shape_area(p0, p1)
+    shape0_area = _calc_shape_area(p0)
+    shape1_area = _calc_shape_area(p1)
 
-        tracks = TrackManager(self.data["tracks"])
-        tracks.merge(data["tracks"], start_frame, overlap)
+    return overlap_area / (shape0_area + shape1_area - overlap_area)
 
-    def to_shapes(self, end_frame):
-        shapes = self.data["shapes"]
-        tracks = TrackManager(self.data["tracks"])
-
-        return shapes + tracks.to_shapes(end_frame)
-
-    def to_tracks(self):
-        tracks = self.data["tracks"]
-        shapes = ShapeManager(self.data["shapes"])
-
-        return tracks + shapes.to_tracks()
-
-class ObjectManager:
-    def __init__(self, objects):
-        self.objects = objects
-
-    @staticmethod
-    def _get_objects_by_frame(objects, start_frame):
-        objects_by_frame = {}
-        for obj in objects:
-            if obj["frame"] >= start_frame:
-                if obj["frame"] in objects_by_frame:
-                    objects_by_frame[obj["frame"]].append(obj)
-                else:
-                    objects_by_frame[obj["frame"]] = [obj]
-
-        return objects_by_frame
-
-    @staticmethod
-    def _get_cost_threshold():
-        raise NotImplementedError()
-
-    @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
-        raise NotImplementedError()
-
-    @staticmethod
-    def _unite_objects(obj0, obj1):
-        raise NotImplementedError()
-
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
-        raise NotImplementedError()
-
-    def merge(self, objects, start_frame, overlap):
-        # 1. Split objects on two parts: new and which can be intersected
-        # with existing objects.
-        new_objects = [obj for obj in objects
-            if obj["frame"] >= start_frame + overlap]
-        int_objects = [obj for obj in objects
-            if obj["frame"] < start_frame + overlap]
-        assert len(new_objects) + len(int_objects) == len(objects)
-
-        # 2. Convert to more convenient data structure (objects by frame)
-        int_objects_by_frame = self._get_objects_by_frame(int_objects, start_frame)
-        old_objects_by_frame = self._get_objects_by_frame(self.objects, start_frame)
-
-        # 3. Add new objects as is. It should be done only after old_objects_by_frame
-        # variable is initialized.
-        self.objects.extend(new_objects)
-
-        # Nothing to merge here. Just add all int_objects if any.
-        if not old_objects_by_frame or not int_objects_by_frame:
-            self.objects.extend(int_objects)
-            return
-
-        # 4. Build cost matrix for each frame and find correspondence using
-        # Hungarian algorithm. In this case min_cost_thresh is stronger
-        # because we compare only on one frame.
-        min_cost_thresh = self._get_cost_threshold()
-        for frame in int_objects_by_frame:
-            if frame in old_objects_by_frame:
-                int_objects = int_objects_by_frame[frame]
-                old_objects = old_objects_by_frame[frame]
-                cost_matrix = np.empty(obj=(len(int_objects), len(old_objects)),
-                    dtype=float)
-                # 5.1 Construct cost matrix for the frame.
-                for i, int_obj in enumerate(int_objects):
-                    for j, old_obj in enumerate(old_objects):
-                        cost_matrix[i][j] = 1 - self._calc_objects_similarity(
-                            int_obj, old_obj, start_frame, overlap)
-
-                # 6. Find optimal solution using Hungarian algorithm.
-                row_ind, col_ind = linear_sum_assignment(cost_matrix)
-                old_objects_indexes = list(range(0, len(old_objects)))
-                int_objects_indexes = list(range(0, len(int_objects)))
-                for i, j in zip(row_ind, col_ind):
-                    # Reject the solution if the cost is too high. Remember
-                    # inside int_objects_indexes objects which were handled.
-                    if cost_matrix[i][j] <= min_cost_thresh:
-                        old_objects[j] = self._unite_objects(int_objects[i], old_objects[j])
-                        int_objects_indexes[i] = -1
-                        int_objects_indexes[j] = -1
-
-                # 7. Add all new objects which were not processed.
-                for i in int_objects_indexes:
-                    if i != -1:
-                        self.objects.append(int_objects[i])
-
-                # 8. Modify all old objects which were not processed
-                # (e.g. generate a shape with outside=True at the end).
-                for j in old_objects_indexes:
-                    if j != -1:
-                        self._modify_unmached_object(old_objects[j],
-                            start_frame + overlap)
-            else:
-                # We don't have old objects on the frame. Let's add all new ones.
-                self.objects.extend(int_objects_by_frame[frame])
-
-class TagManager(ObjectManager):
-    @staticmethod
-    def _get_cost_threshold():
-        raise 0.25
-
-    @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
-        # TODO: improve the trivial implementation, compare attributes
-        return 1 if obj0["label_id"] == obj1["label_id"] else 0
-
-    @staticmethod
-    def _unite_objects(obj0, obj1):
-        # TODO: improve the trivial implementation
-        return obj0 if obj0["frame"] < obj1["frame"] else obj1
-
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
-        pass
-
-def pairwise(iterable):
+def _pairwise(iterable):
     a = iter(iterable)
     return zip(a, a)
 
-class ShapeManager(ObjectManager):
-    def to_tracks(self):
-        tracks = []
-        for shape in self.objects:
-            shape0 = copy.copy(shape)
-            shape0["keyframe"] = True
-            shape0["outside"] = False
-            shape0.pop("group", None)
-            shape0.pop("attributes")
-            shape1 = copy.copy(shape0)
-            shape1["outside"] = True
-            shape1["frame"] += 1
+def _calc_shapes_similarity(shape0, shape1):
+    if shape0["type"] == shape1["type"]:
+        if shape0["type"] == models.ShapeType.RECTANGLE:
+            p0 = geometry.box(*shape0["points"])
+            p1 = geometry.box(*shape1["points"])
 
-            track = {
-                "label_id": shape["label_id"],
-                "frame": shape["frame"],
-                "group": shape.get("group", None),
-                "attributes": shape["attributes"],
-                "shapes": [shape0, shape1]
-            }
-            tracks.append(track)
+            return _calc_similarity(p0, p1)
+        elif shape0["type"] == models.ShapeType.POLYGON:
+            p0 = geometry.Polygon(_pairwise(shape0["points"]))
+            p1 = geometry.Polygon(_pairwise(shape0["points"]))
 
-        return tracks
-
-    @staticmethod
-    def _get_cost_threshold():
-        raise 0.25
-
-    @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
-        def _calc_polygons_similarity(p0, p1):
-            overlap_area = p0.intersection(p1).area
-            return overlap_area / (p0.area + p1.area - overlap_area)
-
-        has_same_type  = obj0["type"] == obj1["type"]
-        has_same_label = obj0["label_id"] == obj1["label_id"]
-        if has_same_type and has_same_label:
-            if obj0["type"] == models.ShapeType.RECTANGLE:
-                p0 = geometry.box(*obj0["points"])
-                p1 = geometry.box(*obj1["points"])
-
-                return self._calc_polygons_similarity(p0, p1)
-            elif obj0["type"] == models.ShapeType.POLYGON:
-                p0 = geometry.Polygon(pairwise(obj0["points"]))
-                p1 = geometry.Polygon(pairwise(obj0["points"]))
-
-                return self._calc_polygons_similarity(p0, p1)
-            else:
-                return 0 # FIXME: need some similarity for points and polylines
-        return 0
-
-    @staticmethod
-    def _unite_objects(obj0, obj1):
-        # TODO: improve the trivial implementation
-        return obj0 if obj0["frame"] < obj1["frame"] else obj1
-
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
-        pass
-
-class TrackManager(ObjectManager):
-    def to_shapes(self, end_frame):
-        shapes = []
-        for track in self.objects:
-            for shape in self.get_interpolated_shapes(track, 0, end_frame):
-                if not shape["outside"]:
-                    shape.pop("outside")
-                    shape.pop("keyframe", None)
-                    shape["label_id"] = track["label_id"]
-                    shape["group"] = track["group"]
-                    shape["attributes"] += track["attributes"]
-
-                    shapes.append(shape)
-
-        return shapes
-
-    @staticmethod
-    def _get_objects_by_frame(objects, start_frame):
-        # Just for unification. All tracks are assigned on the same frame
-        objects_by_frame = {0: []}
-        for obj in objects:
-            shape = obj["shapes"][-1] # optimization for old tracks
-            if shape["frame"] >= start_frame or shape["outside"]:
-                objects_by_frame[0].append(obj)
-
-        if not objects_by_frame[0]:
-            objects_by_frame = {}
-
-        return objects_by_frame
-
-    @staticmethod
-    def _get_cost_threshold():
-        raise 0.5
-
-    @staticmethod
-    def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
-        if obj0["label_id"] == obj1["label_id"]:
-            # Here start_frame is the start frame of next segment
-            # and stop_frame is the stop frame of current segment
-            # end_frame == stop_frame + 1
-            end_frame = start_frame + overlap
-            obj0_shapes = self.get_interpolated_shapes(obj0, start_frame, end_frame)
-            obj1_shapes = self.get_interpolated_shapes(obj1, start_frame, end_frame)
-            obj0_shapes_by_frame = {shape["frame"]:shape for shape in obj0_shapes}
-            obj1_shapes_by_frame = {shape["frame"]:shape for shape in obj1_shapes}
-            assert obj0_shapes_by_frame and obj1_shapes_by_frame
-
-            count, error = 0, 0
-            for frame in range(start_frame, end_frame):
-                shape0 = obj0_shapes_by_frame.get(frame)
-                shape1 = obj1_shapes_by_frame.get(frame)
-                if shape0 and shape1:
-                    if shape0["outside"] != shape1["outside"]:
-                        error += 1
-                    else:
-                        error += 1 - ShapeManager._calc_objects_similarity(shape0, shape1)
-                    count += 1
-                elif shape0 or shape1:
-                    error += 1
-                    count += 1
-
-            return 1 - error / count
+            return _calc_similarity(p0, p1)
         else:
-            return 0
+            return 0 # FIXME: need some similarity for points and polylines
+    return 0
 
-    @staticmethod
-    def _modify_unmached_object(obj, end_frame):
-        shape = obj["shapes"][-1]
-        if not shape["outside"]:
-            shape = copy.deepcopy(shape)
-            shape["frame"] = end_frame
-            shape["outside"] = True
-            obj["shapes"].append(shape)
-
-    @staticmethod
-    def normalize_shape(shape):
-        points = np.asarray(shape["points"]).reshape(-1, 2)
-        broken_line = geometry.LineString(points)
-        points = []
-        for off in range(0, 1, 0.01):
-            p = broken_line.interpolate(off, True)
-            points.append(p.x)
-            points.append(p.y)
-
-        shape = copy.copy(shape)
-        shape["points"] = points
-
-        return shape
-
-    @staticmethod
-    def get_interpolated_shapes(track, start_frame, end_frame):
-        def interpolate(shape0, shape1):
-            shapes = []
-            is_same_type = shape0["type"] == shape1["type"]
-            is_polygon = shape0["type"] == models.ShapeType.POLYGON
-            is_same_size = len(shape0["points"]) == len(shape1["points"])
-            if not is_same_type or is_polygon or not is_same_size:
-                shape0 = normalize_shape(shape0)
-                shape1 = normalize_shape(shape1)
-
-            distance = shape1["frame"] - shape0["frame"]
-            step = np.subtract(shape1["points"], shape0["points"]) / distance
-            for frame in range(shape0["frame"]+1, shape1["frame"]):
-                off = frame - shape0["frame"]
-                points = shape0["points"] + step * off
-                shape = copy.deepcopy(shape0)
-                broken_line = geometry.LineString(points.reshape(-1, 2)).simplify(0.05, False)
-                shape["frame"] = frame
-                shape["points"] = [x for p in broken_line.coords for x in p]
-                shapes.append(shape)
-            return shapes
-
-        if track.get("interpolated_shapes"):
-            return track["interpolated_shapes"]
-
-        # TODO: should be return an iterator?
-        shapes = []
-        curr_frame = track["shapes"][0]["frame"]
-        for shape in track["shapes"]:
-            if shape["frame"] != curr_frame:
-                assert shape["frame"] > curr_frame
-                if not prev_shape["outside"]:
-                    shapes.extend(interpolate(prev_shape, shape))
-
-            if not shape["outside"]:
-                shape["keyframe"] = True
-                shapes.append(shape)
-            curr_frame = shape["frame"] + 1
-            prev_shape = shape
-
-        if not prev_shape["outside"]:
-            shape = copy.copy(prev_shape)
-            shape["frame"] = end_frame
-            shapes.extend(interpolate(prev_shape, shape))
-
-        track["interpolated_shapes"] = shapes
-
-        return shapes
-
-    @staticmethod
-    def _unite_objects(obj0, obj1):
-        track = obj0 if obj0["frame"] < obj1["frame"] else obj1
-        assert obj0["label_id"] == obj1["label_id"]
-        shapes = {shape["frame"]:shape for shape in obj0["shapes"]}
-        for shape in obj1["shapes"]:
-            frame = shape["frame"]
-            if frame in shapes:
-                shapes[frame] = ShapeManager._unite_objects(shapes[frame], shape)
-            else:
-                shapes[frame] = shape
-
-        track["frame"] = min(obj0["frame"], obj1["frame"])
-        track["shapes"] = list(sorted(shapes.values(), key=lambda shape: shape["frame"]))
-        track["interpolated_shapes"] = []
-
-        return track
+def _calc_avg_shape(shape0, shape1):
+    # FIXME: need to calculate an average shape here
+    if shape0["type"] == shape1["type"]:
+        if shape0["type"] == models.ShapeType.RECTANGLE:
+            return shape0
+        elif shape0["type"] == models.ShapeType.POLYGON:
+            return shape0
+        else:
+            return shape0
 
 class TaskAnnotation:
     def __init__(self, pk):
-        self.db_task = models.Task.objects.prefetch_related("image_set").get(id=pk)
+        self.db_task = models.Task.objects.get(id=pk)
         self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk)
         self.reset()
 
@@ -1110,9 +817,6 @@ class TaskAnnotation:
                 _data = patch_job_data(jid, job_data, action)
                 self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
 
-    def _merge_data(self, data, start_frame, overlap):
-        data_manager = DataManager(self.data)
-        data_manager.merge(data, start_frame, overlap)
 
     def create(self, data):
         self._patch_data(data, PatchAction.CREATE)
@@ -1134,25 +838,116 @@ class TaskAnnotation:
             annotation = JobAnnotation(db_job.id)
             annotation.init_from_db()
             db_segment = db_job.segment
-            start_frame = db_segment.start_frame
-            overlap = self.db_task.overlap
-            self._merge_data(annotation.data, start_frame, overlap)
+            self._merge_data(annotation.data, db_segment.start_frame,
+                self.db_task.overlap)
 
-    @staticmethod
-    def _flip_shape(shape, im_w, im_h):
-        for x in range(0, len(shape["points"]), 2):
-            y = x + 1
-            shape["points"][x] = im_w - shape["points"][x]
-            shape["points"][y] = im_w - shape["points"][y]
+    def _merge_data(self, data, start_frame, overlap):
+        self._merge_tags(data["tags"], start_frame, overlap)
+        self._merge_shapes(data["shapes"], start_frame, overlap)
+        self._merge_tracks(data["tracks"], start_frame, overlap)
+
+
+    def _merge_tags(self, tags, start_frame, overlap):
+        # FIXME: implement merge algorithm here
+        self.data["tags"].extend(tags)
+
+    def _merge_shapes(self, shapes, start_frame, overlap):
+        # 1. Split shapes on two parts: new and which can be intersected
+        # with existing boxes.
+        new_shapes = [shape for shape in shapes
+            if shape["frame"] >= start_frame + overlap]
+        int_shapes = [shape for shape in shapes
+            if shape["frame"] < start_frame + overlap]
+        assert len(new_shapes) + len(int_shapes) == len(shapes)
+
+        # 2. Convert to more convenient data structure (shapes by frame)
+        int_shapes_by_frame = {}
+        for shape in int_shapes:
+            if shape["frame"] in int_shapes_by_frame:
+                int_shapes_by_frame[shape["frame"]].append(shape)
+            else:
+                int_shapes_by_frame[shape["frame"]] = [shape]
+
+        old_shapes_by_frame = {}
+        for shape in self.data["shapes"]:
+            if shape["frame"] >= start_frame:
+                if shape["frame"] in old_shapes_by_frame:
+                    old_shapes_by_frame[shape["frame"]].append(shape)
+                else:
+                    old_shapes_by_frame[shape["frame"]] = [shape]
+
+        # 3. Add new shapes as is. It should be done only after old_shapes_by_frame
+        # variable is initialized.
+        self.data["shapes"].extend(new_shapes)
+
+        # Nothing to merge here. Just add all int_shapes if any.
+        if not old_shapes_by_frame or not int_shapes_by_frame:
+            self.data["shapes"].extend(int_shapes)
+            return
+
+        # 4. Build cost matrix for each frame and find correspondence using
+        # Hungarian algorithm. In this case min_cost_thresh is stronger
+        # because we compare only on one frame.
+        min_cost_thresh = 0.25
+        for frame in int_shapes_by_frame:
+            if frame in old_shapes_by_frame:
+                int_shapes = int_shapes_by_frame[frame]
+                old_shapes = old_shapes_by_frame[frame]
+                cost_matrix = np.empty(shape=(len(int_shapes), len(old_shapes)),
+                    dtype=float)
+                # 5.1 Construct cost matrix for the frame.
+                for i, shape0 in enumerate(int_shapes):
+                    for j, shape1 in enumerate(old_shapes):
+                        if shape0["label_id"] == shape1["label_id"]:
+                            cost_matrix[i][j] = 1 - _calc_shapes_similarity(shape0, shape1)
+                        else:
+                            cost_matrix[i][j] = 1
+
+                # 6. Find optimal solution using Hungarian algorithm.
+                row_ind, col_ind = linear_sum_assignment(cost_matrix)
+                int_shapes_indexes = list(range(0, len(int_shapes)))
+                for i, j in zip(row_ind, col_ind):
+                    # Reject the solution if the cost is too high. Remember
+                    # inside int_boxes_indexes boxes which were handled.
+                    if cost_matrix[i][j] <= min_cost_thresh:
+                        old_shapes[j] = _calc_avg_shape(old_shapes[j], int_shapes[i])
+                        int_shapes_indexes[i] = -1
+
+                # 7. Add all boxes which were not processed.
+                for i in int_shapes_indexes:
+                    if i != -1:
+                        self.data["shapes"].append(int_shapes[i])
+            else:
+                # We don't have old boxes on the frame. Let's add all new ones.
+                self.data["shapes"].extend(int_shapes_by_frame[frame])
+
+    def _merge_tracks(self, tracks, start_frame, overlap):
+        # FIXME: implement merge algorithm here
+        self.data["tracks"].extend(tracks)
 
     def dump(self, file_path, scheme, host, query_params):
+        def _flip_box(box, im_w, im_h):
+            box.xbr, box.xtl = im_w - box.xtl, im_w - box.xbr
+            box.ybr, box.ytl = im_h - box.ytl, im_h - box.ybr
+
+        def _flip_shape(shape, im_w, im_h):
+            points = []
+            for p in shape.points.split(' '):
+                p = p.split(',')
+                points.append({
+                    'x': p[0],
+                    'y': p[1]
+                })
+
+            for p in points:
+                p['x'] = im_w - (float(p['x']) + 1)
+                p['y'] = im_h - (float(p['y']) + 1)
+
+            shape.points = ' '.join(['{},{}'.format(point['x'], point['y']) for point in points])
+
         db_task = self.db_task
         db_segments = db_task.segment_set.all().prefetch_related('job_set')
         db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
-        db_label_by_id = {db_label.id:db_label for db_label in db_labels}
-        db_attribute_by_id = {db_attribute.id:db_attribute
-            for db_label in db_labels
-            for db_attribute in db_label.attributespec_set.all()}
         im_meta_data = get_image_meta_cache(db_task)['original_size']
 
         meta = OrderedDict([
@@ -1210,170 +1005,201 @@ class TaskAnnotation:
             dumper.open_root()
             dumper.add_meta(meta)
 
-            if db_task.mode == "annotation":
-                db_image_by_frame = {db_image.frame:db_image
-                    for db_image in db_task.image_set.all()}
-                shapes = {}
-                data_manager = DataManager(self.data)
-                for shape in data_manager.to_shapes(db_task.size):
-                    frame = shape["frame"]
-                    if frame not in shapes:
-                        shapes[frame] = []
-                    shapes[frame].append(shape)
+            # if db_task.mode == "annotation":
+            #     shapes = {}
+            #     shapes["boxes"] = {}
+            #     shapes["polygons"] = {}
+            #     shapes["polylines"] = {}
+            #     shapes["points"] = {}
+            #     for shape in self.to_shapes["shapes"]:
+            #         if shape.type == models.ShapeType.RECTANGLE:
+            #             if shape.frame not in shapes["boxes"]:
+            #                 shapes["boxes"][shape.frame] = []
+            #             shapes["boxes"][shape.frame].append(Rectangle(shape))
+            #         elif shape.type == models.ShapeType.POLYGON:
+            #             if shape.frame not in shapes["polygons"]:
+            #                 shapes["polygons"][shape.frame] = []
+            #             shapes["polygons"][shape.frame].append(Polygon(shape))
+            #         elif shape.type == models.ShapeType.POLYLINE:
+            #             if shape.frame not in shapes["polylines"]:
+            #                 shapes["polylines"][shape.frame] = []
+            #             shapes["polylines"][shape.frame].append(Polyline(shape))
+            #         elif shape.type == models.ShapeType.POINTS:
+            #             if shape.frame not in shapes["points"]:
+            #                 shapes["points"][shape.frame] = []
+            #             shapes["points"][shape.frame].append(Points(shape))
 
-                for frame in sorted(list(shapes.keys())):
-                    db_image = db_image_by_frame[frame]
+            #     for frame in sorted(set(list(shapes["boxes"].keys()) +
+            #         list(shapes["polygons"].keys()) +
+            #         list(shapes["polylines"].keys()) +
+            #         list(shapes["points"].keys()))):
 
-                    rpath = db_image.path.split(os.path.sep)
-                    rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
+            #         link = db_task.get_frame_path(frame)
+            #         path = os.readlink(link)
 
-                    im_w = db_image.width
-                    im_h = db_image.height
+            #         rpath = path.split(os.path.sep)
+            #         rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
 
-                    dumper.open_image(OrderedDict([
-                        ("id", str(frame)),
-                        ("name", rpath),
-                        ("width", str(im_w)),
-                        ("height", str(im_h))
-                    ]))
+            #         im_w = im_meta_data[frame]['width']
+            #         im_h = im_meta_data[frame]['height']
 
-                    for shape in shapes.get(frame, []):
-                        if db_task.flipped:
-                            self._flip_shape(shape, im_w, im_h)
+            #         dumper.open_image(OrderedDict([
+            #             ("id", str(frame)),
+            #             ("name", rpath),
+            #             ("width", str(im_meta_data[frame]["width"])),
+            #             ("height", str(im_meta_data[frame]["height"]))
+            #         ]))
 
-                        db_label = db_label_by_id[shape["label_id"]]
+            #         for shape_type in ["boxes", "polygons", "polylines", "points"]:
+            #             shape_dict = shapes[shape_type]
+            #             if frame in shape_dict:
+            #                 for shape in shape_dict[frame]:
+            #                     if shape_type == "boxes":
+            #                         if db_task.flipped:
+            #                             _flip_box(shape, im_w, im_h)
 
-                        dump_data = OrderedDict([
-                            ("label", db_label.name),
-                            ("occluded", str(int(shape["occluded"]))),
-                        ])
+            #                         dump_dict = OrderedDict([
+            #                             ("label", shape.label.name),
+            #                             ("xtl", "{:.2f}".format(shape.xtl)),
+            #                             ("ytl", "{:.2f}".format(shape.ytl)),
+            #                             ("xbr", "{:.2f}".format(shape.xbr)),
+            #                             ("ybr", "{:.2f}".format(shape.ybr)),
+            #                             ("occluded", str(int(shape.occluded))),
+            #                         ])
+            #                         if db_task.z_order:
+            #                             dump_dict['z_order'] = str(shape.z_order)
+            #                         if shape.group_id:
+            #                             dump_dict['group_id'] = str(shape.group_id)
+            #                         dumper.open_box(dump_dict)
+            #                     else:
+            #                         if db_task.flipped:
+            #                             _flip_shape(shape, im_w, im_h)
 
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dump_data.update(OrderedDict([
-                                ("xtl", "{:.2f}".format(shape["points"][0])),
-                                ("ytl", "{:.2f}".format(shape["points"][1])),
-                                ("xbr", "{:.2f}".format(shape["points"][2])),
-                                ("ybr", "{:.2f}".format(shape["points"][3]))
-                            ]))
-                        else:
-                            dump_data.update(OrderedDict([
-                                ("points", ';'.join((
-                                    ','.join((
-                                        "{:.2f}".format(x),
-                                        "{:.2f}".format(y)
-                                    )) for x,y in pairwise(shape["points"]))
-                                )),
-                            ]))
+            #                         dump_dict = OrderedDict([
+            #                             ("label", shape.label.name),
+            #                             ("points", ';'.join((
+            #                                 ','.join((
+            #                                     "{:.2f}".format(float(p.split(',')[0])),
+            #                                     "{:.2f}".format(float(p.split(',')[1]))
+            #                                 )) for p in shape.points.split(' '))
+            #                             )),
+            #                             ("occluded", str(int(shape.occluded))),
+            #                         ])
 
-                        if db_task.z_order:
-                            dump_data['z_order'] = str(shape["z_order"])
-                        if shape["group"]:
-                            dump_data['group_id'] = str(shape["group"])
+            #                         if db_task.z_order:
+            #                             dump_dict['z_order'] = str(shape.z_order)
+            #                         if shape.group_id:
+            #                             dump_dict['group_id'] = str(shape.group_id)
 
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dumper.open_box(dump_data)
-                        elif shape["type"] == models.ShapeType.POLYGON:
-                            dumper.open_polygon(dump_data)
-                        elif shape["type"] == models.ShapeType.POLYLINE:
-                            dumper.open_polyline(dump_data)
-                        elif shape["type"] == models.ShapeType.POINTS:
-                            dumper.open_points(dump_data)
-                        else:
-                            raise NotImplementedError("unknown shape type")
+            #                         if shape_type == "polygons":
+            #                             dumper.open_polygon(dump_dict)
+            #                         elif shape_type == "polylines":
+            #                             dumper.open_polyline(dump_dict)
+            #                         else:
+            #                             dumper.open_points(dump_dict)
 
-                        for attr in shape["attributes"]:
-                            db_attribute = db_attribute_by_id[attr["spec_id"]]
-                            dumper.add_attribute(OrderedDict([
-                                ("name", db_attribute.name),
-                                ("value", attr["value"])
-                            ]))
+            #                     for attr in shape.attributes:
+            #                         dumper.add_attribute(OrderedDict([
+            #                             ("name", attr.name),
+            #                             ("value", attr.value)
+            #                         ]))
 
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dumper.close_box()
-                        elif shape["type"] == models.ShapeType.POLYGON:
-                            dumper.close_polygon()
-                        elif shape["type"] == models.ShapeType.POLYLINE:
-                            dumper.close_polyline()
-                        elif shape["type"] == models.ShapeType.POINTS:
-                            dumper.close_points()
-                        else:
-                            raise NotImplementedError("unknown shape type")
+            #                     if shape_type == "boxes":
+            #                         dumper.close_box()
+            #                     elif shape_type == "polygons":
+            #                         dumper.close_polygon()
+            #                     elif shape_type == "polylines":
+            #                         dumper.close_polyline()
+            #                     else:
+            #                         dumper.close_points()
 
-                    dumper.close_image()
-            else:
-                data_manager = DataManager(self.data)
-                tracks = data_manager.to_tracks()
+            #         dumper.close_image()
+            # else:
+            #     paths = {}
+            #     paths["boxes"] = self.to_box_paths()
+            #     paths["polygons"] = self.to_polygon_paths()
+            #     paths["polylines"] = self.to_polyline_paths()
+            #     paths["points"] = self.to_points_paths()
 
-                im_w = im_meta_data[0]['width']
-                im_h = im_meta_data[0]['height']
+            #     im_w = im_meta_data[0]['width']
+            #     im_h = im_meta_data[0]['height']
 
-                counter = 0
-                for track in tracks:
-                    track_id = counter
-                    counter += 1
-                    db_label = db_label_by_id[track["label_id"]]
-                    dump_data = OrderedDict([
-                        ("id", str(track_id)),
-                        ("label", db_label.name),
-                    ])
-                    if track["group"]:
-                        dump_data['group_id'] = str(track["group"])
-                    dumper.open_track(dump_data)
-                    for shape in TrackManager.get_interpolated_shapes(
-                        track, 0, db_task.size):
-                        if db_task.flipped:
-                            self._flip_shape(shape, im_w, im_h)
+            #     counter = 0
+            #     for shape_type in ["boxes", "polygons", "polylines", "points"]:
+            #         path_list = paths[shape_type]
+            #         for path in path_list:
+            #             path_id = path.client_id if path.client_id != -1 else counter
+            #             counter += 1
+            #             dump_dict = OrderedDict([
+            #                 ("id", str(path_id)),
+            #                 ("label", path.label.name),
+            #             ])
+            #             if path.group_id:
+            #                 dump_dict['group_id'] = str(path.group_id)
+            #             dumper.open_track(dump_dict)
+            #             if shape_type == "boxes":
+            #                 for box in path.get_interpolated_boxes():
+            #                     if db_task.flipped:
+            #                         _flip_box(box, im_w, im_h)
+            #                     dump_dict = OrderedDict([
+            #                         ("frame", str(box.frame)),
+            #                         ("xtl", "{:.2f}".format(box.xtl)),
+            #                         ("ytl", "{:.2f}".format(box.ytl)),
+            #                         ("xbr", "{:.2f}".format(box.xbr)),
+            #                         ("ybr", "{:.2f}".format(box.ybr)),
+            #                         ("outside", str(int(box.outside))),
+            #                         ("occluded", str(int(box.occluded))),
+            #                         ("keyframe", str(int(box.keyframe)))
+            #                     ])
 
-                        dump_data = OrderedDict([
-                            ("frame", str(shape["frame"])),
-                            ("outside", str(int(shape["outside"]))),
-                            ("occluded", str(int(shape["occluded"]))),
-                            ("keyframe", str(int(shape["keyframe"])))
-                        ])
+            #                     if db_task.z_order:
+            #                         dump_dict["z_order"] = str(box.z_order)
 
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dump_data.update(OrderedDict([
-                                ("xtl", "{:.2f}".format(shape["points"][0])),
-                                ("ytl", "{:.2f}".format(shape["points"][1])),
-                                ("xbr", "{:.2f}".format(shape["points"][2])),
-                                ("ybr", "{:.2f}".format(shape["points"][3])),
-                            ]))
-                        else:
-                            dump_data.update(OrderedDict([
-                                ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
-                                    for x,y in pairwise(shape["points"])]))
-                            ]))
+            #                     dumper.open_box(dump_dict)
+            #                     for attr in path.attributes + box.attributes:
+            #                         dumper.add_attribute(OrderedDict([
+            #                             ("name", attr.name),
+            #                             ("value", attr.value)
+            #                         ]))
+            #                     dumper.close_box()
+            #             else:
+            #                 for shape in path.get_interpolated_shapes():
+            #                     if db_task.flipped:
+            #                         _flip_shape(shape, im_w, im_h)
+            #                     dump_dict = OrderedDict([
+            #                         ("frame", str(shape.frame)),
+            #                         ("points", ';'.join((
+            #                             ','.join((
+            #                                 "{:.2f}".format(float(p.split(',')[0])),
+            #                                 "{:.2f}".format(float(p.split(',')[1]))
+            #                             )) for p in shape.points.split(' '))
+            #                         )),
+            #                         ("outside", str(int(shape.outside))),
+            #                         ("occluded", str(int(shape.occluded))),
+            #                         ("keyframe", str(int(shape.keyframe)))
+            #                     ])
 
-                        if db_task.z_order:
-                            dump_data["z_order"] = str(shape["z_order"])
+            #                     if db_task.z_order:
+            #                         dump_dict["z_order"] = str(shape.z_order)
 
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dumper.open_box(dump_data)
-                        elif shape["type"] == models.ShapeType.POLYGON:
-                            dumper.open_polygon(dump_data)
-                        elif shape["type"] == models.ShapeType.POLYLINE:
-                            dumper.open_polyline(dump_data)
-                        elif shape["type"] == models.ShapeType.POINTS:
-                            dumper.open_points(dump_data)
-                        else:
-                            raise NotImplementedError("unknown shape type")
+            #                     if shape_type == "polygons":
+            #                         dumper.open_polygon(dump_dict)
+            #                     elif shape_type == "polylines":
+            #                         dumper.open_polyline(dump_dict)
+            #                     else:
+            #                         dumper.open_points(dump_dict)
 
-                        for attr in shape.get("attributes", []):
-                            db_attribute = db_attribute_by_id[attr["spec_id"]]
-                            dumper.add_attribute(OrderedDict([
-                                ("name", db_attribute.name),
-                                ("value", attr["value"])
-                            ]))
+            #                     for attr in path.attributes + shape.attributes:
+            #                         dumper.add_attribute(OrderedDict([
+            #                             ("name", attr.name),
+            #                             ("value", attr.value)
+            #                         ]))
 
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dumper.close_box()
-                        elif shape["type"] == models.ShapeType.POLYGON:
-                            dumper.close_polygon()
-                        elif shape["type"] == models.ShapeType.POLYLINE:
-                            dumper.close_polyline()
-                        elif shape["type"] == models.ShapeType.POINTS:
-                            dumper.close_points()
-                        else:
-                            raise NotImplementedError("unknown shape type")
-                    dumper.close_track()
+            #                     if shape_type == "polygons":
+            #                         dumper.close_polygon()
+            #                     elif shape_type == "polylines":
+            #                         dumper.close_polyline()
+            #                     else:
+            #                         dumper.close_points()
+            #             dumper.close_track()
             dumper.close_root()

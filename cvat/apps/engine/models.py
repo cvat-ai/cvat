@@ -5,10 +5,7 @@
 from enum import Enum
 
 import shlex
-import csv
 import os
-import sys
-import re
 
 from django.db import models
 from django.conf import settings

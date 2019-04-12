@@ -4,7 +4,6 @@
 
 import os
 import shutil
-import json
 
 from rest_framework import serializers
 from django.contrib.auth.models import User, Group
@@ -74,11 +73,12 @@ class ServerFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ServerFile
         fields = ('file', )
-
-    def to_internal_value(self, data):
+    @staticmethod
+    def to_internal_value(data):
         return {'file': data}
 
-    def to_representation(self, instance):
+    @staticmethod
+    def to_representation(instance):
         return instance.file
 
 class RemoteFileSerializer(serializers.ModelSerializer):
@@ -183,7 +183,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         write_once_fields = ('overlap', 'segment_size', 'image_quality')
         ordering = ['-id']
 
-    def create(self, validated_data):
+    @staticmethod
+    def create(validated_data):
         labels = validated_data.pop('label_set')
         db_task = models.Task.objects.create(size=0, **validated_data)
         for label in labels:
@@ -203,7 +204,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return db_task
 
-    def update(self, instance, validated_data):
+    @staticmethod
+    def update(instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner = validated_data.get('owner', instance.owner)
         instance.assignee = validated_data.get('assignee', instance.assignee)

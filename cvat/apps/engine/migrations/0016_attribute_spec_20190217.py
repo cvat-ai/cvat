@@ -3,13 +3,8 @@ import re
 import csv
 from io import StringIO
 from PIL import Image
-from django.conf import settings
-from django.db import migrations, models
-import django.db.migrations.operations.special
-import django.db.models.deletion
-import cvat.apps.engine.models
+from django.db import migrations
 from cvat.apps.engine.task import _get_mime
-
 
 def parse_attribute(value):
     match = re.match(r'^([~@])(\w+)=(\w+):(.+)?$', value)
