@@ -958,6 +958,14 @@ class TrackManager(ObjectManager):
         if stop_frame is None:
             stop_frame = obj0["shapes"][-1]["frame"]
 
+        # TODO: should be return an iterator?
+        shape = obj0["shapes"].get(start_frame)
+        if shape is None:
+            pass
+
+        # FIXME: implement the method
+        return obj0["shapes"]
+
     @staticmethod
     def _unite_objects(obj0, obj1):
         track = obj0 if obj0["frame"] < obj1["frame"] else obj1
