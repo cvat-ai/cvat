@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import re
 import json
 import traceback
 from ast import literal_eval
@@ -245,8 +246,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 return Response(data)
 
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='annotations/(?P<filename>[-\w]+)')
+        url_path='annotations/(?P<filename>[^/]+)')
     def dump(self, request, pk, filename):
+        filename = re.sub(r'[\\/*?:"<>|]', '_', filename)
         queue = django_rq.get_queue("default")
         username = request.user.username
         db_task = self.get_object()
