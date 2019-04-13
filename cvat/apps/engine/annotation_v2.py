@@ -834,7 +834,7 @@ def pairwise(iterable):
 class ShapeManager(ObjectManager):
     def to_tracks(self):
         tracks = []
-        for shape in self.data["shapes"]:
+        for shape in self.objects:
             shape0 = copy.copy(shape)
             shape0["keyframe"] = True
             shape0["outside"] = False
@@ -890,7 +890,7 @@ class ShapeManager(ObjectManager):
 class TrackManager(ObjectManager):
     def to_shapes(self):
         shapes = []
-        for track in self.data["tracks"]:
+        for track in self.objects:
             for shape in TrackManager.get_interpolated_shapes(track):
                 if not shape["outside"]:
                     shape.pop("outside")
@@ -1197,7 +1197,7 @@ class TaskAnnotation:
                                 ("value", attr["value"])
                             ]))
 
-                        elif shape["type"] == models.ShapeType.RECTANGLE:
+                        if shape["type"] == models.ShapeType.RECTANGLE:
                             dumper.close_box()
                         elif shape["type"] == models.ShapeType.POLYGON:
                             dumper.close_polygon()
@@ -1248,13 +1248,9 @@ class TaskAnnotation:
                             ]))
                         else:
                             dump_data.update(OrderedDict([
-                                ("points", ';'.join((
-                                    ','.join((
-                                        "{:.2f}".format(x)),
-                                        "{:.2f}".format(y))
-                                    )) for x,y in pairwise(shape["points"])
-                                ))
-                            ])))
+                                ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
+                                    for x,y in pairwise(shape["points"])]))
+                            ]))
 
                         if db_task.z_order:
                             dump_data["z_order"] = str(shape["z_order"])
