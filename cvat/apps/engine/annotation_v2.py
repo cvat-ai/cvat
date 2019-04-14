@@ -988,7 +988,7 @@ class TrackManager(ObjectManager):
 
 class TaskAnnotation:
     def __init__(self, pk):
-        self.db_task = models.Task.objects.get(id=pk)
+        self.db_task = models.Task.objects.prefetch_related("image_set").get(id=pk)
         self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk)
         self.reset()
 
@@ -1065,6 +1065,10 @@ class TaskAnnotation:
         db_task = self.db_task
         db_segments = db_task.segment_set.all().prefetch_related('job_set')
         db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
+        db_label_by_id = {db_label.id:db_label for db_label in db_labels}
+        db_attribute_by_id = {db_attribute.id:db_attribute
+            for db_label in db_labels
+            for db_attribute in db_label.attributespec_set.all()}
         im_meta_data = get_image_meta_cache(db_task)['original_size']
 
         meta = OrderedDict([
@@ -1123,6 +1127,8 @@ class TaskAnnotation:
             dumper.add_meta(meta)
 
             if db_task.mode == "annotation":
+                db_image_by_frame = {db_image.frame:db_image
+                    for db_image in db_task.image_set.all()}
                 shapes = {}
                 data_manager = DataManager(self.data)
                 for shape in data_manager.to_shapes():
@@ -1131,28 +1137,27 @@ class TaskAnnotation:
                         shapes[frame] = []
                     shapes[frame].append(shape)
 
-                for frame in sorted(set(list(shapes.keys()))):
-                    link = db_task.get_frame_path(frame)
-                    track = os.readlink(link)
+                for frame in sorted(list(shapes.keys())):
+                    db_image = db_image_by_frame[frame]
 
-                    rpath = track.split(os.path.sep)
+                    rpath = db_image.path.split(os.path.sep)
                     rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
 
-                    im_w = im_meta_data[frame]['width']
-                    im_h = im_meta_data[frame]['height']
+                    im_w = db_image.width
+                    im_h = db_image.height
 
                     dumper.open_image(OrderedDict([
                         ("id", str(frame)),
                         ("name", rpath),
-                        ("width", str(im_meta_data[frame]["width"])),
-                        ("height", str(im_meta_data[frame]["height"]))
+                        ("width", str(im_w)),
+                        ("height", str(im_h))
                     ]))
 
                     for shape in shapes.get(frame, []):
                         if db_task.flipped:
                             self._flip_shape(shape, im_w, im_h)
 
-                        db_label = db_labels.get(shape["label_id"])
+                        db_label = db_label_by_id[shape["label_id"]]
 
                         dump_data = OrderedDict([
                             ("label", db_label.name),
@@ -1178,7 +1183,7 @@ class TaskAnnotation:
 
                         if db_task.z_order:
                             dump_data['z_order'] = str(shape["z_order"])
-                        if shape.group_id:
+                        if shape["group"]:
                             dump_data['group_id'] = str(shape["group"])
 
                         if shape["type"] == models.ShapeType.RECTANGLE:
@@ -1193,7 +1198,7 @@ class TaskAnnotation:
                             raise NotImplementedError("unknown shape type")
 
                         for attr in shape["attributes"]:
-                            db_attribute = db_label.attributespec_set.get(attr["spec_id"])
+                            db_attribute = db_attribute_by_id[attr["spec_id"]]
                             dumper.add_attribute(OrderedDict([
                                 ("name", db_attribute.name),
                                 ("value", attr["value"])
