@@ -11,7 +11,6 @@ import cvat.apps.engine.models
 from cvat.apps.engine.task import _get_mime
 
 
-
 def parse_attribute(value):
     match = re.match(r'^([~@])(\w+)=(\w+):(.+)?$', value)
     if match:
