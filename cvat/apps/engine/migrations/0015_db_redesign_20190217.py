@@ -116,10 +116,6 @@ class Migration(migrations.Migration):
             name='clientfile',
             unique_together={('task', 'file')},
         ),
-        migrations.RemoveField(
-            model_name='task',
-            name='source',
-        ),
         migrations.AddField(
             model_name='attributespec',
             name='default_value',

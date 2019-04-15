@@ -88,15 +88,15 @@ def fill_task_meta_data(apps, schema_editor):
             db_video.height = image.height
             image.close()
 
-            video = None
-            for root, _, files in os.walk(get_upload_dirname(db_task)):
-                fullnames = map(lambda f: os.path.join(root, f), files)
-                videos = list(filter(lambda x: _get_mime(x) == 'video', fullnames))
-                if len(videos):
-                    video = videos[0]
-                    break
+            # video = None
+            # for root, _, files in os.walk(get_upload_dirname(db_task)):
+            #     fullnames = map(lambda f: os.path.join(root, f), files)
+            #     videos = list(filter(lambda x: _get_mime(x) == 'video', fullnames))
+            #     if len(videos):
+            #         video = videos[0]
+            #         break
 
-            db_video.path = video or ''
+            db_video.path = os.path.join(get_upload_dirname(db_task), db_task.source)
             db_video.save()
         else:
             filenames = []
@@ -142,5 +142,8 @@ class Migration(migrations.Migration):
             code=fill_task_meta_data,
             reverse_code=django.db.migrations.operations.special.RunPython.noop,
         ),
-
+        migrations.RemoveField(
+            model_name='task',
+            name='source',
+        ),
     ]
