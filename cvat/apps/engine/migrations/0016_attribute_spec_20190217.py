@@ -70,19 +70,26 @@ def _get_frame_path(task_obj, frame):
 
 def fill_task_meta_data_forward(apps, schema_editor):
     db_alias = schema_editor.connection.alias
-    Task = apps.get_model('engine', 'Task')
-    Video_model = apps.get_model('engine', "Video")
-    Image_model = apps.get_model('engine', 'Image')
+    task_model = apps.get_model('engine', 'Task')
+    video_model = apps.get_model('engine', "Video")
+    image_model = apps.get_model('engine', 'Image')
 
-    for db_task in Task.objects.all():
+    for db_task in task_model.objects.all():
         if db_task.mode == 'interpolation':
-            db_video = Video_model()
+            db_video = video_model()
             db_video.task_id = db_task.id
-            db_video.path = os.path.join(_get_upload_dirname(db_task), db_task.source)
             db_video.start_frame = 0
             db_video.stop_frame = db_task.size
             db_video.step = 1
 
+            video = ""
+            for root, _, files in os.walk(_get_upload_dirname(db_task)):
+                fullnames = map(lambda f: os.path.join(root, f), files)
+                videos = list(filter(lambda x: _get_mime(x) == 'video', fullnames))
+                if len(videos):
+                    video = videos[0]
+                    break
+            db_video.path = video
             image = Image.open(_get_frame_path(db_task, 0))
             db_video.width = image.width
             db_video.height = image.height
@@ -99,7 +106,7 @@ def fill_task_meta_data_forward(apps, schema_editor):
 
             db_images = []
             for i, image_path in enumerate(filenames):
-                db_image = Image_model()
+                db_image = image_model()
                 db_image.task_id = db_task.id
                 db_image.path = image_path
                 db_image.frame = i
@@ -110,22 +117,22 @@ def fill_task_meta_data_forward(apps, schema_editor):
                 image.close()
 
                 db_images.append(db_image)
-            Image_model.objects.using(db_alias).bulk_create(db_images)
+            image_model.objects.using(db_alias).bulk_create(db_images)
 
 def fill_task_meta_data_backward(apps, schema_editor):
     db_alias = schema_editor.connection.alias
-    Task = apps.get_model('engine', 'Task')
-    Video_model = apps.get_model('engine', "Video")
-    Image_model = apps.get_model('engine', 'Image')
+    task_model = apps.get_model('engine', 'Task')
+    video_model = apps.get_model('engine', "Video")
+    image_model = apps.get_model('engine', 'Image')
 
-    for db_task in Task.objects.all():
+    for db_task in task_model.objects.all():
         upload_dir = _get_upload_dirname(db_task)
         if db_task.mode == 'interpolation':
-            video = Video_model.objects.get(task__id=db_task.id)
+            video = video_model.objects.get(task__id=db_task.id)
             db_task.source = os.path.relpath(video.path, upload_dir)
             video.delete()
         else:
-            images = Image_model.objects.filter(task__id=db_task.id)
+            images = image_model.objects.filter(task__id=db_task.id)
             db_task.source = '{} images: {}, ...'.format(
                 len(images),
                 ", ".join([os.path.relpath(x.path, upload_dir) for x in images[0:2]])
