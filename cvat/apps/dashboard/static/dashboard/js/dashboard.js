@@ -315,9 +315,26 @@ class DashboardView {
         const dashboardPagination = $('#dashboardPagination');
 
         const baseURL = this._baseURL;
+        let overlay = null;
         dashboardPagination.pagination({
-            dataSource: this._dashboardList,
+            dataSource: '/api/v1/tasks',
+            locator: 'results',
+            alias: {
+                pageNumber: 'page',
+            },
+            totalNumberLocator: function(response) {
+                return response.count;
+            },
+            ajax: {
+                beforeSend() {
+                    overlay = showOverlay('Loading..');
+                },
+            },
             callback: function(pageList) {
+                if (overlay) {
+                    overlay.remove();
+                    overlay = null;
+                }
                 dashboardList.empty();
                 for (let details of pageList) {
                     const detailsCopy = JSON.parse(JSON.stringify(details));
