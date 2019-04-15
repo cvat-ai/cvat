@@ -90,10 +90,14 @@ def fill_task_meta_data_forward(apps, schema_editor):
                     video = videos[0]
                     break
             db_video.path = video
-            image = Image.open(_get_frame_path(db_task, 0))
-            db_video.width = image.width
-            db_video.height = image.height
-            image.close()
+            try:
+                image = Image.open(_get_frame_path(db_task, 0))
+                db_video.width = image.width
+                db_video.height = image.height
+                image.close()
+            except:
+                db_video.width = 0
+                db_video.height = 0
 
             db_video.save()
         else:
@@ -110,17 +114,19 @@ def fill_task_meta_data_forward(apps, schema_editor):
                 db_image.task_id = db_task.id
                 db_image.path = image_path
                 db_image.frame = i
-
-                image = Image.open(image_path)
-                db_image.width = image.width
-                db_image.height = image.height
-                image.close()
+                try:
+                    image = Image.open(image_path)
+                    db_image.width = image.width
+                    db_image.height = image.height
+                    image.close()
+                except:
+                    db_image.width = 0
+                    db_image.height = 0
 
                 db_images.append(db_image)
             image_model.objects.using(db_alias).bulk_create(db_images)
 
 def fill_task_meta_data_backward(apps, schema_editor):
-    db_alias = schema_editor.connection.alias
     task_model = apps.get_model('engine', 'Task')
     video_model = apps.get_model('engine', "Video")
     image_model = apps.get_model('engine', 'Image')
