@@ -219,12 +219,8 @@ def create_thread(tid, labels_mapping):
 
         # Run auto annotation by tf
         result = None
-        if os.environ.get('CUDA_SUPPORT') == 'yes' or os.environ.get('OPENVINO_TOOLKIT') != 'yes':
-            slogger.glob.info("tf annotation with tensorflow framework for task {}".format(tid))
-            result = run_tensorflow_annotation(image_list, labels_mapping, TRESHOLD)
-        else:
-            slogger.glob.info('tf annotation with openvino toolkit for task {}'.format(tid))
-            result = run_inference_engine_annotation(image_list, labels_mapping, TRESHOLD)
+        slogger.glob.info("tf annotation with tensorflow framework for task {}".format(tid))
+        result = run_tensorflow_annotation(image_list, labels_mapping, TRESHOLD)
 
         if result is None:
             slogger.glob.info('tf annotation for task {} canceled by user'.format(tid))
