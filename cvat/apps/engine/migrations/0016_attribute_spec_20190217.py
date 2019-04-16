@@ -4,6 +4,7 @@ import csv
 from io import StringIO
 from PIL import Image
 from django.db import migrations
+from django.conf import settings
 from cvat.apps.engine.task import _get_mime
 
 def parse_attribute(value):
