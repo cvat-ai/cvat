@@ -11,8 +11,8 @@ class CoordinateTranslator {
     constructor() {
         this._boxTranslator = {
             _playerOffset: 0,
-            _convert: function(box, sign) {
-                for (let prop of ["xtl", "ytl", "xbr", "ybr", "x", "y"]) {
+            _convert(box, sign) {
+                for (const prop of ['xtl', 'ytl', 'xbr', 'ybr', 'x', 'y']) {
                     if (prop in box) {
                         box[prop] += this._playerOffset * sign;
                     }
@@ -20,49 +20,45 @@ class CoordinateTranslator {
 
                 return box;
             },
-            actualToCanvas: function(actualBox) {
-                let canvasBox = {};
-                for (let key in actualBox) {
-                    canvasBox[key] = actualBox[key];
-                }
-
-                return this._convert(canvasBox, 1);
+            actualToCanvas(actualBox) {
+                return this._convert({ ...actualBox }, 1);
             },
-
-            canvasToActual: function(canvasBox) {
-                let actualBox = {};
-                for (let key in canvasBox) {
-                    actualBox[key] = canvasBox[key];
-                }
+            canvasToActual(canvasBox) {
+                const actualBox = {
+                    x: canvasBox.x,
+                    y: canvasBox.y,
+                    height: canvasBox.height,
+                    width: canvasBox.width,
+                };
 
                 return this._convert(actualBox, -1);
             },
 
-            canvasToClient: function(sourceCanvas, canvasBox) {
-                let points = [
-                    window.cvat.translate.point.canvasToClient(sourceCanvas, canvasBox.x, canvasBox.y),
-                    window.cvat.translate.point.canvasToClient(sourceCanvas, canvasBox.x + canvasBox.width, canvasBox.y),
-                    window.cvat.translate.point.canvasToClient(sourceCanvas, canvasBox.x, canvasBox.y + canvasBox.height),
-                    window.cvat.translate.point.canvasToClient(sourceCanvas, canvasBox.x + canvasBox.width, canvasBox.y + canvasBox.height),
-                ];
+            canvasToClient(sourceCanvas, canvasBox) {
+                const points = [
+                    [canvasBox.x, canvasBox.y],
+                    [canvasBox.x + canvasBox.width, canvasBox.y],
+                    [canvasBox.x, canvasBox.y + canvasBox.height],
+                    [canvasBox.x + canvasBox.width, canvasBox.y + canvasBox.height],
+                ].map(el => window.cvat.translate.point.canvasToClient(sourceCanvas, ...el));
 
-                let xes = points.map((el) => el.x);
-                let yes = points.map((el) => el.y);
+                const xes = points.map(el => el.x);
+                const yes = points.map(el => el.y);
 
-                let xmin = Math.min(...xes);
-                let xmax = Math.max(...xes);
-                let ymin = Math.min(...yes);
-                let ymax = Math.max(...yes);
+                const xmin = Math.min(...xes);
+                const xmax = Math.max(...xes);
+                const ymin = Math.min(...yes);
+                const ymax = Math.max(...yes);
 
                 return {
                     x: xmin,
                     y: ymin,
                     width: xmax - xmin,
-                    height: ymax - ymin
+                    height: ymax - ymin,
                 };
             },
 
-            serverToClient: function(shape) {
+            serverToClient(shape) {
                 return {
                     xtl: shape.points[0],
                     ytl: shape.points[1],
@@ -71,7 +67,7 @@ class CoordinateTranslator {
                 };
             },
 
-            clientToServer: function(clientObject) {
+            clientToServer(clientObject) {
                 return {
                     points: [clientObject.xtl, clientObject.ytl,
                         clientObject.xbr, clientObject.ybr],

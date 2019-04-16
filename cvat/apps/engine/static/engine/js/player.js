@@ -134,20 +134,20 @@ const MAX_PLAYER_SCALE = 10;
 const MIN_PLAYER_SCALE = 0.1;
 
 class PlayerModel extends Listener {
-    constructor(task,  playerSize) {
+    constructor(task, playerSize) {
         super('onPlayerUpdate', () => this);
         this._frame = {
             start: window.cvat.player.frames.start,
             stop: window.cvat.player.frames.stop,
             current: window.cvat.player.frames.current,
-            previous: null
+            previous: null,
         };
 
         this._settings = {
             multipleStep: 10,
             fps: 25,
             rotateAll: task.mode === 'interpolation',
-            resetZoom: task.mode === 'annotation'
+            resetZoom: task.mode === 'annotation',
         };
 
         this._playInterval = null;
@@ -169,7 +169,7 @@ class PlayerModel extends Listener {
 
         this._geometry.frameOffset = Math.floor(Math.max(
             (playerSize.height - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE,
-            (playerSize.width - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE
+            (playerSize.width - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE,
         ));
         window.cvat.translate.playerOffset = this._geometry.frameOffset;
         window.cvat.player.rotation = this._geometry.rotation;
@@ -182,7 +182,7 @@ class PlayerModel extends Listener {
             start: this._frame.start,
             stop: this._frame.stop,
             current: this._frame.current,
-            previous: this._frame.previous
+            previous: this._frame.previous,
         };
     }
 
@@ -326,14 +326,15 @@ class PlayerModel extends Listener {
             to: this._frame.current,
         });
 
-        let changed = this._frame.previous != this._frame.current;
-        let differentRotation = this._framewiseRotation[this._frame.previous] != this._framewiseRotation[this._frame.current];
+        const changed = this._frame.previous !== this._frame.current;
+        const curFrameRotation = this._framewiseRotation[this._frame.current];
+        const prevFrameRotation = this._framewiseRotation[this._frame.previous];
+        const differentRotation = curFrameRotation !== prevFrameRotation;
         // fit if tool is in the annotation mode or frame loading is first in the interpolation mode
         if (this._settings.resetZoom || this._frame.previous === null || differentRotation) {
             this._frame.previous = this._frame.current;
-            this.fit();     // notify() inside the fit()
-        }
-        else {
+            this.fit(); // notify() inside the fit()
+        } else {
             this._frame.previous = this._frame.current;
             this.notify();
         }
@@ -342,10 +343,10 @@ class PlayerModel extends Listener {
     }
 
     fit() {
-        let img = this._frameProvider.require(this._frame.current);
+        const img = this._frameProvider.require(this._frame.current);
         if (!img) return;
 
-        let rotation = this.geometry.rotation;
+        const rotation = this.geometry.rotation;
 
         if ((rotation / 90) % 2) {
             // 90, 270, ..

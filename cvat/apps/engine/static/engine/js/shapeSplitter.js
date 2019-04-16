@@ -8,17 +8,17 @@
 "use strict";
 
 class ShapeSplitter {
-    constructor() {}
-
     _convertMutableAttributes(attributes) {
-        let result = [];
-        for (let attrId in attributes) {
-            let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
-            if (attrInfo.mutable) {
-                result.push({
-                    id: +attrId,
-                    value: attributes[attrId].value
-                });
+        const result = [];
+        for (const attrId in attributes) {
+            if (Object.prototype.hasOwnProperty.call(attributes, attrId)) {
+                const attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
+                if (attrInfo.mutable) {
+                    result.push({
+                        id: +attrId,
+                        value: attributes[attrId].value,
+                    });
+                }
             }
         }
 
@@ -26,7 +26,7 @@ class ShapeSplitter {
     }
 
     split(track, frame) {
-        const keyFrames = track.keyframes.map((frame) => +frame).sort((a,b) => a - b);
+        const keyFrames = track.keyframes.map(keyframe => +keyframe).sort((a, b) => a - b);
         const exported = track.export();
 
         if (frame > +keyFrames[0]) {
@@ -37,7 +37,7 @@ class ShapeSplitter {
             const curPositionList = [];
             const prevPositionList = [];
 
-            for (let shape of exported.shapes) {
+            for (const shape of exported.shapes) {
                 if (shape.frame < frame - 1) {
                     prevPositionList.push(shape);
                 } else if (shape.frame > frame) {
@@ -55,20 +55,20 @@ class ShapeSplitter {
 
                 const curPos = curInterpolation.position;
                 prevPositionList.push(Object.assign({}, {
-                    frame: frame,
+                    frame,
                     attributes: curAttributes,
                     type: 'box',
-                }, curPos, {outside: true}));
+                }, curPos, { outside: true }));
 
                 curPositionList.push(Object.assign({}, {
-                    frame: frame,
+                    frame,
                     attributes: curAttributes,
                     type: 'box',
                 }, curPos));
             } else {
                 const curPos = curInterpolation.position;
                 curPositionList.push(Object.assign({
-                    frame: frame,
+                    frame,
                     attributes: curAttributes,
                     type: track.type.split('_')[1],
                 }, curPos));
@@ -79,14 +79,13 @@ class ShapeSplitter {
             // don't clone group of splitted object
             delete exported.group;
 
-            let prevExported = JSON.parse(JSON.stringify(exported));
-            let curExported = JSON.parse(JSON.stringify(exported));
+            const prevExported = JSON.parse(JSON.stringify(exported));
+            const curExported = JSON.parse(JSON.stringify(exported));
             prevExported.shapes = prevPositionList;
             curExported.shapes = curPositionList;
             curExported.frame = frame;
             return [prevExported, curExported];
-        } else {
-            return [exported];
         }
+        return [exported];
     }
 }

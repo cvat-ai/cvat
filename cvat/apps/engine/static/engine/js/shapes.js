@@ -79,21 +79,21 @@ class ShapeModel extends Listener {
 
         for (let attrId in attributes) {
             let attrInfo = labelsInfo.attrInfo(attrId);
+            const labelValue = LabelsInfo.normalize(attrInfo.type, attributes[attrId]);
             if (attrInfo.mutable) {
-                this._attributes.mutable[this._frame][attrId] = LabelsInfo.normalize(attrInfo.type, attributes[attrId]);
+                this._attributes.mutable[this._frame][attrId] = labelValue;
             } else {
-                this._attributes.immutable[attrId] = LabelsInfo.normalize(attrInfo.type, attributes[attrId]);
+                this._attributes.immutable[attrId] = labelValue;
             }
         }
 
-        for (let pos of positions) {
-            let frame = pos.frame;
-            let attributes = pos.attributes;
-            for (let attr of attributes) {
-                let attrInfo = labelsInfo.attrInfo(attr.id);
+        for (const pos of positions) {
+            for (const attr of pos.attributes) {
+                const attrInfo = labelsInfo.attrInfo(attr.id);
                 if (attrInfo.mutable) {
-                    this._attributes.mutable[frame] = this._attributes.mutable[frame] || {};
-                    this._attributes.mutable[frame][attr.id] = LabelsInfo.normalize(attrInfo.type, attr.value);
+                    this._attributes.mutable[pos.frame] = this._attributes.mutable[pos.frame] || {};
+                    const labelValue = LabelsInfo.normalize(attrInfo.type, attr.value);
+                    this._attributes.mutable[pos.frame][attr.id] = labelValue;
                 }
             }
         }

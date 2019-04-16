@@ -173,8 +173,8 @@ class ShapeCollectionModel extends Listener {
     }
 
     cleanupClientObjects() {
-        for (let shape of this._shapes) {
-            if (typeof(shape.serverID) === 'undefined') {
+        for (const shape of this._shapes) {
+            if (typeof (shape.serverID) === 'undefined') {
                 shape.removed = true;
             }
         }
@@ -211,10 +211,10 @@ class ShapeCollectionModel extends Listener {
 
     updateGroupIdx(groupId) {
         if (groupId in this._groups) {
-            let newGroupId = this._nextGroupIdx();
+            const newGroupId = this._nextGroupIdx();
             this._groups[newGroupId] = this._groups[groupId];
             delete this._groups[groupId];
-            for (let elem of this._groups[newGroupId]) {
+            for (const elem of this._groups[newGroupId]) {
                 elem.groupId = newGroupId;
             }
         }
