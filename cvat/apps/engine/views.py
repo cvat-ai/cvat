@@ -9,11 +9,10 @@ from ast import literal_eval
 import shutil
 from datetime import datetime
 
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.conf import settings
 from sendfile import sendfile
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status

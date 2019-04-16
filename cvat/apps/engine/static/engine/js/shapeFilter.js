@@ -43,11 +43,12 @@ class FilterModel {
 
         // We replace all dashes due to defiant.js can't work with it
         function convertAttributes(attributes) {
-            const converted = {};
+            const convertedAttributes = {};
             for (const attrId in attributes) {
-                converted[attributes[attrId].name.toLowerCase().replace(/[-,\s]+/g, '_')] = String(attributes[attrId].value).toLowerCase();
+                const key = attributes[attrId].name.toLowerCase().replace(/[-,\s]+/g, '_');
+                convertedAttributes[key] = String(attributes[attrId].value).toLowerCase();
             }
-            return converted;
+            return convertedAttributes;
         }
     }
 

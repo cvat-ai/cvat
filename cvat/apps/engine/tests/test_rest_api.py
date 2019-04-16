@@ -522,9 +522,9 @@ class UserUpdateAPITestCase(APITestCase):
         self.client = APIClient()
         create_db_users(self)
 
-    def _run_api_v1_users_id(self, user, id, data):
+    def _run_api_v1_users_id(self, user, user_id, data):
         with ForceLogin(user, self.client):
-            response = self.client.put('/api/v1/users/{}'.format(id), data=data)
+            response = self.client.put('/api/v1/users/{}'.format(user_id), data=data)
 
         return response
 

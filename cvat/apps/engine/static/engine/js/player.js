@@ -346,15 +346,20 @@ class PlayerModel extends Listener {
         const img = this._frameProvider.require(this._frame.current);
         if (!img) return;
 
-        const rotation = this.geometry.rotation;
+        const { rotation } = this.geometry;
 
         if ((rotation / 90) % 2) {
             // 90, 270, ..
-            this._geometry.scale = Math.min(this._geometry.width / img.height, this._geometry.height / img.width);
-        }
-        else {
+            this._geometry.scale = Math.min(
+                this._geometry.width / img.height,
+                this._geometry.height / img.width,
+            );
+        } else {
             // 0, 180, ..
-            this._geometry.scale = Math.min(this._geometry.width / img.width, this._geometry.height / img.height);
+            this._geometry.scale = Math.min(
+                this._geometry.width / img.width,
+                this._geometry.height / img.height,
+            );
         }
 
         this._geometry.top = (this._geometry.height - img.height * this._geometry.scale) / 2;

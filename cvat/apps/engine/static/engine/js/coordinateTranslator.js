@@ -21,15 +21,19 @@ class CoordinateTranslator {
                 return box;
             },
             actualToCanvas(actualBox) {
-                return this._convert({ ...actualBox }, 1);
+                const canvasBox = {};
+                for (const key in actualBox) {
+                    canvasBox[key] = actualBox[key];
+                }
+
+                return this._convert(canvasBox, 1);
             },
+
             canvasToActual(canvasBox) {
-                const actualBox = {
-                    x: canvasBox.x,
-                    y: canvasBox.y,
-                    height: canvasBox.height,
-                    width: canvasBox.width,
-                };
+                const actualBox = {};
+                for (const key in canvasBox) {
+                    actualBox[key] = canvasBox[key];
+                }
 
                 return this._convert(actualBox, -1);
             },
