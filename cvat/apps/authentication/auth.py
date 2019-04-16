@@ -121,7 +121,7 @@ class TaskGetQuerySetMixin(object):
             return queryset
         else:
             return queryset.filter(Q(owner=user) | Q(assignee=user) |
-                Q(segment__job__assignee=user)).distinct()
+                Q(segment__job__assignee=user) | Q(assignee=None)).distinct()
 
 class TaskChangePermission(BasePermission):
     def has_object_permission(self, request, view, obj):
