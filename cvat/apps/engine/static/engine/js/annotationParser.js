@@ -179,6 +179,12 @@ class AnnotationParser {
             polyline: this._getShapeFromPath('polyline', tracks),
             points: this._getShapeFromPath('points', tracks),
         };
+        const shapeTarget = {
+            box: 'boxes',
+            polygon: 'polygons',
+            polyline: 'polylines',
+            points: 'points',
+        };
 
         const images = xml.getElementsByTagName('image');
         for (const image of images) {
@@ -223,7 +229,7 @@ class AnnotationParser {
 
                     if (shapeType === 'box') {
                         const [points, occluded, zOrder] = this._getBoxPosition(shape, frame);
-                        data.boxes.push({
+                        data[shapeTarget[shapeType]].push({
                             label_id: labelId,
                             group: +group,
                             attributes: attributeList,
@@ -235,7 +241,7 @@ class AnnotationParser {
                         });
                     } else {
                         const [points, occluded, zOrder] = this._getPolyPosition(shape, frame);
-                        data[shapeType].push({
+                        data[shapeTarget[shapeType]].push({
                             label_id: labelId,
                             group: +group,
                             attributes: attributeList,
