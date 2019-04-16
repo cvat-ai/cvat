@@ -866,11 +866,11 @@ class ShapeManager(ObjectManager):
             track = {
                 "label_id": shape["label_id"],
                 "frame": shape["frame"],
-                "group": shape.get(group, None),
+                "group": shape.get("group", None),
                 "attributes": shape["attributes"],
                 "shapes": [shape0, shape1]
             }
-            tracks.append(path)
+            tracks.append(track)
 
         return tracks
 
@@ -1309,7 +1309,7 @@ class TaskAnnotation:
                 for track in tracks:
                     track_id = counter
                     counter += 1
-                    db_label = db_labels.get(track["label_id"])
+                    db_label = db_label_by_id[track["label_id"]]
                     dump_data = OrderedDict([
                         ("id", str(track_id)),
                         ("label", db_label.name),
@@ -1356,8 +1356,8 @@ class TaskAnnotation:
                         else:
                             raise NotImplementedError("unknown shape type")
 
-                        for attr in shape["attributes"]:
-                            db_attribute = db_label.attributespec_set.get(attr["spec_id"])
+                        for attr in shape.get("attributes", []):
+                            db_attribute = db_attribute_by_id[attr["spec_id"]]
                             dumper.add_attribute(OrderedDict([
                                 ("name", db_attribute.name),
                                 ("value", attr["value"])
@@ -1373,5 +1373,5 @@ class TaskAnnotation:
                             dumper.close_points()
                         else:
                             raise NotImplementedError("unknown shape type")
-                dumper.close_track()
+                    dumper.close_track()
             dumper.close_root()
