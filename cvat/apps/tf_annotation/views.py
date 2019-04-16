@@ -11,7 +11,7 @@ from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine import annotation, task
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from cvat.apps.engine.annotation_v2 import put_task_data
+from cvat.apps.engine.annotation import put_task_data
 
 import django_rq
 import fnmatch

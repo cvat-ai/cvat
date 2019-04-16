@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task, Job, User
-from cvat.apps.engine.annotation_v2 import dump_task_data
+from cvat.apps.engine.annotation import dump_task_data
 from cvat.apps.engine.plugins import add_plugin
 from cvat.apps.git.models import GitStatusChoice
 

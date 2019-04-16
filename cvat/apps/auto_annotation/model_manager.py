@@ -18,7 +18,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine import annotation
 from cvat.apps.engine.serializers import LabeledDataSerializer
-from cvat.apps.engine.annotation_v2 import put_task_data, patch_task_data
+from cvat.apps.engine.annotation import put_task_data, patch_task_data
 
 from .models import AnnotationModel, FrameworkChoice
 from .model_loader import ModelLoader

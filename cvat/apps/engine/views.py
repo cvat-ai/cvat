@@ -32,7 +32,7 @@ import django_rq
 from django.db import IntegrityError
 
 
-from . import annotation_v2, task, models
+from . import annotation, task, models
 from cvat.settings.base import JS_3RDPARTY, CSS_3RDPARTY
 from cvat.apps.authentication.decorators import login_required
 from requests.exceptions import RequestException
@@ -220,27 +220,27 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
         if request.method == 'GET':
-            data = annotation_v2.get_task_data(pk)
+            data = annotation.get_task_data(pk)
             serializer = LabeledDataSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         elif request.method == 'PUT':
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                data = annotation_v2.put_task_data(pk, serializer.data)
+                data = annotation.put_task_data(pk, serializer.data)
                 return Response(data)
         elif request.method == 'DELETE':
-            annotation_v2.delete_task_data(pk)
+            annotation.delete_task_data(pk)
             return Response(status=status.HTTP_204_NO_CONTENT)
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
-            if action not in annotation_v2.PatchAction.values():
+            if action not in annotation.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 try:
-                    data = annotation_v2.patch_task_data(pk, serializer.data, action)
+                    data = annotation.patch_task_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
@@ -262,7 +262,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         file_path = os.path.join(db_task.get_task_dirname(),
             filename + ".{}.{}.".format(username, timestamp) + "xml")
 
-        rq_id = "{}@/api/v1/jobs/{}/annotations/{}".format(username, pk, filename)
+        rq_id = "{}@/api/v1/tasks/{}/annotations/{}".format(username, pk, filename)
         rq_job = queue.fetch_job(rq_id)
 
         if rq_job:
@@ -288,7 +288,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             else:
                 return Response(status=status.HTTP_202_ACCEPTED)
 
-        rq_job = queue.enqueue_call(func=annotation_v2.dump_task_data,
+        rq_job = queue.enqueue_call(func=annotation.dump_task_data,
             args=(pk, file_path, request.scheme, request.get_host(),
                 request.query_params),
             job_id=rq_id)
@@ -376,28 +376,28 @@ class JobViewSet(viewsets.GenericViewSet,
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
         if request.method == 'GET':
-            data = annotation_v2.get_job_data(pk)
+            data = annotation.get_job_data(pk)
             return Response(data)
         elif request.method == 'PUT':
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 try:
-                    data = annotation_v2.put_job_data(pk, serializer.data)
+                    data = annotation.put_job_data(pk, serializer.data)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
         elif request.method == 'DELETE':
-            annotation_v2.delete_job_data(pk)
+            annotation.delete_job_data(pk)
             return Response(status=status.HTTP_204_NO_CONTENT)
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
-            if action not in annotation_v2.PatchAction.values():
+            if action not in annotation.PatchAction.values():
                 raise serializers.ValidationError(
                     "Please specify a correct 'action' for the request")
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 try:
-                    data = annotation_v2.patch_job_data(pk, serializer.data, action)
+                    data = annotation.patch_job_data(pk, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
@@ -452,7 +452,7 @@ class PluginViewSet(viewsets.ModelViewSet):
     def request_detail(self, request, name, id):
         pass
 
-# FIXME: need to update the handler
+# FIXME: need to update the handler and support dump as well
 def rq_handler(job, exc_type, exc_value, tb):
     job.exc_info = "".join(
         traceback.format_exception_only(exc_type, exc_value))
