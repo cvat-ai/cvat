@@ -718,11 +718,11 @@ class DataManager:
         tracks = TrackManager(self.data["tracks"])
         tracks.merge(data["tracks"], start_frame, overlap)
 
-    def to_shapes(self):
+    def to_shapes(self, end_frame):
         shapes = self.data["shapes"]
         tracks = TrackManager(self.data["tracks"])
 
-        return shapes + tracks.to_shapes()
+        return shapes + tracks.to_shapes(end_frame)
 
     def to_tracks(self):
         tracks = self.data["tracks"]
@@ -756,6 +756,10 @@ class ObjectManager:
 
     @staticmethod
     def _unite_objects(obj0, obj1):
+        raise NotImplementedError()
+
+    @staticmethod
+    def _modify_unmached_object(obj, end_frame):
         raise NotImplementedError()
 
     def merge(self, objects, start_frame, overlap):
@@ -798,6 +802,7 @@ class ObjectManager:
 
                 # 6. Find optimal solution using Hungarian algorithm.
                 row_ind, col_ind = linear_sum_assignment(cost_matrix)
+                old_objects_indexes = list(range(0, len(old_objects)))
                 int_objects_indexes = list(range(0, len(int_objects)))
                 for i, j in zip(row_ind, col_ind):
                     # Reject the solution if the cost is too high. Remember
@@ -805,11 +810,19 @@ class ObjectManager:
                     if cost_matrix[i][j] <= min_cost_thresh:
                         old_objects[j] = self._unite_objects(int_objects[i], old_objects[j])
                         int_objects_indexes[i] = -1
+                        int_objects_indexes[j] = -1
 
-                # 7. Add all objects which were not processed.
+                # 7. Add all new objects which were not processed.
                 for i in int_objects_indexes:
                     if i != -1:
                         self.objects.append(int_objects[i])
+
+                # 8. Modify all old objects which were not processed
+                # (e.g. generate a shape with outside=True at the end).
+                for j in old_objects_indexes:
+                    if j != -1:
+                        self._modify_unmached_object(old_objects[j],
+                            start_frame + overlap)
             else:
                 # We don't have old objects on the frame. Let's add all new ones.
                 self.objects.extend(int_objects_by_frame[frame])
@@ -828,6 +841,10 @@ class TagManager(ObjectManager):
     def _unite_objects(obj0, obj1):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
+
+    @staticmethod
+    def _modify_unmached_object(obj, end_frame):
+        pass
 
 def pairwise(iterable):
     a = iter(iterable)
@@ -889,13 +906,18 @@ class ShapeManager(ObjectManager):
         # TODO: improve the trivial implementation
         return obj0 if obj0["frame"] < obj1["frame"] else obj1
 
+    @staticmethod
+    def _modify_unmached_object(obj, end_frame):
+        pass
+
 class TrackManager(ObjectManager):
-    def to_shapes(self):
+    def to_shapes(self, end_frame):
         shapes = []
         for track in self.objects:
-            for shape in TrackManager.get_interpolated_shapes(track):
+            for shape in self.get_interpolated_shapes(track, 0, end_frame):
                 if not shape["outside"]:
                     shape.pop("outside")
+                    shape.pop("keyframe", None)
                     shape["label_id"] = track["label_id"]
                     shape["group"] = track["group"]
                     shape["attributes"] += track["attributes"]
@@ -927,15 +949,16 @@ class TrackManager(ObjectManager):
         if obj0["label_id"] == obj1["label_id"]:
             # Here start_frame is the start frame of next segment
             # and stop_frame is the stop frame of current segment
-            stop_frame = start_frame + overlap - 1
-            obj0_shapes = self.get_interpolated_shapes(obj0, start_frame, stop_frame)
-            obj1_shapes = self.get_interpolated_shapes(obj1, start_frame, stop_frame)
+            # end_frame == stop_frame + 1
+            end_frame = start_frame + overlap
+            obj0_shapes = self.get_interpolated_shapes(obj0, start_frame, end_frame)
+            obj1_shapes = self.get_interpolated_shapes(obj1, start_frame, end_frame)
             obj0_shapes_by_frame = {shape["frame"]:shape for shape in obj0_shapes}
             obj1_shapes_by_frame = {shape["frame"]:shape for shape in obj1_shapes}
             assert obj0_shapes_by_frame and obj1_shapes_by_frame
 
             count, error = 0, 0
-            for frame in range(start_frame, stop_frame + 1):
+            for frame in range(start_frame, end_frame):
                 shape0 = obj0_shapes_by_frame.get(frame)
                 shape1 = obj1_shapes_by_frame.get(frame)
                 if shape0 and shape1:
@@ -953,20 +976,78 @@ class TrackManager(ObjectManager):
             return 0
 
     @staticmethod
-    def get_interpolated_shapes(obj0, start_frame = None, stop_frame = None):
-        if start_frame is None:
-            start_frame = obj0["frame"]
+    def _modify_unmached_object(obj, end_frame):
+        shape = obj["shapes"][-1]
+        if not shape["outside"]:
+            shape = copy.deepcopy(shape)
+            shape["frame"] = end_frame
+            shape["outside"] = True
+            obj["shapes"].append(shape)
 
-        if stop_frame is None:
-            stop_frame = obj0["shapes"][-1]["frame"]
+    @staticmethod
+    def normalize_shape(shape):
+        points = np.asarray(shape["points"]).reshape(-1, 2)
+        broken_line = geometry.LineString(points)
+        points = []
+        for off in range(0, 1, 0.01):
+            p = broken_line.interpolate(off, True)
+            points.append(p.x)
+            points.append(p.y)
+
+        shape = copy.copy(shape)
+        shape["points"] = points
+
+        return shape
+
+    @staticmethod
+    def get_interpolated_shapes(track, start_frame, end_frame):
+        def interpolate(shape0, shape1):
+            shapes = []
+            is_same_type = shape0["type"] == shape1["type"]
+            is_polygon = shape0["type"] == models.ShapeType.POLYGON
+            is_same_size = len(shape0["points"]) == len(shape1["points"])
+            if not is_same_type or is_polygon or not is_same_size:
+                shape0 = normalize_shape(shape0)
+                shape1 = normalize_shape(shape1)
+
+            distance = shape1["frame"] - shape0["frame"]
+            step = np.subtract(shape1["points"], shape0["points"]) / distance
+            for frame in range(shape0["frame"]+1, shape1["frame"]):
+                off = frame - shape0["frame"]
+                points = shape0["points"] + step * off
+                shape = copy.deepcopy(shape0)
+                broken_line = geometry.LineString(points.reshape(-1, 2)).simplify(0.05, False)
+                shape["frame"] = frame
+                shape["points"] = [x for p in broken_line.coords for x in p]
+                shapes.append(shape)
+            return shapes
+
+        if track.get("interpolated_shapes"):
+            return track["interpolated_shapes"]
 
         # TODO: should be return an iterator?
-        shape = obj0["shapes"].get(start_frame)
-        if shape is None:
-            pass
+        shapes = []
+        curr_frame = track["shapes"][0]["frame"]
+        for shape in track["shapes"]:
+            if shape["frame"] != curr_frame:
+                assert shape["frame"] > curr_frame
+                if not prev_shape["outside"]:
+                    shapes.extend(interpolate(prev_shape, shape))
 
-        # FIXME: implement the method
-        return obj0["shapes"]
+            if not shape["outside"]:
+                shape["keyframe"] = True
+                shapes.append(shape)
+            curr_frame = shape["frame"] + 1
+            prev_shape = shape
+
+        if not prev_shape["outside"]:
+            shape = copy.copy(prev_shape)
+            shape["frame"] = end_frame
+            shapes.extend(interpolate(prev_shape, shape))
+
+        track["interpolated_shapes"] = shapes
+
+        return shapes
 
     @staticmethod
     def _unite_objects(obj0, obj1):
@@ -982,7 +1063,7 @@ class TrackManager(ObjectManager):
 
         track["frame"] = min(obj0["frame"], obj1["frame"])
         track["shapes"] = list(sorted(shapes.values(), key=lambda shape: shape["frame"]))
-        track["interpoated_shapes"] = {}
+        track["interpolated_shapes"] = []
 
         return track
 
@@ -1028,7 +1109,8 @@ class TaskAnnotation:
                 self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
 
     def _merge_data(self, data, start_frame, overlap):
-        DataManager(self.data).merge(data, start_frame, overlap)
+        data_manager = DataManager(self.data)
+        data_manager.merge(data, start_frame, overlap)
 
     def create(self, data):
         self._patch_data(data, PatchAction.CREATE)
@@ -1131,7 +1213,7 @@ class TaskAnnotation:
                     for db_image in db_task.image_set.all()}
                 shapes = {}
                 data_manager = DataManager(self.data)
-                for shape in data_manager.to_shapes():
+                for shape in data_manager.to_shapes(db_task.size):
                     frame = shape["frame"]
                     if frame not in shapes:
                         shapes[frame] = []
@@ -1235,7 +1317,8 @@ class TaskAnnotation:
                     if track["group"]:
                         dump_data['group_id'] = str(track["group"])
                     dumper.open_track(dump_data)
-                    for shape in TrackManager.get_interpolated_shapes(track):
+                    for shape in TrackManager.get_interpolated_shapes(
+                        track, 0, db_task.size):
                         if db_task.flipped:
                             self._flip_shape(shape, im_w, im_h)
 
