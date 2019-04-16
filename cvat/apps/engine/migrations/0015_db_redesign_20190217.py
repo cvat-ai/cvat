@@ -77,6 +77,11 @@ class Migration(migrations.Migration):
             name='status',
             field=models.CharField(choices=[('ANNOTATION', 'annotation'), ('VALIDATION', 'validation'), ('COMPLETED', 'completed')], default=cvat.apps.engine.models.StatusChoice('annotation'), max_length=32),
         ),
+        migrations.AlterField(
+            model_name='task',
+            name='overlap',
+            field=models.PositiveIntegerField(null=True),
+        ),
         migrations.RemoveField(
             model_name='task',
             name='path',

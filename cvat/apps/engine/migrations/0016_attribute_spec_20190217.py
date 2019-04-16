@@ -95,7 +95,7 @@ def fill_task_meta_data_forward(apps, schema_editor):
                 db_video.width = image.width
                 db_video.height = image.height
                 image.close()
-            except:
+            except FileNotFoundError:
                 db_video.width = 0
                 db_video.height = 0
 
@@ -119,7 +119,7 @@ def fill_task_meta_data_forward(apps, schema_editor):
                     db_image.width = image.width
                     db_image.height = image.height
                     image.close()
-                except:
+                except FileNotFoundError:
                     db_image.width = 0
                     db_image.height = 0
 
