@@ -45,8 +45,10 @@ class FilterModel {
         function convertAttributes(attributes) {
             const convertedAttributes = {};
             for (const attrId in attributes) {
-                const key = attributes[attrId].name.toLowerCase().replace(/[-,\s]+/g, '_');
-                convertedAttributes[key] = String(attributes[attrId].value).toLowerCase();
+                if (Object.prototype.hasOwnProperty.call(attributes, attrId)) {
+                    const key = attributes[attrId].name.toLowerCase().replace(/[-,\s]+/g, '_');
+                    convertedAttributes[key] = String(attributes[attrId].value).toLowerCase();
+                }
             }
             return convertedAttributes;
         }
