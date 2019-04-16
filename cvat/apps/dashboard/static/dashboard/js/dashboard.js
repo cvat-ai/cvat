@@ -317,7 +317,7 @@ class DashboardView {
         const baseURL = this._baseURL;
         let overlay = null;
         dashboardPagination.pagination({
-            dataSource: '/api/v1/tasks',
+            dataSource: `/api/v1/tasks${window.location.search}`,
             locator: 'results',
             alias: {
                 pageNumber: 'page',
