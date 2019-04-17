@@ -228,6 +228,9 @@ class ShapeType(str, Enum):
     def choices(self):
         return tuple((x.value, x.name) for x in self)
 
+    def __str__(self):
+        return self.value
+
 class Annotation(models.Model):
     id = models.BigAutoField(primary_key=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)

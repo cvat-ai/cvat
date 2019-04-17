@@ -867,7 +867,7 @@ class ObjectManager:
 class TagManager(ObjectManager):
     @staticmethod
     def _get_cost_threshold():
-        raise 0.25
+        return 0.25
 
     @staticmethod
     def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
@@ -913,7 +913,7 @@ class ShapeManager(ObjectManager):
 
     @staticmethod
     def _get_cost_threshold():
-        raise 0.25
+        return 0.25
 
     @staticmethod
     def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
@@ -928,12 +928,12 @@ class ShapeManager(ObjectManager):
                 p0 = geometry.box(*obj0["points"])
                 p1 = geometry.box(*obj1["points"])
 
-                return self._calc_polygons_similarity(p0, p1)
+                return _calc_polygons_similarity(p0, p1)
             elif obj0["type"] == models.ShapeType.POLYGON:
                 p0 = geometry.Polygon(pairwise(obj0["points"]))
                 p1 = geometry.Polygon(pairwise(obj0["points"]))
 
-                return self._calc_polygons_similarity(p0, p1)
+                return _calc_polygons_similarity(p0, p1)
             else:
                 return 0 # FIXME: need some similarity for points and polylines
         return 0
@@ -951,7 +951,7 @@ class TrackManager(ObjectManager):
     def to_shapes(self, end_frame):
         shapes = []
         for track in self.objects:
-            for shape in self.get_interpolated_shapes(track, 0, end_frame):
+            for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame):
                 if not shape["outside"]:
                     shape.pop("outside")
                     shape.pop("keyframe", None)
@@ -979,7 +979,7 @@ class TrackManager(ObjectManager):
 
     @staticmethod
     def _get_cost_threshold():
-        raise 0.5
+        return 0.5
 
     @staticmethod
     def _calc_objects_similarity(obj0, obj1, start_frame, overlap):
@@ -988,8 +988,8 @@ class TrackManager(ObjectManager):
             # and stop_frame is the stop frame of current segment
             # end_frame == stop_frame + 1
             end_frame = start_frame + overlap
-            obj0_shapes = self.get_interpolated_shapes(obj0, start_frame, end_frame)
-            obj1_shapes = self.get_interpolated_shapes(obj1, start_frame, end_frame)
+            obj0_shapes = TrackManager.get_interpolated_shapes(obj0, start_frame, end_frame)
+            obj1_shapes = TrackManager.get_interpolated_shapes(obj1, start_frame, end_frame)
             obj0_shapes_by_frame = {shape["frame"]:shape for shape in obj0_shapes}
             obj1_shapes_by_frame = {shape["frame"]:shape for shape in obj1_shapes}
             assert obj0_shapes_by_frame and obj1_shapes_by_frame
@@ -1026,8 +1026,8 @@ class TrackManager(ObjectManager):
         points = np.asarray(shape["points"]).reshape(-1, 2)
         broken_line = geometry.LineString(points)
         points = []
-        for off in range(0, 1, 0.01):
-            p = broken_line.interpolate(off, True)
+        for off in range(0, 100, 1):
+            p = broken_line.interpolate(off / 100, True)
             points.append(p.x)
             points.append(p.y)
 
@@ -1042,18 +1042,20 @@ class TrackManager(ObjectManager):
             shapes = []
             is_same_type = shape0["type"] == shape1["type"]
             is_polygon = shape0["type"] == models.ShapeType.POLYGON
+            is_polyline = shape0["type"] == models.ShapeType.POLYLINE
             is_same_size = len(shape0["points"]) == len(shape1["points"])
-            if not is_same_type or is_polygon or not is_same_size:
-                shape0 = normalize_shape(shape0)
-                shape1 = normalize_shape(shape1)
+            if not is_same_type or is_polygon or is_polyline or not is_same_size:
+                shape0 = TrackManager.normalize_shape(shape0)
+                shape1 = TrackManager.normalize_shape(shape1)
 
             distance = shape1["frame"] - shape0["frame"]
             step = np.subtract(shape1["points"], shape0["points"]) / distance
-            for frame in range(shape0["frame"]+1, shape1["frame"]):
+            for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 off = frame - shape0["frame"]
                 points = shape0["points"] + step * off
                 shape = copy.deepcopy(shape0)
                 broken_line = geometry.LineString(points.reshape(-1, 2)).simplify(0.05, False)
+                shape["keyframe"] = False
                 shape["frame"] = frame
                 shape["points"] = [x for p in broken_line.coords for x in p]
                 shapes.append(shape)
@@ -1065,6 +1067,7 @@ class TrackManager(ObjectManager):
         # TODO: should be return an iterator?
         shapes = []
         curr_frame = track["shapes"][0]["frame"]
+        prev_shape = {}
         for shape in track["shapes"]:
             if shape["frame"] != curr_frame:
                 assert shape["frame"] > curr_frame
@@ -1077,7 +1080,7 @@ class TrackManager(ObjectManager):
             curr_frame = shape["frame"] + 1
             prev_shape = shape
 
-        if not prev_shape["outside"]:
+        if not prev_shape["outside"] and prev_shape["type"] == models.ShapeType.RECTANGLE:
             shape = copy.copy(prev_shape)
             shape["frame"] = end_frame
             shapes.extend(interpolate(prev_shape, shape))
@@ -1398,7 +1401,7 @@ class TaskAnnotation:
                         else:
                             raise NotImplementedError("unknown shape type")
 
-                        for attr in shape.get("attributes", []):
+                        for attr in shape.get("attributes", []) + track.get("attributes", []):
                             db_attribute = db_attribute_by_id[attr["spec_id"]]
                             dumper.add_attribute(OrderedDict([
                                 ("name", db_attribute.name),
