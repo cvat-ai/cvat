@@ -48,8 +48,6 @@ def rq_handler(job, exc_type, exc_value, traceback):
     db_task = models.Task.objects.select_for_update().get(pk=tid)
     with open(db_task.get_log_path(), "wt") as log_file:
         print_exception(exc_type, exc_value, traceback, file=log_file)
-    db_task.delete()
-
     return False
 
 ############################# Internal implementation for server API

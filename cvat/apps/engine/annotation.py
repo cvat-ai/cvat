@@ -818,6 +818,9 @@ class ObjectManager:
 
         # Nothing to merge here. Just add all int_objects if any.
         if not old_objects_by_frame or not int_objects_by_frame:
+            for old_obj in self.objects:
+                self._modify_unmached_object(old_obj,
+                    start_frame + overlap)
             self.objects.extend(int_objects)
             return
 
@@ -829,7 +832,7 @@ class ObjectManager:
             if frame in old_objects_by_frame:
                 int_objects = int_objects_by_frame[frame]
                 old_objects = old_objects_by_frame[frame]
-                cost_matrix = np.empty(obj=(len(int_objects), len(old_objects)),
+                cost_matrix = np.empty(shape=(len(int_objects), len(old_objects)),
                     dtype=float)
                 # 5.1 Construct cost matrix for the frame.
                 for i, int_obj in enumerate(int_objects):
@@ -847,7 +850,7 @@ class ObjectManager:
                     if cost_matrix[i][j] <= min_cost_thresh:
                         old_objects[j] = self._unite_objects(int_objects[i], old_objects[j])
                         int_objects_indexes[i] = -1
-                        int_objects_indexes[j] = -1
+                        old_objects_indexes[j] = -1
 
                 # 7. Add all new objects which were not processed.
                 for i in int_objects_indexes:
@@ -969,7 +972,7 @@ class TrackManager(ObjectManager):
         objects_by_frame = {0: []}
         for obj in objects:
             shape = obj["shapes"][-1] # optimization for old tracks
-            if shape["frame"] >= start_frame or shape["outside"]:
+            if shape["frame"] >= start_frame or not shape["outside"]:
                 objects_by_frame[0].append(obj)
 
         if not objects_by_frame[0]:
@@ -1002,7 +1005,11 @@ class TrackManager(ObjectManager):
                     if shape0["outside"] != shape1["outside"]:
                         error += 1
                     else:
-                        error += 1 - ShapeManager._calc_objects_similarity(shape0, shape1)
+                        shape0["label_id"] = obj0["label_id"]
+                        shape1["label_id"] = obj1["label_id"]
+                        error += 1 - ShapeManager._calc_objects_similarity(shape0, shape1, start_frame, overlap)
+                        del shape0["label_id"]
+                        del shape1["label_id"]
                     count += 1
                 elif shape0 or shape1:
                     error += 1
