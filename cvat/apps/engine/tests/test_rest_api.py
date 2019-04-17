@@ -1671,10 +1671,11 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "tracks": []
         }
         response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
+        data["version"] += 1
         self.assertEqual(response.status_code, HTTP_200_OK)
 
         data = {
-            "version": 0,
+            "version": data["version"],
             "tags": [
                 {
                     "frame": 0,
@@ -1765,6 +1766,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             ]
         }
         response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
+        data["version"] += 1
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1773,10 +1775,11 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         self._check_response(response, data)
 
         response = self._delete_api_v1_tasks_id_annotations(task["id"], annotator)
+        data["version"] += 1
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
 
         data = {
-            "version": 0,
+            "version": data["version"],
             "tags": [],
             "shapes": [],
             "tracks": []
@@ -1786,7 +1789,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         self._check_response(response, data)
 
         data = {
-            "version": 0,
+            "version": data["version"],
             "tags": [
                 {
                     "frame": 0,
@@ -1878,6 +1881,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         }
         response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
             "create", data)
+        data["version"] += 1
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1896,6 +1900,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
             "update", data)
+        data["version"] = data.get("version", 0) + 1
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1905,11 +1910,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         response = self._patch_api_v1_tasks_id_annotations(task["id"], annotator,
             "delete", data)
+        data["version"] += 1
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
         data = {
-            "version": 0,
+            "version": data["version"],
             "tags": [],
             "shapes": [],
             "tracks": []
@@ -1919,7 +1925,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         self._check_response(response, data)
 
         data = {
-            "version": 0,
+            "version": data["version"],
             "tags": [
                 {
                     "frame": 0,

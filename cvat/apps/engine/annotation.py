@@ -1135,24 +1135,20 @@ class TaskAnnotation:
             }
 
         for jid, job_data in splitted_data.items():
-            # if an item inside _data isn't empty need to call save_job
-            is_non_empty = False
-            for objects in job_data.values():
-                if objects:
-                    is_non_empty = True
-                    break
-
-            if is_non_empty:
+            if action is None:
+                _data = put_job_data(jid, self.user, job_data)
+            else:
                 _data = patch_job_data(jid, self.user, job_data, action)
-                self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
+            if _data["version"] > self.data["version"]:
+                self.data["version"] = _data["version"]
+            self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
 
     def _merge_data(self, data, start_frame, overlap):
         data_manager = DataManager(self.data)
         data_manager.merge(data, start_frame, overlap)
 
     def put(self, data):
-        self.delete()
-        self.create(data)
+        self._patch_data(data, None)
 
     def create(self, data):
         self._patch_data(data, PatchAction.CREATE)
@@ -1173,6 +1169,8 @@ class TaskAnnotation:
         for db_job in self.db_jobs:
             annotation = JobAnnotation(db_job.id, self.user)
             annotation.init_from_db()
+            if annotation.data["version"] > self.data["version"]:
+                self.data["version"] = annotation.data["version"]
             db_segment = db_job.segment
             start_frame = db_segment.start_frame
             overlap = self.db_task.overlap
