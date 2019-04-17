@@ -36,6 +36,11 @@ class LabelSerializer(serializers.ModelSerializer):
         model = models.Label
         fields = ('id', 'name', 'attributes')
 
+class JobCommitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.JobCommit
+        fields = ('id', 'version', 'author', 'message', 'timestamp')
+
 class JobSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="segment.task.id")
     start_frame = serializers.ReadOnlyField(source="segment.start_frame")

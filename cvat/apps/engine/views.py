@@ -220,17 +220,17 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
         if request.method == 'GET':
-            data = annotation.get_task_data(pk)
+            data = annotation.get_task_data(pk, request.user)
             serializer = LabeledDataSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         elif request.method == 'PUT':
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
-                data = annotation.put_task_data(pk, serializer.data)
+                data = annotation.put_task_data(pk, request.user, serializer.data)
                 return Response(data)
         elif request.method == 'DELETE':
-            annotation.delete_task_data(pk)
+            annotation.delete_task_data(pk, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
@@ -240,7 +240,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 try:
-                    data = annotation.patch_task_data(pk, serializer.data, action)
+                    data = annotation.patch_task_data(pk, request.user, serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
@@ -289,8 +289,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 return Response(status=status.HTTP_202_ACCEPTED)
 
         rq_job = queue.enqueue_call(func=annotation.dump_task_data,
-            args=(pk, file_path, request.scheme, request.get_host(),
-                request.query_params),
+            args=(pk, request.user, file_path, request.scheme,
+                request.get_host(), request.query_params),
             job_id=rq_id)
         rq_job.meta["file_path"] = file_path
         rq_job.save_meta()
@@ -376,18 +376,18 @@ class JobViewSet(viewsets.GenericViewSet,
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
         if request.method == 'GET':
-            data = annotation.get_job_data(pk)
+            data = annotation.get_job_data(pk, request.user)
             return Response(data)
         elif request.method == 'PUT':
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 try:
-                    data = annotation.put_job_data(pk, serializer.data)
+                    data = annotation.put_job_data(pk, request.user, serializer.data)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
         elif request.method == 'DELETE':
-            annotation.delete_job_data(pk)
+            annotation.delete_job_data(pk, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
         elif request.method == 'PATCH':
             action = self.request.query_params.get("action", None)
@@ -397,7 +397,8 @@ class JobViewSet(viewsets.GenericViewSet,
             serializer = LabeledDataSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 try:
-                    data = annotation.patch_job_data(pk, serializer.data, action)
+                    data = annotation.patch_job_data(pk, request.user,
+                        serializer.data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)

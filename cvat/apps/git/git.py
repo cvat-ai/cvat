@@ -419,7 +419,7 @@ def update_states():
             slogger.glob("Exception occured during a status updating for db_git with tid: {}".format(db_git.task_id))
 
 @transaction.atomic
-def _onsave(jid, data, action):
+def _onsave(jid, user, data, action):
     db_task = Job.objects.select_related('segment__task').get(pk = jid).segment.task
     try:
         db_git = GitData.objects.select_for_update().get(pk = db_task.id)
@@ -461,7 +461,7 @@ def _onsave(jid, data, action):
     except GitData.DoesNotExist:
         pass
 
-def _ondump(tid, data_format, scheme, host, plugin_meta_data):
+def _ondump(tid, user, data_format, scheme, host, plugin_meta_data):
     db_task = Task.objects.get(pk = tid)
     try:
         db_git = GitData.objects.get(pk = db_task)

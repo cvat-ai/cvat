@@ -239,6 +239,20 @@ class Annotation(models.Model):
         abstract = True
         default_permissions = ()
 
+class Commit(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    author = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    version = models.PositiveIntegerField(default=0)
+    timestamp = models.DateTimeField(auto_now=True)
+    message = models.CharField(max_length=4096, default="")
+
+    class Meta:
+        abstract = True
+        default_permissions = ()
+
+class JobCommit(Commit):
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="commits")
+
 class FloatArrayField(models.TextField):
     separator = ","
 

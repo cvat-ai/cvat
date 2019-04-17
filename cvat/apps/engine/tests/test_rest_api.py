@@ -1254,7 +1254,7 @@ class JobAnnotationAPITestCase(APITestCase):
         self.assertEqual(response.status_code, HTTP_200_OK)
 
         data = {
-            "version": 0,
+            "version": 1,
             "tags": [
                 {
                     "frame": 0,
@@ -1345,6 +1345,7 @@ class JobAnnotationAPITestCase(APITestCase):
             ]
         }
         response = self._put_api_v1_jobs_id_data(job["id"], annotator, data)
+        data["version"] += 1 # need to update the version
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1353,10 +1354,11 @@ class JobAnnotationAPITestCase(APITestCase):
         self._check_response(response, data)
 
         response = self._delete_api_v1_jobs_id_data(job["id"], annotator)
+        data["version"] += 1 # need to update the version
         self.assertEqual(response.status_code, HTTP_204_NO_CONTENT)
 
         data = {
-            "version": 0,
+            "version": data["version"],
             "tags": [],
             "shapes": [],
             "tracks": []
@@ -1366,7 +1368,7 @@ class JobAnnotationAPITestCase(APITestCase):
         self._check_response(response, data)
 
         data = {
-            "version": 0,
+            "version": data["version"],
             "tags": [
                 {
                     "frame": 0,
@@ -1458,6 +1460,7 @@ class JobAnnotationAPITestCase(APITestCase):
         }
         response = self._patch_api_v1_jobs_id_data(job["id"], annotator,
             "create", data)
+        data["version"] += 1
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1476,6 +1479,7 @@ class JobAnnotationAPITestCase(APITestCase):
 
         response = self._patch_api_v1_jobs_id_data(job["id"], annotator,
             "update", data)
+        data["version"] = data.get("version", 0) + 1 # need to update the version
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1485,11 +1489,12 @@ class JobAnnotationAPITestCase(APITestCase):
 
         response = self._patch_api_v1_jobs_id_data(job["id"], annotator,
             "delete", data)
+        data["version"] += 1 # need to update the version
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
         data = {
-            "version": 0,
+            "version": data["version"],
             "tags": [],
             "shapes": [],
             "tracks": []
@@ -1499,7 +1504,7 @@ class JobAnnotationAPITestCase(APITestCase):
         self._check_response(response, data)
 
         data = {
-            "version": 0,
+            "version": data["version"],
             "tags": [
                 {
                     "frame": 0,

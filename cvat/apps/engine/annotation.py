@@ -41,26 +41,25 @@ class PatchAction(str, Enum):
 
 @silk_profile(name="GET job data")
 @transaction.atomic
-def get_job_data(pk):
-    annotation = JobAnnotation(pk)
+def get_job_data(pk, user):
+    annotation = JobAnnotation(pk, user)
     annotation.init_from_db()
 
     return annotation.data
 
 @silk_profile(name="POST job data")
 @transaction.atomic
-def put_job_data(pk, data):
-    annotation = JobAnnotation(pk)
-    annotation.delete()
-    annotation.create(data)
+def put_job_data(pk, user, data):
+    annotation = JobAnnotation(pk, user)
+    annotation.put(data)
 
     return annotation.data
 
 @silk_profile(name="UPDATE job data")
 @plugin_decorator
 @transaction.atomic
-def patch_job_data(pk, data, action):
-    annotation = JobAnnotation(pk)
+def patch_job_data(pk, user, data, action):
+    annotation = JobAnnotation(pk, user)
     if action == PatchAction.CREATE:
         annotation.create(data)
     elif action == PatchAction.UPDATE:
@@ -72,31 +71,30 @@ def patch_job_data(pk, data, action):
 
 @silk_profile(name="DELETE job data")
 @transaction.atomic
-def delete_job_data(pk):
-    annotation = JobAnnotation(pk)
+def delete_job_data(pk, user):
+    annotation = JobAnnotation(pk, user)
     annotation.delete()
 
 @silk_profile(name="GET task data")
 @transaction.atomic
-def get_task_data(pk):
-    annotation = TaskAnnotation(pk)
+def get_task_data(pk, user):
+    annotation = TaskAnnotation(pk, user)
     annotation.init_from_db()
 
     return annotation.data
 
 @silk_profile(name="POST task data")
 @transaction.atomic
-def put_task_data(pk, data):
-    annotation = TaskAnnotation(pk)
-    annotation.delete()
-    annotation.create(data)
+def put_task_data(pk, user, data):
+    annotation = TaskAnnotation(pk, user)
+    annotation.put(data)
 
     return annotation.data
 
 @silk_profile(name="UPDATE task data")
 @transaction.atomic
-def patch_task_data(pk, data, action):
-    annotation = TaskAnnotation(pk)
+def patch_task_data(pk, user, data, action):
+    annotation = TaskAnnotation(pk, user)
     if action == PatchAction.CREATE:
         annotation.create(data)
     elif action == PatchAction.UPDATE:
@@ -108,19 +106,19 @@ def patch_task_data(pk, data, action):
 
 @silk_profile(name="DELETE task data")
 @transaction.atomic
-def delete_task_data(pk):
-    annotation = TaskAnnotation(pk)
+def delete_task_data(pk, user):
+    annotation = TaskAnnotation(pk, user)
     annotation.delete()
 
 
-def dump_task_data(pk, file_path, scheme, host, query_params):
+def dump_task_data(pk, user, file_path, scheme, host, query_params):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after _AnnotationForTask instance
     # has been initialized from DB.
     # But there is the bug with corrupted dump file in case 2 or more dump request received at the same time.
     # https://github.com/opencv/cvat/issues/217
     with transaction.atomic():
-        annotation = TaskAnnotation(pk)
+        annotation = TaskAnnotation(pk, user)
         annotation.init_from_db()
 
     annotation.dump(file_path, scheme, host, query_params)
@@ -180,7 +178,8 @@ def _merge_table_rows(rows, keys_for_merge, field_id):
     return list(merged_rows.values())
 
 class JobAnnotation:
-    def __init__(self, pk):
+    def __init__(self, pk, user):
+        self.user = user
         self.db_job = models.Job.objects.select_related('segment__task') \
             .select_for_update().get(id=pk)
 
@@ -341,6 +340,19 @@ class JobAnnotation:
 
         self.data["tags"] = tags
 
+    def _commit(self):
+        db_prev_commit = self.db_job.commits.last()
+        db_curr_commit = models.JobCommit()
+        if db_prev_commit:
+            db_curr_commit.version = db_prev_commit.version + 1
+        else:
+            db_curr_commit.version = 1
+        db_curr_commit.job = self.db_job
+        db_curr_commit.message = "Changes: tags - {}; shapes - {}; tracks - {}".format(
+            len(self.data["tags"]), len(self.data["shapes"]), len(self.data["tracks"]))
+        db_curr_commit.save()
+        self.data["version"] = db_curr_commit.version
+
     def _save_to_db(self, data):
         self.reset()
         self._save_tags_to_db(data["tags"])
@@ -349,18 +361,28 @@ class JobAnnotation:
 
         return self.data["tags"] or self.data["shapes"] or self.data["tracks"]
 
-    def create(self, data):
+    def _create(self, data):
         if self._save_to_db(data):
             db_task = self.db_job.segment.task
             db_task.updated_date = timezone.now()
             db_task.save()
             self.db_job.save()
 
-    def update(self, data):
-        self.delete(data)
-        self.create(data)
+    def create(self, data):
+        self._create(data)
+        self._commit()
 
-    def delete(self, data=None):
+    def put(self, data):
+        self._delete()
+        self._create(data)
+        self._commit()
+
+    def update(self, data):
+        self._delete(data)
+        self._create(data)
+        self._commit()
+
+    def _delete(self, data=None):
         if data is None:
             self.db_job.labeledimage_set.all().delete()
             self.db_job.labeledshape_set.all().delete()
@@ -384,6 +406,10 @@ class JobAnnotation:
             labeledimage_set.delete()
             labeledshape_set.delete()
             labeledtrack_set.delete()
+
+    def delete(self, data=None):
+        self._delete(data)
+        self._commit()
 
     def _init_tags_from_db(self):
         db_tags = self.db_job.labeledimage_set.prefetch_related(
@@ -506,10 +532,18 @@ class JobAnnotation:
         serializer = serializers.LabeledTrackSerializer(db_tracks, many=True)
         self.data["tracks"] = serializer.data
 
+    def _init_version_from_db(self):
+        db_commit = self.db_job.commits.last()
+        if db_commit:
+            self.data["version"] = db_commit.version
+        else:
+            self.data["version"] = 0
+
     def init_from_db(self):
         self._init_tags_from_db()
         self._init_shapes_from_db()
         self._init_tracks_from_db()
+        self._init_version_from_db()
 
 class AnnotationWriter:
     __metaclass__ = ABCMeta
@@ -1071,7 +1105,8 @@ class TrackManager(ObjectManager):
         return track
 
 class TaskAnnotation:
-    def __init__(self, pk):
+    def __init__(self, pk, user):
+        self.user = user
         self.db_task = models.Task.objects.prefetch_related("image_set").get(id=pk)
         self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk)
         self.reset()
@@ -1108,12 +1143,16 @@ class TaskAnnotation:
                     break
 
             if is_non_empty:
-                _data = patch_job_data(jid, job_data, action)
+                _data = patch_job_data(jid, self.user, job_data, action)
                 self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
 
     def _merge_data(self, data, start_frame, overlap):
         data_manager = DataManager(self.data)
         data_manager.merge(data, start_frame, overlap)
+
+    def put(self, data):
+        self.delete()
+        self.create(data)
 
     def create(self, data):
         self._patch_data(data, PatchAction.CREATE)
@@ -1126,13 +1165,13 @@ class TaskAnnotation:
             self._patch_data(data, PatchAction.DELETE)
         else:
             for db_job in self.db_jobs:
-                delete_job_data(db_job.id)
+                delete_job_data(db_job.id, self.user)
 
     def init_from_db(self):
         self.reset()
 
         for db_job in self.db_jobs:
-            annotation = JobAnnotation(db_job.id)
+            annotation = JobAnnotation(db_job.id, self.user)
             annotation.init_from_db()
             db_segment = db_job.segment
             start_frame = db_segment.start_frame
