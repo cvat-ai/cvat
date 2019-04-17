@@ -1087,6 +1087,7 @@ class TrackManager(ObjectManager):
             curr_frame = shape["frame"] + 1
             prev_shape = shape
 
+        # TODO: Need to modify a client and a database (append "outside" shapes for polytracks)
         if not prev_shape["outside"] and prev_shape["type"] == models.ShapeType.RECTANGLE:
             shape = copy.copy(prev_shape)
             shape["frame"] = end_frame
