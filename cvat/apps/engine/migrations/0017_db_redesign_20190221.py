@@ -7,7 +7,7 @@ from django.conf import settings
 from cvat.apps.engine.annotation import _merge_table_rows
 
 # some modified functions to transer annotation
-def _bulk_create(db_model, db_alias, objects, flt_param = {}):
+def _bulk_create(db_model, db_alias, objects, flt_param):
     if objects:
         if flt_param:
             if 'postgresql' in settings.DATABASES["default"]["ENGINE"]:
@@ -252,7 +252,7 @@ def process_shapes(db_job, apps, db_labels, db_attributes, db_alias):
     for db_attrval in new_db_attrvals:
         db_attrval.shape_id = new_db_shapes[db_attrval.shape_id].id
 
-    _bulk_create(LabeledShapeAttributeVal, db_alias, new_db_attrvals)
+    _bulk_create(LabeledShapeAttributeVal, db_alias, new_db_attrvals, {})
 
 def process_paths(db_job, apps, db_labels, db_attributes, db_alias):
     TrackedShape = apps.get_model('engine', 'TrackedShape')
@@ -315,7 +315,7 @@ def process_paths(db_job, apps, db_labels, db_attributes, db_alias):
 
     for db_attrval in new_db_track_attrvals:
         db_attrval.track_id = new_db_tracks[db_attrval.track_id].id
-    _bulk_create(LabeledTrackAttributeVal, db_alias, new_db_track_attrvals)
+    _bulk_create(LabeledTrackAttributeVal, db_alias, new_db_track_attrvals, {})
 
     for db_shape in new_db_shapes:
         db_shape.track_id = new_db_tracks[db_shape.track_id].id
@@ -325,7 +325,7 @@ def process_paths(db_job, apps, db_labels, db_attributes, db_alias):
     for db_attrval in new_db_shape_attrvals:
         db_attrval.shape_id = new_db_shapes[db_attrval.shape_id].id
 
-    _bulk_create(TrackedShapeAttributeVal, db_alias, new_db_shape_attrvals)
+    _bulk_create(TrackedShapeAttributeVal, db_alias, new_db_shape_attrvals, {})
 
 def copy_annotations_forward(apps, schema_editor):
     db_alias = schema_editor.connection.alias
@@ -419,7 +419,7 @@ def _save_old_shapes_to_db(apps, db_shapes, db_attributes, db_alias, db_job):
             else:
                 db_attrval.points_id = new_db_shapes[db_attrval.points_id].id
 
-        _bulk_create(_get_shape_attr_class(shape_type), db_alias, new_db_attrvals)
+        _bulk_create(_get_shape_attr_class(shape_type), db_alias, new_db_attrvals, {})
 
 def _save_old_tracks_to_db(apps, db_shapes, db_attributes, db_alias, db_job):
     def _get_shape_class(shape_type):
@@ -521,7 +521,7 @@ def _save_old_tracks_to_db(apps, db_shapes, db_attributes, db_alias, db_job):
 
         for db_attrval in new_db_path_attrvals:
             db_attrval.track_id = new_db_paths[db_attrval.track_id].id
-        _bulk_create(ObjectPathAttributeVal, db_alias, new_db_path_attrvals)
+        _bulk_create(ObjectPathAttributeVal, db_alias, new_db_path_attrvals, {})
 
         for db_shape in new_db_shapes:
             db_shape.track_id = new_db_paths[db_shape.track_id].id
@@ -538,7 +538,7 @@ def _save_old_tracks_to_db(apps, db_shapes, db_attributes, db_alias, db_job):
             elif shape_type == 'points_paths':
                 db_attrval.points_id = db_shapes[db_attrval.points_id].id
 
-        _bulk_create(_get_shape_attr_class(shape_type), db_alias, new_db_shape_attrvals)
+        _bulk_create(_get_shape_attr_class(shape_type), db_alias, new_db_shape_attrvals, {})
 
 def copy_annotations_backward(apps, schema_editor):
     Task = apps.get_model('engine', 'Task')

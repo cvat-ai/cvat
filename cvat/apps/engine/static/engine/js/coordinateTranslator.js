@@ -81,59 +81,58 @@ class CoordinateTranslator {
 
         this._pointsTranslator = {
             _playerOffset: 0,
-            _convert: function(points, sign) {
-                if (typeof(points) === 'string') {
-                    return points.split(' ').map((coord) => coord.split(',')
-                        .map((x) => +x + this._playerOffset * sign).join(',')).join(' ');
+            _convert(points, sign) {
+                if (typeof (points) === 'string') {
+                    return points.split(' ').map(coord => coord.split(',')
+                        .map(x => +x + this._playerOffset * sign).join(',')).join(' ');
                 }
-                else if (typeof(points) === 'object') {
-                    let result = [];
-                    for (let point of points) {
-                        result.push({
-                            x: point.x + this._playerOffset * sign,
-                            y: point.y + this._playerOffset * sign,
-                        });
-                    }
-                    return result;
+                if (typeof (points) === 'object') {
+                    return points.map(point => ({
+                        x: point.x + this._playerOffset * sign,
+                        y: point.y + this._playerOffset * sign,
+                    }));
                 }
-                else {
-                    throw Error('Unknown points type was found');
-                }
+                throw Error('Unknown points type was found');
             },
-            actualToCanvas: function(actualPoints) {
+            actualToCanvas(actualPoints) {
                 return this._convert(actualPoints, 1);
             },
 
-            canvasToActual: function(canvasPoints) {
+            canvasToActual(canvasPoints) {
                 return this._convert(canvasPoints, -1);
             },
 
-            serverToClient: function(shape) {
+            serverToClient(shape) {
                 return {
                     points: shape.points.reduce((acc, el, idx) => {
-                        idx % 2 ? acc.slice(-1)[0].push(el) : acc.push([el]);
-                        return acc
-                    }, []).map((point) => point.join(',')).join(' '),
-                }
-            },
-
-            clientToServer: function(clientPoints) {
-                return {
-                    points: clientPoints.points.split(' ').join(',').split(',').map((x) => +x),
+                        if (idx % 2) {
+                            acc.slice(-1)[0].push(el);
+                        } else {
+                            acc.push([el]);
+                        }
+                        return acc;
+                    }, []).map(point => point.join(',')).join(' '),
                 };
             },
-        },
+
+            clientToServer(clientPoints) {
+                return {
+                    points: clientPoints.points.split(' ').join(',').split(',').map(x => +x),
+                };
+            },
+        };
+
 
         this._pointTranslator = {
             _rotation: 0,
-            clientToCanvas: function(targetCanvas, clientX, clientY) {
+            clientToCanvas(targetCanvas, clientX, clientY) {
                 let pt = targetCanvas.createSVGPoint();
                 pt.x = clientX;
                 pt.y = clientY;
                 pt = pt.matrixTransform(targetCanvas.getScreenCTM().inverse());
                 return pt;
             },
-            canvasToClient: function(sourceCanvas, canvasX, canvasY) {
+            canvasToClient(sourceCanvas, canvasX, canvasY) {
                 let pt = sourceCanvas.createSVGPoint();
                 pt.x = canvasX;
                 pt.y = canvasY;
@@ -141,18 +140,18 @@ class CoordinateTranslator {
                 return pt;
             },
             rotate(x, y, cx, cy) {
-                cx = (typeof cx === "undefined" ? 0 : cx);
-                cy = (typeof cy === "undefined" ? 0 : cy);
+                cx = (typeof cx === 'undefined' ? 0 : cx);
+                cy = (typeof cy === 'undefined' ? 0 : cy);
 
-                let radians = (Math.PI / 180) * window.cvat.player.rotation;
-                let cos = Math.cos(radians);
-                let sin = Math.sin(radians);
+                const radians = (Math.PI / 180) * window.cvat.player.rotation;
+                const cos = Math.cos(radians);
+                const sin = Math.sin(radians);
 
                 return {
                     x: (cos * (x - cx)) + (sin * (y - cy)) + cx,
-                    y: (cos * (y - cy)) - (sin * (x - cx)) + cy
-                }
-            }
+                    y: (cos * (y - cy)) - (sin * (x - cx)) + cy,
+                };
+            },
         };
     }
 

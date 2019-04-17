@@ -7,8 +7,7 @@ from django.conf import settings
 from django.db.models import Q
 import rules
 from . import AUTH_ROLE
-from rest_framework.permissions import (BasePermission, IsAuthenticated)
-
+from rest_framework.permissions import BasePermission
 
 def register_signals():
     from django.db.models.signals import post_migrate, post_save

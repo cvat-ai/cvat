@@ -327,15 +327,6 @@ function makeLabelsInfo() {
     return new LabelsInfo(taskData.labels);
 }
 
-function makeAnnotationParser() {
-    return new AnnotationParser({
-        start: jobData.start,
-        stop: jobData.stop,
-        flipped: taskData.flipped,
-        image_meta_data: framesMeta,
-    }, makeLabelsInfo());
-}
-
 function makePlayerModel() {
     const dummyPlayerGeometry = {
         width: 800,
