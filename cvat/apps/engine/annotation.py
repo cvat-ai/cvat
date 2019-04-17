@@ -818,7 +818,7 @@ class ObjectManager:
 
         # Nothing to merge here. Just add all int_objects if any.
         if not old_objects_by_frame or not int_objects_by_frame:
-            for old_obj in [item for sublist in int_objects_by_frame.values() for item in sublist]:
+            for old_obj in [item for sublist in old_objects_by_frame.values() for item in sublist]:
                 self._modify_unmached_object(old_obj,
                     start_frame + overlap)
             self.objects.extend(int_objects)
