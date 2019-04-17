@@ -9,13 +9,11 @@ from django.utils import timezone
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from collections import OrderedDict
-from distutils.util import strtobool
 from xml.sax.saxutils import XMLGenerator
 from abc import ABCMeta, abstractmethod
 from PIL import Image
 from shapely import geometry
 
-import django_rq
 from django.conf import settings
 from django.db import transaction
 

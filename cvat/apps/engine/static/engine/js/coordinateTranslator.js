@@ -122,7 +122,6 @@ class CoordinateTranslator {
             },
         };
 
-
         this._pointTranslator = {
             _rotation: 0,
             clientToCanvas(targetCanvas, clientX, clientY) {
