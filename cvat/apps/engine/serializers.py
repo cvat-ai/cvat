@@ -73,12 +73,13 @@ class ServerFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ServerFile
         fields = ('file', )
-    @staticmethod
-    def to_internal_value(data):
+
+    # pylint: disable=method-could-be-a-function
+    def to_internal_value(self, data):
         return {'file': data}
 
-    @staticmethod
-    def to_representation(instance):
+    # pylint: disable=method-could-be-a-function
+    def to_representation(self, instance):
         return instance.file
 
 class RemoteFileSerializer(serializers.ModelSerializer):
@@ -183,8 +184,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         write_once_fields = ('overlap', 'segment_size', 'image_quality')
         ordering = ['-id']
 
-    @staticmethod
-    def create(validated_data):
+    # pylint: disable=method-could-be-a-function
+    def create(self, validated_data):
         labels = validated_data.pop('label_set')
         db_task = models.Task.objects.create(size=0, **validated_data)
         for label in labels:
@@ -204,8 +205,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return db_task
 
-    @staticmethod
-    def update(instance, validated_data):
+    # pylint: disable=method-could-be-a-function
+    def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner = validated_data.get('owner', instance.owner)
         instance.assignee = validated_data.get('assignee', instance.assignee)

@@ -365,7 +365,8 @@ class PlayerModel extends Listener {
     focus(xtl, xbr, ytl, ybr) {
         const img = this._frameProvider.require(this._frame.current);
         if (!img) return;
-        const fittedScale = Math.min(this._geometry.width / img.width, this._geometry.height / img.height);
+        const fittedScale = Math.min(this._geometry.width / img.width,
+            this._geometry.height / img.height);
 
         const boxWidth = xbr - xtl;
         const boxHeight = ybr - ytl;
