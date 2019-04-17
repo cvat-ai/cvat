@@ -609,7 +609,8 @@ class TaskListAPITestCase(APITestCase):
         response = self._run_api_v1_tasks(self.user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertListEqual(
-            sorted([task.name for task in self.tasks if task.owner == self.user]),
+            sorted([task.name for task in self.tasks
+                if (task.owner == self.user or task.assignee == None)]),
             sorted([res["name"] for res in response.data["results"]]))
 
     def test_api_v1_tasks_observer(self):
