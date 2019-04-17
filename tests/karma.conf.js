@@ -10,7 +10,6 @@ module.exports = function(config) {
     basePath: path.join(process.env.HOME, 'cvat/apps/'),
     frameworks: ['qunit'],
     files: [
-      'engine/static/engine/js/idGenerator.js',
       'engine/static/engine/js/labelsInfo.js',
       'engine/static/engine/js/annotationParser.js',
       'engine/static/engine/js/listener.js',
@@ -40,7 +39,7 @@ module.exports = function(config) {
     coverageReporter: {
       dir: path.join(process.env.HOME, 'media/coverage'),
       reporters: [
-        { type: 'html', subdir: '.' }, { type: 'lcov', subdir: '.' } 
+        { type: 'html', subdir: '.' }, { type: 'lcov', subdir: '.' }
       ],
       instrumenterOptions: {
        istanbul: { noCompact: true }

@@ -92,19 +92,19 @@ class ShapeBufferModel extends Listener  {
                 occluded: this._shape.position.occluded,
                 frame: window.cvat.player.frames.current,
                 z_order: this._collection.zOrder(window.cvat.player.frames.current).max,
-            }
+            };
 
             if (isTracked) {
                 object.shapes = [];
                 object.shapes.push(Object.assign(position, {
                     outside: false,
-                    attributes: []
+                    attributes: [],
                 }));
             } else {
                 Object.assign(object, position);
             }
         } else {
-            let position = {};
+            const position = {};
             position.points = points;
             position.occluded = this._shape.position.occluded;
             position.frame = window.cvat.player.frames.current;

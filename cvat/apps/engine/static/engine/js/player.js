@@ -134,20 +134,20 @@ const MAX_PLAYER_SCALE = 10;
 const MIN_PLAYER_SCALE = 0.1;
 
 class PlayerModel extends Listener {
-    constructor(task,  playerSize) {
+    constructor(task, playerSize) {
         super('onPlayerUpdate', () => this);
         this._frame = {
             start: window.cvat.player.frames.start,
             stop: window.cvat.player.frames.stop,
             current: window.cvat.player.frames.current,
-            previous: null
+            previous: null,
         };
 
         this._settings = {
             multipleStep: 10,
             fps: 25,
             rotateAll: task.mode === 'interpolation',
-            resetZoom: task.mode === 'annotation'
+            resetZoom: task.mode === 'annotation',
         };
 
         this._playInterval = null;
@@ -166,11 +166,9 @@ class PlayerModel extends Listener {
             rotation: 0,
         };
         this._framewiseRotation = {};
-
-        this._geometry.frameOffset = Math.floor(Math.max(
-            (playerSize.height - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE,
-            (playerSize.width - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE
-        ));
+        const frameOffset = Math.max((playerSize.height - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE,
+            (playerSize.width - MIN_PLAYER_SCALE) / MIN_PLAYER_SCALE);
+        this._geometry.frameOffset = Math.floor(frameOffset);
         window.cvat.translate.playerOffset = this._geometry.frameOffset;
         window.cvat.player.rotation = this._geometry.rotation;
 
@@ -182,14 +180,14 @@ class PlayerModel extends Listener {
             start: this._frame.start,
             stop: this._frame.stop,
             current: this._frame.current,
-            previous: this._frame.previous
+            previous: this._frame.previous,
         };
     }
 
     get geometry() {
-        let copy = Object.assign({}, this._geometry);
-        copy.rotation = this._settings.rotateAll ? this._geometry.rotation :
-            this._framewiseRotation[this._frame.current] || 0;
+        const copy = Object.assign({}, this._geometry);
+        copy.rotation = this._settings.rotateAll ? this._geometry.rotation
+            : this._framewiseRotation[this._frame.current] || 0;
         return copy;
     }
 
@@ -241,7 +239,7 @@ class PlayerModel extends Listener {
         return this._frame.previous === this._frame.current;
     }
 
-    onFrameLoad(last) {  // callback for FrameProvider instance
+    onFrameLoad(last) { // callback for FrameProvider instance
         if (last === this._frame.current) {
             if (this._continueTimeout) {
                 clearTimeout(this._continueTimeout);
@@ -299,17 +297,15 @@ class PlayerModel extends Listener {
     }
 
     shift(delta, absolute) {
-        if (['resize', 'drag'].indexOf(window.cvat.mode) != -1) {
+        if (['resize', 'drag'].indexOf(window.cvat.mode) !== -1) {
             return false;
         }
 
-        this._continueAfterLoad = false;  // default reset continue
-        this._frame.current = Math.clamp(
-            absolute ? delta : this._frame.current + delta,
+        this._continueAfterLoad = false; // default reset continue
+        this._frame.current = Math.clamp(absolute ? delta : this._frame.current + delta,
             this._frame.start,
-            this._frame.stop
-        );
-        let frame = this._frameProvider.require(this._frame.current);
+            this._frame.stop);
+        const frame = this._frameProvider.require(this._frame.current);
         if (!frame) {
             this._continueAfterLoad = this.playing;
             this._pauseFlag = true;
@@ -326,14 +322,15 @@ class PlayerModel extends Listener {
             to: this._frame.current,
         });
 
-        let changed = this._frame.previous != this._frame.current;
-        let differentRotation = this._framewiseRotation[this._frame.previous] != this._framewiseRotation[this._frame.current];
+        const changed = this._frame.previous !== this._frame.current;
+        const curFrameRotation = this._framewiseRotation[this._frame.current];
+        const prevFrameRotation = this._framewiseRotation[this._frame.previous];
+        const differentRotation = curFrameRotation !== prevFrameRotation;
         // fit if tool is in the annotation mode or frame loading is first in the interpolation mode
         if (this._settings.resetZoom || this._frame.previous === null || differentRotation) {
             this._frame.previous = this._frame.current;
-            this.fit();     // notify() inside the fit()
-        }
-        else {
+            this.fit(); // notify() inside the fit()
+        } else {
             this._frame.previous = this._frame.current;
             this.notify();
         }
@@ -342,22 +339,23 @@ class PlayerModel extends Listener {
     }
 
     fit() {
-        let img = this._frameProvider.require(this._frame.current);
+        const img = this._frameProvider.require(this._frame.current);
         if (!img) return;
 
-        let rotation = this.geometry.rotation;
+        const { rotation } = this.geometry;
 
         if ((rotation / 90) % 2) {
             // 90, 270, ..
-            this._geometry.scale = Math.min(this._geometry.width / img.height, this._geometry.height / img.width);
-        }
-        else {
+            this._geometry.scale = Math.min(this._geometry.width / img.height,
+                this._geometry.height / img.width);
+        } else {
             // 0, 180, ..
-            this._geometry.scale = Math.min(this._geometry.width / img.width, this._geometry.height / img.height);
+            this._geometry.scale = Math.min(this._geometry.width / img.width,
+                this._geometry.height / img.height);
         }
 
         this._geometry.top = (this._geometry.height - img.height * this._geometry.scale) / 2;
-        this._geometry.left = (this._geometry.width - img.width * this._geometry.scale ) / 2;
+        this._geometry.left = (this._geometry.width - img.width * this._geometry.scale) / 2;
 
         window.cvat.player.rotation = rotation;
         window.cvat.player.geometry.scale = this._geometry.scale;
@@ -365,14 +363,15 @@ class PlayerModel extends Listener {
     }
 
     focus(xtl, xbr, ytl, ybr) {
-        let img = this._frameProvider.require(this._frame.current);
+        const img = this._frameProvider.require(this._frame.current);
         if (!img) return;
-        let fittedScale = Math.min(this._geometry.width / img.width, this._geometry.height / img.height);
+        const fittedScale = Math.min(this._geometry.width / img.width,
+            this._geometry.height / img.height);
 
-        let boxWidth = xbr - xtl;
-        let boxHeight = ybr - ytl;
-        let wScale = this._geometry.width / boxWidth;
-        let hScale = this._geometry.height / boxHeight;
+        const boxWidth = xbr - xtl;
+        const boxHeight = ybr - ytl;
+        const wScale = this._geometry.width / boxWidth;
+        const hScale = this._geometry.height / boxHeight;
         this._geometry.scale = Math.min(wScale, hScale);
         this._geometry.scale = Math.min(this._geometry.scale, MAX_PLAYER_SCALE);
         this._geometry.scale = Math.max(this._geometry.scale, MIN_PLAYER_SCALE);
@@ -380,9 +379,8 @@ class PlayerModel extends Listener {
         if (this._geometry.scale < fittedScale) {
             this._geometry.scale = fittedScale;
             this._geometry.top = (this._geometry.height - img.height * this._geometry.scale) / 2;
-            this._geometry.left = (this._geometry.width - img.width * this._geometry.scale ) / 2;
-        }
-        else {
+            this._geometry.left = (this._geometry.width - img.width * this._geometry.scale) / 2;
+        } else {
             this._geometry.left = (this._geometry.width / this._geometry.scale - xtl * 2 - boxWidth) * this._geometry.scale / 2;
             this._geometry.top = (this._geometry.height / this._geometry.scale - ytl * 2 - boxHeight) * this._geometry.scale / 2;
         }

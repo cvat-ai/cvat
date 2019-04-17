@@ -4,23 +4,16 @@
 
 import os
 import re
-import json
 import traceback
 from ast import literal_eval
 import shutil
-import glob
 from datetime import datetime
 
-from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
-from django.shortcuts import redirect, render, get_object_or_404
+from django.http import HttpResponseBadRequest
+from django.shortcuts import redirect, render
 from django.conf import settings
-from rules.contrib.views import permission_required, objectgetter
-from django.views.decorators.gzip import gzip_page
 from sendfile import sendfile
-from rest_framework import generics
-from rest_framework.decorators import api_view, APIView
 from rest_framework.response import Response
-from rest_framework.reverse import reverse
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
 from rest_framework import viewsets
@@ -35,7 +28,6 @@ from django.db import IntegrityError
 from . import annotation, task, models
 from cvat.settings.base import JS_3RDPARTY, CSS_3RDPARTY
 from cvat.apps.authentication.decorators import login_required
-from requests.exceptions import RequestException
 import logging
 from .log import slogger, clogger
 from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
@@ -66,10 +58,11 @@ class ServerViewSet(viewsets.ViewSet):
     # To get nice documentation about ServerViewSet actions it is necessary
     # to implement the method. By default, ViewSet doesn't provide it.
     def get_serializer(self, *args, **kwargs):
-        return self.serializer_class(*args, **kwargs)
+        pass
 
+    @staticmethod
     @action(detail=False, methods=['GET'], serializer_class=AboutSerializer)
-    def about(self, request):
+    def about(request):
         from cvat import __version__ as cvat_version
         about = {
             "name": "Computer Vision Annotation Tool",
@@ -86,8 +79,9 @@ class ServerViewSet(viewsets.ViewSet):
         if serializer.is_valid(raise_exception=True):
             return Response(data=serializer.data)
 
+    @staticmethod
     @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
-    def exception(self, request):
+    def exception(request):
         serializer = ExceptionSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             additional_info = {
@@ -106,8 +100,9 @@ class ServerViewSet(viewsets.ViewSet):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @staticmethod
     @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
-    def logs(self, request):
+    def logs(request):
         serializer = LogEventSerializer(many=True, data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = { "username": request.user.username }
@@ -123,8 +118,9 @@ class ServerViewSet(viewsets.ViewSet):
                     clogger.glob.info(message)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @staticmethod
     @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
-    def share(self, request):
+    def share(request):
         param = request.query_params.get('directory', '/')
         if param.startswith("/"):
             param = param[1:]
@@ -199,8 +195,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         super().perform_destroy(instance)
         shutil.rmtree(task_dirname, ignore_errors=True)
 
+    @staticmethod
     @action(detail=True, methods=['GET'], serializer_class=JobSerializer)
-    def jobs(self, request, pk):
+    def jobs(request, pk):
         queryset = Job.objects.filter(segment__task_id=pk)
         serializer = JobSerializer(queryset, many=True,
             context={"request": request})
@@ -306,7 +303,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data)
 
-    def _get_rq_response(self, queue, job_id):
+    @staticmethod
+    def _get_rq_response(queue, job_id):
         queue = django_rq.get_queue(queue)
         job = queue.fetch_job(job_id)
         response = {}
@@ -323,9 +321,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return response
 
+    @staticmethod
     @action(detail=True, methods=['GET'], serializer_class=ImageMetaSerializer,
         url_path='frames/meta')
-    def data_info(self, request, pk):
+    def data_info(request, pk):
         try:
             db_task = models.Task.objects.get(pk=pk)
             meta_cache_file = open(db_task.get_image_meta_cache_path())
@@ -421,8 +420,9 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return [perm() for perm in permissions]
 
+    @staticmethod
     @action(detail=False, methods=['GET'], serializer_class=UserSerializer)
-    def self(self, request):
+    def self(request):
         serializer = UserSerializer(request.user, context={ "request": request })
         return Response(serializer.data)
 
@@ -450,7 +450,7 @@ class PluginViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['GET', 'DELETE'],
         serializer_class=RqStatusSerializer, url_path='requests/(?P<id>\d+)')
-    def request_detail(self, request, name, id):
+    def request_detail(self, request, name, rq_id):
         pass
 
 # FIXME: need to update the handler and support dump as well

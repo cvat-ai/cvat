@@ -7,8 +7,7 @@ from django.conf import settings
 from django.db.models import Q
 import rules
 from . import AUTH_ROLE
-from rest_framework.permissions import (BasePermission, IsAuthenticated,
-    IsAdminUser)
+from rest_framework.permissions import (BasePermission, IsAuthenticated)
 
 
 def register_signals():
@@ -89,26 +88,32 @@ rules.add_perm('engine.job.change', has_admin_role | is_job_owner |
     is_job_annotator)
 
 class AdminRolePermission(BasePermission):
+    # pylint: disable=method-could-be-a-function
     def has_permission(self, request, view):
         return request.user.has_perm("engine.role.admin")
 
 class UserRolePermission(BasePermission):
+    # pylint: disable=method-could-be-a-function
     def has_permission(self, request, view):
         return request.user.has_perm("engine.role.user")
 
 class AnnotatorRolePermission(BasePermission):
+    # pylint: disable=method-could-be-a-function
     def has_permission(self, request, view):
         return request.user.has_perm("engine.role.annotator")
 
 class ObserverRolePermission(BasePermission):
+    # pylint: disable=method-could-be-a-function
     def has_permission(self, request, view):
         return request.user.has_perm("engine.role.observer")
 
 class TaskCreatePermission(BasePermission):
+    # pylint: disable=method-could-be-a-function
     def has_permission(self, request, view):
         return request.user.has_perm("engine.task.create")
 
 class TaskAccessPermission(BasePermission):
+    # pylint: disable=method-could-be-a-function
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm("engine.task.access", obj)
 
@@ -124,17 +129,21 @@ class TaskGetQuerySetMixin(object):
                 Q(segment__job__assignee=user) | Q(assignee=None)).distinct()
 
 class TaskChangePermission(BasePermission):
+    # pylint: disable=method-could-be-a-function
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm("engine.task.change", obj)
 
 class TaskDeletePermission(BasePermission):
+    # pylint: disable=method-could-be-a-function
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm("engine.task.delete", obj)
 
 class JobAccessPermission(BasePermission):
+    # pylint: disable=method-could-be-a-function
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm("engine.job.access", obj)
 
 class JobChangePermission(BasePermission):
+    # pylint: disable=method-could-be-a-function
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm("engine.job.change", obj)

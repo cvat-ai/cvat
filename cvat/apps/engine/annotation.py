@@ -6,7 +6,6 @@ import os
 import copy
 from enum import Enum
 from django.utils import timezone
-from collections import OrderedDict
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from collections import OrderedDict
@@ -125,7 +124,7 @@ def dump_task_data(pk, user, file_path, scheme, host, query_params):
 
 ######
 
-def bulk_create(db_model, objects, flt_param = {}):
+def bulk_create(db_model, objects, flt_param):
     if objects:
         if flt_param:
             if 'postgresql' in settings.DATABASES["default"]["ENGINE"]:
@@ -245,23 +244,37 @@ class JobAnnotation:
             track["attributes"] = track_attributes
             track["shapes"] = shapes
 
-        db_tracks = bulk_create(models.LabeledTrack, db_tracks,
-            {"job_id": self.db_job.id})
+        db_tracks = bulk_create(
+            db_model=models.LabeledTrack,
+            objects=db_tracks,
+            flt_param={"job_id": self.db_job.id}
+        )
 
         for db_attrval in db_track_attrvals:
             db_attrval.track_id = db_tracks[db_attrval.track_id].id
-        bulk_create(models.LabeledTrackAttributeVal, db_track_attrvals)
+        bulk_create(
+            db_model=models.LabeledTrackAttributeVal,
+            objects=db_track_attrvals,
+            flt_param={}
+        )
 
         for db_shape in db_shapes:
             db_shape.track_id = db_tracks[db_shape.track_id].id
 
-        db_shapes = bulk_create(models.TrackedShape, db_shapes,
-            {"track__job_id": self.db_job.id})
+        db_shapes = bulk_create(
+            db_model=models.TrackedShape,
+            objects=db_shapes,
+            flt_param={"track__job_id": self.db_job.id}
+        )
 
         for db_attrval in db_shape_attrvals:
             db_attrval.shape_id = db_shapes[db_attrval.shape_id].id
 
-        bulk_create(models.TrackedShapeAttributeVal, db_shape_attrvals)
+        bulk_create(
+            db_model=models.TrackedShapeAttributeVal,
+            objects=db_shape_attrvals,
+            flt_param={}
+        )
 
         shape_idx = 0
         for track, db_track in zip(tracks, db_tracks):
@@ -294,13 +307,20 @@ class JobAnnotation:
             db_shapes.append(db_shape)
             shape["attributes"] = attributes
 
-        db_shapes = bulk_create(models.LabeledShape, db_shapes,
-            {"job_id": self.db_job.id})
+        db_shapes = bulk_create(
+            db_model=models.LabeledShape,
+            objects=db_shapes,
+            flt_param={"job_id": self.db_job.id}
+        )
 
         for db_attrval in db_attrvals:
             db_attrval.shape_id = db_shapes[db_attrval.shape_id].id
 
-        bulk_create(models.LabeledShapeAttributeVal, db_attrvals)
+        bulk_create(
+            db_model=models.LabeledShapeAttributeVal,
+            objects=db_attrvals,
+            flt_param={}
+        )
 
         for shape, db_shape in zip(shapes, db_shapes):
             shape["id"] = db_shape.id
@@ -327,13 +347,20 @@ class JobAnnotation:
             db_tags.append(db_tag)
             tag["attributes"] = attributes
 
-        db_tags = bulk_create(models.LabeledImage, db_tags,
-            {"job_id": self.db_job.id})
+        db_tags = bulk_create(
+            db_model=models.LabeledImage,
+            objects=db_tags,
+            flt_param={"job_id": self.db_job.id}
+        )
 
         for db_attrval in db_attrvals:
             db_attrval.tag_id = db_tags[db_attrval.tag_id].id
 
-        bulk_create(models.LabeledImageAttributeVal, db_attrvals)
+        bulk_create(
+            db_model=models.LabeledImageAttributeVal,
+            objects=db_attrvals,
+            flt_param={}
+        )
 
         for tag, db_tag in zip(tags, db_tags):
             tag["id"] = db_tag.id
@@ -648,7 +675,7 @@ class XmlAnnotationWriter(AnnotationWriter):
                 self._add_meta(v)
                 self._indent()
                 self.xmlgen.endElement(k)
-            elif type(v) == list:
+            elif isinstance(v, list):
                 self._indent()
                 self.xmlgen.startElement(k, {})
                 for tup in v:

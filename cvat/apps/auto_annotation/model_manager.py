@@ -16,7 +16,6 @@ from django.conf import settings
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task as TaskModel
-from cvat.apps.engine import annotation
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data, patch_task_data
 
