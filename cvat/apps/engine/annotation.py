@@ -818,7 +818,7 @@ class ObjectManager:
 
         # Nothing to merge here. Just add all int_objects if any.
         if not old_objects_by_frame or not int_objects_by_frame:
-            for old_obj in self.objects:
+            for old_obj in [item for sublist in int_objects_by_frame.values() for item in sublist]:
                 self._modify_unmached_object(old_obj,
                     start_frame + overlap)
             self.objects.extend(int_objects)
@@ -925,7 +925,7 @@ class ShapeManager(ObjectManager):
             return overlap_area / (p0.area + p1.area - overlap_area)
 
         has_same_type  = obj0["type"] == obj1["type"]
-        has_same_label = obj0["label_id"] == obj1["label_id"]
+        has_same_label = obj0["label_id"] == obj1["label_id"] if "label_id" in obj0 else True
         if has_same_type and has_same_label:
             if obj0["type"] == models.ShapeType.RECTANGLE:
                 p0 = geometry.box(*obj0["points"])
@@ -1005,11 +1005,7 @@ class TrackManager(ObjectManager):
                     if shape0["outside"] != shape1["outside"]:
                         error += 1
                     else:
-                        shape0["label_id"] = obj0["label_id"]
-                        shape1["label_id"] = obj1["label_id"]
                         error += 1 - ShapeManager._calc_objects_similarity(shape0, shape1, start_frame, overlap)
-                        del shape0["label_id"]
-                        del shape1["label_id"]
                     count += 1
                 elif shape0 or shape1:
                     error += 1
