@@ -453,7 +453,6 @@ class PluginViewSet(viewsets.ModelViewSet):
     def request_detail(self, request, name, rq_id):
         pass
 
-# FIXME: need to update the handler and support dump as well
 def rq_handler(job, exc_type, exc_value, tb):
     job.exc_info = "".join(
         traceback.format_exception_only(exc_type, exc_value))
