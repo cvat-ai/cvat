@@ -79,11 +79,11 @@ class ServerFileSerializer(serializers.ModelSerializer):
         model = models.ServerFile
         fields = ('file', )
 
-    # pylint: disable=method-could-be-a-function
+    # pylint: disable=no-self-use
     def to_internal_value(self, data):
         return {'file': data}
 
-    # pylint: disable=method-could-be-a-function
+    # pylint: disable=no-self-use
     def to_representation(self, instance):
         return instance.file
 
@@ -189,7 +189,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         write_once_fields = ('overlap', 'segment_size', 'image_quality')
         ordering = ['-id']
 
-    # pylint: disable=method-could-be-a-function
+    # pylint: disable=no-self-use
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
         db_task = models.Task.objects.create(size=0, **validated_data)
@@ -210,7 +210,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return db_task
 
-    # pylint: disable=method-could-be-a-function
+    # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.owner = validated_data.get('owner', instance.owner)
