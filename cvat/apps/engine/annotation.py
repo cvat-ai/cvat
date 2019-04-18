@@ -165,7 +165,7 @@ def _merge_table_rows(rows, keys_for_merge, field_id):
 
         for key in keys_for_merge:
             item = dotdict({v.split('__', 1)[-1]:row[v] for v in keys_for_merge[key]})
-            if item.id:
+            if item.id is not None:
                 merged_rows[row_id][key].append(item)
 
     # Remove redundant keys from final objects
@@ -555,6 +555,9 @@ class JobAnnotation:
                     'trackedshapeattributeval__id',
                 ]
             }, 'id')
+
+            # A result table can consist many equal rows for track/shape attributes
+            # We need filter unique attributes manually
             db_track["labeledtrackattributeval_set"] = list(set(db_track["labeledtrackattributeval_set"]))
             for db_shape in db_track["trackedshape_set"]:
                 db_shape["trackedshapeattributeval_set"] = list(
@@ -929,6 +932,7 @@ class ShapeManager(ObjectManager):
             shape0 = copy.copy(shape)
             shape0["keyframe"] = True
             shape0["outside"] = False
+            # TODO: Separate attributes on mutable and unmutable
             shape0["attributes"] = []
             shape0.pop("group", None)
             shape1 = copy.copy(shape0)
