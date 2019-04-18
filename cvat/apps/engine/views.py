@@ -13,6 +13,7 @@ from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.conf import settings
 from sendfile import sendfile
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
@@ -169,7 +170,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
     def get_permissions(self):
         http_method = self.request.method
-        permissions = [auth.IsAuthenticated]
+        permissions = [IsAuthenticated]
 
         if http_method in SAFE_METHODS:
             permissions.append(auth.TaskAccessPermission)
@@ -360,7 +361,7 @@ class JobViewSet(viewsets.GenericViewSet,
 
     def get_permissions(self):
         http_method = self.request.method
-        permissions = [auth.IsAuthenticated]
+        permissions = [IsAuthenticated]
 
         if http_method in SAFE_METHODS:
             permissions.append(auth.JobAccessPermission)
@@ -409,7 +410,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     serializer_class = UserSerializer
 
     def get_permissions(self):
-        permissions = [auth.IsAuthenticated]
+        permissions = [IsAuthenticated]
 
         if self.action in ["self"]:
             pass

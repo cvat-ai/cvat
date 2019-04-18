@@ -216,7 +216,7 @@ class Git:
 
 
     # Method prepares an annotation, merges diffs and pushes it to remote repository to user branch
-    def push(self, scheme, host, db_task, last_save):
+    def push(self, user, scheme, host, db_task, last_save):
         # Update local repository
         self._pull()
 
@@ -252,7 +252,14 @@ class Git:
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         dump_name = os.path.join(db_task.get_task_dirname(),
             "git_annotation_{}.".format(timestamp) + "dump")
-        dump_task_data(self._tid, dump_name, scheme, host, {})
+        dump_task_data(
+            pk=self._tid,
+            user=user,
+            file_path=dump_name,
+            scheme=scheme,
+            host=host,
+            query_params={},
+        )
 
         ext = os.path.splitext(self._path)[1]
         if ext == '.zip':
@@ -360,7 +367,7 @@ def push(tid, user, scheme, host):
         try:
             _git = Git(db_git, tid, user)
             _git.init_repos()
-            _git.push(scheme, host, db_task, db_task.updated_date)
+            _git.push(user, scheme, host, db_task, db_task.updated_date)
 
             # Update timestamp
             db_git.sync_date = db_task.updated_date

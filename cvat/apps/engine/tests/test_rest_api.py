@@ -340,10 +340,12 @@ class ServerExceptionAPITestCase(APITestCase):
             "stack": ""
         }
 
-    @mock.patch("cvat.apps.engine.views.clogger")
-    def _run_api_v1_server_exception(self, user, clogger):
+    def _run_api_v1_server_exception(self, user):
         with ForceLogin(user, self.client):
-            response = self.client.post('/api/v1/server/exception', self.data, format='json')
+            #pylint: disable=unused-variable
+            with mock.patch("cvat.apps.engine.views.clogger") as clogger:
+                response = self.client.post('/api/v1/server/exception',
+                    self.data, format='json')
 
         return response
 
@@ -386,10 +388,12 @@ class ServerLogsAPITestCase(APITestCase):
             "is_active": True,
         }]
 
-    @mock.patch("cvat.apps.engine.views.clogger")
-    def _run_api_v1_server_logs(self, user, clogger):
+    def _run_api_v1_server_logs(self, user):
         with ForceLogin(user, self.client):
-            response = self.client.post('/api/v1/server/logs', self.data, format='json')
+            #pylint: disable=unused-variable
+            with mock.patch("cvat.apps.engine.views.clogger") as clogger:
+                response = self.client.post('/api/v1/server/logs',
+                    self.data, format='json')
 
         return response
 
