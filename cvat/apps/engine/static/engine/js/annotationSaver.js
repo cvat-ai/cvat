@@ -346,7 +346,7 @@ class AnnotationSaverView {
         });
 
         window.onbeforeunload = (e) => {
-            if (this._controller.hasUnsavedChanges()) {
+            if (this._controller.hasUnsavedChanges()) { // eslint-disable-line react/no-this-in-sfc
                 const message = 'You have unsaved changes. Leave this page?';
                 e.returnValue = message;
                 return message;
