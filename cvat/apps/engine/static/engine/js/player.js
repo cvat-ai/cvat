@@ -882,12 +882,14 @@ class PlayerView {
                 copyToClipboard(window.cvat.search.toString());
                 break;
             }
-            case 'frame_url':
+            case 'frame_url': {
                 window.cvat.search.set('frame', window.cvat.player.frames.current);
                 window.cvat.search.set('filter', null);
                 copyToClipboard(window.cvat.search.toString());
                 window.cvat.search.set('frame', null);
                 break;
+            }
+            default:
             }
         });
 
