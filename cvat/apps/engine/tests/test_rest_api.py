@@ -342,6 +342,7 @@ class ServerExceptionAPITestCase(APITestCase):
 
     def _run_api_v1_server_exception(self, user):
         with ForceLogin(user, self.client):
+            #pylint: disable=unused-variable
             with mock.patch("cvat.apps.engine.views.clogger") as clogger:
                 response = self.client.post('/api/v1/server/exception',
                     self.data, format='json')
@@ -389,6 +390,7 @@ class ServerLogsAPITestCase(APITestCase):
 
     def _run_api_v1_server_logs(self, user):
         with ForceLogin(user, self.client):
+            #pylint: disable=unused-variable
             with mock.patch("cvat.apps.engine.views.clogger") as clogger:
                 response = self.client.post('/api/v1/server/logs',
                     self.data, format='json')
