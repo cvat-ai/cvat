@@ -391,10 +391,8 @@ class PlayerModel extends Listener {
         if (!this._frameProvider.require(this._frame.current)) return;
 
         const oldScale = this._geometry.scale;
-        this._geometry.scale = Math.clamp(
-            value > 0 ? this._geometry.scale * 6 / 5 : this._geometry.scale * 5 / 6,
-            MIN_PLAYER_SCALE, MAX_PLAYER_SCALE,
-        );
+        const newScale = value > 0 ? this._geometry.scale * 6 / 5 : this._geometry.scale * 5 / 6;
+        this._geometry.scale = Math.clamp(newScale, MIN_PLAYER_SCALE, MAX_PLAYER_SCALE);
 
         this._geometry.left += (point.x * (oldScale / this._geometry.scale - 1)) * this._geometry.scale;
         this._geometry.top += (point.y * (oldScale / this._geometry.scale - 1)) * this._geometry.scale;
