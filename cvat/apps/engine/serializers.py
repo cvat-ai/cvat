@@ -18,6 +18,7 @@ class AttributeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'mutable', 'input_type', 'default_value',
             'values')
 
+    # pylint: disable=no-self-use
     def to_internal_value(self, data):
         attribute = data.copy()
         attribute['values'] = '\n'.join(data.get('values', []))
@@ -67,9 +68,11 @@ class ClientFileSerializer(serializers.ModelSerializer):
         model = models.ClientFile
         fields = ('file', )
 
+    # pylint: disable=no-self-use
     def to_internal_value(self, data):
         return {'file': data}
 
+    # pylint: disable=no-self-use
     def to_representation(self, instance):
         upload_dir = instance.task.get_upload_dirname()
         return instance.file.path[len(upload_dir) + 1:]
@@ -109,6 +112,7 @@ class TaskDataSerializer(serializers.ModelSerializer):
         model = models.Task
         fields = ('client_files', 'server_files', 'remote_files')
 
+    # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         client_files = validated_data.pop('clientfile_set')
         server_files = validated_data.pop('serverfile_set')

@@ -274,7 +274,7 @@ class ShapeCollectionModel extends Listener {
                 Object.assign(shape, window.cvat.translate.points.clientToServer(shape));
             }
 
-            for (let attr of shape.attributes) {
+            for (const attr of shape.attributes) {
                 attr.spec_id = attr.id;
                 delete attr.id;
             }
@@ -282,7 +282,7 @@ class ShapeCollectionModel extends Listener {
 
         const data = {
             shapes: [],
-            tracks: []
+            tracks: [],
         };
 
         const mapping = [];
