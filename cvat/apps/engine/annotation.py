@@ -165,7 +165,7 @@ def _merge_table_rows(rows, keys_for_merge, field_id):
 
         for key in keys_for_merge:
             item = dotdict({v.split('__', 1)[-1]:row[v] for v in keys_for_merge[key]})
-            if item.id:
+            if item.id is not None:
                 merged_rows[row_id][key].append(item)
 
     # Remove redundant keys from final objects
@@ -556,6 +556,14 @@ class JobAnnotation:
                 ]
             }, 'id')
 
+            # A result table can consist many equal rows for track/shape attributes
+            # We need filter unique attributes manually
+            db_track["labeledtrackattributeval_set"] = list(set(db_track["labeledtrackattributeval_set"]))
+            for db_shape in db_track["trackedshape_set"]:
+                db_shape["trackedshapeattributeval_set"] = list(
+                    set(db_shape["trackedshapeattributeval_set"])
+                )
+
         serializer = serializers.LabeledTrackSerializer(db_tracks, many=True)
         self.data["tracks"] = serializer.data
 
@@ -924,8 +932,9 @@ class ShapeManager(ObjectManager):
             shape0 = copy.copy(shape)
             shape0["keyframe"] = True
             shape0["outside"] = False
+            # TODO: Separate attributes on mutable and unmutable
+            shape0["attributes"] = []
             shape0.pop("group", None)
-            shape0.pop("attributes")
             shape1 = copy.copy(shape0)
             shape1["outside"] = True
             shape1["frame"] += 1
@@ -1099,15 +1108,17 @@ class TrackManager(ObjectManager):
         curr_frame = track["shapes"][0]["frame"]
         prev_shape = {}
         for shape in track["shapes"]:
-            if shape["frame"] != curr_frame:
+            if prev_shape:
                 assert shape["frame"] > curr_frame
+                for attr in prev_shape["attributes"]:
+                    if attr["spec_id"] not in map(lambda el: el["spec_id"], shape["attributes"]):
+                        shape["attributes"].append(copy.deepcopy(attr))
                 if not prev_shape["outside"]:
                     shapes.extend(interpolate(prev_shape, shape))
 
-            if not shape["outside"]:
-                shape["keyframe"] = True
-                shapes.append(shape)
-            curr_frame = shape["frame"] + 1
+            shape["keyframe"] = True
+            shapes.append(shape)
+            curr_frame = shape["frame"]
             prev_shape = shape
 
         # TODO: Need to modify a client and a database (append "outside" shapes for polytracks)
