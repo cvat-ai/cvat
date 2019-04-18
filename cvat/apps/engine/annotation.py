@@ -929,8 +929,8 @@ class ShapeManager(ObjectManager):
             shape0 = copy.copy(shape)
             shape0["keyframe"] = True
             shape0["outside"] = False
+            shape0["attributes"] = []
             shape0.pop("group", None)
-            shape0.pop("attributes")
             shape1 = copy.copy(shape0)
             shape1["outside"] = True
             shape1["frame"] += 1
