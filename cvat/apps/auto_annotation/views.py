@@ -155,7 +155,7 @@ def get_meta_info(request):
             job = queue.fetch_job(rq_id)
             if job is not None:
                 response["run"][tid] = {
-                    "status": job.status,
+                    "status": job.get_status(),
                     "rq_id": rq_id,
                 }
 
@@ -214,6 +214,7 @@ def start_annotation(request, mid, tid):
                 db_attributes,
                 convertation_file_path,
                 should_reset,
+                request.user,
             ),
             job_id = rq_id,
             timeout=604800)     # 7 days
