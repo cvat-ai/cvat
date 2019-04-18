@@ -192,7 +192,7 @@ def convert_to_cvat_format(data):
 
     return result
 
-def create_thread(tid, labels_mapping):
+def create_thread(tid, labels_mapping, user):
     try:
         TRESHOLD = 0.5
         # Init rq job
@@ -217,7 +217,7 @@ def create_thread(tid, labels_mapping):
         result = convert_to_cvat_format(result)
         serializer = LabeledDataSerializer(data = result)
         if serializer.is_valid(raise_exception=True):
-            put_task_data(tid, result)
+            put_task_data(tid, user, result)
         slogger.glob.info('tf annotation for task {} done'.format(tid))
     except Exception as ex:
         try:
@@ -290,7 +290,7 @@ def create(request, tid):
 
         # Run tf annotation job
         queue.enqueue_call(func=create_thread,
-            args=(tid, labels_mapping),
+            args=(tid, labels_mapping, request.user),
             job_id='tf_annotation.create/{}'.format(tid),
             timeout=604800)     # 7 days
 

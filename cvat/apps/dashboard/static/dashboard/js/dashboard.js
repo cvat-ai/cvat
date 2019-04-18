@@ -355,6 +355,10 @@ class DashboardView {
                     dashboardList.append(taskView.render(baseURL));
                 }
 
+                window.dispatchEvent(new CustomEvent('dashboardReady', {
+                    detail: JSON.parse(JSON.stringify(pageList))
+                }));
+
                 const pages = $('.paginationjs-pages');
                 pages.css('margin-left', (window.screen.width - pages.width()) / 2);
             }
@@ -818,9 +822,6 @@ window.addEventListener('DOMContentLoaded', () => {
     ).then((metaData, taskData) => {
         try {
             new DashboardView(metaData[0], taskData[0]);
-            window.dispatchEvent(new CustomEvent('dashboardReady', {
-                detail: JSON.parse(JSON.stringify(taskData[0].results))
-            }));
         }
         catch(exception) {
             $('#content').empty();

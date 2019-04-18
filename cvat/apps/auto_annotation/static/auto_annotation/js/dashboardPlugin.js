@@ -703,12 +703,13 @@ window.cvat.autoAnnotation = {
     managerButtonId: 'annotatorManagerButton',
 };
 
-
-window.addEventListener('dashboardReady', (event) => {
+window.addEventListener('DOMContentLoaded', () => {
     window.cvat.autoAnnotation.server = AutoAnnotationServer;
     window.cvat.autoAnnotation.manager = new AutoAnnotationModelManagerView();
     window.cvat.autoAnnotation.runner = new AutoAnnotationModelRunnerView();
+});
 
+window.addEventListener('dashboardReady', (event) => {
     const elements = $('.dashboardItem');
     const tids = Array.from(elements, el => +el.getAttribute('tid'));
 
