@@ -24,11 +24,14 @@ class AnnotationSaverModel extends Listener {
 
         this._hash = this._getHash();
 
-        for (const shape of initialData.shapes) {
+        // We need use data from export instead of initialData
+        // Otherwise we have differ keys order and JSON comparison code incorrect
+        const data = this._shapeCollection.export()[0];
+        for (const shape of data.shapes) {
             this._initialObjects[shape.id] = shape;
         }
 
-        for (const track of initialData.tracks) {
+        for (const track of data.tracks) {
             this._initialObjects[track.id] = track;
         }
     }
@@ -177,6 +180,7 @@ class AnnotationSaverModel extends Listener {
     }
 
     _updateCreatedObjects(objectsToSave, savedObjects, mapping) {
+        // Method setups IDs of created objects after saving on a server
         const allSavedObjects = savedObjects.shapes.concat(savedObjects.tracks);
         const allObjectsToSave = objectsToSave.shapes.concat(objectsToSave.tracks);
         if (allSavedObjects.length !== allObjectsToSave.length) {
@@ -185,7 +189,9 @@ class AnnotationSaverModel extends Listener {
 
         for (let idx = 0; idx < allSavedObjects.length; idx += 1) {
             const objectModel = mapping.filter(el => el[0] === allObjectsToSave[idx])[0][1];
-            objectModel.serverID = allSavedObjects[idx].id;
+            const { id } = allSavedObjects[idx];
+            objectModel.serverID = id;
+            allObjectsToSave[idx].id = id;
         }
 
         this._shapeCollection.update();
@@ -218,6 +224,7 @@ class AnnotationSaverModel extends Listener {
                 const savedObjects = await this._put(data);
                 this._updateCreatedObjects(exported, savedObjects, mapping);
                 this._shapeCollection.flush = false;
+                this._version = savedObjects.version;
                 for (const object of savedObjects.shapes.concat(savedObjects.tracks)) {
                     this._initialObjects[object.id] = object;
                 }
@@ -228,13 +235,15 @@ class AnnotationSaverModel extends Listener {
                 this.notify('saveCreated');
                 const savedCreated = await this._create(created);
                 this._updateCreatedObjects(created, savedCreated, mapping);
-                for (const object of savedCreated.shapes.concat(savedCreated.tracks)) {
+                this._version = savedCreated.version;
+                for (const object of created.shapes.concat(created.tracks)) {
                     this._initialObjects[object.id] = object;
                 }
 
                 this.notify('saveUpdated');
                 const savedUpdated = await this._update(updated);
-                for (const object of savedUpdated.shapes.concat(savedUpdated.tracks)) {
+                this._version = savedUpdated.version;
+                for (const object of updated.shapes.concat(updated.tracks)) {
                     if (object.id in this._initialObjects) {
                         this._initialObjects[object.id] = object;
                     }
@@ -242,6 +251,7 @@ class AnnotationSaverModel extends Listener {
 
                 this.notify('saveDeleted');
                 const savedDeleted = await this._delete(deleted);
+                this._version = savedDeleted.version;
                 for (const object of savedDeleted.shapes.concat(savedDeleted.tracks)) {
                     if (object.id in this._initialObjects) {
                         delete this._initialObjects[object.id];
