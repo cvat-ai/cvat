@@ -234,10 +234,10 @@ class AnnotationParser {
                             group: +group,
                             attributes: attributeList,
                             type: 'rectangle',
+                            z_order: zOrder,
                             frame,
                             occluded,
                             points,
-                            zOrder,
                         });
                     } else {
                         const [points, occluded, zOrder] = this._getPolyPosition(shape, frame);
@@ -246,10 +246,10 @@ class AnnotationParser {
                             group: +group,
                             attributes: attributeList,
                             type: shapeType,
+                            z_order: zOrder,
                             frame,
                             points,
                             occluded,
-                            zOrder,
                         });
                     }
                 }
