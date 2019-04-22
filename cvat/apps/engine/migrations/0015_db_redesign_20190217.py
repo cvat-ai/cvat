@@ -10,8 +10,9 @@ def set_segment_size(apps, schema_editor):
     Task = apps.get_model('engine', 'Task')
     for task in Task.objects.all():
         segment = task.segment_set.first()
-        task.segment_size = segment.stop_frame - segment.start_frame + 1
-        task.save()
+        if segment:
+            task.segment_size = segment.stop_frame - segment.start_frame + 1
+            task.save()
 
 class Migration(migrations.Migration):
 
