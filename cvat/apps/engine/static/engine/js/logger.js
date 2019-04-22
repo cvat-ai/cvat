@@ -66,7 +66,7 @@ class LoggerHandler {
     }
 
     addEvent(event) {
-            this._pushEvent(event);
+        this._pushEvent(event);
     }
 
     addContinuedEvent(event) {
@@ -102,11 +102,14 @@ class LoggerHandler {
                     }
                 };
                 xhr.onload = () => {
-                    if (xhr.status == 200) {
-                        resolve(xhr.response);
-                    }
-                    else {
-                        onreject();
+                    switch (xhr.status) {
+                        case 200:
+                        case 403: // ignore forbidden response
+                            resolve(xhr.response);
+                            break;
+
+                        default:
+                            onreject();
                     }
                 };
                 xhr.onerror = () => {
