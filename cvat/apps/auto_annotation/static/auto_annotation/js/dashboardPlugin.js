@@ -707,6 +707,14 @@ window.addEventListener('DOMContentLoaded', () => {
     window.cvat.autoAnnotation.server = AutoAnnotationServer;
     window.cvat.autoAnnotation.manager = new AutoAnnotationModelManagerView();
     window.cvat.autoAnnotation.runner = new AutoAnnotationModelRunnerView();
+
+    $('body').append(window.cvat.autoAnnotation.manager.element, window.cvat.autoAnnotation.runner.element);
+    $(`<button id="${window.cvat.autoAnnotation.managerButtonId}" class="regular h1" style=""> Model Manager</button>`)
+        .on('click', () => {
+            const overlay = showOverlay('The manager are being setup..');
+            window.cvat.autoAnnotation.manager.reset().show();
+            overlay.remove();
+        }).appendTo('#dashboardManageButtons');
 });
 
 window.addEventListener('dashboardReady', (event) => {
@@ -715,13 +723,6 @@ window.addEventListener('dashboardReady', (event) => {
 
     window.cvat.autoAnnotation.server.meta(tids, (data) => {
         window.cvat.autoAnnotation.data = data;
-        $('body').append(window.cvat.autoAnnotation.manager.element, window.cvat.autoAnnotation.runner.element);
-        $(`<button id="${window.cvat.autoAnnotation.managerButtonId}" class="regular h1" style=""> Model Manager</button>`)
-            .on('click', () => {
-                const overlay = showOverlay('The manager are being setup..');
-                window.cvat.autoAnnotation.manager.reset().show();
-                overlay.remove();
-            }).appendTo('#dashboardManageButtons');
 
         elements.each(function setupDashboardItem() {
             const elem = $(this);
