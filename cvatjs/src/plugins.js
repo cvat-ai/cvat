@@ -11,6 +11,7 @@
     const plugins = [];
     class PluginRegistry {
         static async apiWrapper(wrappedFunc, ...args) {
+            // I have to optimize the wrapper
             const pluginList = await global.cvat.plugins.list.implementation();
             for (const plugin of pluginList) {
                 const pluginDecorators = plugin.functions
@@ -34,16 +35,16 @@
         }
 
         static async register(plug) {
-            plug.functions = [];
+            const functions = [];
 
             (function traverse(plugin, api) {
                 if (typeof (plugin) !== 'object') {
                     throw Error(`Plugin should be an object, but got ${typeof (plugin)}`);
                 }
 
+                const decorator = {};
                 for (const key in plugin) {
                     if (Object.prototype.hasOwnProperty.call(plugin, key)) {
-                        const decorator = {};
                         if (typeof (plugin[key]) === 'object') {
                             if (Object.prototype.hasOwnProperty.call(api, key)) {
                                 traverse(plugin[key], api[key]);
@@ -53,13 +54,21 @@
                             && typeof (plugin[key] === 'function')) {
                             decorator.callback = api;
                             decorator[key] = plugin[key];
-                            plug.functions.push(decorator);
                         }
                     }
+                }
+
+                if (Object.keys(decorator).length) {
+                    functions.push(decorator);
                 }
             }(plug, {
                 cvat: global.cvat,
             }));
+
+            Object.defineProperty(plug, 'functions', {
+                value: functions,
+                writable: false,
+            });
 
             plugins.push(plug);
         }

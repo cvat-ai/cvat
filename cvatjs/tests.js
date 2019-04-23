@@ -8,6 +8,6 @@
     global:false
 */
 
-require("./dist/cvat")
+require('./src/api');
 
 console.log('Tests have been passed');

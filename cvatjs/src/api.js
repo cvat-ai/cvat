@@ -423,11 +423,14 @@ const plugin = {
     cvat: {
         server: {
             about: {
-                leave(self, result) {
+                async leave(self, result) {
                     result.itworks = true;
                     console.log(result);
                     console.log(self);
                     return result;
+                },
+                async enter() {
+                    console.log('hohoho');
                 },
             },
         },
