@@ -11,8 +11,6 @@
 */
 
 window.cvat = window.cvat || {};
-window.cvat.dashboard = window.cvat.dashboard || {};
-window.cvat.dashboard.uiCallbacks = window.cvat.dashboard.uiCallbacks || [];
 
 const AutoAnnotationServer = {
     start(modelId, taskId, data, success, error, progress, check) {
@@ -602,7 +600,7 @@ class AutoAnnotationModelRunnerView {
 
         this.id = null;
         this.initButton = initButton;
-        this.tid = data.taskid;
+        this.tid = data.id;
         this.modelsTable.empty();
         this.labelsTable.empty();
         this.active = null;
@@ -617,7 +615,7 @@ class AutoAnnotationModelRunnerView {
             this.active.style.color = 'darkblue';
 
             this.labelsTable.empty();
-            const labels = Object.values(event.data.data.spec.labels);
+            const labels = event.data.data.labels.map(x => x.name);
             const intersection = labels.filter(el => event.data.model.labels.indexOf(el) !== -1);
             intersection.forEach((label) => {
                 const dlSelect = labelsSelect(event.data.model.labels, 'annotatorDlLabelSelector');
@@ -705,47 +703,37 @@ window.cvat.autoAnnotation = {
     managerButtonId: 'annotatorManagerButton',
 };
 
-window.cvat.dashboard.uiCallbacks.push((newElements) => {
+window.addEventListener('DOMContentLoaded', () => {
     window.cvat.autoAnnotation.server = AutoAnnotationServer;
     window.cvat.autoAnnotation.manager = new AutoAnnotationModelManagerView();
     window.cvat.autoAnnotation.runner = new AutoAnnotationModelRunnerView();
 
-    const tids = Array.from(newElements, el => el.id.split('_')[1]);
+    $('body').append(window.cvat.autoAnnotation.manager.element, window.cvat.autoAnnotation.runner.element);
+    $(`<button id="${window.cvat.autoAnnotation.managerButtonId}" class="regular h1" style=""> Model Manager</button>`)
+        .on('click', () => {
+            const overlay = showOverlay('The manager are being setup..');
+            window.cvat.autoAnnotation.manager.reset().show();
+            overlay.remove();
+        }).appendTo('#dashboardManageButtons');
+});
+
+window.addEventListener('dashboardReady', (event) => {
+    const elements = $('.dashboardItem');
+    const tids = Array.from(elements, el => +el.getAttribute('tid'));
 
     window.cvat.autoAnnotation.server.meta(tids, (data) => {
         window.cvat.autoAnnotation.data = data;
-        $('body').append(window.cvat.autoAnnotation.manager.element, window.cvat.autoAnnotation.runner.element);
-        $(`<button id="${window.cvat.autoAnnotation.managerButtonId}" class="regular h1" style=""> Model Manager</button>`)
-            .on('click', () => {
-                const overlay = showOverlay('The manager are being setup..');
-                window.cvat.autoAnnotation.manager.reset().show();
-                overlay.remove();
-            }).appendTo('#dashboardManageButtons');
 
-        newElements.each((_, element) => {
-            const elem = $(element);
-            const tid = +elem.attr('id').split('_')[1];
+        elements.each(function setupDashboardItem() {
+            const elem = $(this);
+            const tid = +elem.attr('tid');
 
             const button = $('<button> Run Auto Annotation </button>').addClass('regular dashboardButtonUI');
             button[0].setupRun = function setupRun() {
                 const self = $(this);
+                const taskInfo = event.detail.filter(task => task.id === tid)[0];
                 self.text('Run Auto Annotation').off('click').on('click', () => {
-                    const overlay = showOverlay('Task date are being recieved from the server..');
-                    $.ajax({
-                        url: `/get/task/${tid}`,
-                        dataType: 'json',
-                        success: (responseData) => {
-                            overlay.setMessage('The model runner are being setup..');
-                            window.cvat.autoAnnotation.runner.reset(responseData, self).show();
-                            overlay.remove();
-                        },
-                        error: (responseData) => {
-                            showMessage(`Can't get task data. Code: ${responseData.status}. Message: ${responseData.responseText || responseData.statusText}`);
-                        },
-                        complete: () => {
-                            overlay.remove();
-                        },
-                    });
+                    window.cvat.autoAnnotation.runner.reset(taskInfo, self).show();
                 });
             };
 

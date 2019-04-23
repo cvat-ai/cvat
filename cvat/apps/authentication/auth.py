@@ -4,8 +4,10 @@
 
 import os
 from django.conf import settings
+from django.db.models import Q
 import rules
 from . import AUTH_ROLE
+from rest_framework.permissions import BasePermission
 
 def register_signals():
     from django.db.models.signals import post_migrate, post_save
@@ -67,6 +69,11 @@ def is_job_annotator(db_user, db_job):
     return has_rights
 
 # AUTH PERMISSIONS RULES
+rules.add_perm('engine.role.user', has_user_role)
+rules.add_perm('engine.role.admin', has_admin_role)
+rules.add_perm('engine.role.annotator', has_annotator_role)
+rules.add_perm('engine.role.observer', has_observer_role)
+
 rules.add_perm('engine.task.create', has_admin_role | has_user_role)
 rules.add_perm('engine.task.access', has_admin_role | has_observer_role |
     is_task_owner | is_task_annotator)
@@ -78,3 +85,64 @@ rules.add_perm('engine.job.access', has_admin_role | has_observer_role |
     is_job_owner | is_job_annotator)
 rules.add_perm('engine.job.change', has_admin_role | is_job_owner |
     is_job_annotator)
+
+class AdminRolePermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_permission(self, request, view):
+        return request.user.has_perm("engine.role.admin")
+
+class UserRolePermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_permission(self, request, view):
+        return request.user.has_perm("engine.role.user")
+
+class AnnotatorRolePermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_permission(self, request, view):
+        return request.user.has_perm("engine.role.annotator")
+
+class ObserverRolePermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_permission(self, request, view):
+        return request.user.has_perm("engine.role.observer")
+
+class TaskCreatePermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_permission(self, request, view):
+        return request.user.has_perm("engine.task.create")
+
+class TaskAccessPermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.task.access", obj)
+
+class TaskGetQuerySetMixin(object):
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        # Don't filter queryset for admin, observer and detail methods
+        if has_admin_role(user) or has_observer_role(user) or self.detail:
+            return queryset
+        else:
+            return queryset.filter(Q(owner=user) | Q(assignee=user) |
+                Q(segment__job__assignee=user) | Q(assignee=None)).distinct()
+
+class TaskChangePermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.task.change", obj)
+
+class TaskDeletePermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.task.delete", obj)
+
+class JobAccessPermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.job.access", obj)
+
+class JobChangePermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.job.change", obj)

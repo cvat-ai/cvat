@@ -15,6 +15,7 @@
     Mousetrap:false
     ShapeCollectionView:false
     SVG:false
+    LabelsInfo:false
 */
 
 "use strict";
@@ -28,10 +29,11 @@ const TEXT_MARGIN = 10;
 /******************************** SHAPE MODELS  ********************************/
 
 class ShapeModel extends Listener {
-    constructor(data, positions, type, id, color) {
+    constructor(data, positions, type, clientID, color) {
         super('onShapeUpdate', () => this );
-        this._id = id;
-        this._groupId = data.group_id;
+        this._serverID = data.id;
+        this._id = clientID;
+        this._groupId = data.group || 0;
         this._type = type;
         this._color = color;
         this._label = data.label_id;
@@ -70,30 +72,28 @@ class ShapeModel extends Listener {
             if (attrInfo.mutable) {
                 this._attributes.mutable[this._frame] = this._attributes.mutable[this._frame] || {};
                 this._attributes.mutable[this._frame][attrId] = attrInfo.values[0];
-            }
-            else {
+            } else {
                 this._attributes.immutable[attrId] = attrInfo.values[0];
             }
         }
 
         for (let attrId in attributes) {
             let attrInfo = labelsInfo.attrInfo(attrId);
+            const labelValue = LabelsInfo.normalize(attrInfo.type, attributes[attrId]);
             if (attrInfo.mutable) {
-                this._attributes.mutable[this._frame][attrId] = labelsInfo.strToValues(attrInfo.type, attributes[attrId])[0];
-            }
-            else {
-                this._attributes.immutable[attrId] = labelsInfo.strToValues(attrInfo.type, attributes[attrId])[0];
+                this._attributes.mutable[this._frame][attrId] = labelValue;
+            } else {
+                this._attributes.immutable[attrId] = labelValue;
             }
         }
 
-        for (let pos of positions) {
-            let frame = pos.frame;
-            let attributes = pos.attributes;
-            for (let attr of attributes) {
-                let attrInfo = labelsInfo.attrInfo(attr.id);
+        for (const pos of positions) {
+            for (const attr of pos.attributes) {
+                const attrInfo = labelsInfo.attrInfo(attr.id);
                 if (attrInfo.mutable) {
-                    this._attributes.mutable[frame] = this._attributes.mutable[frame] || {};
-                    this._attributes.mutable[frame][attr.id] = labelsInfo.strToValues(attrInfo.type, attr.value)[0];
+                    this._attributes.mutable[pos.frame] = this._attributes.mutable[pos.frame] || {};
+                    const labelValue = LabelsInfo.normalize(attrInfo.type, attr.value);
+                    this._attributes.mutable[pos.frame][attr.id] = labelValue;
                 }
             }
         }
@@ -264,11 +264,10 @@ class ShapeModel extends Listener {
 
         if (attrInfo.mutable) {
             this._attributes.mutable[frame] = this._attributes.mutable[frame]|| {};
-            this._attributes.mutable[frame][attrId] = labelsInfo.strToValues(attrInfo.type, value)[0];
+            this._attributes.mutable[frame][attrId] = LabelsInfo.normalize(attrInfo.type, value);
             this._setupKeyFrames();
-        }
-        else {
-            this._attributes.immutable[attrId] = labelsInfo.strToValues(attrInfo.type, value)[0];
+        } else {
+            this._attributes.immutable[attrId] = LabelsInfo.normalize(attrInfo.type, value);
         }
 
         this.notify('attributes');
@@ -476,8 +475,7 @@ class ShapeModel extends Listener {
         this.removed = true;
 
         // Undo/redo code
-        window.cvat.addAction('Remove Object', (self) => {
-            this.id = self.generateId();
+        window.cvat.addAction('Remove Object', () => {
             this.removed = false;
         }, () => {
             this.removed = true;
@@ -498,6 +496,7 @@ class ShapeModel extends Listener {
     set removed(value) {
         if (value) {
             this._active = false;
+            this._serverID = undefined;
         }
 
         this._removed = value;
@@ -578,6 +577,14 @@ class ShapeModel extends Listener {
         this._id = value;
     }
 
+    get serverID() {
+        return this._serverID;
+    }
+
+    set serverID(value) {
+        this._serverID = value;
+    }
+
     get frame() {
         return this._frame;
     }
@@ -605,8 +612,8 @@ class ShapeModel extends Listener {
 
 
 class BoxModel extends ShapeModel {
-    constructor(data, type, id, color) {
-        super(data, data.shapes || [], type, id, color);
+    constructor(data, type, clientID, color) {
+        super(data, data.shapes || [], type, clientID, color);
         this._positions = BoxModel.importPositions.call(this, data.shapes || data);
         this._setupKeyFrames();
     }
@@ -748,61 +755,62 @@ class BoxModel extends ShapeModel {
     }
 
     export() {
-        let immutableAttributes = [];
-        for (let attrId in this._attributes.immutable) {
-            immutableAttributes.push({
-                id: +attrId,
-                value: this._attributes.immutable[attrId],
+        const objectAttributes = [];
+        for (let attributeId in this._attributes.immutable) {
+            objectAttributes.push({
+                id: +attributeId,
+                value: String(this._attributes.immutable[attributeId]),
             });
         }
 
         if (this._type === 'annotation_box') {
             if (this._frame in this._attributes.mutable) {
                 for (let attrId in this._attributes.mutable[this._frame]) {
-                    immutableAttributes.push({
+                    objectAttributes.push({
                         id: +attrId,
-                        value: this._attributes.mutable[this._frame][attrId],
+                        value: String(this._attributes.mutable[this._frame][attrId]),
                     });
                 }
             }
 
-            return Object.assign({}, this._positions[this._frame], {
-                id: this._id,
-                attributes: immutableAttributes,
+            return Object.assign({}, {
+                id: this._serverID,
+                attributes: objectAttributes,
                 label_id: this._label,
-                group_id: this._groupId,
+                group: this._groupId,
                 frame: this._frame,
-            });
+                type: 'box',
+            }, this._positions[this._frame]);
         }
         else {
-            let boxPath = {
-                id: this._id,
+            const track = {
+                id: this._serverID,
                 label_id: this._label,
-                group_id: this._groupId,
+                group: this._groupId,
                 frame: this._frame,
-                attributes: immutableAttributes,
+                attributes: objectAttributes,
                 shapes: [],
             };
 
             for (let frame in this._positions) {
-                let mutableAttributes = [];
+                const shapeAttributes = [];
                 if (frame in this._attributes.mutable) {
                     for (let attrId in this._attributes.mutable[frame]) {
-                        mutableAttributes.push({
+                        shapeAttributes.push({
                             id: +attrId,
-                            value: this._attributes.mutable[frame][attrId],
+                            value: String(this._attributes.mutable[frame][attrId]),
                         });
                     }
                 }
 
-                let position = Object.assign({}, this._positions[frame], {
-                    attributes: mutableAttributes,
+                track.shapes.push(Object.assign({}, {
                     frame: +frame,
-                });
-                boxPath.shapes.push(position);
+                    type: 'box',
+                    attributes: shapeAttributes,
+                }, this._positions[frame]));
             }
 
-            return boxPath;
+            return track;
         }
     }
 
@@ -868,8 +876,8 @@ class BoxModel extends ShapeModel {
 }
 
 class PolyShapeModel extends ShapeModel {
-    constructor(data, type, id, color) {
-        super(data, data.shapes || [], type, id, color);
+    constructor(data, type, clientID, color) {
+        super(data, data.shapes || [], type, clientID, color);
         this._positions = PolyShapeModel.importPositions.call(this, data.shapes || data);
         this._setupKeyFrames();
     }
@@ -972,62 +980,62 @@ class PolyShapeModel extends ShapeModel {
     }
 
     export() {
-        let immutableAttributes = [];
+        const objectAttributes = [];
         for (let attrId in this._attributes.immutable) {
-            immutableAttributes.push({
+            objectAttributes.push({
                 id: +attrId,
-                value: this._attributes.immutable[attrId],
+                value: String(this._attributes.immutable[attrId]),
             });
         }
 
         if (this._type.startsWith('annotation')) {
             if (this._frame in this._attributes.mutable) {
                 for (let attrId in this._attributes.mutable[this._frame]) {
-                    immutableAttributes.push({
+                    objectAttributes.push({
                         id: +attrId,
-                        value: this._attributes.mutable[this._frame][attrId],
+                        value: String(this._attributes.mutable[this._frame][attrId]),
                     });
                 }
             }
 
-            return Object.assign({}, this._positions[this._frame], {
-                id: this._id,
-                attributes: immutableAttributes,
+            return Object.assign({}, {
+                id: this._serverID,
+                attributes: objectAttributes,
                 label_id: this._label,
-                group_id: this._groupId,
+                group: this._groupId,
                 frame: this._frame,
-            });
+                type: this._type.split('_')[1],
+            }, this._positions[this._frame]);
         }
         else {
-            let polyPath = {
-                id: this._id,
+            const track = {
+                id: this._serverID,
+                attributes: objectAttributes,
                 label_id: this._label,
-                group_id: this._groupId,
+                group: this._groupId,
                 frame: this._frame,
-                attributes: immutableAttributes,
                 shapes: [],
             };
 
             for (let frame in this._positions) {
-                let mutableAttributes = [];
+                let shapeAttributes = [];
                 if (frame in this._attributes.mutable) {
                     for (let attrId in this._attributes.mutable[frame]) {
-                        mutableAttributes.push({
+                        shapeAttributes.push({
                             id: +attrId,
-                            value: this._attributes.mutable[frame][attrId],
+                            value: String(this._attributes.mutable[frame][attrId]),
                         });
                     }
                 }
 
-                let position = Object.assign({}, this._positions[frame], {
-                    attributes: mutableAttributes,
+                track.shapes.push(Object.assign({
                     frame: +frame,
-                });
-
-                polyPath.shapes.push(position);
+                    attributes: shapeAttributes,
+                    type: this._type.split('_')[1],
+                }, this._positions[frame]));
             }
 
-            return polyPath;
+            return track;
         }
     }
 
@@ -1132,8 +1140,8 @@ class PolyShapeModel extends ShapeModel {
 }
 
 class PointsModel extends PolyShapeModel {
-    constructor(data, type, id, color) {
-        super(data, type, id, color);
+    constructor(data, type, clientID, color) {
+        super(data, type, clientID, color);
         this._minPoints = 1;
     }
 
@@ -1158,8 +1166,8 @@ class PointsModel extends PolyShapeModel {
 
 
 class PolylineModel extends PolyShapeModel {
-    constructor(data, type, id, color) {
-        super(data, type, id, color);
+    constructor(data, type, clientID, color) {
+        super(data, type, clientID, color);
         this._minPoints = 2;
     }
 
@@ -3237,20 +3245,20 @@ class PointsView extends PolyShapeView {
     }
 }
 
-function buildShapeModel(data, type, idx, color) {
+function buildShapeModel(data, type, clientID, color) {
     switch (type) {
     case 'interpolation_box':
     case 'annotation_box':
-        return new BoxModel(data, type, idx, color);
+        return new BoxModel(data, type, clientID, color);
     case 'interpolation_points':
     case 'annotation_points':
-        return new PointsModel(data, type, idx, color);
+        return new PointsModel(data, type, clientID, color);
     case 'interpolation_polyline':
     case 'annotation_polyline':
-        return new PolylineModel(data, type, idx, color);
+        return new PolylineModel(data, type, clientID, color);
     case 'interpolation_polygon':
     case 'annotation_polygon':
-        return new PolygonModel(data, type, idx, color);
+        return new PolygonModel(data, type, clientID, color);
     }
     throw Error('Unreacheable code was reached.');
 }

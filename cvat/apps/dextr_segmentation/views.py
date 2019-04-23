@@ -8,7 +8,6 @@ from rules.contrib.views import permission_required, objectgetter
 
 from cvat.apps.engine.models import Job
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.task import get_frame_path
 from cvat.apps.dextr_segmentation.dextr import DEXTR_HANDLER
 
 import django_rq
@@ -39,8 +38,8 @@ def create(request, jid):
         slogger.job[jid].info("create dextr request for the JOB: {} ".format(jid)
             + "by the USER: {} on the FRAME: {}".format(username, frame))
 
-        tid = Job.objects.select_related("segment__task").get(id=jid).segment.task.id
-        im_path = os.path.realpath(get_frame_path(tid, frame))
+        db_task = Job.objects.select_related("segment__task").get(id=jid).segment.task
+        im_path = os.path.realpath(db_task.get_frame_path(frame))
 
         queue = django_rq.get_queue(__RQ_QUEUE_NAME)
         rq_id = "dextr.create/{}/{}".format(jid, username)

@@ -16,7 +16,8 @@ from django.conf import settings
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task as TaskModel
-from cvat.apps.engine import annotation
+from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.engine.annotation import put_task_data, patch_task_data
 
 from .models import AnnotationModel, FrameworkChoice
 from .model_loader import ModelLoader
@@ -208,71 +209,42 @@ def get_image_data(path_to_data):
     image_list.sort(key=get_image_key)
     return ImageLoader(image_list)
 
-def create_anno_container():
-    return {
-        "boxes": [],
-        "polygons": [],
-        "polylines": [],
-        "points": [],
-        "box_paths": [],
-        "polygon_paths": [],
-        "polyline_paths": [],
-        "points_paths": [],
-    }
-
 class Results():
     def __init__(self):
-        self._results = create_anno_container()
+        self._results = {
+            "shapes": [],
+            "tracks": []
+        }
 
     def add_box(self, xtl, ytl, xbr, ybr, label, frame_number, attributes=None):
-        self.get_boxes().append({
+        self.get_shapes().append({
             "label": label,
             "frame": frame_number,
-            "xtl": xtl,
-            "ytl": ytl,
-            "xbr": xbr,
-            "ybr": ybr,
+            "points": [xtl, ytl, xbr, ybr],
+            "type": "rectangle",
             "attributes": attributes or {},
         })
 
     def add_points(self, points, label, frame_number, attributes=None):
-        self.get_points().append(
-            self._create_polyshape(points, label, frame_number, attributes)
-        )
+        points = self._create_polyshape(points, label, frame_number, attributes)
+        points["type"] = "points"
+        self.get_shapes().append(points)
 
     def add_polygon(self, points, label, frame_number, attributes=None):
-        self.get_polygons().append(
-            self._create_polyshape(points, label, frame_number, attributes)
-        )
+        polygon = self._create_polyshape(points, label, frame_number, attributes)
+        polygon["type"] = "polygon"
+        self.get_shapes().append(polygon)
 
     def add_polyline(self, points, label, frame_number, attributes=None):
-        self.get_polylines().append(
-            self._create_polyshape(points, label, frame_number, attributes)
-        )
+        polyline = self._create_polyshape(points, label, frame_number, attributes)
+        polyline["type"] = "polyline"
+        self.get_shapes().append(polyline)
 
-    def get_boxes(self):
-        return self._results["boxes"]
+    def get_shapes(self):
+        return self._results["shapes"]
 
-    def get_polygons(self):
-        return self._results["polygons"]
-
-    def get_polylines(self):
-        return self._results["polylines"]
-
-    def get_points(self):
-        return self._results["points"]
-
-    def get_box_paths(self):
-        return self._results["box_paths"]
-
-    def get_polygon_paths(self):
-        return self._results["polygon_paths"]
-
-    def get_polyline_paths(self):
-        return self._results["polyline_paths"]
-
-    def get_points_paths(self):
-        return self._results["points_paths"]
+    def get_tracks(self):
+        return self._results["tracks"]
 
     @staticmethod
     def _create_polyshape(self, points, label, frame_number, attributes=None):
@@ -315,7 +287,7 @@ def _run_inference_engine_annotation(data, model_file, weights_file,
 
         return attributes
 
-    def add_polyshapes(shapes, target_container):
+    def add_shapes(shapes, target_container):
         for shape in shapes:
             if shape["label"] not in labels_mapping:
                     continue
@@ -325,35 +297,18 @@ def _run_inference_engine_annotation(data, model_file, weights_file,
                 "label_id": db_label,
                 "frame": shape["frame"],
                 "points": shape["points"],
+                "type": shape["type"],
                 "z_order": 0,
-                "group_id": 0,
+                "group": None,
                 "occluded": False,
                 "attributes": process_attributes(shape["attributes"], attribute_spec[db_label]),
             })
 
-    def add_boxes(boxes, target_container):
-        for box in boxes:
-            if box["label"] not in labels_mapping:
-                    continue
-
-            db_label = labels_mapping[box["label"]]
-            target_container.append({
-                "label_id": db_label,
-                "frame": box["frame"],
-                "xtl": box["xtl"],
-                "ytl": box["ytl"],
-                "xbr": box["xbr"],
-                "ybr": box["ybr"],
-                "z_order": 0,
-                "group_id": 0,
-                "occluded": False,
-                "attributes": process_attributes(box["attributes"], attribute_spec[db_label]),
-            })
-
     result = {
-        "create": create_anno_container(),
-        "update": create_anno_container(),
-        "delete": create_anno_container(),
+        "shapes": [],
+        "tracks": [],
+        "tags": [],
+        "version": 0
     }
 
     data_len = len(data)
@@ -375,16 +330,15 @@ def _run_inference_engine_annotation(data, model_file, weights_file,
         frame_counter += 1
         if job and update_progress and not update_progress(job, frame_counter * 100 / data_len):
             return None
+
     processed_detections = _process_detections(detections, convertation_file)
 
-    add_boxes(processed_detections.get_boxes(), result["create"]["boxes"])
-    add_polyshapes(processed_detections.get_points(), result["create"]["points"])
-    add_polyshapes(processed_detections.get_polygons(), result["create"]["polygons"])
-    add_polyshapes(processed_detections.get_polylines(), result["create"]["polylines"])
+    add_shapes(processed_detections.get_shapes(), result["shapes"])
+
 
     return result
 
-def run_inference_thread(tid, model_file, weights_file, labels_mapping, attributes, convertation_file, reset):
+def run_inference_thread(tid, model_file, weights_file, labels_mapping, attributes, convertation_file, reset, user):
     def update_progress(job, progress):
         job.refresh()
         if "cancel" in job.meta:
@@ -418,9 +372,13 @@ def run_inference_thread(tid, model_file, weights_file, labels_mapping, attribut
             slogger.glob.info("auto annotation for task {} canceled by user".format(tid))
             return
 
-        if reset:
-            annotation.clear_task(tid)
-        annotation.save_task(tid, result)
+        serializer = LabeledDataSerializer(data = result)
+        if serializer.is_valid(raise_exception=True):
+            if reset:
+                put_task_data(tid, user, result)
+            else:
+                patch_task_data(tid, user, result, "create")
+
         slogger.glob.info("auto annotation for task {} done".format(tid))
     except Exception as e:
         try:

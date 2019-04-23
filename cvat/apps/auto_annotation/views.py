@@ -155,7 +155,7 @@ def get_meta_info(request):
             job = queue.fetch_job(rq_id)
             if job is not None:
                 response["run"][tid] = {
-                    "status": job.status,
+                    "status": job.get_status(),
                     "rq_id": rq_id,
                 }
 
@@ -191,7 +191,7 @@ def start_annotation(request, mid, tid):
 
         db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
         db_attributes = {db_label.id:
-            {db_attr.get_name(): db_attr.id for db_attr in db_label.attributespec_set.all()} for db_label in db_labels}
+            {db_attr.name: db_attr.id for db_attr in db_label.attributespec_set.all()} for db_label in db_labels}
         db_labels = {db_label.name:db_label.id for db_label in db_labels}
 
         model_labels = {value: key for key, value in load_label_map(labelmap_file).items()}
@@ -214,6 +214,7 @@ def start_annotation(request, mid, tid):
                 db_attributes,
                 convertation_file_path,
                 should_reset,
+                request.user,
             ),
             job_id = rq_id,
             timeout=604800)     # 7 days

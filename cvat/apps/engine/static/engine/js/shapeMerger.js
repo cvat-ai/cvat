@@ -93,7 +93,7 @@ class ShapeMergerModel extends Listener {
 
             let object = {
                 label_id: label,
-                group_id: 0,
+                group: 0,
                 frame: sortedFrames[0],
                 attributes: [],
                 shapes: [],
@@ -167,22 +167,20 @@ class ShapeMergerModel extends Listener {
             let shapes = this._shapesForMerge;
 
             // Undo/redo code
-            window.cvat.addAction('Merge Objects', (self) => {
+            window.cvat.addAction('Merge Objects', () => {
                 model.unsubscribe(this._collectionModel);
                 model.removed = true;
                 for (let shape of shapes) {
-                    shape.id = self.generateId();
                     shape.removed = false;
                     shape.subscribe(this._collectionModel);
                 }
                 this._collectionModel.update();
-            }, (self) => {
+            }, () => {
                 for (let shape of shapes) {
                     shape.removed = true;
                     shape.unsubscribe(this._collectionModel);
                 }
                 model.subscribe(this._collectionModel);
-                model.id = self.generateId();
                 model.removed = false;
             }, window.cvat.player.frames.current);
             // End of undo/redo code
@@ -214,7 +212,10 @@ class ShapeMergerModel extends Listener {
 
     click() {
         if (this._mergeMode) {
-            let active = this._collectionModel.selectShape(this._collectionModel.lastPosition, true);
+            const active = this._collectionModel.selectShape(
+                this._collectionModel.lastPosition,
+                true,
+            );
             if (active) {
                 this._pushForMerge(active);
             }

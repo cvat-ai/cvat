@@ -3,6 +3,7 @@
 
     SPDX-License-Identifier: MIT
 -->
+
 {% extends 'engine/base.html' %}
 {% load static %}
 {% load pagination_tags %}
@@ -14,7 +15,8 @@
 {% block head_css %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'dashboard/stylesheet.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/jstree/themes/default/style.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/jstree/themes/default/style.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/pagination/pagination.css' %}">
     {% for css_file in css_3rdparty %}
         <link rel="stylesheet" type="text/css" href="{% static css_file %}">
     {% endfor %}
@@ -22,7 +24,8 @@
 
 {% block head_js_3rdparty %}
     {{ block.super }}
-    <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/jstree/jstree.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/jstree/jstree.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/pagination/pagination.min.js' %}"></script>
     {% for js_file in js_3rdparty %}
         <script type="text/javascript" src="{% static js_file %}" defer></script>
     {% endfor %}
@@ -36,17 +39,13 @@
     <script type="text/javascript" src="{% static 'engine/js/shapes.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/annotationParser.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/server.js' %}"></script>
-    <script>
-        window.maxUploadSize = {{ max_upload_size }};
-        window.maxUploadCount = {{ max_upload_count }};
-    </script>
 {% endblock %}
 
 {% block content %}
     <div id="content">
         <div style="width: 100%; display: flex;">
             <div style="width: 50%; display: flex;"> </div>
-            <div style="width: 50%; display: flex;">
+            <div style="width: 100%; display: flex;">
                 <div id="dashboardManageButtons" style="display: flex;">
                     <button id="dashboardCreateTaskButton" class="regular h1" style="padding: 7px;"> Create New Task </button>
                 </div>
@@ -58,13 +57,9 @@
             <div style="width: 50%; display: flex;"> </div>
         </div>
 
-        {% autopaginate data %}
-        <div style="float: left; width: 100%">
-            {% for item in data %}
-                {% include "dashboard/task.html" %}
-            {% endfor %}
+        <div id="dashboardPagination">
+            <div id="dashboardList" style="float: left; width: 100%"> </div>
         </div>
-        <center>{% paginate %}</center>
     </div>
 
     <div id="dashboardCreateModal" class="modal hidden">
@@ -111,14 +106,6 @@ Example: @select=race:__undefined__,skip,asian,black,caucasian,other'/>
                     <td>
                         <input id="dashboardLocalSource" type="radio" name="sourceType" value="local" checked=true/> <label for="dashboardLocalSource" class="regular h2" for="localSource"> Local </label>
                         <br> <input id="dashboardShareSource" type="radio" name="sourceType" value="share"/> <label for="dashboardShareSource" class="regular h2" for="shareSource"> Share </label>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label class="regular h2"> Flip images </label>
-                    </td>
-                    <td>
-                        <input type="checkbox" id="dashboardFlipImages"/>
                     </td>
                 </tr>
                 <tr>
@@ -180,7 +167,7 @@ Example: @select=race:__undefined__,skip,asian,black,caucasian,other'/>
 
     <div id="dashboardShareBrowseModal" class="modal hidden">
         <div style="width: 600px; height: 400px;" class="modal-content noSelect">
-            <center> <label class="regular h1"> {{ share_path }} </label> </center>
+            <center> <label id="dashboardShareBasePath" class="regular h1"> </label> </center>
             <div id="dashboardShareBrowser"> </div>
             <center>
                 <button id="dashboardCancelBrowseServer" class="regular h2" style="margin: 0px 10px"> Cancel </button>
@@ -189,14 +176,16 @@ Example: @select=race:__undefined__,skip,asian,black,caucasian,other'/>
         </div>
     </div>
 
-    <div id="dashboardUpdateModal" class="modal hidden">
-        <div id="dashboardUpdateContent" class="modal-content">
-            <input id="dashboardOldLabels" type="text" readonly=true placeholder="Please Wait.." class="regular h2">
-            <input id="dashboardNewLabels" type="text" placeholder="New Labels" class="regular h2">
-            <center>
-                <button id="dashboardCancelUpdate" class="regular h2"> Cancel </button>
-                <button id="dashboardSubmitUpdate" class="regular h2"> Update </button>
-            </center>
+    <template id="dashboardUpdateTemplate">
+        <div id="dashboardUpdateModal" class="modal">
+            <div id="dashboardUpdateContent" class="modal-content">
+                <input id="dashboardOldLabels" type="text" readonly=true class="regular h2">
+                <input id="dashboardNewLabels" type="text" placeholder="expand the specification here" class="regular h2">
+                <center>
+                    <button id="dashboardCancelUpdate" class="regular h2"> Cancel </button>
+                    <button id="dashboardSubmitUpdate" class="regular h2"> Update </button>
+                </center>
+            </div>
         </div>
-    </div>
+    </template>
 {% endblock %}

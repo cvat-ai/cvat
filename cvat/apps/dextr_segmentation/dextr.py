@@ -69,7 +69,6 @@ class DEXTR_HANDLER:
         input_dextr = np.concatenate((resized, heatmap[:, :, np.newaxis].astype(resized.dtype)), axis=2)
         input_dextr = input_dextr.transpose((2,0,1))
 
-        np.set_printoptions(threshold=np.nan)
         pred = self._exec_network.infer(inputs={self._input_blob: input_dextr[np.newaxis, ...]})[self._output_blob][0, 0, :, :]
         pred = cv2.resize(pred, tuple(reversed(numpy_cropped.shape[:2])), interpolation = cv2.INTER_CUBIC)
         result = np.zeros(numpy_image.shape[:2])

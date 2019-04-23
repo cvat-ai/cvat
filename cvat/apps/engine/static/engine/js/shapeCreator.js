@@ -38,7 +38,7 @@ class ShapeCreatorModel extends Listener {
         let frame = window.cvat.player.frames.current;
 
         data.label_id = this._defaultLabel;
-        data.group_id = 0;
+        data.group = 0;
         data.frame = frame;
         data.occluded = false;
         data.outside = false;
@@ -70,9 +70,8 @@ class ShapeCreatorModel extends Listener {
         window.cvat.addAction('Draw Object', () => {
             model.removed = true;
             model.unsubscribe(this._shapeCollection);
-        }, (self) => {
+        }, () => {
             model.subscribe(this._shapeCollection);
-            model.id = self.generateId();
             model.removed = false;
         }, window.cvat.player.frames.current);
         // End of undo/redo code
@@ -389,20 +388,26 @@ class ShapeCreatorView {
                     sizeUI = null;
                 }
 
-                let frameWidth = window.cvat.player.geometry.frameWidth;
-                let frameHeight = window.cvat.player.geometry.frameHeight;
-                let rect = window.cvat.translate.box.canvasToActual(e.target.getBBox());
-                let box = {};
-                box.xtl = Math.clamp(rect.x, 0, frameWidth);
-                box.ytl = Math.clamp(rect.y, 0, frameHeight);
-                box.xbr = Math.clamp(rect.x + rect.width, 0, frameWidth);
-                box.ybr = Math.clamp(rect.y + rect.height, 0, frameHeight);
+                const frameWidth = window.cvat.player.geometry.frameWidth;
+                const frameHeight = window.cvat.player.geometry.frameHeight;
+                const rect = window.cvat.translate.box.canvasToActual(e.target.getBBox());
 
-                if (this._mode === 'interpolation') {
-                    box.outside = false;
-                }
+                const xtl = Math.clamp(rect.x, 0, frameWidth);
+                const ytl = Math.clamp(rect.y, 0, frameHeight);
+                const xbr = Math.clamp(rect.x + rect.width, 0, frameWidth);
+                const ybr = Math.clamp(rect.y + rect.height, 0, frameHeight);
+                if ((ybr - ytl) * (xbr - xtl) >= AREA_TRESHOLD) {
+                    const box = {
+                        xtl,
+                        ytl,
+                        xbr,
+                        ybr,
+                    }
 
-                if ((box.ybr - box.ytl) * (box.xbr - box.xtl) >= AREA_TRESHOLD) {
+                    if (this._mode === 'interpolation') {
+                        box.outside = false;
+                    }
+
                     this._controller.finish(box, this._type);
                 }
 

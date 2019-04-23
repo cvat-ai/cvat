@@ -6,10 +6,7 @@
 
 /* exported
     userConfirm
-    createExportContainer
     dumpAnnotationRequest
-    ExportType
-    getExportTargetContainer
     showMessage
     showOverlay
 */
@@ -18,54 +15,84 @@
     Cookies:false
 */
 
-"use strict";
 
-Math.clamp = function(x, min, max) {
-    return Math.min(Math.max(x, min), max);
+Math.clamp = (x, min, max) => Math.min(Math.max(x, min), max);
+
+String.customSplit = (string, separator) => {
+    const regex = /"/gi;
+    const occurences = [];
+    let occurence = regex.exec(string);
+    while (occurence) {
+        occurences.push(occurence.index);
+        occurence = regex.exec(string);
+    }
+
+    if (occurences.length % 2) {
+        occurences.pop();
+    }
+
+    let copy = '';
+    if (occurences.length) {
+        let start = 0;
+        for (let idx = 0; idx < occurences.length; idx += 2) {
+            copy += string.substr(start, occurences[idx] - start);
+            copy += string.substr(occurences[idx], occurences[idx + 1] - occurences[idx] + 1)
+                .replace(new RegExp(separator, 'g'), '\0');
+            start = occurences[idx + 1] + 1;
+        }
+        copy += string.substr(occurences[occurences.length - 1] + 1);
+    } else {
+        copy = string;
+    }
+
+    return copy.split(new RegExp(separator, 'g')).map(x => x.replace(/\0/g, separator));
 };
 
 
 function userConfirm(message, onagree, ondisagree) {
-    let template = $('#confirmTemplate');
-    let confirmWindow = $(template.html()).css('display', 'block');
+    const template = $('#confirmTemplate');
+    const confirmWindow = $(template.html()).css('display', 'block');
 
-    let annotationConfirmMessage = confirmWindow.find('.templateMessage');
-    let agreeConfirm = confirmWindow.find('.templateAgreeButton');
-    let disagreeConfirm = confirmWindow.find('.templateDisagreeButton');
-
-    annotationConfirmMessage.text(message);
-    $('body').append(confirmWindow);
-
-    agreeConfirm.on('click', function() {
-        hideConfirm();
-        if (onagree) onagree();
-    });
-
-    disagreeConfirm.on('click', function() {
-        hideConfirm();
-        if (ondisagree) ondisagree();
-    });
-
-    disagreeConfirm.focus();
-
-    confirmWindow.on('keydown', (e) => {
-        e.stopPropagation();
-    });
+    const annotationConfirmMessage = confirmWindow.find('.templateMessage');
+    const agreeConfirm = confirmWindow.find('.templateAgreeButton');
+    const disagreeConfirm = confirmWindow.find('.templateDisagreeButton');
 
     function hideConfirm() {
         agreeConfirm.off('click');
         disagreeConfirm.off('click');
         confirmWindow.remove();
     }
+
+    annotationConfirmMessage.text(message);
+    $('body').append(confirmWindow);
+
+    agreeConfirm.on('click', () => {
+        hideConfirm();
+        if (onagree) {
+            onagree();
+        }
+    });
+
+    disagreeConfirm.on('click', () => {
+        hideConfirm();
+        if (ondisagree) {
+            ondisagree();
+        }
+    });
+
+    disagreeConfirm.focus();
+    confirmWindow.on('keydown', (e) => {
+        e.stopPropagation();
+    });
 }
 
 
 function showMessage(message) {
-    let template = $('#messageTemplate');
-    let messageWindow = $(template.html()).css('display', 'block');
+    const template = $('#messageTemplate');
+    const messageWindow = $(template.html()).css('display', 'block');
 
-    let messageText = messageWindow.find('.templateMessage');
-    let okButton = messageWindow.find('.templateOKButton');
+    const messageText = messageWindow.find('.templateMessage');
+    const okButton = messageWindow.find('.templateOKButton');
 
     messageText.text(message);
     $('body').append(messageWindow);
@@ -74,7 +101,7 @@ function showMessage(message) {
         e.stopPropagation();
     });
 
-    okButton.on('click', function() {
+    okButton.on('click', () => {
         okButton.off('click');
         messageWindow.remove();
     });
@@ -85,15 +112,14 @@ function showMessage(message) {
 
 
 function showOverlay(message) {
-    let template = $('#overlayTemplate');
-    let overlayWindow = $(template.html()).css('display', 'block');
-    let overlayText = overlayWindow.find('.templateMessage');
-    overlayWindow[0].setMessage = function(message) {
-        overlayText.text(message);
-    };
+    const template = $('#overlayTemplate');
+    const overlayWindow = $(template.html()).css('display', 'block');
+    const overlayText = overlayWindow.find('.templateMessage');
 
-    overlayWindow[0].remove = function() {
-        overlayWindow.remove();
+    overlayWindow[0].getMessage = () => overlayText.html();
+    overlayWindow[0].remove = () => overlayWindow.remove();
+    overlayWindow[0].setMessage = (msg) => {
+        overlayText.html(msg);
     };
 
     $('body').append(overlayWindow);
@@ -101,151 +127,34 @@ function showOverlay(message) {
     return overlayWindow[0];
 }
 
-
-function dumpAnnotationRequest(dumpButton, taskID) {
-    dumpButton = $(dumpButton);
-    dumpButton.attr('disabled', true);
-
-    $.ajax({
-        url: '/dump/annotation/task/' + taskID,
-        success: onDumpRequestSuccess,
-        error: onDumpRequestError,
-    });
-
-    function onDumpRequestSuccess() {
-        let requestInterval = 3000;
-        let requestSended = false;
-
-        let checkInterval = setInterval(function() {
-            if (requestSended) return;
-            requestSended = true;
-            $.ajax({
-                url: '/check/annotation/task/' + taskID,
-                success: onDumpCheckSuccess,
-                error: onDumpCheckError,
-                complete: () => requestSended = false,
-            });
-        }, requestInterval);
-
-        function onDumpCheckSuccess(data) {
-            if (data.state === 'created') {
-                clearInterval(checkInterval);
-                getDumpedFile();
-            }
-            else if (data.state != 'started' ) {
-                clearInterval(checkInterval);
-                let message = 'Dump process completed with an error. ' + data.stderr;
-                dumpButton.attr('disabled', false);
-                showMessage(message);
-                throw Error(message);
-            }
-
-            function getDumpedFile() {
-                $.ajax({
-                    url: '/download/annotation/task/' + taskID,
-                    error: onGetDumpError,
-                    success: () => window.location = '/download/annotation/task/' + taskID,
-                    complete: () => dumpButton.attr('disabled', false)
+async function dumpAnnotationRequest(tid, taskName) {
+    const name = encodeURIComponent(`${tid}_${taskName}`);
+    return new Promise((resolve, reject) => {
+        const url = `/api/v1/tasks/${tid}/annotations/${name}`;
+        async function request() {
+            $.get(url)
+                .done((...args) => {
+                    if (args[2].status === 202) {
+                        setTimeout(request, 3000);
+                    } else {
+                        const a = document.createElement('a');
+                        a.href = `${url}?action=download`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        resolve();
+                    }
+                }).fail((errorData) => {
+                    const message = `Can not dump annotations for the task. Code: ${errorData.status}. `
+                        + `Message: ${errorData.responseText || errorData.statusText}`;
+                    reject(new Error(message));
                 });
-
-                function onGetDumpError(response) {
-                    let message = 'Get the dump request error: ' + response.responseText;
-                    showMessage(message);
-                    throw Error(message);
-                }
-            }
         }
 
-        function onDumpCheckError(response) {
-            clearInterval(checkInterval);
-            let message = 'Check the dump request error: ' + response.responseText;
-            dumpButton.attr('disabled', false);
-            showMessage(message);
-            throw Error(message);
-        }
-    }
-
-    function onDumpRequestError(response) {
-        let message = "Dump request error: " + response.responseText;
-        dumpButton.attr('disabled', false);
-        showMessage(message);
-        throw Error(message);
-    }
-}
-
-const ExportType = Object.freeze({
-    'create': 0,
-    'update': 1,
-    'delete': 2,
-});
-
-function createExportContainer() {
-    const container = {};
-    Object.keys(ExportType).forEach( action => {
-        container[action] = {
-            "boxes": [],
-            "box_paths": [],
-            "points": [],
-            "points_paths": [],
-            "polygons": [],
-            "polygon_paths": [],
-            "polylines": [],
-            "polyline_paths": [],
-        };
+        setTimeout(request);
     });
-
-    return container;
 }
 
-function getExportTargetContainer(export_type, shape_type, container) {
-    let shape_container_target = undefined;
-    let export_action_container = undefined;
-
-    switch (export_type) {
-    case ExportType.create:
-        export_action_container = container.create;
-        break;
-    case ExportType.update:
-        export_action_container = container.update;
-        break;
-    case ExportType.delete:
-        export_action_container = container.delete;
-        break;
-    default:
-        throw Error('Unexpected export type');
-    }
-
-    switch (shape_type) {
-    case 'annotation_box':
-        shape_container_target = export_action_container.boxes;
-        break;
-    case 'interpolation_box':
-        shape_container_target = export_action_container.box_paths;
-        break;
-    case 'annotation_points':
-        shape_container_target = export_action_container.points;
-        break;
-    case 'interpolation_points':
-        shape_container_target = export_action_container.points_paths;
-        break;
-    case 'annotation_polygon':
-        shape_container_target = export_action_container.polygons;
-        break;
-    case 'interpolation_polygon':
-        shape_container_target = export_action_container.polygon_paths;
-        break;
-    case 'annotation_polyline':
-        shape_container_target = export_action_container.polylines;
-        break;
-    case 'interpolation_polyline':
-        shape_container_target = export_action_container.polyline_paths;
-        break;
-    default:
-        throw Error('Undefined shape type');
-    }
-
-    return shape_container_target;
-}
 
 /* These HTTP methods do not require CSRF protection */
 function csrfSafeMethod(method) {
@@ -254,17 +163,17 @@ function csrfSafeMethod(method) {
 
 
 $.ajaxSetup({
-    beforeSend: function(xhr, settings) {
+    beforeSend(xhr, settings) {
         if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-            xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+            xhr.setRequestHeader('X-CSRFToken', Cookies.get('csrftoken'));
         }
-    }
+    },
 });
 
 
-$(document).ready(function(){
+$(document).ready(() => {
     $('body').css({
-        width: window.screen.width + 'px',
-        height: window.screen.height * 0.95 + 'px'
+        width: `${window.screen.width}px`,
+        height: `${window.screen.height * 0.95}px`,
     });
 });
