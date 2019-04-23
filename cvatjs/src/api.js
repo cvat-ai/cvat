@@ -144,9 +144,9 @@
         server: {
             /**
                 * @typedef {Object} ServerInfo
-                * @property {string} name A name of the tool [ReadOnly]
-                * @property {string} description A description of the tool [ReadOnly]
-                * @property {string} version A version of the tool [ReadOnly]
+                * @property {string} name A name of the tool
+                * @property {string} description A description of the tool
+                * @property {string} version A version of the tool
                 * @global
             */
 
@@ -164,9 +164,9 @@
             },
             /**
                 * @typedef {Object} FileInfo
-                * @property {string} name A name of a file [ReadOnly]
+                * @property {string} name A name of a file
                 * @property {module:API.cvat.enums.ShareFileType} type
-                * A type of a file 'DIR' or 'REG' [ReadOnly]
+                * A type of a file
                 * @global
             */
 
@@ -239,6 +239,7 @@
         jobs: {
             /**
                 * @typedef {Object} JobFilter
+                * Only one of fields is allowed simultaneously
                 * @property {integer} taskID filter all jobs of specific task
                 * @property {integer} jobID filter job with a specific id
                 * @global
@@ -295,9 +296,9 @@
                     .apiWrapper(cvat.plugins.list);
                 return result;
             },
-            async register() {
+            async register(plugin) {
                 const result = await PluginRegistry
-                    .apiWrapper(cvat.plugins.register);
+                    .apiWrapper(cvat.plugins.register, plugin);
                 return result;
             },
         },
@@ -307,6 +308,15 @@
             * @memberof module:API.cvat
         */
         config: {
+            /**
+                * @property {string} host host with a server REST API
+                * @memberof module:API.cvat.config
+                * @property {string} api used REST API version
+                * @memberof module:API.cvat.config
+                * @property {string} proxy Axios proxy settings.
+                * For more details please read <a href="https://github.com/axios/axios"> here </a>
+                * @memberof module:API.cvat.config
+            */
             host: 'http://localhost:7000',
             api: 'v1',
             proxy: false,
@@ -318,12 +328,12 @@
         */
         client: {
             /**
-                * Format <b>{major}.{minor}.{patch}</b>
-                * <p> <li> A major number is changed after an API becomes
+                * @property {string} version Client version.
+                * Format: <b>{major}.{minor}.{patch}</b>
+                * <li style="margin-left: 10px;"> A major number is changed after an API becomes
                 * incompatible with a previous version
-                * <p> <li> A minor number is changed after an API expands
-                * <p> <li> A patch number is changed after an each build
-                * @property {string} version client version
+                * <li style="margin-left: 10px;"> A minor number is changed after an API expands
+                * <li style="margin-left: 10px;"> A patch number is changed after an each build
                 * @memberof module:API.cvat.client
             */
             version: `${pjson.version}`,
@@ -334,8 +344,33 @@
             * @memberof module:API.cvat
         */
         enums: {
+            /**
+                * Enum for type of server files
+                * @enum {string}
+                * @name ShareFileType
+                * @memberof module:API.cvat.enums
+                * @property {string} DIR - directory
+                * @property {string} REG - regular file
+            */
             ShareFileType,
+            /**
+                * Enum for a status of a task
+                * @enum {string}
+                * @name TaskStatus
+                * @memberof module:API.cvat.enums
+                * @property {string} ANNOTATION - task is being annotated
+                * @property {string} VALIDATION - task is being validated
+                * @property {string} COMPLETED - task has been done
+            */
             TaskStatus,
+            /**
+                * Enum for a mode of a task
+                * @enum {string}
+                * @name TaskMode
+                * @memberof module:API.cvat.enums
+                * @property {string} ANNOTATION - images annotation task
+                * @property {string} INTERPOLATION - video annotation task
+            */
             TaskMode,
         },
         Job: {
@@ -383,4 +418,25 @@
     global.cvat = Object.freeze(implementation(cvat));
 })();
 
-// TODO: Plugins installation
+
+const plugin = {
+    cvat: {
+        server: {
+            about: {
+                leave(self, result) {
+                    result.itworks = true;
+                    console.log(result);
+                    console.log(self);
+                    return result;
+                },
+            },
+        },
+    },
+};
+
+global.cvat.plugins.register(plugin).then(() => {
+    console.log(plugin);
+    global.cvat.server.about().then((result) => {
+        console.log(result);
+    });
+});

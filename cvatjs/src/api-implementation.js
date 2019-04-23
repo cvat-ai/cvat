@@ -8,6 +8,7 @@
     global:false
 */
 
+
 (() => {
     const PluginRegistry = require('./plugins');
     const User = require('./user');

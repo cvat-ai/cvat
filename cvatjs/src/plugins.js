@@ -16,7 +16,7 @@
                 const pluginDecorators = plugin.functions
                     .filter(obj => obj.callback === wrappedFunc)[0];
                 if (pluginDecorators && pluginDecorators.enter) {
-                    pluginDecorators.enter(plugin, ...args);
+                    await pluginDecorators.enter(plugin, ...args);
                 }
             }
 
@@ -26,15 +26,42 @@
                 const pluginDecorators = plugin.functions
                     .filter(obj => obj.callback === wrappedFunc)[0];
                 if (pluginDecorators && pluginDecorators.leave) {
-                    result = pluginDecorators.leave(plugin, result, ...args);
+                    result = await pluginDecorators.leave(plugin, result, ...args);
                 }
             }
 
             return result;
         }
 
-        static async register() {
-            // TODO
+        static async register(plug) {
+            plug.functions = [];
+
+            (function traverse(plugin, api) {
+                if (typeof (plugin) !== 'object') {
+                    throw Error(`Plugin should be an object, but got ${typeof (plugin)}`);
+                }
+
+                for (const key in plugin) {
+                    if (Object.prototype.hasOwnProperty.call(plugin, key)) {
+                        const decorator = {};
+                        if (typeof (plugin[key]) === 'object') {
+                            if (Object.prototype.hasOwnProperty.call(api, key)) {
+                                traverse(plugin[key], api[key]);
+                            }
+                        } else if (['enter', 'leave'].includes(key)
+                            && typeof (api) === 'function'
+                            && typeof (plugin[key] === 'function')) {
+                            decorator.callback = api;
+                            decorator[key] = plugin[key];
+                            plug.functions.push(decorator);
+                        }
+                    }
+                }
+            }(plug, {
+                cvat: global.cvat,
+            }));
+
+            plugins.push(plug);
         }
 
         static async list() {
