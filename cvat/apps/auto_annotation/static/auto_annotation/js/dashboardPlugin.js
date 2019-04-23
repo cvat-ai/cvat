@@ -717,6 +717,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }).appendTo('#dashboardManageButtons');
 });
 
+
 window.addEventListener('dashboardReady', (event) => {
     const elements = $('.dashboardItem');
     const tids = Array.from(elements, el => +el.getAttribute('tid'));
