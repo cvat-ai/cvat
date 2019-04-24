@@ -1,3 +1,40 @@
+* [User's guide](#users-guide)
+    * [1. Getting started](#1-getting-started)
+        * [Authorization](#authorization)
+        * [Administration panel](#administration-panel)
+        * [Creating an annotation task](#creating-an-annotation-task)
+        * [Creating a task using model manager](#creating-a-task-using-model-manager)
+        * [Search](#search)
+    * [2. Interface of the annotation tool](#2-interface-of-the-annotation-tool)
+        * [Basic navigation](#basic-navigation)
+        * [Types of Shapes (basics)](#types-of-shapes-basics)
+        * [Annotation mode (basics)](#annotation-mode-basics)
+        * [Interpolation mode (basics)](#interpolation-mode-basics)
+        * [Attribute annotation mode (basics)](#attribute-annotation-mode-basics)
+        * [Downloading annotations](#downloading-annotations)
+        * [Task synchronization with a repository](#task-synchronization-with-a-repository)
+        * [Vocabulary](#vocabulary)
+        * [Workspace — Context menu](#workspace--context-menu)
+        * [Settings](#settings)
+        * [Bottom Panel](#bottom-panel)
+        * [Side panel](#side-panel)
+            * [Objects](#objects)
+            * [Labels](#labels)
+        * [Bottom side panel](#bottom-side-panel)
+            * [Fullscreen player mode](#fullscreen-player-mode)
+    * [3. Annotation mode (advanced)](#3-annotation-mode-advanced)
+    * [4. Interpolation mode (advanced)](#4-interpolation-mode-advanced)
+    * [5. Attribute annotation mode (advanced)](#5-attribute-annotation-mode-advanced)
+    * [6. Annotation with polygons](#6-annotation-with-polygons)
+    * [7. Annotation with polylines](#7-annotation-with-polylines)
+    * [8. Annotation with points](#8-annotation-with-points)
+    * [9. Annotation with Auto Segmentation](#9-annotation-with-auto-segmentation)
+    * [10. Shape grouping](#10-shape-grouping)
+    * [11. Filter](#11-filter)
+    * [12. Analytics](#12-analytics)
+    * [13. Shortcuts](#13-shortcuts)
+    * [14. Hints](#14-hints)
+
 # User's guide
 
 Computer Vision Annotation Tool (CVAT) is a web-based tool which helps to annotate video and images for Computer Vision algorithms. It was inspired by [Vatic](http://carlvondrick.com/vatic/) free, online, interactive video annotation tool. CVAT has many powerful features: __interpolation of bounding boxes between key frames, automatic annotation using TensorFlow OD API, shortcuts for most of critical actions, dashboard with a list of annotation tasks, LDAP and basic authorization, etc...__ It was created for and used by a professional data annotation team. UX and UI were optimized especially for computer vision tasks developed by our team.
@@ -28,7 +65,8 @@ There you can:
 
     ![](static/documentation/images/image004.jpg)
 
-2. Specify mandatory parameters of the task. You have to fill in ``Name``, ``Labels`` and press ``Select Files`` at least.
+2. Specify mandatory parameters of the task.
+You have to fill in ``Name``, ``Labels`` and press ``Select Files`` at least.
 
     ![](static/documentation/images/image005.jpg)
 
@@ -79,7 +117,7 @@ __Overlap Size__. Use this option to make overlapped segments. The option makes 
 - For an annotation task (independent images). If an object exists on overlapped segments, the overlap is greater than zero and the annotation is good enough on adjacent segments, it will be automatically merged into one object. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file, you will have several bounding boxes for the same object.
 Thus, you annotate an object on the first segment. You annotate the same object on second segment, and if you do it right, you will have one track inside your annotation file. If annotations on different segments (on overlapped frames) are very different or overlap is zero, you will have two tracks for the same object. This functionality works only for bounding boxes. Polygon, polyline, points don't support automatic merge on overlapped segments even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
 
-__Segment size__. Use this option to divide a huge dataset into a few smaller segments.
+__Segment size__. Use this option to divide a huge dataset into a few smaller segments. For example, one job cannot be annotated by several labelers (it isn't supported). Thus using "segment size" you can create several jobs for the same annotation task. It will help you to parallel data annotation process.
 
 __Image Quality__. Use this option to specify quality of uploaded images. The option helps to load high resolution datasets faster. Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
 
@@ -106,7 +144,7 @@ Push ``Submit`` button and it will be added into the list of annotation tasks. T
     ![](static/documentation/images/image007.jpg)
 
 
-### Creating a task using model manager
+### Model manager
 
 The application will be enabled automatically if [OpenVINO™ component](/components/openvino) is installed. It allows to use custom models for auto annotation. Only models in OpenVINO™ toolkit format are supported. If you would like to annotate a task with a custom model, please convert it to the intermediate representation (IR) format via the model optimizer tool. See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details. You can "register" a model and "use" it after that to pre annotate your tasks.
 
@@ -118,7 +156,7 @@ The model manager allows you to manage your deep learning (DL) models uploaded f
 
 ### Search
 
-Used to search for tasks by name
+There are several options how to use the search. It may be task's name or id, owner's name, task's status, assignee's name and so on. The search is case insensitive.
 
 ![](static/documentation/images/image100.jpg)
 
@@ -128,7 +166,7 @@ The tool consists of:
 - ``Workspace`` — where images are shown;
 - ``Bottom panel`` (under workspace) — for navigation, filtering annotation and accessing tools' menu;
 - ``Side panel`` — contains two lists: objects (on the frame) and labels (of objects on the frame);
-- ``Bottom side panel`` — for choosing types of/creating/merging/grouping annotation;
+- ``Bottom side panel`` — is a type of/creating/merging/grouping annotation;
 
 ![](static/documentation/images/image034.jpg)
 
@@ -278,7 +316,7 @@ Usage examples:
 
 ### Task synchronization with a repository
 
-1. At the end of the annotation process, a task is synchronized clicking the `` Git Repository Sync`` on the main page.
+1. At the end of the annotation process, a task is synchronized clicking the `` Git Repository Sync`` on the main page. Notice: this the feature works only if a git repository was specified when the task was created.
 
     ![](static/documentation/images/image106.jpg) 
 
@@ -343,7 +381,7 @@ Context menu opens by right mouse click.
 
 The next options are available clicking inside bounding box:
 - ``Copy Object URL`` — copying to the buffer address of an object on the frame in the task
-- ``Change Color`` —  change color of active shape
+- ``Change Color`` — change color of active shape
 - ``Remove Shape`` — deleting the shape
 - ``Switch Occluded`` — attribute is used if an object is occluded by another object or isn't fully visible on the frame. Use the ``Q`` shortcut to set the property quickly.
 - ``Switch Lock`` — block editing the active shape
@@ -473,7 +511,7 @@ Use ``Ctrl+Z`` for undo actions and  ``Ctrl+Shift+Z`` or ``Ctrl+Y`` to redo them
 ---
 __Propagation__ input box
 
-Allows you to select how many frames of the selected object will be copied clicking``Ctrl+B`` (50 by default)
+Allows you to select how many frames of the selected object will be copied clicking ``Ctrl+B`` (50 by default)
 
 ![](static/documentation/images/image101.jpg)
 
@@ -542,7 +580,7 @@ You can also see all the labels that were used on this frame and highlight them 
 ---
 __Objects' card__
 
-A shape can be removed. Shortcut: ``Delete``. You can delete a locked shape using the` Shift+Delete ' shortcut.
+A shape can be removed. Shortcut: ``Delete``. You can delete a locked shape using the ``Shift+Delete`` shortcut.
 
 ![](static/documentation/images/image047.jpg)
 
@@ -559,12 +597,12 @@ A shape can be **Occluded**. Shortcut: ``Q``. Such shapes have dashed boundaries
 ![](static/documentation/images/image049.jpg)
 
 ---
-You can copy and paste this object in a particular frame. The keyboard shortcuts `` Ctrl + C`` / `` Ctrl + V`` work when you hover over an object
+You can copy and paste this object in a particular frame. The keyboard shortcuts ``Ctrl + C`` / ``Ctrl + V`` work when you hover over an object
 
 ![](static/documentation/images/image052.jpg)
 
 ---
-You can distribute this object in the following X frames. The keyboard shortcut `` Ctrl + B`` works when you hover the mouse over an object. You can change the number of propagating frames in the bottom panel.
+You can distribute this object in the following X frames. The keyboard shortcut ``Ctrl + B`` works when you hover the mouse over an object. You can change the number of propagating frames in the bottom panel.
 
 ![](static/documentation/images/image053.jpg)
 
@@ -592,7 +630,7 @@ To change a type of a highlighted shape using keyboard, you need to press ``Shif
 
 ![](static/documentation/images/image082.jpg)
 
-#### Fullscreen player mode
+### Fullscreen player mode
 
 Go to ``Open Menu`` —> ``Fullscreen Player``
 Exit with ``F11`` or ``Ecs``.
@@ -749,7 +787,7 @@ There are some reasons to use the feature:
 
 1. When you use a filter, objects that don't match the filter will be hidden.
 2. Fast navigation between frames that have an object of interest. Use ``Left Arrow`` / ``Right Arrow`` keys for the purpose. If the filter is empty, the arrows go to previous/next frames which contain any objects.
-3. The list contains frequently used  and recent filters.
+3. The list contains frequently used and recent filters.
 
 To use the functionality, it is enough to specify a value inside ``Filter`` text box and defocus the text box (for example, click on the image). After that, the filter will be applied.
 
@@ -797,7 +835,7 @@ Example                                                 | Description
 
 ## 12. Analytics
 
-If your CVAT instance is created with analytics support, you can press  the "analytics" button in dashboard, a new tab with analytics and journals will open.
+If your CVAT instance is created with analytics support, you can press  the "analytics" button in dashboard, a new tab with analytics and journals will be opened.
 
 ![](static/documentation/images/image113.jpg)
 
@@ -877,7 +915,7 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 ``Left Arrow``         | go to the previous frame which corresponds to the specified filter value
 ``Right Arrow``        | go to the next frame which corresponds to the specified filter value
 
-### Hints
+### 14. Hints
 
 Hold ``Mouse Wheel`` to move frame (for example, while drawing)
 
