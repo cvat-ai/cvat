@@ -128,8 +128,10 @@ class FilterController {
                     const formattedAndExpressions = [];
                     for (const andExpression of andExpressions) {
                         if (andExpression.includes('attr/')) {
-                            const attrPrefix = andExpression.match(/[\\[]?attr\//)[0];
-                            const attrExpression = andExpression.substr(attrPrefix.length);
+                            const attrMatch = andExpression.match(/[\\[(]*attr\//);
+                            const attrPrefix = attrMatch[0];
+                            const attrExpression = andExpression.substr(attrMatch.index
+                                + attrPrefix.length);
                             const [attrName, attrValue] = String.customSplit(attrExpression, '=')
                                 .map(el => el.trim());
                             formattedAndExpressions
