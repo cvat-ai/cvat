@@ -13,6 +13,7 @@
 
 class FilterModel {
     constructor(update) {
+        this._regex = /^[0-9]+|[-,?!()\s]+/g;
         this._filter = '';
         this._update = update;
         this._labels = window.cvat.labelsInfo.labels();
@@ -20,6 +21,20 @@ class FilterModel {
     }
 
     _convertShape(shape) {
+        // We replace all special characters due to defiant.js can't work with them
+        function convertAttributes(attributes) {
+            const convertedAttributes = {};
+            for (const attrId in attributes) {
+                if (Object.prototype.hasOwnProperty.call(attributes, attrId)) {
+                    const key = attributes[attrId].name
+                        .toLowerCase().replace(this._regex, '_');
+                    convertedAttributes[key] = String(attributes[attrId].value)
+                        .toLowerCase();
+                }
+            }
+            return convertedAttributes;
+        }
+
         const converted = {
             id: shape.model.id,
             serverid: shape.model.serverID,
@@ -27,7 +42,7 @@ class FilterModel {
             type: shape.model.type.split('_')[1],
             mode: shape.model.type.split('_')[0],
             occluded: Boolean(shape.interpolation.position.occluded),
-            attr: convertAttributes(shape.interpolation.attributes),
+            attr: convertAttributes.call(this, shape.interpolation.attributes),
             lock: shape.model.lock,
         };
 
@@ -40,28 +55,20 @@ class FilterModel {
         }
 
         return converted;
-
-        // We replace all dashes due to defiant.js can't work with it
-        function convertAttributes(attributes) {
-            const convertedAttributes = {};
-            for (const attrId in attributes) {
-                if (Object.prototype.hasOwnProperty.call(attributes, attrId)) {
-                    const key = attributes[attrId].name.toLowerCase().replace(/[-,\s]+/g, '_');
-                    convertedAttributes[key] = String(attributes[attrId].value).toLowerCase();
-                }
-            }
-            return convertedAttributes;
-        }
     }
 
     _convertCollection(collection) {
-        let converted = {};
-        for (let labelId in this._labels) {
-            converted[this._labels[labelId].replace(/[-,\s]+/g, '_')] = [];
+        const converted = {};
+        for (const labelId in this._labels) {
+            if (Object.prototype.hasOwnProperty.call(this._labels, labelId)) {
+                converted[this._labels[labelId].toLowerCase().replace(this._regex, '_')] = [];
+            }
         }
 
         for (const shape of collection) {
-            converted[this._labels[shape.model.label].toLowerCase().replace(/[-,\s]+/g, '_')].push(this._convertShape(shape));
+            converted[this._labels[shape.model.label]
+                .toLowerCase().replace(this._regex, '_')]
+                .push(this._convertShape.call(this, shape));
         }
         return converted;
     }
@@ -86,6 +93,10 @@ class FilterModel {
             this._update();
         }
     }
+
+    get regex() {
+        return this._regex;
+    }
 }
 
 class FilterController {
@@ -94,19 +105,69 @@ class FilterController {
     }
 
     updateFilter(value, silent) {
-        if (value.length) {
-            value = value.split('|').map(x => `/d:data/${x}`).join('|').toLowerCase()
-                .replace(/[-,\s]+/g, '_');
-            try {
-                document.evaluate(value, document, () => 'ns');
-            } catch (ignore) {
-                return false;
-            }
-            this._model.updateFilter(value, silent);
+        if (!value.length) {
+            this._model.updateFilter('', silent);
             return true;
         }
 
-        this._model.updateFilter('', silent);
+        try {
+            value = value.toLowerCase();
+
+            const labels = String.customSplit(value, '[|]').map(el => el.trim());
+            let result = '';
+            for (const label of labels) {
+                const labelName = label.match(/^[-,?!_0-9a-z()\s"]+/)[0];
+                const labelFilters = label.substr(labelName.length).trim();
+
+                result += `${labelName.replace(this._model.regex, '_').replace(/"/g, '')}`;
+
+                const orExpressions = String.customSplit(labelFilters, 'or').map(el => el.trim());
+                const formattedOrExpressions = [];
+                for (const orExpression of orExpressions) {
+                    const andExpressions = String.customSplit(orExpression, 'and').map(el => el.trim());
+                    const formattedAndExpressions = [];
+                    for (const andExpression of andExpressions) {
+                        if (andExpression.includes('attr/')) {
+                            const attrMatch = andExpression.match(/[\\[(]*attr\//);
+                            const attrPrefix = attrMatch[0];
+                            const attrExpression = andExpression.substr(attrMatch.index
+                                + attrPrefix.length);
+                            const [attrName, attrValue] = String.customSplit(attrExpression, '=')
+                                .map(el => el.trim());
+                            formattedAndExpressions
+                                .push(`${attrPrefix}${attrName.replace(this._model.regex, '_')
+                                    .replace(/"/g, '')}=${attrValue}`);
+                        } else {
+                            formattedAndExpressions.push(andExpression);
+                        }
+                    }
+
+                    if (formattedAndExpressions.length > 1) {
+                        formattedOrExpressions.push(formattedAndExpressions.join(' and '));
+                    } else {
+                        formattedOrExpressions.push(formattedAndExpressions[0]);
+                    }
+                }
+
+                if (formattedOrExpressions.length > 1) {
+                    result += `${formattedOrExpressions.join(' or ')}`;
+                } else {
+                    result += `${formattedOrExpressions[0]}`;
+                }
+
+                result += '|';
+            }
+
+            result = result.substr(0, result.length - 1);
+            result = result.split('|').map(x => `/d:data/${x}`).join('|');
+
+            document.evaluate(result, document, () => 'ns');
+
+            this._model.updateFilter(result, silent);
+        } catch (ignore) {
+            return false;
+        }
+
         return true;
     }
 
