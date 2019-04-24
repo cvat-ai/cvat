@@ -3,7 +3,7 @@
         * [Authorization](#authorization)
         * [Administration panel](#administration-panel)
         * [Creating an annotation task](#creating-an-annotation-task)
-        * [Creating a task using model manager](#creating-a-task-using-model-manager)
+        * [Model manager](#model-manager)
         * [Search](#search)
     * [2. Interface of the annotation tool](#2-interface-of-the-annotation-tool)
         * [Basic navigation](#basic-navigation)
