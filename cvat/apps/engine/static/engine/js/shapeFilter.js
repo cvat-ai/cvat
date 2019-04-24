@@ -13,6 +13,7 @@
 
 class FilterModel {
     constructor(update) {
+        this._regex = /^[0-9]+|[-,?!()\s]+/g;
         this._filter = '';
         this._update = update;
         this._labels = window.cvat.labelsInfo.labels();
@@ -20,6 +21,20 @@ class FilterModel {
     }
 
     _convertShape(shape) {
+        // We replace all dashes due to defiant.js can't work with it
+        function convertAttributes(attributes) {
+            const convertedAttributes = {};
+            for (const attrId in attributes) {
+                if (Object.prototype.hasOwnProperty.call(attributes, attrId)) {
+                    const key = attributes[attrId].name
+                        .toLowerCase().replace(this._regex, '_');
+                    convertedAttributes[key] = String(attributes[attrId].value)
+                        .toLowerCase();
+                }
+            }
+            return convertedAttributes;
+        }
+
         const converted = {
             id: shape.model.id,
             serverid: shape.model.serverID,
@@ -27,7 +42,7 @@ class FilterModel {
             type: shape.model.type.split('_')[1],
             mode: shape.model.type.split('_')[0],
             occluded: Boolean(shape.interpolation.position.occluded),
-            attr: convertAttributes(shape.interpolation.attributes),
+            attr: convertAttributes.call(this, shape.interpolation.attributes),
             lock: shape.model.lock,
         };
 
@@ -40,34 +55,20 @@ class FilterModel {
         }
 
         return converted;
-
-        // We replace all dashes due to defiant.js can't work with it
-        function convertAttributes(attributes) {
-            const convertedAttributes = {};
-            for (const attrId in attributes) {
-                if (Object.prototype.hasOwnProperty.call(attributes, attrId)) {
-                    const key = attributes[attrId].name
-                        .toLowerCase().replace(/[-,?!()\s]+/g, '_');
-                    convertedAttributes[key] = String(attributes[attrId].value)
-                        .toLowerCase();
-                }
-            }
-            return convertedAttributes;
-        }
     }
 
     _convertCollection(collection) {
         const converted = {};
         for (const labelId in this._labels) {
             if (Object.prototype.hasOwnProperty.call(this._labels, labelId)) {
-                converted[this._labels[labelId].toLowerCase().replace(/[-,?!()\s]+/g, '_')] = [];
+                converted[this._labels[labelId].toLowerCase().replace(this._regex, '_')] = [];
             }
         }
 
         for (const shape of collection) {
             converted[this._labels[shape.model.label]
-                .toLowerCase().replace(/[-,?!()\s]+/g, '_')]
-                .push(this._convertShape(shape));
+                .toLowerCase().replace(this._regex, '_')]
+                .push(this._convertShape.call(this, shape));
         }
         return converted;
     }
@@ -92,6 +93,10 @@ class FilterModel {
             this._update();
         }
     }
+
+    get regex() {
+        return this._regex;
+    }
 }
 
 class FilterController {
@@ -114,7 +119,7 @@ class FilterController {
                 const labelName = label.match(/^[-,?!_0-9a-z()\s"]+/)[0];
                 const labelFilters = label.substr(labelName.length).trim();
 
-                result += `${labelName.replace(/[-,?!()\s]+/g, '_').replace(/"/g, '')}`;
+                result += `${labelName.replace(this._model.regex, '_').replace(/"/g, '')}`;
 
                 const orExpressions = String.customSplit(labelFilters, 'or').map(el => el.trim());
                 const formattedOrExpressions = [];
@@ -128,7 +133,7 @@ class FilterController {
                             const [attrName, attrValue] = String.customSplit(attrExpression, '=')
                                 .map(el => el.trim());
                             formattedAndExpressions
-                                .push(`${attrPrefix}${attrName.replace(/[-,?!()\s]+/g, '_')
+                                .push(`${attrPrefix}${attrName.replace(this._model.regex, '_')
                                     .replace(/"/g, '')}=${attrValue}`);
                         } else {
                             formattedAndExpressions.push(andExpression);
