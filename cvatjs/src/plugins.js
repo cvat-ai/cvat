@@ -14,7 +14,7 @@
             // I have to optimize the wrapper
             const pluginList = await global.cvat.plugins.list.implementation();
             for (const plugin of pluginList) {
-                const pluginDecorators = plugin.functions
+                const pluginDecorators = plugin
                     .filter(obj => obj.callback === wrappedFunc)[0];
                 if (pluginDecorators && pluginDecorators.enter) {
                     await pluginDecorators.enter(plugin, ...args);
@@ -36,6 +36,18 @@
 
         static async register(plug) {
             const functions = [];
+
+            if (!('name' in plug)) {
+                throw Error(`Plugin should be an object`);
+            }
+
+            if (!('description' in plug)) {
+                throw Error(`Plugin should be an object`);
+            }
+
+            if ('functions' in plug) {
+                throw Error(`Plugin should be an object`);
+            }
 
             (function traverse(plugin, api) {
                 if (typeof (plugin) !== 'object') {

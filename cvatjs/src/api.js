@@ -291,11 +291,76 @@
             * @memberof module:API.cvat
         */
         plugins: {
+            /**
+                * @typedef {Object} Plugin
+                * A plugin is a JS object. It must have properties listed below. <br>
+                * It also mustn't have property 'functions' which is used internally. <br>
+                * You can expand any API method including methods of classes. <br>
+                * For a class method just use a class name in a cvat space (example listed below).
+                *
+                * @property {string} name A name of a plugin
+                * @property {string} description A description of a plugin
+                * @global
+                *
+                * Example plugin implementation listed below:
+                * @example
+                * plugin = {
+                *   name: 'Example Plugin',
+                *   description: 'This example plugin demonstrates how plugin system in CVAT works',
+                *   cvat: {
+                *     server: {
+                *       about: {
+                *         // We add some actions after the cvat.server.about() method execute
+                *         // For example let's add a field with installed plugins to a result
+                *         // An argument "self" is plugin structure as is with one
+                *         // more field "functions" which is used internally
+                *         // An argument "result" is a return value of cvat.server.about()
+                *         // All next arguments are arguments of a wrapped function
+                *         // (in this case the wrapped function doesn't have any arguments)
+                *         leave(self, result) {
+                *           result.plugins = self.internal.getPlugins();
+                *           // Note that a leave method must return "result" (changed or not)
+                *           // In other case API will not work as expected
+                *           return result;
+                *         },
+                *       },
+                *     },
+                *   },
+                *   // In general you can add any others members to your plugin
+                *   // Members below are only examples
+                *   internal: {
+                *     getPlugins() {
+                *       // Collect information about installed plugins
+                *       const plugins = cvat.plugins.list().map((el) => {
+                *         return {
+                *           name: el.name,
+                *           description: el.description,
+                *         }
+                *       });
+                *     },
+                *   },
+                * };
+            */
+
+            /**
+                * Method returns list of installed plugins
+                * @method list
+                * @async
+                * @memberof module:API.cvat.plugins
+                * @returns {Plugin[]}
+            */
             async list() {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.plugins.list);
                 return result;
             },
+            /**
+                * Install plugin to CVAT
+                * @method register
+                * @async
+                * @memberof module:API.cvat.plugins
+                * @param {Plugin} [plugin] plugin for registration
+            */
             async register(plugin) {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.plugins.register, plugin);
