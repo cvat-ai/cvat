@@ -72,37 +72,42 @@ You have to fill in ``Name``, ``Labels`` and press ``Select Files`` at least.
 
 __Labels__. Use the following layout to create labels: ``label_name <prefix>input_type=attribute_name:attribute_value1,attribute_value2``. You can specify multiple labels and attributes and divide them pressing the space button. Attributes belong to a previous label.
 
- Example:
- - ``vehicle @select=type:__undefined__,car,truck,bus,train ~radio=quality:good,bad ~checkbox=parked:false`` -
-    one label with multiple attributes
- - ``car person bike`` - three labels without attributes
- - ``circle @radio=color:green,red,blue @number=radius:0,10,0.1 line square`` - one label with two attributes and two labels without attributes
+Example:
+-   ``vehicle @select=type:__undefined__,car,truck,bus,train ~radio=quality:good,bad ~checkbox=parked:false`` -
+one label with multiple attributes
+-   ``car person bike`` - three labels without attributes
+-   ``circle @radio=color:green,red,blue @number=radius:0,10,0.1 line square`` -
+one label with two attributes and two labels without attributes
 
-``label_name``: for example *vehicle, person, face etc.*
+``label_name``: for example _vehicle, person, face etc._
 
 ``<prefix>``:
-- Use ``@`` for unique attributes which cannot be changed from frame to frame *(e.g. age, gender, color, etc.)*
-- Use ``~`` for temporary attributes which can be changed on any frame *(e.g. quality, pose, truncated, etc.)*
+-   Use ``@`` for unique attributes which cannot be changed from frame to frame *(e.g. age, gender, color, etc.)*
+-   Use ``~`` for temporary attributes which can be changed on any frame *(e.g. quality, pose, truncated, etc.)*
 
 ``input_type``: the following input types are available ``select``, ``checkbox``, ``radio``, ``number``, ``text``.
 
-``attribute_name``: for example, *age, quality, parked*
+``attribute_name``: for example, _age, quality, parked_
 
-``attribute_value``: for example, *middle-age, good, true*
+``attribute_value``: for example, _middle-age, good, true_
 
 Default value for an attribute is the first value after "``:``".
 
-For ``select`` and ``radio`` input types the special value is available: ``__undefined__``. Specify this value first if an attribute should be annotated explicitly.
+For ``select`` and ``radio`` input types the special value is available: ``__undefined__``.
+Specify this value first if an attribute should be annotated explicitly.
 
 
-__Bug Tracker__. Specify full bug tracker's URL if you have it.
+**Bug Tracker**. Specify full bug tracker's URL if you have it.
 
-__Dataset Repository__.  URL link of the repository optionally specifies the path to the repository for storage (``default: annotation / <dump_file_name> .zip``). The .zip and .xml file extension of annotation are supported. Field format: ``URL [PATH]`` example: ``https://gitlab-icv.inn.intel.com/project/repos.git  [1/2/3/4/annotation.xml``
+**Dataset Repository**.  URL link of the repository optionally specifies the path to the repository for storage
+(``default: annotation / <dump_file_name> .zip``).
+The .zip and .xml file extension of annotation are supported.
+Field format: ``URL [PATH]`` example: ``https://gitlab-icv.inn.intel.com/project/repos.git  [1/2/3/4/annotation.xml]``
 
 Supported URL formats : 
- - ``https://gitlab-icv.inn.intel.com/project/repos[.git]``
- - ``gitlab-icv.inn.intel.com/project/repos[.git]``	
- - ``git@gitlab-icv.inn.intel.com:project/repos[.git]``
+-   ``https://gitlab-icv.inn.intel.com/project/repos[.git]``
+-   ``gitlab-icv.inn.intel.com/project/repos[.git]``	
+-   ``git@gitlab-icv.inn.intel.com:project/repos[.git]``
 
 The task will be highlighted in red after creation if annotation isn't synchronized with the repository.
 
