@@ -23,6 +23,7 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 -   [Attribute mode](https://youtu.be/UPNfWl8Egd8)
 -   [Segmentation mode](https://youtu.be/Fh8oKuSUIPs)
 -   [Tutorial for polygons](https://www.youtube.com/watch?v=XTwfXDh4clI)
+-   [Semi-automatic segmentation](https://www.youtube.com/watch?v=vnqXZ-Z-VTQ)
 
 ## Links
 -   [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
