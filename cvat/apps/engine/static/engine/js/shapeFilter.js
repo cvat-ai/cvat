@@ -47,7 +47,7 @@ class FilterModel {
             for (const attrId in attributes) {
                 if (Object.prototype.hasOwnProperty.call(attributes, attrId)) {
                     const key = attributes[attrId].name
-                        .toLowerCase().replace(/[-,\s]+/g, '_');
+                        .toLowerCase().replace(/[-,?!()\s]+/g, '_');
                     convertedAttributes[key] = String(attributes[attrId].value)
                         .toLowerCase();
                 }
@@ -60,13 +60,14 @@ class FilterModel {
         const converted = {};
         for (const labelId in this._labels) {
             if (Object.prototype.hasOwnProperty.call(this._labels, labelId)) {
-                converted[this._labels[labelId].replace(/[-,\s]+/g, '_')] = [];
+                converted[this._labels[labelId].toLowerCase().replace(/[-,?!()\s]+/g, '_')] = [];
             }
         }
 
         for (const shape of collection) {
             converted[this._labels[shape.model.label]
-                .toLowerCase().replace(/[-,\s]+/g, '_')].push(this._convertShape(shape));
+                .toLowerCase().replace(/[-,?!()\s]+/g, '_')]
+                .push(this._convertShape(shape));
         }
         return converted;
     }
@@ -109,7 +110,7 @@ class FilterController {
                     const labelName = label.match(/^[-,?!_0-9a-z()\s"]+/)[0];
                     const labelFilters = label.substr(labelName.length).trim();
 
-                    result += `${labelName.replace(/[-,\s]+/g, '_').replace(/"/g, '')}`;
+                    result += `${labelName.replace(/[-,?!()\s]+/g, '_').replace(/"/g, '')}`;
 
                     const orExpressions = String.customSplit(labelFilters, 'or').map(el => el.trim());
                     const formattedOrExpressions = [];
@@ -123,7 +124,7 @@ class FilterController {
                                 const [attrName, attrValue] = String.customSplit(attrExpression, '=')
                                     .map(el => el.trim());
                                 formattedAndExpressions
-                                    .push(`${attrPrefix}${attrName.replace(/[-,\s]+/g, '_')
+                                    .push(`${attrPrefix}${attrName.replace(/[-,?!()\s]+/g, '_')
                                         .replace(/"/g, '')}=${attrValue}`);
                             } else {
                                 formattedAndExpressions.push(andExpression);
