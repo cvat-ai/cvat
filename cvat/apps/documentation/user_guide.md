@@ -72,18 +72,16 @@ __Use LFS__. If the annotation file is large, you can create a repository with [
 
 __Source__. To create huge tasks please use ``shared`` server directory (choose ``Share`` option in the dialog).
 
-__Flip images__. All selected files will be turned around 180.
-
 __Z-Order__. Defines the order on drawn polygons. Check the box for enable layered displaying.
 
 __Overlap Size__. Use this option to make overlapped segments. The option makes tracks continuous from one segment into another. Use it for interpolation mode. There are several options for using the parameter:
-- For an interpolation task (video sequence). If an object exists on overlapped segments, the overlap is greater than zero and the annotation is good enough on adjacent segments, it will be automatically merged into a single track. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file, you will have several tracks, one for each segment, which correspond to the object.
-- For an annotation task (independent images). If an object exists on overlapped segments, the overlap is greater than zero and the annotation is good enough on adjacent segments, it will be automatically merged into a single track. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file, you will have several bounding boxes for the same object.
+- For an interpolation task (video sequence). If you annotate a bounding box on two adjusted segments they will be merged into one bounding box. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file, you will have several tracks, one for each segment, which corresponds to the object.
+- For an annotation task (independent images). If an object exists on overlapped segments, the overlap is greater than zero and the annotation is good enough on adjacent segments, it will be automatically merged into one object. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file, you will have several bounding boxes for the same object.
 Thus, you annotate an object on the first segment. You annotate the same object on second segment, and if you do it right, you will have one track inside your annotation file. If annotations on different segments (on overlapped frames) are very different or overlap is zero, you will have two tracks for the same object. This functionality works only for bounding boxes. Polygon, polyline, points don't support automatic merge on overlapped segments even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
 
 __Segment size__. Use this option to divide a huge dataset into a few smaller segments.
 
-__Image Quality__. Use this option to specify quality of uploaded images. The option helps to load high-quality datasets faster. Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
+__Image Quality__. Use this option to specify quality of uploaded images. The option helps to load high resolution datasets faster. Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
 
 __Select files__. Push this button to select files you want to annotate.
 
@@ -98,7 +96,7 @@ Push ``Submit`` button and it will be added into the list of annotation tasks. T
 - ``Delete Task`` — delete the task
 - ``Git Repository Sync`` — sync annotation with the repository. Presence depends on task configuration
 - ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API. Presence depends on task configuration
-- ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit. Presence depends on task configuration
+- ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit. Presense depends on how you build CVAT instance.
 
   Item color depends on status of synchronization with the repository: ``red`` means a task is not synchronized with the repository, 
 ``yellow`` means a task is in a temporary branch of the repository, ``green`` means a task is merged into the repository.
@@ -110,11 +108,11 @@ Push ``Submit`` button and it will be added into the list of annotation tasks. T
 
 ### Creating a task using model manager
 
-The application will be enabled automatically if [OpenVINO™ component](https://github.com/opencv/cvat/blob/develop/components/openvino) is installed. It allows to use custom models for auto annotation. Only models in OpenVINO™ toolkit format are supported. If you would like to annotate a task with a custom model, please convert it to the intermediate representation (IR) format via the model optimizer tool. See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details. To create a task using the model manager, click the model manager button on the main page
+The application will be enabled automatically if [OpenVINO™ component](/components/openvino) is installed. It allows to use custom models for auto annotation. Only models in OpenVINO™ toolkit format are supported. If you would like to annotate a task with a custom model, please convert it to the intermediate representation (IR) format via the model optimizer tool. See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details. You can "register" a model and "use" it after that to pre annotate your tasks.
 
 ![](static/documentation/images/image099.jpg)
 
-Model manager allows you to upload a model to form a pre annotation, for example, if there's no annotation. In the model manager window you can download or update models. [Read more](https://github.com/opencv/cvat/tree/develop/cvat/apps/auto_annotation)
+The model manager allows you to manage your deep learning (DL) models uploaded for auto annotation. Using the functionality you can upload, update or delete a specific DL model. Use "Auto annotation" button to pre annotate a task using one of your DL models. [Read more](/apps/auto_annotation)
 
 ![](static/documentation/images/image104.jpg)
 
@@ -278,7 +276,7 @@ Usage examples:
 
     ![](static/documentation/images/image029.jpg)
 
-### A Task synchronization with a repository
+### Task synchronization with a repository
 
 1. At the end of the annotation process, a task is synchronized clicking the `` Git Repository Sync`` on the main page.
 
@@ -345,9 +343,9 @@ Context menu opens by right mouse click.
 
 The next options are available clicking inside bounding box:
 - ``Copy Object URL`` — copying to the buffer address of an object on the frame in the task
-- ``Change Color`` —  сchange color of active shape
+- ``Change Color`` —  change color of active shape
 - ``Remove Shape`` — deleting the shape
-- ``Switch Occluded`` — switch the overlap shape mode
+- ``Switch Occluded`` — attribute is used if an object is occluded by another object or isn't fully visible on the frame. Use the ``Q`` shortcut to set the property quickly.
 - ``Switch Lock`` — block editing the active shape
 - ``Enable Dragging`` — (only for polygons) allows to adjust polygons position
 - ``Split`` — (only for interpolation bounding box) allows to split an interpolated track into two separate tracks. This function is the opposite of the merge function.
@@ -382,7 +380,7 @@ In ``Player Settings`` you can:
  - Control speed of ``Space``/Play button
  - Show every image in full or zoomed out like previous (reset by default)
 
-  - Enable ``Grid`` when you don't need small annotation. ``Grid`` can have different opacity, color and cells' size — use ``F2`` to configure settings.
+  - Enable ``Grid`` when you don't need small objects. ``Grid`` can have different opacity, color and cells' size — use ``F2`` to configure settings.
 
     ![](static/documentation/images/image068.jpg)
 
@@ -442,15 +440,15 @@ It is the main menu for the annotation tool. It can be used to download, upload 
 Button assignment:
 
 - ``Open Task`` — open task in cvat dashboard
-- ``RunReID Merge`` — combines unbound tracks generated by using autoannotation into one object. [Read more](https://github.com/opencv/cvat/tree/develop/cvat/apps/reid)
-- ``Dump Annotation`` — download an annotation file from the task 
-- ``Upload Annotation`` — uploading an annotation file to the task
-- ``Remove Annotation`` — remove annotation from current task
+- ``RunReID Merge`` — The ReID application uses deep learning model to perform an automatic bbox merging between neighbor frames. You can use "Merge" and "Split" functionality to edit automatically generated annotation. [Read more](/cvat/apps/reid)
+- ``Dump Annotation`` — download annotations from the task 
+- ``Upload Annotation`` — uploading annotations to the task
+- ``Remove Annotation`` — remove annotations from current task
 - ``Settings`` — open the settings menu
 - ``Fullscreen Player`` — fullscreen player mode
-- ``Switch AAM`` — switch to AAM
+- ``Switch AAM`` — switch to attribute annotation mode
 - ``Help`` — open the shortkeys
-- ``Save Work`` — save annotation from current link. The button has an indication of the saving process
+- ``Save Work`` — save annotations for the current job. The button has an indication of the saving process
 
 It also shows statistics about the current task, for example:
 - task name
@@ -712,12 +710,12 @@ Press ``N`` again for finishing marking an area. You can delete points double-cl
 
 ## 9. Annotation with Auto Segmentation
 
-Used to create a polygon automatically. Before starting, you have to be sure that ``Auto Segmentation`` is selected.
+Used to create a polygon semi-automatically. Before starting, you have to be sure that ``Auto Segmentation`` is selected.
 
 ![](static/documentation/images/image114.jpg)
 
 Press ``N`` for entering drawing mode. Now you can start annotating the necessary area.
-Press ``N`` again for finishing marking an area. A shape must consist of 4 points minimum. You can set a fixed number of points in the field "poly shape size", then drawing will be stopped automatically. You can zoom in/out (when scrolling the mouse wheel) and move (when clicking the mouse wheel and moving the mouse) while drawing. At the end of Auto Segmentation, a shape is created and you can work with it as a Polygon.
+Press ``N`` again for finishing marking an area. A shape must consist of 4 points minimum. You can set a fixed number of points in the field "poly shape size", then drawing will be stopped automatically. You can zoom in/out (when scrolling the mouse wheel) and move (when clicking the mouse wheel and moving the mouse) while drawing. At the end of Auto Segmentation, a shape is created and you can work with it as a polygon.
 
 ![](static/documentation/images/gif009.gif)
 
@@ -799,7 +797,7 @@ Example                                                 | Description
 
 ## 12. Analytics
 
-If your CVAT instance is created with analytics support, you can press F3 or the "Analytics" button in dashboard, a new tab with analytics and journals will open.
+If your CVAT instance is created with analytics support, you can press  the "analytics" button in dashboard, a new tab with analytics and journals will open.
 
 ![](static/documentation/images/image113.jpg)
 
