@@ -21,7 +21,7 @@ class FilterModel {
     }
 
     _convertShape(shape) {
-        // We replace all dashes due to defiant.js can't work with it
+        // We replace all special characters due to defiant.js can't work with them
         function convertAttributes(attributes) {
             const convertedAttributes = {};
             for (const attrId in attributes) {
