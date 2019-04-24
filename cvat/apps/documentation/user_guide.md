@@ -33,7 +33,7 @@
     * [11. Filter](#11-filter)
     * [12. Analytics](#12-analytics)
     * [13. Shortcuts](#13-shortcuts)
-    * [14. Hints](#14-hints)
+        * [Hints](#hints)
 
 # User's guide
 
@@ -915,7 +915,7 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 ``Left Arrow``         | go to the previous frame which corresponds to the specified filter value
 ``Right Arrow``        | go to the next frame which corresponds to the specified filter value
 
-### 14. Hints
+#### Hints
 
 Hold ``Mouse Wheel`` to move frame (for example, while drawing)
 
