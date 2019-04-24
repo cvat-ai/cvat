@@ -22,113 +22,127 @@
         TaskMode,
     } = require('./enums');
 
-    const annotationsModule = {
-        async upload(file) {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, annotationsModule.upload, file);
-            return result;
-        },
+    function buildDublicatedAPI() {
+        const annotationsModule = {
+            async upload(file) {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, annotationsModule.upload, file);
+                return result;
+            },
 
-        async save() {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, annotationsModule.save);
-            return result;
-        },
+            async save() {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, annotationsModule.save);
+                return result;
+            },
 
-        async clear() {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, annotationsModule.clear);
-            return result;
-        },
+            async clear() {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, annotationsModule.clear);
+                return result;
+            },
 
-        async dump() {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, annotationsModule.dump);
-            return result;
-        },
+            async dump() {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, annotationsModule.dump);
+                return result;
+            },
 
-        async statistics() {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, annotationsModule.statistics);
-            return result;
-        },
+            async statistics() {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, annotationsModule.statistics);
+                return result;
+            },
 
-        async put(arrayOfObjects = []) {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, annotationsModule.put, arrayOfObjects);
-            return result;
-        },
+            async put(arrayOfObjects = []) {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, annotationsModule.put, arrayOfObjects);
+                return result;
+            },
 
-        async get(frame, filter = {}) {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, annotationsModule.get, frame, filter);
-            return result;
-        },
+            async get(frame, filter = {}) {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, annotationsModule.get, frame, filter);
+                return result;
+            },
 
-        async search(filter, frameFrom, frameTo) {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, annotationsModule.search, filter, frameFrom, frameTo);
-            return result;
-        },
+            async search(filter, frameFrom, frameTo) {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, annotationsModule.search, filter, frameFrom, frameTo);
+                return result;
+            },
 
-        async select(frame, x, y) {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, annotationsModule.select, frame, x, y);
-            return result;
-        },
-    };
+            async select(frame, x, y) {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, annotationsModule.select, frame, x, y);
+                return result;
+            },
+        };
 
-    const framesModule = {
-        async get(frame) {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, framesModule.get, frame);
-            return result;
-        },
-    };
+        const framesModule = {
+            async get(frame) {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, framesModule.get, frame);
+                return result;
+            },
+        };
 
-    const logsModule = {
-        async put(logType, details) {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, logsModule.put, logType, details);
-            return result;
-        },
-        async save() {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, logsModule.save);
-            return result;
-        },
-    };
+        const logsModule = {
+            async put(logType, details) {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, logsModule.put, logType, details);
+                return result;
+            },
+            async save() {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, logsModule.save);
+                return result;
+            },
+        };
 
-    const actionsModule = {
-        async undo(count) {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, actionsModule.undo, count);
-            return result;
-        },
-        async redo(count) {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, actionsModule.redo, count);
-            return result;
-        },
-        async clear() {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, actionsModule.clear);
-            return result;
-        },
-    };
+        const actionsModule = {
+            async undo(count) {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, actionsModule.undo, count);
+                return result;
+            },
+            async redo(count) {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, actionsModule.redo, count);
+                return result;
+            },
+            async clear() {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, actionsModule.clear);
+                return result;
+            },
+        };
 
-    const eventsModule = {
-        async subscribe(eventType, callback) {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, eventsModule.subscribe, eventType, callback);
-            return result;
-        },
-        async unsubscribe(eventType, callback = null) {
-            const result = await PluginRegistry
-                .apiWrapper.call(this, eventsModule.unsubscribe, eventType, callback);
-            return result;
-        },
-    };
+        const eventsModule = {
+            async subscribe(eventType, callback) {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, eventsModule.subscribe, eventType, callback);
+                return result;
+            },
+            async unsubscribe(eventType, callback = null) {
+                const result = await PluginRegistry
+                    .apiWrapper.call(this, eventsModule.unsubscribe, eventType, callback);
+                return result;
+            },
+        };
+
+        return {
+            annotationsModule,
+            framesModule,
+            logsModule,
+            actionsModule,
+            eventsModule,
+        };
+    }
+
+    // Two copies of API for Task and for Job
+    const jobAPI = buildDublicatedAPI();
+    const taskAPI = buildDublicatedAPI();
 
     /**
         * API entrypoint
@@ -293,15 +307,14 @@
         plugins: {
             /**
                 * @typedef {Object} Plugin
-                * A plugin is a JS object. It must have properties listed below. <br>
+                * A plugin is a Javascript object. It must have properties are listed below. <br>
                 * It also mustn't have property 'functions' which is used internally. <br>
-                * You can expand any API method including methods of classes. <br>
-                * For a class method just use a class name in a cvat space (example listed below).
+                * You can expand any API method including class methods. <br>
+                * In order to expand class method just use a class name
+                * in a cvat space (example is listed below).
                 *
                 * @property {string} name A name of a plugin
                 * @property {string} description A description of a plugin
-                * @global
-                *
                 * Example plugin implementation listed below:
                 * @example
                 * plugin = {
@@ -310,28 +323,49 @@
                 *   cvat: {
                 *     server: {
                 *       about: {
-                *         // We add some actions after the cvat.server.about() method execute
-                *         // For example let's add a field with installed plugins to a result
-                *         // An argument "self" is plugin structure as is with one
-                *         // more field "functions" which is used internally
+                *         // Plugin adds some actions after executing the cvat.server.about()
+                *         // For example it adds a field with installed plugins to a result
+                *         // An argument "self" is a plugin itself
                 *         // An argument "result" is a return value of cvat.server.about()
                 *         // All next arguments are arguments of a wrapped function
                 *         // (in this case the wrapped function doesn't have any arguments)
                 *         leave(self, result) {
                 *           result.plugins = self.internal.getPlugins();
-                *           // Note that a leave method must return "result" (changed or not)
-                *           // In other case API will not work as expected
+                *           // Note that a method leave must return "result" (changed or not)
+                *           // Otherwise API won't work as expected
                 *           return result;
                 *         },
                 *       },
                 *     },
+                *     // In this example plugin also wraps a class method
+                *     Job: {
+                *       annotations: {
+                *         put: {
+                *           // The first argument "self" is a plugin, like in a case above
+                *           // The second argument is an argument of the cvat.Job.annotations.put()
+                *           // It contains an array of objects to put
+                *           // In this sample we round objects coordinates and save them
+                *           enter(self, objects) {
+                *             for (const obj of objects) {
+                *               if (obj.type != 'tag') {
+                *                 const points = obj.position.map(point => {
+                *                   x: Math.round(point.x),
+                *                   y: Math.round(point.y),
+                *                 });
+                *                 obj.points = points;
+                *               }
+                *             }
+                *           },
+                *         },
+                *       },
+                *     }
                 *   },
                 *   // In general you can add any others members to your plugin
                 *   // Members below are only examples
                 *   internal: {
                 *     getPlugins() {
                 *       // Collect information about installed plugins
-                *       const plugins = cvat.plugins.list().map((el) => {
+                *       return cvat.plugins.list().map((el) => {
                 *         return {
                 *           name: el.name,
                 *           description: el.description,
@@ -340,6 +374,7 @@
                 *     },
                 *   },
                 * };
+                * @global
             */
 
             /**
@@ -444,11 +479,11 @@
                     .apiWrapper(cvat.Job.save);
                 return result;
             },
-            annotations: Object.freeze(annotationsModule),
-            frames: Object.freeze(framesModule),
-            logs: Object.freeze(logsModule),
-            actions: Object.freeze(actionsModule),
-            events: Object.freeze(eventsModule),
+            annotations: Object.freeze(jobAPI.annotationsModule),
+            frames: Object.freeze(jobAPI.framesModule),
+            logs: Object.freeze(jobAPI.logsModule),
+            actions: Object.freeze(jobAPI.actionsModule),
+            events: Object.freeze(jobAPI.eventsModule),
         },
         Task: {
             async delete() {
@@ -461,11 +496,11 @@
                     .apiWrapper(cvat.Task.save);
                 return result;
             },
-            annotations: Object.freeze(annotationsModule),
-            frames: Object.freeze(framesModule),
-            logs: Object.freeze(logsModule),
-            actions: Object.freeze(actionsModule),
-            events: Object.freeze(eventsModule),
+            annotations: Object.freeze(taskAPI.annotationsModule),
+            frames: Object.freeze(taskAPI.framesModule),
+            logs: Object.freeze(taskAPI.logsModule),
+            actions: Object.freeze(taskAPI.actionsModule),
+            events: Object.freeze(taskAPI.eventsModule),
         },
     };
 
@@ -483,28 +518,4 @@
     global.cvat = Object.freeze(implementation(cvat));
 })();
 
-
-const plugin = {
-    cvat: {
-        server: {
-            about: {
-                async leave(self, result) {
-                    result.itworks = true;
-                    console.log(result);
-                    console.log(self);
-                    return result;
-                },
-                async enter() {
-                    console.log('hohoho');
-                },
-            },
-        },
-    },
-};
-
-global.cvat.plugins.register(plugin).then(() => {
-    console.log(plugin);
-    global.cvat.server.about().then((result) => {
-        console.log(result);
-    });
-});
+console.log('tmp');
