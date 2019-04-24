@@ -39,6 +39,17 @@ def _have_no_access_exception(ex):
         raise ex
 
 
+def _read_old_diffs(diff_dir, summary):
+    diff_files = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
+    for diff_file in diff_files:
+        diff_file = open(diff_file, 'r')
+        diff = json.loads(diff_file.read())
+
+        for action_key in diff:
+            summary[action_key] += sum([diff[action_key][key] for key in diff[action_key]])
+
+
+
 class Git:
     def __init__(self, db_git, tid, user):
         self._db_git = db_git
@@ -273,13 +284,20 @@ class Git:
         self._rep.git.add(self._annotation_file)
 
         # Merge diffs
-        summary_diff = {}
+        summary_diff = {
+            "update": 0,
+            "create": 0,
+            "delete": 0
+        }
+
+        old_diffs_dir = os.path.join(os.path.dirname(self._diffs_dir), 'repos_diffs')
+        if (os.path.isdir(old_diffs_dir)):
+            _read_old_diffs(old_diffs_dir, summary_diff)
+
         for diff_name in list(map(lambda x: os.path.join(self._diffs_dir, x), os.listdir(self._diffs_dir))):
             with open(diff_name, 'r') as f:
                 diff = json.loads(f.read())
                 for key in diff:
-                    if key not in summary_diff:
-                        summary_diff[key] = 0
                     summary_diff[key] += diff[key]
 
         message = "CVAT Annotation updated by {}. \n".format(self._user["name"])
@@ -297,6 +315,7 @@ class Git:
         self._rep.index.commit(message)
         self._rep.git.push("origin", self._branch_name, "--force")
 
+        shutil.rmtree(old_diffs_dir, True)
         shutil.rmtree(self._diffs_dir, True)
 
 
@@ -438,14 +457,10 @@ def _onsave(jid, user, data, action):
             "create": 0,
             "delete": 0
         }
-        if os.path.isdir(diff_dir) and not os.path.isdir(diff_dir_v2):
-            diff_files = list(map(lambda x: os.path.join(diff_dir, x), os.listdir(diff_dir)))
-            for diff_file in diff_files:
-                diff_file = open(diff_file, 'r')
-                diff = json.loads(diff_file.read())
 
-                for action_key in diff:
-                    summary[action_key] += sum([diff[action_key][key] for key in diff[action_key]])
+        if os.path.isdir(diff_dir):
+            _read_old_diffs(diff_dir, summary)
+            shutil.rmtree(diff_dir, True)
 
         os.makedirs(diff_dir_v2, exist_ok = True)
 
