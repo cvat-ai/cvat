@@ -116,7 +116,7 @@ class FilterController {
             const labels = String.customSplit(value, '[|]').map(el => el.trim());
             let result = '';
             for (const label of labels) {
-                const labelName = label.match(/^[-,?!_0-9a-z()\s"]+/)[0];
+                const labelName = label.match(/^[-,?!_0-9a-z()*\s"]+/)[0];
                 const labelFilters = label.substr(labelName.length).trim();
 
                 result += `${labelName.replace(this._model.regex, '_').replace(/"/g, '')}`;
@@ -132,11 +132,14 @@ class FilterController {
                             const attrPrefix = attrMatch[0];
                             const attrExpression = andExpression.substr(attrMatch.index
                                 + attrPrefix.length);
-                            const [attrName, attrValue] = String.customSplit(attrExpression, '=')
-                                .map(el => el.trim());
+                            const [attrName, attrValue] = String
+                                .customSplit(attrExpression, '=|<=|>=|<|>|!=');
+                            const condition = attrExpression
+                                .slice(attrName.length, -attrValue.length).trim();
+
                             formattedAndExpressions
-                                .push(`${attrPrefix}${attrName.replace(this._model.regex, '_')
-                                    .replace(/"/g, '')}=${attrValue}`);
+                                .push(`${attrPrefix}${attrName.trim().replace(this._model.regex, '_')
+                                    .replace(/"/g, '')}${condition}${attrValue.trim()}`);
                         } else {
                             formattedAndExpressions.push(andExpression);
                         }
