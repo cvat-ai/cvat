@@ -437,6 +437,7 @@
                 * @memberof module:API.cvat.client
             */
             version: `${pjson.version}`,
+            clientID: Date.now().toString().substr(-6),
         },
         /**
             * Namespace is used for access to enums

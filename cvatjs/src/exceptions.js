@@ -5,15 +5,15 @@
 
 /* global
     require:false
+    global:false
 */
 
 (() => {
     const Platform = require('platform');
     const ErrorStackParser = require('error-stack-parser');
-    const serverProxy = require('./server-proxy');
 
     class Exception extends Error {
-        constructor(message, initialObject = {}) {
+        constructor(message) {
             super(message);
             const time = new Date().toISOString();
             const system = Platform.os.toString();
@@ -22,19 +22,13 @@
             const filename = info.fileName;
             const line = info.lineNumber;
             const column = info.columnNumber;
+            const {
+                jobID,
+                taskID,
+                clientID,
+            } = global.cvat.client;
 
-            const indexes = {
-                jobID: undefined,
-                taskID: undefined,
-                projID: undefined,
-                clientID: undefined,
-            };
-
-            for (const key of ['clientID', 'taskID', 'projID', 'jobID']) {
-                if (Object.prototype.hasOwnProperty.call(initialObject, key)) {
-                    indexes[key] = initialObject[key];
-                }
-            }
+            const projID = undefined; // wasn't implemented
 
             Object.defineProperties(this, {
                 system: {
@@ -47,16 +41,16 @@
                     get: () => time,
                 },
                 jobID: {
-                    get: () => indexes.jobID,
+                    get: () => jobID,
                 },
                 taskID: {
-                    get: () => indexes.taskID,
+                    get: () => taskID,
                 },
                 projID: {
-                    get: () => indexes.projID,
+                    get: () => projID,
                 },
                 clientID: {
-                    get: () => indexes.clientID,
+                    get: () => clientID,
                 },
                 filename: {
                     get: () => filename,
@@ -87,9 +81,11 @@
             };
 
             try {
+                const { serverProxy } = require('./server-proxy');
                 await serverProxy.server.exception(exceptionObject);
             } catch (exception) {
                 console.log('\nCould not send an exception', exception);
+                // add event
             }
         }
     }
@@ -97,7 +93,7 @@
     class PluginException extends Exception {}
     class ServerInteractionException extends Exception {
         constructor(message, initialObject = {}) {
-            super(message, initialObject);
+            super(message);
             this.code = initialObject.code;
         }
     }

@@ -270,5 +270,8 @@
         }
     }
 
-    module.exports = new ServerProxy();
+    const serverProxy = new ServerProxy();
+    module.exports = {
+        serverProxy,
+    };
 })();

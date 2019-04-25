@@ -81,8 +81,20 @@
                 if (!(this instanceof Base)) {
                     throw new Exception('Bad context for the function');
                 }
-                const result = await wrappedFunction.call(this, ...args);
-                return result;
+
+                try {
+                    if (this instanceof Task) {
+                        global.cvat.client.taskID = this.id;
+                    } else if (this instanceof Job) {
+                        global.cvat.client.jobID = this.id;
+                        global.cvat.client.taskID = this.task.id;
+                    }
+                    const result = await wrappedFunction.call(this, ...args);
+                    return result;
+                } finally {
+                    delete global.cvat.client.taskID;
+                    delete global.cvat.client.jobID;
+                }
             };
         }
 
