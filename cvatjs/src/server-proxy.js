@@ -37,7 +37,9 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException();
+                    throw new ServerInteractionException('Could not get "about" information from a server', {
+                        code: errorData.code,
+                    });
                 }
 
                 return response;
@@ -53,7 +55,9 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException();
+                    throw new ServerInteractionException('Could not get "share" information from a server', {
+                        code: errorData.code,
+                    });
                 }
 
                 return response;
@@ -71,7 +75,9 @@
                         },
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException();
+                    throw new ServerInteractionException('Could not send an exception to a server', {
+                        code: errorData.code,
+                    });
                 }
             }
 
@@ -99,7 +105,8 @@
                         if (csrftoken) {
                             setCSRFHeader(csrftoken);
                         } else {
-                            throw new Exception();
+                            throw new Exception('An environment has been detected as a browser'
+                                + ', but CSRF token has not been found in cookies');
                         }
                     }
                 }
@@ -110,7 +117,9 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException();
+                    throw new ServerInteractionException('Could not get CSRF token from a server', {
+                        code: errorData.code,
+                    });
                 }
 
                 setCookie(csrf);
@@ -138,7 +147,9 @@
                         // Redirection code expected
                         authentificationResponse = errorData.response;
                     } else {
-                        throw new ServerInteractionException();
+                        throw new ServerInteractionException('Could not authentificate on a server', {
+                            code: errorData.code,
+                        });
                     }
                 }
 
@@ -155,7 +166,9 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException();
+                    throw new ServerInteractionException('Could not get tasks from a server', {
+                        code: errorData.code,
+                    });
                 }
 
                 return response.data;
@@ -171,7 +184,9 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException();
+                    throw new ServerInteractionException('Could not get jobs from a server', {
+                        code: errorData.code,
+                    });
                 }
 
                 return response.data;
@@ -187,7 +202,9 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException();
+                    throw new ServerInteractionException('Could not get jobs from a server', {
+                        code: errorData.code,
+                    });
                 }
 
                 return response.data;
@@ -203,7 +220,9 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException();
+                    throw new ServerInteractionException('Could not get users from a server', {
+                        code: errorData.code,
+                    });
                 }
 
                 return response.data;
@@ -219,7 +238,9 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException();
+                    throw new ServerInteractionException('Could not get users from a server', {
+                        code: errorData.code,
+                    });
                 }
 
                 return response.data;

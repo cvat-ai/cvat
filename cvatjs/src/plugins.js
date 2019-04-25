@@ -40,23 +40,23 @@
         static async register(plug) {
             const functions = [];
 
-            if (!('name' in plug)) {
-                throw new PluginException('Plugin should be an object');
+            if (typeof (plugin) !== 'object') {
+                throw new PluginException(`Plugin should be an object, but got "${typeof (plugin)}"`);
             }
 
-            if (!('description' in plug)) {
-                throw new PluginException('Plugin should be an object');
+            if (!('name' in plug) || typeof (plug.name) !== 'string') {
+                throw new PluginException('Plugin must contain a "name" field and it must be a string');
+            }
+
+            if (!('description' in plug) || typeof (plug.description) !== 'string') {
+                throw new PluginException('Plugin must contain a "description" field and it must be a string');
             }
 
             if ('functions' in plug) {
-                throw new PluginException('Plugin should be an object');
+                throw new PluginException('Plugin must not contain a "functions" field');
             }
 
             (function traverse(plugin, api) {
-                if (typeof (plugin) !== 'object') {
-                    throw Error(`Plugin should be an object, but got ${typeof (plugin)}`);
-                }
-
                 const decorator = {};
                 for (const key in plugin) {
                     if (Object.prototype.hasOwnProperty.call(plugin, key)) {
