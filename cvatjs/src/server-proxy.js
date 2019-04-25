@@ -10,6 +10,11 @@
 */
 
 (() => {
+    const {
+        Exception,
+        ServerInteractionException,
+    } = require('./exceptions');
+
     class ServerProxy {
         constructor() {
             const Cookie = require('js-cookie');
@@ -32,7 +37,7 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    // make exception
+                    throw new ServerInteractionException();
                 }
 
                 return response;
@@ -48,7 +53,7 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    // make exception
+                    throw new ServerInteractionException();
                 }
 
                 return response;
@@ -59,27 +64,14 @@
                 const { api } = global.cvat.config;
 
                 try {
-                    await Axios.post(`${host}/api/${api}/server/exception`, JSON.stringify({
-                        system: exceptionObject.system,
-                        client: exceptionObject.client,
-                        time: exceptionObject.time,
-                        job_id: exceptionObject.jobID,
-                        task_id: exceptionObject.taskID,
-                        proj_id: exceptionObject.projID,
-                        client_id: exceptionObject.clientID,
-                        message: exceptionObject.message,
-                        filename: exceptionObject.filename,
-                        line: exceptionObject.line,
-                        column: exceptionObject.column,
-                        stack: exceptionObject.stack,
-                    }), {
+                    await Axios.post(`${host}/api/${api}/server/exception`, JSON.stringify(exceptionObject), {
                         proxy: global.cvat.config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
                         },
                     });
                 } catch (errorData) {
-                    // add log if save fault
+                    throw new ServerInteractionException();
                 }
             }
 
@@ -107,7 +99,7 @@
                         if (csrftoken) {
                             setCSRFHeader(csrftoken);
                         } else {
-                            // make exception
+                            throw new Exception();
                         }
                     }
                 }
@@ -118,7 +110,7 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    // make exception
+                    throw new ServerInteractionException();
                 }
 
                 setCookie(csrf);
@@ -146,7 +138,7 @@
                         // Redirection code expected
                         authentificationResponse = errorData.response;
                     } else {
-                        // make exception
+                        throw new ServerInteractionException();
                     }
                 }
 
@@ -163,7 +155,7 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    // make exception
+                    throw new ServerInteractionException();
                 }
 
                 return response.data;
@@ -179,7 +171,7 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    // make exception
+                    throw new ServerInteractionException();
                 }
 
                 return response.data;
@@ -195,7 +187,7 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    // make exception
+                    throw new ServerInteractionException();
                 }
 
                 return response.data;
@@ -211,7 +203,7 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    // make exception
+                    throw new ServerInteractionException();
                 }
 
                 return response.data;
@@ -227,7 +219,7 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    // make exception
+                    throw new ServerInteractionException();
                 }
 
                 return response.data;
@@ -278,5 +270,5 @@
         }
     }
 
-    module.exports = ServerProxy;
+    module.exports = new ServerProxy();
 })();

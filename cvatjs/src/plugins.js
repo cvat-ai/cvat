@@ -5,9 +5,12 @@
 
 /* global
     global:false
+    require:false
 */
 
 (() => {
+    const { PluginException } = require('./exceptions');
+
     const plugins = [];
     class PluginRegistry {
         static async apiWrapper(wrappedFunc, ...args) {
@@ -38,15 +41,15 @@
             const functions = [];
 
             if (!('name' in plug)) {
-                throw Error(`Plugin should be an object`);
+                throw new PluginException('Plugin should be an object');
             }
 
             if (!('description' in plug)) {
-                throw Error(`Plugin should be an object`);
+                throw new PluginException('Plugin should be an object');
             }
 
             if ('functions' in plug) {
-                throw Error(`Plugin should be an object`);
+                throw new PluginException('Plugin should be an object');
             }
 
             (function traverse(plugin, api) {

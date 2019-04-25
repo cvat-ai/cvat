@@ -3,89 +3,108 @@
 * SPDX-License-Identifier: MIT
 */
 
-
-// Authentification exception
-// Network communication exception
-// Server Error
-
+/* global
+    require:false
+*/
 
 (() => {
+    const Platform = require('platform');
+    const ErrorStackParser = require('error-stack-parser');
     const serverProxy = require('./server-proxy');
 
     class Exception extends Error {
-        constructor(...args) {
-            super(...args);
-            this.system = undefined;
-            this.client = undefined;
-            this.time = undefined;
-            this.jobID = undefined;
-            this.taskID = undefined;
-            this.projID = undefined;
-            this.clientID = undefined;
-            this.message = undefined;
-            this.filename = undefined;
-            this.line = undefined;
-            this.column = undefined;
-            this.stack = undefined;
-            this.code = undefined;
-        }
+        constructor(message, initialObject = {}) {
+            super(message);
+            const time = new Date().toISOString();
+            const system = Platform.os.toString();
+            const client = `${Platform.name} ${Platform.version}`;
+            const info = ErrorStackParser.parse(this)[0];
+            const filename = info.fileName;
+            const line = info.lineNumber;
+            const column = info.columnNumber;
 
-        get system() {
-            return this.system;
-        }
+            const indexes = {
+                jobID: undefined,
+                taskID: undefined,
+                projID: undefined,
+                clientID: undefined,
+            };
 
-        get client() {
-            return this.client;
-        }
+            for (const key of ['clientID', 'taskID', 'projID', 'jobID']) {
+                if (Object.prototype.hasOwnProperty.call(initialObject, key)) {
+                    indexes[key] = initialObject[key];
+                }
+            }
 
-        get time() {
-            return this.time;
-        }
-
-        get jobID() {
-            return this.jobID;
-        }
-
-        get taskID() {
-            return this.taskID;
-        }
-
-        get projID() {
-            return this.clientID;
-        }
-
-        get message() {
-            return this.message;
-        }
-
-        get filename() {
-            return this.filename;
-        }
-
-        get line() {
-            return this.line;
-        }
-
-        get column() {
-            return this.column;
-        }
-
-        get stack() {
-            return this.stack;
-        }
-
-        get code() {
-            return this.code;
+            Object.defineProperties(this, {
+                system: {
+                    get: () => system,
+                },
+                client: {
+                    get: () => client,
+                },
+                time: {
+                    get: () => time,
+                },
+                jobID: {
+                    get: () => indexes.jobID,
+                },
+                taskID: {
+                    get: () => indexes.taskID,
+                },
+                projID: {
+                    get: () => indexes.projID,
+                },
+                clientID: {
+                    get: () => indexes.clientID,
+                },
+                filename: {
+                    get: () => filename,
+                },
+                line: {
+                    get: () => line,
+                },
+                column: {
+                    get: () => column,
+                },
+            });
         }
 
         async save() {
+            const exceptionObject = {
+                system: this.system,
+                client: this.client,
+                time: this.time,
+                job_id: this.jobID,
+                task_id: this.taskID,
+                proj_id: this.projID,
+                client_id: this.clientID,
+                message: this.message,
+                filename: this.filename,
+                line: this.line,
+                column: this.column,
+                stack: this.stack,
+            };
 
-            this.code = null;
+            try {
+                await serverProxy.server.exception(exceptionObject);
+            } catch (exception) {
+                console.log('\nCould not send an exception', exception);
+            }
+        }
+    }
+
+    class PluginException extends Exception {}
+    class ServerInteractionException extends Exception {
+        constructor(message, initialObject = {}) {
+            super(message, initialObject);
+            this.code = initialObject.code;
         }
     }
 
     module.exports = {
         Exception,
-
+        PluginException,
+        ServerInteractionException,
     };
 })();

@@ -518,4 +518,9 @@
     global.cvat = Object.freeze(implementation(cvat));
 })();
 
-console.log('tmp');
+
+const { Exception } = require('./exceptions');
+
+(async function test() {
+    await new Exception('test message').save();
+}());
