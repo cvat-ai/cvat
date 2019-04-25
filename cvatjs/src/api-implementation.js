@@ -11,6 +11,7 @@
 
 (() => {
     const PluginRegistry = require('./plugins');
+
     const User = require('./user');
     const Exception = require('./exceptions');
     const Statistics = require('./statistics');
@@ -30,7 +31,7 @@
         };
 
         cvat.server.share.implementation = async (directory) => {
-            const result = await serverProxy.server.directory(directory);
+            const result = await serverProxy.server.share(directory);
             return result;
         };
 

@@ -1,3 +1,8 @@
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
 (() => {
     const ShareFileType = Object.freeze({
         DIR: 'DIR',

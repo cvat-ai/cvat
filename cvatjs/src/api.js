@@ -522,5 +522,7 @@ const { Exception } = require('./exceptions');
 
 (async function test() {
     await global.cvat.server.login('admin', 'nimda760');
+    console.log(await global.cvat.server.about());
+    console.log(await global.cvat.server.share('/'));
     await new Exception('test message').save();
 }());

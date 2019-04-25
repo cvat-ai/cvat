@@ -41,7 +41,7 @@
                     });
                 }
 
-                return response;
+                return response.data;
             }
 
             async function share(directory) {
@@ -58,7 +58,7 @@
                     });
                 }
 
-                return response;
+                return response.data;
             }
 
             async function exception(exceptionObject) {
