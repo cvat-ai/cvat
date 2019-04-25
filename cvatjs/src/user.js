@@ -9,68 +9,62 @@
     */
     class User {
         constructor(initialData = {}) {
-            this.id = null;
-            this.username = null;
-            this.email = null;
-            this.firstName = null;
-            this.lastName = null;
-            this.groups = null;
-            this.lastLogin = null;
-            this.dateJoined = null;
-            this.isStaff = null;
-            this.isSuperuser = null;
-            this.isActive = null;
+            const data = {
+                id: null,
+                username: null,
+                email: null,
+                firstName: null,
+                lastName: null,
+                groups: null,
+                lastLogin: null,
+                dateJoined: null,
+                isStaff: null,
+                isSuperuser: null,
+                isActive: null,
+            };
 
             for (const property in this) {
                 if (Object.prototype.hasOwnProperty.call(this, property)
                     && property in initialData) {
-                    this[property] = initialData[property];
+                    data[property] = initialData[property];
                 }
             }
-        }
 
-        get id() {
-            return this.id;
-        }
-
-        get username() {
-            return this.username;
-        }
-
-        get email() {
-            return this.email;
-        }
-
-        get firstName() {
-            return this.firstName;
-        }
-
-        get lastName() {
-            return this.lastName;
-        }
-
-        get groups() {
-            return JSON.parse(JSON.stringify(this.groups));
-        }
-
-        get lastLogin() {
-            return this.lastLogin;
-        }
-
-        get dateJoined() {
-            return this.dateJoined;
-        }
-
-        get isStaff() {
-            return this.isStaff;
-        }
-
-        get isSuperuser() {
-            return this.isSuperuser;
-        }
-
-        get isActive() {
-            return this.isActive;
+            Object.defineProperties(this, {
+                id: {
+                    get: () => data.id,
+                },
+                username: {
+                    get: () => data.username,
+                },
+                email: {
+                    get: () => data.email,
+                },
+                firstName: {
+                    get: () => data.firstName,
+                },
+                lastName: {
+                    get: () => data.lastName,
+                },
+                groups: {
+                    get: () => JSON.parse(JSON.stringify(data.groups)),
+                },
+                lastLogin: {
+                    get: () => data.lastLogin,
+                },
+                dateJoined: {
+                    get: () => data.dateJoined,
+                },
+                isStaff: {
+                    get: () => data.isStaff,
+                },
+                isSuperuser: {
+                    get: () => data.isSuperuser,
+                },
+                isActive: {
+                    get: () => data.isActive,
+                },
+            });
         }
     }
 
