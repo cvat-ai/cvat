@@ -409,16 +409,13 @@
         */
         config: {
             /**
-                * @property {string} host host with a server REST API
-                * @memberof module:API.cvat.config
-                * @property {string} api used REST API version
+                * @property {string} restAPI host with a server REST API
                 * @memberof module:API.cvat.config
                 * @property {string} proxy Axios proxy settings.
                 * For more details please read <a href="https://github.com/axios/axios"> here </a>
                 * @memberof module:API.cvat.config
             */
-            host: 'http://localhost:7000',
-            api: 'v1',
+            restAPI: 'http://localhost:7000/api/v1',
             proxy: false,
         },
         /**
@@ -437,7 +434,6 @@
                 * @memberof module:API.cvat.client
             */
             version: `${pjson.version}`,
-            clientID: Date.now().toString().substr(-6),
         },
         /**
             * Namespace is used for access to enums
@@ -517,11 +513,14 @@
 
     const implementation = require('./api-implementation');
     global.cvat = Object.freeze(implementation(cvat));
-})();
 
+    const hidden = require('./hidden');
+    hidden.location = global.cvat.config.restAPI.slice(0, -7); // TODO: Use JS server instead
+})();
 
 const { Exception } = require('./exceptions');
 
 (async function test() {
+    await global.cvat.server.login('admin', 'nimda760');
     await new Exception('test message').save();
 }());

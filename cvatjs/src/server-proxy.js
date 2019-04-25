@@ -28,17 +28,16 @@
             }
 
             async function about() {
-                const { host } = global.cvat.config;
-                const { api } = global.cvat.config;
+                const { restAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${host}/api/${api}/server/about`, {
+                    response = await Axios.get(`${restAPI}/server/about`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     throw new ServerInteractionException('Could not get "about" information from a server', {
-                        code: errorData.code,
+                        code: errorData.response ? errorData.response.status : errorData.code,
                     });
                 }
 
@@ -46,17 +45,16 @@
             }
 
             async function share(directory) {
-                const { host } = global.cvat.config;
-                const { api } = global.cvat.config;
+                const { restAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${host}/api/${api}/server/share?directory=${directory}`, {
+                    response = await Axios.get(`${restAPI}/server/share?directory=${directory}`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     throw new ServerInteractionException('Could not get "share" information from a server', {
-                        code: errorData.code,
+                        code: errorData.response ? errorData.response.status : errorData.code,
                     });
                 }
 
@@ -64,11 +62,10 @@
             }
 
             async function exception(exceptionObject) {
-                const { host } = global.cvat.config;
-                const { api } = global.cvat.config;
+                const { restAPI } = global.cvat.config;
 
                 try {
-                    await Axios.post(`${host}/api/${api}/server/exception`, JSON.stringify(exceptionObject), {
+                    await Axios.post(`${restAPI}/server/exception`, JSON.stringify(exceptionObject), {
                         proxy: global.cvat.config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
@@ -76,12 +73,12 @@
                     });
                 } catch (errorData) {
                     throw new ServerInteractionException('Could not send an exception to a server', {
-                        code: errorData.code,
+                        code: errorData.response ? errorData.response.status : errorData.code,
                     });
                 }
             }
 
-            async function authentificate(username, password) {
+            async function login(username, password) {
                 function setCookie(response) {
                     if (response.headers['set-cookie']) {
                         // Browser itself setup cookie and header is none
@@ -111,14 +108,15 @@
                     }
                 }
 
+                const host = global.cvat.config.restAPI.slice(0, -7);
                 let csrf = null;
                 try {
-                    csrf = await Axios.get(`${global.cvat.config.host}/auth/login`, {
+                    csrf = await Axios.get(`${host}/auth/login`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     throw new ServerInteractionException('Could not get CSRF token from a server', {
-                        code: errorData.code,
+                        code: errorData.response ? errorData.response.status : errorData.code,
                     });
                 }
 
@@ -132,7 +130,7 @@
                 let authentificationResponse = null;
                 try {
                     authentificationResponse = await Axios.post(
-                        `${global.cvat.config.host}/auth/login`,
+                        `${host}/auth/login`,
                         authentificationData,
                         {
                             'Content-Type': 'application/x-www-form-urlencoded',
@@ -147,8 +145,8 @@
                         // Redirection code expected
                         authentificationResponse = errorData.response;
                     } else {
-                        throw new ServerInteractionException('Could not authentificate on a server', {
-                            code: errorData.code,
+                        throw new ServerInteractionException('Could not login on a server', {
+                            code: errorData.response ? errorData.response.status : errorData.code,
                         });
                     }
                 }
@@ -157,17 +155,16 @@
             }
 
             async function getTasks(filter = '') {
-                const { host } = global.cvat.config;
-                const { api } = global.cvat.config;
+                const { restAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${host}/api/${api}/tasks?${filter}`, {
+                    response = await Axios.get(`${restAPI}/tasks?${filter}`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     throw new ServerInteractionException('Could not get tasks from a server', {
-                        code: errorData.code,
+                        code: errorData.response ? errorData.response.status : errorData.code,
                     });
                 }
 
@@ -175,17 +172,16 @@
             }
 
             async function getTaskJobs(taskID) {
-                const { host } = global.cvat.config;
-                const { api } = global.cvat.config;
+                const { restAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${host}/api/${api}/tasks/${taskID}/jobs`, {
+                    response = await Axios.get(`${restAPI}/tasks/${taskID}/jobs`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     throw new ServerInteractionException('Could not get jobs from a server', {
-                        code: errorData.code,
+                        code: errorData.response ? errorData.response.status : errorData.code,
                     });
                 }
 
@@ -193,17 +189,16 @@
             }
 
             async function getJob(jobID) {
-                const { host } = global.cvat.config;
-                const { api } = global.cvat.config;
+                const { restAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${host}/api/${api}/jobs/${jobID}`, {
+                    response = await Axios.get(`${restAPI}/jobs/${jobID}`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     throw new ServerInteractionException('Could not get jobs from a server', {
-                        code: errorData.code,
+                        code: errorData.response ? errorData.response.status : errorData.code,
                     });
                 }
 
@@ -211,17 +206,16 @@
             }
 
             async function getUsers() {
-                const { host } = global.cvat.config;
-                const { api } = global.cvat.config;
+                const { restAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${host}/api/${api}/users`, {
+                    response = await Axios.get(`${restAPI}/users`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     throw new ServerInteractionException('Could not get users from a server', {
-                        code: errorData.code,
+                        code: errorData.response ? errorData.response.status : errorData.code,
                     });
                 }
 
@@ -229,17 +223,16 @@
             }
 
             async function getSelf() {
-                const { host } = global.cvat.config;
-                const { api } = global.cvat.config;
+                const { restAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${host}/api/${api}/users/self`, {
+                    response = await Axios.get(`${restAPI}/users/self`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     throw new ServerInteractionException('Could not get users from a server', {
-                        code: errorData.code,
+                        code: errorData.response ? errorData.response.status : errorData.code,
                     });
                 }
 
@@ -248,7 +241,7 @@
 
             // Set csrftoken header from browser cookies if it exists
             // NodeJS env returns 'undefined'
-            // So in NodeJS we need authentificate after each run
+            // So in NodeJS we need login after each run
             const csrftoken = Cookie.get('csrftoken');
             if (csrftoken) {
                 setCSRFHeader(csrftoken);
@@ -260,7 +253,7 @@
                         about,
                         share,
                         exception,
-                        authentificate,
+                        login,
                     }),
                     writable: false,
                 },
@@ -292,7 +285,5 @@
     }
 
     const serverProxy = new ServerProxy();
-    module.exports = {
-        serverProxy,
-    };
+    module.exports = serverProxy;
 })();

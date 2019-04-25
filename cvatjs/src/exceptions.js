@@ -5,12 +5,12 @@
 
 /* global
     require:false
-    global:false
 */
 
 (() => {
     const Platform = require('platform');
     const ErrorStackParser = require('error-stack-parser');
+    const hidden = require('./hidden');
 
     class Exception extends Error {
         constructor(message) {
@@ -19,14 +19,14 @@
             const system = Platform.os.toString();
             const client = `${Platform.name} ${Platform.version}`;
             const info = ErrorStackParser.parse(this)[0];
-            const filename = info.fileName;
+            const filename = `${hidden.location}${info.fileName}`;
             const line = info.lineNumber;
             const column = info.columnNumber;
             const {
                 jobID,
                 taskID,
                 clientID,
-            } = global.cvat.client;
+            } = hidden;
 
             const projID = undefined; // wasn't implemented
 
@@ -81,7 +81,7 @@
             };
 
             try {
-                const { serverProxy } = require('./server-proxy');
+                const serverProxy = require('./server-proxy');
                 await serverProxy.server.exception(exceptionObject);
             } catch (exception) {
                 console.log('\nCould not send an exception', exception);

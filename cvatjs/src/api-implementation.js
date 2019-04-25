@@ -16,52 +16,26 @@
     const Statistics = require('./statistics');
     const FrameData = require('./frames');
     const ObjectState = require('./object-state');
-    const ServerProxy = require('./server-proxy');
     const { Base, Task, Job } = require('./annotations');
+
+    const serverProxy = require('./server-proxy');
 
     function implement(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
         cvat.plugins.register.implementation = PluginRegistry.register;
 
-        // Stub
         cvat.server.about.implementation = async () => {
-            return {
-                name: 'Computer Vision Annotation Tool',
-                description: 'CVAT is completely re-designed and re-implemented '
-                    + 'version of Video Annotation Tool from Irvine, California '
-                    + 'tool. It is free, online, interactive video and image '
-                    + 'annotation tool for computer vision. It is being used by '
-                    + 'our team to annotate million of objects with different '
-                    + 'properties. Many UI and UX decisions are based on feedbacks'
-                    + 'from professional data annotation team.',
-
-                version: '0.4.dev20190411083901',
-            };
+            const result = await serverProxy.server.about();
+            return result;
         };
 
         cvat.server.share.implementation = async (directory) => {
-            return [
-                {
-                    name: 'file_1',
-                    type: 'REG',
-                },
-                {
-                    name: 'file_2',
-                    type: 'REG',
-                },
-                {
-                    name: 'file_3',
-                    type: 'REG',
-                },
-                {
-                    name: 'dir_1',
-                    type: 'DIR',
-                },
-            ];
+            const result = await serverProxy.server.directory(directory);
+            return result;
         };
 
-        cvat.server.login.implementation = async () => {
-
+        cvat.server.login.implementation = async (username, password) => {
+            await serverProxy.server.login(username, password);
         };
 
         cvat.tasks.get.implementation = async (filter) => {
@@ -76,6 +50,7 @@
             return [new User()];
         };
 
+        const hidden = require('./hidden');
         function checkContext(wrappedFunction) {
             return async function wrapper(...args) {
                 if (!(this instanceof Base)) {
@@ -84,16 +59,16 @@
 
                 try {
                     if (this instanceof Task) {
-                        global.cvat.client.taskID = this.id;
+                        hidden.taskID = this.id;
                     } else if (this instanceof Job) {
-                        global.cvat.client.jobID = this.id;
-                        global.cvat.client.taskID = this.task.id;
+                        hidden.jobID = this.id;
+                        hidden.taskID = this.task.id;
                     }
                     const result = await wrappedFunction.call(this, ...args);
                     return result;
                 } finally {
-                    delete global.cvat.client.taskID;
-                    delete global.cvat.client.jobID;
+                    delete hidden.taskID;
+                    delete hidden.jobID;
                 }
             };
         }
