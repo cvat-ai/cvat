@@ -21,18 +21,18 @@
         - [Objects](#objects)
         - [Labels](#labels)
     - [Bottom side panel](#bottom-side-panel)
-        - [Fullscreen player mode](#fullscreen-player-mode)
-  - [3. Annotation mode (advanced)](#3-annotation-mode-advanced)
-  - [4. Interpolation mode (advanced)](#4-interpolation-mode-advanced)
-  - [5. Attribute annotation mode (advanced)](#5-attribute-annotation-mode-advanced)
-  - [6. Annotation with polygons](#6-annotation-with-polygons)
-  - [7. Annotation with polylines](#7-annotation-with-polylines)
-  - [8. Annotation with points](#8-annotation-with-points)
-  - [9. Annotation with Auto Segmentation](#9-annotation-with-auto-segmentation)
-  - [10. Shape grouping](#10-shape-grouping)
-  - [11. Filter](#11-filter)
-  - [12. Analytics](#12-analytics)
-  - [13. Shortcuts](#13-shortcuts)
+  - [3. Fullscreen player mode](#3-fullscreen-player-mode)
+  - [4. Annotation mode (advanced)](#4-annotation-mode-advanced)
+  - [5. Interpolation mode (advanced)](#5-interpolation-mode-advanced)
+  - [6. Attribute annotation mode (advanced)](#6-attribute-annotation-mode-advanced)
+  - [7. Annotation with polygons](#7-annotation-with-polygons)
+  - [8. Annotation with polylines](#8-annotation-with-polylines)
+  - [9. Annotation with points](#9-annotation-with-points)
+  - [10. Annotation with Auto Segmentation](#10-annotation-with-auto-segmentation)
+  - [11. Shape grouping](#11-shape-grouping)
+  - [12. Filter](#12-filter)
+  - [13. Analytics](#13-analytics)
+  - [14. Shortcuts](#14-shortcuts)
       - [Hints](#hints)
 
 # User's guide
@@ -638,7 +638,7 @@ To change a type of a highlighted shape using keyboard, you need to press ``Shif
 
 ![](static/documentation/images/image082.jpg)
 
-### Fullscreen player mode
+### 3. Fullscreen player mode
 
 Go to ``Open Menu`` —> ``Fullscreen Player``
 Exit with ``F11`` or ``Ecs``.
@@ -647,7 +647,7 @@ This is how it looks like.
 
 ![](static/documentation/images/image043.jpg)
 
-## 3. Annotation mode (advanced)
+## 4. Annotation mode (advanced)
 
 Basic operations in the mode were described above.
 
@@ -663,7 +663,7 @@ If a frame contains too many objects and it is difficult to annotate them due to
 
 ![](static/documentation/images/image066.jpg)
 
-## 4. Interpolation mode (advanced)
+## 5. Interpolation mode (advanced)
 
 Basic operations in the mode were described above.
 
@@ -677,7 +677,7 @@ Bounding boxes that were created in the mode, have extra navigation buttons.
     ![](static/documentation/images/image057.jpg)
 
 
-## 5. Attribute annotation mode (advanced)
+## 6. Attribute annotation mode (advanced)
 
 Basic operations in the mode was described above.
 
@@ -694,7 +694,7 @@ To navigate between objects (pedestrians in the case), use the following shortcu
 By default, objects in the mode are zoomed in to full screen. Check
 ``Open Menu`` —> ``Settings`` —> ``AAM Zoom Margin`` for adjust that.
 
-## 6. Annotation with polygons
+## 7. Annotation with polygons
 
 It is used for semantic / instance segmentation.
 
@@ -727,7 +727,7 @@ Below you can see results with opacity and black stroke:
 
 Also, if you need to annotate small objects, increase ``Image Quality`` to ``95`` in ``Create task`` dialog for annotators' convenience.
 
-## 7. Annotation with polylines
+## 8. Annotation with polylines
 
 It is used for road markup annotation etc.
 
@@ -741,7 +741,7 @@ You can adjust the polyline after it has been drawn.
 
 ![](static/documentation/images/image039.jpg)
 
-## 8. Annotation with points
+## 9. Annotation with points
 
 It is used for face landmarks' annotation etc.
 
@@ -754,7 +754,7 @@ Press ``N`` again for finishing marking an area. You can delete points double-cl
 
 ![](static/documentation/images/image063.jpg)
 
-## 9. Annotation with Auto Segmentation
+## 10. Annotation with Auto Segmentation
 
 Used to create a polygon semi-automatically. Before starting, you have to be sure that ``Auto Segmentation`` is selected.
 
@@ -766,7 +766,7 @@ Press ``N`` again for finishing marking an area. A shape must consist of 4 point
 ![](static/documentation/images/gif009.gif)
 
 
-## 10. Shape grouping
+## 11. Shape grouping
 
 This feature allows to group several shapes.
 
@@ -787,7 +787,7 @@ Shapes that don't have ``group_id``, will be highlighted in white.
 
 ![](static/documentation/images/image077.jpg)
 
-## 11. Filter
+## 12. Filter
 
 ![](static/documentation/images/image059.jpg)
 
@@ -841,7 +841,7 @@ Example                                                 | Description
 ``face[attr/glass="sunglass" or attr/glass="no"]``      | faces with sunglasses or without glasses at all.
 ```person[attr/race="asian"] | car[attr/model="bmw" or attr/model="mazda"]``` | asian persons or bmw or mazda cars.
 
-## 12. Analytics
+## 13. Analytics
 
 If your CVAT instance is created with analytics support, you can press  the "analytics" button in dashboard, a new tab with analytics and journals will be opened.
 
@@ -856,7 +856,7 @@ It also has activity graph which can be modified with number of users shown and 
 ![](static/documentation/images/image096.jpg)
 
 
-## 13. Shortcuts
+## 14. Shortcuts
 
 Many UI elements have shortcut hints. Put your pointer to a required element to see it.
 
