@@ -1,39 +1,39 @@
-* [User's guide](#users-guide)
-    * [1. Getting started](#1-getting-started)
-        * [Authorization](#authorization)
-        * [Administration panel](#administration-panel)
-        * [Creating an annotation task](#creating-an-annotation-task)
-        * [Model manager](#model-manager)
-        * [Search](#search)
-    * [2. Interface of the annotation tool](#2-interface-of-the-annotation-tool)
-        * [Basic navigation](#basic-navigation)
-        * [Types of Shapes (basics)](#types-of-shapes-basics)
-        * [Annotation mode (basics)](#annotation-mode-basics)
-        * [Interpolation mode (basics)](#interpolation-mode-basics)
-        * [Attribute annotation mode (basics)](#attribute-annotation-mode-basics)
-        * [Downloading annotations](#downloading-annotations)
-        * [Task synchronization with a repository](#task-synchronization-with-a-repository)
-        * [Vocabulary](#vocabulary)
-        * [Workspace — Context menu](#workspace--context-menu)
-        * [Settings](#settings)
-        * [Bottom Panel](#bottom-panel)
-        * [Side panel](#side-panel)
-            * [Objects](#objects)
-            * [Labels](#labels)
-        * [Bottom side panel](#bottom-side-panel)
-            * [Fullscreen player mode](#fullscreen-player-mode)
-    * [3. Annotation mode (advanced)](#3-annotation-mode-advanced)
-    * [4. Interpolation mode (advanced)](#4-interpolation-mode-advanced)
-    * [5. Attribute annotation mode (advanced)](#5-attribute-annotation-mode-advanced)
-    * [6. Annotation with polygons](#6-annotation-with-polygons)
-    * [7. Annotation with polylines](#7-annotation-with-polylines)
-    * [8. Annotation with points](#8-annotation-with-points)
-    * [9. Annotation with Auto Segmentation](#9-annotation-with-auto-segmentation)
-    * [10. Shape grouping](#10-shape-grouping)
-    * [11. Filter](#11-filter)
-    * [12. Analytics](#12-analytics)
-    * [13. Shortcuts](#13-shortcuts)
-        * [Hints](#hints)
+- [User's guide](#users-guide)
+  - [1. Getting started](#1-getting-started)
+    - [Authorization](#authorization)
+    - [Administration panel](#administration-panel)
+    - [Creating an annotation task](#creating-an-annotation-task)
+    - [Model manager](#model-manager)
+    - [Search](#search)
+  - [2. Interface of the annotation tool](#2-interface-of-the-annotation-tool)
+    - [Basic navigation](#basic-navigation)
+    - [Types of Shapes (basics)](#types-of-shapes-basics)
+    - [Annotation mode (basics)](#annotation-mode-basics)
+    - [Interpolation mode (basics)](#interpolation-mode-basics)
+    - [Attribute annotation mode (basics)](#attribute-annotation-mode-basics)
+    - [Downloading annotations](#downloading-annotations)
+    - [Task synchronization with a repository](#task-synchronization-with-a-repository)
+    - [Vocabulary](#vocabulary)
+    - [Workspace — Context menu](#workspace--context-menu)
+    - [Settings](#settings)
+    - [Bottom Panel](#bottom-panel)
+    - [Side panel](#side-panel)
+        - [Objects](#objects)
+        - [Labels](#labels)
+    - [Bottom side panel](#bottom-side-panel)
+        - [Fullscreen player mode](#fullscreen-player-mode)
+  - [3. Annotation mode (advanced)](#3-annotation-mode-advanced)
+  - [4. Interpolation mode (advanced)](#4-interpolation-mode-advanced)
+  - [5. Attribute annotation mode (advanced)](#5-attribute-annotation-mode-advanced)
+  - [6. Annotation with polygons](#6-annotation-with-polygons)
+  - [7. Annotation with polylines](#7-annotation-with-polylines)
+  - [8. Annotation with points](#8-annotation-with-points)
+  - [9. Annotation with Auto Segmentation](#9-annotation-with-auto-segmentation)
+  - [10. Shape grouping](#10-shape-grouping)
+  - [11. Filter](#11-filter)
+  - [12. Analytics](#12-analytics)
+  - [13. Shortcuts](#13-shortcuts)
+      - [Hints](#hints)
 
 # User's guide
 
@@ -42,13 +42,13 @@ Computer Vision Annotation Tool (CVAT) is a web-based tool which helps to annota
 ## 1. Getting started
 
 ### Authorization
-- First of all, you have to log in to CVAT tool.
+  - First of all, you have to log in to CVAT tool.
 
     ![](static/documentation/images/image001.jpg)
 
     ![](static/documentation/images/image002.jpg)
 
-- If you don't have an account, you have to create it using the link below on the login page.
+  - If you don't have an account, you have to create it using the link below on the login page.
 
     ![](static/documentation/images/image003.jpg)
 
@@ -61,16 +61,19 @@ There you can:
 
 ### Creating an annotation task
 
-1. Create an annotation task pressing ``Create New Task`` button on the main page.
+ 1. Create an annotation task pressing ``Create New Task`` button on the main page.
 
     ![](static/documentation/images/image004.jpg)
 
-2. Specify mandatory parameters of the task.
+ 2. Specify mandatory parameters of the task.
 You have to fill in ``Name``, ``Labels`` and press ``Select Files`` at least.
 
     ![](static/documentation/images/image005.jpg)
 
-__Labels__. Use the following layout to create labels: ``label_name <prefix>input_type=attribute_name:attribute_value1,attribute_value2``. You can specify multiple labels and attributes and divide them pressing the space button. Attributes belong to a previous label.
+**Labels**. Use the following layout to create labels:
+``label_name <prefix>input_type=attribute_name:attribute_value1,attribute_value2``.
+You can specify multiple labels and attributes and divide them pressing the space button.
+Attributes belong to a previous label.
 
 Example:
 -   ``vehicle @select=type:__undefined__,car,truck,bus,train ~radio=quality:good,bad ~checkbox=parked:false`` -
@@ -82,8 +85,8 @@ one label with two attributes and two labels without attributes
 ``label_name``: for example _vehicle, person, face etc._
 
 ``<prefix>``:
--   Use ``@`` for unique attributes which cannot be changed from frame to frame *(e.g. age, gender, color, etc.)*
--   Use ``~`` for temporary attributes which can be changed on any frame *(e.g. quality, pose, truncated, etc.)*
+-   Use ``@`` for unique attributes which cannot be changed from frame to frame _(e.g. age, gender, color, etc.)_
+-   Use ``~`` for temporary attributes which can be changed on any frame _(e.g. quality, pose, truncated, etc.)_
 
 ``input_type``: the following input types are available ``select``, ``checkbox``, ``radio``, ``number``, ``text``.
 
