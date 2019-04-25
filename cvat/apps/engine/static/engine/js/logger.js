@@ -113,7 +113,12 @@ class LoggerHandler {
                     }
                 };
                 xhr.onerror = () => {
-                    onreject();
+                    //  if status === 0 a request is a failure on the network level, ignore it
+                    if (xhr.status === 0) {
+                        resolve(xhr.response);
+                    } else {
+                        onreject();
+                    }
                 };
                 xhr.send(JSON.stringify(exception.serialize()));
             };
