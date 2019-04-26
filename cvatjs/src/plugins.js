@@ -20,7 +20,17 @@
                 const pluginDecorators = plugin
                     .filter(obj => obj.callback === wrappedFunc)[0];
                 if (pluginDecorators && pluginDecorators.enter) {
-                    await pluginDecorators.enter(plugin, ...args);
+                    try {
+                        await pluginDecorators.enter(plugin, ...args);
+                    } catch (exception) {
+                        if (exception instanceof PluginException) {
+                            throw exception;
+                        } else if (exception.message) {
+                            throw new PluginException(exception.message);
+                        } else {
+                            throw new PluginException(`Unhandled exception in the plugin ${plugin.name}`);
+                        }
+                    }
                 }
             }
 
@@ -30,7 +40,17 @@
                 const pluginDecorators = plugin.functions
                     .filter(obj => obj.callback === wrappedFunc)[0];
                 if (pluginDecorators && pluginDecorators.leave) {
-                    result = await pluginDecorators.leave(plugin, result, ...args);
+                    try {
+                        result = await pluginDecorators.leave(plugin, result, ...args);
+                    } catch (exception) {
+                        if (exception instanceof PluginException) {
+                            throw exception;
+                        } else if (exception.message) {
+                            throw new PluginException(exception.message);
+                        } else {
+                            throw new PluginException(`Unhandled exception in the plugin ${plugin.name}`);
+                        }
+                    }
                 }
             }
 

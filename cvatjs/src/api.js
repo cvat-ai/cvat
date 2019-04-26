@@ -170,6 +170,8 @@
                 * @async
                 * @memberof module:API.cvat.server
                 * @return {ServerInfo}
+                * @throws {ServerInteractionException}
+                * @throws {PluginException}
             */
             async about() {
                 const result = await PluginRegistry
@@ -191,6 +193,8 @@
                 * @memberof module:API.cvat.server
                 * @param {string} [directory=/] - Share directory path
                 * @returns {FileInfo[]}
+                * @throws {PluginException}
+                * @throws {ServerInteractionException}
             */
             async share(directory = '/') {
                 const result = await PluginRegistry
@@ -204,6 +208,9 @@
                 * @memberof module:API.cvat.server
                 * @param {string} username An username of an account
                 * @param {string} password A password of an account
+                * @throws {Exception}
+                * @throws {PluginException}
+                * @throws {ServerInteractionException}
             */
             async login(username, password) {
                 const result = await PluginRegistry
@@ -238,6 +245,7 @@
                 * @memberof module:API.cvat.tasks
                 * @param {TaskFilter} [filter={}] task filter
                 * @returns {Task[]}
+                * @throws {PluginException}
             */
             async get(filter = {}) {
                 const result = await PluginRegistry
@@ -266,6 +274,7 @@
                 * @memberof module:API.cvat.jobs
                 * @param {JobFilter} filter job filter
                 * @returns {Job[]}
+                * @throws {PluginException}
             */
             async get(filter) {
                 const result = await PluginRegistry
@@ -292,6 +301,7 @@
                 * @memberof module:API.cvat.users
                 * @param {UserFilter} [filter={}] user filter
                 * @returns {User[]}
+                * @throws {PluginException}
             */
             async get(filter = {}) {
                 const result = await PluginRegistry
@@ -383,6 +393,7 @@
                 * @async
                 * @memberof module:API.cvat.plugins
                 * @returns {Plugin[]}
+                * @throws {PluginException}
             */
             async list() {
                 const result = await PluginRegistry
@@ -395,6 +406,7 @@
                 * @async
                 * @memberof module:API.cvat.plugins
                 * @param {Plugin} [plugin] plugin for registration
+                * @throws {PluginException}
             */
             async register(plugin) {
                 const result = await PluginRegistry

@@ -36,9 +36,8 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException('Could not get "about" information from a server', {
-                        code: errorData.response ? errorData.response.status : errorData.code,
-                    });
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerInteractionException('Could not get "about" information from a server', code);
                 }
 
                 return response.data;
@@ -53,9 +52,8 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException('Could not get "share" information from a server', {
-                        code: errorData.response ? errorData.response.status : errorData.code,
-                    });
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerInteractionException('Could not get "share" information from a server', code);
                 }
 
                 return response.data;
@@ -72,9 +70,8 @@
                         },
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException('Could not send an exception to a server', {
-                        code: errorData.response ? errorData.response.status : errorData.code,
-                    });
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerInteractionException('Could not send an exception to a server', code);
                 }
             }
 
@@ -115,9 +112,8 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException('Could not get CSRF token from a server', {
-                        code: errorData.response ? errorData.response.status : errorData.code,
-                    });
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerInteractionException('Could not get CSRF token from a server', code);
                 }
 
                 setCookie(csrf);
@@ -145,9 +141,8 @@
                         // Redirection code expected
                         authentificationResponse = errorData.response;
                     } else {
-                        throw new ServerInteractionException('Could not login on a server', {
-                            code: errorData.response ? errorData.response.status : errorData.code,
-                        });
+                        const code = errorData.response ? errorData.response.status : errorData.code;
+                        throw new ServerInteractionException('Could not login on a server', code);
                     }
                 }
 
@@ -163,9 +158,8 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException('Could not get tasks from a server', {
-                        code: errorData.response ? errorData.response.status : errorData.code,
-                    });
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerInteractionException('Could not get tasks from a server', code);
                 }
 
                 return response.data;
@@ -180,9 +174,8 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException('Could not get jobs from a server', {
-                        code: errorData.response ? errorData.response.status : errorData.code,
-                    });
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerInteractionException('Could not get jobs from a server', code);
                 }
 
                 return response.data;
@@ -197,9 +190,8 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException('Could not get jobs from a server', {
-                        code: errorData.response ? errorData.response.status : errorData.code,
-                    });
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerInteractionException('Could not get jobs from a server', code);
                 }
 
                 return response.data;
@@ -214,9 +206,8 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException('Could not get users from a server', {
-                        code: errorData.response ? errorData.response.status : errorData.code,
-                    });
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerInteractionException('Could not get users from a server', code);
                 }
 
                 return response.data;
@@ -231,9 +222,8 @@
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    throw new ServerInteractionException('Could not get users from a server', {
-                        code: errorData.response ? errorData.response.status : errorData.code,
-                    });
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerInteractionException('Could not get users from a server', code);
                 }
 
                 return response.data;
