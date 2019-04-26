@@ -38,6 +38,43 @@
         return typeof (value) === 'string';
     }
 
+    function checkFilter(filter, fields) {
+        for (const prop in filter) {
+            if (Object.prototype.hasOwnProperty.call(filter, prop)) {
+                if (!(prop in fields)) {
+                    throw new global.cvat.exceptions.ArgumentError(
+                        `Unsupported filter property has been recieved: "${prop}"`,
+                    );
+                } else if (!fields[prop](filter[prop])) {
+                    throw new global.cvat.exceptions.ArgumentError(
+                        `Received filter property ${prop} was not satisfied for checker`,
+                    );
+                }
+            }
+        }
+    }
+
+    const hidden = require('./hidden');
+    function checkContext(wrappedFunction) {
+        return async function wrapper(...args) {
+            try {
+                if (this instanceof global.cvat.classes.Task) {
+                    hidden.taskID = this.id;
+                } else if (this instanceof global.cvat.classes.Job) {
+                    hidden.jobID = this.id;
+                    hidden.taskID = this.task.id;
+                } else {
+                    throw new global.cvat.exceptions.ScriptingError('Bad context for the function');
+                }
+                const result = await wrappedFunction.call(this, ...args);
+                return result;
+            } finally {
+                delete hidden.taskID;
+                delete hidden.jobID;
+            }
+        };
+    }
+
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
         cvat.plugins.register.implementation = PluginRegistry.register;
@@ -56,22 +93,6 @@
             await serverProxy.server.login(username, password);
         };
 
-        function checkFilter(filter, fields) {
-            for (const prop in filter) {
-                if (Object.prototype.hasOwnProperty.call(filter, prop)) {
-                    if (!(prop in fields)) {
-                        throw new global.cvat.exceptions.ArgumentError(
-                            `Unsupported property has been recieved: "${prop}"`,
-                        );
-                    } else if (!fields[prop](filter[prop])) {
-                        throw new global.cvat.exceptions.ArgumentError(
-                            `Received property ${prop} was not satisfied for checker`,
-                        );
-                    }
-                }
-            }
-        }
-
         cvat.users.get.implementation = async (filter) => {
             checkFilter(filter, {
                 self: isBoolean,
@@ -80,6 +101,7 @@
             let users = null;
             if ('self' in filter && filter.self) {
                 users = await serverProxy.users.getSelf();
+                users = [users];
             } else {
                 users = await serverProxy.users.getUsers();
             }
@@ -94,21 +116,28 @@
                 jobID: isInteger,
             });
 
-            let jobs = null;
             if (('taskID' in filter) && ('jobID' in filter)) {
                 throw new global.cvat.exceptions.ArgumentError(
                     'Only one of fields "taskID" and "jobID" allowed simultaneously',
                 );
             }
 
-            if ('taskID' in filter) {
-                jobs = await serverProxy.jobs.getTaskJobs();
-            } else if ('jobID' in filter) {
-                jobs = await serverProxy.jobs.getJob();
+            if (!Object.keys(filter).length) {
+                throw new global.cvat.exceptions.ArgumentError(
+                    'Job filter must not be empty',
+                );
             }
 
-            jobs = jobs.map(job => new global.cvat.classes.Job(job));
-            return jobs;
+            let task = null;
+            if ('taskID' in filter) {
+                task = await cvat.tasks.get.implementation({ id: filter.taskID });
+            } else {
+                const job = await serverProxy.jobs.getJob(filter.jobID);
+                task = await cvat.tasks.get.implementation({ id: job.task_id });
+            }
+
+            task = new global.cvat.classes.Task(task[0]);
+            return filter.jobID ? task.jobs.filter(job => job.id === filter.jobID) : task.jobs;
         };
 
         cvat.tasks.get.implementation = async (filter) => {
@@ -134,40 +163,18 @@
                 );
             }
 
-            let query = '';
-            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode']) {
+            const searchParams = new URLSearchParams();
+            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
-                    query += `${field}=${filter[field]}&`;
+                    searchParams.set(field, filter[field]);
                 }
             }
-            query = query.slice(0, -1);
 
-            let tasks = serverProxy.tasks.getTasks(query);
+            let tasks = await serverProxy.tasks.getTasks(searchParams.toString());
             tasks = tasks.map(task => new global.cvat.classes.Task(task));
 
             return tasks;
         };
-
-        const hidden = require('./hidden');
-        function checkContext(wrappedFunction) {
-            return async function wrapper(...args) {
-                try {
-                    if (this instanceof global.cvat.classes.Task) {
-                        hidden.taskID = this.id;
-                    } else if (this instanceof global.cvat.classes.Job) {
-                        hidden.jobID = this.id;
-                        hidden.taskID = this.task.id;
-                    } else {
-                        throw new global.cvat.exceptions.ScriptingError('Bad context for the function');
-                    }
-                    const result = await wrappedFunction.call(this, ...args);
-                    return result;
-                } finally {
-                    delete hidden.taskID;
-                    delete hidden.jobID;
-                }
-            };
-        }
 
         cvat.Task.annotations.upload.implementation = checkContext(
             async (file) => {

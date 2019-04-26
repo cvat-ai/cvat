@@ -166,22 +166,6 @@
                 return response.data.results;
             }
 
-            async function getTaskJobs(taskID) {
-                const { backendAPI } = global.cvat.config;
-
-                let response = null;
-                try {
-                    response = await Axios.get(`${backendAPI}/tasks/${taskID}/jobs`, {
-                        proxy: global.cvat.config.proxy,
-                    });
-                } catch (errorData) {
-                    const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError('Could not get jobs from a server', code);
-                }
-
-                return response.data.results;
-            }
-
             async function getJob(jobID) {
                 const { backendAPI } = global.cvat.config;
 
@@ -195,7 +179,7 @@
                     throw new ServerError('Could not get jobs from a server', code);
                 }
 
-                return [response.data];
+                return response.data;
             }
 
             async function getUsers() {
@@ -227,7 +211,7 @@
                     throw new ServerError('Could not get users from a server', code);
                 }
 
-                return [response.data];
+                return response.data;
             }
 
             // Set csrftoken header from browser cookies if it exists
@@ -251,14 +235,13 @@
 
                 tasks: {
                     value: Object.freeze({
-                        get: getTasks,
+                        getTasks,
                     }),
                     writable: false,
                 },
 
                 jobs: {
                     value: Object.freeze({
-                        getTaskJobs,
                         getJob,
                     }),
                     writable: false,

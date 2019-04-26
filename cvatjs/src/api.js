@@ -291,7 +291,7 @@
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
-            async get(filter) {
+            async get(filter = {}) {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.jobs.get, filter);
                 return result;
@@ -624,8 +624,13 @@ const plugin = {
 
     try {
         console.log(JSON.stringify(await global.cvat.server.about()));
-        console.log(JSON.stringify(await global.cvat.users.get({ self: false })));
-        console.log(JSON.stringify(await global.cvat.users.get({ self: true })));
+        console.log(await global.cvat.users.get({ self: false }));
+        console.log(await global.cvat.users.get({ self: true }));
+        console.log(JSON.stringify(await global.cvat.jobs.get({ taskID: 8 })));
+        console.log(JSON.stringify(await global.cvat.jobs.get({ jobID: 10 })));
+        console.log(await global.cvat.tasks.get());
+        console.log(await global.cvat.tasks.get({ id: 8 }));
+        console.log('Done.');
     } catch (exception) {
         console.log(typeof (exception));
         console.log(exception.message);
