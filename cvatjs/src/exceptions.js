@@ -14,7 +14,9 @@
 
     /**
         * Base exception class
+        * @memberof module:API.cvat.exceptions
         * @extends Error
+        * @ignore
     */
     class Exception extends Error {
         /**
@@ -43,7 +45,7 @@
                     /**
                         * @name system
                         * @type {string}
-                        * @memberof Exception
+                        * @memberof module:API.cvat.exceptions.Exception
                         * @readonly
                         * @instance
                     */
@@ -53,7 +55,7 @@
                     /**
                         * @name client
                         * @type {string}
-                        * @memberof Exception
+                        * @memberof module:API.cvat.exceptions.Exception
                         * @readonly
                         * @instance
                     */
@@ -63,7 +65,7 @@
                     /**
                         * @name time
                         * @type {string}
-                        * @memberof Exception
+                        * @memberof module:API.cvat.exceptions.Exception
                         * @readonly
                         * @instance
                     */
@@ -73,7 +75,7 @@
                     /**
                         * @name jobID
                         * @type {integer}
-                        * @memberof Exception
+                        * @memberof module:API.cvat.exceptions.Exception
                         * @readonly
                         * @instance
                     */
@@ -83,7 +85,7 @@
                     /**
                         * @name taskID
                         * @type {integer}
-                        * @memberof Exception
+                        * @memberof module:API.cvat.exceptions.Exception
                         * @readonly
                         * @instance
                     */
@@ -93,7 +95,7 @@
                     /**
                         * @name projID
                         * @type {integer}
-                        * @memberof Exception
+                        * @memberof module:API.cvat.exceptions.Exception
                         * @readonly
                         * @instance
                     */
@@ -103,7 +105,7 @@
                     /**
                         * @name clientID
                         * @type {integer}
-                        * @memberof Exception
+                        * @memberof module:API.cvat.exceptions.Exception
                         * @readonly
                         * @instance
                     */
@@ -113,7 +115,7 @@
                     /**
                         * @name filename
                         * @type {string}
-                        * @memberof Exception
+                        * @memberof module:API.cvat.exceptions.Exception
                         * @readonly
                         * @instance
                     */
@@ -123,7 +125,7 @@
                     /**
                         * @name line
                         * @type {integer}
-                        * @memberof Exception
+                        * @memberof module:API.cvat.exceptions.Exception
                         * @readonly
                         * @instance
                     */
@@ -133,7 +135,7 @@
                     /**
                         * @name column
                         * @type {integer}
-                        * @memberof Exception
+                        * @memberof module:API.cvat.exceptions.Exception
                         * @readonly
                         * @instance
                     */
@@ -176,7 +178,8 @@
 
     /**
         * Exceptions are referred with arguments data
-        * @extends Exception
+        * @memberof module:API.cvat.exceptions
+        * @extends module:API.cvat.exceptions.Exception
     */
     class ArgumentError extends Exception {
         /**
@@ -189,7 +192,8 @@
 
     /**
         * Unexpected situations in code
-        * @extends Exception
+        * @memberof module:API.cvat.exceptions
+        * @extends module:API.cvat.exceptions.Exception
         */
     class ScriptingError extends Exception {
         /**
@@ -202,7 +206,8 @@
 
     /**
         * Plugin-referred exceptions
-        * @extends Exception
+        * @memberof module:API.cvat.exceptions
+        * @extends module:API.cvat.exceptions.Exception
     */
     class PluginError extends Exception {
         /**
@@ -215,7 +220,8 @@
 
     /**
         * Exceptions in interaction with a server
-        * @extends Exception
+        * @memberof module:API.cvat.exceptions
+        * @extends module:API.cvat.exceptions.Exception
     */
     class ServerError extends Exception {
         /**
@@ -229,7 +235,7 @@
                 /**
                     * @name code
                     * @type {string|integer}
-                    * @memberof ServerInteractionException
+                    * @memberof module:API.cvat.exceptions.ServerError
                     * @readonly
                     * @instance
                 */

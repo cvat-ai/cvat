@@ -28,11 +28,11 @@
             }
 
             async function about() {
-                const { restAPI } = global.cvat.config;
+                const { backendAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${restAPI}/server/about`, {
+                    response = await Axios.get(`${backendAPI}/server/about`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
@@ -44,11 +44,11 @@
             }
 
             async function share(directory) {
-                const { restAPI } = global.cvat.config;
+                const { backendAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${restAPI}/server/share?directory=${directory}`, {
+                    response = await Axios.get(`${backendAPI}/server/share?directory=${directory}`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
@@ -60,10 +60,10 @@
             }
 
             async function exception(exceptionObject) {
-                const { restAPI } = global.cvat.config;
+                const { backendAPI } = global.cvat.config;
 
                 try {
-                    await Axios.post(`${restAPI}/server/exception`, JSON.stringify(exceptionObject), {
+                    await Axios.post(`${backendAPI}/server/exception`, JSON.stringify(exceptionObject), {
                         proxy: global.cvat.config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
@@ -105,7 +105,7 @@
                     }
                 }
 
-                const host = global.cvat.config.restAPI.slice(0, -7);
+                const host = global.cvat.config.backendAPI.slice(0, -7);
                 let csrf = null;
                 try {
                     csrf = await Axios.get(`${host}/auth/login`, {
@@ -151,11 +151,11 @@
             }
 
             async function getTasks(filter = '') {
-                const { restAPI } = global.cvat.config;
+                const { backendAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${restAPI}/tasks?${filter}`, {
+                    response = await Axios.get(`${backendAPI}/tasks?${filter}`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
@@ -167,11 +167,11 @@
             }
 
             async function getTaskJobs(taskID) {
-                const { restAPI } = global.cvat.config;
+                const { backendAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${restAPI}/tasks/${taskID}/jobs`, {
+                    response = await Axios.get(`${backendAPI}/tasks/${taskID}/jobs`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
@@ -183,11 +183,11 @@
             }
 
             async function getJob(jobID) {
-                const { restAPI } = global.cvat.config;
+                const { backendAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${restAPI}/jobs/${jobID}`, {
+                    response = await Axios.get(`${backendAPI}/jobs/${jobID}`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
@@ -199,11 +199,11 @@
             }
 
             async function getUsers() {
-                const { restAPI } = global.cvat.config;
+                const { backendAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${restAPI}/users`, {
+                    response = await Axios.get(`${backendAPI}/users`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {
@@ -215,11 +215,11 @@
             }
 
             async function getSelf() {
-                const { restAPI } = global.cvat.config;
+                const { backendAPI } = global.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${restAPI}/users/self`, {
+                    response = await Axios.get(`${backendAPI}/users/self`, {
                         proxy: global.cvat.config.proxy,
                     });
                 } catch (errorData) {

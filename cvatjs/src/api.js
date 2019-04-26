@@ -21,6 +21,13 @@
         TaskStatus,
         TaskMode,
     } = require('./enums');
+    const {
+        Exception,
+        ArgumentError,
+        ScriptingError,
+        PluginError,
+        ServerError,
+    } = require('./exceptions');
 
     function buildDublicatedAPI() {
         const annotationsModule = {
@@ -170,8 +177,8 @@
                 * @async
                 * @memberof module:API.cvat.server
                 * @return {ServerInfo}
-                * @throws {ServerInteractionException}
-                * @throws {PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+                * @throws {module:API.cvat.exceptions.PluginError}
             */
             async about() {
                 const result = await PluginRegistry
@@ -193,8 +200,8 @@
                 * @memberof module:API.cvat.server
                 * @param {string} [directory=/] - Share directory path
                 * @returns {FileInfo[]}
-                * @throws {PluginError}
-                * @throws {ServerInteractionException}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
             */
             async share(directory = '/') {
                 const result = await PluginRegistry
@@ -208,9 +215,9 @@
                 * @memberof module:API.cvat.server
                 * @param {string} username An username of an account
                 * @param {string} password A password of an account
-                * @throws {Exception}
-                * @throws {PluginError}
-                * @throws {ServerInteractionException}
+                * @throws {module:API.cvat.exceptions.ScriptingError}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
             */
             async login(username, password) {
                 const result = await PluginRegistry
@@ -245,7 +252,8 @@
                 * @memberof module:API.cvat.tasks
                 * @param {TaskFilter} [filter={}] task filter
                 * @returns {Task[]}
-                * @throws {PluginError}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
             */
             async get(filter = {}) {
                 const result = await PluginRegistry
@@ -274,7 +282,8 @@
                 * @memberof module:API.cvat.jobs
                 * @param {JobFilter} filter job filter
                 * @returns {Job[]}
-                * @throws {PluginError}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
             */
             async get(filter) {
                 const result = await PluginRegistry
@@ -301,7 +310,8 @@
                 * @memberof module:API.cvat.users
                 * @param {UserFilter} [filter={}] user filter
                 * @returns {User[]}
-                * @throws {PluginError}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
             */
             async get(filter = {}) {
                 const result = await PluginRegistry
@@ -396,7 +406,7 @@
                 * @async
                 * @memberof module:API.cvat.plugins
                 * @returns {Plugin[]}
-                * @throws {PluginError}
+                * @throws {module:API.cvat.exceptions.PluginError}
             */
             async list() {
                 const result = await PluginRegistry
@@ -409,7 +419,7 @@
                 * @async
                 * @memberof module:API.cvat.plugins
                 * @param {Plugin} [plugin] plugin for registration
-                * @throws {PluginError}
+                * @throws {module:API.cvat.exceptions.PluginError}
             */
             async register(plugin) {
                 const result = await PluginRegistry
@@ -424,13 +434,13 @@
         */
         config: {
             /**
-                * @property {string} restAPI host with a server REST API
+                * @property {string} backendAPI host with a backend api
                 * @memberof module:API.cvat.config
                 * @property {string} proxy Axios proxy settings.
                 * For more details please read <a href="https://github.com/axios/axios"> here </a>
                 * @memberof module:API.cvat.config
             */
-            restAPI: 'http://localhost:7000/api/v1',
+            backendAPI: 'http://localhost:7000/api/v1',
             proxy: false,
         },
         /**
@@ -447,6 +457,7 @@
                 * <li style="margin-left: 10px;"> A minor number is changed after an API expands
                 * <li style="margin-left: 10px;"> A patch number is changed after an each build
                 * @memberof module:API.cvat.client
+                * @readonly
             */
             version: `${pjson.version}`,
         },
@@ -463,6 +474,7 @@
                 * @memberof module:API.cvat.enums
                 * @property {string} DIR - directory
                 * @property {string} REG - regular file
+                * @readonly
             */
             ShareFileType,
             /**
@@ -473,6 +485,7 @@
                 * @property {string} ANNOTATION - task is being annotated
                 * @property {string} VALIDATION - task is being validated
                 * @property {string} COMPLETED - task has been done
+                * @readonly
             */
             TaskStatus,
             /**
@@ -482,8 +495,21 @@
                 * @memberof module:API.cvat.enums
                 * @property {string} ANNOTATION - images annotation task
                 * @property {string} INTERPOLATION - video annotation task
+                * @readonly
             */
             TaskMode,
+        },
+        /**
+            * Namespace is used for access to exceptions
+            * @namespace exceptions
+            * @memberof module:API.cvat
+        */
+        exceptions: {
+            Exception,
+            ArgumentError,
+            ScriptingError,
+            PluginError,
+            ServerError,
         },
         Job: {
             async save() {
@@ -530,7 +556,7 @@
     global.cvat = Object.freeze(implementation(cvat));
 
     const hidden = require('./hidden');
-    hidden.location = global.cvat.config.restAPI.slice(0, -7); // TODO: Use JS server instead
+    hidden.location = global.cvat.config.backendAPI.slice(0, -7); // TODO: Use JS server instead
 })();
 
 const plugin = {
