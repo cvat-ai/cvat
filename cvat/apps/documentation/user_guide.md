@@ -42,13 +42,13 @@ Computer Vision Annotation Tool (CVAT) is a web-based tool which helps to annota
 ## 1. Getting started
 
 ### Authorization
-  - First of all, you have to log in to CVAT tool.
+- First of all, you have to log in to CVAT tool.
 
     ![](static/documentation/images/image001.jpg)
 
     ![](static/documentation/images/image002.jpg)
 
-  - If you don't have an account, you have to create it using the link below on the login page.
+- If you don't have an account, you have to create it using the link below on the login page.
 
     ![](static/documentation/images/image003.jpg)
 
@@ -61,11 +61,11 @@ There you can:
 
 ### Creating an annotation task
 
- 1. Create an annotation task pressing ``Create New Task`` button on the main page.
+1. Create an annotation task pressing ``Create New Task`` button on the main page.
 
     ![](static/documentation/images/image004.jpg)
 
- 2. Specify mandatory parameters of the task.
+2. Specify mandatory parameters of the task.
 You have to fill in ``Name``, ``Labels`` and press ``Select Files`` at least.
 
     ![](static/documentation/images/image005.jpg)
@@ -124,11 +124,11 @@ The task will be highlighted in red after creation if annotation isn't synchroni
 **Overlap Size**. Use this option to make overlapped segments.
 The option makes tracks continuous from one segment into another.
 Use it for interpolation mode. There are several options for using the parameter:
-  - For an interpolation task (video sequence).
+- For an interpolation task (video sequence).
 If you annotate a bounding box on two adjusted segments they will be merged into one bounding box.
 If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
 you will have several tracks, one for each segment, which corresponds to the object.
-  - For an annotation task (independent images).
+- For an annotation task (independent images).
 If an object exists on overlapped segments, the overlap is greater than zero
 and the annotation is good enough on adjacent segments, it will be automatically merged into one object.
 If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
@@ -157,17 +157,17 @@ Then, the created task will be displayed on dashboard:
 
 ![](static/documentation/images/image006.jpg)
 
- 3. The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
+3. The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
 Each element contains: task name, preview, execution status, buttons, and one or more links.
 Each button is responsible for a specific function:
-  - ``Dump Annotation`` — download an annotation file from the task (xml format) 
-  - ``Upload Annotation`` — uploading an annotation file to the task (xml format)
-  - ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
-  - ``Delete Task`` — delete the task
-  - ``Git Repository Sync`` — sync annotation with the repository. Presence depends on task configuration
-  - ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API.
+- ``Dump Annotation`` — download an annotation file from the task (xml format) 
+- ``Upload Annotation`` — uploading an annotation file to the task (xml format)
+- ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
+- ``Delete Task`` — delete the task
+- ``Git Repository Sync`` — sync annotation with the repository. Presence depends on task configuration
+- ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API.
 Presence depends on task configuration
-  - ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
+- ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
 Presense depends on how you build CVAT instance.
 
 Item color depends on status of synchronization with the repository:
@@ -175,7 +175,7 @@ Item color depends on status of synchronization with the repository:
 ``yellow`` means a task is in a temporary branch of the repository,
 ``green`` means a task is merged into the repository.
 
- 4. Follow a link inside ``Jobs`` section to start annotation process. In some cases, you can have several links.
+4. Follow a link inside ``Jobs`` section to start annotation process. In some cases, you can have several links.
 It depends on size of your task and ``Overlap Size`` and ``Segment Size`` parameters.
 To improve UX, only the first several frames will be loaded and you will be able to annotate first images.
 Other frames will be loaded in background.
@@ -210,42 +210,42 @@ It may be task's name or id, owner's name, task's status, assignee's name and so
 ## 2. Interface of the annotation tool
 
 The tool consists of:
-  - ``Workspace`` — where images are shown;
-  - ``Bottom panel`` (under workspace) — for navigation, filtering annotation and accessing tools' menu;
-  - ``Side panel`` — contains two lists: objects (on the frame) and labels (of objects on the frame);
-  - ``Bottom side panel`` — is a type of/creating/merging/grouping annotation;
+- ``Workspace`` — where images are shown;
+- ``Bottom panel`` (under workspace) — for navigation, filtering annotation and accessing tools' menu;
+- ``Side panel`` — contains two lists: objects (on the frame) and labels (of objects on the frame);
+- ``Bottom side panel`` — is a type of/creating/merging/grouping annotation;
 
 ![](static/documentation/images/image034.jpg)
 
 There is also:
-  - ``Settings`` (F2) — pop-up in the bottom panel, contains different parameters
+- ``Settings`` (F2) — pop-up in the bottom panel, contains different parameters
   which can be adjusted according to the user's needs
 
-  - ``Context menu`` — available on right mouse button.
+- ``Context menu`` — available on right mouse button.
 
 ### Basic navigation
 
- 1. Use arrows below to move on next/previous frame.
+1. Use arrows below to move on next/previous frame.
  Use the scroll bar slider to scroll through frames.
  Almost every button is covered by a shortcut.
  To get a hint about a shortcut, just put your mouse pointer over an UI element.
 
     ![](static/documentation/images/image008.jpg)
 
- 2. An image can be zoom in/out using mouse's wheel. The image will be zoomed relatively your current cursor position.
+2. An image can be zoom in/out using mouse's wheel. The image will be zoomed relatively your current cursor position.
  Thus, if you point on an object, it will be under your mouse during zooming process.
 
- 3. An image can be moved/shifted by holding left mouse button inside some area without annotated objects.
+3. An image can be moved/shifted by holding left mouse button inside some area without annotated objects.
  If ``Mouse Wheel`` is pressed, then all annotated objects are ignored.
  Otherwise, a highlighted bounding box will be moved instead of the image itself.
 
 ### Types of Shapes (basics)
 There are four shapes which you can annotate your images with:
-  - ``box``
-  - ``polygon``
-  - ``polyline``
-  - ``points``
-  - ``auto segmentation``
+- ``box``
+- ``polygon``
+- ``polyline``
+- ``points``
+- ``auto segmentation``
 
 And there is how they all look like:
 
@@ -259,23 +259,27 @@ Usage examples:
   - Create new annotations for a set of images.
   - Add/modify/delete objects for existing annotations.
 
- 1. Before starting, you need to check if ``Annotation`` is selected:
+1. Before starting, you need to check if ``Annotation`` is selected:
 
     ![](static/documentation/images/image082.jpg) ![](static/documentation/images/image081.jpg)
 
- 2. Create a new annotation:
+2. Create a new annotation:
   
   - Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
 
     ![](static/documentation/images/image080.jpg) ![](static/documentation/images/image083.jpg)
 
-  - Create a bounding box by clicking on ``Create Shape`` button or ``N`` shortcut. Choose opposite points. Your first bounding box is ready!
+  - Create a bounding box by clicking on ``Create Shape`` button or ``N`` shortcut.
+  Choose opposite points. Your first bounding box is ready!
 
     ![](static/documentation/images/image011.jpg)
 
-  - It is possible to adjust boundaries and location of the bounding box using mouse. Boxes' size is shown in the top right corner , you can check it clicking on one of the boxes' points. You can also undo your actions using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
+  - It is possible to adjust boundaries and location of the bounding box using mouse.
+  Boxes' size is shown in the top right corner , you can check it clicking on one of the boxes' points.
+  You can also undo your actions using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
 
- 3. In the list of objects you can see the labeled car. In the side panel you can perform basic operations under the object — choose attributes, change label or delete box.
+3. In the list of objects you can see the labeled car.
+ In the side panel you can perform basic operations under the object — choose attributes, change label or delete box.
 
     ![](static/documentation/images/image012.jpg)
 
