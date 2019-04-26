@@ -14,14 +14,15 @@
 
     /**
         * Base exception class
+        * @extends Error
     */
     class Exception extends Error {
         /**
-            * Create an exception
             * @param {string} message - Exception message
         */
         constructor(message) {
             super(message);
+
             const time = new Date().toISOString();
             const system = Platform.os.toString();
             const client = `${Platform.name} ${Platform.version}`;
@@ -43,6 +44,7 @@
                         * @name system
                         * @type {string}
                         * @memberof Exception
+                        * @readonly
                         * @instance
                     */
                     get: () => system,
@@ -52,6 +54,7 @@
                         * @name client
                         * @type {string}
                         * @memberof Exception
+                        * @readonly
                         * @instance
                     */
                     get: () => client,
@@ -61,6 +64,7 @@
                         * @name time
                         * @type {string}
                         * @memberof Exception
+                        * @readonly
                         * @instance
                     */
                     get: () => time,
@@ -70,6 +74,7 @@
                         * @name jobID
                         * @type {integer}
                         * @memberof Exception
+                        * @readonly
                         * @instance
                     */
                     get: () => jobID,
@@ -79,6 +84,7 @@
                         * @name taskID
                         * @type {integer}
                         * @memberof Exception
+                        * @readonly
                         * @instance
                     */
                     get: () => taskID,
@@ -88,6 +94,7 @@
                         * @name projID
                         * @type {integer}
                         * @memberof Exception
+                        * @readonly
                         * @instance
                     */
                     get: () => projID,
@@ -97,6 +104,7 @@
                         * @name clientID
                         * @type {integer}
                         * @memberof Exception
+                        * @readonly
                         * @instance
                     */
                     get: () => clientID,
@@ -106,6 +114,7 @@
                         * @name filename
                         * @type {string}
                         * @memberof Exception
+                        * @readonly
                         * @instance
                     */
                     get: () => filename,
@@ -115,6 +124,7 @@
                         * @name line
                         * @type {integer}
                         * @memberof Exception
+                        * @readonly
                         * @instance
                     */
                     get: () => line,
@@ -124,6 +134,7 @@
                         * @name column
                         * @type {integer}
                         * @memberof Exception
+                        * @readonly
                         * @instance
                     */
                     get: () => column,
@@ -131,6 +142,13 @@
             });
         }
 
+        /**
+            * Save an exception on a server
+            * @name save
+            * @method
+            * @memberof Exception
+            * @instance
+        */
         async save() {
             const exceptionObject = {
                 system: this.system,
@@ -157,18 +175,50 @@
     }
 
     /**
+        * Exceptions are referred with arguments data
+        * @extends Exception
+    */
+    class ArgumentError extends Exception {
+        /**
+            * @param {string} message - Exception message
+        */
+        constructor(message) {
+            super(message);
+        }
+    }
+
+    /**
+        * Unexpected situations in code
+        * @extends Exception
+        */
+    class ScriptingError extends Exception {
+        /**
+            * @param {string} message - Exception message
+        */
+        constructor(message) {
+            super(message);
+        }
+    }
+
+    /**
         * Plugin-referred exceptions
         * @extends Exception
     */
-    class PluginException extends Exception {}
+    class PluginError extends Exception {
+        /**
+            * @param {string} message - Exception message
+        */
+        constructor(message) {
+            super(message);
+        }
+    }
 
     /**
         * Exceptions in interaction with a server
         * @extends Exception
     */
-    class ServerInteractionException extends Exception {
+    class ServerError extends Exception {
         /**
-            * Create an exception
             * @param {string} message - Exception message
             * @param {string|integer} code - Response code
         */
@@ -180,6 +230,7 @@
                     * @name code
                     * @type {string|integer}
                     * @memberof ServerInteractionException
+                    * @readonly
                     * @instance
                 */
                 get: () => code,
@@ -189,7 +240,9 @@
 
     module.exports = {
         Exception,
-        PluginException,
-        ServerInteractionException,
+        ArgumentError,
+        ScriptingError,
+        PluginError,
+        ServerError,
     };
 })();

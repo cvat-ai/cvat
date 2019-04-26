@@ -9,7 +9,7 @@
 */
 
 (() => {
-    const { PluginException } = require('./exceptions');
+    const { PluginError } = require('./exceptions');
 
     const plugins = [];
     class PluginRegistry {
@@ -23,12 +23,12 @@
                     try {
                         await pluginDecorators.enter(plugin, ...args);
                     } catch (exception) {
-                        if (exception instanceof PluginException) {
+                        if (exception instanceof PluginError) {
                             throw exception;
                         } else if (exception.message) {
-                            throw new PluginException(exception.message);
+                            throw new PluginError(exception.message);
                         } else {
-                            throw new PluginException(`Unhandled exception in the plugin ${plugin.name}`);
+                            throw new PluginError(`Unhandled exception in the plugin ${plugin.name}`);
                         }
                     }
                 }
@@ -43,12 +43,12 @@
                     try {
                         result = await pluginDecorators.leave(plugin, result, ...args);
                     } catch (exception) {
-                        if (exception instanceof PluginException) {
+                        if (exception instanceof PluginError) {
                             throw exception;
                         } else if (exception.message) {
-                            throw new PluginException(exception.message);
+                            throw new PluginError(exception.message);
                         } else {
-                            throw new PluginException(`Unhandled exception in the plugin ${plugin.name}`);
+                            throw new PluginError(`Unhandled exception in the plugin ${plugin.name}`);
                         }
                     }
                 }
@@ -61,19 +61,19 @@
             const functions = [];
 
             if (typeof (plugin) !== 'object') {
-                throw new PluginException(`Plugin should be an object, but got "${typeof (plugin)}"`);
+                throw new PluginError(`Plugin should be an object, but got "${typeof (plugin)}"`);
             }
 
             if (!('name' in plug) || typeof (plug.name) !== 'string') {
-                throw new PluginException('Plugin must contain a "name" field and it must be a string');
+                throw new PluginError('Plugin must contain a "name" field and it must be a string');
             }
 
             if (!('description' in plug) || typeof (plug.description) !== 'string') {
-                throw new PluginException('Plugin must contain a "description" field and it must be a string');
+                throw new PluginError('Plugin must contain a "description" field and it must be a string');
             }
 
             if ('functions' in plug) {
-                throw new PluginException('Plugin must not contain a "functions" field');
+                throw new PluginError('Plugin must not contain a "functions" field');
             }
 
             (function traverse(plugin, api) {

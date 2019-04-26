@@ -11,8 +11,8 @@
 
 (() => {
     const {
-        Exception,
-        ServerInteractionException,
+        ScriptingError,
+        ServerError,
     } = require('./exceptions');
 
     class ServerProxy {
@@ -37,7 +37,7 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerInteractionException('Could not get "about" information from a server', code);
+                    throw new ServerError('Could not get "about" information from a server', code);
                 }
 
                 return response.data;
@@ -53,7 +53,7 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerInteractionException('Could not get "share" information from a server', code);
+                    throw new ServerError('Could not get "share" information from a server', code);
                 }
 
                 return response.data;
@@ -71,7 +71,7 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerInteractionException('Could not send an exception to a server', code);
+                    throw new ServerError('Could not send an exception to a server', code);
                 }
             }
 
@@ -99,7 +99,7 @@
                         if (csrftoken) {
                             setCSRFHeader(csrftoken);
                         } else {
-                            throw new Exception('An environment has been detected as a browser'
+                            throw new ScriptingError('An environment has been detected as a browser'
                                 + ', but CSRF token has not been found in cookies');
                         }
                     }
@@ -113,7 +113,7 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerInteractionException('Could not get CSRF token from a server', code);
+                    throw new ServerError('Could not get CSRF token from a server', code);
                 }
 
                 setCookie(csrf);
@@ -141,8 +141,9 @@
                         // Redirection code expected
                         authentificationResponse = errorData.response;
                     } else {
-                        const code = errorData.response ? errorData.response.status : errorData.code;
-                        throw new ServerInteractionException('Could not login on a server', code);
+                        const code = errorData.response
+                            ? errorData.response.status : errorData.code;
+                        throw new ServerError('Could not login on a server', code);
                     }
                 }
 
@@ -159,7 +160,7 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerInteractionException('Could not get tasks from a server', code);
+                    throw new ServerError('Could not get tasks from a server', code);
                 }
 
                 return response.data;
@@ -175,7 +176,7 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerInteractionException('Could not get jobs from a server', code);
+                    throw new ServerError('Could not get jobs from a server', code);
                 }
 
                 return response.data;
@@ -191,7 +192,7 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerInteractionException('Could not get jobs from a server', code);
+                    throw new ServerError('Could not get jobs from a server', code);
                 }
 
                 return response.data;
@@ -207,7 +208,7 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerInteractionException('Could not get users from a server', code);
+                    throw new ServerError('Could not get users from a server', code);
                 }
 
                 return response.data;
@@ -223,7 +224,7 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerInteractionException('Could not get users from a server', code);
+                    throw new ServerError('Could not get users from a server', code);
                 }
 
                 return response.data;
