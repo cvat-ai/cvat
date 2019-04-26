@@ -42,13 +42,13 @@ Computer Vision Annotation Tool (CVAT) is a web-based tool which helps to annota
 ## 1. Getting started
 
 ### Authorization
-  - First of all, you have to log in to CVAT tool.
+- First of all, you have to log in to CVAT tool.
 
     ![](static/documentation/images/image001.jpg)
 
     ![](static/documentation/images/image002.jpg)
 
-  - If you don't have an account, you have to create it using the link below on the login page.
+- If you don't have an account, you have to create it using the link below on the login page.
 
     ![](static/documentation/images/image003.jpg)
 
@@ -61,11 +61,11 @@ There you can:
 
 ### Creating an annotation task
 
- 1. Create an annotation task pressing ``Create New Task`` button on the main page.
+1. Create an annotation task pressing ``Create New Task`` button on the main page.
 
     ![](static/documentation/images/image004.jpg)
 
- 2. Specify mandatory parameters of the task.
+2. Specify mandatory parameters of the task.
 You have to fill in ``Name``, ``Labels`` and press ``Select Files`` at least.
 
     ![](static/documentation/images/image005.jpg)
@@ -114,40 +114,66 @@ Supported URL formats :
 
 The task will be highlighted in red after creation if annotation isn't synchronized with the repository.
 
-__Use LFS__. If the annotation file is large, you can create a repository with [LFS](https://git-lfs.github.com/) support.
+**Use LFS**. If the annotation file is large, you can create a repository with
+[LFS](https://git-lfs.github.com/) support.
 
-__Source__. To create huge tasks please use ``shared`` server directory (choose ``Share`` option in the dialog).
+**Source**. To create huge tasks please use ``shared`` server directory (choose ``Share`` option in the dialog).
 
-__Z-Order__. Defines the order on drawn polygons. Check the box for enable layered displaying.
+**Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
 
-__Overlap Size__. Use this option to make overlapped segments. The option makes tracks continuous from one segment into another. Use it for interpolation mode. There are several options for using the parameter:
-- For an interpolation task (video sequence). If you annotate a bounding box on two adjusted segments they will be merged into one bounding box. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file, you will have several tracks, one for each segment, which corresponds to the object.
-- For an annotation task (independent images). If an object exists on overlapped segments, the overlap is greater than zero and the annotation is good enough on adjacent segments, it will be automatically merged into one object. If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file, you will have several bounding boxes for the same object.
-Thus, you annotate an object on the first segment. You annotate the same object on second segment, and if you do it right, you will have one track inside your annotation file. If annotations on different segments (on overlapped frames) are very different or overlap is zero, you will have two tracks for the same object. This functionality works only for bounding boxes. Polygon, polyline, points don't support automatic merge on overlapped segments even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
+**Overlap Size**. Use this option to make overlapped segments.
+The option makes tracks continuous from one segment into another.
+Use it for interpolation mode. There are several options for using the parameter:
+  - For an interpolation task (video sequence).
+If you annotate a bounding box on two adjusted segments they will be merged into one bounding box.
+If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
+you will have several tracks, one for each segment, which corresponds to the object.
+  - For an annotation task (independent images).
+If an object exists on overlapped segments, the overlap is greater than zero
+and the annotation is good enough on adjacent segments, it will be automatically merged into one object.
+If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
+you will have several bounding boxes for the same object.
+Thus, you annotate an object on the first segment.
+You annotate the same object on second segment, and if you do it right, you will have one track inside the annotations.
+If annotations on different segments (on overlapped frames)
+are very different or overlap is zero, you will have two tracks for the same object.
+This functionality works only for bounding boxes.
+Polygon, polyline, points don't support automatic merge on overlapped segments
+even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
 
-__Segment size__. Use this option to divide a huge dataset into a few smaller segments. For example, one job cannot be annotated by several labelers (it isn't supported). Thus using "segment size" you can create several jobs for the same annotation task. It will help you to parallel data annotation process.
+**Segment size**. Use this option to divide a huge dataset into a few smaller segments.
+For example, one job cannot be annotated by several labelers (it isn't supported).
+Thus using "segment size" you can create several jobs for the same annotation task.
+It will help you to parallel data annotation process.
 
-__Image Quality__. Use this option to specify quality of uploaded images. The option helps to load high resolution datasets faster. Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
+**Image Quality**. Use this option to specify quality of uploaded images.
+The option helps to load high resolution datasets faster.
+Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
 
-__Select files__. Push this button to select files you want to annotate.
+**Select files**. Push this button to select files you want to annotate.
 
-Push ``Submit`` button and it will be added into the list of annotation tasks. Then, the created task will be displayed on dashboard:
+Push ``Submit`` button and it will be added into the list of annotation tasks.
+Then, the created task will be displayed on dashboard:
 
 ![](static/documentation/images/image006.jpg)
 
-3. The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order. Each element contains: task name, preview, execution status, buttons, and one or more links. Each button is responsible for a specific function:
-- ``Dump Annotation`` — download an annotation file from the task (xml format) 
-- ``Upload Annotation`` — uploading an annotation file to the task (xml format)
-- ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
-- ``Delete Task`` — delete the task
-- ``Git Repository Sync`` — sync annotation with the repository. Presence depends on task configuration
-- ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API. Presence depends on task configuration
-- ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit. Presense depends on how you build CVAT instance.
+ 3. The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
+Each element contains: task name, preview, execution status, buttons, and one or more links.
+Each button is responsible for a specific function:
+  - ``Dump Annotation`` — download an annotation file from the task (xml format) 
+  - ``Upload Annotation`` — uploading an annotation file to the task (xml format)
+  - ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
+  - ``Delete Task`` — delete the task
+  - ``Git Repository Sync`` — sync annotation with the repository. Presence depends on task configuration
+  - ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API. Presence depends on task configuration
+  - ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit. Presense depends on how you build CVAT instance.
 
-  Item color depends on status of synchronization with the repository: ``red`` means a task is not synchronized with the repository, 
-``yellow`` means a task is in a temporary branch of the repository, ``green`` means a task is merged into the repository.
+Item color depends on status of synchronization with the repository:
+``red`` means a task is not synchronized with the repository, 
+``yellow`` means a task is in a temporary branch of the repository,
+``green`` means a task is merged into the repository.
 
-4. Follow a link inside ``Jobs`` section to start annotation process. In some cases, you can have several links. It depends on size of your task and ``Overlap Size`` and ``Segment Size`` parameters. To improve UX, only the first several frames will be loaded and you will be able to annotate first images. Other frames will be loaded in background.
+ 4. Follow a link inside ``Jobs`` section to start annotation process. In some cases, you can have several links. It depends on size of your task and ``Overlap Size`` and ``Segment Size`` parameters. To improve UX, only the first several frames will be loaded and you will be able to annotate first images. Other frames will be loaded in background.
 
     ![](static/documentation/images/image007.jpg)
 
