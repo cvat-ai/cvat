@@ -16,7 +16,6 @@ module.exports = function setup(api) {
         }],
     ];
 
-
     return {
         presets,
         plugins,
