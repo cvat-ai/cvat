@@ -180,7 +180,7 @@ It depends on size of your task and ``Overlap Size`` and ``Segment Size`` parame
 To improve UX, only the first several frames will be loaded and you will be able to annotate first images.
 Other frames will be loaded in background.
 
-    ![](static/documentation/images/image007.jpg)
+![](static/documentation/images/image007.jpg)
 
 
 ### Model manager
@@ -230,7 +230,7 @@ There is also:
  Almost every button is covered by a shortcut.
  To get a hint about a shortcut, just put your mouse pointer over an UI element.
 
-    ![](static/documentation/images/image008.jpg)
+![](static/documentation/images/image008.jpg)
 
 2. An image can be zoom in/out using mouse's wheel. The image will be zoomed relatively your current cursor position.
  Thus, if you point on an object, it will be under your mouse during zooming process.
@@ -256,143 +256,143 @@ And there is how they all look like:
 
 ### Annotation mode (basics)
 Usage examples:
-  - Create new annotations for a set of images.
-  - Add/modify/delete objects for existing annotations.
+- Create new annotations for a set of images.
+- Add/modify/delete objects for existing annotations.
 
 1. Before starting, you need to check if ``Annotation`` is selected:
 
-    ![](static/documentation/images/image082.jpg) ![](static/documentation/images/image081.jpg)
+![](static/documentation/images/image082.jpg) ![](static/documentation/images/image081.jpg)
 
 2. Create a new annotation:
   
-  - Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
+- Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
 
-    ![](static/documentation/images/image080.jpg) ![](static/documentation/images/image083.jpg)
+![](static/documentation/images/image080.jpg) ![](static/documentation/images/image083.jpg)
 
-  - Create a bounding box by clicking on ``Create Shape`` button or ``N`` shortcut.
+- Create a bounding box by clicking on ``Create Shape`` button or ``N`` shortcut.
   Choose opposite points. Your first bounding box is ready!
 
-    ![](static/documentation/images/image011.jpg)
+![](static/documentation/images/image011.jpg)
 
-  - It is possible to adjust boundaries and location of the bounding box using mouse.
+- It is possible to adjust boundaries and location of the bounding box using mouse.
   Boxes' size is shown in the top right corner , you can check it clicking on one of the boxes' points.
   You can also undo your actions using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
 
 3. In the list of objects you can see the labeled car.
- In the side panel you can perform basic operations under the object — choose attributes, change label or delete box.
+In the side panel you can perform basic operations under the object — choose attributes, change label or delete box.
 
-    ![](static/documentation/images/image012.jpg)
+![](static/documentation/images/image012.jpg)
 
 4. The following figure is an example of fully annotated frame in ``Annotation`` mode.
 
-    ![](static/documentation/images/image013.jpg)
+![](static/documentation/images/image013.jpg)
 
 ### Interpolation mode (basics)
 Usage examples:
- - Create new annotations for a sequence of frames.
- - Add/modify/delete objects for existing annotations.
- - Edit tracks, merge a lot of bounding boxes into one track.
+- Create new annotations for a sequence of frames.
+- Add/modify/delete objects for existing annotations.
+- Edit tracks, merge a lot of bounding boxes into one track.
 
 1. Before starting, you have to be sure that ``Interpolation`` is selected.
 
-    ![](static/documentation/images/image014.jpg)
+![](static/documentation/images/image014.jpg)
 
 2. Create a track for an object (look at the selected car as an example):
-    - Annotate a bounding box on the first frame for the object.
-    - In ``Interpolation`` mode the bounding box will be interpolated on next frames automatically.
+- Annotate a bounding box on the first frame for the object.
+- In ``Interpolation`` mode the bounding box will be interpolated on next frames automatically.
 
-        ![](static/documentation/images/image015.jpg)
+![](static/documentation/images/image015.jpg)
 
 3. If the object starts to change its position, you need to modify bounding boxes where it happens. It isn't necessary to change bounding boxes on each frame. It is enough to update several key frames and frames between them will be interpolated automatically. See an example below:
-    - The car starts moving on frame #630. Let's mark the frame as a key frame. You can press ``K`` for that.
+- The car starts moving on frame #630. Let's mark the frame as a key frame. You can press ``K`` for that.
 
-        ![](static/documentation/images/image016.jpg)
+![](static/documentation/images/image016.jpg)
 
-    - Let's jump 30 frames forward and adjust boundaries of the object.
+- Let's jump 30 frames forward and adjust boundaries of the object.
 
-        ![](static/documentation/images/image017.jpg)
+![](static/documentation/images/image017.jpg)
 
-    - After that, bounding boxes of the object between 630 and 660 frames will be changed automatically. For example, frame #645 looks like on the figure below:
+- After that, bounding boxes of the object between 630 and 660 frames will be changed automatically. For example, frame #645 looks like on the figure below:
 
-        ![](static/documentation/images/image018.jpg)
+![](static/documentation/images/image018.jpg)
 
- 4. When the annotated object disappears or becomes too small, you need to finish the track. You have to choose ``Outside Property``, shortcut ``O``.
+4. When the annotated object disappears or becomes too small, you need to finish the track. You have to choose ``Outside Property``, shortcut ``O``.
 
-    ![](static/documentation/images/image019.jpg)
+![](static/documentation/images/image019.jpg)
 
- 5. If the object isn't visible on a couple of frames and then appears again, you can use ``Merge Tracks`` feature to merge several individual tracks into one.
+5. If the object isn't visible on a couple of frames and then appears again, you can use ``Merge Tracks`` feature to merge several individual tracks into one.
 
-    ![](static/documentation/images/image020.jpg)
+![](static/documentation/images/image020.jpg)
 
-    - Let's create a track for the bus.
+- Let's create a track for the bus.
 
-        ![](static/documentation/images/gif001.gif)
+![](static/documentation/images/gif001.gif)
 
-    - After that, you should create a track when it appears again on the sequence of frames.
+After that, you should create a track when it appears again on the sequence of frames.
 
-        ![](static/documentation/images/gif002.gif)
+![](static/documentation/images/gif002.gif)
 
-    - Press ``Merge Tracks`` button and click on any bounding box of the first track and on any bounding box of the second track.
+- Press ``Merge Tracks`` button and click on any bounding box of the first track and on any bounding box of the second track.
 
-        ![](static/documentation/images/image021.jpg)
+![](static/documentation/images/image021.jpg)
 
-    - Press ``Apply Merge`` button to apply changes.
+- Press ``Apply Merge`` button to apply changes.
 
-        ![](static/documentation/images/image022.jpg)
+![](static/documentation/images/image022.jpg)
 
-    - The final annotated sequence of frames in ``Interpolation`` mode can look like the clip below:
+- The final annotated sequence of frames in ``Interpolation`` mode can look like the clip below:
 
-        ![](static/documentation/images/gif003.gif)
+![](static/documentation/images/gif003.gif)
 
 ### Attribute annotation mode (basics)
 
 - In this mode you can edit attributes with fast navigation between objects and frames using keyboard. Press ``Shift+Enter`` shortcut to enter AAMode. After that, you can change attributes using a keyboard.
 
-    ![](static/documentation/images/image023.jpg)
+![](static/documentation/images/image023.jpg)
 
 - The active attribute will be red. It is ``gender`` in this case. Look at the bottom side panel to see all possible shortcuts for changing the attribute. Press ``2`` key on your keyboard to assign ``female`` value for the attribute.
 
-    ![](static/documentation/images/image024.jpg) ![](static/documentation/images/image025.jpg)
+![](static/documentation/images/image024.jpg) ![](static/documentation/images/image025.jpg)
 
 - Press ``Up Arrow``/``Down Arrow`` on your keyboard to go to next/previous attribute. In this case, after pressing ``Down Arrow`` you will be able to edit ``Age`` attribute.
 
-    ![](static/documentation/images/image026.jpg) ![](static/documentation/images/image027.jpg)
+![](static/documentation/images/image026.jpg) ![](static/documentation/images/image027.jpg)
 
 - Use ``Right Arrow``/``Left Arrow`` keys to move on previous/next image with annotation.
 
 ### Downloading annotations
 
- 1. To download the latest annotations, you have to save all changes first. Press ``Open Menu`` and then ``Save Work`` button. There is ``Ctrl+S`` shortcut to save annotations quickly.
+1. To download the latest annotations, you have to save all changes first. Press ``Open Menu`` and then ``Save Work`` button. There is ``Ctrl+S`` shortcut to save annotations quickly.
 
- 2. After that, press ``Open Menu`` and then ``Dump Annotation`` button.
+2. After that, press ``Open Menu`` and then ``Dump Annotation`` button.
 
-    ![](static/documentation/images/image028.jpg)
+![](static/documentation/images/image028.jpg)
 
- 3. The annotation will be written into **.xml** file. To find the annotation file, you should go to the directory where your browser saves downloaded files by default. For more information visit [xml format page](/xml_format.html).
+3. The annotation will be written into **.xml** file. To find the annotation file, you should go to the directory where your browser saves downloaded files by default. For more information visit [xml format page](/xml_format.html).
 
-    ![](static/documentation/images/image029.jpg)
+![](static/documentation/images/image029.jpg)
 
 ### Task synchronization with a repository
 
- 1. At the end of the annotation process, a task is synchronized clicking the `` Git Repository Sync`` on the main page. Notice: this the feature works only if a git repository was specified when the task was created.
+1. At the end of the annotation process, a task is synchronized clicking the `` Git Repository Sync`` on the main page. Notice: this the feature works only if a git repository was specified when the task was created.
 
-    ![](static/documentation/images/image106.jpg) 
+![](static/documentation/images/image106.jpg) 
 
- 2. Clicking `` Sync`` starts synchronization of annotation with the repository, the url address of which is specified in the `` Repository URL`` field. The synchronization process may take some time.
+2. Clicking `` Sync`` starts synchronization of annotation with the repository, the url address of which is specified in the `` Repository URL`` field. The synchronization process may take some time.
 
-    ![](static/documentation/images/image107.jpg) 
+![](static/documentation/images/image107.jpg) 
 
-    ![](static/documentation/images/image108.jpg) 
+![](static/documentation/images/image108.jpg) 
 
- 3. After synchronization, the task in the list is highlighted in yellow. The annotation is now in the repository, in a temporary branch.
+3. After synchronization, the task in the list is highlighted in yellow. The annotation is now in the repository, in a temporary branch.
 
-    ![](static/documentation/images/image109.jpg) 
+![](static/documentation/images/image109.jpg) 
 
- 4. The next step is to go to the repository and manually create a pull request to the main branch.
- 5. After confirming the PR, when the annotation is saved in the main branch, the color of the task changes to green.
+4. The next step is to go to the repository and manually create a pull request to the main branch.
+5. After confirming the PR, when the annotation is saved in the main branch, the color of the task changes to green.
 
-    ![](static/documentation/images/image110.jpg) 
-    ![](static/documentation/images/image111.jpg) 
+![](static/documentation/images/image110.jpg) 
+![](static/documentation/images/image111.jpg) 
 
 ### Vocabulary
 
@@ -472,29 +472,29 @@ Press ``F2`` to access settings menu.
 There is ``Player Settings`` which adjusts ``Workspace`` and ``Other Settings``.
 
 In ``Player Settings`` you can:
- - Control step of ``C`` and ``V`` shortcuts
- - Control speed of ``Space``/Play button
- - Show every image in full or zoomed out like previous (reset by default)
+- Control step of ``C`` and ``V`` shortcuts
+- Control speed of ``Space``/Play button
+- Show every image in full or zoomed out like previous (reset by default)
 
-  - Enable ``Grid`` when you don't need small objects. ``Grid`` can have different opacity, color and cells' size — use ``F2`` to configure settings.
+- Enable ``Grid`` when you don't need small objects. ``Grid`` can have different opacity, color and cells' size — use ``F2`` to configure settings.
 
-    ![](static/documentation/images/image068.jpg)
+![](static/documentation/images/image068.jpg)
 
- - Adjust ``Brightness``/``Contrast``/``Saturation`` of too exposing or too dark images using ``F2`` — color settings (changes displaying and not the image itself).
+- Adjust ``Brightness``/``Contrast``/``Saturation`` of too exposing or too dark images using ``F2`` — color settings (changes displaying and not the image itself).
 Shortcuts:
-   - ``Shift+B``/``Alt+B`` for brightness
-   - ``Shift+C``/``Alt+C`` for contrast
-   - ``Shift+S``/``Alt+S`` for saturation
-   - ``F2`` —> ``Reset Color Settings`` for default image
+- ``Shift+B``/``Alt+B`` for brightness
+- ``Shift+C``/``Alt+C`` for contrast
+- ``Shift+S``/``Alt+S`` for saturation
+- ``F2`` —> ``Reset Color Settings`` for default image
 
-     ![](static/documentation/images/image069.jpg)
+![](static/documentation/images/image069.jpg)
 
 ``Other Settings`` contains:
- - ``Show All Interpolation Tracks`` checkbox — shows hidden object on the side panel for every interpolated object (turned off by default)
- - ``AAM Zoom Margin`` slider — defines margins for shape in attribute annotation mode
- - ``Enable AutoSaving`` checkbox — turned off by default
- - ``AutoSaving Interval (min)`` input box — 15 minutes by default
- - ``Rotate all images``  checkbox — switch the rotation of all frames / individual frame 
+- ``Show All Interpolation Tracks`` checkbox — shows hidden object on the side panel for every interpolated object (turned off by default)
+- ``AAM Zoom Margin`` slider — defines margins for shape in attribute annotation mode
+- ``Enable AutoSaving`` checkbox — turned off by default
+- ``AutoSaving Interval (min)`` input box — 15 minutes by default
+- ``Rotate all images``  checkbox — switch the rotation of all frames / individual frame 
  
 ---
 ### Bottom Panel
@@ -527,7 +527,7 @@ Go to specified frame. Press ``~`` to highlight element.
 ![](static/documentation/images/image060.jpg)
 
 ---
-__Open Menu__ button
+**Open Menu** button
 
 It is the main menu for the annotation tool. It can be used to download, upload and remove annotation.
 
@@ -553,35 +553,35 @@ It also shows statistics about the current task, for example:
 - number of created bounding boxes, sorted by labels (e.g. vehicle, person) and type of annotation (polygons, boxes, etc.)
 
 ---
-__Filter__ input box
+**Filter** input box
 
 The way how to use filters is described in the advanced guide (below).
 
 ![](static/documentation/images/image059.jpg)
 
 ---
-__History / Undo-redo panel__
+**History / Undo-redo panel**
 
 Use ``Ctrl+Z`` for undo actions and  ``Ctrl+Shift+Z`` or ``Ctrl+Y`` to redo them.
 
 ![](static/documentation/images/image061.jpg)
 
 ---
-__Propagation__ input box
+**Propagation** input box
 
 Allows you to select how many frames of the selected object will be copied clicking ``Ctrl+B`` (50 by default)
 
 ![](static/documentation/images/image101.jpg)
 
 ---
-__Rotation__
+**Rotation**
 
 Buttons are used to rotate the image clockwise / counterclockwise or use ``Ctrl+R``/``Ctrl+Shift+R`` 
 
 ![](static/documentation/images/image102.jpg)
 
 ---
-__Fill Opacity slider__
+**Fill Opacity slider**
 
 Change opacity of every bounding box in the annotation.
 
@@ -589,7 +589,7 @@ Change opacity of every bounding box in the annotation.
 
 Opacity can be chaged from 0% to 100% and by random colors or white. If any white option is chosen, ``Color By`` scheme won't work.
 
-__Selected Fill Opacity slider__
+**Selected Fill Opacity slider**
 
 Change the opacity of the selected object's fill.
 
@@ -597,13 +597,13 @@ Change the opacity of the selected object's fill.
 
 Opacity can be changed from 0% to 100%.
 
-__Black Stroke checkbox__
+**Black Stroke checkbox**
 
 Change bounding box border from white/colored to black.
 
 ![](static/documentation/images/image088.jpg)
 
-__Color By options__
+**Color By options**
 
 Change color scheme of annotation:
 - ``Instance`` — every bounding box has random color
@@ -636,7 +636,7 @@ You can also see all the labels that were used on this frame and highlight them 
 ![](static/documentation/images/image062.jpg)
 
 ---
-__Objects' card__
+**Objects' card**
 
 A shape can be removed. Shortcut: ``Delete``. You can delete a locked shape using the ``Shift+Delete`` shortcut.
 
@@ -670,7 +670,7 @@ You can change the way this objects' annotation is displayed on this frame. It c
 ![](static/documentation/images/image055.jpg)
 
 ---
-The type of a shape can be changed selecting __Label__ property. For instance, it can look like on the figure below:
+The type of a shape can be changed selecting **Label** property. For instance, it can look like on the figure below:
 
 ![](static/documentation/images/image050.jpg)
 
@@ -701,11 +701,11 @@ This is how it looks like.
 
 Basic operations in the mode were described above.
 
-__occluded__ attribute is used if an object is occluded by another object or isn't fully visible on the frame. Use ``Q`` shortcut to set the property quickly.
+**occluded** attribute is used if an object is occluded by another object or isn't fully visible on the frame. Use ``Q`` shortcut to set the property quickly.
 
 ![](static/documentation/images/image065.jpg)
 
-Example: both cars on the figure below should be labeled as __occluded__.
+Example: both cars on the figure below should be labeled as **occluded**.
 
 ![](static/documentation/images/image054.jpg)
 
@@ -720,11 +720,11 @@ Basic operations in the mode were described above.
 Bounding boxes that were created in the mode, have extra navigation buttons.
 - These buttons help to jump to previous/next key frame.
 
-    ![](static/documentation/images/image056.jpg)
+![](static/documentation/images/image056.jpg)
 
 - The button helps to jump to initial frame for the object (first bounding box for the track).
 
-    ![](static/documentation/images/image057.jpg)
+![](static/documentation/images/image057.jpg)
 
 
 ## 6. Attribute annotation mode (advanced)
@@ -821,9 +821,9 @@ Press ``N`` again for finishing marking an area. A shape must consist of 4 point
 This feature allows to group several shapes.
 
 You may use ``Group Shapes`` button or shortcuts:
-  - ``G`` — switch group mode
-  - ``Alt+G`` — close group mode
-  - ``Shift+G`` — reset group for selected shapes
+- ``G`` — switch group mode
+- ``Alt+G`` — close group mode
+- ``Shift+G`` — reset group for selected shapes
 
 You may select shapes clicking on them or selecting an area.
 
@@ -856,13 +856,13 @@ In the trivial case, the correct filter must match the template: ``label[prop op
 
 ``prop`` is a property which should be filtered. The following items are available:
 
- - ``id`` — identifier of an object. It helps to find a specific object easily in case of huge number of objects and static/documentation/images/frames.
- - ``type`` — an annotation type. Possible values:
-    - ``annotation``
-    - ``interpolation``
- - ``lock`` accepts ``true`` and ``false`` values. It can be used to hide all locked objects.
- - ``occluded`` accepts ``true`` and ``false`` values. It can be used to hide all occluded objects.
- - ``attr`` is a prefix to access attributes of an object. For example, it is possible to access _race_ attribute. For the purpose you should specify ``attr/race``. To access all attributes, it is necessary to write ``attr/*``.
+- ``id`` — identifier of an object. It helps to find a specific object easily in case of huge number of objects and static/documentation/images/frames.
+- ``type`` — an annotation type. Possible values:
+- ``annotation``
+- ``interpolation``
+- ``lock`` accepts ``true`` and ``false`` values. It can be used to hide all locked objects.
+- ``occluded`` accepts ``true`` and ``false`` values. It can be used to hide all occluded objects.
+- ``attr`` is a prefix to access attributes of an object. For example, it is possible to access _race_ attribute. For the purpose you should specify ``attr/race``. To access all attributes, it is necessary to write ``attr/*``.
 
 ``operator`` can be ``=`` (equal), ``!=`` (not equal), ``<`` (less), ``>`` (more), ``<=`` (less or equal), ``>=`` (more or equal).
 
@@ -951,25 +951,25 @@ Many UI elements have shortcut hints. Put your pointer to a required element to 
 ``Ctrl+S``             | save job
 ``Ctrl+B``             | propagate active shape
 ``+``/``-``            | change relative order of highlighted box (if Z-Order is enabled)
-|                      | __Interpolation__             |
+|                      | **Interpolation**             |
 ``M``                  | enter/apply merge mode
 ``Esc``                | close merge mode without apply the merge
 ``R``                  | go to the next key frame of an active shape
 ``E``                  | go to the previous key frame of an active shape
 ``O``                  | change attribute of an active shape to "Outside the frame"
 ``K``                  | mark current frame as key frame on an active shape
-|                      | __Attribute annotation mode__ |
+|                      | **Attribute annotation mode** |
 ``Shift+Enter``        | enter/leave Attribute Annotation mode
 ``Up Arrow``           | go to the next attribute (up)
 ``Down Arrow``         | go to the next attribute (down)
 ``Tab``                | go to the next annotated object
 ``Shift+Tab``          | go to the previous annotated object
 ``<number>``           | assign a corresponding value to the current attribute
-|                      | __Grouping__                  |
+|                      | **Grouping**                  |
 ``G``                  | switch group mode
 ``Esc``                | close group mode
 ``Shift+G``            | reset group for selected shapes
-|                      | __Filter__                    |
+|                      | **Filter**                    |
 ``Left Arrow``         | go to the previous frame which corresponds to the specified filter value
 ``Right Arrow``        | go to the next frame which corresponds to the specified filter value
 
