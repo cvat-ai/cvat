@@ -15,12 +15,16 @@
 
 (() => {
     const PluginRegistry = require('./plugins');
-    const pjson = require('../package.json');
+    const User = require('./user');
+    const Task = require('./task');
+    const Job = require('./job');
+
     const {
         ShareFileType,
         TaskStatus,
         TaskMode,
     } = require('./enums');
+
     const {
         Exception,
         ArgumentError,
@@ -28,6 +32,8 @@
         PluginError,
         ServerError,
     } = require('./exceptions');
+
+    const pjson = require('../package.json');
 
     function buildDublicatedAPI() {
         const annotationsModule = {
@@ -511,6 +517,11 @@
             PluginError,
             ServerError,
         },
+        classes: {
+            User,
+            Task,
+            Job,
+        },
         Job: {
             async save() {
                 const result = await PluginRegistry
@@ -552,11 +563,11 @@
     cvat.Job = Object.freeze(cvat.Job);
     cvat.Task = Object.freeze(cvat.Task);
 
-    const implementation = require('./api-implementation');
-    global.cvat = Object.freeze(implementation(cvat));
+    const implementAPI = require('./api-implementation');
+    global.cvat = Object.freeze(implementAPI(cvat));
 
     const hidden = require('./hidden');
-    hidden.location = global.cvat.config.backendAPI.slice(0, -7); // TODO: Use JS server instead
+    hidden.location = cvat.config.backendAPI.slice(0, -7); // TODO: Use JS server instead
 })();
 
 const plugin = {

@@ -6,6 +6,7 @@
 (() => {
     /**
         * Class representing a user
+        * @memberof module:API.cvat.classes
     */
     class User {
         constructor(initialData = {}) {

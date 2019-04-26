@@ -227,7 +227,7 @@
                     throw new ServerError('Could not get users from a server', code);
                 }
 
-                return response.data;
+                return [response.data];
             }
 
             // Set csrftoken header from browser cookies if it exists
