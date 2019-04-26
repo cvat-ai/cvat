@@ -124,11 +124,11 @@ The task will be highlighted in red after creation if annotation isn't synchroni
 **Overlap Size**. Use this option to make overlapped segments.
 The option makes tracks continuous from one segment into another.
 Use it for interpolation mode. There are several options for using the parameter:
-- For an interpolation task (video sequence).
+  - For an interpolation task (video sequence).
 If you annotate a bounding box on two adjusted segments they will be merged into one bounding box.
 If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
 you will have several tracks, one for each segment, which corresponds to the object.
-- For an annotation task (independent images).
+  - For an annotation task (independent images).
 If an object exists on overlapped segments, the overlap is greater than zero
 and the annotation is good enough on adjacent segments, it will be automatically merged into one object.
 If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
@@ -157,17 +157,17 @@ Then, the created task will be displayed on dashboard:
 
 ![](static/documentation/images/image006.jpg)
 
-3. The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
+ 3. The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
 Each element contains: task name, preview, execution status, buttons, and one or more links.
 Each button is responsible for a specific function:
-- ``Dump Annotation`` — download an annotation file from the task (xml format) 
-- ``Upload Annotation`` — uploading an annotation file to the task (xml format)
-- ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
-- ``Delete Task`` — delete the task
-- ``Git Repository Sync`` — sync annotation with the repository. Presence depends on task configuration
-- ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API.
+  - ``Dump Annotation`` — download an annotation file from the task (xml format) 
+  - ``Upload Annotation`` — uploading an annotation file to the task (xml format)
+  - ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
+  - ``Delete Task`` — delete the task
+  - ``Git Repository Sync`` — sync annotation with the repository. Presence depends on task configuration
+  - ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API.
 Presence depends on task configuration
-- ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
+  - ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
 Presense depends on how you build CVAT instance.
 
 Item color depends on status of synchronization with the repository:
@@ -175,7 +175,7 @@ Item color depends on status of synchronization with the repository:
 ``yellow`` means a task is in a temporary branch of the repository,
 ``green`` means a task is merged into the repository.
 
-4. Follow a link inside ``Jobs`` section to start annotation process. In some cases, you can have several links.
+ 4. Follow a link inside ``Jobs`` section to start annotation process. In some cases, you can have several links.
 It depends on size of your task and ``Overlap Size`` and ``Segment Size`` parameters.
 To improve UX, only the first several frames will be loaded and you will be able to annotate first images.
 Other frames will be loaded in background.
@@ -225,21 +225,27 @@ There is also:
 
 ### Basic navigation
 
-1. Use arrows below to move on next/previous frame. Use the scroll bar slider to scroll through frames. Almost every button is covered by a shortcut. To get a hint about a shortcut, just put your mouse pointer over an UI element.
+ 1. Use arrows below to move on next/previous frame.
+ Use the scroll bar slider to scroll through frames.
+ Almost every button is covered by a shortcut.
+ To get a hint about a shortcut, just put your mouse pointer over an UI element.
 
     ![](static/documentation/images/image008.jpg)
 
-2. An image can be zoom in/out using mouse's wheel. The image will be zoomed relatively your current cursor position. Thus, if you point on an object, it will be under your mouse during zooming process.
+ 2. An image can be zoom in/out using mouse's wheel. The image will be zoomed relatively your current cursor position.
+ Thus, if you point on an object, it will be under your mouse during zooming process.
 
-3. An image can be moved/shifted by holding left mouse button inside some area without annotated objects. If ``Mouse Wheel`` is pressed, then all annotated objects are ignored. Otherwise, a highlighted bounding box will be moved instead of the image itself.
+ 3. An image can be moved/shifted by holding left mouse button inside some area without annotated objects.
+ If ``Mouse Wheel`` is pressed, then all annotated objects are ignored.
+ Otherwise, a highlighted bounding box will be moved instead of the image itself.
 
 ### Types of Shapes (basics)
 There are four shapes which you can annotate your images with:
-- ``box``
-- ``polygon``
-- ``polyline``
-- ``points``
-- ``auto segmentation``
+  - ``box``
+  - ``polygon``
+  - ``polyline``
+  - ``points``
+  - ``auto segmentation``
 
 And there is how they all look like:
 
@@ -250,26 +256,26 @@ And there is how they all look like:
 
 ### Annotation mode (basics)
 Usage examples:
- - Create new annotations for a set of images.
- - Add/modify/delete objects for existing annotations.
+  - Create new annotations for a set of images.
+  - Add/modify/delete objects for existing annotations.
 
-1. Before starting, you need to check if ``Annotation`` is selected:
+ 1. Before starting, you need to check if ``Annotation`` is selected:
 
     ![](static/documentation/images/image082.jpg) ![](static/documentation/images/image081.jpg)
 
-2. Create a new annotation:
+ 2. Create a new annotation:
   
-   - Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
+  - Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
 
     ![](static/documentation/images/image080.jpg) ![](static/documentation/images/image083.jpg)
 
-   - Create a bounding box by clicking on ``Create Shape`` button or ``N`` shortcut. Choose opposite points. Your first bounding box is ready!
+  - Create a bounding box by clicking on ``Create Shape`` button or ``N`` shortcut. Choose opposite points. Your first bounding box is ready!
 
     ![](static/documentation/images/image011.jpg)
 
-    - It is possible to adjust boundaries and location of the bounding box using mouse. Boxes' size is shown in the top right corner , you can check it clicking on one of the boxes' points. You can also undo your actions using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
+  - It is possible to adjust boundaries and location of the bounding box using mouse. Boxes' size is shown in the top right corner , you can check it clicking on one of the boxes' points. You can also undo your actions using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
 
-3. In the list of objects you can see the labeled car. In the side panel you can perform basic operations under the object — choose attributes, change label or delete box.
+ 3. In the list of objects you can see the labeled car. In the side panel you can perform basic operations under the object — choose attributes, change label or delete box.
 
     ![](static/documentation/images/image012.jpg)
 
@@ -306,11 +312,11 @@ Usage examples:
 
         ![](static/documentation/images/image018.jpg)
 
-4. When the annotated object disappears or becomes too small, you need to finish the track. You have to choose ``Outside Property``, shortcut ``O``.
+ 4. When the annotated object disappears or becomes too small, you need to finish the track. You have to choose ``Outside Property``, shortcut ``O``.
 
     ![](static/documentation/images/image019.jpg)
 
-5. If the object isn't visible on a couple of frames and then appears again, you can use ``Merge Tracks`` feature to merge several individual tracks into one.
+ 5. If the object isn't visible on a couple of frames and then appears again, you can use ``Merge Tracks`` feature to merge several individual tracks into one.
 
     ![](static/documentation/images/image020.jpg)
 
@@ -352,34 +358,34 @@ Usage examples:
 
 ### Downloading annotations
 
-1. To download the latest annotations, you have to save all changes first. Press ``Open Menu`` and then ``Save Work`` button. There is ``Ctrl+S`` shortcut to save annotations quickly.
+ 1. To download the latest annotations, you have to save all changes first. Press ``Open Menu`` and then ``Save Work`` button. There is ``Ctrl+S`` shortcut to save annotations quickly.
 
-2. After that, press ``Open Menu`` and then ``Dump Annotation`` button.
+ 2. After that, press ``Open Menu`` and then ``Dump Annotation`` button.
 
     ![](static/documentation/images/image028.jpg)
 
-3. The annotation will be written into **.xml** file. To find the annotation file, you should go to the directory where your browser saves downloaded files by default. For more information visit [xml format page](/xml_format.html).
+ 3. The annotation will be written into **.xml** file. To find the annotation file, you should go to the directory where your browser saves downloaded files by default. For more information visit [xml format page](/xml_format.html).
 
     ![](static/documentation/images/image029.jpg)
 
 ### Task synchronization with a repository
 
-1. At the end of the annotation process, a task is synchronized clicking the `` Git Repository Sync`` on the main page. Notice: this the feature works only if a git repository was specified when the task was created.
+ 1. At the end of the annotation process, a task is synchronized clicking the `` Git Repository Sync`` on the main page. Notice: this the feature works only if a git repository was specified when the task was created.
 
     ![](static/documentation/images/image106.jpg) 
 
-2. Clicking `` Sync`` starts synchronization of annotation with the repository, the url address of which is specified in the `` Repository URL`` field. The synchronization process may take some time.
+ 2. Clicking `` Sync`` starts synchronization of annotation with the repository, the url address of which is specified in the `` Repository URL`` field. The synchronization process may take some time.
 
     ![](static/documentation/images/image107.jpg) 
 
     ![](static/documentation/images/image108.jpg) 
 
-3. After synchronization, the task in the list is highlighted in yellow. The annotation is now in the repository, in a temporary branch.
+ 3. After synchronization, the task in the list is highlighted in yellow. The annotation is now in the repository, in a temporary branch.
 
     ![](static/documentation/images/image109.jpg) 
 
-4. The next step is to go to the repository and manually create a pull request to the main branch.
-5. After confirming the PR, when the annotation is saved in the main branch, the color of the task changes to green.
+ 4. The next step is to go to the repository and manually create a pull request to the main branch.
+ 5. After confirming the PR, when the annotation is saved in the main branch, the color of the task changes to green.
 
     ![](static/documentation/images/image110.jpg) 
     ![](static/documentation/images/image111.jpg) 
@@ -403,11 +409,11 @@ Usage examples:
 
 **Attribute** is a property of an annotated object (e.g. color, model, quality, etc.). There are two types of attributes:
 
-- __Unique__: immutable and can't be changed from frame to frame (e.g. age, gender, color, etc.)
+- **Unique**: immutable and can't be changed from frame to frame (e.g. age, gender, color, etc.)
 
     ![](static/documentation/images/image073.jpg)
 
-- __Temporary__: mutable and can be changed on any frame (e.g. quality, pose, truncated, etc.)
+- **Temporary**: mutable and can be changed on any frame (e.g. quality, pose, truncated, etc.)
 
     ![](static/documentation/images/image072.jpg)
 
