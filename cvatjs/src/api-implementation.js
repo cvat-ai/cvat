@@ -11,14 +11,32 @@
 
 (() => {
     const PluginRegistry = require('./plugins');
-
-    const Statistics = require('./statistics');
-    const FrameData = require('./frames');
-    const ObjectState = require('./object-state');
-    const Task = require('./task');
-    const Job = require('./task');
-
     const serverProxy = require('./server-proxy');
+
+    function isBoolean(value) {
+        return typeof (value) === 'boolean';
+    }
+
+    function isInteger(value) {
+        return typeof (value) === 'number' && Number.isInteger(value);
+    }
+
+    function isEnum(value) {
+        // Called with specific Enum context
+        for (const key in this) {
+            if (Object.prototype.hasOwnProperty.call(this, key)) {
+                if (this[key] === value) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    function isString(value) {
+        return typeof (value) === 'string';
+    }
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -38,12 +56,32 @@
             await serverProxy.server.login(username, password);
         };
 
-        cvat.tasks.get.implementation = async (filter) => {
+        function checkFilter(filter, fields) {
+            for (const prop in filter) {
+                if (Object.prototype.hasOwnProperty.call(filter, prop)) {
+                    if (!(prop in fields)) {
+                        throw new global.cvat.exceptions.ArgumentError(
+                            `Unsupported property has been recieved: "${prop}"`,
+                        );
+                    } else if (!fields[prop](filter[prop])) {
+                        throw new global.cvat.exceptions.ArgumentError(
+                            `Received property ${prop} was not satisfied for checker`,
+                        );
+                    }
+                }
+            }
+        }
+
+        cvat.users.get.implementation = async (filter) => {
+            checkFilter(filter, {
+                self: isBoolean,
+            });
+
             let users = null;
             if ('self' in filter && filter.self) {
-                users = await serverProxy.getSelf();
+                users = await serverProxy.users.getSelf();
             } else {
-                users = await serverProxy.getUsers();
+                users = await serverProxy.users.getUsers();
             }
 
             users = users.map(user => new global.cvat.classes.User(user));
@@ -51,20 +89,72 @@
         };
 
         cvat.jobs.get.implementation = async (filter) => {
-            return [new Job({})];
+            checkFilter(filter, {
+                taskID: isInteger,
+                jobID: isInteger,
+            });
+
+            let jobs = null;
+            if (('taskID' in filter) && ('jobID' in filter)) {
+                throw new global.cvat.exceptions.ArgumentError(
+                    'Only one of fields "taskID" and "jobID" allowed simultaneously',
+                );
+            }
+
+            if ('taskID' in filter) {
+                jobs = await serverProxy.jobs.getTaskJobs();
+            } else if ('jobID' in filter) {
+                jobs = await serverProxy.jobs.getJob();
+            }
+
+            jobs = jobs.map(job => new global.cvat.classes.Job(job));
+            return jobs;
         };
 
-        cvat.users.get.implementation = async (filter) => {
-            return [new User()];
+        cvat.tasks.get.implementation = async (filter) => {
+            checkFilter(filter, {
+                name: isString,
+                id: isInteger,
+                owner: isString,
+                assignee: isString,
+                search: isString,
+                status: isEnum.bind(global.cvat.enums.TaskStatus),
+                mode: isEnum.bind(global.cvat.enums.TaskMode),
+            });
+
+            if ('search' in filter && Object.keys(filter).length > 1) {
+                throw new global.cvat.exceptions.ArgumentError(
+                    'Do not use the filter field "search" with others',
+                );
+            }
+
+            if ('id' in filter && Object.keys(filter).length > 1) {
+                throw new global.cvat.exceptions.ArgumentError(
+                    'Do not use the filter field "id" with others',
+                );
+            }
+
+            let query = '';
+            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode']) {
+                if (Object.prototype.hasOwnProperty.call(filter, field)) {
+                    query += `${field}=${filter[field]}&`;
+                }
+            }
+            query = query.slice(0, -1);
+
+            let tasks = serverProxy.tasks.getTasks(query);
+            tasks = tasks.map(task => new global.cvat.classes.Task(task));
+
+            return tasks;
         };
 
         const hidden = require('./hidden');
         function checkContext(wrappedFunction) {
             return async function wrapper(...args) {
                 try {
-                    if (this instanceof Task) {
+                    if (this instanceof global.cvat.classes.Task) {
                         hidden.taskID = this.id;
-                    } else if (this instanceof Job) {
+                    } else if (this instanceof global.cvat.classes.Job) {
                         hidden.jobID = this.id;
                         hidden.taskID = this.task.id;
                     } else {

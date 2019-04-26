@@ -163,7 +163,7 @@
                     throw new ServerError('Could not get tasks from a server', code);
                 }
 
-                return response.data;
+                return response.data.results;
             }
 
             async function getTaskJobs(taskID) {
@@ -179,7 +179,7 @@
                     throw new ServerError('Could not get jobs from a server', code);
                 }
 
-                return response.data;
+                return response.data.results;
             }
 
             async function getJob(jobID) {
@@ -195,7 +195,7 @@
                     throw new ServerError('Could not get jobs from a server', code);
                 }
 
-                return response.data;
+                return [response.data];
             }
 
             async function getUsers() {
@@ -211,7 +211,7 @@
                     throw new ServerError('Could not get users from a server', code);
                 }
 
-                return response.data;
+                return response.data.results;
             }
 
             async function getSelf() {

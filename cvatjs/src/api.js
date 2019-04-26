@@ -244,7 +244,7 @@
                 * Check if status contains this value
                 * @property {module:API.cvat.enums.TaskMode} mode
                 * Check if mode contains this value
-                * @property {string} id Check if id equals this value
+                * @property {integer} id Check if id equals this value
                 * @property {string} owner Check if owner user contains this value
                 * @property {string} assignee Check if assigneed contains this value
                 * @property {string} search Combined search of contains among all fields
@@ -622,5 +622,12 @@ const plugin = {
     await global.cvat.plugins.register(plugin);
     await global.cvat.server.login('admin', 'nimda760');
 
-    console.log(JSON.stringify(await global.cvat.server.about()));
+    try {
+        console.log(JSON.stringify(await global.cvat.server.about()));
+        console.log(JSON.stringify(await global.cvat.users.get({ self: false })));
+        console.log(JSON.stringify(await global.cvat.users.get({ self: true })));
+    } catch (exception) {
+        console.log(typeof (exception));
+        console.log(exception.message);
+    }
 }());

@@ -14,18 +14,18 @@
                 id: null,
                 username: null,
                 email: null,
-                firstName: null,
-                lastName: null,
+                first_name: null,
+                last_name: null,
                 groups: null,
-                lastLogin: null,
-                dateJoined: null,
-                isStaff: null,
-                isSuperuser: null,
-                isActive: null,
+                last_login: null,
+                date_joined: null,
+                is_staff: null,
+                is_superuser: null,
+                is_active: null,
             };
 
-            for (const property in this) {
-                if (Object.prototype.hasOwnProperty.call(this, property)
+            for (const property in data) {
+                if (Object.prototype.hasOwnProperty.call(data, property)
                     && property in initialData) {
                     data[property] = initialData[property];
                 }
@@ -42,28 +42,28 @@
                     get: () => data.email,
                 },
                 firstName: {
-                    get: () => data.firstName,
+                    get: () => data.first_name,
                 },
                 lastName: {
-                    get: () => data.lastName,
+                    get: () => data.last_name,
                 },
                 groups: {
                     get: () => JSON.parse(JSON.stringify(data.groups)),
                 },
                 lastLogin: {
-                    get: () => data.lastLogin,
+                    get: () => data.last_login,
                 },
                 dateJoined: {
-                    get: () => data.dateJoined,
+                    get: () => data.date_joined,
                 },
                 isStaff: {
-                    get: () => data.isStaff,
+                    get: () => data.is_staff,
                 },
                 isSuperuser: {
-                    get: () => data.isSuperuser,
+                    get: () => data.is_superuser,
                 },
                 isActive: {
-                    get: () => data.isActive,
+                    get: () => data.is_active,
                 },
             });
         }
