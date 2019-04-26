@@ -42,33 +42,33 @@ Computer Vision Annotation Tool (CVAT) is a web-based tool which helps to annota
 ## 1. Getting started
 
 ### Authorization
-- First of all, you have to log in to CVAT tool.
+  - First of all, you have to log in to CVAT tool.
 
-    ![](static/documentation/images/image001.jpg)
+![](static/documentation/images/image001.jpg)
 
-    ![](static/documentation/images/image002.jpg)
+![](static/documentation/images/image002.jpg)
 
-- If you don't have an account, you have to create it using the link below on the login page.
+  - If you don't have an account, you have to create it using the link below on the login page.
 
-    ![](static/documentation/images/image003.jpg)
+![](static/documentation/images/image003.jpg)
 
 ### Administration panel
 Type ``/admin`` in URL to go to the administration panel.
 There you can:
- - Create / edit / delete users
- - Control user's permission and access to the tool.
+  - Create / edit / delete users
+  - Control user's permission and access to the tool.
 
 
 ### Creating an annotation task
 
 1. Create an annotation task pressing ``Create New Task`` button on the main page.
 
-    ![](static/documentation/images/image004.jpg)
+![](static/documentation/images/image004.jpg)
 
 2. Specify mandatory parameters of the task.
 You have to fill in ``Name``, ``Labels`` and press ``Select Files`` at least.
 
-    ![](static/documentation/images/image005.jpg)
+![](static/documentation/images/image005.jpg)
 
 **Labels**. Use the following layout to create labels:
 ``label_name <prefix>input_type=attribute_name:attribute_value1,attribute_value2``.
@@ -76,17 +76,17 @@ You can specify multiple labels and attributes and divide them pressing the spac
 Attributes belong to a previous label.
 
 Example:
--   ``vehicle @select=type:__undefined__,car,truck,bus,train ~radio=quality:good,bad ~checkbox=parked:false`` -
+  -   ``vehicle @select=type:__undefined__,car,truck,bus,train ~radio=quality:good,bad ~checkbox=parked:false`` -
 one label with multiple attributes
--   ``car person bike`` - three labels without attributes
--   ``circle @radio=color:green,red,blue @number=radius:0,10,0.1 line square`` -
+  -   ``car person bike`` - three labels without attributes
+  -   ``circle @radio=color:green,red,blue @number=radius:0,10,0.1 line square`` -
 one label with two attributes and two labels without attributes
 
 ``label_name``: for example _vehicle, person, face etc._
 
 ``<prefix>``:
--   Use ``@`` for unique attributes which cannot be changed from frame to frame _(e.g. age, gender, color, etc.)_
--   Use ``~`` for temporary attributes which can be changed on any frame _(e.g. quality, pose, truncated, etc.)_
+  -   Use ``@`` for unique attributes which cannot be changed from frame to frame _(e.g. age, gender, color, etc.)_
+  -   Use ``~`` for temporary attributes which can be changed on any frame _(e.g. quality, pose, truncated, etc.)_
 
 ``input_type``: the following input types are available ``select``, ``checkbox``, ``radio``, ``number``, ``text``.
 
@@ -108,9 +108,9 @@ The .zip and .xml file extension of annotation are supported.
 Field format: ``URL [PATH]`` example: ``https://gitlab-icv.inn.intel.com/project/repos.git  [1/2/3/4/annotation.xml]``
 
 Supported URL formats : 
--   ``https://gitlab-icv.inn.intel.com/project/repos[.git]``
--   ``gitlab-icv.inn.intel.com/project/repos[.git]``	
--   ``git@gitlab-icv.inn.intel.com:project/repos[.git]``
+  -   ``https://gitlab-icv.inn.intel.com/project/repos[.git]``
+  -   ``gitlab-icv.inn.intel.com/project/repos[.git]``	
+  -   ``git@gitlab-icv.inn.intel.com:project/repos[.git]``
 
 The task will be highlighted in red after creation if annotation isn't synchronized with the repository.
 
@@ -124,11 +124,11 @@ The task will be highlighted in red after creation if annotation isn't synchroni
 **Overlap Size**. Use this option to make overlapped segments.
 The option makes tracks continuous from one segment into another.
 Use it for interpolation mode. There are several options for using the parameter:
-- For an interpolation task (video sequence).
+  - For an interpolation task (video sequence).
 If you annotate a bounding box on two adjusted segments they will be merged into one bounding box.
 If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
 you will have several tracks, one for each segment, which corresponds to the object.
-- For an annotation task (independent images).
+  - For an annotation task (independent images).
 If an object exists on overlapped segments, the overlap is greater than zero
 and the annotation is good enough on adjacent segments, it will be automatically merged into one object.
 If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
@@ -160,14 +160,14 @@ Then, the created task will be displayed on dashboard:
 3. The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
 Each element contains: task name, preview, execution status, buttons, and one or more links.
 Each button is responsible for a specific function:
-- ``Dump Annotation`` — download an annotation file from the task (xml format) 
-- ``Upload Annotation`` — uploading an annotation file to the task (xml format)
-- ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
-- ``Delete Task`` — delete the task
-- ``Git Repository Sync`` — sync annotation with the repository. Presence depends on task configuration
-- ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API.
+  - ``Dump Annotation`` — download an annotation file from the task (xml format) 
+  - ``Upload Annotation`` — uploading an annotation file to the task (xml format)
+  - ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
+  - ``Delete Task`` — delete the task
+  - ``Git Repository Sync`` — sync annotation with the repository. Presence depends on task configuration
+  - ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API.
 Presence depends on task configuration
-- ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
+  - ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
 Presense depends on how you build CVAT instance.
 
 Item color depends on status of synchronization with the repository:
@@ -210,18 +210,18 @@ It may be task's name or id, owner's name, task's status, assignee's name and so
 ## 2. Interface of the annotation tool
 
 The tool consists of:
-- ``Workspace`` — where images are shown;
-- ``Bottom panel`` (under workspace) — for navigation, filtering annotation and accessing tools' menu;
-- ``Side panel`` — contains two lists: objects (on the frame) and labels (of objects on the frame);
-- ``Bottom side panel`` — is a type of/creating/merging/grouping annotation;
+  - ``Workspace`` — where images are shown;
+  - ``Bottom panel`` (under workspace) — for navigation, filtering annotation and accessing tools' menu;
+  - ``Side panel`` — contains two lists: objects (on the frame) and labels (of objects on the frame);
+  - ``Bottom side panel`` — is a type of/creating/merging/grouping annotation;
 
 ![](static/documentation/images/image034.jpg)
 
 There is also:
-- ``Settings`` (F2) — pop-up in the bottom panel, contains different parameters
+  - ``Settings`` (F2) — pop-up in the bottom panel, contains different parameters
   which can be adjusted according to the user's needs
 
-- ``Context menu`` — available on right mouse button.
+  - ``Context menu`` — available on right mouse button.
 
 ### Basic navigation
 
@@ -241,11 +241,11 @@ There is also:
 
 ### Types of Shapes (basics)
 There are four shapes which you can annotate your images with:
-- ``box``
-- ``polygon``
-- ``polyline``
-- ``points``
-- ``auto segmentation``
+  - ``box``
+  - ``polygon``
+  - ``polyline``
+  - ``points``
+  - ``auto segmentation``
 
 And there is how they all look like:
 
@@ -256,8 +256,8 @@ And there is how they all look like:
 
 ### Annotation mode (basics)
 Usage examples:
-- Create new annotations for a set of images.
-- Add/modify/delete objects for existing annotations.
+  - Create new annotations for a set of images.
+  - Add/modify/delete objects for existing annotations.
 
 1. Before starting, you need to check if ``Annotation`` is selected:
 
@@ -265,16 +265,16 @@ Usage examples:
 
 2. Create a new annotation:
   
-- Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
+  - Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
 
 ![](static/documentation/images/image080.jpg) ![](static/documentation/images/image083.jpg)
 
-- Create a bounding box by clicking on ``Create Shape`` button or ``N`` shortcut.
+  - Create a bounding box by clicking on ``Create Shape`` button or ``N`` shortcut.
   Choose opposite points. Your first bounding box is ready!
 
 ![](static/documentation/images/image011.jpg)
 
-- It is possible to adjust boundaries and location of the bounding box using mouse.
+  - It is possible to adjust boundaries and location of the bounding box using mouse.
   Boxes' size is shown in the top right corner , you can check it clicking on one of the boxes' points.
   You can also undo your actions using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
 
@@ -289,30 +289,30 @@ In the side panel you can perform basic operations under the object — choose a
 
 ### Interpolation mode (basics)
 Usage examples:
-- Create new annotations for a sequence of frames.
-- Add/modify/delete objects for existing annotations.
-- Edit tracks, merge a lot of bounding boxes into one track.
+  - Create new annotations for a sequence of frames.
+  - Add/modify/delete objects for existing annotations.
+  - Edit tracks, merge a lot of bounding boxes into one track.
 
 1. Before starting, you have to be sure that ``Interpolation`` is selected.
 
 ![](static/documentation/images/image014.jpg)
 
 2. Create a track for an object (look at the selected car as an example):
-- Annotate a bounding box on the first frame for the object.
-- In ``Interpolation`` mode the bounding box will be interpolated on next frames automatically.
+  - Annotate a bounding box on the first frame for the object.
+  - In ``Interpolation`` mode the bounding box will be interpolated on next frames automatically.
 
 ![](static/documentation/images/image015.jpg)
 
 3. If the object starts to change its position, you need to modify bounding boxes where it happens. It isn't necessary to change bounding boxes on each frame. It is enough to update several key frames and frames between them will be interpolated automatically. See an example below:
-- The car starts moving on frame #630. Let's mark the frame as a key frame. You can press ``K`` for that.
+  - The car starts moving on frame #630. Let's mark the frame as a key frame. You can press ``K`` for that.
 
 ![](static/documentation/images/image016.jpg)
 
-- Let's jump 30 frames forward and adjust boundaries of the object.
+  - Let's jump 30 frames forward and adjust boundaries of the object.
 
 ![](static/documentation/images/image017.jpg)
 
-- After that, bounding boxes of the object between 630 and 660 frames will be changed automatically. For example, frame #645 looks like on the figure below:
+  - After that, bounding boxes of the object between 630 and 660 frames will be changed automatically. For example, frame #645 looks like on the figure below:
 
 ![](static/documentation/images/image018.jpg)
 
@@ -324,7 +324,7 @@ Usage examples:
 
 ![](static/documentation/images/image020.jpg)
 
-- Let's create a track for the bus.
+  - Let's create a track for the bus.
 
 ![](static/documentation/images/gif001.gif)
 
@@ -332,33 +332,33 @@ After that, you should create a track when it appears again on the sequence of f
 
 ![](static/documentation/images/gif002.gif)
 
-- Press ``Merge Tracks`` button and click on any bounding box of the first track and on any bounding box of the second track.
+  - Press ``Merge Tracks`` button and click on any bounding box of the first track and on any bounding box of the second track.
 
 ![](static/documentation/images/image021.jpg)
 
-- Press ``Apply Merge`` button to apply changes.
+  - Press ``Apply Merge`` button to apply changes.
 
 ![](static/documentation/images/image022.jpg)
 
-- The final annotated sequence of frames in ``Interpolation`` mode can look like the clip below:
+  - The final annotated sequence of frames in ``Interpolation`` mode can look like the clip below:
 
 ![](static/documentation/images/gif003.gif)
 
 ### Attribute annotation mode (basics)
 
-- In this mode you can edit attributes with fast navigation between objects and frames using keyboard. Press ``Shift+Enter`` shortcut to enter AAMode. After that, you can change attributes using a keyboard.
+  - In this mode you can edit attributes with fast navigation between objects and frames using keyboard. Press ``Shift+Enter`` shortcut to enter AAMode. After that, you can change attributes using a keyboard.
 
 ![](static/documentation/images/image023.jpg)
 
-- The active attribute will be red. It is ``gender`` in this case. Look at the bottom side panel to see all possible shortcuts for changing the attribute. Press ``2`` key on your keyboard to assign ``female`` value for the attribute.
+  - The active attribute will be red. It is ``gender`` in this case. Look at the bottom side panel to see all possible shortcuts for changing the attribute. Press ``2`` key on your keyboard to assign ``female`` value for the attribute.
 
 ![](static/documentation/images/image024.jpg) ![](static/documentation/images/image025.jpg)
 
-- Press ``Up Arrow``/``Down Arrow`` on your keyboard to go to next/previous attribute. In this case, after pressing ``Down Arrow`` you will be able to edit ``Age`` attribute.
+  - Press ``Up Arrow``/``Down Arrow`` on your keyboard to go to next/previous attribute. In this case, after pressing ``Down Arrow`` you will be able to edit ``Age`` attribute.
 
 ![](static/documentation/images/image026.jpg) ![](static/documentation/images/image027.jpg)
 
-- Use ``Right Arrow``/``Left Arrow`` keys to move on previous/next image with annotation.
+  - Use ``Right Arrow``/``Left Arrow`` keys to move on previous/next image with annotation.
 
 ### Downloading annotations
 
@@ -413,11 +413,11 @@ After that, you should create a track when it appears again on the sequence of f
 
 **Attribute** is a property of an annotated object (e.g. color, model, quality, etc.). There are two types of attributes:
 
-- **Unique**: immutable and can't be changed from frame to frame (e.g. age, gender, color, etc.)
+  - **Unique**: immutable and can't be changed from frame to frame (e.g. age, gender, color, etc.)
 
     ![](static/documentation/images/image073.jpg)
 
-- **Temporary**: mutable and can be changed on any frame (e.g. quality, pose, truncated, etc.)
+  - **Temporary**: mutable and can be changed on any frame (e.g. quality, pose, truncated, etc.)
 
     ![](static/documentation/images/image072.jpg)
 
@@ -428,9 +428,9 @@ After that, you should create a track when it appears again on the sequence of f
 
 ---
 **Annotation** is a set of shapes and tracks. There are several types of annotations:
-- *Manual* which is created by a person
-- *Semi-automatic* which is created mainly automatically, but the user provides some data (e.g. interpolation)
-- *Automatic* which is created automatically without a person in the loop
+  - *Manual* which is created by a person
+  - *Semi-automatic* which is created mainly automatically, but the user provides some data (e.g. interpolation)
+  - *Automatic* which is created automatically without a person in the loop
 
 ---
 ### Workspace — Context menu
@@ -438,13 +438,13 @@ After that, you should create a track when it appears again on the sequence of f
 Context menu opens by right mouse click.
 
 The next options are available clicking inside bounding box:
-- ``Copy Object URL`` — copying to the buffer address of an object on the frame in the task
-- ``Change Color`` — change color of active shape
-- ``Remove Shape`` — deleting the shape
-- ``Switch Occluded`` — attribute is used if an object is occluded by another object or isn't fully visible on the frame. Use the ``Q`` shortcut to set the property quickly.
-- ``Switch Lock`` — block editing the active shape
-- ``Enable Dragging`` — (only for polygons) allows to adjust polygons position
-- ``Split`` — (only for interpolation bounding box) allows to split an interpolated track into two separate tracks. This function is the opposite of the merge function.
+  - ``Copy Object URL`` — copying to the buffer address of an object on the frame in the task
+  - ``Change Color`` — change color of active shape
+  - ``Remove Shape`` — deleting the shape
+  - ``Switch Occluded`` — attribute is used if an object is occluded by another object or isn't fully visible on the frame. Use the ``Q`` shortcut to set the property quickly.
+  - ``Switch Lock`` — block editing the active shape
+  - ``Enable Dragging`` — (only for polygons) allows to adjust polygons position
+  - ``Split`` — (only for interpolation bounding box) allows to split an interpolated track into two separate tracks. This function is the opposite of the merge function.
 
 ![](static/documentation/images/image089.jpg) 
 ![](static/documentation/images/image090.jpg) 
@@ -472,29 +472,29 @@ Press ``F2`` to access settings menu.
 There is ``Player Settings`` which adjusts ``Workspace`` and ``Other Settings``.
 
 In ``Player Settings`` you can:
-- Control step of ``C`` and ``V`` shortcuts
-- Control speed of ``Space``/Play button
-- Show every image in full or zoomed out like previous (reset by default)
+  - Control step of ``C`` and ``V`` shortcuts
+  - Control speed of ``Space``/Play button
+  - Show every image in full or zoomed out like previous (reset by default)
 
-- Enable ``Grid`` when you don't need small objects. ``Grid`` can have different opacity, color and cells' size — use ``F2`` to configure settings.
+  - Enable ``Grid`` when you don't need small objects. ``Grid`` can have different opacity, color and cells' size — use ``F2`` to configure settings.
 
 ![](static/documentation/images/image068.jpg)
 
-- Adjust ``Brightness``/``Contrast``/``Saturation`` of too exposing or too dark images using ``F2`` — color settings (changes displaying and not the image itself).
+  - Adjust ``Brightness``/``Contrast``/``Saturation`` of too exposing or too dark images using ``F2`` — color settings (changes displaying and not the image itself).
 Shortcuts:
-- ``Shift+B``/``Alt+B`` for brightness
-- ``Shift+C``/``Alt+C`` for contrast
-- ``Shift+S``/``Alt+S`` for saturation
-- ``F2`` —> ``Reset Color Settings`` for default image
+  - ``Shift+B``/``Alt+B`` for brightness
+  - ``Shift+C``/``Alt+C`` for contrast
+  - ``Shift+S``/``Alt+S`` for saturation
+  - ``F2`` —> ``Reset Color Settings`` for default image
 
 ![](static/documentation/images/image069.jpg)
 
 ``Other Settings`` contains:
-- ``Show All Interpolation Tracks`` checkbox — shows hidden object on the side panel for every interpolated object (turned off by default)
-- ``AAM Zoom Margin`` slider — defines margins for shape in attribute annotation mode
-- ``Enable AutoSaving`` checkbox — turned off by default
-- ``AutoSaving Interval (min)`` input box — 15 minutes by default
-- ``Rotate all images``  checkbox — switch the rotation of all frames / individual frame 
+  - ``Show All Interpolation Tracks`` checkbox — shows hidden object on the side panel for every interpolated object (turned off by default)
+  - ``AAM Zoom Margin`` slider — defines margins for shape in attribute annotation mode
+  - ``Enable AutoSaving`` checkbox — turned off by default
+  - ``AutoSaving Interval (min)`` input box — 15 minutes by default
+  - ``Rotate all images``  checkbox — switch the rotation of all frames / individual frame 
  
 ---
 ### Bottom Panel
@@ -535,22 +535,22 @@ It is the main menu for the annotation tool. It can be used to download, upload 
 
 Button assignment:
 
-- ``Open Task`` — open task in cvat dashboard
-- ``RunReID Merge`` — The ReID application uses deep learning model to perform an automatic bbox merging between neighbor frames. You can use "Merge" and "Split" functionality to edit automatically generated annotation. [Read more](/cvat/apps/reid)
-- ``Dump Annotation`` — download annotations from the task 
-- ``Upload Annotation`` — uploading annotations to the task
-- ``Remove Annotation`` — remove annotations from current task
-- ``Settings`` — open the settings menu
-- ``Fullscreen Player`` — fullscreen player mode
-- ``Switch AAM`` — switch to attribute annotation mode
-- ``Help`` — open the shortkeys
-- ``Save Work`` — save annotations for the current job. The button has an indication of the saving process
+  - ``Open Task`` — open task in cvat dashboard
+  - ``RunReID Merge`` — The ReID application uses deep learning model to perform an automatic bbox merging between neighbor frames. You can use "Merge" and "Split" functionality to edit automatically generated annotation. [Read more](/cvat/apps/reid)
+  - ``Dump Annotation`` — download annotations from the task 
+  - ``Upload Annotation`` — uploading annotations to the task
+  - ``Remove Annotation`` — remove annotations from current task
+  - ``Settings`` — open the settings menu
+  - ``Fullscreen Player`` — fullscreen player mode
+  - ``Switch AAM`` — switch to attribute annotation mode
+  - ``Help`` — open the shortkeys
+  - ``Save Work`` — save annotations for the current job. The button has an indication of the saving process
 
 It also shows statistics about the current task, for example:
-- task name
-- type of performance on the task: ``annotation``, ``validation`` or ``completed task``
-- technical information about task
-- number of created bounding boxes, sorted by labels (e.g. vehicle, person) and type of annotation (polygons, boxes, etc.)
+  - task name
+  - type of performance on the task: ``annotation``, ``validation`` or ``completed task``
+  - technical information about task
+  - number of created bounding boxes, sorted by labels (e.g. vehicle, person) and type of annotation (polygons, boxes, etc.)
 
 ---
 **Filter** input box
@@ -606,15 +606,15 @@ Change bounding box border from white/colored to black.
 **Color By options**
 
 Change color scheme of annotation:
-- ``Instance`` — every bounding box has random color
+  - ``Instance`` — every bounding box has random color
 
 ![](static/documentation/images/image095.jpg)
 
-- ``Group`` — every group of boxes has its own random color, ungrouped boxes are white
+  - ``Group`` — every group of boxes has its own random color, ungrouped boxes are white
 
 ![](static/documentation/images/image094.jpg)
 
-- ``Label`` — every label (e.g. vehicle, pedestrian, roadmark) has its own random color
+  - ``Label`` — every label (e.g. vehicle, pedestrian, roadmark) has its own random color
 
 ![](static/documentation/images/image093.jpg)
 
@@ -678,13 +678,13 @@ To change a type of a highlighted shape using keyboard, you need to press ``Shif
 
 ### Bottom side panel
 
-- ``Create Shape`` (``N``) — start/stop drawing new shape mode
-- ``Merge Shapes`` (``M``) — start/stop merging boxes mode
-- ``Group Shapes`` (``G``) — start/stop grouping boxes mode
-- ``Label Type`` — (e.g. face, person, vehicle)
-- ``Working Mode`` — Annotation or Interpolation modes. You can't interpolate polygons/polylines/points, but you can propagate them using ``Ctrl+B`` or merge into a track
-- ``Shape Type`` — (e.g. box, polygon, polyline, points)
-- ``Poly Shape Size`` — (optional) hard number of dots for creating polygon/polyline shapes
+  - ``Create Shape`` (``N``) — start/stop drawing new shape mode
+  - ``Merge Shapes`` (``M``) — start/stop merging boxes mode
+  - ``Group Shapes`` (``G``) — start/stop grouping boxes mode
+  - ``Label Type`` — (e.g. face, person, vehicle)
+  - ``Working Mode`` — Annotation or Interpolation modes. You can't interpolate polygons/polylines/points, but you can propagate them using ``Ctrl+B`` or merge into a track
+  - ``Shape Type`` — (e.g. box, polygon, polyline, points)
+  - ``Poly Shape Size`` — (optional) hard number of dots for creating polygon/polyline shapes
 
 ![](static/documentation/images/image082.jpg)
 
@@ -718,11 +718,11 @@ If a frame contains too many objects and it is difficult to annotate them due to
 Basic operations in the mode were described above.
 
 Bounding boxes that were created in the mode, have extra navigation buttons.
-- These buttons help to jump to previous/next key frame.
+  - These buttons help to jump to previous/next key frame.
 
 ![](static/documentation/images/image056.jpg)
 
-- The button helps to jump to initial frame for the object (first bounding box for the track).
+  - The button helps to jump to initial frame for the object (first bounding box for the track).
 
 ![](static/documentation/images/image057.jpg)
 
@@ -738,8 +738,8 @@ It is possible to handle lots of objects on the same frame in the mode.
 It is more convenient to annotate objects of the same type. You can specify the appropriate filter in this case. For example, the following filter will hide all objects except pedestrians: ``pedestrian``.
 
 To navigate between objects (pedestrians in the case), use the following shortcuts:
-- ``Tab`` — go to the next object
-- ``Shift+Tab`` — go to the previous object.
+  - ``Tab`` — go to the next object
+  - ``Shift+Tab`` — go to the previous object.
 
 By default, objects in the mode are zoomed in to full screen. Check
 ``Open Menu`` —> ``Settings`` —> ``AAM Zoom Margin`` for adjust that.
@@ -821,9 +821,9 @@ Press ``N`` again for finishing marking an area. A shape must consist of 4 point
 This feature allows to group several shapes.
 
 You may use ``Group Shapes`` button or shortcuts:
-- ``G`` — switch group mode
-- ``Alt+G`` — close group mode
-- ``Shift+G`` — reset group for selected shapes
+  - ``G`` — switch group mode
+  - ``Alt+G`` — close group mode
+  - ``Shift+G`` — reset group for selected shapes
 
 You may select shapes clicking on them or selecting an area.
 
@@ -856,13 +856,13 @@ In the trivial case, the correct filter must match the template: ``label[prop op
 
 ``prop`` is a property which should be filtered. The following items are available:
 
-- ``id`` — identifier of an object. It helps to find a specific object easily in case of huge number of objects and static/documentation/images/frames.
-- ``type`` — an annotation type. Possible values:
-- ``annotation``
-- ``interpolation``
-- ``lock`` accepts ``true`` and ``false`` values. It can be used to hide all locked objects.
-- ``occluded`` accepts ``true`` and ``false`` values. It can be used to hide all occluded objects.
-- ``attr`` is a prefix to access attributes of an object. For example, it is possible to access _race_ attribute. For the purpose you should specify ``attr/race``. To access all attributes, it is necessary to write ``attr/*``.
+  - ``id`` — identifier of an object. It helps to find a specific object easily in case of huge number of objects and static/documentation/images/frames.
+  - ``type`` — an annotation type. Possible values:
+  - ``annotation``
+  - ``interpolation``
+  - ``lock`` accepts ``true`` and ``false`` values. It can be used to hide all locked objects.
+  - ``occluded`` accepts ``true`` and ``false`` values. It can be used to hide all occluded objects.
+  - ``attr`` is a prefix to access attributes of an object. For example, it is possible to access _race_ attribute. For the purpose you should specify ``attr/race``. To access all attributes, it is necessary to write ``attr/*``.
 
 ``operator`` can be ``=`` (equal), ``!=`` (not equal), ``<`` (less), ``>`` (more), ``<=`` (less or equal), ``>=`` (more or equal).
 
