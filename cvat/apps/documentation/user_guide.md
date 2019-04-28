@@ -31,7 +31,6 @@
   - [Annotation with Auto Segmentation](#annotation-with-auto-segmentation)
   - [Shape grouping](#shape-grouping)
   - [Filter](#filter)
-  - [| ``*[width<300 or height<300]`` | shape less than 300 pixels wide and more than 200 pixels high |](#-width300-or-height300--shape-less-than-300-pixels-wide-and-more-than-200-pixels-high-)
   - [Analytics](#analytics)
   - [Shortcuts](#shortcuts)
   - [Hints](#hints)
@@ -991,6 +990,7 @@ in case of huge number of objects and static/documentation/images/frames.
 | ``car[attr/parked="true"]``    | parked cars                                                   |
 | ``*[attr/*="__undefined__"]``  | any objects with ``__undefined__`` value of an attribute      |
 | ``*[width<300 or height<300]`` | shape less than 300 pixels wide and more than 200 pixels high |
+
 ---
 
 The functionality allows to create more complex conditions. Several filters can
