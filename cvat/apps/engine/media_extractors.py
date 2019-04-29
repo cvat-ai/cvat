@@ -7,15 +7,14 @@ from ffmpy import FFmpeg
 from pyunpack import Archive
 from PIL import Image
 
-from cvat.apps.engine.mime import get_mime
 from .log import slogger
 
 
 class MediaExtractor:
-    def __init__(self, source_path, dest_path, compress_quality):
+    def __init__(self, source_path, dest_path, image_quality):
         self._source_path = source_path
         self._dest_path = dest_path
-        self._compress_quality = compress_quality
+        self._image_quality = image_quality
 
     def __getitem__(self, k):
         pass
@@ -24,8 +23,8 @@ class MediaExtractor:
         pass
 
 class ImageListExtractor(MediaExtractor):
-    def __init__(self, source_path, dest_path, compress_quality):
-        return super().__init__(source_path, dest_path, compress_quality)
+    def __init__(self, source_path, dest_path, image_quality):
+        return super().__init__(source_path, dest_path, image_quality)
 
     def __iter__(self):
         return iter(self._source_path)
@@ -46,40 +45,42 @@ class ImageListExtractor(MediaExtractor):
             im_data = im_data * (2**8 / im_data.max())
             image = Image.fromarray(im_data.astype(np.int32))
         image = image.convert('RGB')
-        image.save(dest_path, quality=self._compress_quality, optimize=True)
+        image.save(dest_path, quality=self._image_quality, optimize=True)
         height = image.height
         width = image.width
         image.close()
         return width, height
 
 class DirectoryExtractor(ImageListExtractor):
-    def __init__(self, source_path, dest_path, compress_quality):
+    def __init__(self, source_path, dest_path, image_quality):
+        from cvat.apps.engine.settings import _get_mime
         image_paths = []
         for root, _, files in os.walk(source_path[0]):
             paths = [os.path.join(root, f) for f in files]
             paths = filter(lambda x: get_mime(x) == 'image', paths)
             image_paths.extend(paths)
         image_paths.sort()
-        super().__init__(image_paths, dest_path, compress_quality)
+        super().__init__(image_paths, dest_path, image_quality)
 
 class ArchiveExtractor(ImageListExtractor):
-    def __init__(self, source_path, dest_path, compress_quality):
+    def __init__(self, source_path, dest_path, image_quality):
+        from cvat.apps.engine.settings import _get_mime
         Archive(source_path[0]).extractall(dest_path)
         os.remove(source_path[0])
         image_paths = []
         for root, _, files in os.walk(dest_path):
             paths = [os.path.join(root, f) for f in files]
-            paths = filter(lambda x: get_mime(x) == 'image', paths)
+            paths = filter(lambda x: _get_mime(x) == 'image', paths)
             image_paths.extend(paths)
         image_paths.sort()
-        super().__init__(image_paths, dest_path, compress_quality)
+        super().__init__(image_paths, dest_path, image_quality)
 
 class VideoExtractor(MediaExtractor):
-    def __init__(self, source_path, dest_path, compress_quality):
+    def __init__(self, source_path, dest_path, image_quality):
         _dest_path = tempfile.mkdtemp(prefix='cvat-', suffix='.data')
-        super().__init__(source_path[0], _dest_path, compress_quality)
+        super().__init__(source_path[0], _dest_path, image_quality)
         # translate inversed range 1:95 to 2:32
-        translated_quality = 96 - self._compress_quality
+        translated_quality = 96 - self._image_quality
         translated_quality = round((((translated_quality - 1) * (31 - 2)) / (95 - 1)) + 2)
         self._tmp_output = tempfile.mkdtemp(prefix='cvat-', suffix='.data')
         target_path = os.path.join(self._tmp_output, '%d.jpg')
