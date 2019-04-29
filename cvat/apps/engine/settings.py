@@ -5,7 +5,7 @@ from cvat.apps.engine.media_extractors import ImageListExtractor, DirectoryExtra
 _SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 
 MEDIA_MIMETYPES_FILES = [
-    os.path.join(_SCRIPT_DIR, "media.mimetypes")
+    os.path.join(_SCRIPT_DIR, "media.mimetypes"),
 ]
 
 mimetypes.init(files=MEDIA_MIMETYPES_FILES)
@@ -50,7 +50,6 @@ MEDIA_TYPES = {
 }
 
 def _get_mime(name):
-    from cvat.apps.engine.settings import MEDIA_TYPES
     for type_name, type_def in MEDIA_TYPES.items():
         if type_def['has_mime_type'](name):
             return type_name

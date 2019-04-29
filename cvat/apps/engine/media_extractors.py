@@ -7,9 +7,6 @@ from ffmpy import FFmpeg
 from pyunpack import Archive
 from PIL import Image
 
-from .log import slogger
-
-
 class MediaExtractor:
     def __init__(self, source_path, dest_path, image_quality):
         self._source_path = source_path
@@ -24,6 +21,8 @@ class MediaExtractor:
 
 class ImageListExtractor(MediaExtractor):
     def __init__(self, source_path, dest_path, image_quality):
+        if not source_path:
+            raise Exception('No image found')
         return super().__init__(source_path, dest_path, image_quality)
 
     def __iter__(self):
@@ -57,7 +56,7 @@ class DirectoryExtractor(ImageListExtractor):
         image_paths = []
         for root, _, files in os.walk(source_path[0]):
             paths = [os.path.join(root, f) for f in files]
-            paths = filter(lambda x: get_mime(x) == 'image', paths)
+            paths = filter(lambda x: _get_mime(x) == 'image', paths)
             image_paths.extend(paths)
         image_paths.sort()
         super().__init__(image_paths, dest_path, image_quality)
