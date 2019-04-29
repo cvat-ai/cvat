@@ -18,6 +18,7 @@
     const User = require('./user');
     const Task = require('./task');
     const Job = require('./job');
+    const { Attribute, Label } = require('./labels');
 
     const {
         ShareFileType,
@@ -517,10 +518,17 @@
             PluginError,
             ServerError,
         },
+        /**
+            * Namespace is used for access to classes
+            * @namespace classes
+            * @memberof module:API.cvat
+        */
         classes: {
             User,
             Task,
             Job,
+            Attribute,
+            Label,
         },
         Job: {
             async save() {

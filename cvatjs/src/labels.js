@@ -4,13 +4,20 @@
 */
 
 (() => {
+    /**
+        * Class representing an attribute
+        * @memberof module:API.cvat.classes
+    */
     class Attribute {
         constructor() {
             this.b = 5;
         }
     }
 
-
+    /**
+        * Class representing a label
+        * @memberof module:API.cvat.classes
+    */
     class Label {
         constructor() {
             this.a = 5;
