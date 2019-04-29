@@ -13,12 +13,6 @@ class MediaExtractor:
         self._dest_path = dest_path
         self._image_quality = image_quality
 
-    def __getitem__(self, k):
-        pass
-
-    def __iter__(self):
-        pass
-
 class ImageListExtractor(MediaExtractor):
     def __init__(self, source_path, dest_path, image_quality):
         if not source_path:
@@ -76,6 +70,7 @@ class ArchiveExtractor(ImageListExtractor):
 
 class VideoExtractor(MediaExtractor):
     def __init__(self, source_path, dest_path, image_quality):
+        from cvat.apps.engine.log import slogger
         _dest_path = tempfile.mkdtemp(prefix='cvat-', suffix='.data')
         super().__init__(source_path[0], _dest_path, image_quality)
         # translate inversed range 1:95 to 2:32
