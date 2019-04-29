@@ -48,10 +48,11 @@ class DirectoryExtractor(ImageListExtractor):
     def __init__(self, source_path, dest_path, image_quality):
         from cvat.apps.engine.settings import _get_mime
         image_paths = []
-        for root, _, files in os.walk(source_path[0]):
-            paths = [os.path.join(root, f) for f in files]
-            paths = filter(lambda x: _get_mime(x) == 'image', paths)
-            image_paths.extend(paths)
+        for source in source_path:
+            for root, _, files in os.walk(source):
+                paths = [os.path.join(root, f) for f in files]
+                paths = filter(lambda x: _get_mime(x) == 'image', paths)
+                image_paths.extend(paths)
         image_paths.sort()
         super().__init__(image_paths, dest_path, image_quality)
 
