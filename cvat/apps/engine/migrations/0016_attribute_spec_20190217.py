@@ -5,7 +5,7 @@ from io import StringIO
 from PIL import Image
 from django.db import migrations
 from django.conf import settings
-from cvat.apps.engine.task import _get_mime
+from cvat.apps.engine.mime import get_mime
 
 def parse_attribute(value):
     match = re.match(r'^([~@])(\w+)=(\w+):(.+)?$', value)
