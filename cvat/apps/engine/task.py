@@ -7,8 +7,6 @@ import os
 import sys
 import rq
 import shutil
-import tempfile
-import numpy as np
 from PIL import Image
 from traceback import print_exception
 from ast import literal_eval

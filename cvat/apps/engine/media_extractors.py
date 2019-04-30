@@ -17,7 +17,7 @@ class ImageListExtractor(MediaExtractor):
     def __init__(self, source_path, dest_path, image_quality):
         if not source_path:
             raise Exception('No image found')
-        return super().__init__(source_path, dest_path, image_quality)
+        super().__init__(source_path, dest_path, image_quality)
 
     def __iter__(self):
         return iter(self._source_path)
