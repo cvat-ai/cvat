@@ -37,120 +37,120 @@
     const pjson = require('../package.json');
 
     function buildDublicatedAPI() {
-        const annotationsModule = {
+        const annotations = {
             async upload(file) {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, annotationsModule.upload, file);
+                    .apiWrapper.call(this, annotations.upload, file);
                 return result;
             },
 
             async save() {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, annotationsModule.save);
+                    .apiWrapper.call(this, annotations.save);
                 return result;
             },
 
             async clear() {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, annotationsModule.clear);
+                    .apiWrapper.call(this, annotations.clear);
                 return result;
             },
 
             async dump() {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, annotationsModule.dump);
+                    .apiWrapper.call(this, annotations.dump);
                 return result;
             },
 
             async statistics() {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, annotationsModule.statistics);
+                    .apiWrapper.call(this, annotations.statistics);
                 return result;
             },
 
             async put(arrayOfObjects = []) {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, annotationsModule.put, arrayOfObjects);
+                    .apiWrapper.call(this, annotations.put, arrayOfObjects);
                 return result;
             },
 
             async get(frame, filter = {}) {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, annotationsModule.get, frame, filter);
+                    .apiWrapper.call(this, annotations.get, frame, filter);
                 return result;
             },
 
             async search(filter, frameFrom, frameTo) {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, annotationsModule.search, filter, frameFrom, frameTo);
+                    .apiWrapper.call(this, annotations.search, filter, frameFrom, frameTo);
                 return result;
             },
 
             async select(frame, x, y) {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, annotationsModule.select, frame, x, y);
+                    .apiWrapper.call(this, annotations.select, frame, x, y);
                 return result;
             },
         };
 
-        const framesModule = {
+        const frames = {
             async get(frame) {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, framesModule.get, frame);
+                    .apiWrapper.call(this, frames.get, frame);
                 return result;
             },
         };
 
-        const logsModule = {
+        const logs = {
             async put(logType, details) {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, logsModule.put, logType, details);
+                    .apiWrapper.call(this, logs.put, logType, details);
                 return result;
             },
             async save() {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, logsModule.save);
+                    .apiWrapper.call(this, logs.save);
                 return result;
             },
         };
 
-        const actionsModule = {
+        const actions = {
             async undo(count) {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, actionsModule.undo, count);
+                    .apiWrapper.call(this, actions.undo, count);
                 return result;
             },
             async redo(count) {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, actionsModule.redo, count);
+                    .apiWrapper.call(this, actions.redo, count);
                 return result;
             },
             async clear() {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, actionsModule.clear);
+                    .apiWrapper.call(this, actions.clear);
                 return result;
             },
         };
 
-        const eventsModule = {
+        const events = {
             async subscribe(eventType, callback) {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, eventsModule.subscribe, eventType, callback);
+                    .apiWrapper.call(this, events.subscribe, eventType, callback);
                 return result;
             },
             async unsubscribe(eventType, callback = null) {
                 const result = await PluginRegistry
-                    .apiWrapper.call(this, eventsModule.unsubscribe, eventType, callback);
+                    .apiWrapper.call(this, events.unsubscribe, eventType, callback);
                 return result;
             },
         };
 
         return {
-            annotationsModule,
-            framesModule,
-            logsModule,
-            actionsModule,
-            eventsModule,
+            annotations,
+            frames,
+            logs,
+            actions,
+            events,
         };
     }
 
@@ -564,13 +564,111 @@
     cvat.Job = Object.freeze(cvat.Job);
     cvat.Task = Object.freeze(cvat.Task);
 
+    Object.defineProperties(Job.prototype, Object.freeze({
+        annotations: {
+            value: Object.freeze({
+                upload: jobAPI.annotations.upload,
+                save: jobAPI.annotations.save,
+                clear: jobAPI.annotations.clear,
+                dump: jobAPI.annotations.dump,
+                statistics: jobAPI.annotations,
+                put: jobAPI.annotations.put,
+                get: jobAPI.annotations.get,
+                search: jobAPI.annotations.search,
+                select: jobAPI.annotations.select,
+            }),
+            writable: false,
+        },
+
+        frames: {
+            value: Object.freeze({
+                get: jobAPI.frames.get,
+            }),
+            writable: false,
+        },
+
+        logs: {
+            value: Object.freeze({
+                put: jobAPI.logs.put,
+                save: jobAPI.logs.save,
+            }),
+            writable: false,
+        },
+
+        actions: {
+            value: Object.freeze({
+                undo: jobAPI.actions.undo,
+                redo: jobAPI.actions.redo,
+                clear: jobAPI.actions.clear,
+            }),
+            writable: false,
+        },
+
+        events: {
+            value: Object.freeze({
+                subscribe: jobAPI.events.subscribe,
+                unsubscribe: jobAPI.events.unsubscribe,
+            }),
+            writable: false,
+        },
+    }));
+
+    Object.defineProperties(Task.prototype, Object.freeze({
+        annotations: {
+            value: Object.freeze({
+                upload: taskAPI.annotations.upload,
+                save: taskAPI.annotations.save,
+                clear: taskAPI.annotations.clear,
+                dump: taskAPI.annotations.dump,
+                statistics: taskAPI.annotations.statistics,
+                put: taskAPI.annotations.put,
+                get: taskAPI.annotations.get,
+                search: taskAPI.annotations.search,
+                select: taskAPI.annotations.select,
+            }),
+            writable: false,
+        },
+
+        frames: {
+            value: Object.freeze({
+                get: taskAPI.frames.get,
+            }),
+            writable: false,
+        },
+
+        logs: {
+            value: Object.freeze({
+                put: taskAPI.logs.put,
+                save: taskAPI.logs.save,
+            }),
+            writable: false,
+        },
+
+        actions: {
+            value: Object.freeze({
+                undo: taskAPI.actions.undo,
+                redo: taskAPI.actions.redo,
+                clear: taskAPI.actions.clear,
+            }),
+            writable: false,
+        },
+
+        events: {
+            value: Object.freeze({
+                subscribe: taskAPI.events.subscribe,
+                unsubscribe: taskAPI.events.unsubscribe,
+            }),
+            writable: false,
+        },
+    }));
+
     const implementAPI = require('./api-implementation');
     if (typeof (window) === 'undefined') {
         // Dummy browser environment
         require('browser-env')();
     }
 
-    window.cvat = Object.freeze(implementAPI(cvat));
+    window.cvat = Object.freeze(implementAPI(cvat, jobAPI, taskAPI));
 
     const hidden = require('./hidden');
     hidden.location = cvat.config.backendAPI.slice(0, -7); // TODO: Use JS server instead
@@ -588,22 +686,26 @@ const plugin = {
                 },
             },
         },
-        Job: {
-            annotations: {
-                put: {
-                    enter(self, objects) {
-                        for (const obj of objects) {
-                            if (obj.type !== 'tag') {
-                                const points = obj.position.map((point) => {
-                                    const roundPoint = {
-                                        x: Math.round(point.x),
-                                        y: Math.round(point.y),
-                                    };
-                                    return roundPoint;
-                                });
-                                obj.points = points;
-                            }
-                        }
+        classes: {
+            Job: {
+                prototype: {
+                    annotations: {
+                        put: {
+                            enter(self, objects) {
+                                for (const obj of objects) {
+                                    if (obj.type !== 'tag') {
+                                        const points = obj.position.map((point) => {
+                                            const roundPoint = {
+                                                x: Math.round(point.x),
+                                                y: Math.round(point.y),
+                                            };
+                                            return roundPoint;
+                                        });
+                                        obj.points = points;
+                                    }
+                                }
+                            },
+                        },
                     },
                 },
             },

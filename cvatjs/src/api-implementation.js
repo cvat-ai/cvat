@@ -54,7 +54,7 @@
     }
 
     const hidden = require('./hidden');
-    function checkContext(wrappedFunction) {
+    function setupEnv(wrappedFunction) {
         return async function wrapper(...args) {
             try {
                 if (this instanceof window.cvat.classes.Task) {
@@ -74,7 +74,7 @@
         };
     }
 
-    function implementAPI(cvat) {
+    function implementAPI(cvat, jobAPI, taskAPI) {
         cvat.plugins.list.implementation = PluginRegistry.list;
         cvat.plugins.register.implementation = PluginRegistry.register;
 
@@ -175,25 +175,25 @@
             return tasks;
         };
 
-        cvat.Task.annotations.upload.implementation = checkContext(
+        jobAPI.annotations.upload.implementation = setupEnv(
             async (file) => {
                 // TODO: Update annotations
             },
         );
 
-        cvat.Task.annotations.save.implementation = checkContext(
+        jobAPI.annotations.save.implementation = setupEnv(
             async () => {
                 // TODO: Save annotation on a server
             },
         );
 
-        cvat.Task.annotations.clear.implementation = checkContext(
+        jobAPI.annotations.clear.implementation = setupEnv(
             async () => {
                 // TODO: Remove all annotations
             },
         );
 
-        cvat.Task.annotations.dump.implementation = checkContext(
+        jobAPI.annotations.dump.implementation = setupEnv(
             async () => {
                 const { host } = window.cvat.config;
                 const { api } = window.cvat.config;
@@ -202,105 +202,104 @@
             },
         );
 
-        cvat.Task.annotations.statistics.implementation = checkContext(
+        jobAPI.annotations.statistics.implementation = setupEnv(
             async () => {
                 return new Statistics();
             },
         );
 
-        cvat.Task.annotations.put.implementation = checkContext(
+        jobAPI.annotations.put.implementation = setupEnv(
             async (arrayOfObjects) => {
                 // TODO: Make from objects
             },
         );
 
-        cvat.Task.annotations.get.implementation = checkContext(
+        jobAPI.annotations.get.implementation = setupEnv(
             async (frame, filter) => {
                 return [new ObjectState()];
                 // TODO: Return collection
             },
         );
 
-        cvat.Task.annotations.search.implementation = checkContext(
+        jobAPI.annotations.search.implementation = setupEnv(
             async (filter, frameFrom, frameTo) => {
                 return 0;
             },
         );
 
-        cvat.Task.annotations.select.implementation = checkContext(
+        jobAPI.annotations.select.implementation = setupEnv(
             async (frame, x, y) => {
                 return null;
             },
         );
 
-        cvat.Task.frames.get.implementation = checkContext(
+        jobAPI.frames.get.implementation = setupEnv(
             async (frame) => {
                 return new FrameData(this.taskID, frame);
             },
         );
 
-        cvat.Task.logs.put.implementation = checkContext(
+        jobAPI.logs.put.implementation = setupEnv(
             async (logType, details) => {
                 // TODO: Put log into collection
             },
         );
 
-        cvat.Task.logs.save.implementation = checkContext(
+        jobAPI.logs.save.implementation = setupEnv(
             async () => {
 
             },
         );
 
-        cvat.Task.actions.undo.implementation = checkContext(
+        jobAPI.actions.undo.implementation = setupEnv(
             async (count) => {
                 // TODO: Undo
             },
         );
 
-        cvat.Task.actions.redo.implementation = checkContext(
+        jobAPI.actions.redo.implementation = setupEnv(
             async (count) => {
                 // TODO: Redo
             },
         );
 
-        cvat.Task.actions.clear.implementation = checkContext(
+        jobAPI.actions.clear.implementation = setupEnv(
             async () => {
                 // TODO: clear
             },
         );
 
-        cvat.Task.events.subscribe.implementation = checkContext(
+        jobAPI.events.subscribe.implementation = setupEnv(
             async (type, callback) => {
                 // TODO: Subscribe
             }
         );
 
-        cvat.Task.events.unsubscribe.implementation = checkContext(
+        jobAPI.events.unsubscribe.implementation = setupEnv(
             async (type, callback) => {
                 // TODO: Save log collection
             },
         );
 
-
-        cvat.Job.annotations.upload.implementation = checkContext(
+        taskAPI.annotations.upload.implementation = setupEnv(
             async (file) => {
                 // TODO: Update annotations
             },
         );
 
-        cvat.Job.annotations.save.implementation = checkContext(
+        taskAPI.annotations.save.implementation = setupEnv(
             async () => {
                 // TODO: Save annotation on a server
             },
         );
 
-        cvat.Job.annotations.clear.implementation = checkContext(
+        taskAPI.annotations.clear.implementation = setupEnv(
             async () => {
                 // TODO: Remove all annotations
             },
         );
 
-        cvat.Job.annotations.dump.implementation = checkContext(
+        taskAPI.annotations.dump.implementation = setupEnv(
             async () => {
                 const { host } = window.cvat.config;
                 const { api } = window.cvat.config;
@@ -309,80 +308,80 @@
             },
         );
 
-        cvat.Job.annotations.statistics.implementation = checkContext(
+        taskAPI.annotations.statistics.implementation = setupEnv(
             async () => {
                 return new Statistics();
             },
         );
 
-        cvat.Job.annotations.put.implementation = checkContext(
+        taskAPI.annotations.put.implementation = setupEnv(
             async (arrayOfObjects) => {
                 // TODO: Make from objects
             },
         );
 
-        cvat.Job.annotations.get.implementation = checkContext(
+        taskAPI.annotations.get.implementation = setupEnv(
             async (frame, filter) => {
                 return [new ObjectState()];
                 // TODO: Return collection
             },
         );
 
-        cvat.Job.annotations.search.implementation = checkContext(
+        taskAPI.annotations.search.implementation = setupEnv(
             async (filter, frameFrom, frameTo) => {
                 return 0;
             },
         );
 
-        cvat.Job.annotations.select.implementation = checkContext(
+        taskAPI.annotations.select.implementation = setupEnv(
             async (frame, x, y) => {
                 return null;
             },
         );
 
-        cvat.Job.frames.get.implementation = checkContext(
+        taskAPI.frames.get.implementation = setupEnv(
             async (frame) => {
                 return new FrameData(this.taskID, frame);
             },
         );
 
-        cvat.Job.logs.put.implementation = checkContext(
+        taskAPI.logs.put.implementation = setupEnv(
             async (logType, details) => {
                 // TODO: Put log into collection
             },
         );
 
-        cvat.Job.logs.save.implementation = checkContext(
+        taskAPI.logs.save.implementation = setupEnv(
             async () => {
 
             },
         );
 
-        cvat.Job.actions.undo.implementation = checkContext(
+        taskAPI.actions.undo.implementation = setupEnv(
             async (count) => {
                 // TODO: Undo
             },
         );
 
-        cvat.Job.actions.redo.implementation = checkContext(
+        taskAPI.actions.redo.implementation = setupEnv(
             async (count) => {
                 // TODO: Redo
             },
         );
 
-        cvat.Job.actions.clear.implementation = checkContext(
+        taskAPI.actions.clear.implementation = setupEnv(
             async () => {
                 // TODO: clear
             },
         );
 
-        cvat.Job.events.subscribe.implementation = checkContext(
+        taskAPI.events.subscribe.implementation = setupEnv(
             async (type, callback) => {
                 // TODO: Subscribe
             }
         );
 
-        cvat.Job.events.unsubscribe.implementation = checkContext(
+        taskAPI.events.unsubscribe.implementation = setupEnv(
             async (type, callback) => {
                 // TODO: Save log collection
             },

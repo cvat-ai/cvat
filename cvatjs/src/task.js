@@ -11,8 +11,6 @@
 (() => {
     const PluginRegistry = require('./plugins');
 
-    let initialized = false;
-
     /**
         * Class representing a task
         * @memberof module:API.cvat.classes
@@ -31,60 +29,6 @@
             * <br> <li style="margin-left: 10px;"> overlap
         */
         constructor(initialData) {
-            if (!initialized) {
-                Object.defineProperties(Task.prototype, Object.freeze({
-                    annotations: {
-                        value: Object.freeze({
-                            upload: window.cvat.Task.annotations.upload.bind(this),
-                            save: window.cvat.Task.annotations.save.bind(this),
-                            clear: window.cvat.Task.annotations.clear.bind(this),
-                            dump: window.cvat.Task.annotations.dump.bind(this),
-                            statistics: window.cvat.Task.annotations.statistics.bind(this),
-                            put: window.cvat.Task.annotations.put.bind(this),
-                            get: window.cvat.Task.annotations.get.bind(this),
-                            search: window.cvat.Task.annotations.search.bind(this),
-                            select: window.cvat.Task.annotations.select.bind(this),
-                        }),
-                        writable: false,
-                    },
-
-                    frames: {
-                        value: Object.freeze({
-                            get: window.cvat.Task.frames.get.bind(this),
-                        }),
-                        writable: false,
-                    },
-
-                    logs: {
-                        value: Object.freeze({
-                            put: window.cvat.Task.logs.put.bind(this),
-                            save: window.cvat.Task.logs.save.bind(this),
-                        }),
-                        writable: false,
-                    },
-
-                    actions: {
-                        value: Object.freeze({
-                            undo: window.cvat.Task.actions.undo.bind(this),
-                            redo: window.cvat.Task.actions.redo.bind(this),
-                            clear: window.cvat.Task.actions.clear.bind(this),
-                        }),
-                        writable: false,
-                    },
-
-                    events: {
-                        value: Object.freeze({
-                            subscribe: window.cvat.Task.events.subscribe.bind(this),
-                            unsubscribe: window.cvat.Task.events.unsubscribe.bind(this),
-                        }),
-                        writable: false,
-                    },
-                }));
-
-                initialized = true;
-            }
-
-
             const data = {
                 id: undefined,
                 name: undefined,
