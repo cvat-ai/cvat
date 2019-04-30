@@ -61,14 +61,14 @@ computer vision tasks developed by our team.
     ![](static/documentation/images/image003.jpg)
 
 Two options here:
--   You can register a user but by default it will not have rights even to view list of tasks.
+- You can register a user but by default it will not have rights even to view list of tasks.
 Thus you should create a superuser. The superuser can use
 [Django administration panel](http://localhost:8080/admin) to assign correct groups to the user.
 Please use the command below to create an admin account:
 
 ``docker exec -it cvat bash -ic '/usr/bin/python3 ~/manage.py createsuperuser'``
 
--   If you want to create a non-admin account, you can do that using the link below on the login page.
+- If you want to create a non-admin account, you can do that using the link below on the login page.
 Don't forget to modify permissions for the new user in the administration panel.
 There are several groups (aka roles): admin, user, annotator, observer.
 
@@ -1022,7 +1022,7 @@ outside of square brackets.
 | --------------------------------------------------------                      |-------------                                     |
 | ``person[attr/age>="25" and attr/age<="35"]``                                 | people with age between 25 and 35.               |
 | ``face[attr/glass="sunglass" or attr/glass="no"]``                            | faces with sunglasses or without glasses at all. |
-| ``person[attr/race="asian"] | car[attr/model="bmw" or attr/model="mazda"]``   | asian persons or bmw or mazda cars.              |
+| ``person[attr/race="asian"]|car[attr/model="bmw" or attr/model="mazda"]``     | asian persons or bmw or mazda cars.              |
 
 ## Analytics
 
