@@ -13,6 +13,9 @@ class MediaExtractor:
         self._dest_path = dest_path
         self._image_quality = image_quality
 
+    def get_source_name(self):
+        return self._source_path
+
 class ImageListExtractor(MediaExtractor):
     def __init__(self, source_path, dest_path, image_quality):
         if not source_path:

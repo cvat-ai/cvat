@@ -30,26 +30,38 @@ def _is_image(path):
 def _is_dir(path):
     return os.path.isdir(path)
 
+# 'has_mime_type': function receives 1 argument - path to file.
+#                  Should return True if file has specified media type.
+# 'extractor': class that extracts images from specified media.
+# 'mode': 'annotation' or 'interpolation' - mode of task that should be created.
+# 'unique': True or False - describes how the type can be combined with other.
+#           True - only one item of this type and no other is allowed
+#           False - this media types can be combined with other which have unique == False
+
 MEDIA_TYPES = {
     'image': {
         'has_mime_type': _is_image,
         'extractor': ImageListExtractor,
         'mode': 'annotation',
+        'unique': False,
     },
     'video': {
         'has_mime_type': _is_video,
         'extractor': VideoExtractor,
         'mode': 'interpolation',
+        'unique': True,
     },
     'archive': {
         'has_mime_type': _is_archive,
         'extractor': ArchiveExtractor,
         'mode': 'annotation',
+        'unique': True,
     },
     'directory': {
         'has_mime_type': _is_dir,
         'extractor': DirectoryExtractor,
         'mode': 'annotation',
+        'unique': False,
     },
 }
 

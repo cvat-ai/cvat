@@ -177,18 +177,24 @@ def _validate_data(data):
         counter=counter,
     )
 
-    num_videos = len(counter["video"])
-    num_archives = len(counter["archive"])
-    num_images = len(counter["image"]) + len(counter["directory"])
-    if (num_videos > 1 or num_archives > 1 or
-        (num_videos == 1 and num_archives + num_images > 0) or
-        (num_archives == 1 and num_videos + num_images > 0) or
-        (num_images > 0 and num_archives + num_videos > 0)):
+    unique_entries = 0
+    multiple_entries = 0
+    for media_type, media_config in MEDIA_TYPES.items():
+        if counter[media_type]:
+            if media_config['unique']:
+                unique_entries += len(counter[media_type])
+            else:
+                multiple_entries += len(counter[media_type])
 
-        raise ValueError("Only one archive, one video or many images can be \
-            dowloaded simultaneously. {} image(s), {} dir(s), {} video(s), {} \
-            archive(s) found".format(counter['image'], counter['directory'],
-                counter['video'], counter['archive']))
+    if unique_entries == 1 and multiple_entries > 0 or unique_entries > 1:
+        unique_types = ', '.join([k for k, v in MEDIA_TYPES.items() if v['unique']])
+        multiply_types = ', '.join([k for k, v in MEDIA_TYPES.items() if not v['unique']])
+        count = ', '.join(['{} {}(s)'.format(len(v), k) for k, v in counter.items()])
+        raise ValueError('Only one {} or many {} can be used simultaneously, \
+            but {} found.'.format(unique_types, multiply_types, count))
+
+    if unique_entries == 0 and multiple_entries == 0:
+        raise ValueError('No media data found')
 
     return counter
 
@@ -207,7 +213,12 @@ def _create_thread(tid, data):
         _copy_data_from_share(data['server_files'], upload_dir)
 
     job = rq.get_current_job()
+    job.meta['status'] = 'Media files is being extracted...'
+    job.save_meta()
+
     db_images = []
+    extractors = []
+    length = 0
     for media_type, media_files in media.items():
         if not media_files:
             continue
@@ -217,34 +228,43 @@ def _create_thread(tid, data):
             dest_path=upload_dir,
             image_quality=db_task.image_quality,
         )
-
+        length += len(extractor)
         db_task.mode = MEDIA_TYPES[media_type]['mode']
+        extractors.append(extractor)
+
+    for extractor in extractors:
         for frame, image_orig_path in enumerate(extractor):
-            image_dest_path = db_task.get_frame_path(frame)
-            db_task.size += 1
+            image_dest_path = db_task.get_frame_path(db_task.size)
             dirname = os.path.dirname(image_dest_path)
+
             if not os.path.exists(dirname):
-                    os.makedirs(dirname)
+                os.makedirs(dirname)
+
             if db_task.mode == 'interpolation':
-                job.meta['status'] = 'Video is being extracted..'
-                job.save_meta()
                 extractor.save_image(frame, image_dest_path)
             else:
-                progress = frame * 100 // len(extractor)
-                job.meta['status'] = 'Images are being compressed.. {}%'.format(progress)
-                job.save_meta()
                 width, height = extractor.save_image(frame, image_dest_path)
-                db_images.append(models.Image(task=db_task, path=image_orig_path,
-                    frame=frame, width=width, height=height))
+                db_images.append(models.Image(
+                    task=db_task,
+                    path=os.path.relpath(image_orig_path, upload_dir),
+                    frame=db_task.size,
+                    width=width, height=height))
 
-        if db_task.mode == 'interpolation':
-            image = Image.open(db_task.get_frame_path(0))
-            models.Video.objects.create(task=db_task, path=media[media_type][0],
-                start_frame=0, stop_frame=db_task.size, step=1,
-                width=image.width, height=image.height)
-            image.close()
+            db_task.size += 1
+            progress = frame * 100 // length
+            job.meta['status'] = 'Images are being compressed... {}%'.format(progress)
+            job.save_meta()
 
-    if db_task.mode == 'annotation':
+    if db_task.mode == 'interpolation':
+        image = Image.open(db_task.get_frame_path(0))
+        models.Video.objects.create(
+            task=db_task,
+            path=os.path.relpath(extractors[0].get_source_name(), upload_dir),
+            start_frame=0, stop_frame=db_task.size,
+            step=1,
+            width=image.width, height=image.height)
+        image.close()
+    else:
         models.Image.objects.bulk_create(db_images)
 
     slogger.glob.info("Founded frames {} for task #{}".format(db_task.size, tid))
