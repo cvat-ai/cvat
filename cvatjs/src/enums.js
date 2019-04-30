@@ -20,15 +20,9 @@
         INTERPOLATION: 'interpolation',
     });
 
-    const FramesLoadingPolicy = Object.freeze({
-        LOAD_ALL: 'loadAll',
-        LOAD_PART: 'loadPart',
-    });
-
     module.exports = {
         ShareFileType,
         TaskStatus,
         TaskMode,
-        FramesLoadingPolicy,
     };
 })();

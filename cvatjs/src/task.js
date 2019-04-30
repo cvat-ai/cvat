@@ -113,24 +113,24 @@
             }
 
             Object.defineProperties(this, {
+                /**
+                    * @name id
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @readonly
+                    * @instance
+                */
                 id: {
-                    /**
-                        * @name id
-                        * @type {integer}
-                        * @memberof module:API.cvat.classes.Task
-                        * @readonly
-                        * @instance
-                    */
                     get: () => data.id,
                 },
+                /**
+                    * @name name
+                    * @type {string}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
                 name: {
-                    /**
-                        * @name name
-                        * @type {string}
-                        * @memberof module:API.cvat.classes.Task
-                        * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
-                    */
                     get: () => data.name,
                     set: () => (value) => {
                         if (!value.trim().length) {
@@ -141,56 +141,56 @@
                         data.name = value;
                     },
                 },
+                /**
+                    * @name status
+                    * @type {module:API.cvat.enums.TaskStatus}
+                    * @memberof module:API.cvat.classes.Task
+                    * @readonly
+                    * @instance
+                */
                 status: {
-                    /**
-                        * @name status
-                        * @type {module:API.cvat.enums.TaskStatus}
-                        * @memberof module:API.cvat.classes.Task
-                        * @readonly
-                        * @instance
-                    */
                     get: () => data.status,
                 },
+                /**
+                    * @name size
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @readonly
+                    * @instance
+                */
                 size: {
-                    /**
-                        * @name size
-                        * @type {integer}
-                        * @memberof module:API.cvat.classes.Task
-                        * @readonly
-                        * @instance
-                    */
                     get: () => data.size,
                 },
+                /**
+                    * @name mode
+                    * @type {TaskMode}
+                    * @memberof module:API.cvat.classes.Task
+                    * @readonly
+                    * @instance
+                */
                 mode: {
-                    /**
-                        * @name mode
-                        * @type {TaskMode}
-                        * @memberof module:API.cvat.classes.Task
-                        * @readonly
-                        * @instance
-                    */
                     get: () => data.mode,
                 },
+                /**
+                    * Identificator of a user who has created the task
+                    * @name owner
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @readonly
+                    * @instance
+                */
                 owner: {
-                    /**
-                        * Identificator of a user who has created the task
-                        * @name owner
-                        * @type {integer}
-                        * @memberof module:API.cvat.classes.Task
-                        * @readonly
-                        * @instance
-                    */
                     get: () => data.owner,
                 },
+                /**
+                    * Identificator of a user who is responsible for the task
+                    * @name assignee
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
                 assignee: {
-                    /**
-                        * Identificator of a user who is responsible for the task
-                        * @name assignee
-                        * @type {integer}
-                        * @memberof module:API.cvat.classes.Task
-                        * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
-                    */
                     get: () => data.assignee,
                     set: () => (assignee) => {
                         if (!Number.isInteger(assignee) || assignee < 0) {
@@ -201,47 +201,47 @@
                         data.assignee = assignee;
                     },
                 },
+                /**
+                    * @name createdDate
+                    * @type {string}
+                    * @memberof module:API.cvat.classes.Task
+                    * @readonly
+                    * @instance
+                */
                 createdDate: {
-                    /**
-                        * @name createdDate
-                        * @type {string}
-                        * @memberof module:API.cvat.classes.Task
-                        * @readonly
-                        * @instance
-                    */
                     get: () => data.created_date,
                 },
+                /**
+                    * @name updatedDate
+                    * @type {string}
+                    * @memberof module:API.cvat.classes.Task
+                    * @readonly
+                    * @instance
+                */
                 updatedDate: {
-                    /**
-                        * @name updatedDate
-                        * @type {string}
-                        * @memberof module:API.cvat.classes.Task
-                        * @readonly
-                        * @instance
-                    */
                     get: () => data.updated_date,
                 },
+                /**
+                    * @name bugTracker
+                    * @type {string}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
                 bugTracker: {
-                    /**
-                        * @name bugTracker
-                        * @type {string}
-                        * @memberof module:API.cvat.classes.Task
-                        * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
-                    */
                     get: () => data.bug_tracker,
                     set: () => (tracker) => {
                         data.bug_tracker = tracker;
                     },
                 },
+                /**
+                    * @name overlap
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
                 overlap: {
-                    /**
-                        * @name overlap
-                        * @type {integer}
-                        * @memberof module:API.cvat.classes.Task
-                        * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
-                    */
                     get: () => data.overlap,
                     set: () => (overlap) => {
                         if (!Number.isInteger(overlap) || overlap < 0) {
@@ -252,14 +252,14 @@
                         data.overlap = overlap;
                     },
                 },
+                /**
+                    * @name segmentSize
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
                 segmentSize: {
-                    /**
-                        * @name segmentSize
-                        * @type {integer}
-                        * @memberof module:API.cvat.classes.Task
-                        * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
-                    */
                     get: () => data.segment_size,
                     set: (segment) => {
                         if (!Number.isInteger(segment) || segment < 0) {
@@ -270,14 +270,14 @@
                         data.segment_size = segment;
                     },
                 },
+                /**
+                    * @name zOrder
+                    * @type {boolean}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
                 zOrder: {
-                    /**
-                        * @name zOrder
-                        * @type {boolean}
-                        * @memberof module:API.cvat.classes.Task
-                        * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
-                    */
                     get: () => data.z_order,
                     set: (zOrder) => {
                         if (typeof (zOrder) !== 'boolean') {
@@ -288,15 +288,15 @@
                         data.z_order = zOrder;
                     },
                 },
+                /**
+                    * After task has been created value can be appended only.
+                    * @name labels
+                    * @type {module:API.cvat.classes.Label[]}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
                 labels: {
-                    /**
-                        * After task has been created value can be appended only.
-                        * @name labels
-                        * @type {module:API.cvat.classes.Label[]}
-                        * @memberof module:API.cvat.classes.Task
-                        * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
-                    */
                     get: () => [...data.labels],
                     set: (labels) => {
                         if (!Array.isArray(labels)) {
@@ -321,14 +321,14 @@
                         }
                     },
                 },
+                /**
+                    * @name jobs
+                    * @type {module:API.cvat.classes.Job[]}
+                    * @memberof module:API.cvat.classes.Task
+                    * @readonly
+                    * @instance
+                */
                 jobs: {
-                    /**
-                        * @name jobs
-                        * @type {module:API.cvat.classes.Job[]}
-                        * @memberof module:API.cvat.classes.Task
-                        * @readonly
-                        * @instance
-                    */
                     get: () => [...data.jobs],
                 },
                 /**
@@ -386,6 +386,16 @@
 
                         data.files.client_files = clientFiles;
                     },
+                },
+                /**
+                    * Method updates data of a created task or creates task from scratch
+                    * @method save
+                    * @memberof module:API.cvat.classes.Task
+                    * @readonly
+                    * @instance
+                */
+                save() {
+
                 },
             });
         }

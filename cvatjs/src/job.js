@@ -68,25 +68,25 @@
             }
 
             Object.defineProperties(this, {
+                /**
+                    * @name id
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Job
+                    * @readonly
+                    * @instance
+                */
                 id: {
-                    /**
-                        * @name id
-                        * @type {integer}
-                        * @memberof module:API.cvat.classes.Job
-                        * @readonly
-                        * @instance
-                    */
                     get: () => data.id,
                 },
+                /**
+                    * Identifier of a user who is responsible for the job
+                    * @name assignee
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Job
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
                 assignee: {
-                    /**
-                        * Identifier of a user who is responsible for the job
-                        * @name assignee
-                        * @type {integer}
-                        * @memberof module:API.cvat.classes.Job
-                        * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
-                    */
                     get: () => data.assignee,
                     set: () => (assignee) => {
                         if (!Number.isInteger(assignee) || assignee < 0) {
@@ -97,14 +97,14 @@
                         data.assignee = assignee;
                     },
                 },
+                /**
+                    * @name status
+                    * @type {module:API.cvat.enums.TaskStatus}
+                    * @memberof module:API.cvat.classes.Job
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
                 status: {
-                    /**
-                        * @name status
-                        * @type {module:API.cvat.enums.TaskStatus}
-                        * @memberof module:API.cvat.classes.Job
-                        * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
-                    */
                     get: () => data.status,
                     set: (status) => {
                         const type = window.cvat.enums.TaskStatus;
@@ -125,35 +125,45 @@
                         data.status = status;
                     },
                 },
+                /**
+                    * @name startFrame
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Job
+                    * @readonly
+                    * @instance
+                */
                 startFrame: {
-                    /**
-                        * @name startFrame
-                        * @type {integer}
-                        * @memberof module:API.cvat.classes.Job
-                        * @readonly
-                        * @instance
-                    */
                     get: () => data.start_frame,
                 },
+                /**
+                    * @name stopFrame
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Job
+                    * @readonly
+                    * @instance
+                */
                 stopFrame: {
-                    /**
-                        * @name stopFrame
-                        * @type {integer}
-                        * @memberof module:API.cvat.classes.Job
-                        * @readonly
-                        * @instance
-                    */
                     get: () => data.stop_frame,
                 },
+                /**
+                    * @name task
+                    * @type {module:API.cvat.classes.Task}
+                    * @memberof module:API.cvat.classes.Job
+                    * @readonly
+                    * @instance
+                */
                 task: {
-                    /**
-                        * @name task
-                        * @type {module:API.cvat.classes.Task}
-                        * @memberof module:API.cvat.classes.Job
-                        * @readonly
-                        * @instance
-                    */
                     get: () => data.task,
+                },
+                /**
+                    * Method updates job data like status or assignee
+                    * @method save
+                    * @memberof module:API.cvat.classes.Job
+                    * @readonly
+                    * @instance
+                */
+                save() {
+
                 },
             });
         }

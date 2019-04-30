@@ -7,6 +7,7 @@
     /**
         * Class representing an attribute
         * @memberof module:API.cvat.classes
+        * @hideconstructor
     */
     class Attribute {
         constructor() {
@@ -17,6 +18,7 @@
     /**
         * Class representing a label
         * @memberof module:API.cvat.classes
+        * @hideconstructor
     */
     class Label {
         constructor() {
