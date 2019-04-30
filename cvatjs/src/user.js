@@ -10,7 +10,7 @@
         * @hideconstructor
     */
     class User {
-        constructor(initialData = {}) {
+        constructor(initialData) {
             const data = {
                 id: null,
                 username: null,

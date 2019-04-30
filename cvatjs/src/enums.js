@@ -20,9 +20,18 @@
         INTERPOLATION: 'interpolation',
     });
 
+    const AttributeType = Object.freeze({
+        CHECKBOX: 'checkbox',
+        RADIOBUTTON: 'radio',
+        SELECT: 'select',
+        NUMBER: 'number',
+        TEXT: 'text',
+    });
+
     module.exports = {
         ShareFileType,
         TaskStatus,
         TaskMode,
+        AttributeType,
     };
 })();
