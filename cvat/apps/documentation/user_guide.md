@@ -145,8 +145,8 @@ There you can:
     will have one track inside the annotations.
     If annotations on different segments (on overlapped frames)
     are very different, you will have two shapes for the same object.
-    This functionality works only for bounding boxes and polygons
-    Polyline, points don't support automatic merge on overlapped segments
+    This functionality works only for bounding boxes.
+    Polygons,polylines, points don't support automatic merge on overlapped segments
     even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
 
     **Segment size**. Use this option to divide a huge dataset into a few smaller segments.
@@ -169,19 +169,20 @@ There you can:
     Each element contains: task name, preview, execution status, buttons, and one or more links.
     Each button is responsible for a specific function:
     - ``Dump Annotation`` — download an annotation file from the task (xml format)
-    - ``Upload Annotation`` — uploading an annotation file to the task (xml format)
+    - ``Upload Annotation`` — upload an annotation file to the task (xml format)
     - ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
     - ``Delete Task`` — delete the task
-    - ``Git Repository Sync`` — sync annotation with the repository. Presence depends on task configuration
+    - ``Git Repository Sync`` — sync annotation with the repository.
+    It is available only if you specify dataset repository when the task has been created.
     - ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API.
-    Presence depends on task configuration
+    Presence depends on how you build CVAT instance
     - ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
     Presense depends on how you build CVAT instance.
 
-    Item color depends on status of synchronization with the repository:
-    ``red`` means a task is not synchronized with the repository,
-    ``yellow`` means a task is in a temporary branch of the repository,
-    ``green`` means a task is merged into the repository.
+    Item color depends on status of synchronization with the dataset repository:
+    ``red`` means annotations are not synchronized with the repository,
+    ``yellow`` means annotations are in a temporary branch of the repository,
+    ``green`` means annotations are merged into the repository.
 
 1.  Follow a link inside ``Jobs`` section to start annotation process.
     In some cases, you can have several links. It depends on size of your
@@ -211,7 +212,7 @@ Use "Auto annotation" button to pre annotate a task using one of your DL models.
 ### Search
 
 There are several options how to use the search.
-It may be task's name, mode (annotation or interpolation), owner (username), assigneee (username),
+It may be task's name, mode (annotation or interpolation), owner (username), assignee (username),
 status (annotation, validation, completed), id.
 The search is case insensitive.
 
@@ -229,7 +230,7 @@ The tool consists of:
 ![](static/documentation/images/image034.jpg)
 
 There is also:
-- ``Settings`` (F2) — pop-up in the bottom panel, contains different parameters
+- ``Settings`` (F2) — the button inside ``Open Menu`` in the bottom panel. Contains different parameters
   which can be adjusted according to the user's needs
 - ``Context menu`` — available on right mouse button.
 
@@ -249,7 +250,7 @@ There is also:
     If ``Mouse Wheel`` is pressed, then all annotated objects are ignored.
     Otherwise, a highlighted bounding box will be moved instead of the image itself.
 
-### Types of Shapes (basics)
+### Types of shapes (basics)
 There are four shapes which you can annotate your images with:
 - ``box``
 - ``polygon``
@@ -285,11 +286,12 @@ Usage examples:
         ![](static/documentation/images/image011.jpg)
 
     -   It is possible to adjust boundaries and location of the bounding box using mouse.
-        Boxe's size is shown in the top right corner , you can check it clicking on the one point of box.
+        Box's size is shown in the top right corner , you can check it clicking on the one point of box.
         You can also undo your actions using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
 
 1.  In the list of objects you can see the labeled car.
-    In the side panel you can perform basic operations under the object — choose attributes, change label or delete box.
+    In the side panel you can perform basic operations under the object — choose attributes,
+    change its label or delete box.
 
     ![](static/documentation/images/image012.jpg)
 
@@ -317,7 +319,8 @@ Usage examples:
     boxes where it happens. It isn't necessary to change bounding boxes on each
     frame. It is enough to update several key frames and frames between them
     will be interpolated automatically. See an example below:
-    -   The car starts moving on frame #630. Let's mark the frame as a key frame. You can press ``K`` for that.
+    -   The car starts moving on frame #630. Let's mark the frame as a key frame.
+    You can press ``K`` for that or push ``star`` button (see the screenshot below)
 
         ![](static/documentation/images/image016.jpg)
 
@@ -367,7 +370,7 @@ Usage examples:
 
 -   In this mode you can edit attributes with fast navigation between
     objects and frames using keyboard. Press ``Shift+Enter`` shortcut
-    to enter AAMode. After that, you can change attributes using a keyboard.
+    to enter the AAMode. After that, you can change attributes using a keyboard.
 
     ![](static/documentation/images/image023.jpg)
 
@@ -474,9 +477,9 @@ quality, etc.). There are two types of attributes:
 ---
 ### Workspace — Context menu
 
-Context menu opens by right mouse click.
+Press the ``Right mouse button`` to see the context menu.
 
-The next options are available clicking inside bounding box:
+Next options are available clicking inside bounding box:
 - ``Copy Object URL`` — copying to the buffer address of an object on the frame
 in the task
 - ``Change Color`` — change color of active shape
@@ -486,8 +489,7 @@ object or isn't fully visible on the frame. Use the ``Q`` shortcut to set the
 property quickly.
 - ``Switch Lock`` — block editing the active shape
 - ``Enable Dragging`` — (only for polygons) allows to adjust polygons position
-- ``Split`` — (only for interpolation bounding box) allows to split an
-interpolated track into two separate tracks. This function is the opposite
+- ``Split`` — allows to split aninterpolated track into two separate tracks. This function is the opposite
 of the merge function.
 
 ![](static/documentation/images/image089.jpg)
@@ -517,10 +519,12 @@ There is ``Player Settings`` which adjusts ``Workspace`` and ``Other Settings``.
 
 In ``Player Settings`` you can:
 -   Control step of ``C`` and ``V`` shortcuts
--   Control speed of ``Space``/Play button
--   Show every image in full or zoomed out like previous (reset by default)
+-   Control speed of ``Space``/``Play`` button
+-   Show every image in full or zoomed out like previous
+(it is enabled by default for interpolation mode and disabled for annotation mode)
 -   Enable ``Grid`` when you don't need small objects. ``Grid`` can have
 different opacity, color and cells' size — use ``F2`` to configure settings.
+
     ![](static/documentation/images/image068.jpg)
 
 -   Adjust ``Brightness``/``Contrast``/``Saturation`` of too exposing or too
@@ -531,7 +535,7 @@ Shortcuts:
 -   ``Shift+B``/``Alt+B`` for brightness
 -   ``Shift+C``/``Alt+C`` for contrast
 -   ``Shift+S``/``Alt+S`` for saturation
--   ``F2`` —> ``Reset Color Settings`` for default image
+-   ``F2`` —> ``Reset Color Settings`` for default values
 
     ![](static/documentation/images/image069.jpg)
 
@@ -571,14 +575,14 @@ Play the sequence of frames or the set of images. Shortcut: ``Space`` (change at
 ![](static/documentation/images/image041.jpg)
 
 ---
-Go to specified frame. Press ``~`` to highlight element.
+Go to specified frame. Press ``~`` to focus on the element element.
 
 ![](static/documentation/images/image060.jpg)
 
 ---
 **Open Menu** button
 
-It is the main menu of the annotation tool. It can be used to download, upload and remove annotation.
+It is the main menu of the annotation tool. It can be used to download, upload and remove annotations.
 
 ![](static/documentation/images/image051.jpg)
 
