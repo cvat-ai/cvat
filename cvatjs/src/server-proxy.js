@@ -5,7 +5,6 @@
 
 /* global
     require:false
-    global:false
     encodeURIComponent:false
 */
 
@@ -28,12 +27,12 @@
             }
 
             async function about() {
-                const { backendAPI } = global.cvat.config;
+                const { backendAPI } = window.cvat.config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/server/about`, {
-                        proxy: global.cvat.config.proxy,
+                        proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
@@ -44,12 +43,12 @@
             }
 
             async function share(directory) {
-                const { backendAPI } = global.cvat.config;
+                const { backendAPI } = window.cvat.config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/server/share?directory=${directory}`, {
-                        proxy: global.cvat.config.proxy,
+                        proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
@@ -60,11 +59,11 @@
             }
 
             async function exception(exceptionObject) {
-                const { backendAPI } = global.cvat.config;
+                const { backendAPI } = window.cvat.config;
 
                 try {
                     await Axios.post(`${backendAPI}/server/exception`, JSON.stringify(exceptionObject), {
-                        proxy: global.cvat.config.proxy,
+                        proxy: window.cvat.config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
                         },
@@ -105,11 +104,11 @@
                     }
                 }
 
-                const host = global.cvat.config.backendAPI.slice(0, -7);
+                const host = window.cvat.config.backendAPI.slice(0, -7);
                 let csrf = null;
                 try {
                     csrf = await Axios.get(`${host}/auth/login`, {
-                        proxy: global.cvat.config.proxy,
+                        proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
@@ -130,7 +129,7 @@
                         authentificationData,
                         {
                             'Content-Type': 'application/x-www-form-urlencoded',
-                            proxy: global.cvat.config.proxy,
+                            proxy: window.cvat.config.proxy,
                             // do not redirect to a dashboard,
                             // otherwise we don't get a session id in a response
                             maxRedirects: 0,
@@ -151,12 +150,12 @@
             }
 
             async function getTasks(filter = '') {
-                const { backendAPI } = global.cvat.config;
+                const { backendAPI } = window.cvat.config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/tasks?${filter}`, {
-                        proxy: global.cvat.config.proxy,
+                        proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
@@ -167,12 +166,12 @@
             }
 
             async function getJob(jobID) {
-                const { backendAPI } = global.cvat.config;
+                const { backendAPI } = window.cvat.config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/jobs/${jobID}`, {
-                        proxy: global.cvat.config.proxy,
+                        proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
@@ -183,12 +182,12 @@
             }
 
             async function getUsers() {
-                const { backendAPI } = global.cvat.config;
+                const { backendAPI } = window.cvat.config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/users`, {
-                        proxy: global.cvat.config.proxy,
+                        proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
@@ -199,12 +198,12 @@
             }
 
             async function getSelf() {
-                const { backendAPI } = global.cvat.config;
+                const { backendAPI } = window.cvat.config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/users/self`, {
-                        proxy: global.cvat.config.proxy,
+                        proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;

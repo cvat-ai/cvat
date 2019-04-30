@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
+    "browser-env": "^3.2.6",
     "error-stack-parser": "^2.0.2",
     "js-cookie": "^2.2.0",
     "platform": "^1.3.5",

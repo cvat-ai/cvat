@@ -5,7 +5,6 @@
 
 /* global
     require:false
-    global:false
 */
 
 
@@ -42,11 +41,11 @@
         for (const prop in filter) {
             if (Object.prototype.hasOwnProperty.call(filter, prop)) {
                 if (!(prop in fields)) {
-                    throw new global.cvat.exceptions.ArgumentError(
+                    throw new window.cvat.exceptions.ArgumentError(
                         `Unsupported filter property has been recieved: "${prop}"`,
                     );
                 } else if (!fields[prop](filter[prop])) {
-                    throw new global.cvat.exceptions.ArgumentError(
+                    throw new window.cvat.exceptions.ArgumentError(
                         `Received filter property ${prop} was not satisfied for checker`,
                     );
                 }
@@ -58,13 +57,13 @@
     function checkContext(wrappedFunction) {
         return async function wrapper(...args) {
             try {
-                if (this instanceof global.cvat.classes.Task) {
+                if (this instanceof window.cvat.classes.Task) {
                     hidden.taskID = this.id;
-                } else if (this instanceof global.cvat.classes.Job) {
+                } else if (this instanceof window.cvat.classes.Job) {
                     hidden.jobID = this.id;
                     hidden.taskID = this.task.id;
                 } else {
-                    throw new global.cvat.exceptions.ScriptingError('Bad context for the function');
+                    throw new window.cvat.exceptions.ScriptingError('Bad context for the function');
                 }
                 const result = await wrappedFunction.call(this, ...args);
                 return result;
@@ -106,7 +105,7 @@
                 users = await serverProxy.users.getUsers();
             }
 
-            users = users.map(user => new global.cvat.classes.User(user));
+            users = users.map(user => new window.cvat.classes.User(user));
             return users;
         };
 
@@ -117,13 +116,13 @@
             });
 
             if (('taskID' in filter) && ('jobID' in filter)) {
-                throw new global.cvat.exceptions.ArgumentError(
+                throw new window.cvat.exceptions.ArgumentError(
                     'Only one of fields "taskID" and "jobID" allowed simultaneously',
                 );
             }
 
             if (!Object.keys(filter).length) {
-                throw new global.cvat.exceptions.ArgumentError(
+                throw new window.cvat.exceptions.ArgumentError(
                     'Job filter must not be empty',
                 );
             }
@@ -136,7 +135,7 @@
                 task = await cvat.tasks.get.implementation({ id: job.task_id });
             }
 
-            task = new global.cvat.classes.Task(task[0]);
+            task = new window.cvat.classes.Task(task[0]);
             return filter.jobID ? task.jobs.filter(job => job.id === filter.jobID) : task.jobs;
         };
 
@@ -147,18 +146,18 @@
                 owner: isString,
                 assignee: isString,
                 search: isString,
-                status: isEnum.bind(global.cvat.enums.TaskStatus),
-                mode: isEnum.bind(global.cvat.enums.TaskMode),
+                status: isEnum.bind(window.cvat.enums.TaskStatus),
+                mode: isEnum.bind(window.cvat.enums.TaskMode),
             });
 
             if ('search' in filter && Object.keys(filter).length > 1) {
-                throw new global.cvat.exceptions.ArgumentError(
+                throw new window.cvat.exceptions.ArgumentError(
                     'Do not use the filter field "search" with others',
                 );
             }
 
             if ('id' in filter && Object.keys(filter).length > 1) {
-                throw new global.cvat.exceptions.ArgumentError(
+                throw new window.cvat.exceptions.ArgumentError(
                     'Do not use the filter field "id" with others',
                 );
             }
@@ -171,7 +170,7 @@
             }
 
             let tasks = await serverProxy.tasks.getTasks(searchParams.toString());
-            tasks = tasks.map(task => new global.cvat.classes.Task(task));
+            tasks = tasks.map(task => new window.cvat.classes.Task(task));
 
             return tasks;
         };
@@ -196,8 +195,8 @@
 
         cvat.Task.annotations.dump.implementation = checkContext(
             async () => {
-                const { host } = global.cvat.config;
-                const { api } = global.cvat.config;
+                const { host } = window.cvat.config;
+                const { api } = window.cvat.config;
 
                 return `${host}/api/${api}/tasks/${this.taskID}/annotations/dump`;
             },
@@ -303,8 +302,8 @@
 
         cvat.Job.annotations.dump.implementation = checkContext(
             async () => {
-                const { host } = global.cvat.config;
-                const { api } = global.cvat.config;
+                const { host } = window.cvat.config;
+                const { api } = window.cvat.config;
 
                 return `${host}/api/${api}/tasks/${this.taskID}/annotations/dump`;
             },

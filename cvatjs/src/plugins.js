@@ -4,7 +4,6 @@
 */
 
 /* global
-    global:false
     require:false
 */
 
@@ -15,7 +14,7 @@
     class PluginRegistry {
         static async apiWrapper(wrappedFunc, ...args) {
             // I have to optimize the wrapper
-            const pluginList = await global.cvat.plugins.list.implementation();
+            const pluginList = await window.cvat.plugins.list.implementation();
             for (const plugin of pluginList) {
                 const pluginDecorators = plugin.functions
                     .filter(obj => obj.callback === wrappedFunc)[0];
@@ -97,7 +96,7 @@
                     functions.push(decorator);
                 }
             }(plug, {
-                cvat: global.cvat,
+                cvat: window.cvat,
             }));
 
             Object.defineProperty(plug, 'functions', {

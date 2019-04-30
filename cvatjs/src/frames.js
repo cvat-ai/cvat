@@ -21,8 +21,8 @@
                 },
                 image: {
                     value: async () => {
-                        const { api } = global.cvat.config;
-                        const { host } = global.cvat.config;
+                        const { api } = window.cvat.config;
+                        const { host } = window.cvat.config;
                         return new Promise((resolve) => {
                             resolve(`${host}/api/${api}/tasks/${tid}/frames/${number}`);
                         });

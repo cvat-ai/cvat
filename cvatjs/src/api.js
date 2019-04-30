@@ -5,7 +5,6 @@
 
 /* global
     require:false
-    global:false
 */
 
 /**
@@ -394,7 +393,7 @@
                 *   internal: {
                 *     async getPlugins() {
                 *       // Collect information about installed plugins
-                *       const plugins = await global.cvat.plugins.list();
+                *       const plugins = await window.cvat.plugins.list();
                 *       return plugins.map((el) => {
                 *         return {
                 *           name: el.name,
@@ -576,7 +575,12 @@
     cvat.Task = Object.freeze(cvat.Task);
 
     const implementAPI = require('./api-implementation');
-    global.cvat = Object.freeze(implementAPI(cvat));
+    if (typeof (window) === 'undefined') {
+        // Dummy browser environment
+        require('browser-env')();
+    }
+
+    window.cvat = Object.freeze(implementAPI(cvat));
 
     const hidden = require('./hidden');
     hidden.location = cvat.config.backendAPI.slice(0, -7); // TODO: Use JS server instead
@@ -617,7 +621,7 @@ const plugin = {
     },
     internal: {
         async getPlugins() {
-            const plugins = await global.cvat.plugins.list();
+            const plugins = await window.cvat.plugins.list();
             return plugins.map((el) => {
                 const obj = {
                     name: el.name,
@@ -631,17 +635,17 @@ const plugin = {
 
 
 (async function test() {
-    await global.cvat.plugins.register(plugin);
-    await global.cvat.server.login('admin', 'nimda760');
+    await window.cvat.plugins.register(plugin);
+    await window.cvat.server.login('admin', 'nimda760');
 
     try {
-        console.log(JSON.stringify(await global.cvat.server.about()));
-        console.log(await global.cvat.users.get({ self: false }));
-        console.log(await global.cvat.users.get({ self: true }));
-        console.log(JSON.stringify(await global.cvat.jobs.get({ taskID: 8 })));
-        console.log(JSON.stringify(await global.cvat.jobs.get({ jobID: 10 })));
-        console.log(await global.cvat.tasks.get());
-        console.log(await global.cvat.tasks.get({ id: 8 }));
+        console.log(JSON.stringify(await window.cvat.server.about()));
+        console.log(await window.cvat.users.get({ self: false }));
+        console.log(await window.cvat.users.get({ self: true }));
+        console.log(JSON.stringify(await window.cvat.jobs.get({ taskID: 8 })));
+        console.log(JSON.stringify(await window.cvat.jobs.get({ jobID: 10 })));
+        console.log(await window.cvat.tasks.get());
+        console.log(await window.cvat.tasks.get({ id: 8 }));
         console.log('Done.');
     } catch (exception) {
         console.log(typeof (exception));

@@ -7,6 +7,7 @@
     /**
         * Class representing a user
         * @memberof module:API.cvat.classes
+        * @hideconstructor
     */
     class User {
         constructor(initialData = {}) {
