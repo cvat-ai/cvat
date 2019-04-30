@@ -156,10 +156,6 @@
                 },
             });
         }
-
-        toString() {
-            return `${this.username}: ${this.email}`;
-        }
     }
 
     module.exports = User;

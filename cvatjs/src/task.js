@@ -299,7 +299,6 @@
                         }
                         data.z_order = zOrder;
                     },
-                    v
                 },
                 /**
                     * After task has been created value can be appended only.
@@ -404,20 +403,20 @@
                     },
                     writable: false,
                 },
-                /**
-                    * Method updates data of a created task or creates task from scratch
-                    * @method save
-                    * @memberof module:API.cvat.classes.Task
-                    * @readonly
-                    * @instance
-                */
-                save: {
-                    value: async () => {
-
-                    },
-                    writable: false,
-                },
             });
+        }
+
+        /**
+            * Method updates data of a created task or creates task from scratch
+            * @method save
+            * @memberof module:API.cvat.classes.Task
+            * @readonly
+            * @instance
+            * @async
+            * @throws {module:API.cvat.exception.ServerError}
+        */
+        async save() {
+
         }
     }
 

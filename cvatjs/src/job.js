@@ -161,20 +161,20 @@
                     get: () => data.task,
                     writable: false,
                 },
-                /**
-                    * Method updates job data like status or assignee
-                    * @method save
-                    * @memberof module:API.cvat.classes.Job
-                    * @readonly
-                    * @instance
-                */
-                save: {
-                    value: async () => {
-
-                    },
-                    writable: false,
-                },
             });
+        }
+
+        /**
+            * Method updates job data like status or assignee
+            * @method save
+            * @memberof module:API.cvat.classes.Job
+            * @readonly
+            * @instance
+            * @async
+            * @throws {module:API.cvat.exception.ServerError}
+        */
+        async save() {
+
         }
     }
 

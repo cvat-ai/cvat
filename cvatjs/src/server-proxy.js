@@ -213,6 +213,38 @@
                 return response.data;
             }
 
+            async function getFrame(tid, frame) {
+                const { backendAPI } = window.cvat.config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/${frame}`, {
+                        proxy: window.cvat.config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(`Could not get frame ${frame} for a task ${tid} from a server`, code);
+                }
+
+                return response.data;
+            }
+
+            async function getMeta(tid) {
+                const { backendAPI } = window.cvat.config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/meta`, {
+                        proxy: window.cvat.config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(`Could not get frame meta info for a task ${tid} from a server`, code);
+                }
+
+                return response.data;
+            }
+
             // Set csrftoken header from browser cookies if it exists
             // NodeJS env returns 'undefined'
             // So in NodeJS we need login after each run
@@ -250,6 +282,14 @@
                     value: Object.freeze({
                         getUsers,
                         getSelf,
+                    }),
+                    writable: false,
+                },
+
+                frames: {
+                    value: Object.freeze({
+                        getFrame,
+                        getMeta,
                     }),
                     writable: false,
                 },

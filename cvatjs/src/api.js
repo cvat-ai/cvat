@@ -8,7 +8,7 @@
 */
 
 /**
-    * External API which is should used for an integration
+    * External API which should be used by for development
     * @module API
 */
 
