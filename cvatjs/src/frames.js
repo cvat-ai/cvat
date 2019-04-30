@@ -8,7 +8,7 @@
 */
 
 (() => {
-    const serverProxy = require('./server-proxy');
+    const PluginRegistry = require('./plugins');
 
     /**
         * Class provides meta information about specific frame and frame itself
@@ -17,9 +17,7 @@
     */
     class FrameData {
         constructor(width, height, tid, number) {
-            let frame = null;
-
-            Object.defineProperties(this, {
+            Object.defineProperties(this, Object.freeze({
                 /**
                     * @name width
                     * @type {integer}
@@ -28,7 +26,7 @@
                     * @instance
                 */
                 width: {
-                    get: () => width,
+                    value: width,
                     writable: false,
                 },
                 /**
@@ -39,28 +37,34 @@
                     * @instance
                 */
                 height: {
-                    get: () => height,
+                    value: height,
                     writable: false,
                 },
-                /**
-                    * Method returns URL encoded image which can be placed in the <img> tag
-                    * @method image
-                    * @memberof module:API.cvat.classes.FrameData
-                    * @instance
-                    * @async
-                    * @throws {module:API.cvat.exception.ServerError}
-                    * @returns {string}
-                */
-                image: {
-                    value: async () => {
-                        if (!frame) {
-                            frame = await serverProxy.frames.getFrame(tid, number);
-                        }
-                        return frame;
-                    },
+                tid: {
+                    value: tid,
                     writable: false,
                 },
-            });
+                number: {
+                    value: number,
+                    writable: false,
+                },
+            }));
+        }
+
+        /**
+            * Method returns URL encoded image which can be placed in the img tag
+            * @method image
+            * @returns {string}
+            * @memberof module:API.cvat.classes.FrameData
+            * @instance
+            * @async
+            * @throws {module:API.cvat.exception.ServerError}
+            * @throws {module:API.cvat.exception.PluginError}
+        */
+        async image() {
+            const result = await PluginRegistry
+                .apiWrapper.call(this, FrameData.prototype.image);
+            return result;
         }
     }
 

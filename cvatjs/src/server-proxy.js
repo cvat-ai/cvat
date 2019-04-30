@@ -253,7 +253,7 @@
                 setCSRFHeader(csrftoken);
             }
 
-            Object.defineProperties(this, {
+            Object.defineProperties(this, Object.freeze({
                 server: {
                     value: Object.freeze({
                         about,
@@ -293,7 +293,7 @@
                     }),
                     writable: false,
                 },
-            });
+            }));
         }
     }
 

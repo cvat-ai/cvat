@@ -32,7 +32,7 @@
                 }
             }
 
-            Object.defineProperties(this, {
+            Object.defineProperties(this, Object.freeze({
                 id: {
                     /**
                         * @name id
@@ -42,7 +42,6 @@
                         * @instance
                     */
                     get: () => data.id,
-                    writable: false,
                 },
                 username: {
                     /**
@@ -53,7 +52,6 @@
                         * @instance
                     */
                     get: () => data.username,
-                    writable: false,
                 },
                 email: {
                     /**
@@ -64,7 +62,6 @@
                         * @instance
                     */
                     get: () => data.email,
-                    writable: false,
                 },
                 firstName: {
                     /**
@@ -75,7 +72,6 @@
                         * @instance
                     */
                     get: () => data.first_name,
-                    writable: false,
                 },
                 lastName: {
                     /**
@@ -86,7 +82,6 @@
                         * @instance
                     */
                     get: () => data.last_name,
-                    writable: false,
                 },
                 groups: {
                     /**
@@ -97,7 +92,6 @@
                         * @instance
                     */
                     get: () => JSON.parse(JSON.stringify(data.groups)),
-                    writable: false,
                 },
                 lastLogin: {
                     /**
@@ -108,7 +102,6 @@
                         * @instance
                     */
                     get: () => data.last_login,
-                    writable: false,
                 },
                 dateJoined: {
                     /**
@@ -119,7 +112,6 @@
                         * @instance
                     */
                     get: () => data.date_joined,
-                    writable: false,
                 },
                 isStaff: {
                     /**
@@ -130,7 +122,6 @@
                         * @instance
                     */
                     get: () => data.is_staff,
-                    writable: false,
                 },
                 isSuperuser: {
                     /**
@@ -141,7 +132,6 @@
                         * @instance
                     */
                     get: () => data.is_superuser,
-                    writable: false,
                 },
                 isActive: {
                     /**
@@ -152,9 +142,8 @@
                         * @instance
                     */
                     get: () => data.is_active,
-                    writable: false,
                 },
-            });
+            }));
         }
     }
 

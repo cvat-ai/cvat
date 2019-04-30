@@ -40,7 +40,7 @@
 
             const projID = undefined; // wasn't implemented
 
-            Object.defineProperties(this, {
+            Object.defineProperties(this, Object.freeze({
                 system: {
                     /**
                         * @name system
@@ -50,7 +50,6 @@
                         * @instance
                     */
                     get: () => system,
-                    writable: false,
                 },
                 client: {
                     /**
@@ -61,7 +60,6 @@
                         * @instance
                     */
                     get: () => client,
-                    writable: false,
                 },
                 time: {
                     /**
@@ -72,7 +70,6 @@
                         * @instance
                     */
                     get: () => time,
-                    writable: false,
                 },
                 jobID: {
                     /**
@@ -83,7 +80,6 @@
                         * @instance
                     */
                     get: () => jobID,
-                    writable: false,
                 },
                 taskID: {
                     /**
@@ -94,7 +90,6 @@
                         * @instance
                     */
                     get: () => taskID,
-                    writable: false,
                 },
                 projID: {
                     /**
@@ -105,7 +100,6 @@
                         * @instance
                     */
                     get: () => projID,
-                    writable: false,
                 },
                 clientID: {
                     /**
@@ -116,7 +110,6 @@
                         * @instance
                     */
                     get: () => clientID,
-                    writable: false,
                 },
                 filename: {
                     /**
@@ -127,7 +120,6 @@
                         * @instance
                     */
                     get: () => filename,
-                    writable: false,
                 },
                 line: {
                     /**
@@ -138,7 +130,6 @@
                         * @instance
                     */
                     get: () => line,
-                    writable: false,
                 },
                 column: {
                     /**
@@ -149,9 +140,8 @@
                         * @instance
                     */
                     get: () => column,
-                    writable: false,
                 },
-            });
+            }));
         }
 
         /**
@@ -242,7 +232,7 @@
         constructor(message, code) {
             super(message);
 
-            Object.defineProperty(this, 'code', {
+            Object.defineProperties(this, Object.freeze({
                 /**
                     * @name code
                     * @type {(string|integer)}
@@ -250,9 +240,10 @@
                     * @readonly
                     * @instance
                 */
-                get: () => code,
-                writable: false,
-            });
+                code: {
+                    get: () => code,
+                },
+            }));
         }
     }
 

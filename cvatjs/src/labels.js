@@ -32,25 +32,13 @@
                 }
             }
 
-            let valid = false;
-            for (const key in window.cvat.enums.AttributeType) {
-                if (Object.prototype.hasOwnProperty.call(
-                    window.cvat.enums.AttributeType,
-                    key,
-                )) {
-                    if (key === data.input_type) {
-                        valid = true;
-                    }
-                }
-            }
-
-            if (!valid) {
-                throw window.cvat.exceptions.ArgumentError(
+            if (!Object.values(window.cvat.enums.AttributeType).includes(data.input_type)) {
+                throw new window.cvat.exceptions.ArgumentError(
                     `Got invalid attribute type ${data.input_type}`,
                 );
             }
 
-            Object.defineProperties(this, {
+            Object.defineProperties(this, Object.freeze({
                 /**
                     * @name id
                     * @type {integer}
@@ -60,7 +48,6 @@
                 */
                 id: {
                     get: () => data.id,
-                    writable: false,
                 },
                 /**
                     * @name defaultValue
@@ -71,7 +58,6 @@
                 */
                 defaultValue: {
                     get: () => data.default_value,
-                    writable: false,
                 },
                 /**
                     * @name inputType
@@ -82,7 +68,6 @@
                 */
                 inputType: {
                     get: () => data.input_type,
-                    writable: false,
                 },
                 /**
                     * @name mutable
@@ -93,7 +78,6 @@
                 */
                 mutable: {
                     get: () => data.mutable,
-                    writable: false,
                 },
                 /**
                     * @name name
@@ -104,7 +88,6 @@
                 */
                 name: {
                     get: () => data.name,
-                    writable: false,
                 },
                 /**
                     * @name values
@@ -115,9 +98,8 @@
                 */
                 values: {
                     get: () => [...data.values],
-                    writable: false,
                 },
-            });
+            }));
         }
     }
 
@@ -150,7 +132,7 @@
                 }
             }
 
-            Object.defineProperties(this, {
+            Object.defineProperties(this, Object.freeze({
                 /**
                     * @name id
                     * @type {integer}
@@ -181,7 +163,7 @@
                 attributes: {
                     get: () => [...data.attributes],
                 },
-            });
+            }));
         }
     }
 

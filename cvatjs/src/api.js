@@ -365,29 +365,34 @@
                 *       },
                 *     },
                 *     // In this example plugin also wraps a class method
-                *     Job: {
-                *       annotations: {
-                *         put: {
-                *           // The first argument "self" is a plugin, like in a case above
-                *           // The second argument is an argument of the cvat.Job.annotations.put()
-                *           // It contains an array of objects to put
-                *           // In this sample we round objects coordinates and save them
-                *           enter(self, objects) {
-                *             for (const obj of objects) {
-                *               if (obj.type != 'tag') {
-                *                 const points = obj.position.map((point) => {
-                *                    const roundPoint = {
-                *                      x: Math.round(point.x),
-                *                      y: Math.round(point.y),
-                *                    };
-                *                    return roundPoint;
-                *                 });
-                *               }
-                *             }
+                *     classes: {
+                *       Job: {
+                *         prototype: {
+                *           annotations: {
+                *             put: {
+                *               // The first argument "self" is a plugin, like in a case above
+                *               // The second argument is an argument of the
+                *               // cvat.Job.annotations.put()
+                *               // It contains an array of objects to put
+                *               // In this sample we round objects coordinates and save them
+                *               enter(self, objects) {
+                *                 for (const obj of objects) {
+                *                   if (obj.type != 'tag') {
+                *                     const points = obj.position.map((point) => {
+                *                       const roundPoint = {
+                *                         x: Math.round(point.x),
+                *                         y: Math.round(point.y),
+                *                       };
+                *                       return roundPoint;
+                *                     });
+                *                   }
+                *                 }
+                *               },
+                *             },
                 *           },
                 *         },
                 *       },
-                *     }
+                *     },
                 *   },
                 *   // In general you can add any others members to your plugin
                 *   // Members below are only examples
@@ -547,35 +552,6 @@
             Attribute,
             Label,
         },
-        Job: {
-            async save() {
-                const result = await PluginRegistry
-                    .apiWrapper(cvat.Job.save);
-                return result;
-            },
-            annotations: Object.freeze(jobAPI.annotationsModule),
-            frames: Object.freeze(jobAPI.framesModule),
-            logs: Object.freeze(jobAPI.logsModule),
-            actions: Object.freeze(jobAPI.actionsModule),
-            events: Object.freeze(jobAPI.eventsModule),
-        },
-        Task: {
-            async delete() {
-                const result = await PluginRegistry
-                    .apiWrapper(cvat.Task.delete);
-                return result;
-            },
-            async save() {
-                const result = await PluginRegistry
-                    .apiWrapper(cvat.Task.save);
-                return result;
-            },
-            annotations: Object.freeze(taskAPI.annotationsModule),
-            frames: Object.freeze(taskAPI.framesModule),
-            logs: Object.freeze(taskAPI.logsModule),
-            actions: Object.freeze(taskAPI.actionsModule),
-            events: Object.freeze(taskAPI.eventsModule),
-        },
     };
 
     cvat.server = Object.freeze(cvat.server);
@@ -662,7 +638,7 @@ const plugin = {
         console.log(await window.cvat.tasks.get({ id: 8 }));
         console.log('Done.');
     } catch (exception) {
-        console.log(typeof (exception));
+        console.log(exception.constructor.name);
         console.log(exception.message);
     }
 }());

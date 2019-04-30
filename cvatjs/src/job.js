@@ -3,8 +3,13 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* global
+    require:false
+*/
 
 (() => {
+    const PluginRegistry = require('./plugins');
+    let initialized = false;
     /**
         * Class representing a job.
         * @memberof module:API.cvat.classes
@@ -12,37 +17,57 @@
     */
     class Job {
         constructor(initialData) {
-            this.annotations = Object.freeze({
-                upload: window.cvat.Task.annotations.upload.bind(this),
-                save: window.cvat.Task.annotations.save.bind(this),
-                clear: window.cvat.Task.annotations.clear.bind(this),
-                dump: window.cvat.Task.annotations.dump.bind(this),
-                statistics: window.cvat.Task.annotations.statistics.bind(this),
-                put: window.cvat.Task.annotations.put.bind(this),
-                get: window.cvat.Task.annotations.get.bind(this),
-                search: window.cvat.Task.annotations.search.bind(this),
-                select: window.cvat.Task.annotations.select.bind(this),
-            });
+            if (!initialized) {
+                Object.defineProperties(Job.prototype, Object.freeze({
+                    annotations: {
+                        value: Object.freeze({
+                            upload: window.cvat.Task.annotations.upload.bind(this),
+                            save: window.cvat.Task.annotations.save.bind(this),
+                            clear: window.cvat.Task.annotations.clear.bind(this),
+                            dump: window.cvat.Task.annotations.dump.bind(this),
+                            statistics: window.cvat.Task.annotations.statistics.bind(this),
+                            put: window.cvat.Task.annotations.put.bind(this),
+                            get: window.cvat.Task.annotations.get.bind(this),
+                            search: window.cvat.Task.annotations.search.bind(this),
+                            select: window.cvat.Task.annotations.select.bind(this),
+                        }),
+                        writable: false,
+                    },
 
-            this.frames = Object.freeze({
-                get: window.cvat.Task.frames.get.bind(this),
-            });
+                    frames: {
+                        value: Object.freeze({
+                            get: window.cvat.Task.frames.get.bind(this),
+                        }),
+                        writable: false,
+                    },
 
-            this.logs = Object.freeze({
-                put: window.cvat.Task.logs.put.bind(this),
-                save: window.cvat.Task.logs.save.bind(this),
-            });
+                    logs: {
+                        value: Object.freeze({
+                            put: window.cvat.Task.logs.put.bind(this),
+                            save: window.cvat.Task.logs.save.bind(this),
+                        }),
+                        writable: false,
+                    },
 
-            this.actions = Object.freeze({
-                undo: window.cvat.Task.actions.undo.bind(this),
-                redo: window.cvat.Task.actions.redo.bind(this),
-                clear: window.cvat.Task.actions.clear.bind(this),
-            });
+                    actions: {
+                        value: Object.freeze({
+                            undo: window.cvat.Task.actions.undo.bind(this),
+                            redo: window.cvat.Task.actions.redo.bind(this),
+                            clear: window.cvat.Task.actions.clear.bind(this),
+                        }),
+                        writable: false,
+                    },
 
-            this.events = Object.freeze({
-                subscribe: window.cvat.Task.events.subscribe.bind(this),
-                unsubscribe: window.cvat.Task.events.unsubscribe.bind(this),
-            });
+                    events: {
+                        value: Object.freeze({
+                            subscribe: window.cvat.Task.events.subscribe.bind(this),
+                            unsubscribe: window.cvat.Task.events.unsubscribe.bind(this),
+                        }),
+                        writable: false,
+                    },
+                }));
+                initialized = true;
+            }
 
             const data = {
                 id: undefined,
@@ -67,7 +92,7 @@
                 }
             }
 
-            Object.defineProperties(this, {
+            Object.defineProperties(this, Object.freeze({
                 /**
                     * @name id
                     * @type {integer}
@@ -77,7 +102,6 @@
                 */
                 id: {
                     get: () => data.id,
-                    writable: false,
                 },
                 /**
                     * Identifier of a user who is responsible for the job
@@ -97,7 +121,6 @@
                         }
                         data.assignee = assignee;
                     },
-                    writable: false,
                 },
                 /**
                     * @name status
@@ -126,7 +149,6 @@
 
                         data.status = status;
                     },
-                    writable: false,
                 },
                 /**
                     * @name startFrame
@@ -137,7 +159,6 @@
                 */
                 startFrame: {
                     get: () => data.start_frame,
-                    writable: false,
                 },
                 /**
                     * @name stopFrame
@@ -148,7 +169,6 @@
                 */
                 stopFrame: {
                     get: () => data.stop_frame,
-                    writable: false,
                 },
                 /**
                     * @name task
@@ -159,9 +179,8 @@
                 */
                 task: {
                     get: () => data.task,
-                    writable: false,
                 },
-            });
+            }));
         }
 
         /**
@@ -172,9 +191,12 @@
             * @instance
             * @async
             * @throws {module:API.cvat.exception.ServerError}
+            * @throws {module:API.cvat.exception.PluginError}
         */
         async save() {
-
+            const result = await PluginRegistry
+                .apiWrapper.call(this, Job.prototype.save);
+            return result;
         }
     }
 

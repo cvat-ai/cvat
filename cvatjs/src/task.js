@@ -3,8 +3,16 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* global
+    require:false
+*/
+
 
 (() => {
+    const PluginRegistry = require('./plugins');
+
+    let initialized = false;
+
     /**
         * Class representing a task
         * @memberof module:API.cvat.classes
@@ -23,37 +31,59 @@
             * <br> <li style="margin-left: 10px;"> overlap
         */
         constructor(initialData) {
-            this.annotations = Object.freeze({
-                upload: window.cvat.Task.annotations.upload.bind(this),
-                save: window.cvat.Task.annotations.save.bind(this),
-                clear: window.cvat.Task.annotations.clear.bind(this),
-                dump: window.cvat.Task.annotations.dump.bind(this),
-                statistics: window.cvat.Task.annotations.statistics.bind(this),
-                put: window.cvat.Task.annotations.put.bind(this),
-                get: window.cvat.Task.annotations.get.bind(this),
-                search: window.cvat.Task.annotations.search.bind(this),
-                select: window.cvat.Task.annotations.select.bind(this),
-            });
+            if (!initialized) {
+                Object.defineProperties(Task.prototype, Object.freeze({
+                    annotations: {
+                        value: Object.freeze({
+                            upload: window.cvat.Task.annotations.upload.bind(this),
+                            save: window.cvat.Task.annotations.save.bind(this),
+                            clear: window.cvat.Task.annotations.clear.bind(this),
+                            dump: window.cvat.Task.annotations.dump.bind(this),
+                            statistics: window.cvat.Task.annotations.statistics.bind(this),
+                            put: window.cvat.Task.annotations.put.bind(this),
+                            get: window.cvat.Task.annotations.get.bind(this),
+                            search: window.cvat.Task.annotations.search.bind(this),
+                            select: window.cvat.Task.annotations.select.bind(this),
+                        }),
+                        writable: false,
+                    },
 
-            this.frames = Object.freeze({
-                get: window.cvat.Task.frames.get.bind(this),
-            });
+                    frames: {
+                        value: Object.freeze({
+                            get: window.cvat.Task.frames.get.bind(this),
+                        }),
+                        writable: false,
+                    },
 
-            this.logs = Object.freeze({
-                put: window.cvat.Task.logs.put.bind(this),
-                save: window.cvat.Task.logs.save.bind(this),
-            });
+                    logs: {
+                        value: Object.freeze({
+                            put: window.cvat.Task.logs.put.bind(this),
+                            save: window.cvat.Task.logs.save.bind(this),
+                        }),
+                        writable: false,
+                    },
 
-            this.actions = Object.freeze({
-                undo: window.cvat.Task.actions.undo.bind(this),
-                redo: window.cvat.Task.actions.redo.bind(this),
-                clear: window.cvat.Task.actions.clear.bind(this),
-            });
+                    actions: {
+                        value: Object.freeze({
+                            undo: window.cvat.Task.actions.undo.bind(this),
+                            redo: window.cvat.Task.actions.redo.bind(this),
+                            clear: window.cvat.Task.actions.clear.bind(this),
+                        }),
+                        writable: false,
+                    },
 
-            this.events = Object.freeze({
-                subscribe: window.cvat.Task.events.subscribe.bind(this),
-                unsubscribe: window.cvat.Task.events.unsubscribe.bind(this),
-            });
+                    events: {
+                        value: Object.freeze({
+                            subscribe: window.cvat.Task.events.subscribe.bind(this),
+                            unsubscribe: window.cvat.Task.events.unsubscribe.bind(this),
+                        }),
+                        writable: false,
+                    },
+                }));
+
+                initialized = true;
+            }
+
 
             const data = {
                 id: undefined,
@@ -112,7 +142,7 @@
                 }
             }
 
-            Object.defineProperties(this, {
+            Object.defineProperties(this, Object.freeze({
                 /**
                     * @name id
                     * @type {integer}
@@ -122,7 +152,6 @@
                 */
                 id: {
                     get: () => data.id,
-                    writable: false,
                 },
                 /**
                     * @name name
@@ -141,7 +170,6 @@
                         }
                         data.name = value;
                     },
-                    writable: false,
                 },
                 /**
                     * @name status
@@ -152,7 +180,6 @@
                 */
                 status: {
                     get: () => data.status,
-                    writable: false,
                 },
                 /**
                     * @name size
@@ -163,7 +190,6 @@
                 */
                 size: {
                     get: () => data.size,
-                    writable: false,
                 },
                 /**
                     * @name mode
@@ -174,7 +200,6 @@
                 */
                 mode: {
                     get: () => data.mode,
-                    writable: false,
                 },
                 /**
                     * Identificator of a user who has created the task
@@ -186,7 +211,6 @@
                 */
                 owner: {
                     get: () => data.owner,
-                    writable: false,
                 },
                 /**
                     * Identificator of a user who is responsible for the task
@@ -206,7 +230,6 @@
                         }
                         data.assignee = assignee;
                     },
-                    writable: false,
                 },
                 /**
                     * @name createdDate
@@ -217,7 +240,6 @@
                 */
                 createdDate: {
                     get: () => data.created_date,
-                    writable: false,
                 },
                 /**
                     * @name updatedDate
@@ -228,7 +250,6 @@
                 */
                 updatedDate: {
                     get: () => data.updated_date,
-                    writable: false,
                 },
                 /**
                     * @name bugTracker
@@ -242,7 +263,6 @@
                     set: () => (tracker) => {
                         data.bug_tracker = tracker;
                     },
-                    writable: false,
                 },
                 /**
                     * @name overlap
@@ -261,7 +281,6 @@
                         }
                         data.overlap = overlap;
                     },
-                    writable: false,
                 },
                 /**
                     * @name segmentSize
@@ -280,7 +299,6 @@
                         }
                         data.segment_size = segment;
                     },
-                    writable: false,
                 },
                 /**
                     * @name zOrder
@@ -332,7 +350,6 @@
                             data.labels = data.labels.concat([...labels]);
                         }
                     },
-                    writable: false,
                 },
                 /**
                     * @name jobs
@@ -343,7 +360,6 @@
                 */
                 jobs: {
                     get: () => [...data.jobs],
-                    writable: false,
                 },
                 /**
                     * List of files from shared resource
@@ -372,7 +388,6 @@
 
                         data.files.server_files = serverFiles;
                     },
-                    writable: false,
                 },
                 /**
                     * List of files from client host
@@ -401,22 +416,41 @@
 
                         data.files.client_files = clientFiles;
                     },
-                    writable: false,
                 },
-            });
+            }));
         }
 
         /**
-            * Method updates data of a created task or creates task from scratch
+            * Method updates data of a created task or creates new task from scratch
             * @method save
+            * @returns {module:API.cvat.classes.Task}
             * @memberof module:API.cvat.classes.Task
             * @readonly
             * @instance
             * @async
             * @throws {module:API.cvat.exception.ServerError}
+            * @throws {module:API.cvat.exception.PluginError}
         */
         async save() {
+            const result = await PluginRegistry
+                .apiWrapper.call(this, Task.prototype.save);
+            return result;
+        }
 
+        /**
+            * Method deletes a task from a server
+            * @method delete
+            * @memberof module:API.cvat.classes.Task
+            * @readonly
+            * @instance
+            * @async
+            * @throws {module:API.cvat.exception.ServerError}
+            * @throws {module:API.cvat.exception.PluginError}
+        */
+        async delete() {
+            const result = await PluginRegistry
+                .apiWrapper.call(this, Task.prototype.delete);
+            return result;
         }
     }
 
