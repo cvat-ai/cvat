@@ -14,9 +14,9 @@
     - [Downloading annotations](#downloading-annotations)
     - [Task synchronization with a repository](#task-synchronization-with-a-repository)
     - [Vocabulary](#vocabulary)
-    - [Workspace — context menu](#workspace--context-menu)
+    - [Workspace — Context menu](#workspace--context-menu)
     - [Settings](#settings)
-    - [Bottom panel](#bottom-panel)
+    - [Bottom Panel](#bottom-panel)
     - [Side panel](#side-panel)
       - [Objects](#objects)
       - [Labels](#labels)
@@ -56,29 +56,26 @@ computer vision tasks developed by our team.
 
     ![](static/documentation/images/image002.jpg)
 
--   If you don't have an account, you have to create it using the link below on the login page.
+-   You can register a user but by default it will not have rights even to view
+    list of tasks. Thus you should create a superuser. The superuser can use
+    [Django administration panel](http://localhost:8080/admin) to assign correct
+    groups to the user. Please use the command below to create an admin account:
+
+    ``docker exec -it cvat bash -ic '/usr/bin/python3 ~/manage.py createsuperuser'``
+
+-   If you want to create a non-admin account, you can do that using the link below
+    on the login page. Don't forget to modify permissions for the new user in the
+    administration panel. There are several groups (aka roles): admin, user,
+    annotator, observer.
 
     ![](static/documentation/images/image003.jpg)
 
-Two options here:
-- You can register a user but by default it will not have rights even to view list of tasks.
-Thus you should create a superuser. The superuser can use
-[Django administration panel](http://localhost:8080/admin) to assign correct groups to the user.
-Please use the command below to create an admin account:
-
-``docker exec -it cvat bash -ic '/usr/bin/python3 ~/manage.py createsuperuser'``
-
-- If you want to create a non-admin account, you can do that using the link below on the login page.
-Don't forget to modify permissions for the new user in the administration panel.
-There are several groups (aka roles): admin, user, annotator, observer.
-
 ### Administration panel
-Type ``/admin`` in URL to go to the [Django administration panel](http://localhost:8080/admin).
-There you can:
-- Create / edit / delete users
-- Control user's permission and access to the tool.
+Go to the [Django administration panel](http://localhost:8080/admin). There you can:
+-   Create / edit / delete users
+-   Control user's permission and access to the tool.
 
-    ![](static/documentation/images/image116.jpg)
+    ![](static/documentation/images/image115.jpg)
 
 ### Creating an annotation task
 
@@ -126,12 +123,12 @@ There you can:
     **Dataset Repository**.  URL link of the repository optionally specifies the path to the repository for storage
     (``default: annotation / <dump_file_name> .zip``).
     The .zip and .xml file extension of annotation are supported.
-    Field format: ``URL [PATH]`` example: ``https://gitlab-icv.inn.intel.com/project/repos.git  [1/2/3/4/annotation.xml]``
+    Field format: ``URL [PATH]`` example: ``https://github.com/project/repos.git  [1/2/3/4/annotation.xml]``
 
     Supported URL formats :
-    - ``https://gitlab-icv.inn.intel.com/project/repos[.git]``
-    - ``gitlab-icv.inn.intel.com/project/repos[.git]``
-    - ``git@gitlab-icv.inn.intel.com:project/repos[.git]``
+    - ``https://github.com/project/repos[.git]``
+    - ``github.com/project/repos[.git]``
+    - ``git@github.com:project/repos[.git]``
 
     The task will be highlighted in red after creation if annotation isn't synchronized with the repository.
 
@@ -160,7 +157,7 @@ There you can:
     If annotations on different segments (on overlapped frames)
     are very different, you will have two shapes for the same object.
     This functionality works only for bounding boxes.
-    Polygons,polylines, points don't support automatic merge on overlapped segments
+    Polygons, polylines, points don't support automatic merge on overlapped segments
     even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
 
     **Segment size**. Use this option to divide a huge dataset into a few smaller segments.
@@ -191,7 +188,7 @@ There you can:
     - ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API.
     Presence depends on how you build CVAT instance
     - ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
-    Presense depends on how you build CVAT instance.
+    Presence depends on how you build CVAT instance.
 
     Item color depends on status of synchronization with the dataset repository:
     ``red`` means annotations are not synchronized with the repository,
@@ -238,7 +235,7 @@ The tool consists of:
 - ``Workspace`` — where images are shown;
 - ``Bottom panel`` (under workspace) — for navigation, filtering annotation and accessing tools' menu;
 - ``Side panel`` — contains two lists: objects (on the frame) and labels (of objects on the frame);
-- ``Bottom side panel`` — contains the main annotation functions (create, merge, group objects). 
+- ``Bottom side panel`` — contains the main annotation functions (create, merge, group objects).
   Here you can choose a type of shape, a label you want to annotate and a mode (annotation or interpolation)
 
 ![](static/documentation/images/image034.jpg)
@@ -334,7 +331,7 @@ Usage examples:
     frame. It is enough to update several key frames and frames between them
     will be interpolated automatically. See an example below:
     -   The car starts moving on frame #630. Let's mark the frame as a key frame.
-    You can press ``K`` for that or push ``star`` button (see the screenshot below)
+        You can press ``K`` for that or push ``star`` button (see the screenshot below)
 
         ![](static/documentation/images/image016.jpg)
 
@@ -503,7 +500,7 @@ object or isn't fully visible on the frame. Use the ``Q`` shortcut to set the
 property quickly.
 - ``Switch Lock`` — block editing the active shape
 - ``Enable Dragging`` — (only for polygons) allows to adjust polygons position
-- ``Split`` — allows to split aninterpolated track into two separate tracks. This function is the opposite
+- ``Split`` — allows to split an interpolated track into two separate tracks. This function is the opposite
 of the merge function.
 
 ![](static/documentation/images/image089.jpg)
@@ -535,15 +532,15 @@ In ``Player Settings`` you can:
 -   Control step of ``C`` and ``V`` shortcuts
 -   Control speed of ``Space``/``Play`` button
 -   Show every image in full or zoomed out like previous
-(it is enabled by default for interpolation mode and disabled for annotation mode)
+    (it is enabled by default for interpolation mode and disabled for annotation mode)
 -   Enable ``Grid`` when you don't need small objects. ``Grid`` can have
-different opacity, color and cells' size — use ``F2`` to configure settings.
+    different opacity, color and cells' size — use ``F2`` to configure settings.
 
     ![](static/documentation/images/image068.jpg)
 
 -   Adjust ``Brightness``/``Contrast``/``Saturation`` of too exposing or too
-dark images using ``F2`` — color settings (changes displaying and not the
-image itself).
+    dark images using ``F2`` — color settings (changes displaying and not the
+    image itself).
 
 Shortcuts:
 -   ``Shift+B``/``Alt+B`` for brightness
@@ -555,7 +552,7 @@ Shortcuts:
 
 ``Other Settings`` contains:
 - ``Show All Interpolation Tracks`` checkbox — shows hidden object on the
-side panel for every interpolated object (turned off by default)
+  side panel for every interpolated object (turned off by default)
 - ``AAM Zoom Margin`` slider — defines margins for shape in attribute annotation mode
 - ``Enable AutoSaving`` checkbox — turned off by default
 - ``AutoSaving Interval (min)`` input box — 15 minutes by default
@@ -604,9 +601,9 @@ Button assignment:
 
 - ``Open Task`` — open task in cvat dashboard
 - ``RunReID Merge`` — The ReID application uses deep learning model to perform
-an automatic bbox merging between neighbor frames. You can use "Merge" and
-"Split" functionality to edit automatically generated annotation.
-[Read more](/cvat/apps/reid)
+  an automatic merging of bounding boxes between neighbor frames. You can use
+  "Merge" and "Split" functionality to edit automatically generated annotation
+  [read more](/cvat/apps/reid).
 - ``Dump Annotation`` — download annotations from the task
 - ``Upload Annotation`` — uploading annotations to the task
 - ``Remove Annotation`` — remove annotations from current task
@@ -614,7 +611,8 @@ an automatic bbox merging between neighbor frames. You can use "Merge" and
 - ``Fullscreen Player`` — fullscreen player mode
 - ``Switch AAM`` — switch to attribute annotation mode
 - ``Help`` — open the shortkeys
-- ``Save Work`` — save annotations for the current job. The button has an indication of the saving process
+- ``Save Work`` — save annotations for the current job. The button has an
+  indication of the saving process
 
 It also shows statistics about the current task, for example:
 - task name
@@ -658,7 +656,7 @@ Change opacity of every bounding box in the annotation.
 
 ![](static/documentation/images/image086.jpg)
 
-Opacity can be chaged from 0% to 100% and by random colors or white. If any
+Opacity can be changed from 0% to 100% and by random colors or white. If any
 white option is chosen, ``Color By`` scheme won't work.
 
 **Selected Fill Opacity** slider
@@ -686,7 +684,7 @@ Change the color scheme of annotation:
 
     ![](static/documentation/images/image094.jpg)
 
--   ``Label`` — every label (e.g. vehicle, pedestrian, roadmark) has its own random color
+-   ``Label`` — every label (e.g. vehicle, pedestrian, road marks) has its own random color
 
     ![](static/documentation/images/image093.jpg)
 
@@ -1018,11 +1016,11 @@ be combined by ``or``, ``and``, ``|`` operators. Operators ``or``, ``and`` can
 be applied inside square brackets. ``|`` operator (union) can be applied
 outside of square brackets.
 
-| Example                                                                       | Description                                      |
-| --------------------------------------------------------                      |-------------                                     |
-| ``person[attr/age>="25" and attr/age<="35"]``                                 | people with age between 25 and 35.               |
-| ``face[attr/glass="sunglass" or attr/glass="no"]``                            | faces with sunglasses or without glasses at all. |
-| ``person[attr/race="asian"]|car[attr/model="bmw" or attr/model="mazda"]``     | asian persons or bmw or mazda cars.              |
+| Example                                                                          | Description                                      |
+| --------------------------------------------------------                         |-------------                                     |
+| ``person[attr/age>="25" and attr/age<="35"]``                                    | people with age between 25 and 35.               |
+| ``face[attr/glass="sunglass" or attr/glass="no"]``                               | faces with sunglasses or without glasses at all. |
+| ``person[attr/race="asian"]`` \| ``car[attr/model="bmw" or attr/model="mazda"]`` | asian persons or bmw or mazda cars.              |
 
 ## Analytics
 
