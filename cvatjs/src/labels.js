@@ -50,9 +50,6 @@
                 );
             }
 
-            data.default_value = data.default_value.toString();
-            data.values = data.values.map(el => el.toString());
-
             Object.defineProperties(this, {
                 /**
                     * @name id
@@ -66,7 +63,7 @@
                 },
                 /**
                     * @name defaultValue
-                    * @type {string}
+                    * @type {(string|integer|boolean)}
                     * @memberof module:API.cvat.classes.Attribute
                     * @readonly
                     * @instance
@@ -106,7 +103,7 @@
                 },
                 /**
                     * @name values
-                    * @type {string[]}
+                    * @type {(string[]|integer[]|boolean[])}
                     * @memberof module:API.cvat.classes.Attribute
                     * @readonly
                     * @instance

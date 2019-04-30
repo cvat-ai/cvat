@@ -23,6 +23,7 @@
         ShareFileType,
         TaskStatus,
         TaskMode,
+        AttributeType,
     } = require('./enums');
 
     const {
@@ -445,7 +446,7 @@
                 * @property {string} proxy Axios proxy settings.
                 * For more details please read <a href="https://github.com/axios/axios"> here </a>
                 * @memberof module:API.cvat.config
-                * @property {number} preloadFrames the number of subsequent frames which are
+                * @property {integer} preloadFrames the number of subsequent frames which are
                 * loaded in background
                 * @memberof module:API.cvat.config
             */
@@ -492,9 +493,9 @@
                 * @enum {string}
                 * @name TaskStatus
                 * @memberof module:API.cvat.enums
-                * @property {string} ANNOTATION - task is being annotated
-                * @property {string} VALIDATION - task is being validated
-                * @property {string} COMPLETED - task has been done
+                * @property {string} annotation - task is being annotated
+                * @property {string} validation - task is being validated
+                * @property {string} completed - task has been done
                 * @readonly
             */
             TaskStatus,
@@ -503,11 +504,24 @@
                 * @enum {string}
                 * @name TaskMode
                 * @memberof module:API.cvat.enums
-                * @property {string} ANNOTATION - images annotation task
-                * @property {string} INTERPOLATION - video annotation task
+                * @property {string} annotation - images annotation task
+                * @property {string} interpolation - video annotation task
                 * @readonly
             */
             TaskMode,
+            /**
+                * Enum for type of server files
+                * @enum {string}
+                * @name AttributeType
+                * @memberof module:API.cvat.enums
+                * @property {string} checkbox
+                * @property {string} select
+                * @property {string} radio
+                * @property {string} number
+                * @property {string} text
+                * @readonly
+            */
+            AttributeType,
         },
         /**
             * Namespace is used for access to exceptions
