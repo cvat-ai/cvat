@@ -122,6 +122,7 @@
                 */
                 id: {
                     get: () => data.id,
+                    writable: false,
                 },
                 /**
                     * @name name
@@ -140,6 +141,7 @@
                         }
                         data.name = value;
                     },
+                    writable: false,
                 },
                 /**
                     * @name status
@@ -150,6 +152,7 @@
                 */
                 status: {
                     get: () => data.status,
+                    writable: false,
                 },
                 /**
                     * @name size
@@ -160,6 +163,7 @@
                 */
                 size: {
                     get: () => data.size,
+                    writable: false,
                 },
                 /**
                     * @name mode
@@ -170,6 +174,7 @@
                 */
                 mode: {
                     get: () => data.mode,
+                    writable: false,
                 },
                 /**
                     * Identificator of a user who has created the task
@@ -181,6 +186,7 @@
                 */
                 owner: {
                     get: () => data.owner,
+                    writable: false,
                 },
                 /**
                     * Identificator of a user who is responsible for the task
@@ -200,6 +206,7 @@
                         }
                         data.assignee = assignee;
                     },
+                    writable: false,
                 },
                 /**
                     * @name createdDate
@@ -210,6 +217,7 @@
                 */
                 createdDate: {
                     get: () => data.created_date,
+                    writable: false,
                 },
                 /**
                     * @name updatedDate
@@ -220,6 +228,7 @@
                 */
                 updatedDate: {
                     get: () => data.updated_date,
+                    writable: false,
                 },
                 /**
                     * @name bugTracker
@@ -233,6 +242,7 @@
                     set: () => (tracker) => {
                         data.bug_tracker = tracker;
                     },
+                    writable: false,
                 },
                 /**
                     * @name overlap
@@ -251,6 +261,7 @@
                         }
                         data.overlap = overlap;
                     },
+                    writable: false,
                 },
                 /**
                     * @name segmentSize
@@ -269,6 +280,7 @@
                         }
                         data.segment_size = segment;
                     },
+                    writable: false,
                 },
                 /**
                     * @name zOrder
@@ -287,6 +299,7 @@
                         }
                         data.z_order = zOrder;
                     },
+                    v
                 },
                 /**
                     * After task has been created value can be appended only.
@@ -320,6 +333,7 @@
                             data.labels = data.labels.concat([...labels]);
                         }
                     },
+                    writable: false,
                 },
                 /**
                     * @name jobs
@@ -330,6 +344,7 @@
                 */
                 jobs: {
                     get: () => [...data.jobs],
+                    writable: false,
                 },
                 /**
                     * List of files from shared resource
@@ -358,6 +373,7 @@
 
                         data.files.server_files = serverFiles;
                     },
+                    writable: false,
                 },
                 /**
                     * List of files from client host
@@ -386,6 +402,7 @@
 
                         data.files.client_files = clientFiles;
                     },
+                    writable: false,
                 },
                 /**
                     * Method updates data of a created task or creates task from scratch
@@ -394,8 +411,11 @@
                     * @readonly
                     * @instance
                 */
-                save() {
+                save: {
+                    value: async () => {
 
+                    },
+                    writable: false,
                 },
             });
         }

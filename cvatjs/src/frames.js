@@ -3,11 +3,12 @@
 * SPDX-License-Identifier: MIT
 */
 
-/* global
-    global:false
-*/
-
 (() => {
+    /**
+        * Exceptions are referred with arguments data
+        * @memberof module:API.cvat.exceptions
+        * @extends module:API.cvat.exceptions.Exception
+    */
     class FrameData {
         constructor(tid, number) {
             Object.defineProperties(this, {

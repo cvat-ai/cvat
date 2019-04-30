@@ -77,6 +77,7 @@
                 */
                 id: {
                     get: () => data.id,
+                    writable: false,
                 },
                 /**
                     * Identifier of a user who is responsible for the job
@@ -96,6 +97,7 @@
                         }
                         data.assignee = assignee;
                     },
+                    writable: false,
                 },
                 /**
                     * @name status
@@ -124,6 +126,7 @@
 
                         data.status = status;
                     },
+                    writable: false,
                 },
                 /**
                     * @name startFrame
@@ -134,6 +137,7 @@
                 */
                 startFrame: {
                     get: () => data.start_frame,
+                    writable: false,
                 },
                 /**
                     * @name stopFrame
@@ -144,6 +148,7 @@
                 */
                 stopFrame: {
                     get: () => data.stop_frame,
+                    writable: false,
                 },
                 /**
                     * @name task
@@ -154,6 +159,7 @@
                 */
                 task: {
                     get: () => data.task,
+                    writable: false,
                 },
                 /**
                     * Method updates job data like status or assignee
@@ -162,8 +168,11 @@
                     * @readonly
                     * @instance
                 */
-                save() {
+                save: {
+                    value: async () => {
 
+                    },
+                    writable: false,
                 },
             });
         }

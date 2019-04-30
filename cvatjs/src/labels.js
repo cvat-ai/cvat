@@ -60,6 +60,7 @@
                 */
                 id: {
                     get: () => data.id,
+                    writable: false,
                 },
                 /**
                     * @name defaultValue
@@ -70,6 +71,7 @@
                 */
                 defaultValue: {
                     get: () => data.default_value,
+                    writable: false,
                 },
                 /**
                     * @name inputType
@@ -80,6 +82,7 @@
                 */
                 inputType: {
                     get: () => data.input_type,
+                    writable: false,
                 },
                 /**
                     * @name mutable
@@ -90,6 +93,7 @@
                 */
                 mutable: {
                     get: () => data.mutable,
+                    writable: false,
                 },
                 /**
                     * @name name
@@ -100,6 +104,7 @@
                 */
                 name: {
                     get: () => data.name,
+                    writable: false,
                 },
                 /**
                     * @name values
@@ -110,6 +115,7 @@
                 */
                 values: {
                     get: () => [...data.values],
+                    writable: false,
                 },
             });
         }

@@ -50,6 +50,7 @@
                         * @instance
                     */
                     get: () => system,
+                    writable: false,
                 },
                 client: {
                     /**
@@ -60,6 +61,7 @@
                         * @instance
                     */
                     get: () => client,
+                    writable: false,
                 },
                 time: {
                     /**
@@ -70,6 +72,7 @@
                         * @instance
                     */
                     get: () => time,
+                    writable: false,
                 },
                 jobID: {
                     /**
@@ -80,6 +83,7 @@
                         * @instance
                     */
                     get: () => jobID,
+                    writable: false,
                 },
                 taskID: {
                     /**
@@ -90,6 +94,7 @@
                         * @instance
                     */
                     get: () => taskID,
+                    writable: false,
                 },
                 projID: {
                     /**
@@ -100,6 +105,7 @@
                         * @instance
                     */
                     get: () => projID,
+                    writable: false,
                 },
                 clientID: {
                     /**
@@ -110,6 +116,7 @@
                         * @instance
                     */
                     get: () => clientID,
+                    writable: false,
                 },
                 filename: {
                     /**
@@ -120,6 +127,7 @@
                         * @instance
                     */
                     get: () => filename,
+                    writable: false,
                 },
                 line: {
                     /**
@@ -130,6 +138,7 @@
                         * @instance
                     */
                     get: () => line,
+                    writable: false,
                 },
                 column: {
                     /**
@@ -140,39 +149,42 @@
                         * @instance
                     */
                     get: () => column,
+                    writable: false,
+                },
+                /**
+                    * Save an exception on a server
+                    * @name save
+                    * @method
+                    * @memberof Exception
+                    * @instance
+                */
+                save: {
+                    value: async () => {
+                        const exceptionObject = {
+                            system: this.system,
+                            client: this.client,
+                            time: this.time,
+                            job_id: this.jobID,
+                            task_id: this.taskID,
+                            proj_id: this.projID,
+                            client_id: this.clientID,
+                            message: this.message,
+                            filename: this.filename,
+                            line: this.line,
+                            column: this.column,
+                            stack: this.stack,
+                        };
+
+                        try {
+                            const serverProxy = require('./server-proxy');
+                            await serverProxy.server.exception(exceptionObject);
+                        } catch (exception) {
+                            // add event
+                        }
+                    },
+                    writable: false,
                 },
             });
-        }
-
-        /**
-            * Save an exception on a server
-            * @name save
-            * @method
-            * @memberof Exception
-            * @instance
-        */
-        async save() {
-            const exceptionObject = {
-                system: this.system,
-                client: this.client,
-                time: this.time,
-                job_id: this.jobID,
-                task_id: this.taskID,
-                proj_id: this.projID,
-                client_id: this.clientID,
-                message: this.message,
-                filename: this.filename,
-                line: this.line,
-                column: this.column,
-                stack: this.stack,
-            };
-
-            try {
-                const serverProxy = require('./server-proxy');
-                await serverProxy.server.exception(exceptionObject);
-            } catch (exception) {
-                // add event
-            }
         }
     }
 
@@ -240,6 +252,7 @@
                     * @instance
                 */
                 get: () => code,
+                writable: false,
             });
         }
     }
