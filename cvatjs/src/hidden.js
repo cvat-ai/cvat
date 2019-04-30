@@ -3,6 +3,7 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* Some shared cvat.js data which aren't intended for a user */
 (() => {
     const hidden = {
         clientID: +Date.now().toString().substr(-6),

@@ -446,7 +446,11 @@
                 * @property {string} proxy Axios proxy settings.
                 * For more details please read <a href="https://github.com/axios/axios"> here </a>
                 * @memberof module:API.cvat.config
+                * @property {number} preloadFrames the number of subsequent frames which are
+                * loaded in background
+                * @memberof module:API.cvat.config
             */
+            preloadFrames: 300,
             backendAPI: 'http://localhost:7000/api/v1',
             proxy: false,
         },

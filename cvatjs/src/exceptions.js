@@ -226,7 +226,7 @@
     class ServerError extends Exception {
         /**
             * @param {string} message - Exception message
-            * @param {string|integer} code - Response code
+            * @param {(string|integer)} code - Response code
         */
         constructor(message, code) {
             super(message);
@@ -234,7 +234,7 @@
             Object.defineProperty(this, 'code', {
                 /**
                     * @name code
-                    * @type {string|integer}
+                    * @type {(string|integer)}
                     * @memberof module:API.cvat.exceptions.ServerError
                     * @readonly
                     * @instance

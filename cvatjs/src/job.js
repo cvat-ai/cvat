@@ -10,7 +10,7 @@
 
 (() => {
     /**
-        * Class representing a job
+        * Class representing a job.
         * You should not create instances of this class manually
         * @memberof module:API.cvat.classes
     */
