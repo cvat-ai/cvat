@@ -7,16 +7,16 @@
     - [Search](#search)
   - [Interface of the annotation tool](#interface-of-the-annotation-tool)
     - [Basic navigation](#basic-navigation)
-    - [Types of Shapes (basics)](#types-of-shapes-basics)
+    - [Types of shapes (basics)](#types-of-shapes-basics)
     - [Annotation mode (basics)](#annotation-mode-basics)
     - [Interpolation mode (basics)](#interpolation-mode-basics)
     - [Attribute annotation mode (basics)](#attribute-annotation-mode-basics)
     - [Downloading annotations](#downloading-annotations)
     - [Task synchronization with a repository](#task-synchronization-with-a-repository)
     - [Vocabulary](#vocabulary)
-    - [Workspace — Context menu](#workspace--context-menu)
+    - [Workspace — context menu](#workspace--context-menu)
     - [Settings](#settings)
-    - [Bottom Panel](#bottom-panel)
+    - [Bottom panel](#bottom-panel)
     - [Side panel](#side-panel)
       - [Objects](#objects)
       - [Labels](#labels)
@@ -38,10 +38,10 @@
 # User's guide
 
 Computer Vision Annotation Tool (CVAT) is a web-based tool which helps to
-annotate video and images for Computer Vision algorithms. It was inspired
+annotate videos and images for Computer Vision algorithms. It was inspired
 by [Vatic](http://carlvondrick.com/vatic/) free, online, interactive video
 annotation tool. CVAT has many powerful features: _interpolation of bounding
-boxes between key frames, automatic annotation using TensorFlow OD API,
+boxes between key frames, automatic annotation using deep learning models,
 shortcuts for most of critical actions, dashboard with a list of annotation
 tasks, LDAP and basic authorization, etc..._ It was created for and used by
 a professional data annotation team. UX and UI were optimized especially for
@@ -73,7 +73,8 @@ There you can:
     ![](static/documentation/images/image004.jpg)
 
 1.  Specify mandatory parameters of the task.
-    You have to fill in ``Name``, ``Labels`` and press ``Select Files`` at least.
+    You have to fill in ``Name``, ``Labels`` and press the ``Select Files`` button.
+    After that you have to choose data you want to annotate.
 
     ![](static/documentation/images/image005.jpg)
 
@@ -131,7 +132,7 @@ There you can:
     The option makes tracks continuous from one segment into another.
     Use it for interpolation mode. There are several options for using the parameter:
     - For an interpolation task (video sequence).
-    If you annotate a bounding box on two adjusted segments they will be merged into one bounding box.
+    If you annotate a bounding box on two adjacent segments they will be merged into one bounding box.
     If overlap equals to zero or annotation is poor on adjacent segments inside a dumped annotation file,
     you will have several tracks, one for each segment, which corresponds to the object.
     - For an annotation task (independent images).
@@ -143,9 +144,9 @@ There you can:
     You annotate the same object on second segment, and if you do it right, you
     will have one track inside the annotations.
     If annotations on different segments (on overlapped frames)
-    are very different or overlap is zero, you will have two tracks for the same object.
-    This functionality works only for bounding boxes.
-    Polygon, polyline, points don't support automatic merge on overlapped segments
+    are very different, you will have two shapes for the same object.
+    This functionality works only for bounding boxes and polygons
+    Polyline, points don't support automatic merge on overlapped segments
     even the overlap parameter isn't zero and match between corresponding shapes on adjacent segments is perfect.
 
     **Segment size**. Use this option to divide a huge dataset into a few smaller segments.
@@ -192,7 +193,7 @@ There you can:
 
 ### Model manager
 
-The application will be enabled automatically if [OpenVINO™ component](/components/openvino) is installed.
+The application will be enabled automatically if [OpenVINO™ component](/cvat/components/openvino) is installed.
 It allows to use custom models for auto annotation. Only models in OpenVINO™ toolkit format are supported.
 If you would like to annotate a task with a custom model,
 please convert it to the intermediate representation (IR) format via the model optimizer tool.
@@ -203,14 +204,16 @@ You can "register" a model and "use" it after that to pre annotate your tasks.
 
 The model manager allows you to manage your deep learning (DL) models uploaded for auto annotation.
 Using the functionality you can upload, update or delete a specific DL model.
-Use "Auto annotation" button to pre annotate a task using one of your DL models. [Read more](/apps/auto_annotation)
+Use "Auto annotation" button to pre annotate a task using one of your DL models. [Read more](/cvat/apps/auto_annotation)
 
 ![](static/documentation/images/image104.jpg)
 
 ### Search
 
 There are several options how to use the search.
-It may be task's name or id, owner's name, task's status, assignee's name and so on. The search is case insensitive.
+It may be task's name, mode (annotation or interpolation), owner (username), assigneee (username),
+status (annotation, validation, completed), id.
+The search is case insensitive.
 
 ![](static/documentation/images/image100.jpg)
 
@@ -220,7 +223,8 @@ The tool consists of:
 - ``Workspace`` — where images are shown;
 - ``Bottom panel`` (under workspace) — for navigation, filtering annotation and accessing tools' menu;
 - ``Side panel`` — contains two lists: objects (on the frame) and labels (of objects on the frame);
-- ``Bottom side panel`` — is a type of/creating/merging/grouping annotation;
+- ``Bottom side panel`` — contains the main annotation functions (create, merge, group objects). 
+  Here you can choose a type of shape, a label you want to annotate and a mode (annotation or interpolation)
 
 ![](static/documentation/images/image034.jpg)
 
@@ -238,7 +242,7 @@ There is also:
 
     ![](static/documentation/images/image008.jpg)
 
-1.  An image can be zoom in/out using mouse's wheel. The image will be zoomed relatively your current cursor position.
+1.  An image can be scaled in/out using mouse's wheel. The image will be zoomed relatively your current cursor position.
     Thus, if you point on an object, it will be under your mouse during zooming process.
 
 1.  An image can be moved/shifted by holding left mouse button inside some area without annotated objects.
@@ -271,7 +275,7 @@ Usage examples:
 
 1.  Create a new annotation:
 
-    -   Choose right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
+    -   Choose a right ``Shape`` (box etc.) and ``Label`` (was specified by you while creating the task) beforehand:
 
         ![](static/documentation/images/image080.jpg) ![](static/documentation/images/image083.jpg)
 
@@ -281,7 +285,7 @@ Usage examples:
         ![](static/documentation/images/image011.jpg)
 
     -   It is possible to adjust boundaries and location of the bounding box using mouse.
-        Boxes' size is shown in the top right corner , you can check it clicking on one of the boxes' points.
+        Boxe's size is shown in the top right corner , you can check it clicking on the one point of box.
         You can also undo your actions using ``Ctrl+Z`` and redo them with ``Shift+Ctrl+Z`` or ``Ctrl+Y``.
 
 1.  In the list of objects you can see the labeled car.
@@ -394,14 +398,14 @@ Usage examples:
 
 1.  The annotation will be written into **.xml** file. To find the annotation
     file, you should go to the directory where your browser saves downloaded
-    files by default. For more information visit [xml format page](/xml_format.html).
+    files by default. For more information visit [xml format page](/cvat/apps/documentation/xml_format.md).
 
     ![](static/documentation/images/image029.jpg)
 
 ### Task synchronization with a repository
 
 1.  At the end of the annotation process, a task is synchronized clicking
-    the `` Git Repository Sync`` on the main page. Notice: this the feature
+    the `` Git Repository Sync`` on the main page. Notice: this feature
     works only if a git repository was specified when the task was created.
 
     ![](static/documentation/images/image106.jpg)
@@ -574,7 +578,7 @@ Go to specified frame. Press ``~`` to highlight element.
 ---
 **Open Menu** button
 
-It is the main menu for the annotation tool. It can be used to download, upload and remove annotation.
+It is the main menu of the annotation tool. It can be used to download, upload and remove annotation.
 
 ![](static/documentation/images/image051.jpg)
 
@@ -655,7 +659,7 @@ Change bounding box border from white/colored to black.
 
 **Color By** options
 
-Change color scheme of annotation:
+Change the color scheme of annotation:
 -   ``Instance`` — every bounding box has random color
 
     ![](static/documentation/images/image095.jpg)
@@ -683,7 +687,7 @@ frame. The following figure is an example of how a list might look like:
 | ![](static/documentation/images/image044.jpg) | ![](static/documentation/images/image045.jpg) |
 
 #### Labels
-You can also see all the labels that were used on this frame and highlight them clicking on a label you need
+You can also see all labels that were used on this frame and highlight them clicking on a label you need
 
 ![](static/documentation/images/image062.jpg)
 
@@ -743,7 +747,7 @@ To change a type of a highlighted shape using keyboard, you need to press ``Shif
 polygons/polylines/points, but you can propagate them using ``Ctrl+B`` or
 merge into a track
 - ``Shape Type`` — (e.g. box, polygon, polyline, points)
-- ``Poly Shape Size`` — (optional) hard number of dots for creating polygon/polyline shapes
+- ``Poly Shape Size`` — (optional) hard number of dots for creating polygon, polyline and points shapes
 
 ![](static/documentation/images/image082.jpg)
 
@@ -760,7 +764,7 @@ This is how it looks like.
 
 Basic operations in the mode were described above.
 
-**occluded** attribute is used if an object is occluded by another object or
+**Occluded** attribute is used if an object is occluded by another object or
 isn't fully visible on the frame. Use ``Q`` shortcut to set the property
 quickly.
 
@@ -853,7 +857,7 @@ Below you can see results with opacity and black stroke:
 ![](static/documentation/images/image064.jpg)
 
 Also, if you need to annotate small objects, increase ``Image Quality`` to
-``95`` in ``Create task`` dialog for annotators' convenience.
+``95`` in ``Create task`` dialog for annotator's convenience.
 
 ## Annotation with polylines
 
@@ -880,7 +884,7 @@ automatically. You can adjust the polyline after it has been drawn.
 
 ## Annotation with points
 
-It is used for face landmarks' annotation etc.
+It is used for face landmarks annotation etc.
 
 Before starting, you have to be sure that ``Points`` is selected.
 
@@ -969,8 +973,8 @@ in case of huge number of objects and static/documentation/images/frames.
 - ``interpolation``
 - ``lock`` accepts ``true`` and ``false`` values. It can be used to hide all locked objects.
 - ``occluded`` accepts ``true`` and ``false`` values. It can be used to hide all occluded objects.
-- ``attr`` is a prefix to access attributes of an object. For example, it is
-- possible to access _race_ attribute. For the purpose you should specify
+- ``attr`` is a prefix to access attributes of an object. For example, it is possible to
+access _race_ attribute. For the purpose you should specify
 - ``attr/race``. To access all attributes, it is necessary to write ``attr/*``.
 
 ``operator`` can be ``=`` (equal), ``!=`` (not equal), ``<`` (less), ``>``
