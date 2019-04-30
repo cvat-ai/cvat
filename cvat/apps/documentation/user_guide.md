@@ -60,11 +60,25 @@ computer vision tasks developed by our team.
 
     ![](static/documentation/images/image003.jpg)
 
+Two options here:
+-   You can register a user but by default it will not have rights even to view list of tasks.
+Thus you should create a superuser. The superuser can use
+[Django administration panel](http://localhost:8080/admin) to assign correct groups to the user.
+Please use the command below to create an admin account:
+
+``docker exec -it cvat bash -ic '/usr/bin/python3 ~/manage.py createsuperuser'``
+
+-   If you want to create a non-admin account, you can do that using the link below on the login page.
+Don't forget to modify permissions for the new user in the administration panel.
+There are several groups (aka roles): admin, user, annotator, observer.
+
 ### Administration panel
-Type ``/admin`` in URL to go to the administration panel.
+Type ``/admin`` in URL to go to the [Django administration panel](http://localhost:8080/admin).
 There you can:
 - Create / edit / delete users
 - Control user's permission and access to the tool.
+
+    ![](static/documentation/images/image115.jpg)
 
 ### Creating an annotation task
 
@@ -370,7 +384,7 @@ Usage examples:
 
 -   In this mode you can edit attributes with fast navigation between
     objects and frames using keyboard. Press ``Shift+Enter`` shortcut
-    to enter the AAMode. After that, you can change attributes using a keyboard.
+    to enter the mode. After that, you can change attributes using a keyboard.
 
     ![](static/documentation/images/image023.jpg)
 
@@ -535,7 +549,7 @@ Shortcuts:
 -   ``Shift+B``/``Alt+B`` for brightness
 -   ``Shift+C``/``Alt+C`` for contrast
 -   ``Shift+S``/``Alt+S`` for saturation
--   ``F2`` —> ``Reset Color Settings`` for default values
+-   ``F2`` —> ``Reset Color Settings`` to default values
 
     ![](static/documentation/images/image069.jpg)
 
@@ -575,7 +589,7 @@ Play the sequence of frames or the set of images. Shortcut: ``Space`` (change at
 ![](static/documentation/images/image041.jpg)
 
 ---
-Go to specified frame. Press ``~`` to focus on the element element.
+Go to specified frame. Press ``~`` to focus on the element.
 
 ![](static/documentation/images/image060.jpg)
 
@@ -604,7 +618,7 @@ an automatic bbox merging between neighbor frames. You can use "Merge" and
 
 It also shows statistics about the current task, for example:
 - task name
-- type of performance on the task: ``annotation``, ``validation`` or ``completed task``
+- status of the task: ``annotation``, ``validation`` or ``completed task``
 - technical information about task
 - number of created bounding boxes, sorted by labels (e.g. vehicle, person) and
 type of annotation (polygons, boxes, etc.)
@@ -715,20 +729,20 @@ A shape can be **Occluded**. Shortcut: ``Q``. Such shapes have dashed boundaries
 ![](static/documentation/images/image049.jpg)
 
 ---
-You can copy and paste this object in a particular frame. The keyboard
+You can copy and paste an object in a particular frame. The keyboard
 shortcuts ``Ctrl + C`` / ``Ctrl + V`` work when you hover over an object
 
 ![](static/documentation/images/image052.jpg)
 
 ---
-You can distribute this object in the following X frames. The keyboard
+You can propagate this object in the following X frames. The keyboard
 shortcut ``Ctrl + B`` works when you hover the mouse over an object. You can
 change the number of propagating frames in the bottom panel.
 
 ![](static/documentation/images/image053.jpg)
 
 ---
-You can change the way this objects' annotation is displayed on this frame.
+You can change the way an object is displayed on a frame.
 It could be hide, shows only box, shows box and title. ``H`` is for this
 object, ``T+H`` for all objects on this frame.
 
@@ -744,8 +758,8 @@ To change a type of a highlighted shape using keyboard, you need to press ``Shif
 ### Bottom side panel
 
 - ``Create Shape`` (``N``) — start/stop drawing new shape mode
-- ``Merge Shapes`` (``M``) — start/stop merging boxes mode
-- ``Group Shapes`` (``G``) — start/stop grouping boxes mode
+- ``Merge Shapes`` (``M``) — start/stop merging shapes mode
+- ``Group Shapes`` (``G``) — start/stop grouping shapes mode
 - ``Label Type`` — (e.g. face, person, vehicle)
 - ``Working Mode`` — Annotation or Interpolation modes. You can't interpolate
 polygons/polylines/points, but you can propagate them using ``Ctrl+B`` or
@@ -815,7 +829,7 @@ To navigate between objects (pedestrians in the case), use the following shortcu
 - ``Tab`` — go to the next object
 - ``Shift+Tab`` — go to the previous object.
 
-By default, objects in the mode are zoomed in to full screen. Check
+By default, objects in the mode are zoomed. Check
 ``Open Menu`` —> ``Settings`` —> ``AAM Zoom Margin`` for adjust that.
 
 ## Annotation with polygons
@@ -972,9 +986,7 @@ In the trivial case, the correct filter must match the template: ``label[prop op
 
 - ``id`` — identifier of an object. It helps to find a specific object easily
 in case of huge number of objects and static/documentation/images/frames.
-- ``type`` — an annotation type. Possible values:
-- ``annotation``
-- ``interpolation``
+- ``type`` — an annotation type. Possible values: ``annotation``, ``interpolation``
 - ``lock`` accepts ``true`` and ``false`` values. It can be used to hide all locked objects.
 - ``occluded`` accepts ``true`` and ``false`` values. It can be used to hide all occluded objects.
 - ``attr`` is a prefix to access attributes of an object. For example, it is possible to
@@ -992,7 +1004,7 @@ access _race_ attribute. For the purpose you should specify
 | -------------------------------|-------------                                                  |
 | ``face``                       | all faces                                                     |
 | ``*[id=4]``                    | object with id #4                                             |
-| ``*[type="annotation"]``       | _annotation_ objects only                                     |
+| ``*[type="annotation"]``       | annotated objects only                                        |
 | ``car[occluded="true"]``       | cars with _occluded_ property                                 |
 | ``*[lock!="true"]``            | all unlocked objects                                          |
 | ``car[attr/parked="true"]``    | parked cars                                                   |
@@ -1010,7 +1022,7 @@ outside of square brackets.
 | --------------------------------------------------------                      |-------------                                     |
 | ``person[attr/age>="25" and attr/age<="35"]``                                 | people with age between 25 and 35.               |
 | ``face[attr/glass="sunglass" or attr/glass="no"]``                            | faces with sunglasses or without glasses at all. |
-| ```person[attr/race="asian"] | car[attr/model="bmw" or attr/model="mazda"]``` | asian persons or bmw or mazda cars.              |
+| ``person[attr/race="asian"] | car[attr/model="bmw" or attr/model="mazda"]``   | asian persons or bmw or mazda cars.              |
 
 ## Analytics
 
