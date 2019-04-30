@@ -78,7 +78,7 @@ There you can:
 - Create / edit / delete users
 - Control user's permission and access to the tool.
 
-![](static/documentation/images/image115.jpg)
+    ![](static/documentation/images/image116.jpg)
 
 ### Creating an annotation task
 
