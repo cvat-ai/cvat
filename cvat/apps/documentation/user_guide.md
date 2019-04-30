@@ -193,7 +193,7 @@ There you can:
 
 ### Model manager
 
-The application will be enabled automatically if [OpenVINO™ component](/cvat/components/openvino) is installed.
+The application will be enabled automatically if [OpenVINO™ component](/cvat/components/openvino/README.md) is installed.
 It allows to use custom models for auto annotation. Only models in OpenVINO™ toolkit format are supported.
 If you would like to annotate a task with a custom model,
 please convert it to the intermediate representation (IR) format via the model optimizer tool.
