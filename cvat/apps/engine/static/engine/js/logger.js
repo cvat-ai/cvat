@@ -103,7 +103,7 @@ class LoggerHandler {
                 };
                 xhr.onload = () => {
                     switch (xhr.status) {
-                        case 200:
+                        case 201:
                         case 403: // ignore forbidden response
                             resolve(xhr.response);
                             break;
