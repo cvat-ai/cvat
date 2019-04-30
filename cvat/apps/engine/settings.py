@@ -34,18 +34,22 @@ MEDIA_TYPES = {
     'image': {
         'has_mime_type': _is_image,
         'extractor': ImageListExtractor,
+        'mode': 'annotation',
     },
     'video': {
         'has_mime_type': _is_video,
         'extractor': VideoExtractor,
+        'mode': 'interpolation',
     },
     'archive': {
         'has_mime_type': _is_archive,
         'extractor': ArchiveExtractor,
+        'mode': 'annotation',
     },
     'directory': {
         'has_mime_type': _is_dir,
         'extractor': DirectoryExtractor,
+        'mode': 'annotation',
     },
 }
 

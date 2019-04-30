@@ -207,10 +207,7 @@ def _create_thread(tid, data):
         _copy_data_from_share(data['server_files'], upload_dir)
 
     job = rq.get_current_job()
-
     db_images = []
-
-    db_task.mode = 'interpolation' if media['video'] else 'annotation'
     for media_type, media_files in media.items():
         if not media_files:
             continue
@@ -221,6 +218,7 @@ def _create_thread(tid, data):
             image_quality=db_task.image_quality,
         )
 
+        db_task.mode = MEDIA_TYPES[media_type]['mode']
         for frame, image_orig_path in enumerate(extractor):
             image_dest_path = db_task.get_frame_path(frame)
             db_task.size += 1
@@ -239,13 +237,14 @@ def _create_thread(tid, data):
                 db_images.append(models.Image(task=db_task, path=image_orig_path,
                     frame=frame, width=width, height=height))
 
-    if db_task.mode == 'interpolation':
-        image = Image.open(db_task.get_frame_path(0))
-        models.Video.objects.create(task=db_task, path=media['video'][0],
-            start_frame=0, stop_frame=db_task.size, step=1,
-            width=image.width, height=image.height)
-        image.close()
-    else:
+        if db_task.mode == 'interpolation':
+            image = Image.open(db_task.get_frame_path(0))
+            models.Video.objects.create(task=db_task, path=media[media_type][0],
+                start_frame=0, stop_frame=db_task.size, step=1,
+                width=image.width, height=image.height)
+            image.close()
+
+    if db_task.mode == 'annotation':
         models.Image.objects.bulk_create(db_images)
 
     slogger.glob.info("Founded frames {} for task #{}".format(db_task.size, tid))
