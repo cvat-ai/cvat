@@ -7,6 +7,7 @@ import os
 import sys
 import rq
 import shutil
+import subprocess
 import tempfile
 import numpy as np
 from PIL import Image
@@ -48,15 +49,27 @@ def rq_handler(job, exc_type, exc_value, traceback):
 ############################# Internal implementation for server API
 
 class _FrameExtractor:
-    def __init__(self, source_path, compress_quality, flip_flag=False):
+    def __init__(self, source_path, compress_quality, step=1, start=0, stop=0, flip_flag=False):
         # translate inversed range 1:95 to 2:32
         translated_quality = 96 - compress_quality
         translated_quality = round((((translated_quality - 1) * (31 - 2)) / (95 - 1)) + 2)
+        self.source = source_path
         self.output = tempfile.mkdtemp(prefix='cvat-', suffix='.data')
         target_path = os.path.join(self.output, '%d.jpg')
         output_opts = '-start_number 0 -b:v 10000k -vsync 0 -an -y -q:v ' + str(translated_quality)
+        filters = ''
+        if stop > 0:
+            filters = 'between(n,' + str(start) + ',' + str(stop) + ')'
+        elif start > 0:
+            filters = 'gte(n,' + str(start) + ')'
+        if step > 1:
+            filters += ('*' if filters else '') + 'not(mod(n-' + str(start) + ',' + str(step) + '))'
+        if filters:
+            filters = "select=\"'" + filters + "'\""
         if flip_flag:
-            output_opts += ' -vf "transpose=2,transpose=2"'
+            filters += (',' if filters else '') + 'transpose=2,transpose=2'
+        if filters:
+            output_opts += ' -vf ' + filters
         ff = FFmpeg(
             inputs  = {source_path: None},
             outputs = {target_path: output_opts})
@@ -170,12 +183,13 @@ def _unpack_archive(archive, upload_dir):
     Archive(archive).extractall(upload_dir)
     os.remove(archive)
 
-def _copy_video_to_task(video, db_task):
+def _copy_video_to_task(video, db_task, step):
     job = rq.get_current_job()
     job.meta['status'] = 'Video is being extracted..'
     job.save_meta()
 
-    extractor = _FrameExtractor(video, db_task.image_quality)
+    extractor = _FrameExtractor(video, db_task.image_quality,
+        step, db_task.start_frame, db_task.stop_frame)
     for frame, image_orig_path in enumerate(extractor):
         image_dest_path = db_task.get_frame_path(frame)
         db_task.size += 1
@@ -183,10 +197,11 @@ def _copy_video_to_task(video, db_task):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         shutil.copyfile(image_orig_path, image_dest_path)
+    if db_task.stop_frame == 0:
+        db_task.stop_frame = db_task.start_frame + (db_task.size - 1) * step
 
     image = Image.open(db_task.get_frame_path(0))
     models.Video.objects.create(task=db_task, path=video,
-        start_frame=0, stop_frame=db_task.size, step=1,
         width=image.width, height=image.height)
     image.close()
 
@@ -351,7 +366,7 @@ def _create_thread(tid, data):
     if video:
         db_task.mode = "interpolation"
         video = os.path.join(upload_dir, video)
-        _copy_video_to_task(video, db_task)
+        _copy_video_to_task(video, db_task, db_task.get_frame_step())
     else:
         db_task.mode = "annotation"
         _copy_images_to_task(upload_dir, db_task)

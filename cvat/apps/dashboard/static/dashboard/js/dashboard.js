@@ -464,6 +464,10 @@ class DashboardView {
             return (overlapSize >= 0 && overlapSize <= segmentSize - 1);
         }
 
+        function validateStopFrame(stopFrame, startFrame) {
+            return !customStopFrame.prop('checked') || stopFrame >= startFrame;
+        }
+
         function requestCreatingStatus(tid, onUpdateStatus, onSuccess, onError) {
             function checkCallback() {
                 $.get(`/api/v1/tasks/${tid}/status`).done((data) => {
@@ -516,6 +520,12 @@ class DashboardView {
         const customOverlapSize = $('#dashboardCustomOverlap');
         const imageQualityInput = $('#dashboardImageQuality');
         const customCompressQuality = $('#dashboardCustomQuality');
+        const startFrameInput = $('#dashboardStartFrame');
+        const customStartFrame = $('#dashboardCustomStart');
+        const stopFrameInput = $('#dashboardStopFrame');
+        const customStopFrame = $('#dashboardCustomStop');
+        const frameFilterInput = $('#dashboardFrameFilter');
+        const customFrameFilter = $('#dashboardCustomFilter');
 
         const taskMessage = $('#dashboardCreateTaskMessage');
         const submitCreate = $('#dashboardSubmitTask');
@@ -529,6 +539,9 @@ class DashboardView {
         let segmentSize = 5000;
         let overlapSize = 0;
         let compressQuality = 50;
+        let startFrame = 0;
+        let stopFrame = 0;
+        let frameFilter = '';
         let files = [];
 
         dashboardCreateTaskButton.on('click', () => {
@@ -612,6 +625,9 @@ class DashboardView {
         customSegmentSize.on('change', (e) => segmentSizeInput.prop('disabled', !e.target.checked));
         customOverlapSize.on('change', (e) => overlapSizeInput.prop('disabled', !e.target.checked));
         customCompressQuality.on('change', (e) => imageQualityInput.prop('disabled', !e.target.checked));
+        customStartFrame.on('change', (e) => startFrameInput.prop('disabled', !e.target.checked));
+        customStopFrame.on('change', (e) => stopFrameInput.prop('disabled', !e.target.checked));
+        customFrameFilter.on('change', (e) => frameFilterInput.prop('disabled', !e.target.checked));
 
         segmentSizeInput.on('change', () => {
             const value = Math.clamp(
@@ -646,6 +662,28 @@ class DashboardView {
             compressQuality = value;
         });
 
+        startFrameInput.on('change', function() {
+            let value = Math.max(
+                +startFrameInput.prop('value'),
+                +startFrameInput.prop('min')
+            );
+
+            startFrameInput.prop('value', value);
+            startFrame = value;
+        });
+        stopFrameInput.on('change', function() {
+            let value = Math.max(
+                +stopFrameInput.prop('value'),
+                +stopFrameInput.prop('min')
+            );
+
+            stopFrameInput.prop('value', value);
+            stopFrame = value;
+        });
+        frameFilterInput.on('change', function() {
+            frameFilter = frameFilterInput.prop('value');
+        });
+
         submitCreate.on('click', () => {
             if (!validateName(name)) {
                 taskMessage.css('color', 'red');
@@ -674,6 +712,12 @@ class DashboardView {
             if (!validateOverlapSize(overlapSize, segmentSize)) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Overlap size must be positive and not more then segment size');
+                return;
+            }
+
+            if (!validateStopFrame(stopFrame, startFrame)) {
+                taskMessage.css('color', 'red');
+                taskMessage.text('Stop frame must be greater than or equal to start frame');
                 return;
             }
 
@@ -716,6 +760,15 @@ class DashboardView {
             }
             if (customOverlapSize.prop('checked')) {
                 description.overlap = overlapSize;
+            }
+            if (customStartFrame.prop('checked')) {
+                description.start_frame = startFrame;
+            }
+            if (customStopFrame.prop('checked')) {
+                description.stop_frame = stopFrame;
+            }
+            if (customFrameFilter.prop('checked')) {
+                description.frame_filter = frameFilter;
             }
 
             function cleanupTask(tid) {
