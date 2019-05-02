@@ -73,7 +73,7 @@ computer vision tasks developed by our team.
 ### Administration panel
 Go to the [Django administration panel](http://localhost:8080/admin). There you can:
 -   Create / edit / delete users
--   Control user's permission and access to the tool.
+-   Control permissions of users and access to the tool.
 
     ![](static/documentation/images/image115.jpg)
 
@@ -183,12 +183,12 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     - ``Upload Annotation`` — upload an annotation file to the task (xml format)
     - ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
     - ``Delete Task`` — delete the task
-    - ``Git Repository Sync`` — sync annotation with the repository.
-    It is available only if you specify dataset repository when the task has been created.
+    - ``Git Repository Sync`` — sync annotation with the dataset repository.
+      It is available only if you specify a dataset repository when the task has been created.
     - ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API.
-    Presence depends on how you build CVAT instance
+      Presence depends on how you build CVAT instance
     - ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
-    Presence depends on how you build CVAT instance.
+      Presence depends on how you build CVAT instance.
 
     Item color depends on status of synchronization with the dataset repository:
     ``red`` means annotations are not synchronized with the repository,
@@ -242,7 +242,7 @@ The tool consists of:
 
 There is also:
 - ``Settings`` (F2) — the button inside ``Open Menu`` in the bottom panel. Contains different parameters
-  which can be adjusted according to the user's needs
+  which can be adjusted according to the user's needs.
 - ``Context menu`` — available on right mouse button.
 
 ### Basic navigation
@@ -733,7 +733,7 @@ shortcuts ``Ctrl + C`` / ``Ctrl + V`` work when you hover over an object
 ![](static/documentation/images/image052.jpg)
 
 ---
-You can propagate this object in the following X frames. The keyboard
+You can propagate an object in the following X frames. The keyboard
 shortcut ``Ctrl + B`` works when you hover the mouse over an object. You can
 change the number of propagating frames in the bottom panel.
 
@@ -828,7 +828,7 @@ To navigate between objects (pedestrians in the case), use the following shortcu
 - ``Shift+Tab`` — go to the previous object.
 
 By default, objects in the mode are zoomed. Check
-``Open Menu`` —> ``Settings`` —> ``AAM Zoom Margin`` for adjust that.
+``Open Menu`` —> ``Settings`` —> ``AAM Zoom Margin`` to adjust that.
 
 ## Annotation with polygons
 
