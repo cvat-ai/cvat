@@ -9,6 +9,9 @@
 {% block head_css %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'engine/stylesheet.css' %}">
+    {% for css_file in css_3rdparty %}
+        <link rel="stylesheet" type="text/css" src="{% static css_file %}">
+    {% endfor %}
 {% endblock %}
 
 
@@ -16,10 +19,10 @@
     {{ block.super }}
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/svg.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/svg.draw.js' %}"></script>
-    <script type="text/javascript" src="{% static 'engine/js/3rdparty/svg.resize.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/3rdparty/svg.resize.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/svg.draggable.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/svg.select.js' %}"></script>
-    <script type="text/javascript" src="{% static 'engine/js/3rdparty/defiant.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/3rdparty/defiant.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/jquery-3.3.1.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/js.cookie.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/jquery.fullscreen.js' %}"></script>
@@ -55,6 +58,7 @@
         <script type="text/javascript" src="{% static 'engine/js/shapeBuffer.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/shapeGrouper.js' %}"></script>
 
+        <script type="text/javascript" src="{% static 'engine/js/annotationSaver.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/annotationUI.js' %}"></script>
 {% endblock %}
 
@@ -63,39 +67,42 @@
 <div id="taskAnnotationCenterPanel">
     <div id="player">
         <div id="playerFrame">
-            <svg id="frameLoadingAnim" style="width: 100%; height: 100%;" class="hidden">
-                <circle r="30" cx="50%" cy="50%" id="frameLoadingAnimation"/>
-            </svg>
-            <svg id="frameContent"> </svg>
-            <svg id="frameBackground"> </svg>
-            <svg id="frameGrid" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <pattern id="playerGridPattern" width="100" height="100" patternUnits="userSpaceOnUse">
-                        <!-- Max size value for grid is 1000. Path size should be >= such value in order to it displayed correct -->
-                        <path id="playerGridPath" d="M 1000 0 L 0 0 0 1000" fill="none" stroke="white" opacity="0" stroke-width="2"/>
-                    </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#playerGridPattern)" />
-            </svg>
+            <div id="rotationWrapper">
+                <svg id="frameLoadingAnim" style="width: 100%; height: 100%;" class="hidden">
+                    <circle r="30" cx="50%" cy="50%" id="frameLoadingAnimation"/>
+                </svg>
+                <svg id="frameContent"> </svg>
+                <svg id="frameText"> </svg>
+                <svg id="frameBackground"> </svg>
+                <svg id="frameGrid" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="playerGridPattern" width="100" height="100" patternUnits="userSpaceOnUse">
+                            <!-- Max size value for grid is 1000. Path size should be >= such value in order to it displayed correct -->
+                            <path id="playerGridPath" d="M 1000 0 L 0 0 0 1000" fill="none" stroke="white" opacity="0" stroke-width="2"/>
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#playerGridPattern)" />
+                </svg>
 
-            <ul id="shapeContextMenu" class='custom-menu' oncontextmenu="return false;">
-                <li action="object_url"> Copy Object URL </li>
-                <li action="change_color"> Change Color </li>
-                <li action="remove_shape"> Remove Shape </li>
-                <li action="switch_occluded"> Switch Occluded </li>
-                <li action="switch_lock"> Switch Lock </li>
-                <li class="interpolationItem" action="split_track"> Split </li>
-                <li class="polygonItem" action="drag_polygon"> Enable Dragging </li>
-            </ul>
+                <ul id="shapeContextMenu" class='custom-menu' oncontextmenu="return false;">
+                    <li action="object_url"> Copy Object URL </li>
+                    <li action="change_color"> Change Color </li>
+                    <li action="remove_shape"> Remove Shape </li>
+                    <li action="switch_occluded"> Switch Occluded </li>
+                    <li action="switch_lock"> Switch Lock </li>
+                    <li class="interpolationItem" action="split_track"> Split </li>
+                    <li class="polygonItem" action="drag_polygon"> Enable Dragging </li>
+                </ul>
 
-            <ul id="playerContextMenu" class='custom-menu' oncontextmenu="return false;">
-                <li action="job_url"> Copy Job URL </li>
-                <li action="frame_url"> Copy Frame URL </li>
-            </ul>
+                <ul id="playerContextMenu" class='custom-menu' oncontextmenu="return false;">
+                    <li action="job_url"> Copy Job URL </li>
+                    <li action="frame_url"> Copy Frame URL </li>
+                </ul>
 
-            <ul id="pointContextMenu" class='custom-menu' oncontextmenu="return false;">
-                <li action="remove_point"> Remove </li>
-            </ul>
+                <ul id="pointContextMenu" class='custom-menu' oncontextmenu="return false;">
+                    <li action="remove_point"> Remove </li>
+                </ul>
+            </div>
         </div>
         <div id="playerPanel">
             <svg id="firstButton" class="playerButton">
@@ -132,18 +139,24 @@
             <input type = "range" id = "playerProgress"/>
         </div>  <!-- END of PLAYER PANEL -->
         <div style="margin-top: 20px">
-            <button id="menuButton" class="regular h1"> Open Menu </button>
-            <label class="regular h1" style="margin-left: 50px"> Filter: </label>
-            <input type="text" id="filterInputString" class="regular h2"/>
-            <button id="resetFilterButton" class="regular h1"> Reset </button>
-            <button class="regular h1" id="undoButton" disabled> &#x27F2; </button>
+            <button id="menuButton" class="regular h2"> Open Menu </button>
+            <label class="regular h2" style="margin-left: 50px"> Filter: </label>
+            <datalist id="filterSubmitList" style="display: none;"> </datalist>
+            <input type="text" list="filterSubmitList" id="filterInputString" class="regular h2" placeholder='car[attr/model=/"mazda"'/>
+            <button id="resetFilterButton" class="regular h2"> Reset </button>
+            <button class="regular h2" id="undoButton" disabled> &#x27F2; </button>
             <select size="2" class="regular" style="overflow: hidden; width: 15%; top: 0.5em; position: relative;" disabled>
                 <option id="lastUndoText" title="Undo Action" selected> None </option>
                 <option id="lastRedoText" title="Redo Action"> None </option>
             </select>
-            <button class="regular h1" id="redoButton" disabled> &#10227; </button>
+            <button class="regular h2" id="redoButton" disabled> &#10227; </button>
+            <label class="regular h2" style="margin-left: 15px;"> Propagation </label>
+            <input type ="number" id="propagateFramesInput" style="width: 3em" min="1" max="10000" value="50" class="regular h2"/>
+            <label class="regular h2" style="margin-left: 15px;"> Rotation </label>
+            <button class="regular h2" id="clockwiseRotation" title="Clockwise rotation"> &#10227; </button>
+            <button class="regular h2" id="counterClockwiseRotation" title="Counter clockwise rotation"> &#10226; </button>
             <div style="float: right;">
-                <label class="regular h1"> Frame </label>
+                <label class="regular h2"> Frame </label>
                 <input class="regular h2" style="width: 3.5em;" type="number" id="frameNumber">
             </div>
             <hr>
@@ -184,7 +197,7 @@
     <div id="helpWindow" class="modal hidden">
         <div id="helpWindowContent" class="modal-content">
             <div style="width: 100%; height: 90%; overflow-y: auto;">
-                <div>
+                <div class="selectable">
                     <label class="h1 semiBold"> Shortkeys: </label> <br>
                     <table class="regular" id="shortkeyHelpTable"> </table>
                     <label class="h1 semiBold"> <br> Hints: <br> </label>
@@ -208,6 +221,8 @@
                         person[attr/race="asian"] | car[attr/model="bmw"] - asians and BMW cars <br>
                         face[attr/glass="sunglass" or attr/glass="no"] - faces with sunglass or without glass <br>
                         *[attr/*="__undefined__"] - any tracks with any unlabeled attributes <br>
+                        *[width<300 or height<300] - shapes with height or width less than 300px <br>
+                        person[width>300 and height<200] - person shapes with width > 300px and height < 200px <br>
                      </label>
                 </div>
             </div>
@@ -242,15 +257,15 @@
                         <td> <input type="checkbox"  id="resetZoomBox" class="settingsBox"/> </td>
                     </tr>
                     <tr>
-                        <td> <label> Greed Size </label> </td>
+                        <td> <label> Grid Size </label> </td>
                         <td> <input type="number" min="5" max="1000" value="100" id="playerGridSizeInput" class="regular h2"/> </td>
                     </tr>
                     <tr>
-                        <td> <label> Greed Opacity </label> </td>
+                        <td> <label> Grid Opacity </label> </td>
                         <td> <input type="range" min="0" max="5" value="0" id="playerGridOpacityInput" class="regular h2"/> </td>
                     </tr>
                     <tr>
-                        <td> <label> Greed Stroke </label> </td>
+                        <td> <label> Grid Stroke </label> </td>
                         <td>
                             <select id="playerGridStrokeInput" class="regular h2">
                                 <option value="black"> Black </option>
@@ -262,15 +277,15 @@
                         </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2" for="playerBrightnessRange"> Brightness: </label> </td>
+                        <td> <label for="playerBrightnessRange"> Brightness: </label> </td>
                         <td> <input type="range" min="50" max="200" value="100" id="playerBrightnessRange"> </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2" for="playerContrastRange"> Contrast: </label> </td>
+                        <td> <label for="playerContrastRange"> Contrast: </label> </td>
                         <td> <input type="range" min="50" max="200" value="100" id="playerContrastRange"> </td>
                     </tr>
                     <tr>
-                        <td> <label class="regular h2" for="playerSaturationRange"> Saturation: </label> </td>
+                        <td> <label for="playerSaturationRange"> Saturation: </label> </td>
                         <td> <input type="range" min="0" max="300" value="100" id="playerSaturationRange"> </td>
                     </tr>
                     <tr>
@@ -301,8 +316,8 @@
                         <td> <input type = "number"  id="autoSaveTime" style="width: 3em" min="5" max="60" value="15" class="regular h2"/> </td>
                     </tr>
                     <tr>
-                        <td> <label> Propagate Frames </label> </td>
-                        <td> <input type = "number" id="propagateFramesInput" style="width: 3em" min="1" max="10000" value="50" class="regular h2"/> </td>
+                        <td> <label> Rotate All Images </label> </td>
+                        <td> <input type = "checkbox"  id="rotateAllImages" class="settingsBox"/> </td>
                     </tr>
                 </table>
             </div>

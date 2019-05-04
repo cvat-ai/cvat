@@ -8,17 +8,17 @@
 "use strict";
 
 class ShapeSplitter {
-    constructor() {}
-
     _convertMutableAttributes(attributes) {
-        let result = [];
-        for (let attrId in attributes) {
-            let attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
-            if (attrInfo.mutable) {
-                result.push({
-                    id: +attrId,
-                    value: attributes[attrId].value
-                });
+        const result = [];
+        for (const attrId in attributes) {
+            if (Object.prototype.hasOwnProperty.call(attributes, attrId)) {
+                const attrInfo = window.cvat.labelsInfo.attrInfo(attrId);
+                if (attrInfo.mutable) {
+                    result.push({
+                        id: +attrId,
+                        value: attributes[attrId].value,
+                    });
+                }
             }
         }
 
@@ -26,58 +26,66 @@ class ShapeSplitter {
     }
 
     split(track, frame) {
-        let keyFrames = track.keyframes.sort((a,b) => a - b);
-        let exported = track.export();
-        if (frame > +keyFrames[0]) {
-            let curInterpolation = track.interpolate(frame);
-            let prevInterpolation = track.interpolate(frame - 1);
-            let curAttributes = this._convertMutableAttributes(curInterpolation.attributes);
-            let prevAttrributes = this._convertMutableAttributes(prevInterpolation.attributes);
-            let curPositionList = [];
-            let prevPositionList = [];
+        const keyFrames = track.keyframes.map(keyframe => +keyframe).sort((a, b) => a - b);
+        const exported = track.export();
 
-            for (let shape of exported.shapes) {
-                if (shape.frame < frame) {
+        if (frame > +keyFrames[0]) {
+            const curInterpolation = track.interpolate(frame);
+            const prevInterpolation = track.interpolate(frame - 1);
+            const curAttributes = this._convertMutableAttributes(curInterpolation.attributes);
+            const prevAttrributes = this._convertMutableAttributes(prevInterpolation.attributes);
+            const curPositionList = [];
+            const prevPositionList = [];
+
+            for (const shape of exported.shapes) {
+                if (shape.frame < frame - 1) {
                     prevPositionList.push(shape);
-                }
-                else if (shape.frame > frame) {
+                } else if (shape.frame > frame) {
                     curPositionList.push(shape);
                 }
             }
 
             if (track.type.split('_')[1] === 'box') {
-                prevPositionList.push(Object.assign({}, prevInterpolation.position, {
+                const prevPos = prevInterpolation.position;
+                prevPositionList.push(Object.assign({}, {
                     frame: frame - 1,
                     attributes: prevAttrributes,
-                }));
+                    type: 'box',
+                }, prevPos));
 
-                if (!prevInterpolation.position.outside) {
-                    prevPositionList.push(Object.assign({}, prevInterpolation.position, {
-                        outside: true,
-                        frame: frame,
-                        attributes: [],
-                    }));
-                }
+                const curPos = curInterpolation.position;
+                prevPositionList.push(Object.assign({}, {
+                    frame,
+                    attributes: curAttributes,
+                    type: 'box',
+                }, curPos, { outside: true }));
+
+                curPositionList.push(Object.assign({}, {
+                    frame,
+                    attributes: curAttributes,
+                    type: 'box',
+                }, curPos));
+            } else {
+                const curPos = curInterpolation.position;
+                curPositionList.push(Object.assign({
+                    frame,
+                    attributes: curAttributes,
+                    type: track.type.split('_')[1],
+                }, curPos));
             }
-
-            curPositionList.push(Object.assign(curInterpolation.position, {
-                frame: frame,
-                attributes: curAttributes,
-            }));
 
             // don't clone id of splitted object
             delete exported.id;
-            let prevExported = Object.assign({}, exported);
-            let curExported = Object.assign({}, exported);
+            // don't clone group of splitted object
+            delete exported.group;
+
+            const prevExported = JSON.parse(JSON.stringify(exported));
+            const curExported = JSON.parse(JSON.stringify(exported));
             prevExported.shapes = prevPositionList;
-            prevExported.group_id = 0;
             curExported.shapes = curPositionList;
-            curExported.group_id = 0;
             curExported.frame = frame;
             return [prevExported, curExported];
         }
-        else {
-            return [exported];
-        }
+        return [exported];
     }
 }

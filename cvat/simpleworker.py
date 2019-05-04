@@ -7,7 +7,7 @@ from rq import Worker
 
 
 class BaseDeathPenalty(object):
-    def __init__(self, timeout):
+    def __init__(self, timeout, exception, **kwargs):
         pass
 
     def __enter__(self):

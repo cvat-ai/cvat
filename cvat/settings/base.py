@@ -16,6 +16,10 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 import sys
+import fcntl
+import shutil
+import subprocess
+
 from pathlib import Path
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -34,8 +38,47 @@ except ImportError:
         f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
     from keys.secret_key import SECRET_KEY
 
+
+def generate_ssh_keys():
+    keys_dir = '{}/keys'.format(os.getcwd())
+    ssh_dir = '{}/.ssh'.format(os.getenv('HOME'))
+    pidfile = os.path.join(ssh_dir, 'ssh.pid')
+
+    with open(pidfile, "w") as pid:
+        fcntl.flock(pid, fcntl.LOCK_EX)
+        try:
+            subprocess.run(['ssh-add {}/*'.format(ssh_dir)], shell = True, stderr = subprocess.PIPE)
+            keys = subprocess.run(['ssh-add -l'], shell = True,
+                stdout = subprocess.PIPE).stdout.decode('utf-8').split('\n')
+            if 'has no identities' in keys[0]:
+                print('SSH keys were not found')
+                volume_keys = os.listdir(keys_dir)
+                if not ('id_rsa' in volume_keys and 'id_rsa.pub' in volume_keys):
+                    print('New pair of keys are being generated')
+                    subprocess.run(['ssh-keygen -b 4096 -t rsa -f {}/id_rsa -q -N ""'.format(ssh_dir)], shell = True)
+                    shutil.copyfile('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa'.format(ssh_dir), '{}/id_rsa'.format(keys_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(ssh_dir), '{}/id_rsa.pub'.format(keys_dir))
+                else:
+                    print('Copying them from keys volume')
+                    shutil.copyfile('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa'.format(keys_dir), '{}/id_rsa'.format(ssh_dir))
+                    shutil.copyfile('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
+                    shutil.copymode('{}/id_rsa.pub'.format(keys_dir), '{}/id_rsa.pub'.format(ssh_dir))
+                subprocess.run(['ssh-add', '{}/id_rsa'.format(ssh_dir)], shell = True)
+        finally:
+            fcntl.flock(pid, fcntl.LOCK_UN)
+
+try:
+    if os.getenv("SSH_AUTH_SOCK", None):
+        generate_ssh_keys()
+except Exception:
+    pass
+
 # Application definition
 JS_3RDPARTY = {}
+CSS_3RDPARTY = {}
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -48,6 +91,7 @@ INSTALLED_APPS = [
     'cvat.apps.dashboard',
     'cvat.apps.authentication',
     'cvat.apps.documentation',
+    'cvat.apps.git',
     'django_rq',
     'compressor',
     'cacheops',
@@ -55,10 +99,42 @@ INSTALLED_APPS = [
     'dj_pagination',
     'revproxy',
     'rules',
+    'rest_framework',
+    'django_filters',
+    'drf_yasg',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_VERSIONING_CLASS':
+        # Don't try to use URLPathVersioning. It will give you /api/{version}
+        # in path and '/api/docs' will not collapse similar items (flat list
+        # of all possible methods isn't readable).
+        'rest_framework.versioning.NamespaceVersioning',
+    # Need to add 'api-docs' here as a workaround for include_docs_urls.
+    'ALLOWED_VERSIONS': ('v1', 'api-docs'),
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': (
+        'rest_framework.filters.SearchFilter',
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.OrderingFilter')
+}
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
     INSTALLED_APPS += ['cvat.apps.tf_annotation']
+
+if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
+    INSTALLED_APPS += ['cvat.apps.auto_annotation']
+
+if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
+    INSTALLED_APPS += ['cvat.apps.reid']
+
+if 'yes' == os.environ.get('WITH_DEXTR', 'no'):
+    INSTALLED_APPS += ['cvat.apps.dextr_segmentation']
 
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
@@ -262,6 +338,8 @@ DATA_ROOT = os.path.join(BASE_DIR, 'data')
 os.makedirs(DATA_ROOT, exist_ok=True)
 SHARE_ROOT = os.path.join(BASE_DIR, 'share')
 os.makedirs(SHARE_ROOT, exist_ok=True)
+MODELS_ROOT=os.path.join(BASE_DIR, 'models')
+os.makedirs(MODELS_ROOT, exist_ok=True)
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None   # this django check disabled

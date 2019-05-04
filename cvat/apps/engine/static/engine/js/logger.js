@@ -5,38 +5,45 @@
  */
 
 /* exported Logger */
+
+/* global
+    Cookies:false
+*/
+
 "use strict";
 
-var UserActivityHandler = function()
-{
-    this._TIME_TRESHHOLD = 100000; //ms
-    this._prevEventTime = Date.now();
-
-    this._workingTime = 0;
-
-    this.updateTimer = function()
-    {
-        let now = Date.now();
-        let diff = now - this._prevEventTime;
-        this._prevEventTime = now;
-        this._workingTime += diff < this._TIME_TRESHHOLD ? diff : 0;
-    };
-
-    this.resetTimer = function()
-    {
+class UserActivityHandler {
+    constructor() {
+        this._TIME_TRESHHOLD = 100000; //ms
         this._prevEventTime = Date.now();
         this._workingTime = 0;
-    };
+    }
 
-    this.getWorkingTime = function()
-    {
+    updateTimer() {
+        if (document.hasFocus()) {
+            let now = Date.now();
+            let diff = now - this._prevEventTime;
+            this._prevEventTime = now;
+            this._workingTime += diff < this._TIME_TRESHHOLD ? diff : 0;
+        }
+    }
+
+    resetTimer() {
+        this._prevEventTime = Date.now();
+        this._workingTime = 0;
+    }
+
+    getWorkingTime() {
         return this._workingTime;
-    };
-};
+    }
+}
 
 class LogCollection extends Array {
     constructor(logger, items) {
-        super(...items);
+        super(items.length);
+        for (let i = 0; i < items.length; i++) {
+            super[i] = items[i];
+        }
         this._loggerHandler = logger;
     }
 
@@ -45,131 +52,121 @@ class LogCollection extends Array {
     }
 
     export() {
-        return Array.from(this, log => log.toString());
+        return Array.from(this, log => log.serialize());
     }
 }
 
-var LoggerHandler = function(applicationName, jobId)
-{
-    this._application = applicationName;
-    this._jobId = jobId;
-    this._username = null;
-    this._userActivityHandler = null;
-    this._logEvents = [];
-    this._userActivityHandler = new UserActivityHandler();
-    this._timeThresholds = {};
-    this.isInitialized = Boolean(this._userActivityHandler);
+class LoggerHandler {
+    constructor(jobId) {
+        this._clientID = Date.now().toString().substr(-6);
+        this._jobId = jobId;
+        this._logEvents = [];
+        this._userActivityHandler = new UserActivityHandler();
+        this._timeThresholds = {};
+    }
 
-    this.addEvent = function(event)
-    {
+    addEvent(event) {
         this._pushEvent(event);
-    };
+    }
 
-    this.addContinuedEvent = function(event)
-    {
+    addContinuedEvent(event) {
         this._userActivityHandler.updateTimer();
         event.onCloseCallback = this._closeCallback;
         return event;
-    };
+    }
 
-    this.sendExceptions = function(exceptions)
-    {
-        for (let e of exceptions) {
-            this._extendEvent(e);
-        }
+    sendExceptions(exception) {
+        this._extendEvent(exception);
+        return new Promise((resolve, reject) => {
+            let retries = 3;
+            let makeRequest = () => {
+                let xhr = new XMLHttpRequest();
+                xhr.open('POST', '/api/v1/server/exception');
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
+                let onreject = () => {
+                    if (retries--) {
+                        setTimeout(() => makeRequest(), 30000); //30 sec delay
+                    } else {
+                        let payload = exception.serialize();
+                        delete Object.assign(payload, {origin_message: payload.message }).message;
+                        this.addEvent(new Logger.LogEvent(
+                            Logger.EventType.sendException,
+                            payload,
+                            "Can't send exception",
+                        ));
+                        reject({
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                        });
+                    }
+                };
+                xhr.onload = () => {
+                    switch (xhr.status) {
+                        case 201:
+                        case 403: // ignore forbidden response
+                            resolve(xhr.response);
+                            break;
 
-        return new Promise( (resolve, reject) => {
-            let xhr = new XMLHttpRequest();
-            xhr.open('POST', '/save/exception/' + this._jobId);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.setRequestHeader("X-CSRFToken", Cookies.get('csrftoken'));
-
-            let onreject = () => {
-                Array.prototype.push.apply(this._logEvents, exceptions);
-                reject({
-                    status: xhr.status,
-                    statusText: xhr.statusText,
-                });
+                        default:
+                            onreject();
+                    }
+                };
+                xhr.onerror = () => {
+                    //  if status === 0 a request is a failure on the network level, ignore it
+                    if (xhr.status === 0) {
+                        resolve(xhr.response);
+                    } else {
+                        onreject();
+                    }
+                };
+                xhr.send(JSON.stringify(exception.serialize()));
             };
-
-            xhr.onload = () => {
-                if (xhr.status == 200)
-                {
-                    resolve(xhr.response);
-                }
-                else {
-                    onreject();
-                }
-            };
-
-            xhr.onerror = () => {
-                onreject();
-            };
-
-            const data = {'exceptions': Array.from(exceptions, log => log.toString())};
-            xhr.send(JSON.stringify(data));
+            makeRequest();
         });
-    };
+    }
 
-    this.getLogs = function()
-    {
+    getLogs() {
         let logs = new LogCollection(this, this._logEvents);
         this._logEvents.length = 0;
         return logs;
-    };
+    }
 
-    this.pushLogs = function(logEvents)
-    {
+    pushLogs(logEvents) {
         Array.prototype.push.apply(this._logEvents, logEvents);
-    };
+    }
 
-    this._extendEvent = function(event)
-    {
-        event.addValues({
-            application: this._application,
-            task: this._jobId,
-            userid: this._username,
-        });
-    };
+    _extendEvent(event) {
+        event._jobId = this._jobId;
+        event._clientId = this._clientID;
+    }
 
-    this._pushEvent = function(event)
-    {
+    _pushEvent(event) {
         this._extendEvent(event);
-
         if (event._type in this._timeThresholds) {
             this._timeThresholds[event._type].wait(event);
         }
         else {
             this._logEvents.push(event);
         }
-
         this._userActivityHandler.updateTimer();
-    };
+    }
 
-    this._closeCallback = event => { this._pushEvent(event); };
+    _closeCallback = event => { this._pushEvent(event); };
 
-    this.setUsername = function(username)
-    {
-        this._username = username;
-    };
-
-    this.updateTimer = function()
-    {
+    updateTimer() {
         this._userActivityHandler.updateTimer();
-    };
+    }
 
-    this.resetTimer = function()
-    {
+    resetTimer() {
         this._userActivityHandler.resetTimer();
-    };
+    }
 
-    this.getWorkingTime = function()
-    {
+    getWorkingTime() {
         return this._userActivityHandler.getWorkingTime();
-    };
+    }
 
-    this.setTimeThreshold = function(eventType, threshold)
-    {
+    setTimeThreshold(eventType, threshold) {
         this._timeThresholds[eventType] = {
             _threshold: threshold,
             _timeoutHandler: null,
@@ -178,27 +175,26 @@ var LoggerHandler = function(applicationName, jobId)
             _logEvents: this._logEvents,
             wait: function(event) {
                 if (this._event) {
-                    if (this._timeoutHandler) clearTimeout(this._timeoutHandler);
+                    if (this._timeoutHandler) {
+                        clearTimeout(this._timeoutHandler);
+                    }
                 }
                 else {
                     this._timestamp = event._timestamp;
                 }
-
                 this._event = event;
-
-                this._timeoutHandler = setTimeout( () => {
+                this._timeoutHandler = setTimeout(() => {
                     if ('duration' in this._event._values) {
                         this._event._values.duration += this._event._timestamp - this._timestamp;
                     }
-
                     this._event._timestamp = this._timestamp;
                     this._logEvents.push(this._event);
                     this._event = null;
                 }, threshold);
             },
         };
-    };
-};
+    }
+}
 
 
 /*
@@ -229,8 +225,30 @@ are Logger.EventType.addObject, Logger.EventType.deleteObject and
 Logger.EventType.sendTaskInfo. Value of "count" property should be a number.
 */
 
-var Logger = {
+class LoggerEvent {
+    constructor(type, message) {
+        this._time = new Date().toISOString();
+        this._clientId = null;
+        this._jobId = null;
+        this._type = type;
+        this._message = message;
+    }
 
+    serialize() {
+        let serializedObj = {
+            job_id: this._jobId,
+            client_id: this._clientId,
+            name: Logger.eventTypeToString(this._type),
+            time: this._time,
+        };
+        if (this._message) {
+            Object.assign(serializedObj, { message: this._message,});
+        }
+        return serializedObj;
+    }
+}
+
+var Logger = {
     /**
      * @private
      */
@@ -243,26 +261,25 @@ var Logger = {
      * @param {Object} values Any event values, for example {count: 1, label: 'vehicle'}
      * @param {Function} closeCallback callback function which will be called by close method. Setted by
      */
-    LogEvent: function(type, values, closeCallback=null)
-    {
-        this._type = type;
-        this._timestamp = Date.now();
-        this.onCloseCallback = closeCallback;
+    LogEvent: class extends LoggerEvent {
+        constructor(type, values, message) {
+            super(type, message);
 
-        this._values = values || {};
+            this._timestamp = Date.now();
+            this.onCloseCallback = null;
+            this._is_active = document.hasFocus();
+            this._values = values || {};
+        }
 
-        this.toString = function()
-        {
-            return Object.assign({
-                event: Logger.eventTypeToString(this._type),
-                timestamp: this._timestamp,
-            }, this._values);
+        serialize() {
+            return Object.assign(super.serialize(), {
+                payload: this._values,
+                is_active: this._is_active,
+            });
         };
 
-        this.close = function(endTimestamp)
-        {
-            if (this.onCloseCallback)
-            {
+        close(endTimestamp) {
+            if (this.onCloseCallback) {
                 this.addValues({
                     duration: endTimestamp ? endTimestamp - this._timestamp : Date.now() - this._timestamp,
                 });
@@ -270,9 +287,32 @@ var Logger = {
             }
         };
 
-        this.addValues = function(values)
-        {
+        addValues(values) {
             Object.assign(this._values, values);
+        };
+    },
+
+    ExceptionEvent: class extends LoggerEvent {
+        constructor(message, filename, line, column, stack, client, system) {
+            super(Logger.EventType.sendException, message);
+
+            this._client = client;
+            this._column = column;
+            this._filename = filename;
+            this._line = line;
+            this._stack = stack;
+            this._system = system;
+        }
+
+        serialize() {
+            return Object.assign(super.serialize(), {
+                client: this._client,
+                column: this._column,
+                filename: this._filename,
+                line: this._line,
+                stack: this._stack,
+                system: this._system,
+            });
         };
     },
 
@@ -346,6 +386,12 @@ var Logger = {
         sendException: 22,
         // dumped as "Change frame". There are no additional required fields.
         changeFrame: 23,
+        // dumped as "Debug info". There are no additional required fields.
+        debugInfo: 24,
+        // dumped as "Fit image". There are no additional required fields.
+        fitImage: 25,
+        // dumped as "Rotate image". There are no additional required fields.
+        rotateImage: 26,
     },
 
     /**
@@ -356,12 +402,11 @@ var Logger = {
      * @return {Bool} true if initialization was succeed
      * @static
      */
-    initializeLogger: function(applicationName, taskId)
-    {
+    initializeLogger: function(jobId) {
         if (!this._logger)
         {
-            this._logger = new LoggerHandler(applicationName, taskId);
-            return this._logger.isInitialized;
+            this._logger = new LoggerHandler(jobId);
+            return true;
         }
         return false;
     },
@@ -370,11 +415,11 @@ var Logger = {
      * Logger.addEvent Use this method to add a log event without duration field.
      * @param {Logger.EventType} type Event Type
      * @param {Object} values Any event values, for example {count: 1, label: 'vehicle'}
+     * @param {String} message Any string message. Empty by default.
      * @static
      */
-    addEvent: function(type, values)
-    {
-        this._logger.addEvent(new Logger.LogEvent(type, values));
+    addEvent: function(type, values, message='') {
+        this._logger.addEvent(new Logger.LogEvent(type, values, message));
     },
 
     /**
@@ -385,12 +430,12 @@ var Logger = {
      * @param {Logger.EventType} type Event Type
      * @param {Object} values Any event values, for example {count: 1, label:
      * 'vehicle'}
+     * @param {String} message Any string message. Empty by default.
      * @return {LogEvent} instance of LogEvent
      * @static
      */
-    addContinuedEvent: function(type, values)
-    {
-        return this._logger.addContinuedEvent(new Logger.LogEvent(type, values));
+    addContinuedEvent: function(type, values, message='') {
+        return this._logger.addContinuedEvent(new Logger.LogEvent(type, values, message));
     },
 
     /**
@@ -401,8 +446,7 @@ var Logger = {
      * @return {Function} is decorated decoredFunc
      * @static
      */
-    shortkeyLogDecorator: function(decoredFunc)
-    {
+    shortkeyLogDecorator: function(decoredFunc) {
         let self = this;
         return function(e, combo) {
             let pressKeyEvent = self.addContinuedEvent(self.EventType.pressShortcut, {key:  combo});
@@ -418,9 +462,19 @@ var Logger = {
      * @param {LogEvent} exceptionEvent
      * @static
      */
-    sendException: function(exceptionData)
-    {
-        return this._logger.sendExceptions([new Logger.LogEvent(Logger.EventType.sendException, exceptionData)]);
+
+    sendException: function(message, filename, line, column, stack, client, system) {
+        return this._logger.sendExceptions(
+            new Logger.ExceptionEvent(
+                message,
+                filename,
+                line,
+                column,
+                stack,
+                client,
+                system
+            )
+        );
     },
 
     /**
@@ -437,17 +491,6 @@ var Logger = {
         }
 
         return this._logger.getLogs();
-    },
-
-    /**
-     * Logger.setUsername just set username property which will be added to all
-     * log messages
-     * @param {String} username
-     * @static
-     */
-    setUsername: function(username)
-    {
-        this._logger.setUsername(username);
     },
 
     /** Logger.updateUserActivityTimer method updates internal timer for working
@@ -495,7 +538,7 @@ var Logger = {
         case this.EventType.drawObject: return 'Draw object';
         case this.EventType.changeLabel: return 'Change label';
         case this.EventType.sendTaskInfo: return 'Send task info';
-        case this.EventType.loadJob: return 'Load job'; // FIXME add track count, object count, fields
+        case this.EventType.loadJob: return 'Load job';
         case this.EventType.moveImage: return 'Move image';
         case this.EventType.zoomImage: return 'Zoom image';
         case this.EventType.lockObject: return 'Lock object';
@@ -507,6 +550,9 @@ var Logger = {
         case this.EventType.sendUserActivity: return 'Send user activity';
         case this.EventType.sendException: return 'Send exception';
         case this.EventType.changeFrame: return 'Change frame';
+        case this.EventType.debugInfo: return 'Debug info';
+        case this.EventType.fitImage: return 'Fit image';
+        case this.EventType.rotateImage: return 'Rotate image';
         default: return 'Unknown';
         }
     },

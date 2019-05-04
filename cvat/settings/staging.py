@@ -1,4 +1,3 @@
-
 # Copyright (C) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
@@ -30,7 +29,7 @@ SILKY_IGNORE_PATHS = ['/admin', '/documentation', '/django-rq', '/auth']
 SILKY_MAX_RECORDED_REQUESTS = 10**4
 def SILKY_INTERCEPT_FUNC(request):
     # Ignore all requests which try to get a frame (too many of them)
-    if request.method == 'GET' and '/frame/' in request.path:
+    if request.method == 'GET' and '/frames/' in request.path:
         return False
 
     return True

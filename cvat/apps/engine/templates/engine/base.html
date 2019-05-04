@@ -37,7 +37,6 @@
         {% compress js file cvat %}
             {% block head_js_cvat %}
                 <script type="text/javascript" src="{% static 'engine/js/base.js' %}"></script>
-                <script type="text/javascript" src="{% static 'engine/js/idGenerator.js' %}"></script>
                 <script type="text/javascript" src="{% static 'engine/js/userConfig.js' %}"></script>
             {% endblock %}
         {% endcompress %}
@@ -73,7 +72,7 @@
     <template id="messageTemplate">
         <div class="modal">
             <div class="modal-content"  style="width: 400px; height: auto; max-height: 600px; overflow: auto;">
-                <label class="regular templateMessage selectable"> </label>
+                <label class="regular templateMessage selectable" style="word-break: break-word;"> </label>
                 <center>
                     <button class="regular h2 templateOKButton" style="margin-top: 20px"> Ok </button>
                 </center>

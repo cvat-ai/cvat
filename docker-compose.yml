@@ -44,6 +44,7 @@ services:
         http_proxy:
         https_proxy:
         no_proxy:
+        socks_proxy:
         TF_ANNOTATION: "no"
         USER: "django"
         DJANGO_CONFIGURATION: "production"
@@ -54,9 +55,11 @@ services:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
+      - cvat_models:/home/django/models
 
 volumes:
   cvat_db:
   cvat_data:
   cvat_keys:
   cvat_logs:
+  cvat_models:

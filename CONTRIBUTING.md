@@ -57,6 +57,11 @@ $ code .
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 
+## JavaScript coding style
+
+We use the [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript) for JavaScript code with a
+litle exception - we prefere 4 spaces for indentation of nested blocks and statements.
+
 ## Branching model
 
 The project uses [a successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model).

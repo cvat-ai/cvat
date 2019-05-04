@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- OpenVINO auto annotation: it is possible to upload a custom model and annotate images automatically.
+- Ability to rotate images/video in the client part (Ctrl+R, Shift+Ctrl+R shortcuts) (#305)
+- The ReID application for automatic bounding box merging has been added (#299)
+- Keyboard shortcuts to switch next/previous default shape type (box, polygon etc) [Alt + <, Alt + >] (#316)
+- Converter for VOC now supports interpolation tracks
+- REST API (/api/v1/*, /api/docs)
+- Semi-automatic semantic segmentation with the [Deep Extreme Cut](http://www.vision.ee.ethz.ch/~cvlsegmentation/dextr/) work
+
+### Changed
+- Propagation setup has been moved from settings to bottom player panel
+- Additional events like "Debug Info" or "Fit Image" have been added for analitics
+- Optional using LFS for git annotation storages (#314)
+
+### Deprecated
+- "Flip images" flag in the create task dialog will be removed. Rotation functionality in client part have been added instead.
+
+### Removed
+-
+
+### Fixed
+- Django 2.1.5 (security fix, https://nvd.nist.gov/vuln/detail/CVE-2019-3498)
+- Several scenarious which cause code 400 after undo/redo/save have been fixed (#315)
+
+### Security
+-
+
 ## [0.3.0] - 2018-12-29
 ### Added
 - Ability to copy Object URL and Frame URL via object context menu and player context menu respectively.

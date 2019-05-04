@@ -1,0 +1,10 @@
+version: "2.3"
+
+services:
+  cvat:
+    build:
+      args:
+        WITH_TESTS: "yes"
+    environment:
+      COVERALLS_REPO_TOKEN: 
+      

@@ -10,9 +10,10 @@ from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine import annotation, task
+from cvat.apps.engine.serializers import LabeledDataSerializer
+from cvat.apps.engine.annotation import put_task_data
 
 import django_rq
-import subprocess
 import fnmatch
 import logging
 import json
@@ -25,8 +26,6 @@ import numpy as np
 from PIL import Image
 from cvat.apps.engine.log import slogger
 
-if os.environ.get('OPENVINO_TOOLKIT') == 'yes':
-    from openvino.inference_engine import IENetwork, IEPlugin
 
 def load_image_into_numpy(image):
     (im_width, im_height) = image.size
@@ -34,12 +33,7 @@ def load_image_into_numpy(image):
 
 
 def run_inference_engine_annotation(image_list, labels_mapping, treshold):
-    def _check_instruction(instruction):
-        return instruction == str.strip(
-            subprocess.check_output(
-                'lscpu | grep -o "{}" | head -1'.format(instruction), shell=True
-            ).decode('utf-8')
-        )
+    from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
 
     def _normalize_box(box, w, h, dw, dh):
         xmin = min(int(box[0] * dw * w), w)
@@ -53,19 +47,8 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
     if MODEL_PATH is None:
         raise OSError('Model path env not found in the system.')
 
-    IE_PLUGINS_PATH = os.getenv('IE_PLUGINS_PATH')
-    if IE_PLUGINS_PATH is None:
-        raise OSError('Inference engine plugin path env not found in the system.')
-
-    plugin = IEPlugin(device='CPU', plugin_dirs=[IE_PLUGINS_PATH])
-    if (_check_instruction('avx2')):
-        plugin.add_cpu_extension(os.path.join(IE_PLUGINS_PATH, 'libcpu_extension_avx2.so'))
-    elif (_check_instruction('sse4')):
-        plugin.add_cpu_extension(os.path.join(IE_PLUGINS_PATH, 'libcpu_extension_sse4.so'))
-    else:
-        raise Exception('Inference engine requires a support of avx2 or sse4.')
-
-    network = IENetwork.from_ir(model = MODEL_PATH + '.xml', weights = MODEL_PATH + '.bin')
+    plugin = make_plugin()
+    network = make_network('{}.xml'.format(MODEL_PATH), '{}.bin'.format(MODEL_PATH))
     input_blob_name = next(iter(network.inputs))
     output_blob_name = next(iter(network.outputs))
     executable_network = plugin.load(network=network)
@@ -186,44 +169,30 @@ def make_image_list(path_to_data):
 
 
 def convert_to_cvat_format(data):
-    def create_anno_container():
-        return {
-            "boxes": [],
-            "polygons": [],
-            "polylines": [],
-            "points": [],
-            "box_paths": [],
-            "polygon_paths": [],
-            "polyline_paths": [],
-            "points_paths": [],
-        }
-
     result = {
-        'create': create_anno_container(),
-        'update': create_anno_container(),
-        'delete': create_anno_container(),
+        "tracks": [],
+        "shapes": [],
+        "tags": [],
+        "version": 0,
     }
 
     for label in data:
         boxes = data[label]
         for box in boxes:
-            result['create']['boxes'].append({
+            result['shapes'].append({
+                "type": "rectangle",
                 "label_id": label,
                 "frame": box[0],
-                "xtl": box[1],
-                "ytl": box[2],
-                "xbr": box[3],
-                "ybr": box[4],
+                "points": [box[1], box[2], box[3], box[4]],
                 "z_order": 0,
-                "group_id": 0,
+                "group": None,
                 "occluded": False,
                 "attributes": [],
-                "id": -1,
             })
 
     return result
 
-def create_thread(tid, labels_mapping):
+def create_thread(tid, labels_mapping, user):
     try:
         TRESHOLD = 0.5
         # Init rq job
@@ -237,12 +206,8 @@ def create_thread(tid, labels_mapping):
 
         # Run auto annotation by tf
         result = None
-        if os.environ.get('CUDA_SUPPORT') == 'yes' or os.environ.get('OPENVINO_TOOLKIT') != 'yes':
-            slogger.glob.info("tf annotation with tensorflow framework for task {}".format(tid))
-            result = run_tensorflow_annotation(image_list, labels_mapping, TRESHOLD)
-        else:
-            slogger.glob.info('tf annotation with openvino toolkit for task {}'.format(tid))
-            result = run_inference_engine_annotation(image_list, labels_mapping, TRESHOLD)
+        slogger.glob.info("tf annotation with tensorflow framework for task {}".format(tid))
+        result = run_tensorflow_annotation(image_list, labels_mapping, TRESHOLD)
 
         if result is None:
             slogger.glob.info('tf annotation for task {} canceled by user'.format(tid))
@@ -250,14 +215,16 @@ def create_thread(tid, labels_mapping):
 
         # Modify data format and save
         result = convert_to_cvat_format(result)
-        annotation.clear_task(tid)
-        annotation.save_task(tid, result)
+        serializer = LabeledDataSerializer(data = result)
+        if serializer.is_valid(raise_exception=True):
+            put_task_data(tid, user, result)
         slogger.glob.info('tf annotation for task {} done'.format(tid))
-    except:
+    except Exception as ex:
         try:
             slogger.task[tid].exception('exception was occured during tf annotation of the task', exc_info=True)
         except:
             slogger.glob.exception('exception was occured during tf annotation of the task {}'.format(tid), exc_into=True)
+        raise ex
 
 @login_required
 def get_meta_info(request):
@@ -323,7 +290,7 @@ def create(request, tid):
 
         # Run tf annotation job
         queue.enqueue_call(func=create_thread,
-            args=(tid, labels_mapping),
+            args=(tid, labels_mapping, request.user),
             job_id='tf_annotation.create/{}'.format(tid),
             timeout=604800)     # 7 days
 
@@ -360,6 +327,7 @@ def check(request, tid):
             job.delete()
         else:
             data['status'] = 'failed'
+            data['stderr'] = job.exc_info
             job.delete()
 
     except Exception:

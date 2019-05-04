@@ -5,6 +5,19 @@
  */
 
 /* exported ShapeBufferModel ShapeBufferController ShapeBufferView */
+
+/* global
+    AREA_TRESHOLD:false
+    userConfirm:false
+    Listener:false
+    Logger:false
+    Mousetrap:false
+    POINT_RADIUS:false
+    PolyShapeModel:false
+    STROKE_WIDTH:false
+    SVG:false
+*/
+
 "use strict";
 
 class ShapeBufferModel extends Listener  {
@@ -66,28 +79,32 @@ class ShapeBufferModel extends Listener  {
         }
 
         object.label_id = this._shape.label;
-        object.group_id = 0;
+        object.group = 0;
         object.frame = window.cvat.player.frames.current;
         object.attributes = attributes;
 
         if (this._shape.type === 'box') {
-            box.occluded = this._shape.position.occluded;
-            box.frame = window.cvat.player.frames.current;
-            box.z_order = this._collection.zOrder(box.frame).max;
+            const position = {
+                xtl: box.xtl,
+                ytl: box.ytl,
+                xbr: box.xbr,
+                ybr: box.ybr,
+                occluded: this._shape.position.occluded,
+                frame: window.cvat.player.frames.current,
+                z_order: this._collection.zOrder(window.cvat.player.frames.current).max,
+            };
 
             if (isTracked) {
                 object.shapes = [];
-                object.shapes.push(Object.assign(box, {
+                object.shapes.push(Object.assign(position, {
                     outside: false,
-                    attributes: []
+                    attributes: [],
                 }));
+            } else {
+                Object.assign(object, position);
             }
-            else {
-                Object.assign(object, box);
-            }
-        }
-        else {
-            let position = {};
+        } else {
+            const position = {};
             position.points = points;
             position.occluded = this._shape.position.occluded;
             position.frame = window.cvat.player.frames.current;
@@ -166,8 +183,7 @@ class ShapeBufferModel extends Listener  {
                     ybr: this._shape.position.ybr,
                 };
                 object = this._makeObject(box, null, false);
-            }
-            else {
+            } else {
                 object = this._makeObject(null, this._shape.position.points, false);
             }
 
@@ -176,7 +192,7 @@ class ShapeBufferModel extends Listener  {
                     count: numOfFrames,
                 });
 
-                let imageSizes = window.cvat.job.images.original_size;
+                let imageSizes = window.cvat.job.images;
                 let startFrame = window.cvat.player.frames.start;
                 let originalImageSize = imageSizes[object.frame - startFrame] || imageSizes[0];
 
@@ -281,11 +297,12 @@ class ShapeBufferController {
             let propagateDialogShowed = false;
             let propagateHandler = Logger.shortkeyLogDecorator(function() {
                 if (!propagateDialogShowed) {
+                    blurAllElements();
                     if (this._model.copyToBuffer()) {
                         let curFrame = window.cvat.player.frames.current;
                         let startFrame = window.cvat.player.frames.start;
                         let endFrame = Math.min(window.cvat.player.frames.stop, curFrame + this._model.propagateFrames);
-                        let imageSizes = window.cvat.job.images.original_size;
+                        let imageSizes = window.cvat.job.images;
 
                         let message = `Propagate up to ${endFrame} frame. `;
                         let refSize = imageSizes[curFrame - startFrame] || imageSizes[0];
@@ -299,7 +316,7 @@ class ShapeBufferController {
                         message += 'Are you sure?';
 
                         propagateDialogShowed = true;
-                        confirm(message, () => {
+                        userConfirm(message, () => {
                             this._model.propagateToFrames();
                             propagateDialogShowed = false;
                         }, () => propagateDialogShowed = false);

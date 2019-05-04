@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-.dashboardTaskUI {
+.dashboardItem {
     margin: 5px auto;
     width: 1200px;
     height: 335px;
@@ -14,7 +14,7 @@
 }
 
 .dashboardTaskIntro {
-    width: 25%;
+    width: 30%;
     height: 75%;
     float: left;
     margin-left: 20px;
@@ -25,7 +25,7 @@
 
 .dashboardButtonsUI {
     margin-top: 1%;
-    width: 33%;
+    width: 35%;
     height: 75%;
     float: left;
     overflow-y: auto;
@@ -33,19 +33,19 @@
 
 .dashboardButtonUI {
     display: block;
-    width: 70%;
-    height: 2.5em;
+    width: 60%;
+    height: 1.6em;
     margin: auto;
-    margin-top: 0.1em;
+    margin-top: 0.3em;
     font-size: 1em;
 }
 
 .dashboardJobsUI {
-    width: 40%;
+    width: 30%;
     height: 75%;
     float: left;
     text-align: center;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .dashboardJobList {
@@ -65,7 +65,7 @@
     padding: 10px;
     border: 1px solid grey;
     float: left;
-    width: 70%;
+    width: 76%;
     background: #f1f1f1;
     outline: 0;
 }
@@ -75,7 +75,6 @@
     width: 20%;
     padding: 10px;
     background: #0b7dda;
-    color: white;
     border: 1px solid grey;
     border-left: none;
     cursor: pointer;
@@ -88,10 +87,6 @@
 
 #dashboardSearchSubmit:active {
     background: #0b7fff;
-}
-
-#dashboardCreateTaskButton {
-    font-size: 2em;
 }
 
 #dashboardCreateContent {

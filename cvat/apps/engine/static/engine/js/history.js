@@ -1,4 +1,16 @@
+/*
+ * Copyright (C) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 /* exported HistoryModel HistoryController HistoryView */
+
+/* global
+    Listener:false
+    Logger:false
+    Mousetrap:false
+*/
 "use strict";
 
 class HistoryModel extends Listener {

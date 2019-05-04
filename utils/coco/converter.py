@@ -30,12 +30,16 @@ def parse_args():
         help='input file with CVAT annotation in *.xml format'
     )
     parser.add_argument(
-        '--output', required=True,
-        help='output annotation file'
+        '--output', default=None,
+        help='output annotation file. If not defined, the output file name will be created from input file name'
     )
     parser.add_argument(
         '--image-dir', required=True,
         help='directory with images from annotation'
+    )
+    parser.add_argument(
+        '--labels', default=None,
+        help='path to file with labels'
     )
     parser.add_argument(
         '--draw', default=None,
@@ -49,14 +53,19 @@ def parse_args():
         '--use_background_label', action='store_true',
         help='insert in output annotation objects with label \'background\'. By default is false'
     )
+    parser.add_argument(
+        '--polygon-area-threshold', type=int, default=1,
+        help='polygons with area less than this value will be ignored. By default set to 1'
+    )
     return parser.parse_args()
 
 
-def mask_to_polygon(mask, tolerance=1.0):
+def mask_to_polygon(mask, tolerance=1.0, area_threshold=1):
     """Convert object's mask to polygon [[x1,y1, x2,y2 ...], [...]]
     Args:
         mask: object's mask presented as 2D array of 0 and 1
         tolerance: maximum distance from original points of polygon to approximated
+        area_threshold: if area of a polygon is less than this value, remove this small object
     """
     polygons = []
     # pad mask with 0 around borders
@@ -77,8 +86,13 @@ def mask_to_polygon(mask, tolerance=1.0):
             for i in range(0, len(reshaped_contour)):
                 if reshaped_contour[i] < 0:
                     reshaped_contour[i] = 0
-            polygons.append(reshaped_contour)
+            # Check if area of a polygon is enough
+            rle = mask_util.frPyObjects([reshaped_contour], mask.shape[0], mask.shape[1])
+            area = mask_util.area(rle)
+            if sum(area) > area_threshold:
+                polygons.append(reshaped_contour)
     return polygons
+
 
 def draw_polygons(polygons, img_name, input_dir, output_dir, draw_labels):
     """Draw on image contours of its objects and save
@@ -96,8 +110,7 @@ def draw_polygons(polygons, img_name, input_dir, output_dir, draw_labels):
     red = (0, 0, 255)
     for poly in polygons:
         label = poly['label']
-        rle = mask_util.frPyObjects(poly['points'], img.shape[0], img.shape[1])
-        bbox = mask_util.toBbox(rle)
+        _, bbox = polygon_area_and_bbox(poly['points'], img.shape[0], img.shape[1])
         for j in range(0, len(poly['points'])):
             i = 0
             points = []
@@ -106,15 +119,18 @@ def draw_polygons(polygons, img_name, input_dir, output_dir, draw_labels):
                 y = int(poly['points'][j][i + 1])
                 points.append([x, y])
                 i += 2
+            bbox = [int(value) for value in bbox]
             img = cv2.polylines(img, np.int32([points]), True, yellow, 1)
+            img = cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), red, 2)
             if draw_labels:
-                x = int(bbox[0][0]) + int(bbox[0][2] / 4)
-                y = int(bbox[0][1]) + int(bbox[0][3] / 2)
+                x = bbox[0] + bbox[2] // 4
+                y = bbox[1] + bbox[3] // 2
                 cv2.putText(img, label, (x, y), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, red, 1)
     cv2.imwrite(output_file, img)
 
+
 def fix_segments_intersections(polygons, height, width, img_name, use_background_label,
-                               threshold=0.0, ratio_tolerance=0.001):
+                               threshold=0.0, ratio_tolerance=0.001, area_threshold=1):
     """Find all intersected regions and crop contour for back object by objects which
         are in front of the first one. It is related to a specialty of segmentation
         in CVAT annotation. Intersection is calculated via function 'iou' from cocoapi
@@ -174,7 +190,7 @@ def fix_segments_intersections(polygons, height, width, img_name, use_background
 
                 bottom_mask = np.sum(bottom_mask, axis=2)
                 bottom_mask = np.array(bottom_mask > 0, dtype=np.uint8)
-                converted_polygons[i]['points'] = mask_to_polygon(bottom_mask)
+                converted_polygons[i]['points'] = mask_to_polygon(bottom_mask, area_threshold=area_threshold)
                 # If some segment is empty, do small fix to avoid error in cocoapi function
                 if len(converted_polygons[i]['points']) == 0:
                     converted_polygons[i]['points'] = [empty_polygon]
@@ -196,6 +212,7 @@ def fix_segments_intersections(polygons, height, width, img_name, use_background
 
     return output_polygons
 
+
 def polygon_area_and_bbox(polygon, height, width):
     """Calculate area of object's polygon and bounding box around it
     Args:
@@ -206,7 +223,12 @@ def polygon_area_and_bbox(polygon, height, width):
     rle = mask_util.frPyObjects(polygon, height, width)
     area = mask_util.area(rle)
     bbox = mask_util.toBbox(rle)
+    bbox = [min(bbox[:, 0]),
+            min(bbox[:, 1]),
+            max(bbox[:, 0] + bbox[:, 2]) - min(bbox[:, 0]),
+            max(bbox[:, 1] + bbox[:, 3]) - min(bbox[:, 1])]
     return area, bbox
+
 
 def insert_license_data(result_annotation):
     """Fill license fields in annotation by blank data
@@ -218,6 +240,7 @@ def insert_license_data(result_annotation):
         'id': 0,
         'url': ''
     })
+
 
 def insert_info_data(xml_root, result_annotation):
     """Fill available information of annotation
@@ -252,56 +275,84 @@ def insert_info_data(xml_root, result_annotation):
     }
     log.info('Found the next information data: {}'.format(result_annotation['info']))
 
-def insert_categories_data(xml_root, use_background_label, result_annotation, xml_dir):
+
+def insert_categories_data(xml_root, use_background_label, result_annotation, labels_file=None):
     """Get labels from input annotation and fill categories field in output annotation
     Args:
         xml_root: root for xml parser
         use_background_label: key to enable using label background
         result_annotation: output annotation in COCO representation
-        xml_dir: directory with input annotation
+        labels_file: path to file with labels names.
+                     If not defined, parse annotation to get labels names
     """
-    log.info('Reading labels...')
+    def get_categories(names, bg_found, use_background_label, sort=False):
+        bg_used = False
+        category_map = {}
+        categories = []
+        # Sort labels by its names to make the same order of ids for different annotations
+        if sort:
+            names.sort()
+        # Always use id = 0 for background
+        if bg_found and use_background_label:
+            category_map['background'] = 0
+            bg_used = True
+        cat_id = 1
+        # Define id for all labels beginning from 1
+        for name in names:
+            if name == 'background':
+                continue
+            category_map[name] = cat_id
+            categories.append({'id': cat_id, 'name': name, 'supercategory': ''})
+            cat_id += 1
+        return category_map, categories, bg_used
+
     categories = []
     category_map = {}
+    label_names = []
     bg_found = False
-    id = 0
-    for label in xml_root.iter('label'):
-        for name in label.findall("./name"):
-            if not use_background_label and name.text == 'background':
-                bg_found = True
-                continue
-            category_map[name.text] = id
-            categories.append({'id': id, 'name': name.text, 'supercategory': ''})
-            id += 1
+    bg_used = False
+
+    if labels_file is None:
+        log.info('Reading labels from annotation...')
+        for label in xml_root.iter('label'):
+            for name in label.findall("./name"):
+                if name.text == 'background':
+                    bg_found = True
+                    continue
+                label_names.append(name.text)
+        if len(label_names) == 0:
+            log.info('Labels in annotation were not found. Please use \'--labels\' argument to define file with labels.')
+        else:
+            category_map, categories, bg_used = get_categories(label_names, bg_found, use_background_label, sort=True)
+    else:
+        log.info('Parsing labels from file <{}>...'.format(labels_file))
+        with open(labels_file, 'r') as file:
+            string = '  '
+            while string != '' and string != '\n':
+                string = file.readline()
+                labels = string.split(' ')
+                for label in labels:
+                    if label == '\n' or label == '':
+                        continue
+                    label = label.replace('\n', '')
+                    if label == 'background':
+                        bg_found = True
+                        continue
+                    label_names.append(label)
+            category_map, categories, bg_used = get_categories(label_names, bg_found, use_background_label)
+
     if len(categories) == 0:
-        log.info('Labels in annotation were not found. Trying to find file <labels.txt> in <{}>'.format(xml_dir))
-        if osp.isfile(osp.join(xml_dir, 'labels.txt')):
-            labels_file = osp.join(xml_dir, 'labels.txt')
-            log.info('File <labels.txt> was found in <{}>. Reading...'.format(xml_dir))
-            with open(labels_file, 'r') as file:
-                string = '  '
-                id = 0
-                while string != '' and string != '\n':
-                    string = file.readline()
-                    labels = string.split(' ')
-                    for l in labels:
-                        if l == '\n':
-                            continue
-                        if not use_background_label and l == 'background':
-                            bg_found = True
-                            continue
-                        category_map[l] = id
-                        categories.append({'id': id, 'name': l, 'supercategory': ''})
-                        id += 1
+        raise ValueError('Categories list is empty. Something wrong.')
 
     result_annotation['categories'] = categories
     log.info('Found the next labels: {}'.format(category_map))
-    if bg_found:
+    if bg_found and not bg_used:
         log.warning('Label <background> was found but not used. '
                     'To enable it should use command line argument [--use_background_label]')
     return category_map
 
-def insert_image_data(image, path_to_images, result_annotation):
+
+def insert_image_data(image, result_annotation):
     """Get data from input annotation for image and fill fields for this image in output annotation
     Args:
         image: dictionary with data for image from original annotation
@@ -315,10 +366,10 @@ def insert_image_data(image, path_to_images, result_annotation):
     new_img['license'] = 0
     new_img['id'] = image['id']
     new_img['file_name'] = osp.basename(image['name'])
-    pic = cv2.imread(osp.join(path_to_images, new_img['file_name']))
-    new_img['height'] = pic.shape[0]
-    new_img['width'] = pic.shape[1]
+    new_img['height'] = int(image['height'])
+    new_img['width'] = int(image['width'])
     result_annotation['images'].append(new_img)
+
 
 def insert_annotation_data(image, category_map, segm_id, object, img_dims, result_annotation):
     """Get data from input annotation for object and fill fields for this object in output annotation
@@ -337,18 +388,22 @@ def insert_annotation_data(image, category_map, segm_id, object, img_dims, resul
     new_anno['iscrowd'] = 0
     new_anno['segmentation'] = object['points']
     area, bbox = polygon_area_and_bbox(object['points'], img_dims[0], img_dims[1])
-    new_anno['area'] = float(area[0])
-    new_anno['bbox'] = [bbox[0][0], bbox[0][1], bbox[0][2], bbox[0][3]]
+    new_anno['area'] = float(np.sum(area))
+    new_anno['bbox'] = bbox
     result_annotation['annotations'].append(new_anno)
 
 
 def main():
     args = parse_args()
     xml_file_name = args.cvat_xml
-    output_file_name = args.output
+    if args.output is not None:
+        output_file_name = args.output
+    else:
+        output_file_name = args.cvat_xml.split('.xml')[0] + '.json'
+        log.info('Output file name set to: {}'.format(output_file_name))
     root = etree.parse(xml_file_name).getroot()
 
-    if args.draw != None:
+    if args.draw is not None:
         log.info('Draw key was enabled. Images will be saved in directory <{}>'.format(args.draw))
 
     result_annotation = {
@@ -361,32 +416,47 @@ def main():
 
     insert_license_data(result_annotation)
     insert_info_data(root, result_annotation)
-    category_map = insert_categories_data(root, args.use_background_label, result_annotation, osp.dirname(xml_file_name))
+    category_map = insert_categories_data(root, args.use_background_label, result_annotation, labels_file=args.labels)
 
     if len(category_map) == 0:
         sys.exit('Labels were not found. Be sure that annotation <{}> includes field <labels> or '
                  'annotation directory includes file <labels.txt>'.format(xml_file_name))
 
     segm_id = 0
+    z_order_off_counter = 0
     # Parse original annotation
     for img in tqdm(root.iter('image'), desc='Processing images from ' + xml_file_name):
         image = {}
         for key, value in img.items():
             image[key] = value
+        img_name = osp.join(args.image_dir, osp.basename(image['name']))
+        if not osp.isfile(img_name):
+            log.warning('Image <{}> is not available'.format(img_name))
         image['polygon'] = []
+        z_order_on_counter = 0
+        polygon_counter = 0
         for poly in img.iter('polygon'):
             polygon = {}
             for key, value in poly.items():
                 polygon[key] = value
+                if key == 'z_order':
+                    z_order_on_counter += 1
+            polygon_counter += 1
             image['polygon'].append(polygon)
-        image['polygon'].sort(key=lambda x: int(x['z_order']))
+        # If at least one of polygons on image does not have field 'z_order' do not sort them
+        if z_order_on_counter == polygon_counter:
+            image['polygon'].sort(key=lambda x: int(x['z_order']))
+        else:
+            z_order_off_counter += 1
 
         # Create new image
-        insert_image_data(image, args.image_dir, result_annotation)
+        image['id'] = int(image['id'])
+        insert_image_data(image, result_annotation)
         height = result_annotation['images'][-1]['height']
         width = result_annotation['images'][-1]['width']
         image['polygon'] = fix_segments_intersections(image['polygon'], height, width,
-                                                      image['name'], args.use_background_label)
+                                                      image['name'], args.use_background_label,
+                                                      area_threshold=args.polygon_area_threshold)
 
         # Create new annotation for this image
         for poly in image['polygon']:
@@ -394,11 +464,14 @@ def main():
             segm_id += 1
 
         # Draw contours of objects on image
-        if args.draw != None:
+        if args.draw is not None:
             draw_polygons(image['polygon'], image['name'], args.image_dir, args.draw, args.draw_labels)
 
     log.info('Processed images: {}'.format(len(result_annotation['images'])))
     log.info('Processed objects: {}'.format(len(result_annotation['annotations'])))
+    if z_order_off_counter > 0:
+        log.warning('Annotation does not have a field \'z_order\' for {} image(s). '
+                    'Overlapped objects may be cropped incorrectly!'. format(z_order_off_counter))
 
     # Save created annotation
     log.info('Saving annotation...')
@@ -409,12 +482,12 @@ def main():
     # Try to load created annotation via cocoapi
     try:
         log.info('Trying to load annotation <{}> via cocoapi...'.format(output_file_name))
-        anno = coco_loader.COCO(output_file_name)
+        coco_loader.COCO(output_file_name)
     except:
         raise
     else:
-        log.info('Annotation in COCO representation <{}> created from <{}> successfully!'
-                 .format(output_file_name, xml_file_name))
+        log.info('Conversion <{}> --> <{}> has finished successfully!'.format(xml_file_name, output_file_name))
+
 
 if __name__ == "__main__":
     main()

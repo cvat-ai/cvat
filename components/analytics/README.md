@@ -1,5 +1,7 @@
 ## Analytics for Computer Vision Annotation Tool (CVAT)
 
+![](/cvat/apps/documentation/static/documentation/images/image097.jpg)
+
 It is possible to proxy annotation logs from client to ELK. To do that run the following command below:
 
 ### Build docker image

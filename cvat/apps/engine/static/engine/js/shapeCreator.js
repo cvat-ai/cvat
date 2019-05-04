@@ -5,6 +5,19 @@
  */
 
 /* exported ShapeCreatorModel ShapeCreatorController ShapeCreatorView */
+
+/* global
+    AREA_TRESHOLD:false
+    drawBoxSize:false
+    Listener:false
+    Logger:false
+    Mousetrap:false
+    PolyShapeModel:false
+    showMessage:false
+    STROKE_WIDTH:false
+    SVG:false
+*/
+
 "use strict";
 
 class ShapeCreatorModel extends Listener {
@@ -25,7 +38,7 @@ class ShapeCreatorModel extends Listener {
         let frame = window.cvat.player.frames.current;
 
         data.label_id = this._defaultLabel;
-        data.group_id = 0;
+        data.group = 0;
         data.frame = frame;
         data.occluded = false;
         data.outside = false;
@@ -171,6 +184,7 @@ class ShapeCreatorView {
         this._typeSelector = $('#shapeTypeSelector');
         this._polyShapeSizeInput = $('#polyShapeSize');
         this._frameContent = SVG.adopt($('#frameContent')[0]);
+        this._frameText = SVG.adopt($("#frameText")[0]);
         this._playerFrame = $('#playerFrame');
         this._createButton.on('click', () => this._controller.switchCreateMode(false));
         this._drawInstance = null;
@@ -374,26 +388,32 @@ class ShapeCreatorView {
                     sizeUI = null;
                 }
 
-                let frameWidth = window.cvat.player.geometry.frameWidth;
-                let frameHeight = window.cvat.player.geometry.frameHeight;
-                let rect = window.cvat.translate.box.canvasToActual(e.target.getBBox());
-                let box = {};
-                box.xtl = Math.clamp(rect.x, 0, frameWidth);
-                box.ytl = Math.clamp(rect.y, 0, frameHeight);
-                box.xbr = Math.clamp(rect.x + rect.width, 0, frameWidth);
-                box.ybr = Math.clamp(rect.y + rect.height, 0, frameHeight);
+                const frameWidth = window.cvat.player.geometry.frameWidth;
+                const frameHeight = window.cvat.player.geometry.frameHeight;
+                const rect = window.cvat.translate.box.canvasToActual(e.target.getBBox());
 
-                if (this._mode === 'interpolation') {
-                    box.outside = false;
-                }
+                const xtl = Math.clamp(rect.x, 0, frameWidth);
+                const ytl = Math.clamp(rect.y, 0, frameHeight);
+                const xbr = Math.clamp(rect.x + rect.width, 0, frameWidth);
+                const ybr = Math.clamp(rect.y + rect.height, 0, frameHeight);
+                if ((ybr - ytl) * (xbr - xtl) >= AREA_TRESHOLD) {
+                    const box = {
+                        xtl,
+                        ytl,
+                        xbr,
+                        ybr,
+                    }
 
-                if ((box.ybr - box.ytl) * (box.xbr - box.xtl) >= AREA_TRESHOLD) {
+                    if (this._mode === 'interpolation') {
+                        box.outside = false;
+                    }
+
                     this._controller.finish(box, this._type);
                 }
 
                 this._controller.switchCreateMode(true);
             }.bind(this)).on('drawupdate', (e) => {
-                sizeUI = drawBoxSize.call(sizeUI, this._frameContent, e.target);
+                sizeUI = drawBoxSize.call(sizeUI, this._frameContent, this._frameText, e.target.getBBox());
             }).on('drawcancel', () => {
                 if (sizeUI) {
                     sizeUI.rm();
