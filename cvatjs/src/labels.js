@@ -61,7 +61,7 @@
                 },
                 /**
                     * @name inputType
-                    * @type {string}
+                    * @type {module:API.cvat.enums.AttributeType}
                     * @memberof module:API.cvat.classes.Attribute
                     * @readonly
                     * @instance
@@ -71,7 +71,7 @@
                 },
                 /**
                     * @name mutable
-                    * @type {module:API.cvat.enums.AttributeType}
+                    * @type {boolean}
                     * @memberof module:API.cvat.classes.Attribute
                     * @readonly
                     * @instance

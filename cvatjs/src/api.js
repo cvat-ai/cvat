@@ -15,8 +15,7 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const User = require('./user');
-    const Task = require('./task');
-    const Job = require('./job');
+    const { Job, Task } = require('./session');
     const { Attribute, Label } = require('./labels');
 
     const {
@@ -167,6 +166,7 @@
         /**
             * Namespace is used for an interaction with a server
             * @namespace server
+            * @package
             * @memberof module:API.cvat
         */
         server: {
