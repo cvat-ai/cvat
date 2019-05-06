@@ -1,12 +1,10 @@
 {
   "name": "cvat.js",
-  "version": "1.0.0",
+  "version": "1.0.9",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "babel.config.js",
   "scripts": {
-    "babel": "mkdir babel.build -p && babel src -d babel.build",
-    "webpack": "webpack",
-    "build": "npm version patch && npm run babel && npm run webpack && rm babel.build -r",
+    "build": "npm version patch && webpack",
     "test": "npm run build && node --nolazy --inspect-brk=9229 tests.js",
     "debug": "node --nolazy --inspect-brk=9230 src/api.js",
     "docs": "jsdoc --readme README.md src/*.js -p -c jsdoc.config.js -d docs"
@@ -18,6 +16,7 @@
     "@babel/core": "^7.4.3",
     "@babel/preset-env": "^7.4.3",
     "babel-eslint": "^10.0.1",
+    "babel-loader": "^8.0.5",
     "jest": "^24.7.1",
     "jsdoc": "^3.5.5",
     "webpack": "^4.29.6",

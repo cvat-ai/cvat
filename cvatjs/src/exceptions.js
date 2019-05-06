@@ -10,6 +10,7 @@
 (() => {
     const Platform = require('platform');
     const ErrorStackParser = require('error-stack-parser');
+
     const hidden = require('./hidden');
 
     /**
