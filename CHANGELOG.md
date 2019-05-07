@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed incorrect width of shapes borders in some cases
+- Fixed annotation parser for tracks with a start frame less than the first segment frame
 
 ### Security
 -
