@@ -10,6 +10,7 @@
 /profiles
 /ssh/*
 !/ssh/README.md
+node_modules
 
 
 # Ignore temporary files

@@ -327,7 +327,7 @@ class AnnotationParser {
                 shapes: [],
             };
 
-            if (path.frame < this._startFrame || path.frame > this._stopFrame) {
+            if (path.frame > this._stopFrame) {
                 continue;
             }
 
