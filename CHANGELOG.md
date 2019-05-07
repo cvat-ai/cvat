@@ -6,6 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+-
+
+### Changed
+-
+
+### Deprecated
+-
+
+### Removed
+-
+
+### Fixed
+-
+
+### Security
+-
+
+## [0.4.0] - 2019-05-04
+### Added
 - OpenVINO auto annotation: it is possible to upload a custom model and annotate images automatically.
 - Ability to rotate images/video in the client part (Ctrl+R, Shift+Ctrl+R shortcuts) (#305)
 - The ReID application for automatic bounding box merging has been added (#299)
@@ -28,9 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Django 2.1.5 (security fix, https://nvd.nist.gov/vuln/detail/CVE-2019-3498)
 - Several scenarious which cause code 400 after undo/redo/save have been fixed (#315)
-
-### Security
--
 
 ## [0.3.0] - 2018-12-29
 ### Added
