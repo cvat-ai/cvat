@@ -24,10 +24,8 @@
                     } catch (exception) {
                         if (exception instanceof PluginError) {
                             throw exception;
-                        } else if (exception.message) {
-                            throw new PluginError(exception.message);
                         } else {
-                            throw new PluginError(`Unhandled exception in the plugin ${plugin.name}`);
+                            throw new PluginError(`Exception in plugin ${plugin.name}: ${exception.toString()}`);
                         }
                     }
                 }
@@ -44,10 +42,8 @@
                     } catch (exception) {
                         if (exception instanceof PluginError) {
                             throw exception;
-                        } else if (exception.message) {
-                            throw new PluginError(exception.message);
                         } else {
-                            throw new PluginError(`Unhandled exception in the plugin ${plugin.name}`);
+                            throw new PluginError(`Exception in plugin ${plugin.name}: ${exception.toString()}`);
                         }
                     }
                 }

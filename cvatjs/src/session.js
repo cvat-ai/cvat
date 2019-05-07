@@ -22,7 +22,6 @@
                 * @namespace annotations
                 * @memberof Session
             */
-
             /**
                 * Upload annotations from a dump file
                 * @method upload
@@ -33,7 +32,6 @@
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
-
             /**
                 * Save annotation changes on a server
                 * @method save
@@ -43,7 +41,6 @@
                 * @instance
                 * @async
             */
-
             /**
                 * Remove all annotations from a session
                 * @method clear
@@ -52,7 +49,6 @@
                 * @instance
                 * @async
             */
-
             /**
                 * Dump of annotations to a file.
                 * Method always dumps annotations for a whole task.
@@ -64,7 +60,6 @@
                 * @instance
                 * @async
             */
-
             /**
                 * Collect some statistics from a session.
                 * For example number of shapes, tracks, polygons etc
@@ -75,7 +70,6 @@
                 * @instance
                 * @async
             */
-
             /**
                 * Add some annotations to a session
                 * @method put
@@ -86,7 +80,6 @@
                 * @instance
                 * @async
             */
-
             /**
                 * @typedef {Object} ObjectFilter
                 * @property {string} [label] a name of a label
@@ -111,7 +104,6 @@
                 * @instance
                 * @async
             */
-
             /**
                 * Find frame which contains at least one object satisfied to a filter
                 * @method search
@@ -120,10 +112,10 @@
                 * @param {integer} from lower bound of a search
                 * @param {integer} to upper bound of a search
                 * @returns {integer} the nearest frame which contains filtered objects
+                * @throws {module:API.cvat.exceptions.PluginError}
                 * @instance
                 * @async
             */
-
             /**
                 * Select shape under a cursor using smart alghorithms
                 * @method select
@@ -144,11 +136,45 @@
                 * @namespace frames
                 * @memberof Session
             */
+            /**
+                * Get frame by its number
+                * @method get
+                * @memberof Session.frames
+                * @param {integer} frame number of frame which you want to get
+                * @returns {module:API.cvat.classes.FrameData}
+                * @instance
+                * @async
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
 
             /**
-                * Namespace is used for an interaction with events
-                * @namespace events
+                * Namespace is used for an interaction with logs
+                * @namespace logs
                 * @memberof Session
+            */
+
+            /**
+                * Append log to a log collection.
+                * Continue logs will have been added after "close" method is called
+                * @method put
+                * @memberof Session.logs
+                * @param {module:API.cvat.enums.LogType} type a type of a log
+                * @param {boolean} continue log is a continue log
+                * @param {Object} details any others data which will be append to log data
+                * @returns {module:API.cvat.classes.Log}
+                * @instance
+                * @async
+                * @throws {module:API.cvat.exceptions.PluginError}
+            */
+            /**
+                * Save accumulated logs on a server
+                * @method save
+                * @memberof Session.logs
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+                * @instance
+                * @async
             */
 
             /**
@@ -158,8 +184,36 @@
             */
 
             /**
-                * Namespace is used for an interaction with logs
-                * @namespace logs
+                * Is a dictionary of pairs "id:action" where "id" is an identifier of an object
+                * which has been affected by undo/redo and "action" is what exactly has been
+                * done with the object. Action can be: "created", "deleted", "updated".
+                * Size of an output array equal the param "count".
+                * @typedef {Object} HistoryAction
+                * @global
+            */
+            /**
+                * Undo actions
+                * @method undo
+                * @memberof Session.actions
+                * @returns {HistoryAction}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+            /**
+                * Redo actions
+                * @method redo
+                * @memberof Session.actions
+                * @returns {HistoryAction}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+
+
+            /**
+                * Namespace is used for an interaction with events
+                * @namespace events
                 * @memberof Session
             */
         }
@@ -295,8 +349,8 @@
             * @readonly
             * @instance
             * @async
-            * @throws {module:API.cvat.exception.ServerError}
-            * @throws {module:API.cvat.exception.PluginError}
+            * @throws {module:API.cvat.exceptions.ServerError}
+            * @throws {module:API.cvat.exceptions.PluginError}
         */
         async save() {
             const result = await PluginRegistry
@@ -313,7 +367,7 @@
     */
     class Task extends Session {
         /**
-            * In a fact you need use the constructor only if you want create a task
+            * In a fact you need use the constructor only if you want to create a task
             * @param {object} initialData - Object which is used for initalization
             * <br> It can contain keys:
             * <br> <li style="margin-left: 10px;"> name
