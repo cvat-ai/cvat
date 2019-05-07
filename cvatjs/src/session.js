@@ -18,10 +18,126 @@
     class Session {
         constructor() {
             /**
-                * Namespace is used for an interaction with annotations
+                * An interaction with annotations
                 * @namespace annotations
                 * @memberof Session
             */
+
+            /**
+                * Upload annotations from a dump file
+                * @method upload
+                * @memberof Session.annotations
+                * @param {string} [annotations] - annotations in a text format
+                * @instance
+                * @async
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+
+            /**
+                * Save annotation changes on a server
+                * @method save
+                * @memberof Session.annotations
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+                * @instance
+                * @async
+            */
+
+            /**
+                * Remove all annotations from a session
+                * @method clear
+                * @memberof Session.annotations
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+
+            /**
+                * Dump of annotations to a file.
+                * Method always dumps annotations for a whole task.
+                * @method dump
+                * @memberof Session.annotations
+                * @returns {string} URL which can be used in order to get a dump file
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+                * @instance
+                * @async
+            */
+
+            /**
+                * Collect some statistics from a session.
+                * For example number of shapes, tracks, polygons etc
+                * @method statistics
+                * @memberof Session.annotations
+                * @returns {module:API.cvat.classes.Statistics} statistics object
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+
+            /**
+                * Add some annotations to a session
+                * @method put
+                * @memberof Session.annotations
+                * @param {module:API.cvat.classes.ObjectState[]} data
+                * array of objects on the specific frame
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+
+            /**
+                * @typedef {Object} ObjectFilter
+                * @property {string} [label] a name of a label
+                * @property {module:API.cvat.enums.ObjectType} [type]
+                * @property {module:API.cvat.enums.ObjectShape} [shape]
+                * @property {boolean} [occluded] a value of occluded property
+                * @property {boolean} [lock] a value of lock property
+                * @property {number} [width] a width of a shape
+                * @property {number} [height] a height of a shape
+                * @property {Object[]} [attributes] dictionary with "name: value" pairs
+                * @global
+            */
+            /**
+                * Get annotations for a specific frame
+                * @method get
+                * @param {integer} frame get objects from the frame
+                * @param {ObjectFilter[]} [filter = []]
+                * get only objects are satisfied to specific filter
+                * @returns {module:API.cvat.classes.ObjectState[]}
+                * @memberof Session.annotations
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+
+            /**
+                * Find frame which contains at least one object satisfied to a filter
+                * @method search
+                * @memberof Session.annotations
+                * @param {ObjectFilter} [filter = []] filter
+                * @param {integer} from lower bound of a search
+                * @param {integer} to upper bound of a search
+                * @returns {integer} the nearest frame which contains filtered objects
+                * @instance
+                * @async
+            */
+
+            /**
+                * Select shape under a cursor using smart alghorithms
+                * @method select
+                * @memberof Session.annotations
+                * @param {integer} frame frame for selecting
+                * @param {float} x horizontal coordinate
+                * @param {float} y vertical coordinate
+                * @returns {(integer|null)}
+                * identifier of a selected object or null if no one of objects is on position
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+
 
             /**
                 * Namespace is used for an interaction with frames
@@ -553,8 +669,8 @@
             * @readonly
             * @instance
             * @async
-            * @throws {module:API.cvat.exception.ServerError}
-            * @throws {module:API.cvat.exception.PluginError}
+            * @throws {module:API.cvat.exceptions.ServerError}
+            * @throws {module:API.cvat.exceptions.PluginError}
         */
         async save() {
             const result = await PluginRegistry
@@ -569,8 +685,8 @@
             * @readonly
             * @instance
             * @async
-            * @throws {module:API.cvat.exception.ServerError}
-            * @throws {module:API.cvat.exception.PluginError}
+            * @throws {module:API.cvat.exceptions.ServerError}
+            * @throws {module:API.cvat.exceptions.PluginError}
         */
         async delete() {
             const result = await PluginRegistry

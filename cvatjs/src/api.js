@@ -15,6 +15,9 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const User = require('./user');
+    const ObjectState = require('./object-state');
+    const Statistics = require('./statistics');
+    const User = require('./user');
     const { Job, Task } = require('./session');
     const { Attribute, Label } = require('./labels');
 
@@ -23,6 +26,8 @@
         TaskStatus,
         TaskMode,
         AttributeType,
+        ObjectType,
+        ObjectShape,
     } = require('./enums');
 
     const {
@@ -258,7 +263,7 @@
                 * @async
                 * @memberof module:API.cvat.tasks
                 * @param {TaskFilter} [filter={}] task filter
-                * @returns {Task[]}
+                * @returns {module:API.cvat.classes.Task[]}
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
@@ -288,7 +293,7 @@
                 * @async
                 * @memberof module:API.cvat.jobs
                 * @param {JobFilter} filter job filter
-                * @returns {Job[]}
+                * @returns {module:API.cvat.classes.Job[]}
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
@@ -519,14 +524,37 @@
                 * @enum {string}
                 * @name AttributeType
                 * @memberof module:API.cvat.enums
-                * @property {string} checkbox
-                * @property {string} select
-                * @property {string} radio
-                * @property {string} number
-                * @property {string} text
+                * @property {string} checkbox - true or false
+                * @property {string} select - list of values
+                * @property {string} radio - list of values
+                * @property {string} number - range of numbers
+                * @property {string} text - any text
                 * @readonly
             */
             AttributeType,
+            /**
+                * Enum for type of an object
+                * @enum {string}
+                * @name ObjectType
+                * @memberof module:API.cvat.enums
+                * @property {string} tag one frame - one object
+                * @property {string} shape - one frame - many objects
+                * @property {string} track - many frames - many objects
+                * @readonly
+            */
+            ObjectType,
+            /**
+                * Enum for type of server files
+                * @enum {string}
+                * @name ObjectShape
+                * @memberof module:API.cvat.enums
+                * @property {string} rectangle
+                * @property {string} polygon
+                * @property {string} polyline
+                * @property {string} points
+                * @readonly
+            */
+            ObjectShape,
         },
         /**
             * Namespace is used for access to exceptions
@@ -551,6 +579,8 @@
             Job,
             Attribute,
             Label,
+            ObjectState,
+            Statistics
         },
     };
 

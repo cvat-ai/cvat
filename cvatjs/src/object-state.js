@@ -4,6 +4,10 @@
 */
 
 (() => {
+    /**
+        * Class representing a state of an object on a specific frame
+        * @memberof module:API.cvat.classes
+    */
     class ObjectState {
         constructor() {
             this.a = 5;

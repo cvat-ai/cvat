@@ -28,10 +28,25 @@
         TEXT: 'text',
     });
 
+    const ObjectType = Object.freeze({
+        TAG: 'tag',
+        SHAPE: 'shape',
+        TRACK: 'track',
+    });
+
+    const ObjectShape = Object.freeze({
+        RECTANGLE: 'rectangle',
+        POLYGON: 'polygon',
+        POLYLINE: 'polyline',
+        POINTS: 'points',
+    });
+
     module.exports = {
         ShareFileType,
         TaskStatus,
         TaskMode,
         AttributeType,
+        ObjectType,
+        ObjectShape
     };
 })();
