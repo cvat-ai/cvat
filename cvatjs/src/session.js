@@ -26,11 +26,12 @@
                 * Upload annotations from a dump file
                 * @method upload
                 * @memberof Session.annotations
-                * @param {string} [annotations] - annotations in a text format
+                * @param {File} [annotations] - text file with annotations
                 * @instance
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
             */
             /**
                 * Save annotation changes on a server
@@ -77,6 +78,7 @@
                 * @param {module:API.cvat.classes.ObjectState[]} data
                 * array of objects on the specific frame
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
                 * @async
             */
@@ -101,6 +103,7 @@
                 * @returns {module:API.cvat.classes.ObjectState[]}
                 * @memberof Session.annotations
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
                 * @async
             */
@@ -113,6 +116,7 @@
                 * @param {integer} to upper bound of a search
                 * @returns {integer} the nearest frame which contains filtered objects
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
                 * @async
             */
@@ -126,6 +130,7 @@
                 * @returns {(integer|null)}
                 * identifier of a selected object or null if no one of objects is on position
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
                 * @async
             */
@@ -146,6 +151,7 @@
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
             */
 
             /**
@@ -160,12 +166,13 @@
                 * @method put
                 * @memberof Session.logs
                 * @param {module:API.cvat.enums.LogType} type a type of a log
-                * @param {boolean} continue log is a continue log
+                * @param {boolean} continuous log is a continuous log
                 * @param {Object} details any others data which will be append to log data
                 * @returns {module:API.cvat.classes.Log}
                 * @instance
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
             */
             /**
                 * Save accumulated logs on a server
@@ -215,6 +222,29 @@
                 * Namespace is used for an interaction with events
                 * @namespace events
                 * @memberof Session
+            */
+            /**
+                * Subscribe on an event
+                * @method subscribe
+                * @memberof Session.events
+                * @param {module:API.cvat.enums.EventType} type - event type
+                * @param {functions} callback - function which will be called on event
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
+            */
+            /**
+                * Unsubscribe from an event. If callback is not provided,
+                * all callbacks will be removed from subscribers for the event
+                * @method unsubscribe
+                * @memberof Session.events
+                * @param {module:API.cvat.enums.EventType} type - event type
+                * @param {functions} [callback = null] - function which is called on event
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
             */
         }
     }

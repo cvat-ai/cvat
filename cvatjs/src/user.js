@@ -47,7 +47,7 @@
                     /**
                         * @name username
                         * @type {string}
-                        * @memberof module:API.cvatclasses.User
+                        * @memberof module:API.cvat.classes.User
                         * @readonly
                         * @instance
                     */
