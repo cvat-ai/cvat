@@ -102,7 +102,7 @@ RUN if [ "$WITH_TESTS" = "yes" ]; then \
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
-RUN  pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
+RUN pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 
 # Install git application dependencies
 RUN apt-get update && \

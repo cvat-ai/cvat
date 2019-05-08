@@ -5,6 +5,6 @@ services:
     build:
       args:
         WITH_TESTS: "yes"
+      network: host
     environment:
-      COVERALLS_REPO_TOKEN: 
-      
+      COVERALLS_REPO_TOKEN:
