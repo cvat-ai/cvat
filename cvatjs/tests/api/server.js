@@ -3,14 +3,33 @@
  * SPDX-License-Identifier: MIT
  */
 
+/* eslint no-underscore-dangle: 0 */
+
 /* global
     require:false
+    jest:false
+    describe:false
 */
 
-require('./src/api');
+// Setup mock for a server
+jest.mock('../../src/server-proxy', () => {
+    const mock = require('../mocks/server-proxy.mock');
+    return mock;
+});
 
-console.log('Tests have been passed');
+// Initialize api
+require('../../src/api');
 
+// Test cases
+describe('listFilesInDirectorySync', () => {
+    test('adds 1 + 2 to equal 3', async () => {
+        const result = await window.cvat.tasks.get();
+        expect(result).toEqual([]);
+    });
+});
+
+
+/*
 const plugin = {
     name: 'Example Plugin',
     description: 'This example plugin demonstrates how plugin system in CVAT works',
@@ -63,7 +82,7 @@ const plugin = {
 };
 
 
-(async function test() {
+async function test() {
     await window.cvat.plugins.register(plugin);
     await window.cvat.server.login('admin', 'nimda760');
 
@@ -80,4 +99,5 @@ const plugin = {
         console.log(exception.constructor.name);
         console.log(exception.message);
     }
-}());
+}
+*/

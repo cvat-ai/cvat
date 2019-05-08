@@ -119,35 +119,6 @@
             "env": {}
         },
         {
-            "name": "tests",
-            "type": "python",
-            "request": "launch",
-            "debugStdLib": true,
-            "stopOnEntry": false,
-            "pythonPath": "${config:python.pythonPath}",
-            "program": "${workspaceRoot}/manage.py",
-            "args": [
-                "test",
-                "--settings",
-                "cvat.settings.testing",
-                "cvat/apps/engine",
-            ],
-            "django": true,
-            "cwd": "${workspaceFolder}",
-            "env": {}
-        },
-        {
-            "name": "cvat.js test",
-            "type": "node",
-            "request": "launch",
-            "cwd": "${workspaceFolder}/cvatjs",
-            "runtimeExecutable": "npm",
-            "runtimeArgs": [
-                "run-script", "test"
-            ],
-            "port": 9229
-        },
-        {
             "name": "cvat.js debug",
             "type": "node",
             "request": "launch",
@@ -157,7 +128,20 @@
                 "run-script", "debug"
             ],
             "port": 9230
-        }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "jest debug",
+            "program": "${workspaceFolder}/cvatjs/node_modules/.bin/jest",
+            "args": [
+              "--config",
+              "${workspaceFolder}/cvatjs/jest.config.js"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "disableOptimisticBPs": true,
+          }
     ],
     "compounds": [
         {
