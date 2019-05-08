@@ -10,25 +10,26 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 
 ## Documentation
 
--   [User's guide](cvat/apps/documentation/user_guide.md)
--   [XML annotation format](cvat/apps/documentation/xml_format.md)
--   [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
--   [Questions](#questions)
+- [Installation Guide](cvat/apps/documentation/installation.md)
+- [User's guide](cvat/apps/documentation/user_guide.md)
+- [XML annotation format](cvat/apps/documentation/xml_format.md)
+- [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
+- [Questions](#questions)
 
 ## Screencasts
 
--   [Introduction](https://youtu.be/L9_IvUIHGwM)
--   [Annotation mode](https://youtu.be/6h7HxGL6Ct4)
--   [Interpolation mode](https://youtu.be/U3MYDhESHo4)
--   [Attribute mode](https://youtu.be/UPNfWl8Egd8)
--   [Segmentation mode](https://youtu.be/Fh8oKuSUIPs)
--   [Tutorial for polygons](https://www.youtube.com/watch?v=XTwfXDh4clI)
--   [Semi-automatic segmentation](https://www.youtube.com/watch?v=vnqXZ-Z-VTQ)
+- [Introduction](https://youtu.be/L9_IvUIHGwM)
+- [Annotation mode](https://youtu.be/6h7HxGL6Ct4)
+- [Interpolation mode](https://youtu.be/U3MYDhESHo4)
+- [Attribute mode](https://youtu.be/UPNfWl8Egd8)
+- [Segmentation mode](https://youtu.be/Fh8oKuSUIPs)
+- [Tutorial for polygons](https://www.youtube.com/watch?v=XTwfXDh4clI)
+- [Semi-automatic segmentation](https://www.youtube.com/watch?v=vnqXZ-Z-VTQ)
 
 ## Links
--   [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
--   [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
--   [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
+- [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
+- [Intel Software: Computer Vision Annotation Tool: A Universal Approach to Data Annotation](https://software.intel.com/en-us/articles/computer-vision-annotation-tool-a-universal-approach-to-data-annotation)
+- [VentureBeat: Intel open-sources CVAT, a toolkit for data labeling](https://venturebeat.com/2019/03/05/intel-open-sources-cvat-a-toolkit-for-data-labeling/)
 
 ## Online Demo
 
@@ -36,8 +37,8 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 
 After you click the link above:
 
--   Click on "GO TO WORKSPACE" and the CVAT environment will load up
--   The environment is backed by a K80 GPU
+- Click on "GO TO WORKSPACE" and the CVAT environment will load up
+- The environment is backed by a K80 GPU
 
 If you have any questions, please contact Onepanel directly at support@onepanel.io. If you are in the Onepanel application, you can also use the chat icon in the bottom right corner.
 
@@ -67,7 +68,7 @@ To build all necessary docker images run `docker-compose build` command. By defa
 
 To start default container run `docker-compose up -d` command. Go to [localhost:8080](http://localhost:8080/). You should see a login page.
 
-### You can include any additional components. Just add corresponding docker-compose file to build or run command:
+### You can include any additional components. Just add corresponding docker-compose file to build or run command
 
 ```bash
 # Build image with CUDA and OpenVINO support
@@ -79,11 +80,11 @@ docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml 
 
 ### Additional optional components
 
--   [Auto annotation using DL models in OpenVINO toolkit format](cvat/apps/auto_annotation/README.md)
--   [Analytics: management and monitoring of data annotation team](components/analytics/README.md)
--   [TF Object Detection API: auto annotation](components/tf_annotation/README.md)
--   [Support for NVIDIA GPUs](components/cuda/README.md)
--   [Semi-automatic segmentation with Deep Extreme Cut](cvat/apps/dextr_segmentation/README.md)
+- [Auto annotation using DL models in OpenVINO toolkit format](cvat/apps/auto_annotation/README.md)
+- [Analytics: management and monitoring of data annotation team](components/analytics/README.md)
+- [TF Object Detection API: auto annotation](components/tf_annotation/README.md)
+- [Support for NVIDIA GPUs](components/cuda/README.md)
+- [Semi-automatic segmentation with Deep Extreme Cut](cvat/apps/dextr_segmentation/README.md)
 
 ### Create superuser account
 
@@ -126,7 +127,6 @@ It is possible to proxy annotation logs from client to ELK. To do that run the f
 docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d --build
 ```
 
-
 ### Share path
 
 You can use a share storage for data uploading during you are creating a task. To do that you can mount it to CVAT docker container. Example of docker-compose.override.yml for this purpose:
@@ -148,7 +148,7 @@ volumes:
       device: /mnt/share
       o: bind
 ```
-You can change the share device path to your actual share. For user convenience we have defined the enviroment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser.
+You can change the share device path to your actual share. For user convenience we have defined the environment variable $CVAT_SHARE_URL. This variable contains a text (url for example) which will be being shown in the client-share browser.
 
 ## Questions
 
