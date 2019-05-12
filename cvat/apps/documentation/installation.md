@@ -235,11 +235,11 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 ### Additional components
 
-- [Auto annotation using DL models in OpenVINO toolkit format](cvat/apps/auto_annotation/README.md)
-- [Analytics: management and monitoring of data annotation team](components/analytics/README.md)
-- [TF Object Detection API: auto annotation](components/tf_annotation/README.md)
-- [Support for NVIDIA GPUs](components/cuda/README.md)
-- [Semi-automatic segmentation with Deep Extreme Cut](cvat/apps/dextr_segmentation/README.md)
+- [Auto annotation using DL models in OpenVINO toolkit format](/cvat/apps/auto_annotation/README.md)
+- [Analytics: management and monitoring of data annotation team](/components/analytics/README.md)
+- [TF Object Detection API: auto annotation](/components/tf_annotation/README.md)
+- [Support for NVIDIA GPUs](/components/cuda/README.md)
+- [Semi-automatic segmentation with Deep Extreme Cut](/cvat/apps/dextr_segmentation/README.md)
 
 ```bash
 # Build and run containers with CUDA and OpenVINO support
