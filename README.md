@@ -10,7 +10,7 @@ CVAT is completely re-designed and re-implemented version of [Video Annotation T
 
 ## Documentation
 
-- [Installation Guide](cvat/apps/documentation/installation.md)
+- [Installation guide](cvat/apps/documentation/installation.md)
 - [User's guide](cvat/apps/documentation/user_guide.md)
 - [XML annotation format](cvat/apps/documentation/xml_format.md)
 - [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
