@@ -2,7 +2,7 @@
   - [Ubuntu 18.04 (x86_64/amd64)](#ubuntu-1804-x86_64amd64)
   - [Windows 10](#windows-10)
   - [Mac OS Mojave](#mac-os-mojave)
-  - [Advanced installation guide](#advanced-installation-guide)
+  - [Advanced topics](#advanced-topics)
     - [Additional components](#additional-components)
     - [Stop all containers](#stop-all-containers)
     - [Advanced settings](#advanced-settings)
@@ -231,7 +231,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     button. Now you should be able to create a new annotation task. Please read
     documentation about CVAT for more details.
 
-## Advanced installation guide
+## Advanced topics
 
 ### Additional components
 
@@ -243,13 +243,15 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 ```bash
 # Build and run containers with CUDA and OpenVINO support
+# IMPORTANT: need to download OpenVINO package before running the command
 docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml -f components/openvino/docker-compose.openvino.yml up -d --build
 
-# Proxy annotation logs from a client to ELK (Analytics component):
+# Build and run containers with Analytics component support:
 docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d --build
 ```
 
 ### Stop all containers
+
 The command below will stop and remove containers, networks, volumes, and images
 created by `up`.
 
