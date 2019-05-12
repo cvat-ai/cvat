@@ -2,6 +2,11 @@
   - [Ubuntu 18.04 (x86_64/amd64)](#ubuntu-1804-x86_64amd64)
   - [Windows 10](#windows-10)
   - [Mac OS Mojave](#mac-os-mojave)
+  - [Advanced installation guide](#advanced-installation-guide)
+    - [Additional components](#additional-components)
+    - [Stop all containers](#stop-all-containers)
+    - [Advanced settings](#advanced-settings)
+    - [Share path](#share-path)
 
 # Quick installation guide
 
@@ -225,3 +230,77 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     Type your login/password for the superuser on the login page and press _Login_
     button. Now you should be able to create a new annotation task. Please read
     documentation about CVAT for more details.
+
+## Advanced installation guide
+
+### Additional components
+
+- [Auto annotation using DL models in OpenVINO toolkit format](cvat/apps/auto_annotation/README.md)
+- [Analytics: management and monitoring of data annotation team](components/analytics/README.md)
+- [TF Object Detection API: auto annotation](components/tf_annotation/README.md)
+- [Support for NVIDIA GPUs](components/cuda/README.md)
+- [Semi-automatic segmentation with Deep Extreme Cut](cvat/apps/dextr_segmentation/README.md)
+
+```bash
+# Build and run containers with CUDA and OpenVINO support
+docker-compose -f docker-compose.yml -f components/cuda/docker-compose.cuda.yml -f components/openvino/docker-compose.openvino.yml up -d --build
+
+# Proxy annotation logs from a client to ELK (Analytics component):
+docker-compose -f docker-compose.yml -f components/analytics/docker-compose.analytics.yml up -d --build
+```
+
+### Stop all containers
+The command below will stop and remove containers, networks, volumes, and images
+created by `up`.
+
+```bash
+docker-compose down
+```
+
+### Advanced settings
+
+If you want to access you instance of CVAT outside of your localhost you should
+specify [ALLOWED_HOSTS](https://docs.djangoproject.com/en/2.0/ref/settings/#allowed-hosts)
+environment variable. The best way to do that is to create
+[docker-compose.override.yml](https://docs.docker.com/compose/extends/) and put
+all your extra settings here.
+
+```yml
+version: "2.3"
+
+services:
+  cvat:
+    environment:
+      ALLOWED_HOSTS: .example.com
+    ports:
+      - "80:8080"
+```
+
+### Share path
+
+You can use a share storage for data uploading during you are creating a task.
+To do that you can mount it to CVAT docker container. Example of
+docker-compose.override.yml for this purpose:
+
+```yml
+version: "2.3"
+
+services:
+  cvat:
+    environment:
+      CVAT_SHARE_URL: "Mounted from /mnt/share host directory"
+    volumes:
+      - cvat_share:/home/django/share:ro
+
+volumes:
+  cvat_share:
+    driver_opts:
+      type: none
+      device: /mnt/share
+      o: bind
+```
+
+You can change the share device path to your actual share. For user convenience
+we have defined the environment variable $CVAT_SHARE_URL. This variable
+contains a text (url for example) which will be being shown in the client-share
+browser.
