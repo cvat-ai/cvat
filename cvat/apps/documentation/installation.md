@@ -108,8 +108,8 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 -   Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
     Type your login/password for the superuser on the login page and press the _Login_
-    button. Now you should be able to create a new annotation task. Please read
-    documentation about CVAT for more details.
+    button. Now you should be able to create a new annotation task. Please read the
+    [CVAT user's guide](/cvat/apps/documentation/user_guide.md) for more details.
 
 ## Windows 10
 -   Download [Docker for Windows](https://download.docker.com/win/stable/Docker%20for%20Windows%20Installer.exe).
@@ -163,8 +163,8 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 -   Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
     Type your login/password for the superuser on the login page and press the _Login_
-    button. Now you should be able to create a new annotation task. Please read
-    documentation about CVAT for more details.
+    button. Now you should be able to create a new annotation task. Please read the
+    [CVAT user's guide](/cvat/apps/documentation/user_guide.md) for more details.
 
 ## Mac OS Mojave
 -   Download [Docker for Mac](https://download.docker.com/mac/stable/Docker.dmg).
@@ -182,7 +182,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     ```
 
     If you don’t have it installed already, it will prompt you to install it.
-    Complete instructions can be found [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
+    More instructions can be found [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
 
 -   Download and install [Google Chrome](https://www.google.com/chrome/). It
     is the only browser which is supported by CVAT.
