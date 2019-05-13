@@ -138,7 +138,9 @@ RUN if [ "$WITH_DEXTR" = "yes" ]; then \
 COPY ssh ${HOME}/.ssh
 COPY cvat/ ${HOME}/cvat
 COPY tests ${HOME}/tests
-RUN patch -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
+# Binary option is necessary to correctly apply the patch on Windows platform.
+# https://unix.stackexchange.com/questions/239364/how-to-fix-hunk-1-failed-at-1-different-line-endings-message
+RUN patch --binary -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
 RUN chown -R ${USER}:${USER} .
 
 # RUN all commands below as 'django' user
