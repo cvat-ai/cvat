@@ -11,18 +11,18 @@
 # Quick installation guide
 
 Before you can use CVAT, you’ll need to get it installed. The document below
-contains instructions for most popular operation systems. If your system is
+contains instructions for the most popular operating systems. If your system is
 not covered by the document it should be relatively straight forward to adapt
-instructions below for other systems.
+the instructions below for other systems.
 
-Probably you need to modify instructions below in case you behind a proxy
+Probably you need to modify the instructions below in case you are behind a proxy
 server. Proxy is an advanced topic and it is not covered by the guide.
 
 ## Ubuntu 18.04 (x86_64/amd64)
 -   Open a terminal window. If you don't know how to open a terminal window on
     Ubuntu please read [the answer](https://askubuntu.com/questions/183775/how-do-i-open-a-terminal).
 
--   Type commands below into the terminal window to install `docker`. Complete
+-   Type commands below into the terminal window to install `docker`. More
     instructions can be found [here](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
 
     ```sh
@@ -42,7 +42,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     sudo apt-get install -y docker-ce docker-ce-cli containerd.io
     ```
 
--   Do [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
+-   Perform [post-installation steps](https://docs.docker.com/install/linux/linux-postinstall/)
     to run docker without root permissions.
 
     ```sh
@@ -61,7 +61,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     sudo pip3 install docker-compose
     ```
 
--   Clone _CVAT_ source code from public
+-   Clone _CVAT_ source code from the
     [GitHub repository](https://github.com/opencv/cvat).
 
     ```bash
@@ -86,7 +86,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     ```
 
 -   You can register a user but by default it will not have rights even to view
-    list of tasks. Thus you should create a superuser. The superuser can use
+    list of tasks. Thus you should create a superuser. A superuser can use an
     admin panel to assign correct groups to the user. Please use the command
     below:
 
@@ -107,13 +107,13 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     ```
 
 -   Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
-    Type your login/password for the superuser on the login page and press _Login_
+    Type your login/password for the superuser on the login page and press the _Login_
     button. Now you should be able to create a new annotation task. Please read
     documentation about CVAT for more details.
 
 ## Windows 10
 -   Download [Docker for Windows](https://download.docker.com/win/stable/Docker%20for%20Windows%20Installer.exe).
-    Double-click `Docker for Windows Installer` to run the installer. Complete
+    Double-click `Docker for Windows Installer` to run the installer. More
     instructions can be found [here](https://docs.docker.com/docker-for-windows/install/). Note:
     Docker Desktop requires Windows 10 Pro or Enterprise version 14393 to run.
 
@@ -127,7 +127,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
 -   Go to windows menu, find `Git Bash` application and run it. You should see a terminal window.
 
--   Clone _CVAT_ source code from public
+-   Clone _CVAT_ source code from the
     [GitHub repository](https://github.com/opencv/cvat).
 
     ```bash
@@ -151,8 +151,8 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     ```
 
 -   You can register a user but by default it will not have rights even to view
-    list of tasks. Thus you should create a superuser. The superuser can use
-    admin panel to assign correct groups to the user. Please use the command
+    list of tasks. Thus you should create a superuser. A superuser can use an
+    admin panel to assign correct groups to other users. Please use the command
     below:
 
     ```sh
@@ -162,7 +162,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
 
 -   Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
-    Type your login/password for the superuser on the login page and press _Login_
+    Type your login/password for the superuser on the login page and press the _Login_
     button. Now you should be able to create a new annotation task. Please read
     documentation about CVAT for more details.
 
@@ -170,7 +170,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 -   Download [Docker for Mac](https://download.docker.com/mac/stable/Docker.dmg).
     Double-click Docker.dmg to open the installer, then drag Moby the whale
     to the Applications folder. Double-click Docker.app in the Applications
-    folder to start Docker. Complete instructions can be found
+    folder to start Docker. More instructions can be found
     [here](https://docs.docker.com/v17.12/docker-for-mac/install/#install-and-run-docker-for-mac).
 
 -   There are several ways to install Git on a Mac. The easiest is probably to
@@ -192,7 +192,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     Utilities and double-click on Terminal, or press Command - spacebar to
     launch Spotlight and type "Terminal," then double-click the search result.
 
--   Clone _CVAT_ source code from public
+-   Clone _CVAT_ source code from the
     [GitHub repository](https://github.com/opencv/cvat).
 
     ```bash
@@ -216,8 +216,8 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     ```
 
 -   You can register a user but by default it will not have rights even to view
-    list of tasks. Thus you should create a superuser. The superuser can use
-    admin panel to assign correct groups to the user. Please use the command
+    list of tasks. Thus you should create a superuser. A superuser can use an
+    admin panel to assign correct groups to other users. Please use the command
     below:
 
     ```sh
@@ -227,9 +227,9 @@ server. Proxy is an advanced topic and it is not covered by the guide.
     please read [Django documentation](https://docs.djangoproject.com/en/2.2/ref/django-admin/#createsuperuser).
 
 -   Open the installed Google Chrome browser and go to [localhost:8080](http://localhost:8080).
-    Type your login/password for the superuser on the login page and press _Login_
-    button. Now you should be able to create a new annotation task. Please read
-    documentation about CVAT for more details.
+    Type your login/password for the superuser on the login page and press the _Login_
+    button. Now you should be able to create a new annotation task. Please read the
+    [CVAT user's guide](/cvat/apps/documentation/user_guide.md) for more details.
 
 ## Advanced topics
 
@@ -252,7 +252,7 @@ docker-compose -f docker-compose.yml -f components/analytics/docker-compose.anal
 
 ### Stop all containers
 
-The command below will stop and remove containers, networks, volumes, and images
+The command below stops and removes containers, networks, volumes, and images
 created by `up`.
 
 ```bash
@@ -262,7 +262,7 @@ docker-compose down
 ### Advanced settings
 
 If you want to access you instance of CVAT outside of your localhost you should
-specify [ALLOWED_HOSTS](https://docs.djangoproject.com/en/2.0/ref/settings/#allowed-hosts)
+specify the [ALLOWED_HOSTS](https://docs.djangoproject.com/en/2.0/ref/settings/#allowed-hosts)
 environment variable. The best way to do that is to create
 [docker-compose.override.yml](https://docs.docker.com/compose/extends/) and put
 all your extra settings here.
@@ -277,6 +277,9 @@ services:
     ports:
       - "80:8080"
 ```
+
+Please don't forget include this file to docker-compose commands using the `-f`
+option (in some cases it can be omitted).
 
 ### Share path
 
@@ -304,5 +307,4 @@ volumes:
 
 You can change the share device path to your actual share. For user convenience
 we have defined the environment variable $CVAT_SHARE_URL. This variable
-contains a text (url for example) which will be being shown in the client-share
-browser.
+contains a text (url for example) which is shown in the client-share browser.
