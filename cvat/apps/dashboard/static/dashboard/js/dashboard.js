@@ -447,7 +447,7 @@ class DashboardView {
             try {
                 LabelsInfo.deserialize(labels)
                 return true;
-            } catch {
+            } catch (error) {
                 return false;
             }
         }
