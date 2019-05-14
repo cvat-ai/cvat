@@ -123,9 +123,11 @@
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}/cvatjs",
-            "runtimeExecutable": "npm",
+            "runtimeExecutable": "node",
             "runtimeArgs": [
-                "run-script", "debug"
+                "--nolazy",
+                "--inspect-brk=9230",
+                "src/api.js"
             ],
             "port": 9230
         },

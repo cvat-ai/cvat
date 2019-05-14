@@ -6,7 +6,6 @@
   "scripts": {
     "build": "webpack",
     "test": "jest --config=jest.config.js",
-    "debug": "node --nolazy --inspect-brk=9230 src/api.js",
     "docs": "jsdoc --readme README.md src/*.js -p -c jsdoc.config.js -d docs"
   },
   "author": "Intel",
