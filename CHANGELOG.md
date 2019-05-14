@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 -
 
+## [0.4.1] - 2019-05-14
+### Fixed
+- JavaScript syntax incompatibility with Google Chrome versions less than 72
+
 ## [0.4.0] - 2019-05-04
 ### Added
 - OpenVINO auto annotation: it is possible to upload a custom model and annotate images automatically.
