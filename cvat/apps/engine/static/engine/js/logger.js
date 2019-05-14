@@ -71,7 +71,7 @@ class LoggerHandler {
 
     addContinuedEvent(event) {
         this._userActivityHandler.updateTimer();
-        event.onCloseCallback = this._closeCallback;
+        event.onCloseCallback = this._closeCallback.bind(this);
         return event;
     }
 
@@ -152,7 +152,9 @@ class LoggerHandler {
         this._userActivityHandler.updateTimer();
     }
 
-    _closeCallback = event => { this._pushEvent(event); };
+    _closeCallback(event) {
+        this._pushEvent(event);
+    }
 
     updateTimer() {
         this._userActivityHandler.updateTimer();
