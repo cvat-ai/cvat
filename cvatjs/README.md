@@ -25,6 +25,13 @@ npm run-script docs
 npm run-script test
 ```
 
+-   Update version of library:
+```
+npm version patch 	# updated after minor fixes
+npm version minor 	# updated after major changes which don't affect API compatibility with previous versions
+npm version major	# updated after major changes which affect API compatibility with previous versions
+```
+
 Visual studio code configurations:
 -   cvat.js debug starts debugging with entrypoint api.js
 -   cvat.js test builds library and runs entrypoint tests.js

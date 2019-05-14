@@ -1,10 +1,10 @@
 {
   "name": "cvat.js",
-  "version": "1.0.11",
+  "version": "1.0.0",
   "description": "Part of Computer Vision Tool which presents an interface for client-side integration",
   "main": "babel.config.js",
   "scripts": {
-    "build": "npm version patch && webpack",
+    "build": "webpack",
     "test": "jest --config=jest.config.js",
     "debug": "node --nolazy --inspect-brk=9230 src/api.js",
     "docs": "jsdoc --readme README.md src/*.js -p -c jsdoc.config.js -d docs"
@@ -12,16 +12,17 @@
   "author": "Intel",
   "license": "MIT",
   "devDependencies": {
-    "@babel/cli": "^7.4.3",
-    "@babel/core": "^7.4.3",
-    "@babel/preset-env": "^7.4.3",
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.4",
+    "@babel/preset-env": "^7.4.4",
     "babel-eslint": "^10.0.1",
-    "babel-loader": "^8.0.5",
-    "jest": "^24.7.1",
+    "babel-loader": "^8.0.6",
+    "core-js": "^3.0.1",
+    "jest": "^24.8.0",
     "jest-junit": "^6.4.0",
-    "jsdoc": "^3.5.5",
-    "webpack": "^4.29.6",
-    "webpack-cli": "^3.3.0"
+    "jsdoc": "^3.6.2",
+    "webpack": "^4.31.0",
+    "webpack-cli": "^3.3.2"
   },
   "dependencies": {
     "axios": "^0.18.0",

@@ -41,6 +41,7 @@ module.exports = {
                                 chrome: 58,
                             },
                             useBuiltIns: 'usage',
+			    corejs: 3,
                             loose: false,
                             spec: false,
                             debug: false,
