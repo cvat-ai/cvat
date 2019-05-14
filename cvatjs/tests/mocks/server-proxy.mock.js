@@ -1,7 +1,17 @@
 /*
  * Copyright (C) 2018 Intel Corporation
  * SPDX-License-Identifier: MIT
- */
+*/
+
+/* eslint import/no-extraneous-dependencies: 0 */
+
+/* global
+    require:false
+*/
+
+const sqlite3 = require('sqlite3');
+
+const db = new sqlite3.Database('../data/db.sqlite3');
 
 class ServerProxy {
     constructor() {
@@ -22,6 +32,7 @@ class ServerProxy {
         }
 
         async function getTasks(filter = '') {
+            const d = db;
             return [];
         }
 
