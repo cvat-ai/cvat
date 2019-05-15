@@ -220,7 +220,7 @@ class ShapeCreatorView {
                 && mode !== 'annotation') {
                 this._modeSelector.prop('value', 'annotation');
                 this._controller.setDefaultShapeMode('annotation');
-                showMessage('Poly shapes available only like annotation shapes');
+                showMessage('Only the annotation mode allowed for the shape');
             }
             this._controller.setDefaultShapeType(type);
         }).trigger('change');
@@ -237,16 +237,23 @@ class ShapeCreatorView {
                 && type !== 'box') {
                 this._typeSelector.prop('value', 'box');
                 this._controller.setDefaultShapeType('box');
-                showMessage('Only boxes available like interpolation shapes');
+                showMessage('Only boxes and single point allowed in the interpolation mode');
             }
             this._controller.setDefaultShapeMode(mode);
         }).trigger('change');
 
         this._polyShapeSizeInput.on('change', (e) => {
             e.stopPropagation();
-            let size = + e.target.value;
+            let size = +e.target.value;
             if (size < 0) size = 0;
             if (size > 100) size = 0;
+            const mode = this._modeSelector.prop('value');
+            const type = this._typeSelector.prop('value');
+            if (mode === 'interpolation' && type === 'points' && size !== 1) {
+                showMessage('Only single point allowed in the interpolation mode');
+                size = 1;
+            }
+
             e.target.value = size || '';
             this._polyShapeSize = size;
         }).trigger('change');
