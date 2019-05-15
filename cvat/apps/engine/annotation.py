@@ -1090,12 +1090,19 @@ class TrackManager(ObjectManager):
             step = np.subtract(shape1["points"], shape0["points"]) / distance
             for frame in range(shape0["frame"] + 1, shape1["frame"]):
                 off = frame - shape0["frame"]
-                points = shape0["points"] + step * off
+                if shape1["outside"]:
+                    points = np.asarray(shape0["points"]).reshape(-1, 2)
+                else:
+                    points = (shape0["points"] + step * off).reshape(-1, 2)
                 shape = copy.deepcopy(shape0)
-                broken_line = geometry.LineString(points.reshape(-1, 2)).simplify(0.05, False)
+                if len(points) == 1:
+                    shape["points"] = points.flatten()
+                else:
+                    broken_line = geometry.LineString(points).simplify(0.05, False)
+                    shape["points"] = [x for p in broken_line.coords for x in p]
+
                 shape["keyframe"] = False
                 shape["frame"] = frame
-                shape["points"] = [x for p in broken_line.coords for x in p]
                 shapes.append(shape)
             return shapes
 
