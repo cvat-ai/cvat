@@ -8,3 +8,4 @@ This folder contains some useful utilities for Computer Vision Annotation Tool (
 -   [Convert CVAT XML to MS COCO](coco/converter.md)
 -   [Convert CVAT XML to PNG mask](mask/converter.md)
 -   [Convert CVAT XML to TFRECORDS](tfrecords/converter.md)
+-   [Convert CVAT XML to YOLO](yolo/converter.md)
