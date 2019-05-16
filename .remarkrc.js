@@ -1,16 +1,16 @@
 exports.settings = {bullet: '*', paddedTable: false}
 
 exports.plugins = [
-  require('remark-preset-lint-recommended'),
-  require('remark-preset-lint-consistent'),
-  require('remark-validate-links'),
-  [require("remark-lint-no-dead-urls"), { skipOffline: true }],
-  [require("remark-lint-maximum-line-length"), 120],
-  [require("remark-lint-maximum-heading-length"), 120],
-  [require("remark-lint-list-item-indent"), "tab-size"],
-  [require("remark-lint-list-item-spacing"), false],
-  [require("remark-lint-strong-marker"), "*"],
-  [require("remark-lint-emphasis-marker"), "_"],
-  [require("remark-lint-unordered-list-marker-style"), "-"],
-  [require("remark-lint-ordered-list-marker-style"), "."],
+  'remark-preset-lint-recommended',
+  'remark-preset-lint-consistent',
+  ['remark-preset-lint-markdown-style-guide', 'mixed'],
+  ['remark-lint-no-dead-urls', { skipOffline: true }],
+  ['remark-lint-maximum-line-length', 120],
+  ['remark-lint-maximum-heading-length', 120],
+  ['remark-lint-strong-marker', "*"],
+  ['remark-lint-emphasis-marker', "_"],
+  ['remark-lint-unordered-list-marker-style', "-"],
+  ['remark-lint-ordered-list-marker-style', "."],
+  ['remark-lint-no-file-name-irregular-characters', false],
+  ['remark-lint-list-item-spacing', false],
 ]

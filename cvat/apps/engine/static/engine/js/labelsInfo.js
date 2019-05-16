@@ -164,7 +164,7 @@ class LabelsInfo {
         for (let fragment of fragments) {
             fragment = fragment.trim();
             if ((fragment.startsWith('~')) || (fragment.startsWith('@'))) {
-                const regex = /(@|~)(checkbox|select|number|text|radio)=([,?!-_0-9a-zA-Z()\s"]+):([,?!-_0-9a-zA-Z()"\s]+)/g;
+                const regex = /(@|~)(checkbox|select|number|text|radio)=([-,?!_0-9a-zA-Z()\s"]+):([-,?!_0-9a-zA-Z()"\s]+)/g;
                 const result = regex.exec(fragment);
                 if (result === null || latest === null) {
                     throw Error('Bad labels format');
