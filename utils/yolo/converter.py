@@ -181,7 +181,7 @@ def process_cvat_xml(xml_file, image_dir, output_dir,username,password,ilabels):
                 if not label in current_labels:
                     current_labels[label] = auto_lbl_count
                     auto_lbl_count+=1
-                    
+
                 labelid=current_labels[label]
                 yolo_x= (xmin + ((xmax-xmin)/2))/width
                 yolo_y= (ymin + ((ymax-ymin)/2))/height
