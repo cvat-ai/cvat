@@ -25,6 +25,7 @@ class ServerProxy {
         async function share(directory) {
             let position = shareDummyData;
 
+            // Emulation of internal directories
             if (directory.length > 1) {
                 const components = directory.split('/');
 
@@ -48,7 +49,7 @@ class ServerProxy {
             return null;
         }
 
-        async function login(username, password) {
+        async function login() {
             return null;
         }
 
@@ -69,6 +70,7 @@ class ServerProxy {
                 return JSON.parse(JSON.stringify(result));
             }
 
+            // Emulation of a query filter
             const queries = QueryStringToJSON(filter);
             const result = tasksDummyData.results.filter((x) => {
                 for (const key in queries) {
