@@ -129,14 +129,19 @@
 
             let task = null;
             if ('taskID' in filter) {
-                task = await cvat.tasks.get.implementation({ id: filter.taskID });
+                task = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
             } else {
-                const job = await serverProxy.jobs.getJob(filter.jobID);
-                task = await cvat.tasks.get.implementation({ id: job.task_id });
+                const [job] = await serverProxy.jobs.getJob(filter.jobID);
+                task = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
             }
 
-            task = new window.cvat.classes.Task(task[0]);
-            return filter.jobID ? task.jobs.filter(job => job.id === filter.jobID) : task.jobs;
+            // If task was found by its id, then create task instance and get Job instance from it
+            if (task.length) {
+                task = new window.cvat.classes.Task(task[0]);
+                return filter.jobID ? task.jobs.filter(job => job.id === filter.jobID) : task.jobs;
+            }
+
+            return [];
         };
 
         cvat.tasks.get.implementation = async (filter) => {

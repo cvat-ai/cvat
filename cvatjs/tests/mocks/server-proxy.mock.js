@@ -64,7 +64,20 @@ class ServerProxy {
         }
 
         async function getJob(jobID) {
-            return null;
+            return tasks.results.reduce((acc, task) => {
+                for (const segment of task.segments) {
+                    for (const job of segment.jobs) {
+                        const copy = JSON.parse(JSON.stringify(job));
+                        copy.start_frame = segment.start_frame;
+                        copy.stop_frame = segment.stop_frame;
+                        copy.task_id = task.id;
+
+                        acc.push(copy);
+                    }
+                }
+
+                return acc;
+            }, []).filter(job => job.id === jobID);
         }
 
         async function getUsers() {
