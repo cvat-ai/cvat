@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 """
-Given a CVAT XML, this script reads the CVAT XML and writes the 
+Given a CVAT XML, this script reads the CVAT XML and writes the
 annotations in YOLO format into a given directory.
 
-This implementation supports both interpolation tracks from video and 
+This implementation supports both interpolation tracks from video and
 annotated images.
 """
 
@@ -70,7 +70,7 @@ def process_cvat_xml(xml_file, image_dir, output_dir,username,password,ilabels):
     KNOWN_TAGS = {'box', 'image', 'attribute'}
 
     if (image_dir is None):
-        image_dir=os.path.join(output_dir,"data/obj") 
+        image_dir=os.path.join(output_dir,"data/obj")
         os.makedirs(image_dir, exist_ok=True)
 
     os.makedirs(output_dir, exist_ok=True)
@@ -192,8 +192,6 @@ def process_cvat_xml(xml_file, image_dir, output_dir,username,password,ilabels):
                         _yoloAnnotationContent += "\n"
 
                 _yoloAnnotationContent+=str(labelid)+" "+"{:.6f}".format(yolo_x) +" "+"{:.6f}".format(yolo_y) +" "+"{:.6f}".format(yolo_w) +" "+"{:.6f}".format(yolo_h)
-                
-
             anno_name = os.path.basename(os.path.splitext(image_name)[0] + '.txt')
             anno_path = os.path.join(image_dir, anno_name)
 
