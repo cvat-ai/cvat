@@ -9,9 +9,23 @@
     require:false
 */
 
-const sqlite3 = require('sqlite3');
+const { tasks } = require('./dummy-data.mock');
 
-const db = new sqlite3.Database('../data/db.sqlite3');
+function QueryStringToJSON(query) {
+    const pairs = [...new URLSearchParams(query).entries()];
+
+    const result = {};
+    for (const pair of pairs) {
+        const [key, value] = pair;
+        if (['id'].includes(key)) {
+            result[key] = +value;
+        } else {
+            result[key] = value;
+        }
+    }
+
+    return JSON.parse(JSON.stringify(result));
+}
 
 class ServerProxy {
     constructor() {
@@ -32,8 +46,21 @@ class ServerProxy {
         }
 
         async function getTasks(filter = '') {
-            const d = db;
-            return [];
+            const queries = QueryStringToJSON(filter);
+            const result = tasks.results.filter((x) => {
+                for (const key in queries) {
+                    if (Object.prototype.hasOwnProperty.call(queries, key)) {
+                        // TODO: Particular match for some fields is not checked
+                        if (queries[key] !== x[key]) {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            });
+
+            return result;
         }
 
         async function getJob(jobID) {

@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 
+/* global
+    require:false
+*/
 
 const { defaults } = require('jest-config');
 
@@ -22,6 +25,7 @@ module.exports = {
     testPathIgnorePatterns: [
         '/node_modules/',
         '/tests/mocks/*',
+        '/tests/api/server.js',
     ],
     automock: false,
 };

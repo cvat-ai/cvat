@@ -18,37 +18,76 @@ jest.mock('../../src/server-proxy', () => {
 // Initialize api
 require('../../src/api');
 
+const { Task } = require('../../src/session');
+
 
 // Test cases
 describe('Feature: get a list of tasks', () => {
     test('get all tasks', async () => {
         const result = await window.cvat.tasks.get();
-        expect(result).toEqual([]);
+        expect(Array.isArray(result)).toBeTruthy();
+        expect(result).toHaveLength(3);
+        for (const el of result) {
+            expect(el).toBeInstanceOf(Task);
+        }
     });
 
     test('get a task by an id', async () => {
-        const result = await window.cvat.tasks.get();
-        expect(result).toEqual([]);
+        const result = await window.cvat.tasks.get({
+            id: 3,
+        });
+        expect(Array.isArray(result)).toBeTruthy();
+        expect(result).toHaveLength(1);
+        expect(result[0]).toBeInstanceOf(Task);
+        expect(result[0].id).toBe(3);
     });
 
     test('get a task by an unknown id', async () => {
-        const result = await window.cvat.tasks.get();
-        expect(result).toEqual([]);
+        const result = await window.cvat.tasks.get({
+            id: 50,
+        });
+        expect(Array.isArray(result)).toBeTruthy();
+        expect(result).toHaveLength(0);
     });
 
     test('get a task by an invalid id', async () => {
-        const result = await window.cvat.tasks.get();
-        expect(result).toEqual([]);
+        await expect(window.cvat.tasks.get({
+            id: '50',
+        })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('get tasks by filters', async () => {
-        const result = await window.cvat.tasks.get();
-        expect(result).toEqual([]);
+        const result = await window.cvat.tasks.get({
+            mode: 'interpolation',
+        });
+        expect(Array.isArray(result)).toBeTruthy();
+        expect(result).toHaveLength(2);
+        for (const el of result) {
+            expect(el).toBeInstanceOf(Task);
+            expect(el.mode).toBe('interpolation');
+        }
     });
 
     test('get tasks by invalid filters', async () => {
-        const result = await window.cvat.tasks.get();
-        expect(result).toEqual([]);
+        await expect(window.cvat.tasks.get({
+            unknown: '5',
+        })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('get task by name, status and mode', async () => {
+        const result = await window.cvat.tasks.get({
+            mode: 'interpolation',
+            status: 'annotation',
+            name: 'Test Task',
+        });
+        expect(Array.isArray(result)).toBeTruthy();
+        expect(result).toHaveLength(1);
+        for (const el of result) {
+            expect(el).toBeInstanceOf(Task);
+            expect(el.mode).toBe('interpolation');
+            expect(el.status).toBe('annotation');
+            expect(el.name).toBe('Test Task');
+        }
     });
 });
 
