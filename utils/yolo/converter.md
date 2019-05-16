@@ -15,7 +15,7 @@ $ sudo apt-get update
 $ sudo apt-get install -y --no-install-recommends python3-pip python3-venv python3-dev
 ```
 
-```python
+```bash
 $ python3 -m venv .env
 $ . .env/bin/activate
 $ cat requirements.txt | xargs -n 1 -L 1 pip install
