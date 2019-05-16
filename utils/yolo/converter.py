@@ -153,14 +153,14 @@ def process_cvat_xml(xml_file, image_dir, output_dir,username,password,ilabels):
                             sessionid = httpclient.cookies["sessionid"]
 
                     url = urlbase+"/api/v1/tasks/"+str(taskid)+"/frames/"+ str(frameid)
-                    
+
                     req = httpclient.get(url, headers=dict(
                         csrftoken=csrftoken, sessionid=sessionid))
-                
+
                     with open(image_path, 'wb') as fo:
                         fo.write(req.content)
                         print('Url saved as %s\n' % image_path)
-            
+
 
             frame = frames[frameid]
 
