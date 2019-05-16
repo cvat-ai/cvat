@@ -3,8 +3,8 @@
 ## Description
 
 Given a CVAT XML, this script reads the CVAT XML and writes the 
-annotations in YOLO format into a given directory. This implementation supports both interpolation tracks from video and 
-annotated images.
+annotations in YOLO format into a given directory. This implementation
+supports both interpolation tracks from video and annotated images.
 
 ## Installation
 
@@ -15,7 +15,7 @@ $ sudo apt-get update
 $ sudo apt-get install -y --no-install-recommends python3-pip python3-venv python3-dev
 ```
 
-```
+```python
 $ python3 -m venv .env
 $ . .env/bin/activate
 $ cat requirements.txt | xargs -n 1 -L 1 pip install
@@ -26,13 +26,13 @@ $ cat requirements.txt | xargs -n 1 -L 1 pip install
 Run the script inside the virtual environment:
 
 ```bash
-$ python converter.py --cvat-xml </path/to/cvat/xml> --image-dir </path/to/images> --output-dir </path/to/output/directory>
-```
+python converter.py --cvat-xml </path/to/cvat/xml> --image-dir </path/to/images> --output-dir </path/to/output/directory>
+```bash
 
 Case you need download frames from annotated video file submited to CVAT:
 
 ```bash
-$ python converter.py --cvat-xml </path/to/cvat/xml> --output-dir </path/to/output/directory> --username <CVAT Username> --password <CVAT Password>
-```
+python converter.py --cvat-xml </path/to/cvat/xml> --output-dir </path/to/output/directory> --username <CVAT Username> --password <CVAT Password>
+```bash
 
 Please run `python converter.py --help` for more details.
