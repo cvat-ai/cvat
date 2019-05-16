@@ -27,12 +27,12 @@ Run the script inside the virtual environment:
 
 ```bash
 python converter.py --cvat-xml </path/to/cvat/xml> --image-dir </path/to/images> --output-dir </path/to/output/directory>
-```bash
+```
 
 Case you need download frames from annotated video file submited to CVAT:
 
 ```bash
 python converter.py --cvat-xml </path/to/cvat/xml> --output-dir </path/to/output/directory> --username <CVAT Username> --password <CVAT Password>
-```bash
+```
 
 Please run `python converter.py --help` for more details.
