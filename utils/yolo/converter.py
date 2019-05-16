@@ -104,9 +104,9 @@ def process_cvat_xml(xml_file, image_dir, output_dir,username,password,ilabels):
                 ytl      = float(box.get('ytl'))
                 xbr      = float(box.get('xbr'))
                 ybr      = float(box.get('ybr'))
-                
+
                 frame = frames.get( frameid, {} )
-                
+
                 if outside == 0:
                     frame[ trackid ] = { 'xtl': xtl, 'ytl': ytl, 'xbr': xbr, 'ybr': ybr, 'label': label }
 
