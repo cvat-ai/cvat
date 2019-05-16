@@ -25,7 +25,6 @@ module.exports = {
     testPathIgnorePatterns: [
         '/node_modules/',
         '/tests/mocks/*',
-        '/tests/api/server.js',
     ],
     automock: false,
 };

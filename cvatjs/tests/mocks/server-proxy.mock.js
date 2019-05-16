@@ -9,32 +9,39 @@
     require:false
 */
 
-const { tasks } = require('./dummy-data.mock');
+const {
+    tasksDummyData,
+    aboutDummyData,
+    shareDummyData,
+} = require('./dummy-data.mock');
 
-function QueryStringToJSON(query) {
-    const pairs = [...new URLSearchParams(query).entries()];
-
-    const result = {};
-    for (const pair of pairs) {
-        const [key, value] = pair;
-        if (['id'].includes(key)) {
-            result[key] = +value;
-        } else {
-            result[key] = value;
-        }
-    }
-
-    return JSON.parse(JSON.stringify(result));
-}
 
 class ServerProxy {
     constructor() {
         async function about() {
-            return null;
+            return JSON.parse(JSON.stringify(aboutDummyData));
         }
 
         async function share(directory) {
-            return null;
+            let position = shareDummyData;
+
+            if (directory.length > 1) {
+                const components = directory.split('/');
+
+                for (const component of components) {
+                    const idx = position.map(x => x.name).indexOf(component);
+                    if (idx !== -1 && 'children' in position[idx]) {
+                        position = position[idx].children;
+                    } else {
+                        throw new window.cvat.exceptions.ServerError(
+                            `${component} is not a valid directory`,
+                            400,
+                        );
+                    }
+                }
+            }
+
+            return JSON.parse(JSON.stringify(position));
         }
 
         async function exception(exceptionObject) {
@@ -46,8 +53,24 @@ class ServerProxy {
         }
 
         async function getTasks(filter = '') {
+            function QueryStringToJSON(query) {
+                const pairs = [...new URLSearchParams(query).entries()];
+
+                const result = {};
+                for (const pair of pairs) {
+                    const [key, value] = pair;
+                    if (['id'].includes(key)) {
+                        result[key] = +value;
+                    } else {
+                        result[key] = value;
+                    }
+                }
+
+                return JSON.parse(JSON.stringify(result));
+            }
+
             const queries = QueryStringToJSON(filter);
-            const result = tasks.results.filter((x) => {
+            const result = tasksDummyData.results.filter((x) => {
                 for (const key in queries) {
                     if (Object.prototype.hasOwnProperty.call(queries, key)) {
                         // TODO: Particular match for some fields is not checked
@@ -64,7 +87,7 @@ class ServerProxy {
         }
 
         async function getJob(jobID) {
-            return tasks.results.reduce((acc, task) => {
+            return tasksDummyData.results.reduce((acc, task) => {
                 for (const segment of task.segments) {
                     for (const job of segment.jobs) {
                         const copy = JSON.parse(JSON.stringify(job));
