@@ -951,9 +951,14 @@ class PolyShapeModel extends ShapeModel {
         if (this._verifyArea(box)) {
             if (!silent) {
                 // Undo/redo code
-                let oldPos = Object.assign({}, this._positions[frame]);
+                const oldPos = Object.assign({}, this._positions[frame]);
                 window.cvat.addAction('Change Position', () => {
-                    this.updatePosition(frame, oldPos, false);
+                    if (!Object.keys(oldPos).length) {
+                        delete this._positions[frame];
+                        this.notify('position');
+                    } else {
+                        this.updatePosition(frame, oldPos, false);
+                    }
                 }, () => {
                     this.updatePosition(frame, pos, false);
                 }, frame);
@@ -961,7 +966,7 @@ class PolyShapeModel extends ShapeModel {
             }
 
             if (this._type.startsWith('annotation')) {
-                if (this._frame != frame) {
+                if (this._frame !== frame) {
                     throw Error(`Got bad frame for annotation poly shape during update position: ${frame}. Own frame is ${this._frame}`);
                 }
                 this._positions[frame] = pos;
@@ -2979,6 +2984,11 @@ class PolyShapeView extends ShapeView {
                 });
 
                 point.on('dblclick.polyshapeEditor', (e) => {
+                    if (this._controller.type === 'interpolation_points') {
+                        // Not available for interpolation points
+                        return;
+                    }
+
                     if (e.shiftKey) {
                         if (!window.cvat.mode) {
                             // Get index before detach shape from DOM
