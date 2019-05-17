@@ -13,6 +13,7 @@ const {
     tasksDummyData,
     aboutDummyData,
     shareDummyData,
+    usersDummyData,
 } = require('./dummy-data.mock');
 
 
@@ -106,11 +107,11 @@ class ServerProxy {
         }
 
         async function getUsers() {
-            return null;
+            return JSON.parse(JSON.stringify(usersDummyData)).results;
         }
 
         async function getSelf() {
-            return null;
+            return JSON.parse(JSON.stringify(usersDummyData)).results[0];
         }
 
         async function getFrame(tid, frame) {

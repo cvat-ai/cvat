@@ -6,6 +6,47 @@ const aboutDummyData = {
     "version": "0.5.dev20190516142240"
 }
 
+const usersDummyData = {
+    "count": 2,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "url": "http://localhost:7000/api/v1/users/1",
+            "id": 1,
+            "username": "admin",
+            "first_name": "",
+            "last_name": "",
+            "email": "admin@dummy.com",
+            "groups": [
+                "admin"
+            ],
+            "is_staff": true,
+            "is_superuser": true,
+            "is_active": true,
+            "last_login": "2019-05-17T11:53:05.961434+03:00",
+            "date_joined": "2019-05-13T15:33:17.833200+03:00"
+        },
+        {
+            "url": "http://localhost:7000/api/v1/users/2",
+            "id": 2,
+            "username": "bsekache",
+            "first_name": "",
+            "last_name": "",
+            "email": "",
+            "groups": [
+                "user",
+                "observer"
+            ],
+            "is_staff": false,
+            "is_superuser": false,
+            "is_active": true,
+            "last_login": "2019-05-16T13:07:19.564241+03:00",
+            "date_joined": "2019-05-16T13:05:57+03:00"
+        }
+    ]
+}
+
 const shareDummyData = [
     {
         "name": "images",
@@ -844,4 +885,5 @@ module.exports = {
     tasksDummyData,
     aboutDummyData,
     shareDummyData,
+    usersDummyData,
 }
