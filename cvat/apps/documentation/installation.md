@@ -308,3 +308,53 @@ volumes:
 You can change the share device path to your actual share. For user convenience
 we have defined the environment variable $CVAT_SHARE_URL. This variable
 contains a text (url for example) which is shown in the client-share browser.
+
+### Running over HTTPS
+
+First, you'll want to set the `SECURE_SSL_REDIRECT` inside your `cvat/settings/base.py` file.
+This tells Django that you want to use SSL.
+```python
+SECURE_SSL_REDIRECT = True
+```
+
+Then you should add a `docker-compose.override.yml`, or append to it if you already have one. 
+This change sets up the port forwarding in docker to redirect traffic from 443 on the host to 8443 on your
+CVAT container.
+```yml
+version: "2.3"
+
+services:
+  cvat:
+    environment:
+      ALLOWED_HOSTS: localhost
+      DJANGO_MODWSGI_EXTRA_ARGS: --https-only --allow-localhost --ssl-certificate /etc/ssl/cvat-certs/localhost --https-port 8443 --server-name localhost
+    ports:
+      - "443:8443"
+```
+
+Notice that the above change references a ssl certificate file.
+You'll need to make that certificate available on your container.
+One quick and dirty way to do this is to modify your `Dockerfile` to generate a self-signed ssl certificate.
+You can do that by adding the following to your Dockerfile.
+Using a self-signed certificate will cause Chrome to complain but users can bypass that by going through
+the "advanced settings".
+```bash
+RUN mkdir /etc/ssl/cvat-certs/
+RUN apt-get update && \
+    apt-get install -y openssl && \
+    openssl genrsa -des3 -passout pass:x -out server.pass.key 2048 && \
+    openssl rsa -passin pass:x -in server.pass.key -out server.key && \
+    rm server.pass.key && \
+    openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout /etc/ssl/cvat-certs/localhost.key -out /etc/ssl/cvat-certs/localhost.crt \
+	-subj "/C=US/ST=Washington/L=Seattle/O=CVAT/OU=Eng/CN=localhost"
+```
+
+In order to take `docker-compose.override.yml` into account when starting up CVAT, reference the overriding file with
+`-f` in the `docker-compose up` command.
+Also, don't forget to `docker-compose build` after making your changes.
+```bash
+docker-compose build
+docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
+```
+
+Those changes should get CVAT running over SSH.
