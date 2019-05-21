@@ -189,20 +189,67 @@
         };
 
         Task.prototype.save.implementation = setupEnv(
-            async function saveTaskImplementation() {
-                return null;
+            async function saveTaskImplementation(onUpdate) {
+                if (typeof (this.id) !== 'undefined') {
+                    // TODO: Add ability to change an owner and an assignee
+                    // TODO: Image quality must be changed, but what is the goal?
+                    const taskData = {
+                        name: this.name,
+                        bug_tracker: this.bugTracker,
+                        z_order: this.zOrder,
+                        labels: [...this.labels.map(el => el.toJSON())],
+                    };
+
+                    await serverProxy.tasks.saveTask(this.id, taskData);
+                } else {
+                    const taskData = {
+                        name: this.name,
+                        labels: this.labels.toJSON(),
+                        image_quality: this.imageQuality,
+                        z_order: Boolean(this.zOrder),
+                    };
+
+                    if (this.bugTracker) {
+                        taskData.bug_tracker = this.bugTracker;
+                    }
+                    if (this.segmentSize) {
+                        taskData.segment_size = this.segmentSize;
+                    }
+                    if (this.overlap) {
+                        taskData.overlap = this.overlap;
+                    }
+
+                    const taskFiles = {
+                        client_files: this.clientFiles,
+                        server_files: this.serverFiles,
+                        remote_files: [], // hasn't been supported yet
+                    };
+
+                    await serverProxy.tasks.createTask(taskData, taskFiles, onUpdate);
+                }
             },
         );
 
         Task.prototype.delete.implementation = setupEnv(
             async function deleteTaskImplementation() {
-                serverProxy.tasks.deleteTask(this.id);
+                await serverProxy.tasks.deleteTask(this.id);
             },
         );
 
         Job.prototype.save.implementation = setupEnv(
             async function saveJobImplementation() {
-                return null;
+                if (this.id) {
+                    // TODO: Add ability to change an assignee
+                    const jobData = {
+                        status: this.status,
+                    };
+
+                    await serverProxy.jobs.saveJob(this.id, jobData);
+                } else {
+                    throw window.cvat.exceptions.ArgumentError(
+                        'Can save job without and id',
+                    );
+                }
             },
         );
 

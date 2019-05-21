@@ -101,6 +101,22 @@
                 },
             }));
         }
+
+        toJSON() {
+            const object = {
+                name: this.name,
+                mutable: this.mutable,
+                input_type: this.inputType,
+                default_value: this.defaultValue,
+                values: this.values,
+            };
+
+            if (typeof (this.id) !== 'undefined') {
+                object.id = this.id;
+            }
+
+            return object;
+        }
     }
 
     /**
@@ -164,6 +180,19 @@
                     get: () => [...data.attributes],
                 },
             }));
+        }
+
+        toJSON() {
+            const object = {
+                name: this.name,
+                attributes: [...this.attributes.map(el => el.toJSON())],
+            };
+
+            if (typeof (this.id) !== 'undefined') {
+                object.id = this.id;
+            }
+
+            return object;
         }
     }
 

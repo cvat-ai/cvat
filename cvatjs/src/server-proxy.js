@@ -213,7 +213,7 @@
                 }
             }
 
-            async function createTask(taskData, onUpdate) {
+            async function createTask(taskData, files, onUpdate) {
                 const { backendAPI } = window.cvat.config;
 
                 async function wait(id) {
