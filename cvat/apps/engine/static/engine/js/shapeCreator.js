@@ -408,8 +408,17 @@ class ShapeCreatorView {
 
                 const xtl = Math.clamp(rect.x, 0, frameWidth);
                 const ytl = Math.clamp(rect.y, 0, frameHeight);
-                const xbr = Math.clamp(rect.x + rect.width, 0, frameWidth);
-                const ybr = Math.clamp(rect.y + rect.height, 0, frameHeight);
+                let xbr = Math.clamp(rect.x + rect.width, 0, frameWidth);
+                let ybr = Math.clamp(rect.y + rect.height, 0, frameHeight);
+
+                if ((xbr - xtl) < rect.width || (ybr - ytl) < rect.height) {
+                    if (xtl + (ybr - ytl) / 3 <= frameWidth && xtl + (ybr - ytl) / 3 <= xbr) {
+                        xbr = xtl + (ybr - ytl) / 3;
+                    } else {
+                        ybr = ytl + (xbr - xtl) * 3;
+                    }
+                }
+
                 if ((ybr - ytl) * (xbr - xtl) >= AREA_TRESHOLD) {
                     const box = {
                         xtl,

@@ -682,6 +682,16 @@ class BoxModel extends ShapeModel {
             z_order: position.z_order,
         };
 
+        const height = pos.ybr - pos.ytl;
+        const width = pos.xbr - pos.xtl;
+        if (pos.xtl != position.xtl || pos.ytl != position.ytl || pos.xbrn != position.xbr || pos.ybr != position.ybr) {
+            if (pos.xtl + height / 3 <= window.cvat.player.geometry.frameWidth && pos.xtl + height / 3 <= pos.xbr) {
+                pos.xbr = pos.xtl + (pos.ybr - pos.ytl) / 3;
+            } else {
+                pos.ybr = pos.ytl + width * 3;
+            }
+        }
+
         if (this._verifyArea(pos)) {
             if (this._type === 'annotation_box') {
                 if (this._frame != frame) {
@@ -1579,8 +1589,10 @@ class ShapeView extends Listener {
                     rotationPoint: false,
                     pointSize: POINT_RADIUS * 2 / window.cvat.player.geometry.scale,
                     deepSelect: true,
+                    points: ['lt', 'rt', 'rb', 'lb'],
                 }).resize({
                     snapToGrid: 0.1,
+                    saveAspectRatio: true,
                 }).on('resizestart', () => {
                     objWasResized = false;
                     this._flags.resizing = true;
