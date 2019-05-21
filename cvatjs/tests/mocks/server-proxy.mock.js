@@ -89,6 +89,50 @@ class ServerProxy {
             return result;
         }
 
+        async function saveTask(id, taskData) {
+            const object = tasksDummyData.results.filter(task => task.id === id)[0];
+            for (const prop in taskData) {
+                if (Object.prototype.hasOwnProperty.call(taskData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)) {
+                    object[prop] = taskData[prop];
+                }
+            }
+        }
+
+        async function createTask(taskData) {
+            const id = Math.max(...tasksDummyData.results.map(el => el.id)) + 1;
+            tasksDummyData.results.push({
+                id,
+                url: `http://localhost:7000/api/v1/tasks/${id}`,
+                name: taskData.name,
+                size: 5000,
+                mode: 'interpolation',
+                owner: 2,
+                assignee: null,
+                bug_tracker: taskData.bug_tracker,
+                created_date: '2019-05-16T13:08:00.621747+03:00',
+                updated_date: '2019-05-16T13:08:00.621797+03:00',
+                overlap: taskData.overlap ? taskData.overlap : 5,
+                segment_size: taskData.segment_size ? taskData.segment_size : 5000,
+                z_order: taskData.z_order,
+                flipped: false,
+                status: 'annotation',
+                image_quality: taskData.image_quality,
+                labels: JSON.parse(JSON.stringify(taskData.labels)),
+            });
+
+            const createdTask = await getTasks(`?id=${id}`);
+            return createdTask[0];
+        }
+
+        async function deleteTask(id) {
+            const tasks = tasksDummyData.results;
+            const task = tasks.filter(el => el.id === id)[0];
+            if (task) {
+                tasks.splice(tasks.indexOf(task), 1);
+            }
+        }
+
         async function getJob(jobID) {
             return tasksDummyData.results.reduce((acc, task) => {
                 for (const segment of task.segments) {
@@ -104,6 +148,25 @@ class ServerProxy {
 
                 return acc;
             }, []).filter(job => job.id === jobID);
+        }
+
+        async function saveJob(id, jobData) {
+            const object = tasksDummyData.results.reduce((acc, task) => {
+                for (const segment of task.segments) {
+                    for (const job of segment.jobs) {
+                        acc.push(job);
+                    }
+                }
+
+                return acc;
+            }, []).filter(job => job.id === id)[0];
+
+            for (const prop in jobData) {
+                if (Object.prototype.hasOwnProperty.call(jobData, prop)
+                    && Object.prototype.hasOwnProperty.call(object, prop)) {
+                    object[prop] = jobData[prop];
+                }
+            }
         }
 
         async function getUsers() {
@@ -136,6 +199,9 @@ class ServerProxy {
             tasks: {
                 value: Object.freeze({
                     getTasks,
+                    saveTask,
+                    createTask,
+                    deleteTask,
                 }),
                 writable: false,
             },
@@ -143,6 +209,7 @@ class ServerProxy {
             jobs: {
                 value: Object.freeze({
                     getJob,
+                    saveJob,
                 }),
                 writable: false,
             },

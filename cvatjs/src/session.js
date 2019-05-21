@@ -487,7 +487,7 @@
                 */
                 name: {
                     get: () => data.name,
-                    set: () => (value) => {
+                    set: (value) => {
                         if (!value.trim().length) {
                             throw new window.cvat.exceptions.ArgumentError(
                                 'Value must not be empty',
@@ -585,7 +585,7 @@
                 */
                 bugTracker: {
                     get: () => data.bug_tracker,
-                    set: () => (tracker) => {
+                    set: (tracker) => {
                         data.bug_tracker = tracker;
                     },
                 },
@@ -598,7 +598,7 @@
                 */
                 overlap: {
                     get: () => data.overlap,
-                    set: () => (overlap) => {
+                    set: (overlap) => {
                         if (!Number.isInteger(overlap) || overlap < 0) {
                             throw new window.cvat.exceptions.ArgumentError(
                                 'Value must be a non negative integer',
@@ -695,7 +695,7 @@
                     * @throws {module:API.cvat.exceptions.ArgumentError}
                 */
                 serverFiles: {
-                    get: () => [...data.files.serverFiles],
+                    get: () => [...data.files.server_files],
                     set: (serverFiles) => {
                         if (!Array.isArray(serverFiles)) {
                             throw new window.cvat.exceptions.ArgumentError(
@@ -723,7 +723,7 @@
                     * @throws {module:API.cvat.exceptions.ArgumentError}
                 */
                 clientFiles: {
-                    get: () => [...data.files.clientFiles],
+                    get: () => [...data.files.client_files],
                     set: (clientFiles) => {
                         if (!Array.isArray(clientFiles)) {
                             throw new window.cvat.exceptions.ArgumentError(

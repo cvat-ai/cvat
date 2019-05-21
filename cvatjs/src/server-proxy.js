@@ -283,6 +283,9 @@
 
                 onUpdate('The data is being uploaded to the server..');
                 await wait(response.id);
+
+                const createdTask = await getTasks(`?id=${response.id}`);
+                return createdTask[0];
             }
 
             async function getJob(jobID) {

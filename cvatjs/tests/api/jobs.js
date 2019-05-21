@@ -88,3 +88,31 @@ describe('Feature: get a list of jobs', () => {
         })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 });
+
+
+describe('Feature: save job', () => {
+    test('save status of a job', async () => {
+        let result = await window.cvat.jobs.get({
+            jobID: 1,
+        });
+
+        result[0].status = 'validation';
+        await result[0].save();
+
+        result = await window.cvat.jobs.get({
+            jobID: 1,
+        });
+        expect(result[0].status).toBe('validation');
+    });
+
+    test('save invalid status of a job', async () => {
+        const result = await window.cvat.jobs.get({
+            jobID: 1,
+        });
+
+        await result[0].save();
+        expect(() => {
+            result[0].status = 'invalid';
+        }).toThrow(window.cvat.exceptions.ArgumentError);
+    });
+});
