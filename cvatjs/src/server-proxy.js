@@ -9,11 +9,6 @@
 */
 
 (() => {
-    const {
-        ScriptingError,
-        ServerError,
-    } = require('./exceptions');
-
     class ServerProxy {
         constructor() {
             const Cookie = require('js-cookie');
@@ -36,7 +31,10 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError('Could not get "about" information from a server', code);
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not get "about" information from the server',
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -52,7 +50,10 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError('Could not get "share" information from a server', code);
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not get "share" information from the server',
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -70,7 +71,10 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError('Could not send an exception to a server', code);
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not send an exception to the server',
+                        code,
+                    );
                 }
             }
 
@@ -98,8 +102,10 @@
                         if (csrftoken) {
                             setCSRFHeader(csrftoken);
                         } else {
-                            throw new ScriptingError('An environment has been detected as a browser'
-                                + ', but CSRF token has not been found in cookies');
+                            throw new window.cvat.exceptions.ScriptingError(
+                                'An environment has been detected as a browser'
+                                + ', but CSRF token has not been found in cookies',
+                            );
                         }
                     }
                 }
@@ -112,7 +118,10 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError('Could not get CSRF token from a server', code);
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not get CSRF token from a server',
+                        code,
+                    );
                 }
 
                 setCookie(csrf);
@@ -142,7 +151,10 @@
                     } else {
                         const code = errorData.response
                             ? errorData.response.status : errorData.code;
-                        throw new ServerError('Could not login on a server', code);
+                        throw new window.cvat.exceptions.ServerError(
+                            'Could not login on a server',
+                            code,
+                        );
                     }
                 }
 
@@ -159,10 +171,118 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError('Could not get tasks from a server', code);
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not get tasks from a server',
+                        code,
+                    );
                 }
 
                 return response.data.results;
+            }
+
+            async function saveTask(id, taskData) {
+                const { backendAPI } = window.cvat.config;
+
+                try {
+                    await Axios.patch(`${backendAPI}/tasks/${id}`, JSON.stringify(taskData), {
+                        proxy: window.cvat.config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not save the task on the server',
+                        code,
+                    );
+                }
+            }
+
+            async function deleteTask(id) {
+                const { backendAPI } = window.cvat.config;
+
+                try {
+                    await Axios.delete(`${backendAPI}/tasks/${id}`)
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not delete the task from the server',
+                        code,
+                    );
+                }
+            }
+
+            async function createTask(taskData, onUpdate) {
+                const { backendAPI } = window.cvat.config;
+
+                async function wait(id) {
+                    return new Promise((resolve, reject) => {
+                        async function checkStatus() {
+                            try {
+                                const response = await Axios.get(`${backendAPI}/tasks/${id}/status`);
+                                if (['Queued', 'Started'].includes(response.state)) {
+                                    if (response.message !== '') {
+                                        onUpdate(response.message);
+                                    }
+                                    setTimeout(checkStatus, 1000);
+                                } else if (response.state === 'Finished') {
+                                    resolve();
+                                } else if (response.state === 'Failed') {
+                                    // If request has been successful, but task hasn't been created
+                                    // Then passed data is wrong and we can pass code 400
+                                    reject(
+                                        new window.cvat.exceptions.ServerError(
+                                            'Could not create the task on the server',
+                                            400,
+                                        ),
+                                    );
+                                } else {
+                                    // If server has another status, it is unexpected
+                                    // Therefore it is server error and we can pass code 500
+                                    reject(
+                                        new window.cvat.exceptions.ServerError(
+                                            `Unknown task state has been recieved: ${response.state}`,
+                                            500,
+                                        ),
+                                    );
+                                }
+                            } catch (errorData) {
+                                const code = errorData.response
+                                    ? errorData.response.status : errorData.code;
+
+                                reject(
+                                    new window.cvat.exceptions.ServerError(
+                                        'Data uploading error occured',
+                                        code,
+                                    ),
+                                );
+                            }
+                        }
+
+                        setTimeout(checkStatus, 1000);
+                    });
+                }
+
+                let response = null;
+                try {
+                    onUpdate('The task is being created on the server..');
+                    response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskData), {
+                        proxy: window.cvat.config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not put task to the server',
+                        code,
+                    );
+                }
+
+                onUpdate('The data is being uploaded to the server..');
+                await wait(response.id);
             }
 
             async function getJob(jobID) {
@@ -175,10 +295,32 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError('Could not get jobs from a server', code);
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not get jobs from a server',
+                        code,
+                    );
                 }
 
                 return response.data;
+            }
+
+            async function saveJob(id, jobData) {
+                const { backendAPI } = window.cvat.config;
+
+                try {
+                    await Axios.patch(`${backendAPI}/jobs/${id}`, JSON.stringify(jobData), {
+                        proxy: window.cvat.config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not save the job on the server',
+                        code,
+                    );
+                }
             }
 
             async function getUsers() {
@@ -191,7 +333,10 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError('Could not get users from a server', code);
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not get users from a server',
+                        code,
+                    );
                 }
 
                 return response.data.results;
@@ -207,7 +352,10 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError('Could not get users from a server', code);
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not get users from a server',
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -223,7 +371,10 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError(`Could not get frame ${frame} for a task ${tid} from a server`, code);
+                    throw new window.cvat.exceptions.ServerError(
+                        `Could not get frame ${frame} for a task ${tid} from a server`,
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -239,7 +390,10 @@
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError(`Could not get frame meta info for a task ${tid} from a server`, code);
+                    throw new window.cvat.exceptions.ServerError(
+                        `Could not get frame meta info for a task ${tid} from a server`,
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -267,6 +421,9 @@
                 tasks: {
                     value: Object.freeze({
                         getTasks,
+                        saveTask,
+                        createTask,
+                        deleteTask,
                     }),
                     writable: false,
                 },
@@ -274,6 +431,7 @@
                 jobs: {
                     value: Object.freeze({
                         getJob,
+                        saveJob,
                     }),
                     writable: false,
                 },

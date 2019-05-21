@@ -3,6 +3,8 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* eslint prefer-arrow-callback: [ "error", { "allowNamedFunctions": true } ] */
+
 /* global
     require:false
 */
@@ -11,6 +13,11 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
+
+    const {
+        Task,
+        Job,
+    } = require('./session');
 
     function isBoolean(value) {
         return typeof (value) === 'boolean';
@@ -65,6 +72,7 @@
                 } else {
                     throw new window.cvat.exceptions.ScriptingError('Bad context for the function');
                 }
+
                 const result = await wrappedFunction.call(this, ...args);
                 return result;
             } finally {
@@ -74,7 +82,7 @@
         };
     }
 
-    function implementAPI(cvat, jobAPI, taskAPI) {
+    function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
         cvat.plugins.register.implementation = PluginRegistry.register;
 
@@ -180,217 +188,24 @@
             return tasks;
         };
 
-        jobAPI.annotations.upload.implementation = setupEnv(
-            async (file) => {
-                // TODO: Update annotations
-            },
-        );
-
-        jobAPI.annotations.save.implementation = setupEnv(
-            async () => {
-                // TODO: Save annotation on a server
-            },
-        );
-
-        jobAPI.annotations.clear.implementation = setupEnv(
-            async () => {
-                // TODO: Remove all annotations
-            },
-        );
-
-        jobAPI.annotations.dump.implementation = setupEnv(
-            async () => {
-                const { host } = window.cvat.config;
-                const { api } = window.cvat.config;
-
-                return `${host}/api/${api}/tasks/${this.taskID}/annotations/dump`;
-            },
-        );
-
-        jobAPI.annotations.statistics.implementation = setupEnv(
-            async () => {
-                return new Statistics();
-            },
-        );
-
-        jobAPI.annotations.put.implementation = setupEnv(
-            async (arrayOfObjects) => {
-                // TODO: Make from objects
-            },
-        );
-
-        jobAPI.annotations.get.implementation = setupEnv(
-            async (frame, filter) => {
-                return [new ObjectState()];
-                // TODO: Return collection
-            },
-        );
-
-        jobAPI.annotations.search.implementation = setupEnv(
-            async (filter, frameFrom, frameTo) => {
-                return 0;
-            },
-        );
-
-        jobAPI.annotations.select.implementation = setupEnv(
-            async (frame, x, y) => {
+        Task.prototype.save.implementation = setupEnv(
+            async function saveTaskImplementation() {
                 return null;
             },
         );
 
-        jobAPI.frames.get.implementation = setupEnv(
-            async (frame) => {
-                return new FrameData(this.taskID, frame);
+        Task.prototype.delete.implementation = setupEnv(
+            async function deleteTaskImplementation() {
+                serverProxy.tasks.deleteTask(this.id);
             },
         );
 
-        jobAPI.logs.put.implementation = setupEnv(
-            async (logType, details) => {
-                // TODO: Put log into collection
-            },
-        );
-
-        jobAPI.logs.save.implementation = setupEnv(
-            async () => {
-
-            },
-        );
-
-        jobAPI.actions.undo.implementation = setupEnv(
-            async (count) => {
-                // TODO: Undo
-            },
-        );
-
-        jobAPI.actions.redo.implementation = setupEnv(
-            async (count) => {
-                // TODO: Redo
-            },
-        );
-
-        jobAPI.actions.clear.implementation = setupEnv(
-            async () => {
-                // TODO: clear
-            },
-        );
-
-        jobAPI.events.subscribe.implementation = setupEnv(
-            async (type, callback) => {
-                // TODO: Subscribe
-            }
-        );
-
-        jobAPI.events.unsubscribe.implementation = setupEnv(
-            async (type, callback) => {
-                // TODO: Save log collection
-            },
-        );
-
-        taskAPI.annotations.upload.implementation = setupEnv(
-            async (file) => {
-                // TODO: Update annotations
-            },
-        );
-
-        taskAPI.annotations.save.implementation = setupEnv(
-            async () => {
-                // TODO: Save annotation on a server
-            },
-        );
-
-        taskAPI.annotations.clear.implementation = setupEnv(
-            async () => {
-                // TODO: Remove all annotations
-            },
-        );
-
-        taskAPI.annotations.dump.implementation = setupEnv(
-            async () => {
-                const { host } = window.cvat.config;
-                const { api } = window.cvat.config;
-
-                return `${host}/api/${api}/tasks/${this.taskID}/annotations/dump`;
-            },
-        );
-
-        taskAPI.annotations.statistics.implementation = setupEnv(
-            async () => {
-                return new Statistics();
-            },
-        );
-
-        taskAPI.annotations.put.implementation = setupEnv(
-            async (arrayOfObjects) => {
-                // TODO: Make from objects
-            },
-        );
-
-        taskAPI.annotations.get.implementation = setupEnv(
-            async (frame, filter) => {
-                return [new ObjectState()];
-                // TODO: Return collection
-            },
-        );
-
-        taskAPI.annotations.search.implementation = setupEnv(
-            async (filter, frameFrom, frameTo) => {
-                return 0;
-            },
-        );
-
-        taskAPI.annotations.select.implementation = setupEnv(
-            async (frame, x, y) => {
+        Job.prototype.save.implementation = setupEnv(
+            async function saveJobImplementation() {
                 return null;
             },
         );
 
-        taskAPI.frames.get.implementation = setupEnv(
-            async (frame) => {
-                return new FrameData(this.taskID, frame);
-            },
-        );
-
-        taskAPI.logs.put.implementation = setupEnv(
-            async (logType, details) => {
-                // TODO: Put log into collection
-            },
-        );
-
-        taskAPI.logs.save.implementation = setupEnv(
-            async () => {
-
-            },
-        );
-
-        taskAPI.actions.undo.implementation = setupEnv(
-            async (count) => {
-                // TODO: Undo
-            },
-        );
-
-        taskAPI.actions.redo.implementation = setupEnv(
-            async (count) => {
-                // TODO: Redo
-            },
-        );
-
-        taskAPI.actions.clear.implementation = setupEnv(
-            async () => {
-                // TODO: clear
-            },
-        );
-
-        taskAPI.events.subscribe.implementation = setupEnv(
-            async (type, callback) => {
-                // TODO: Subscribe
-            }
-        );
-
-        taskAPI.events.unsubscribe.implementation = setupEnv(
-            async (type, callback) => {
-                // TODO: Save log collection
-            },
-        );
 
         return cvat;
     }

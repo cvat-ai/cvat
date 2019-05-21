@@ -640,7 +640,7 @@
         require('browser-env')();
     }
 
-    window.cvat = Object.freeze(implementAPI(cvat, jobAPI, taskAPI));
+    window.cvat = Object.freeze(implementAPI(cvat));
 
     const hidden = require('./hidden');
     hidden.location = cvat.config.backendAPI.slice(0, -7); // TODO: Use JS server instead

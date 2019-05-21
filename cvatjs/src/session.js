@@ -750,15 +750,18 @@
             * @method save
             * @returns {module:API.cvat.classes.Task}
             * @memberof module:API.cvat.classes.Task
+            * @param {function} [onUpdate] - the function which is used only if task hasn't
+            * been created yet. It called in order to notify about creation status.
+            * It receives the string parameter which is a status message
             * @readonly
             * @instance
             * @async
             * @throws {module:API.cvat.exceptions.ServerError}
             * @throws {module:API.cvat.exceptions.PluginError}
         */
-        async save() {
+        async save(onUpdate = () => {}) {
             const result = await PluginRegistry
-                .apiWrapper.call(this, Task.prototype.save);
+                .apiWrapper.call(this, Task.prototype.save, onUpdate);
             return result;
         }
 
