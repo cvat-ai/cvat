@@ -71,7 +71,7 @@ class LoggerHandler {
 
     addContinuedEvent(event) {
         this._userActivityHandler.updateTimer();
-        event.onCloseCallback = this._closeCallback;
+        event.onCloseCallback = this._closeCallback.bind(this);
         return event;
     }
 
@@ -103,7 +103,7 @@ class LoggerHandler {
                 };
                 xhr.onload = () => {
                     switch (xhr.status) {
-                        case 200:
+                        case 201:
                         case 403: // ignore forbidden response
                             resolve(xhr.response);
                             break;
@@ -113,7 +113,12 @@ class LoggerHandler {
                     }
                 };
                 xhr.onerror = () => {
-                    onreject();
+                    //  if status === 0 a request is a failure on the network level, ignore it
+                    if (xhr.status === 0) {
+                        resolve(xhr.response);
+                    } else {
+                        onreject();
+                    }
                 };
                 xhr.send(JSON.stringify(exception.serialize()));
             };
@@ -147,7 +152,9 @@ class LoggerHandler {
         this._userActivityHandler.updateTimer();
     }
 
-    _closeCallback = event => { this._pushEvent(event); };
+    _closeCallback(event) {
+        this._pushEvent(event);
+    }
 
     updateTimer() {
         this._userActivityHandler.updateTimer();
