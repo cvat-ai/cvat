@@ -251,7 +251,7 @@
                 }
 
                 throw window.cvat.exceptions.ArgumentError(
-                    'Can save job without and id',
+                    'Can not save job without and id',
                 );
             },
         );
