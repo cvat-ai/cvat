@@ -37,6 +37,7 @@
             "object": "Math",
             "property": "pow",
         }],
+        "no-plusplus": [0],
         "no-param-reassign": [0],
         "no-underscore-dangle": ["error", { "allowAfterThis": true }],
         "no-restricted-syntax": [0, {"selector": "ForOfStatement"}],

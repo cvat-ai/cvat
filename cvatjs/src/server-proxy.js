@@ -264,9 +264,19 @@
                     });
                 }
 
+                const batchOfFiles = new window.FormData();
+                for (const key in files) {
+                    if (Object.prototype.hasOwnProperty.call(files, key)) {
+                        for (let i = 0; i < files[key].length; i++) {
+                            batchOfFiles.append(`${key}[${i}]`, files[key][i]);
+                        }
+                    }
+                }
+
                 let response = null;
+
+                onUpdate('The task is being created on the server..');
                 try {
-                    onUpdate('The task is being created on the server..');
                     response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskData), {
                         proxy: window.cvat.config.proxy,
                         headers: {
@@ -282,6 +292,18 @@
                 }
 
                 onUpdate('The data is being uploaded to the server..');
+                try {
+                    response = await Axios.post(`${backendAPI}/tasks/${response.id}/data`, batchOfFiles, {
+                        proxy: window.cvat.config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not put data to the server',
+                        code,
+                    );
+                }
+
                 await wait(response.id);
 
                 const createdTask = await getTasks(`?id=${response.id}`);
