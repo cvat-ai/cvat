@@ -298,6 +298,7 @@ class DashboardView {
         this._maxUploadCount = metaData.max_upload_count;
         this._baseURL = metaData.base_url;
         this._sharePath = metaData.share_path;
+        this._params = {};
 
         this._setupList();
         this._setupTaskSearch();
@@ -309,103 +310,86 @@ class DashboardView {
         const dashboardPagination = $('#dashboardPagination');
         const baseURL = this._baseURL;
 
-        dashboardPagination.pagination({
-            async dataSource(done) {
+        const defaults = {
+            totalPages: 1,
+            visiblePages: 7,
+            async onPageClick(_, page) {
                 const overlay = showOverlay('Loading..');
-                let result = null;
+                dashboardList.empty();
+
+                let tasks = null;
                 try {
-                    result = await window.cvat.tasks.get({
-                        page: this.pageNumber,
-                    });
+                    tasks = await window.cvat.tasks.get(Object.assign({}, {
+                        page,
+                    }, this._params));
                 } catch (exception) {
                     let { message } = exception;
                     if (exception instanceof window.cvat.exceptions.ServerError) {
                         message += ` Code: ${exception.code}`;
                     }
                     showMessage(message);
+                    return;
                 } finally {
                     overlay.remove();
                 }
 
-                done(result);
-            },
-            callback(tasks) {
-                dashboardList.empty();
+                const startPage = dashboardPagination.twbsPagination('getCurrentPage');
+                dashboardPagination.twbsPagination('destroy');
+                dashboardPagination.twbsPagination(Object.assign({}, defaults, {
+                    totalPages: Math.max(1, tasks.count / 20),
+                    startPage,
+                    initiateStartPageClick: false,
+                }));
 
                 for (const task of tasks) {
                     const taskView = new TaskView(task);
                     dashboardList.append(taskView.render(baseURL));
                 }
 
+                dashboardPagination.css('margin-left', (window.screen.width - dashboardPagination.width()) / 2);
+
                 window.dispatchEvent(new CustomEvent('dashboardReady', {
                     detail: tasks,
                 }));
+            },
+        };
 
-                const pages = $('.paginationjs-pages');
-                pages.css('margin-left', (window.screen.width - pages.width()) / 2);
-            },
-            totalNumberLocator(response) {
-                return response.count;
-            },
-        });
+        dashboardPagination.twbsPagination(defaults);
     }
 
     _setupTaskSearch() {
+        const dashboardPagination = $('#dashboardPagination');
         const searchInput = $('#dashboardSearchInput');
         const searchSubmit = $('#dashboardSearchSubmit');
 
         searchInput.on('keypress', (e) => {
-            if (e.keyCode != 13) {
+            if (e.keyCode !== 13) {
                 return;
             }
 
-            const params = {};
+            this._params = {};
             const search = e.target.value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim();
-            for (let field of ['name', 'mode', 'owner', 'assignee', 'status', 'id']) {
+            for (const field of ['name', 'mode', 'owner', 'assignee', 'status', 'id']) {
                 for (let param of search.split(' and ')) {
                     if (param.includes(':')) {
                         param = param.split(':');
                         if (param[0] === field && param[1]) {
-                            params[field] = param[1];
+                            [, this._params[field]] = param;
                         }
                     }
                 }
             }
 
-            if (!Object.keys(params).length && search.length) {
-                params['search'] = search;
-            }
-
-            if (Object.keys(params).length) {
-                const searchParams = new URLSearchParams();
-                for (let key in params) {
-                    searchParams.set(key, params[key]);
-                }
-                window.location.search = searchParams.toString();
-            } else {
-                window.location.search = '';
-            }
+            // dashboardPagination.pagination('destroy');
+            // this._setupList();
+            dashboardPagination.pagination('go', 1);
         });
 
-        searchSubmit.on('click', function() {
-            let e = $.Event('keypress');
+        searchSubmit.on('click', () => {
+            const e = $.Event('keypress');
             e.keyCode = 13;
             searchInput.trigger(e);
         });
-
-        const searchParams = new URLSearchParams(window.location.search.substring(1));
-        if (searchParams.get('all')) {
-            searchInput.prop('value', searchParams.get('all'));
-        } else {
-            let search = '';
-            for (let field of ['name', 'mode', 'owner', 'assignee', 'status']) {
-                const fieldVal = searchParams.get(field);
-                if (fieldVal) {
-                    search += `${field}: ${fieldVal} and `;
-                }
-            }
-            searchInput.prop('value', search.slice(0, -5));
-        }
     }
 
     _setupCreateDialog() {

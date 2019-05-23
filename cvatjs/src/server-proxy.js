@@ -177,7 +177,7 @@
                     );
                 }
 
-                response.data.results.count = response.count;
+                response.data.results.count = response.data.count;
                 return response.data.results;
             }
 
