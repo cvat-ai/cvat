@@ -313,7 +313,11 @@ class DashboardView {
         const defaults = {
             totalPages: 1,
             visiblePages: 7,
-            async onPageClick(_, page) {
+            onPageClick: async (_, page) => {
+                dashboardPagination.css({
+                    visibility: 'hidden',
+                });
+
                 const overlay = showOverlay('Loading..');
                 dashboardList.empty();
 
@@ -346,7 +350,10 @@ class DashboardView {
                     dashboardList.append(taskView.render(baseURL));
                 }
 
-                dashboardPagination.css('margin-left', (window.screen.width - dashboardPagination.width()) / 2);
+                dashboardPagination.css({
+                    'margin-left': (window.screen.width - dashboardPagination.width()) / 2,
+                    visibility: 'visible',
+                });
 
                 window.dispatchEvent(new CustomEvent('dashboardReady', {
                     detail: tasks,
@@ -382,7 +389,7 @@ class DashboardView {
 
             // dashboardPagination.pagination('destroy');
             // this._setupList();
-            dashboardPagination.pagination('go', 1);
+            dashboardPagination.twbsPagination('show', 1);
         });
 
         searchSubmit.on('click', () => {
