@@ -7,22 +7,16 @@
 /* global
     AnnotationParser:false
     userConfirm:false
-    createExportContainer:false
     dumpAnnotationRequest: false
-    dumpAnnotation:false
     LabelsInfo:false
     showMessage:false
     showOverlay:false
 */
 
-'use strict';
-
 class TaskView {
-    constructor(details, ondelete, onupdate) {
-        this.init(details);
+    constructor(task) {
+        this.init(task);
 
-        this._ondelete = ondelete;
-        this._onupdate = onupdate;
         this._UI = null;
     }
 
@@ -31,73 +25,74 @@ class TaskView {
         this._UI.find('.dashboardJobList').empty();
     }
 
-    _remove() {
-        $.ajax ({
-            url: `/api/v1/tasks/${this._id}`,
-            type: 'DELETE',
-            success: () => {
-                this._ondelete(this._id);
-                this._disable();
-            },
-            error: (errorData) => {
-                const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.responseText || errorData.statusText}`;
-                showMessage(message);
+    async _remove() {
+        try {
+            await this._task.delete();
+        } catch (exception) {
+            let { message } = exception;
+            if (exception instanceof window.cvat.exceptions.ServerError) {
+                message += ` Code: ${exception.code}`;
             }
-        });
+            showMessage(message);
+        }
+
+        this._disable();
     }
 
     _update() {
         $('#dashboardUpdateModal').remove();
-        const dashboardUpdateModal = $($('#dashboardUpdateTemplate').html()).appendTo('body');
-        $('#dashboardOldLabels').prop('value', LabelsInfo.serialize(this._labels));
 
+        const dashboardUpdateModal = $($('#dashboardUpdateTemplate').html()).appendTo('body');
+
+        // TODO: Use JSON labels format instead of custom
+        $('#dashboardOldLabels').prop('value', LabelsInfo.serialize(this._task.labels.map(el => el.toJSON())));
         $('#dashboardCancelUpdate').on('click', () => {
             dashboardUpdateModal.remove();
         });
-
         $('#dashboardSubmitUpdate').on('click', () => {
+            let jsonLabels = null;
             try {
-                const body = {
-                    labels: LabelsInfo.deserialize($('#dashboardNewLabels').prop('value'))
-                };
-                $.ajax({
-                    url: `/api/v1/tasks/${this._id}`,
-                    type: 'PATCH',
-                    contentType: 'application/json',
-                    data: JSON.stringify(body)
-                }).done(() => {
-                    this._onupdate();
-                    dashboardUpdateModal.remove();
-                    showMessage('Task has been successfully updated');
-                }).fail((errorData) => {
-                    const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
-                        `Message: ${errorData.responseText || errorData.statusText}`;
-                    showMessage(message);
-                });
+                jsonLabels = LabelsInfo.deserialize($('#dashboardNewLabels').prop('value'));
             } catch (exception) {
                 showMessage(exception);
+                return;
             }
+
+            try {
+                const labels = jsonLabels.map(label => new window.cvat.classes.Label(label));
+                this._task.labels = labels;
+                this._task.save();
+                showMessage('Task has been successfully updated');
+            } catch (exception) {
+                let { message } = exception;
+                if (exception instanceof window.cvat.exceptions.ServerError) {
+                    message += ` Code: ${exception.code}`;
+                }
+                showMessage(message);
+            }
+
+            dashboardUpdateModal.remove();
         });
     }
 
     _upload() {
         async function saveChunk(parsed) {
             const CHUNK_SIZE = 30000;
+            let chunk = null;
 
             class Chunk {
                 constructor() {
                     this.shapes = [];
                     this.tracks = [];
-                    this.tags   = [];
+                    this.tags = [];
                     this.capasity = CHUNK_SIZE;
                     this.version = 0;
                 }
 
                 length() {
-                    return this.tags.length +
-                           this.shapes.length +
-                           this.tracks.reduce((sum, track) => sum + track.shapes.length, 0);
+                    return this.tags.length
+                           + this.shapes.length
+                           + this.tracks.reduce((sum, track) => sum + track.shapes.length, 0);
                 }
 
                 isFull() {
@@ -111,8 +106,9 @@ class TaskView {
                 clear() {
                     this.shapes = [];
                     this.tracks = [];
-                    this.tags   = [];
+                    this.tags = [];
                 }
+
                 export() {
                     return {
                         shapes: this.shapes,
@@ -121,6 +117,7 @@ class TaskView {
                         version: this.version,
                     };
                 }
+
                 async save(taskID) {
                     try {
                         const response = await $.ajax({
@@ -137,24 +134,25 @@ class TaskView {
                 }
             }
 
-            const splitAndSave = async (chunk, prop, splitStep) => {
-                for(let start = 0; start < parsed[prop].length; start += splitStep) {
-                    Array.prototype.push.apply(chunk[prop], parsed[prop].slice(start, start + splitStep));
-                    if (chunk.isFull()) {
-                        await chunk.save(this._id);
+            const splitAndSave = async (chunkForSave, prop, splitStep) => {
+                for (let start = 0; start < parsed[prop].length; start += splitStep) {
+                    Array.prototype.push.apply(chunkForSave[prop],
+                        parsed[prop].slice(start, start + splitStep));
+                    if (chunkForSave.isFull()) {
+                        await chunkForSave.save(this._id);
                     }
                 }
                 // save tail
-                if (!chunk.isEmpty()) {
-                    await chunk.save(this._id);
+                if (!chunkForSave.isEmpty()) {
+                    await chunkForSave.save(this._id);
                 }
             };
 
-            let chunk = new Chunk();
-            // FIXME tags aren't supported by parser
+            chunk = new Chunk();
+            // TODO tags aren't supported by parser
             // await split(chunk, "tags", CHUNK_SIZE);
-            await splitAndSave(chunk, "shapes", CHUNK_SIZE);
-            await splitAndSave(chunk, "tracks", 1);
+            await splitAndSave(chunk, 'shapes', CHUNK_SIZE);
+            await splitAndSave(chunk, 'tracks', 1);
         }
 
         async function save(parsed) {
@@ -170,7 +168,8 @@ class TaskView {
             try {
                 overlay.setMessage('Required data are being downloaded from the server..');
                 const imageCache = await $.get(`/api/v1/tasks/${this._id}/frames/meta`);
-                const labelsCopy = JSON.parse(JSON.stringify(this._labels));
+                const labelsCopy = JSON.parse(JSON.stringify(this._task.labels
+                    .map(el => el.toJSON())));
                 const parser = new AnnotationParser({
                     start: 0,
                     stop: this._size,
@@ -186,13 +185,13 @@ class TaskView {
 
                 const message = 'Annotation have been successfully uploaded';
                 showMessage(message);
-            } catch(errorData) {
+            } catch (errorData) {
                 let message = null;
-                if (typeof(errorData) === 'string') {
+                if (typeof (errorData) === 'string') {
                     message = `Can not upload annotations. ${errorData}`;
                 } else {
-                    message = `Can not upload annotations. Code: ${errorData.status}. ` +
-                        `Message: ${errorData.responseText || errorData.statusText}`;
+                    message = `Can not upload annotations. Code: ${errorData.status}. `
+                        + `Message: ${errorData.responseText || errorData.statusText}`;
                 }
                 showMessage(message);
             } finally {
@@ -200,15 +199,15 @@ class TaskView {
             }
         }
 
-        $('<input type="file" accept="text/xml">').on('change', (e) => {
-            const file = e.target.files[0];
-            $(e.target).remove();
+        $('<input type="file" accept="text/xml">').on('change', (onChangeEvent) => {
+            const file = onChangeEvent.target.files[0];
+            $(onChangeEvent.target).remove();
             if (file) {
                 const overlay = showOverlay('File is being parsed..');
                 const fileReader = new FileReader();
-                fileReader.onload = (e) => {
-                    onload.call(this, overlay, e.target.result);
-                }
+                fileReader.onload = (onloadEvent) => {
+                    onload.call(this, overlay, onloadEvent.target.result);
+                };
                 fileReader.readAsText(file);
             }
         }).click();
@@ -225,59 +224,54 @@ class TaskView {
         }
     }
 
-    init(details) {
-        for (let prop in details) {
-            this[`_${prop}`] = details[prop];
-        }
+    init(task) {
+        this._task = task;
     }
 
     render(baseURL) {
-        const self = this;
         this._UI = $(`<div tid=${this._id} class="dashboardItem"> </div>`).append(
             $(`<center class="dashboardTitleWrapper">
-                <label class="semiBold h1 selectable"> ${this._name} </label>
-            </center>`)
+                <label class="semiBold h1 selectable"> ${this._task.name} </label>
+            </center>`),
         ).append(
             $(`<center class="dashboardTitleWrapper">
-                <label class="regular selectable"> ${this._status} </label>
-            </center>`)
+                <label class="regular selectable"> ${this._task.status} </label>
+            </center>`),
         ).append(
             $('<div class="dashboardTaskIntro"> </div>').css({
-                'background-image': `url("/api/v1/tasks/${this._id}/frames/0")`
-            })
+                'background-image': `url("/api/v1/tasks/${this._task.id}/frames/0")`,
+            }),
         );
 
 
-        const buttonsContainer = $(`<div class="dashboardButtonsUI"> </div>`).appendTo(this._UI);
+        const buttonsContainer = $('<div class="dashboardButtonsUI"> </div>').appendTo(this._UI);
         $('<button class="regular dashboardButtonUI"> Dump Annotation </button>').on('click', (e) => {
-            self._dump(e.target);
+            this._dump(e.target);
         }).appendTo(buttonsContainer);
 
         $('<button class="regular dashboardButtonUI"> Upload Annotation </button>').on('click', () => {
-            userConfirm("The current annotation will be lost. Are you sure?", () => self._upload());
+            userConfirm('The current annotation will be lost. Are you sure?', () => this._upload());
         }).appendTo(buttonsContainer);
 
         $('<button class="regular dashboardButtonUI"> Update Task </button>').on('click', () => {
-            self._update();
+            this._update();
         }).appendTo(buttonsContainer);
 
         $('<button class="regular dashboardButtonUI"> Delete Task </button>').on('click', () => {
-            userConfirm("The task will be removed. Are you sure?", () => self._remove());
+            userConfirm('The task will be removed. Are you sure?', () => this._remove());
         }).appendTo(buttonsContainer);
 
-        if (this._bug_tracker) {
+        if (this._task.bugTracker) {
             $('<button class="regular dashboardButtonUI"> Open Bug Tracker </button>').on('click', () => {
-                window.open(this._bug_tracker);
+                window.open(this._task.bugTracker);
             }).appendTo(buttonsContainer);
         }
 
 
-        const jobsContainer = $(`<table class="dashboardJobList regular">`);
-        for (let segment of this._segments) {
-            for (let job of segment.jobs) {
-                const link = `${baseURL}?id=${job.id}`;
-                jobsContainer.append($(`<tr> <td> <a href="${link}"> ${link} </a> </td> </tr>`));
-            }
+        const jobsContainer = $('<table class="dashboardJobList regular">');
+        for (const job of this._task.jobs) {
+            const link = `${baseURL}?id=${job.id}`;
+            jobsContainer.append($(`<tr> <td> <a href="${link}"> ${link} </a> </td> </tr>`));
         }
 
         this._UI.append($(`
@@ -313,55 +307,46 @@ class DashboardView {
     _setupList() {
         const dashboardList = $('#dashboardList');
         const dashboardPagination = $('#dashboardPagination');
-
         const baseURL = this._baseURL;
-        let overlay = null;
+
         dashboardPagination.pagination({
-            dataSource: `/api/v1/tasks${window.location.search}`,
-            locator: 'results',
-            alias: {
-                pageNumber: 'page',
-            },
-            totalNumberLocator: function(response) {
-                return response.count;
-            },
-            ajax: {
-                beforeSend() {
-                    overlay = showOverlay('Loading..');
-                },
-            },
-            callback: function(pageList) {
-                if (overlay) {
-                    overlay.remove();
-                    overlay = null;
-                }
-                dashboardList.empty();
-                for (let details of pageList) {
-                    const detailsCopy = JSON.parse(JSON.stringify(details));
-                    const taskView = new TaskView(detailsCopy, () => {
-                        // on delete task callback
-                        details.removed = true
-                    }, () => {
-                        // on update task callback
-                        $.get(`/api/v1/tasks/${details.id}`).done((taskData) => {
-                            Object.assign(details, taskData);
-                            taskView.init(details);
-                        }).fail((errorData) => {
-                            const message = `Can not get task from server. Showed info may be obsolete. Code: ${errorData.status}. ` +
-                                `Message: ${errorData.responseText || errorData.statusText}`;
-                            showMessage(message);
-                        })
+            async dataSource(done) {
+                const overlay = showOverlay('Loading..');
+                let result = null;
+                try {
+                    result = await window.cvat.tasks.get({
+                        page: this.pageNumber,
                     });
+                } catch (exception) {
+                    let { message } = exception;
+                    if (exception instanceof window.cvat.exceptions.ServerError) {
+                        message += ` Code: ${exception.code}`;
+                    }
+                    showMessage(message);
+                } finally {
+                    overlay.remove();
+                }
+
+                done(result);
+            },
+            callback(tasks) {
+                dashboardList.empty();
+
+                for (const task of tasks) {
+                    const taskView = new TaskView(task);
                     dashboardList.append(taskView.render(baseURL));
                 }
 
                 window.dispatchEvent(new CustomEvent('dashboardReady', {
-                    detail: JSON.parse(JSON.stringify(pageList))
+                    detail: tasks,
                 }));
 
                 const pages = $('.paginationjs-pages');
                 pages.css('margin-left', (window.screen.width - pages.width()) / 2);
-            }
+            },
+            totalNumberLocator(response) {
+                return response.count;
+            },
         });
     }
 

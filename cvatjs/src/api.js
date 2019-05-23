@@ -252,6 +252,9 @@
                 * @property {module:API.cvat.enums.TaskMode} mode
                 * Check if mode contains this value
                 * @property {integer} id Check if id equals this value
+                * @property {integer} page Get specific page
+                * (default REST API returns 20 tasks per request.
+                * In order to get more, it is need to specify next page)
                 * @property {string} owner Check if owner user contains this value
                 * @property {string} assignee Check if assigneed contains this value
                 * @property {string} search Combined search of contains among all fields

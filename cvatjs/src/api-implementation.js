@@ -154,6 +154,7 @@
 
         cvat.tasks.get.implementation = async (filter) => {
             checkFilter(filter, {
+                page: isInteger,
                 name: isString,
                 id: isInteger,
                 owner: isString,
@@ -176,14 +177,15 @@
             }
 
             const searchParams = new URLSearchParams();
-            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id']) {
+            for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page']) {
                 if (Object.prototype.hasOwnProperty.call(filter, field)) {
                     searchParams.set(field, filter[field]);
                 }
             }
 
-            let tasks = await serverProxy.tasks.getTasks(searchParams.toString());
-            tasks = tasks.map(task => new window.cvat.classes.Task(task));
+            const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
+            const tasks = tasksData.map(task => new window.cvat.classes.Task(task));
+            tasks.count = tasksData.count;
 
             return tasks;
         };
