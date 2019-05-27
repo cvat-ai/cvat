@@ -230,32 +230,28 @@
                                 } else if (response.data.state === 'Finished') {
                                     resolve();
                                 } else if (response.data.state === 'Failed') {
-                                    deleteTask(id);
                                     // If request has been successful, but task hasn't been created
                                     // Then passed data is wrong and we can pass code 400
-                                    new window.cvat.exceptions.ServerError(
+                                    reject(new window.cvat.exceptions.ServerError(
                                         'Could not create the task on the server',
                                         400,
-                                    );
+                                    ));
                                 } else {
-                                    deleteTask(id);
                                     // If server has another status, it is unexpected
                                     // Therefore it is server error and we can pass code 500
-                                    new window.cvat.exceptions.ServerError(
+                                    reject(new window.cvat.exceptions.ServerError(
                                         `Unknown task state has been recieved: ${response.data.state}`,
                                         500,
-                                    );
+                                    ));
                                 }
                             } catch (errorData) {
                                 const code = errorData.response
                                     ? errorData.response.status : errorData.code;
 
-                                reject(
-                                    new window.cvat.exceptions.ServerError(
-                                        'Data uploading error occured',
-                                        code,
-                                    ),
-                                );
+                                reject(new window.cvat.exceptions.ServerError(
+                                    'Data uploading error occured',
+                                    code,
+                                ));
                             }
                         }
 
@@ -304,7 +300,13 @@
                     );
                 }
 
-                await wait(response.data.id);
+                try {
+                    await wait(response.data.id);
+                } catch (createException) {
+                    deleteTask(response.data.id);
+                    throw createException;
+                }
+
 
                 const createdTask = await getTasks(`?id=${response.id}`);
                 return createdTask[0];

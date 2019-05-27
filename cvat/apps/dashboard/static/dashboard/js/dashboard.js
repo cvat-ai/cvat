@@ -704,18 +704,6 @@ class DashboardView {
     }
 }
 
-DashboardView.decorators = (action) => {
-    DashboardView._decorators = DashboardView._decorators || {};
-    return DashboardView._decorators[action] || [];
-}
-
-DashboardView.registerDecorator = (action, decorator) => {
-    DashboardView._decorators = DashboardView._decorators || {};
-    DashboardView._decorators[action] = DashboardView._decorators[action] || [];
-    DashboardView._decorators[action].push(decorator);
-}
-
-
 // DASHBOARD ENTRYPOINT
 window.addEventListener('DOMContentLoaded', () => {
     $.when(
@@ -725,8 +713,7 @@ window.addEventListener('DOMContentLoaded', () => {
     ).then((metaData, taskData) => {
         try {
             new DashboardView(metaData[0], taskData[0]);
-        }
-        catch(exception) {
+        } catch (exception) {
             $('#content').empty();
             const message = `Can not build CVAT dashboard. Exception: ${exception}.`;
             showMessage(message);

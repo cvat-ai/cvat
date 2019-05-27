@@ -20,7 +20,7 @@
                     .filter(obj => obj.callback === wrappedFunc)[0];
                 if (pluginDecorators && pluginDecorators.enter) {
                     try {
-                        await pluginDecorators.enter(plugin, ...args);
+                        await pluginDecorators.enter.call(this, plugin, ...args);
                     } catch (exception) {
                         if (exception instanceof PluginError) {
                             throw exception;
@@ -38,7 +38,7 @@
                     .filter(obj => obj.callback === wrappedFunc)[0];
                 if (pluginDecorators && pluginDecorators.leave) {
                     try {
-                        result = await pluginDecorators.leave(plugin, result, ...args);
+                        result = await pluginDecorators.leave.call(this, plugin, result, ...args);
                     } catch (exception) {
                         if (exception instanceof PluginError) {
                             throw exception;

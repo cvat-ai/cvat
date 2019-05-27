@@ -10,7 +10,7 @@
     userConfirm
 */
 
-window.cvat = window.cvat || {};
+window.cvatUI = window.cvatUI || {};
 
 const AutoAnnotationServer = {
     start(modelId, taskId, data, success, error, progress, check) {
@@ -136,8 +136,8 @@ const AutoAnnotationServer = {
 
 class AutoAnnotationModelManagerView {
     constructor() {
-        const html = `<div class="modal hidden" id="${window.cvat.autoAnnotation.managerWindowId}">
-            <div class="modal-content" id="${window.cvat.autoAnnotation.managerContentId}">
+        const html = `<div class="modal hidden" id="${window.cvatUI.autoAnnotation.managerWindowId}">
+            <div class="modal-content" id="${window.cvatUI.autoAnnotation.managerContentId}">
                 <div style="float: left; width: 55%; height: 100%;">
                     <center>
                         <label class="regular h1"> Uploaded Models </label>
@@ -151,48 +151,48 @@ class AutoAnnotationModelManagerView {
                                     <th> Actions </th>
                                 </tr>
                             </thead>
-                            <tbody id="${window.cvat.autoAnnotation.managerUploadedModelsId}"> </tbody>
+                            <tbody id="${window.cvatUI.autoAnnotation.managerUploadedModelsId}"> </tbody>
                         </table>
                     </div>
                 </div>
-                <div class="regular" id="${window.cvat.autoAnnotation.uploadContentId}">
+                <div class="regular" id="${window.cvatUI.autoAnnotation.uploadContentId}">
                     <center>
-                        <label class="regular h1" id="${window.cvat.autoAnnotation.uploadTitleId}"> Create Model </label>
+                        <label class="regular h1" id="${window.cvatUI.autoAnnotation.uploadTitleId}"> Create Model </label>
                     </center>
                     <table>
                         <tr>
                             <td style="width: 25%"> <label class="regular h3"> Name: </label> </td>
-                            <td> <input type="text" id="${window.cvat.autoAnnotation.uploadNameInputId}" class="regular h3" style="width: 100%"> </td>
+                            <td> <input type="text" id="${window.cvatUI.autoAnnotation.uploadNameInputId}" class="regular h3" style="width: 100%"> </td>
                         </tr>
                         <tr>
                             <td> <label class="regular h3"> Source: </label> </td>
                             <td>
-                                <input id="${window.cvat.autoAnnotation.uploadLocalSourceId}" type="radio" name="modelSourceType" value="local" checked>
-                                <label for="${window.cvat.autoAnnotation.uploadLocalSourceId}" class="regular h3"> Local </label>
+                                <input id="${window.cvatUI.autoAnnotation.uploadLocalSourceId}" type="radio" name="modelSourceType" value="local" checked>
+                                <label for="${window.cvatUI.autoAnnotation.uploadLocalSourceId}" class="regular h3"> Local </label>
                                 <br>
-                                <input id="${window.cvat.autoAnnotation.uploadShareSourceId}" type="radio" name="modelSourceType" value="shared">
-                                <label for="${window.cvat.autoAnnotation.uploadShareSourceId}" class="regular h3"> Share </label>
+                                <input id="${window.cvatUI.autoAnnotation.uploadShareSourceId}" type="radio" name="modelSourceType" value="shared">
+                                <label for="${window.cvatUI.autoAnnotation.uploadShareSourceId}" class="regular h3"> Share </label>
                             </td>
                         </tr>
-                        <tr id="${window.cvat.autoAnnotation.uploadGloballyBlockId}">
+                        <tr id="${window.cvatUI.autoAnnotation.uploadGloballyBlockId}">
                             <td> <label class="regular h3"> Upload Globally </label> </td>
-                            <td> <input type="checkbox" id="${window.cvat.autoAnnotation.uploadGloballyId}"> </td>
+                            <td> <input type="checkbox" id="${window.cvatUI.autoAnnotation.uploadGloballyId}"> </td>
                         </tr>
                     </table>
                 <div style="text-align: left;">
                     <div>
-                        <button id="${window.cvat.autoAnnotation.selectFilesButtonId}" class="regular h3"> Select Files </button>
-                        <label id="${window.cvat.autoAnnotation.selectedFilesId}" class="regular h3" style="margin-left: 10px"> No Files </label>
-                        <input id="${window.cvat.autoAnnotation.localFileSelectorId}" type="file" accept=".bin,.xml,.json,.py" style="display: none" multiple>
+                        <button id="${window.cvatUI.autoAnnotation.selectFilesButtonId}" class="regular h3"> Select Files </button>
+                        <label id="${window.cvatUI.autoAnnotation.selectedFilesId}" class="regular h3" style="margin-left: 10px"> No Files </label>
+                        <input id="${window.cvatUI.autoAnnotation.localFileSelectorId}" type="file" accept=".bin,.xml,.json,.py" style="display: none" multiple>
                     </div>
                 </div>
                 <div>
                     <div style="float: right; width: 50%; height: 50px;">
-                        <button class="regular h3" id="${window.cvat.autoAnnotation.submitUploadButtonId}"> Submit </button>
-                        <button class="regular h3" id="${window.cvat.autoAnnotation.cancelUploadButtonId}"> Cancel </button>
+                        <button class="regular h3" id="${window.cvatUI.autoAnnotation.submitUploadButtonId}"> Submit </button>
+                        <button class="regular h3" id="${window.cvatUI.autoAnnotation.cancelUploadButtonId}"> Cancel </button>
                     </div>
                     <div style="float: left; overflow-y: auto; height: 75px;  overflow: auto; width: 100%; word-break: break-word;">
-                        <label class="regular h3 selectable" style="float: left;" id="${window.cvat.autoAnnotation.uploadMessageId}"> </label>
+                        <label class="regular h3 selectable" style="float: left;" id="${window.cvatUI.autoAnnotation.uploadMessageId}"> </label>
                     </div>
                 </div>
             </div>
@@ -200,20 +200,20 @@ class AutoAnnotationModelManagerView {
 
         this.el = $(html);
 
-        this.table = this.el.find(`#${window.cvat.autoAnnotation.managerUploadedModelsId}`);
-        this.globallyBlock = this.el.find(`#${window.cvat.autoAnnotation.uploadGloballyBlockId}`);
-        this.uploadTitle = this.el.find(`#${window.cvat.autoAnnotation.uploadTitleId}`);
-        this.uploadNameInput = this.el.find(`#${window.cvat.autoAnnotation.uploadNameInputId}`);
-        this.uploadMessage = this.el.find(`#${window.cvat.autoAnnotation.uploadMessageId}`);
-        this.selectedFilesLabel = this.el.find(`#${window.cvat.autoAnnotation.selectedFilesId}`);
-        this.modelNameInput = this.el.find(`#${window.cvat.autoAnnotation.uploadNameInputId}`);
-        this.localSource = this.el.find(`#${window.cvat.autoAnnotation.uploadLocalSourceId}`);
-        this.shareSource = this.el.find(`#${window.cvat.autoAnnotation.uploadShareSourceId}`);
-        this.cancelButton = this.el.find(`#${window.cvat.autoAnnotation.cancelUploadButtonId}`);
-        this.submitButton = this.el.find(`#${window.cvat.autoAnnotation.submitUploadButtonId}`);
-        this.globallyBox = this.el.find(`#${window.cvat.autoAnnotation.uploadGloballyId}`);
-        this.selectButton = this.el.find(`#${window.cvat.autoAnnotation.selectFilesButtonId}`);
-        this.localSelector = this.el.find(`#${window.cvat.autoAnnotation.localFileSelectorId}`);
+        this.table = this.el.find(`#${window.cvatUI.autoAnnotation.managerUploadedModelsId}`);
+        this.globallyBlock = this.el.find(`#${window.cvatUI.autoAnnotation.uploadGloballyBlockId}`);
+        this.uploadTitle = this.el.find(`#${window.cvatUI.autoAnnotation.uploadTitleId}`);
+        this.uploadNameInput = this.el.find(`#${window.cvatUI.autoAnnotation.uploadNameInputId}`);
+        this.uploadMessage = this.el.find(`#${window.cvatUI.autoAnnotation.uploadMessageId}`);
+        this.selectedFilesLabel = this.el.find(`#${window.cvatUI.autoAnnotation.selectedFilesId}`);
+        this.modelNameInput = this.el.find(`#${window.cvatUI.autoAnnotation.uploadNameInputId}`);
+        this.localSource = this.el.find(`#${window.cvatUI.autoAnnotation.uploadLocalSourceId}`);
+        this.shareSource = this.el.find(`#${window.cvatUI.autoAnnotation.uploadShareSourceId}`);
+        this.cancelButton = this.el.find(`#${window.cvatUI.autoAnnotation.cancelUploadButtonId}`);
+        this.submitButton = this.el.find(`#${window.cvatUI.autoAnnotation.submitUploadButtonId}`);
+        this.globallyBox = this.el.find(`#${window.cvatUI.autoAnnotation.uploadGloballyId}`);
+        this.selectButton = this.el.find(`#${window.cvatUI.autoAnnotation.selectFilesButtonId}`);
+        this.localSelector = this.el.find(`#${window.cvatUI.autoAnnotation.localFileSelectorId}`);
         this.shareSelector = $('#dashboardShareBrowseModal');
         this.shareBrowseTree = $('#dashboardShareBrowser');
         this.submitShare = $('#dashboardSubmitBrowseServer');
@@ -355,14 +355,14 @@ class AutoAnnotationModelManagerView {
 
                 this.uploadMessage.text('');
                 const overlay = showOverlay('Send request to the server..');
-                window.cvat.autoAnnotation.server.update(modelData, () => {
+                window.cvatUI.autoAnnotation.server.update(modelData, () => {
                     window.location.reload();
                 }, (message) => {
                     overlay.remove();
                     showMessage(message);
                 }, (progress) => {
                     overlay.setMessage(progress);
-                }, window.cvat.autoAnnotation.server.check, this.id);
+                }, window.cvatUI.autoAnnotation.server.check, this.id);
             } finally {
                 this.submitButton.prop('disabled', false);
             }
@@ -371,7 +371,7 @@ class AutoAnnotationModelManagerView {
 
     reset() {
         const setBlocked = () => {
-            if (window.cvat.autoAnnotation.data.admin) {
+            if (window.cvatUI.autoAnnotation.data.admin) {
                 this.globallyBlock.removeClass('hidden');
             } else {
                 this.globallyBlock.addClass('hidden');
@@ -402,11 +402,11 @@ class AutoAnnotationModelManagerView {
 
         const deleteButtonClickHandler = (event) => {
             userConfirm(`Do you actually want to delete the "${event.data.model.name}" model. Are you sure?`, () => {
-                window.cvat.autoAnnotation.server.delete(event.data.model.id, () => {
-                    const filtered = window.cvat.autoAnnotation.data.models.filter(
+                window.cvatUI.autoAnnotation.server.delete(event.data.model.id, () => {
+                    const filtered = window.cvatUI.autoAnnotation.data.models.filter(
                         item => item !== event.data.model,
                     );
-                    window.cvat.autoAnnotation.data.models = filtered;
+                    window.cvatUI.autoAnnotation.data.models = filtered;
                     this.reset();
                 }, (message) => {
                     showMessage(message);
@@ -428,7 +428,7 @@ class AutoAnnotationModelManagerView {
             );
         };
 
-        window.cvat.autoAnnotation.data.models.forEach((model) => {
+        window.cvatUI.autoAnnotation.data.models.forEach((model) => {
             const rowHtml = `<tr>
                 <td> ${model.name} </td>
                 <td> ${model.uploadDate} </td>
@@ -455,18 +455,18 @@ class AutoAnnotationModelManagerView {
 
 class AutoAnnotationModelRunnerView {
     constructor() {
-        const html = `<div class="modal hidden" id="${window.cvat.autoAnnotation.runnerWindowId}">
-            <div class="modal-content" id="${window.cvat.autoAnnotation.runnerContentId}">
+        const html = `<div class="modal hidden" id="${window.cvatUI.autoAnnotation.runnerWindowId}">
+            <div class="modal-content" id="${window.cvatUI.autoAnnotation.runnerContentId}">
                 <div style="width: 55%; height: 100%; float: left;">
                     <center style="height: 10%;">
                         <label class="regular h1"> Uploaded Models </label>
                     </center>
                     <div style="height: 70%; overflow: auto; margin-top: 2%;">
-                        <table class="modelsTable" id="${window.cvat.autoAnnotation.runnerUploadedModelsId}"> </table>
+                        <table class="modelsTable" id="${window.cvatUI.autoAnnotation.runnerUploadedModelsId}"> </table>
                     </div>
                     <div>
-                        <input type="checkbox" id="${window.cvat.autoAnnotation.removeCurrentAnnotationId}"/>
-                        <label class="regular h3" for="${window.cvat.autoAnnotation.removeCurrentAnnotationId}"> Remove current annotation </label>
+                        <input type="checkbox" id="${window.cvatUI.autoAnnotation.removeCurrentAnnotationId}"/>
+                        <label class="regular h3" for="${window.cvatUI.autoAnnotation.removeCurrentAnnotationId}"> Remove current annotation </label>
                     </div>
                 </div>
                 <div style="width: 40%; height: 100%; float: left; margin-left: 3%;">
@@ -482,14 +482,14 @@ class AutoAnnotationModelRunnerView {
                                     <th style="width: 10%;"> </th>
                                 </tr>
                             </thead>
-                            <tbody id="${window.cvat.autoAnnotation.annotationLabelsId}">
+                            <tbody id="${window.cvatUI.autoAnnotation.annotationLabelsId}">
 
                             </tbody>
                         </table>
                     </div>
                     <div style="float:right;">
-                        <button class="regular h3" style="width: 6em;" id="${window.cvat.autoAnnotation.submitAnnotationId}"> Start </button>
-                        <button class="regular h3" style="width: 6em;" id="${window.cvat.autoAnnotation.cancelAnnotationId}"> Cancel </button>
+                        <button class="regular h3" style="width: 6em;" id="${window.cvatUI.autoAnnotation.submitAnnotationId}"> Start </button>
+                        <button class="regular h3" style="width: 6em;" id="${window.cvatUI.autoAnnotation.cancelAnnotationId}"> Cancel </button>
                     </div>
                 </div>
             </div>
@@ -499,15 +499,15 @@ class AutoAnnotationModelRunnerView {
         this.id = null;
         this.tid = null;
         this.initButton = null;
-        this.modelsTable = this.el.find(`#${window.cvat.autoAnnotation.runnerUploadedModelsId}`);
-        this.labelsTable = this.el.find(`#${window.cvat.autoAnnotation.annotationLabelsId}`);
+        this.modelsTable = this.el.find(`#${window.cvatUI.autoAnnotation.runnerUploadedModelsId}`);
+        this.labelsTable = this.el.find(`#${window.cvatUI.autoAnnotation.annotationLabelsId}`);
         this.active = null;
 
-        this.el.find(`#${window.cvat.autoAnnotation.cancelAnnotationId}`).on('click', () => {
+        this.el.find(`#${window.cvatUI.autoAnnotation.cancelAnnotationId}`).on('click', () => {
             this.el.addClass('hidden');
         });
 
-        this.el.find(`#${window.cvat.autoAnnotation.submitAnnotationId}`).on('click', () => {
+        this.el.find(`#${window.cvatUI.autoAnnotation.submitAnnotationId}`).on('click', () => {
             try {
                 if (this.id === null) {
                     throw Error('Please specify a model for an annotation process');
@@ -528,20 +528,20 @@ class AutoAnnotationModelRunnerView {
                 }
 
                 const overlay = showOverlay('Request has been sent');
-                window.cvat.autoAnnotation.server.start(this.id, this.tid, {
-                    reset: $(`#${window.cvat.autoAnnotation.removeCurrentAnnotationId}`).prop('checked'),
+                window.cvatUI.autoAnnotation.server.start(this.id, this.tid, {
+                    reset: $(`#${window.cvatUI.autoAnnotation.removeCurrentAnnotationId}`).prop('checked'),
                     labels: mapping,
                 }, () => {
                     overlay.remove();
                     this.initButton[0].setupRun();
-                    window.cvat.autoAnnotation.runner.hide();
+                    window.cvatUI.autoAnnotation.runner.hide();
                 }, (message) => {
                     overlay.remove();
                     this.initButton[0].setupRun();
                     showMessage(message);
                 }, () => {
                     window.location.reload();
-                }, window.cvat.autoAnnotation.server.check);
+                }, window.cvatUI.autoAnnotation.server.check);
             } catch (error) {
                 showMessage(error);
             }
@@ -647,7 +647,7 @@ class AutoAnnotationModelRunnerView {
             makeCreator(dlSelect, taskSelect, callback).appendTo(this.labelsTable);
         };
 
-        window.cvat.autoAnnotation.data.models.forEach((model) => {
+        window.cvatUI.autoAnnotation.data.models.forEach((model) => {
             this.modelsTable.append(
                 $(`<tr> <td> <label class="regular h3"> ${model.name} (${model.uploadDate}) </label> </td> </tr>`).on(
                     'click', { model, data }, modelItemClickHandler,
@@ -673,7 +673,7 @@ class AutoAnnotationModelRunnerView {
     }
 }
 
-window.cvat.autoAnnotation = {
+window.cvatUI.autoAnnotation = {
     managerWindowId: 'annotatorManagerWindow',
     managerContentId: 'annotatorManagerContent',
     managerUploadedModelsId: 'annotatorManagerUploadedModels',
@@ -704,15 +704,15 @@ window.cvat.autoAnnotation = {
 };
 
 window.addEventListener('DOMContentLoaded', () => {
-    window.cvat.autoAnnotation.server = AutoAnnotationServer;
-    window.cvat.autoAnnotation.manager = new AutoAnnotationModelManagerView();
-    window.cvat.autoAnnotation.runner = new AutoAnnotationModelRunnerView();
+    window.cvatUI.autoAnnotation.server = AutoAnnotationServer;
+    window.cvatUI.autoAnnotation.manager = new AutoAnnotationModelManagerView();
+    window.cvatUI.autoAnnotation.runner = new AutoAnnotationModelRunnerView();
 
-    $('body').append(window.cvat.autoAnnotation.manager.element, window.cvat.autoAnnotation.runner.element);
-    $(`<button id="${window.cvat.autoAnnotation.managerButtonId}" class="regular h1" style=""> Model Manager</button>`)
+    $('body').append(window.cvatUI.autoAnnotation.manager.element, window.cvatUI.autoAnnotation.runner.element);
+    $(`<button id="${window.cvatUI.autoAnnotation.managerButtonId}" class="regular h1" style=""> Model Manager</button>`)
         .on('click', () => {
             const overlay = showOverlay('The manager are being setup..');
-            window.cvat.autoAnnotation.manager.reset().show();
+            window.cvatUI.autoAnnotation.manager.reset().show();
             overlay.remove();
         }).appendTo('#dashboardManageButtons');
 });
@@ -722,8 +722,8 @@ window.addEventListener('dashboardReady', (event) => {
     const elements = $('.dashboardItem');
     const tids = Array.from(elements, el => +el.getAttribute('tid'));
 
-    window.cvat.autoAnnotation.server.meta(tids, (data) => {
-        window.cvat.autoAnnotation.data = data;
+    window.cvatUI.autoAnnotation.server.meta(tids, (data) => {
+        window.cvatUI.autoAnnotation.data = data;
 
         elements.each(function setupDashboardItem() {
             const elem = $(this);
@@ -734,7 +734,7 @@ window.addEventListener('dashboardReady', (event) => {
                 const self = $(this);
                 const taskInfo = event.detail.filter(task => task.id === tid)[0];
                 self.text('Run Auto Annotation').off('click').on('click', () => {
-                    window.cvat.autoAnnotation.runner.reset(taskInfo, self).show();
+                    window.cvatUI.autoAnnotation.runner.reset(taskInfo, self).show();
                 });
             };
 
@@ -742,7 +742,7 @@ window.addEventListener('dashboardReady', (event) => {
                 const self = $(this);
                 self.off('click').text('Cancel Auto Annotation').on('click', () => {
                     userConfirm('Process will be canceled. Are you sure?', () => {
-                        window.cvat.autoAnnotation.server.cancel(tid, () => {
+                        window.cvatUI.autoAnnotation.server.cancel(tid, () => {
                             this.setupRun();
                         }, (message) => {
                             showMessage(message);
@@ -750,8 +750,8 @@ window.addEventListener('dashboardReady', (event) => {
                     });
                 });
 
-                window.cvat.autoAnnotation.server.check(
-                    window.cvat.autoAnnotation.data.run[tid].rq_id,
+                window.cvatUI.autoAnnotation.server.check(
+                    window.cvatUI.autoAnnotation.data.run[tid].rq_id,
                     () => {
                         this.setupRun();
                     },
@@ -766,7 +766,7 @@ window.addEventListener('dashboardReady', (event) => {
                 );
             };
 
-            const taskStatus = window.cvat.autoAnnotation.data.run[tid];
+            const taskStatus = window.cvatUI.autoAnnotation.data.run[tid];
             if (taskStatus && ['queued', 'started'].includes(taskStatus.status)) {
                 button[0].setupCancel();
             } else {
