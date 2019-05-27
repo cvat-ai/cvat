@@ -13,6 +13,7 @@ npm install
 -   Build library from sources in ```dist``` directory:
 ```
 npm run-script build
+npm run build -- --mode=development     # without a minification
 ```
 
 -   Build documentation in ```docs``` directory:
@@ -27,9 +28,9 @@ npm run-script test
 
 -   Update version of library:
 ```
-npm version patch 	# updated after minor fixes
-npm version minor 	# updated after major changes which don't affect API compatibility with previous versions
-npm version major	# updated after major changes which affect API compatibility with previous versions
+npm version patch   # updated after minor fixes
+npm version minor   # updated after major changes which don't affect API compatibility with previous versions
+npm version major   # updated after major changes which affect API compatibility with previous versions
 ```
 
 Visual studio code configurations:

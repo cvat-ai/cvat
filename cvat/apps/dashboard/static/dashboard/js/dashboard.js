@@ -402,77 +402,6 @@ class DashboardView {
     }
 
     _setupCreateDialog() {
-        function updateSelectedFiles() {
-            switch (files.length) {
-            case 0:
-                filesLabel.text('No Files');
-                break;
-            case 1:
-                filesLabel.text(typeof(files[0]) === 'string' ? files[0] : files[0].name);
-                break;
-            default:
-                filesLabel.text(files.length + ' files');
-            }
-        }
-
-
-        function validateName(name) {
-            const math = name.match('[a-zA-Z0-9_]+');
-            return math !== null;
-        }
-
-        function validateLabels(labels) {
-            try {
-                LabelsInfo.deserialize(labels)
-                return true;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        function validateBugTracker(bugTracker) {
-            return !bugTracker || !!bugTracker.match(/^http[s]?/);
-        }
-
-        function validateSegmentSize(segmentSize) {
-            return (segmentSize >= 100 && segmentSize <= 50000);
-        }
-
-        function validateOverlapSize(overlapSize, segmentSize) {
-            return (overlapSize >= 0 && overlapSize <= segmentSize - 1);
-        }
-
-        function requestCreatingStatus(tid, onUpdateStatus, onSuccess, onError) {
-            function checkCallback() {
-                $.get(`/api/v1/tasks/${tid}/status`).done((data) => {
-                    if (['Queued', 'Started'].includes(data.state)) {
-                        if (data.message !== '') {
-                            onUpdateStatus(data.message);
-                        }
-                        setTimeout(checkCallback, 1000);
-                    } else {
-                        if (data.state === 'Finished') {
-                            onSuccess();
-                        }
-                        else if (data.state === 'Failed') {
-                            const message = `Can not create task. ${data.message}`;
-                            onError(message);
-                        } else {
-                            const message = `Unknown state has been received: ${data.state}`;
-                            onError(message);
-                        }
-
-                    }
-                }).fail((errorData) => {
-                    const message = `Can not check task status. Code: ${errorData.status}. ` +
-                        `Message: ${errorData.responseText || errorData.statusText}`;
-                    onError(message);
-                });
-            }
-
-            setTimeout(checkCallback, 1000);
-        }
-
         const dashboardCreateTaskButton = $('#dashboardCreateTaskButton');
         const createModal = $('#dashboardCreateModal');
         const nameInput = $('#dashboardNameInput');
@@ -509,13 +438,61 @@ class DashboardView {
         let compressQuality = 50;
         let files = [];
 
+        function updateSelectedFiles() {
+            switch (files.length) {
+            case 0:
+                filesLabel.text('No Files');
+                break;
+            case 1:
+                filesLabel.text(typeof (files[0]) === 'string' ? files[0] : files[0].name);
+                break;
+            default:
+                filesLabel.text(`${files.length} files`);
+            }
+        }
+
+
+        function validateName() {
+            const math = name.match('[a-zA-Z0-9_]+');
+            return math !== null;
+        }
+
+        function validateLabels() {
+            try {
+                LabelsInfo.deserialize(labels);
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function validateBugTracker() {
+            return !bugTrackerLink || !!bugTrackerLink.match(/^http[s]?/);
+        }
+
+        function validateSegmentSize() {
+            return (segmentSize >= 100 && segmentSize <= 50000);
+        }
+
+        function validateOverlapSize() {
+            return (overlapSize >= 0 && overlapSize <= segmentSize - 1);
+        }
+
         dashboardCreateTaskButton.on('click', () => {
             $('#dashboardCreateModal').removeClass('hidden');
         });
 
-        nameInput.on('change', (e) => name = e.target.value);
-        bugTrackerInput.on('change', (e) => bugTrackerLink = e.target.value.trim());
-        labelsInput.on('change', (e) => labels = e.target.value);
+        nameInput.on('change', (e) => {
+            name = e.target.value;
+        });
+
+        bugTrackerInput.on('change', (e) => {
+            bugTrackerLink = e.target.value.trim();
+        });
+
+        labelsInput.on('change', (e) => {
+            labels = e.target.value;
+        });
 
         localSourceRadio.on('click', () => {
             if (source === 'local') {
@@ -538,46 +515,49 @@ class DashboardView {
         selectFiles.on('click', () => {
             if (source === 'local') {
                 localFileSelector.click();
-            }
-            else {
+            } else {
                 shareBrowseTree.jstree('refresh');
                 shareFileSelector.removeClass('hidden');
                 shareBrowseTree.jstree({
                     core: {
-                        data: async function (obj, callback) {
+                        async data(obj, callback) {
                             let url = '/api/v1/server/share';
 
-                            if (obj.id != '#') {
+                            if (obj.id !== '#') {
                                 url += `?directory=${obj.id.substr(2)}`;
                             }
 
                             const response = await $.get(url);
-                            const files = Array.from(response, (element) => {
-                                return {
+                            const shareFiles = Array.from(response, (element) => {
+                                const shareFileInfo = {
                                     id: `${obj.id}/${element.name}`,
                                     children: element.type === 'DIR',
                                     text: element.name,
                                     icon: element.type === 'DIR' ? 'jstree-folder' : 'jstree-file',
-                                }
+                                };
+
+                                return shareFileInfo;
                             });
 
-                            callback.call(this, files);
-                        }
+                            callback.call(this, shareFiles);
+                        },
                     },
                     plugins: ['checkbox', 'sort'],
                 });
             }
         });
 
-        localFileSelector.on('change', function(e) {
-            files = e.target.files;
+        localFileSelector.on('change', (e) => {
+            const localFiles = e.target.files;
+            files = localFiles;
             updateSelectedFiles();
         });
 
         cancelBrowseServer.on('click', () => shareFileSelector.addClass('hidden'));
         submitBrowseServer.on('click', () => {
             if (!createModal.hasClass('hidden')) {
-                files = Array.from(shareBrowseTree.jstree(true).get_selected(), (el) => el.substr(2));
+                files = Array.from(shareBrowseTree
+                    .jstree(true).get_selected(), el => el.substr(2));
                 cancelBrowseServer.click();
                 updateSelectedFiles();
             }
@@ -587,15 +567,15 @@ class DashboardView {
             zOrder = e.target.checked;
         });
 
-        customSegmentSize.on('change', (e) => segmentSizeInput.prop('disabled', !e.target.checked));
-        customOverlapSize.on('change', (e) => overlapSizeInput.prop('disabled', !e.target.checked));
-        customCompressQuality.on('change', (e) => imageQualityInput.prop('disabled', !e.target.checked));
+        customSegmentSize.on('change', e => segmentSizeInput.prop('disabled', !e.target.checked));
+        customOverlapSize.on('change', e => overlapSizeInput.prop('disabled', !e.target.checked));
+        customCompressQuality.on('change', e => imageQualityInput.prop('disabled', !e.target.checked));
 
         segmentSizeInput.on('change', () => {
             const value = Math.clamp(
                 +segmentSizeInput.prop('value'),
                 +segmentSizeInput.prop('min'),
-                +segmentSizeInput.prop('max')
+                +segmentSizeInput.prop('max'),
             );
 
             segmentSizeInput.prop('value', value);
@@ -606,7 +586,7 @@ class DashboardView {
             const value = Math.clamp(
                 +overlapSizeInput.prop('value'),
                 +overlapSizeInput.prop('min'),
-                +overlapSizeInput.prop('max')
+                +overlapSizeInput.prop('max'),
             );
 
             overlapSizeInput.prop('value', value);
@@ -617,39 +597,39 @@ class DashboardView {
             const value = Math.clamp(
                 +imageQualityInput.prop('value'),
                 +imageQualityInput.prop('min'),
-                +imageQualityInput.prop('max')
+                +imageQualityInput.prop('max'),
             );
 
             imageQualityInput.prop('value', value);
             compressQuality = value;
         });
 
-        submitCreate.on('click', () => {
-            if (!validateName(name)) {
+        submitCreate.on('click', async () => {
+            if (!validateName()) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Bad task name');
                 return;
             }
 
-            if (!validateLabels(labels)) {
+            if (!validateLabels()) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Bad labels specification');
                 return;
             }
 
-            if (!validateSegmentSize(segmentSize)) {
+            if (!validateSegmentSize()) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Segment size out of range');
                 return;
             }
 
-            if (!validateBugTracker(bugTrackerLink)) {
+            if (!validateBugTracker()) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Bad bag tracker link');
                 return;
             }
 
-            if (!validateOverlapSize(overlapSize, segmentSize)) {
+            if (!validateOverlapSize()) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Overlap size must be positive and not more then segment size');
                 return;
@@ -660,16 +640,20 @@ class DashboardView {
                 taskMessage.text('No files specified for the task');
                 return;
             }
-            else if (files.length > window.maxUploadCount && source === 'local') {
+
+            if (files.length > window.maxUploadCount && source === 'local') {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Too many files were specified. Please use share to upload');
                 return;
             }
-            else if (source === 'local') {
+
+            if (source === 'local') {
                 let commonSize = 0;
-                for (let file of files) {
+
+                for (const file of files) {
                     commonSize += file.size;
                 }
+
                 if (commonSize > window.maxUploadSize) {
                     taskMessage.css('color', 'red');
                     taskMessage.text('Too big files size. Please use share to upload');
@@ -678,100 +662,42 @@ class DashboardView {
             }
 
             const description = {
-                name: name,
+                name,
                 labels: LabelsInfo.deserialize(labels),
-                image_quality: compressQuality
-            }
+                image_quality: compressQuality,
+                z_order: zOrder,
+                bug_tracker: bugTrackerLink,
+            };
 
-            if (bugTrackerLink) {
-                description.bug_tracker = bugTrackerLink;
-            }
-            if (zOrder) {
-                description.z_order = zOrder;
-            }
             if (customSegmentSize.prop('checked')) {
                 description.segment_size = segmentSize;
             }
+
             if (customOverlapSize.prop('checked')) {
                 description.overlap = overlapSize;
             }
 
-            function cleanupTask(tid) {
-                $.ajax({
-                    url: `/api/v1/tasks/${tid}`,
-                    type: 'DELETE'
-                });
-            }
-
-            submitCreate.prop('disabled', true);
-            $.ajax({
-                url: '/api/v1/tasks',
-                type: 'POST',
-                data: JSON.stringify(description),
-                contentType: 'application/json'
-            }).done((taskData) => {
-                taskMessage.css('color', 'green');
-                taskMessage.text('Task has been created. Uploading the data..');
-
-                const batchOfFiles = new FormData();
-                for (let j = 0; j < files.length; j++) {
-                    if (source === 'local') {
-                        batchOfFiles.append(`client_files[${j}]`, files[j]);
-                    } else {
-                        batchOfFiles.append(`server_files[${j}]`, files[j]);
-                    }
+            try {
+                let task = new window.cvat.classes.Task(description);
+                if (source === 'local') {
+                    task.clientFiles = Array.from(files);
+                } else {
+                    task.serverFiles = Array.from(files);
                 }
-
-                $.ajax({
-                    url: `/api/v1/tasks/${taskData.id}/data`,
-                    type: 'POST',
-                    data: batchOfFiles,
-                    contentType: false,
-                    processData: false,
-                }).done(() => {
-                    taskMessage.text('The data has been sent. Task is being created..');
-
-                    requestCreatingStatus(taskData.id, (status) => {
-                        taskMessage.css('color', 'blue');
-                        taskMessage.text(status);
-                    }, () => {
-                        const decorators = DashboardView.decorators('createTask');
-                        let idx = 0;
-
-                        function next() {
-                            const decorator = decorators[idx++];
-                            if (decorator) {
-                                decorator(taskData, next, () => {
-                                    submitCreate.prop('disabled', false);
-                                    cleanupTask(taskData.id);
-                                });
-                            } else {
-                                window.location.reload();
-                            }
-                        }
-
-                        next();
-                    }, (errorMessage) => {
-                        submitCreate.prop('disabled', false);
-                        taskMessage.css('color', 'red');
-                        taskMessage.text(errorMessage);
-                        cleanupTask(taskData.id);
-                    });
-                }).fail((errorData) => {
-                    const message = `Can not put the data for the task. Code: ${errorData.status}. ` +
-                        `Message: ${errorData.responseText || errorData.statusText}`;
-                    taskMessage.css('color', 'red');
+                task = await task.save((message) => {
+                    taskMessage.css('color', 'green');
                     taskMessage.text(message);
-                    submitCreate.prop('disabled', false);
-                    cleanupTask(taskData.id);
                 });
-            }).fail((errorData) => {
-                const message = `Task has not been created. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.responseText || errorData.statusText}`;
+                window.location.reload();
+            } catch (exception) {
+                let { message } = exception;
+                if (exception instanceof window.cvat.exceptions.ServerError) {
+                    message += ` Code: ${exception.code}`;
+                }
                 taskMessage.css('color', 'red');
                 taskMessage.text(message);
-                submitCreate.prop('disabled', false);
-            });
+                console.error(exception);
+            }
         });
 
         cancelCreate.on('click', () => createModal.addClass('hidden'));

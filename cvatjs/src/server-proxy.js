@@ -204,7 +204,7 @@
                 const { backendAPI } = window.cvat.config;
 
                 try {
-                    await Axios.delete(`${backendAPI}/tasks/${id}`)
+                    await Axios.delete(`${backendAPI}/tasks/${id}`);
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
@@ -222,30 +222,28 @@
                         async function checkStatus() {
                             try {
                                 const response = await Axios.get(`${backendAPI}/tasks/${id}/status`);
-                                if (['Queued', 'Started'].includes(response.state)) {
-                                    if (response.message !== '') {
-                                        onUpdate(response.message);
+                                if (['Queued', 'Started'].includes(response.data.state)) {
+                                    if (response.data.message !== '') {
+                                        onUpdate(response.data.message);
                                     }
                                     setTimeout(checkStatus, 1000);
-                                } else if (response.state === 'Finished') {
+                                } else if (response.data.state === 'Finished') {
                                     resolve();
-                                } else if (response.state === 'Failed') {
+                                } else if (response.data.state === 'Failed') {
+                                    deleteTask(id);
                                     // If request has been successful, but task hasn't been created
                                     // Then passed data is wrong and we can pass code 400
-                                    reject(
-                                        new window.cvat.exceptions.ServerError(
-                                            'Could not create the task on the server',
-                                            400,
-                                        ),
+                                    new window.cvat.exceptions.ServerError(
+                                        'Could not create the task on the server',
+                                        400,
                                     );
                                 } else {
+                                    deleteTask(id);
                                     // If server has another status, it is unexpected
                                     // Therefore it is server error and we can pass code 500
-                                    reject(
-                                        new window.cvat.exceptions.ServerError(
-                                            `Unknown task state has been recieved: ${response.state}`,
-                                            500,
-                                        ),
+                                    new window.cvat.exceptions.ServerError(
+                                        `Unknown task state has been recieved: ${response.data.state}`,
+                                        500,
                                     );
                                 }
                             } catch (errorData) {
@@ -294,10 +292,11 @@
 
                 onUpdate('The data is being uploaded to the server..');
                 try {
-                    response = await Axios.post(`${backendAPI}/tasks/${response.id}/data`, batchOfFiles, {
+                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, batchOfFiles, {
                         proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
+                    deleteTask(response.data.id);
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
                         'Could not put data to the server',
@@ -305,7 +304,7 @@
                     );
                 }
 
-                await wait(response.id);
+                await wait(response.data.id);
 
                 const createdTask = await getTasks(`?id=${response.id}`);
                 return createdTask[0];

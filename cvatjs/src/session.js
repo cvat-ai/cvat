@@ -424,6 +424,7 @@
                 overlap: undefined,
                 segment_size: undefined,
                 z_order: undefined,
+                image_quality: undefined,
             };
 
             for (const property in data) {
@@ -637,10 +638,28 @@
                     set: (zOrder) => {
                         if (typeof (zOrder) !== 'boolean') {
                             throw new window.cvat.exceptions.ArgumentError(
-                                'Value must be a boolean value',
+                                'Value must be a boolean',
                             );
                         }
                         data.z_order = zOrder;
+                    },
+                },
+                /**
+                    * @name imageQuality
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                imageQuality: {
+                    get: () => data.image_quality,
+                    set: (quality) => {
+                        if (!Number.isInteger(quality) || quality < 0) {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                'Value must be a positive integer',
+                            );
+                        }
+                        data.image_quality = quality;
                     },
                 },
                 /**
@@ -711,7 +730,7 @@
                             }
                         }
 
-                        data.files.server_files = serverFiles;
+                        Array.prototype.push.apply(data.files.server_files, serverFiles);
                     },
                 },
                 /**
@@ -739,7 +758,7 @@
                             }
                         }
 
-                        data.files.client_files = clientFiles;
+                        Array.prototype.push.apply(data.files.client_files, clientFiles);
                     },
                 },
             }));
