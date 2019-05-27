@@ -381,7 +381,7 @@ class DashboardView {
             this._params = {};
             const search = e.target.value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim();
             for (const field of ['name', 'mode', 'owner', 'assignee', 'status', 'id']) {
-                for (let param of search.split(' and ')) {
+                for (let param of search.split(/[\s]+and[\s]+|[\s]+AND[\s]+/)) {
                     if (param.includes(':')) {
                         param = param.split(':');
                         if (param[0] === field && param[1]) {
