@@ -337,10 +337,14 @@ class DashboardView {
                     overlay.remove();
                 }
 
-                const startPage = dashboardPagination.twbsPagination('getCurrentPage');
+                let startPage = dashboardPagination.twbsPagination('getCurrentPage');
+                if (!Number.isInteger(startPage)) {
+                    startPage = 1;
+                }
+
                 dashboardPagination.twbsPagination('destroy');
                 dashboardPagination.twbsPagination(Object.assign({}, defaults, {
-                    totalPages: Math.max(1, tasks.count / 20),
+                    totalPages: Math.max(1, Math.ceil(tasks.count / 10)),
                     startPage,
                     initiateStartPageClick: false,
                 }));
@@ -387,8 +391,6 @@ class DashboardView {
                 }
             }
 
-            // dashboardPagination.pagination('destroy');
-            // this._setupList();
             dashboardPagination.twbsPagination('show', 1);
         });
 
@@ -713,7 +715,7 @@ class DashboardView {
 
                 const batchOfFiles = new FormData();
                 for (let j = 0; j < files.length; j++) {
-                    if (source === "local") {
+                    if (source === 'local') {
                         batchOfFiles.append(`client_files[${j}]`, files[j]);
                     } else {
                         batchOfFiles.append(`server_files[${j}]`, files[j]);
@@ -725,7 +727,7 @@ class DashboardView {
                     type: 'POST',
                     data: batchOfFiles,
                     contentType: false,
-                    processData: false
+                    processData: false,
                 }).done(() => {
                     taskMessage.text('The data has been sent. Task is being created..');
 
@@ -741,7 +743,7 @@ class DashboardView {
                             if (decorator) {
                                 decorator(taskData, next, () => {
                                     submitCreate.prop('disabled', false);
-                                    cleanupTask(tid);
+                                    cleanupTask(taskData.id);
                                 });
                             } else {
                                 window.location.reload();
@@ -769,7 +771,6 @@ class DashboardView {
                 taskMessage.css('color', 'red');
                 taskMessage.text(message);
                 submitCreate.prop('disabled', false);
-                cleanupTask(taskData.id);
             });
         });
 
