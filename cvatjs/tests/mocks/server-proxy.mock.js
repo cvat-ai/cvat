@@ -46,7 +46,7 @@ class ServerProxy {
             return JSON.parse(JSON.stringify(position));
         }
 
-        async function exception(exceptionObject) {
+        async function exception() {
             return null;
         }
 
@@ -177,11 +177,11 @@ class ServerProxy {
             return JSON.parse(JSON.stringify(usersDummyData)).results[0];
         }
 
-        async function getFrame(tid, frame) {
+        async function getFrame() {
             return null;
         }
 
-        async function getMeta(tid) {
+        async function getMeta() {
             return null;
         }
 

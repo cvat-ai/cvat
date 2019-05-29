@@ -263,10 +263,9 @@ class TaskView {
 
         if (this._task.bugTracker) {
             $('<button class="regular dashboardButtonUI"> Open Bug Tracker </button>').on('click', () => {
-                window.open(this._task.bugTracker);
+                window.open.call(window, this._task.bugTracker);
             }).appendTo(buttonsContainer);
         }
-
 
         const jobsContainer = $('<table class="dashboardJobList regular">');
         for (const job of this._task.jobs) {
@@ -684,6 +683,8 @@ class DashboardView {
                 } else {
                     task.serverFiles = Array.from(files);
                 }
+                submitCreate.attr('disabled', true);
+                cancelCreate.attr('disabled', true);
                 task = await task.save((message) => {
                     taskMessage.css('color', 'green');
                     taskMessage.text(message);
@@ -696,7 +697,8 @@ class DashboardView {
                 }
                 taskMessage.css('color', 'red');
                 taskMessage.text(message);
-                console.error(exception);
+                submitCreate.attr('disabled', false);
+                cancelCreate.attr('disabled', false);
             }
         });
 
@@ -706,6 +708,7 @@ class DashboardView {
 
 // DASHBOARD ENTRYPOINT
 window.addEventListener('DOMContentLoaded', () => {
+    window.cvat.config.backendAPI = `${window.location.origin}/api/v1`;
     $.when(
         // TODO: Use REST API in order to get meta
         $.get('/dashboard/meta'),
