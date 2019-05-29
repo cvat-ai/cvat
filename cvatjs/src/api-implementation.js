@@ -165,9 +165,11 @@
             });
 
             if ('search' in filter && Object.keys(filter).length > 1) {
-                throw new window.cvat.exceptions.ArgumentError(
-                    'Do not use the filter field "search" with others',
-                );
+                if (!('page' in filter && Object.keys(filter).length === 2)) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        'Do not use the filter field "search" with others',
+                    );
+                }
             }
 
             if ('id' in filter && Object.keys(filter).length > 1) {

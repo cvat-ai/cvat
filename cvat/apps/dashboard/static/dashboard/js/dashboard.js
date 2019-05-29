@@ -389,6 +389,10 @@ class DashboardView {
                 }
             }
 
+            if (!Object.keys(this._params).length) {
+                this._params.search = search;
+            }
+
             dashboardPagination.twbsPagination('show', 1);
         });
 
@@ -457,8 +461,8 @@ class DashboardView {
 
         function validateLabels() {
             try {
-                LabelsInfo.deserialize(labels);
-                return true;
+                const result = LabelsInfo.deserialize(labels);
+                return result.length;
             } catch (error) {
                 return false;
             }
