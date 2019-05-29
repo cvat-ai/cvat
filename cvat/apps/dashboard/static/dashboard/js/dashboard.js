@@ -139,12 +139,12 @@ class TaskView {
                     Array.prototype.push.apply(chunkForSave[prop],
                         parsed[prop].slice(start, start + splitStep));
                     if (chunkForSave.isFull()) {
-                        await chunkForSave.save(this._id);
+                        await chunkForSave.save(this._task.id);
                     }
                 }
                 // save tail
                 if (!chunkForSave.isEmpty()) {
-                    await chunkForSave.save(this._id);
+                    await chunkForSave.save(this._task.id);
                 }
             };
 
@@ -157,7 +157,7 @@ class TaskView {
 
         async function save(parsed) {
             await $.ajax({
-                url: `/api/v1/tasks/${this._id}/annotations`,
+                url: `/api/v1/tasks/${this._task.id}/annotations`,
                 type: 'DELETE',
             });
 
@@ -167,13 +167,12 @@ class TaskView {
         async function onload(overlay, text) {
             try {
                 overlay.setMessage('Required data are being downloaded from the server..');
-                const imageCache = await $.get(`/api/v1/tasks/${this._id}/frames/meta`);
+                const imageCache = await $.get(`/api/v1/tasks/${this._task.id}/frames/meta`);
                 const labelsCopy = JSON.parse(JSON.stringify(this._task.labels
                     .map(el => el.toJSON())));
                 const parser = new AnnotationParser({
                     start: 0,
-                    stop: this._size,
-                    flipped: this._flipped,
+                    stop: this._task.size,
                     image_meta_data: imageCache,
                 }, new LabelsInfo(labelsCopy));
 
@@ -216,7 +215,7 @@ class TaskView {
     async _dump(button) {
         button.disabled = true;
         try {
-            await dumpAnnotationRequest(this._id, this._name);
+            await dumpAnnotationRequest(this._task.id, this._task.name);
         } catch (error) {
             showMessage(error.message);
         } finally {
@@ -229,7 +228,7 @@ class TaskView {
     }
 
     render(baseURL) {
-        this._UI = $(`<div tid=${this._id} class="dashboardItem"> </div>`).append(
+        this._UI = $(`<div tid=${this._task.id} class="dashboardItem"> </div>`).append(
             $(`<center class="dashboardTitleWrapper">
                 <label class="semiBold h1 selectable"> ${this._task.name} </label>
             </center>`),
