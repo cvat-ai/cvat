@@ -1293,7 +1293,8 @@ class TaskAnnotation:
                 ("width", str(im_meta_data[0]["width"])),
                 ("height", str(im_meta_data[0]["height"]))
             ])
-
+            meta["source"] = str(db_task.video.path)
+            
         with open(file_path, "w") as dump_file:
             dumper = XmlAnnotationWriter(dump_file)
             dumper.open_root()
