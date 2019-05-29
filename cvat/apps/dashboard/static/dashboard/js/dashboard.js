@@ -723,8 +723,8 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }).fail((errorData) => {
         $('#content').empty();
-        const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
-            `Message: ${errorData.responseText || errorData.statusText}`;
+        const message = `Can not build CVAT dashboard. Code: ${errorData.status}. `
+            + `Message: ${errorData.responseText || errorData.statusText}`;
         showMessage(message);
     }).always(() => {
         $('#loadingOverlay').remove();
