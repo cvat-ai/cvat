@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import re
 import shutil
 
 from rest_framework import serializers
@@ -187,16 +188,25 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         fields = ('url', 'id', 'name', 'size', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'z_order', 'flipped', 'status', 'labels', 'segments',
-            'image_quality')
+            'image_quality', 'start_frame', 'stop_frame', 'frame_filter')
         read_only_fields = ('size', 'mode', 'created_date', 'updated_date',
             'status')
         write_once_fields = ('overlap', 'segment_size', 'image_quality')
         ordering = ['-id']
 
+    def validate_frame_filter(self, value):
+        match = re.search("step\s*=\s*([1-9]\d*)", value)
+        if not match:
+            raise serializers.ValidationError("Invalid frame filter expression")
+        return value
+
     # pylint: disable=no-self-use
     def create(self, validated_data):
         labels = validated_data.pop('label_set')
         db_task = models.Task.objects.create(size=0, **validated_data)
+        db_task.start_frame = validated_data.get('start_frame', 0)
+        db_task.stop_frame = validated_data.get('stop_frame', 0)
+        db_task.frame_filter = validated_data.get('frame_filter', '')
         for label in labels:
             attributes = label.pop('attributespec_set')
             db_label = models.Label.objects.create(task=db_task, **label)
@@ -225,6 +235,9 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.flipped = validated_data.get('flipped', instance.flipped)
         instance.image_quality = validated_data.get('image_quality',
             instance.image_quality)
+        instance.start_frame = validated_data.get('start_frame', instance.start_frame)
+        instance.stop_frame = validated_data.get('stop_frame', instance.stop_frame)
+        instance.frame_filter = validated_data.get('frame_filter', instance.frame_filter)
         labels = validated_data.get('label_set', [])
         for label in labels:
             attributes = label.pop('attributespec_set', [])
