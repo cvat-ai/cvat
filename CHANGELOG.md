@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- A converter to YOLO format
 - Installation guide
 - Linear interpolation for a single point
 - Video frame filter
