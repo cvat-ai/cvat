@@ -40,3 +40,4 @@ window.addEventListener('dashboardReady', () => {
 
     const cfapi = $(`#${createWorkstreamApiInputTextId}`).prop('value');
     const cfwsid = $(`#${createWorkstreamIdInputTextId}`).prop('value');
+});
