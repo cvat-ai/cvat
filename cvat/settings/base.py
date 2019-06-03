@@ -92,6 +92,8 @@ INSTALLED_APPS = [
     'cvat.apps.authentication',
     'cvat.apps.documentation',
     'cvat.apps.git',
+#    'cvat.apps.cf',
+    'cvat.apps.google',
     'django_rq',
     'compressor',
     'cacheops',
