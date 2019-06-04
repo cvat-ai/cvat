@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 -
 
+## [0.4.2] - 2019-06-03
+### Fixed
+- Fixed interaction with the server share in the auto annotation plugin
+
 ## [0.4.1] - 2019-05-14
 ### Fixed
 - JavaScript syntax incompatibility with Google Chrome versions less than 72
