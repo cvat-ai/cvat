@@ -1,2 +1,2 @@
--f development.txt
+-r development.txt
 fakeredis==1.0.3
