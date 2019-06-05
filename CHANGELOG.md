@@ -6,8 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- A converter to YOLO format
 - Installation guide
 - Linear interpolation for a single point
+- Video frame filter
 
 ### Changed
 - Outside and keyframe buttons in the side panel for all interpolation shapes (they were only for boxes before)
@@ -25,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 -
+
+## [0.4.2] - 2019-06-03
+### Fixed
+- Fixed interaction with the server share in the auto annotation plugin
 
 ## [0.4.1] - 2019-05-14
 ### Fixed
