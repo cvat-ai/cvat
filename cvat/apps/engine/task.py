@@ -227,6 +227,9 @@ def _create_thread(tid, data):
             source_path=[os.path.join(upload_dir, f) for f in media_files],
             dest_path=upload_dir,
             image_quality=db_task.image_quality,
+            step=db_task.get_frame_step(),
+            start=db_task.start_frame,
+            stop=db_task.stop_frame,
         )
         length += len(extractor)
         db_task.mode = MEDIA_TYPES[media_type]['mode']
@@ -246,7 +249,7 @@ def _create_thread(tid, data):
                 width, height = extractor.save_image(frame, image_dest_path)
                 db_images.append(models.Image(
                     task=db_task,
-                    path=os.path.relpath(image_orig_path, upload_dir),
+                    path=image_orig_path,
                     frame=db_task.size,
                     width=width, height=height))
 
@@ -259,11 +262,11 @@ def _create_thread(tid, data):
         image = Image.open(db_task.get_frame_path(0))
         models.Video.objects.create(
             task=db_task,
-            path=os.path.relpath(extractors[0].get_source_name(), upload_dir),
-            start_frame=0, stop_frame=db_task.size,
-            step=1,
+            path=extractors[0].get_source_name(),
             width=image.width, height=image.height)
         image.close()
+        if db_task.stop_frame == 0:
+            db_task.stop_frame = db_task.start_frame + (db_task.size - 1) * db_task.get_frame_step()
     else:
         models.Image.objects.bulk_create(db_images)
 
