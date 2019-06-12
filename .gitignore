@@ -23,3 +23,5 @@ __pycache__
 # Ignore development npm files
 package-lock.json
 node_modules
+
+.DS_Store
