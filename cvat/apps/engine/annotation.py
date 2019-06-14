@@ -1104,6 +1104,7 @@ class TrackManager(ObjectManager):
 
         # TODO: should be return an iterator?
         shapes = []
+        track["shapes"] = sorted(track["shapes"], key=lambda k: k['frame'])
         curr_frame = track["shapes"][0]["frame"]
         prev_shape = {}
         for shape in track["shapes"]:
