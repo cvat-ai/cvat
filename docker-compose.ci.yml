@@ -5,6 +5,7 @@ services:
     build:
       args:
         WITH_TESTS: "yes"
+        DJANGO_CONFIGURATION: "testing"
       network: host
     environment:
       COVERALLS_REPO_TOKEN:
