@@ -300,9 +300,22 @@ class AutoAnnotationModelManagerView {
                 this.shareSelector.removeClass('hidden');
                 this.shareBrowseTree.jstree({
                     core: {
-                        data: {
-                            url: 'get_share_nodes',
-                            data: node => ({ id: node.id }),
+                        async data(obj, callback) {
+                            const directory = obj.id === '#' ? '' : `${obj.id}/`;
+
+                            let shareFiles = await window.cvat.server.share(directory);
+                            shareFiles = Array.from(shareFiles, (element) => {
+                                const shareFileInfo = {
+                                    id: `${directory}${element.name}`,
+                                    children: element.type === 'DIR',
+                                    text: element.name,
+                                    icon: element.type === 'DIR' ? 'jstree-folder' : 'jstree-file',
+                                };
+
+                                return shareFileInfo;
+                            });
+
+                            callback.call(this, shareFiles);
                         },
                     },
                     plugins: ['checkbox', 'sort'],

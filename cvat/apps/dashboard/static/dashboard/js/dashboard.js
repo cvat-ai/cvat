@@ -523,16 +523,12 @@ class DashboardView {
                 shareBrowseTree.jstree({
                     core: {
                         async data(obj, callback) {
-                            let url = '/api/v1/server/share';
+                            const directory = obj.id === '#' ? '' : `${obj.id}/`;
 
-                            if (obj.id !== '#') {
-                                url += `?directory=${obj.id.substr(2)}`;
-                            }
-
-                            const response = await $.get(url);
-                            const shareFiles = Array.from(response, (element) => {
+                            let shareFiles = await window.cvat.server.share(directory);
+                            shareFiles = Array.from(shareFiles, (element) => {
                                 const shareFileInfo = {
-                                    id: `${obj.id}/${element.name}`,
+                                    id: `${directory}${element.name}`,
                                     children: element.type === 'DIR',
                                     text: element.name,
                                     icon: element.type === 'DIR' ? 'jstree-folder' : 'jstree-file',
@@ -558,8 +554,7 @@ class DashboardView {
         cancelBrowseServer.on('click', () => shareFileSelector.addClass('hidden'));
         submitBrowseServer.on('click', () => {
             if (!createModal.hasClass('hidden')) {
-                files = Array.from(shareBrowseTree
-                    .jstree(true).get_selected(), el => el.substr(2));
+                files = Array.from(shareBrowseTree.jstree(true).get_selected());
                 cancelBrowseServer.click();
                 updateSelectedFiles();
             }
