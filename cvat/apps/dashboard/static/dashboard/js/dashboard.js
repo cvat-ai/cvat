@@ -404,6 +404,81 @@ class DashboardView {
     }
 
     _setupCreateDialog() {
+        function updateSelectedFiles() {
+            switch (files.length) {
+            case 0:
+                filesLabel.text('No Files');
+                break;
+            case 1:
+                filesLabel.text(typeof(files[0]) === 'string' ? files[0] : files[0].name);
+                break;
+            default:
+                filesLabel.text(files.length + ' files');
+            }
+        }
+
+
+        function validateName(name) {
+            const math = name.match('[a-zA-Z0-9_]+');
+            return math !== null;
+        }
+
+        function validateLabels(labels) {
+            try {
+                LabelsInfo.deserialize(labels)
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function validateBugTracker(bugTracker) {
+            return !bugTracker || !!bugTracker.match(/^http[s]?/);
+        }
+
+        function validateSegmentSize(segmentSize) {
+            return (segmentSize >= 100 && segmentSize <= 50000);
+        }
+
+        function validateOverlapSize(overlapSize, segmentSize) {
+            return (overlapSize >= 0 && overlapSize <= segmentSize - 1);
+        }
+
+        function validateStopFrame(stopFrame, startFrame) {
+            return !customStopFrame.prop('checked') || stopFrame >= startFrame;
+        }
+
+        function requestCreatingStatus(tid, onUpdateStatus, onSuccess, onError) {
+            function checkCallback() {
+                $.get(`/api/v1/tasks/${tid}/status`).done((data) => {
+                    if (['Queued', 'Started'].includes(data.state)) {
+                        if (data.message !== '') {
+                            onUpdateStatus(data.message);
+                        }
+                        setTimeout(checkCallback, 1000);
+                    } else {
+                        if (data.state === 'Finished') {
+                            onSuccess();
+                        }
+                        else if (data.state === 'Failed') {
+                            const message = `Can not create task. ${data.message}`;
+                            onError(message);
+                        } else {
+                            const message = `Unknown state has been received: ${data.state}`;
+                            onError(message);
+                        }
+
+                    }
+                }).fail((errorData) => {
+                    const message = `Can not check task status. Code: ${errorData.status}. ` +
+                        `Message: ${errorData.responseText || errorData.statusText}`;
+                    onError(message);
+                });
+            }
+
+            setTimeout(checkCallback, 1000);
+        }
+
         const dashboardCreateTaskButton = $('#dashboardCreateTaskButton');
         const createModal = $('#dashboardCreateModal');
         const nameInput = $('#dashboardNameInput');
@@ -425,6 +500,12 @@ class DashboardView {
         const customOverlapSize = $('#dashboardCustomOverlap');
         const imageQualityInput = $('#dashboardImageQuality');
         const customCompressQuality = $('#dashboardCustomQuality');
+        const startFrameInput = $('#dashboardStartFrame');
+        const customStartFrame = $('#dashboardCustomStart');
+        const stopFrameInput = $('#dashboardStopFrame');
+        const customStopFrame = $('#dashboardCustomStop');
+        const frameFilterInput = $('#dashboardFrameFilter');
+        const customFrameFilter = $('#dashboardCustomFilter');
 
         const taskMessage = $('#dashboardCreateTaskMessage');
         const submitCreate = $('#dashboardSubmitTask');
@@ -438,6 +519,9 @@ class DashboardView {
         let segmentSize = 5000;
         let overlapSize = 0;
         let compressQuality = 50;
+        let startFrame = 0;
+        let stopFrame = 0;
+        let frameFilter = '';
         let files = [];
 
         function updateSelectedFiles() {
@@ -564,9 +648,12 @@ class DashboardView {
             zOrder = e.target.checked;
         });
 
-        customSegmentSize.on('change', e => segmentSizeInput.prop('disabled', !e.target.checked));
-        customOverlapSize.on('change', e => overlapSizeInput.prop('disabled', !e.target.checked));
-        customCompressQuality.on('change', e => imageQualityInput.prop('disabled', !e.target.checked));
+        customSegmentSize.on('change', (e) => segmentSizeInput.prop('disabled', !e.target.checked));
+        customOverlapSize.on('change', (e) => overlapSizeInput.prop('disabled', !e.target.checked));
+        customCompressQuality.on('change', (e) => imageQualityInput.prop('disabled', !e.target.checked));
+        customStartFrame.on('change', (e) => startFrameInput.prop('disabled', !e.target.checked));
+        customStopFrame.on('change', (e) => stopFrameInput.prop('disabled', !e.target.checked));
+        customFrameFilter.on('change', (e) => frameFilterInput.prop('disabled', !e.target.checked));
 
         segmentSizeInput.on('change', () => {
             const value = Math.clamp(
@@ -601,8 +688,30 @@ class DashboardView {
             compressQuality = value;
         });
 
+        startFrameInput.on('change', function() {
+            let value = Math.max(
+                +startFrameInput.prop('value'),
+                +startFrameInput.prop('min')
+            );
+
+            startFrameInput.prop('value', value);
+            startFrame = value;
+        });
+        stopFrameInput.on('change', function() {
+            let value = Math.max(
+                +stopFrameInput.prop('value'),
+                +stopFrameInput.prop('min')
+            );
+
+            stopFrameInput.prop('value', value);
+            stopFrame = value;
+        });
+        frameFilterInput.on('change', function() {
+            frameFilter = frameFilterInput.prop('value');
+        });
+
         submitCreate.on('click', async () => {
-            if (!validateName()) {
+            if (!validateName(name)) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Bad task name');
                 return;
@@ -629,6 +738,12 @@ class DashboardView {
             if (!validateOverlapSize()) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Overlap size must be positive and not more then segment size');
+                return;
+            }
+
+            if (!validateStopFrame(stopFrame, startFrame)) {
+                taskMessage.css('color', 'red');
+                taskMessage.text('Stop frame must be greater than or equal to start frame');
                 return;
             }
 
@@ -672,6 +787,15 @@ class DashboardView {
 
             if (customOverlapSize.prop('checked')) {
                 description.overlap = overlapSize;
+            }
+            if (customStartFrame.prop('checked')) {
+                description.start_frame = startFrame;
+            }
+            if (customStopFrame.prop('checked')) {
+                description.stop_frame = stopFrame;
+            }
+            if (customFrameFilter.prop('checked')) {
+                description.frame_filter = frameFilter;
             }
 
             try {

@@ -143,6 +143,33 @@ Example: @select=race:__undefined__,skip,asian,black,caucasian,other'/>
                             <input type="checkbox" id="dashboardCustomQuality" title="Custom image quality"/>
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Start Frame </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardStartFrame" class="regular" style="width: 4.5em;" min="0" value=0 disabled=true/>
+                            <input type="checkbox" id="dashboardCustomStart" title="Custom start frame"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Stop Frame </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardStopFrame" class="regular" style="width: 4.5em;" min="0" value=0 disabled=true/>
+                            <input type="checkbox" id="dashboardCustomStop" title="Custom stop frame"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Frame Filter </label>
+                        </td>
+                        <td>
+                            <input type="text" id="dashboardFrameFilter" class="regular" style="width: 4.5em;" title="Currently only support 'step=K' filter expression." disabled=true/>
+                            <input type="checkbox" id="dashboardCustomFilter" title="Custom frame filter"/>
+                        </td>
+                    </tr>
             </table>
 
 

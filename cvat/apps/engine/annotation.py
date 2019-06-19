@@ -1247,6 +1247,9 @@ class TaskAnnotation:
                 ("bugtracker", db_task.bug_tracker),
                 ("created", str(timezone.localtime(db_task.created_date))),
                 ("updated", str(timezone.localtime(db_task.updated_date))),
+                ("start_frame", str(db_task.start_frame)),
+                ("stop_frame", str(db_task.stop_frame)),
+                ("frame_filter", db_task.frame_filter),
 
                 ("labels", [
                     ("label", OrderedDict([
@@ -1285,6 +1288,8 @@ class TaskAnnotation:
                 ("width", str(im_meta_data[0]["width"])),
                 ("height", str(im_meta_data[0]["height"]))
             ])
+            # Add source to dumped file
+            meta["source"] = str(db_task.video.path)
 
         with open(file_path, "w") as dump_file:
             dumper = XmlAnnotationWriter(dump_file)
@@ -1401,7 +1406,7 @@ class TaskAnnotation:
                         track, 0, db_task.size):
 
                         dump_data = OrderedDict([
-                            ("frame", str(shape["frame"])),
+                            ("frame", str(db_task.start_frame + shape["frame"] * db_task.get_frame_step())),
                             ("outside", str(int(shape["outside"]))),
                             ("occluded", str(int(shape["occluded"]))),
                             ("keyframe", str(int(shape["keyframe"])))

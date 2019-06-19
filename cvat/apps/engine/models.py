@@ -4,6 +4,7 @@
 
 from enum import Enum
 
+import re
 import shlex
 import os
 
@@ -48,6 +49,9 @@ class Task(models.Model):
     segment_size = models.PositiveIntegerField(default=0)
     z_order = models.BooleanField(default=False)
     image_quality = models.PositiveSmallIntegerField(default=50)
+    start_frame = models.PositiveIntegerField(default=0)
+    stop_frame = models.PositiveIntegerField(default=0)
+    frame_filter = models.CharField(max_length=256, default="")
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
 
@@ -62,6 +66,10 @@ class Task(models.Model):
             str(frame) + '.jpg')
 
         return path
+
+    def get_frame_step(self):
+        match = re.search("step\s*=\s*([1-9]\d*)", self.frame_filter)
+        return int(match.group(1)) if match else 1
 
     def get_upload_dirname(self):
         return os.path.join(self.get_task_dirname(), ".upload")
@@ -127,9 +135,6 @@ class RemoteFile(models.Model):
 class Video(models.Model):
     task = models.OneToOneField(Task, on_delete=models.CASCADE)
     path = models.CharField(max_length=1024)
-    start_frame = models.PositiveIntegerField()
-    stop_frame = models.PositiveIntegerField()
-    step = models.PositiveIntegerField(default=1)
     width = models.PositiveIntegerField()
     height = models.PositiveIntegerField()
 
