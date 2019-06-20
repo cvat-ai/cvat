@@ -247,7 +247,7 @@ class Results():
         return self._results["tracks"]
 
     @staticmethod
-    def _create_polyshape(self, points, label, frame_number, attributes=None):
+    def _create_polyshape(points, label, frame_number, attributes=None):
         return {
             "label": label,
             "frame": frame_number,
