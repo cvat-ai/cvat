@@ -53,7 +53,7 @@
                     );
                 } else if (!fields[prop](filter[prop])) {
                     throw new window.cvat.exceptions.ArgumentError(
-                        `Received filter property ${prop} was not satisfied for checker`,
+                        `Received filter property ${prop} is not satisfied for checker`,
                     );
                 }
             }
@@ -173,9 +173,11 @@
             }
 
             if ('id' in filter && Object.keys(filter).length > 1) {
-                throw new window.cvat.exceptions.ArgumentError(
-                    'Do not use the filter field "id" with others',
-                );
+                if (!('page' in filter && Object.keys(filter).length === 2)) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        'Do not use the filter field "id" with others',
+                    );
+                }
             }
 
             const searchParams = new URLSearchParams();

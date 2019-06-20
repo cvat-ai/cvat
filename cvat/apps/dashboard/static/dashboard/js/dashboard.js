@@ -389,6 +389,10 @@ class DashboardView {
                 }
             }
 
+            if ('id' in this._params) {
+                this._params.id = +this._params.id;
+            }
+
             if (!Object.keys(this._params).length) {
                 this._params.search = search;
             }
