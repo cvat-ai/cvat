@@ -1,3 +1,3 @@
 exclude_paths:
  - '**/3rdparty/**'
- - '**/dashboard/js/cvat.js'
+ - '**/engine/js/cvat.js'
