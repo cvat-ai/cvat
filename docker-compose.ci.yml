@@ -4,6 +4,7 @@ services:
   cvat:
     build:
       args:
+        DJANGO_CONFIGURATION: "testing"
         WITH_TESTS: "yes"
       network: host
     environment:
