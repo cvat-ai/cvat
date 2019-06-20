@@ -6,7 +6,6 @@
 
 /* global
     showMessage:false
-    DashboardView:false
 */
 
 // GIT ENTRYPOINT
@@ -17,8 +16,6 @@ window.addEventListener('dashboardReady', () => {
     const reposSyncButtonId = 'gitReposSyncButton';
     const labelStatusId = 'gitReposLabelStatus';
     const labelMessageId = 'gitReposLabelMessage';
-    const createURLInputTextId = 'gitCreateURLInputText';
-    const lfsCheckboxId = 'gitLFSCheckbox';
 
     const reposWindowTemplate = `
         <div id="${reposWindowId}" class="modal">
@@ -177,6 +174,11 @@ window.addEventListener('dashboardReady', () => {
             + `Message: ${errorData.responseText || errorData.statusText}`;
         showMessage(message);
     });
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    const createURLInputTextId = 'gitCreateURLInputText';
+    const lfsCheckboxId = 'gitLFSCheckbox';
 
     // Setup the "Create task" dialog
     const title = 'Field for a repository URL and a relative path inside the repository. \n'
@@ -196,72 +198,92 @@ window.addEventListener('dashboardReady', () => {
             <td> <input type="checkbox" checked id="${lfsCheckboxId}" </td>
         </tr>`).insertAfter($('#dashboardBugTrackerInput').parent().parent());
 
+    async function cloneRepos(_, createdTask) {
+        async function wait(rqId) {
+            return new Promise((resolve, reject) => {
+                async function checkCallback() {
+                    let response = null;
+                    try {
+                        response = await $.get(`/git/repository/check/${rqId}`);
+                    } catch (errorData) {
+                        const message = `Can not sent a request to clone the repository. Code: ${errorData.status}. `
+                            + `Message: ${errorData.responseText || errorData.statusText}`;
+                        reject(new Error(message));
+                    }
 
-    DashboardView.registerDecorator('createTask', (taskData, next, onFault) => {
+                    if (['queued', 'started'].includes(response.status)) {
+                        setTimeout(checkCallback, 1000);
+                    } else if (response.status === 'finished') {
+                        resolve();
+                    } else if (response.status === 'failed') {
+                        let message = 'Repository status check failed. ';
+                        if (response.stderr) {
+                            message += response.stderr;
+                        }
+
+                        reject(new Error(message));
+                    } else {
+                        const message = `Repository status check returned the status "${response.status}"`;
+                        reject(new Error(message));
+                    }
+                }
+
+                setTimeout(checkCallback, 1000);
+            });
+        }
+
         const taskMessage = $('#dashboardCreateTaskMessage');
 
         const path = $(`#${createURLInputTextId}`).prop('value').replace(/\s/g, '');
         const lfs = $(`#${lfsCheckboxId}`).prop('checked');
 
+        let response = null;
         if (path.length) {
-            taskMessage.css('color', 'blue');
             taskMessage.text('Git repository is being cloned..');
 
-            $.ajax({
-                url: `/git/repository/create/${taskData.id}`,
-                type: 'POST',
-                data: JSON.stringify({
-                    path,
-                    lfs,
-                    tid: taskData.id,
-                }),
-                contentType: 'application/json',
-            }).done((rqData) => {
-                function checkCallback() {
-                    $.ajax({
-                        url: `/git/repository/check/${rqData.rq_id}`,
-                        type: 'GET',
-                    }).done((statusData) => {
-                        if (['queued', 'started'].includes(statusData.status)) {
-                            setTimeout(checkCallback, 1000);
-                        } else if (statusData.status === 'finished') {
-                            taskMessage.css('color', 'blue');
-                            taskMessage.text('Git repository has been cloned');
-                            next();
-                        } else if (statusData.status === 'failed') {
-                            let message = 'Repository status check failed. ';
-                            if (statusData.stderr) {
-                                message += statusData.stderr;
-                            }
-
-                            taskMessage.css('color', 'red');
-                            taskMessage.text(message);
-                            onFault();
-                        } else {
-                            const message = `Repository status check returned the status "${statusData.status}"`;
-                            taskMessage.css('color', 'red');
-                            taskMessage.text(message);
-                            onFault();
-                        }
-                    }).fail((errorData) => {
-                        const message = `Can not sent a request to clone the repository. Code: ${errorData.status}. `
-                            + `Message: ${errorData.responseText || errorData.statusText}`;
-                        taskMessage.css('color', 'red');
-                        taskMessage.text(message);
-                        onFault();
-                    });
-                }
-
-                setTimeout(checkCallback, 1000);
-            }).fail((errorData) => {
-                const message = `Can not sent a request to clone the repository. Code: ${errorData.status}. `
+            try {
+                response = await $.ajax({
+                    url: `/git/repository/create/${createdTask.id}`,
+                    type: 'POST',
+                    data: JSON.stringify({
+                        path,
+                        lfs,
+                        tid: createdTask.id,
+                    }),
+                    contentType: 'application/json',
+                });
+            } catch (errorData) {
+                createdTask.delete();
+                const message = `Can not send a request to clone the repository. Code: ${errorData.status}. `
                     + `Message: ${errorData.responseText || errorData.statusText}`;
-                taskMessage.css('color', 'red');
-                taskMessage.text(message);
-                onFault();
-            });
-        } else {
-            next();
+                throw new Error(message);
+            }
+
+            try {
+                await wait(response.rq_id);
+            } catch (exception) {
+                createdTask.delete();
+                throw exception;
+            }
+            taskMessage.text('Git repository has been cloned..');
         }
-    });
+    }
+
+    const gitPlugin = {
+        name: 'Git Plugin',
+        description: 'Plugin allows you to attach a repository to a task',
+        cvat: {
+            classes: {
+                Task: {
+                    prototype: {
+                        save: {
+                            leave: cloneRepos,
+                        },
+                    },
+                },
+            },
+        },
+    };
+
+    window.cvat.plugins.register(gitPlugin);
 });

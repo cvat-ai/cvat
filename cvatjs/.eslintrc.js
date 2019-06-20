@@ -13,7 +13,9 @@
         "qunit": true,
     },
     "parserOptions": {
-        "sourceType": "script",
+        "parser": "babel-eslint",
+        "sourceType": "module",
+        "ecmaVersion": 2018,
     },
     "plugins": [
         "security",
@@ -35,6 +37,7 @@
             "object": "Math",
             "property": "pow",
         }],
+        "no-plusplus": [0],
         "no-param-reassign": [0],
         "no-underscore-dangle": ["error", { "allowAfterThis": true }],
         "no-restricted-syntax": [0, {"selector": "ForOfStatement"}],
@@ -43,5 +46,6 @@
         // This rule actual for user input data on the node.js environment mainly.
         "security/detect-object-injection": 0,
         "indent": ["warn", 4],
+        "no-useless-constructor": 0,
     },
 };

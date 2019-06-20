@@ -371,7 +371,6 @@ function setupMenu(job, task, shapeCollectionModel,
     $('#statFrames').text(`[${window.cvat.player.frames.start}-${window.cvat.player.frames.stop}]`);
     $('#statOverlap').text(task.overlap);
     $('#statZOrder').text(task.z_order);
-    $('#statFlipped').text(task.flipped);
     $('#statTaskStatus').prop('value', job.status).on('change', async (e) => {
         try {
             const jobCopy = JSON.parse(JSON.stringify(job));

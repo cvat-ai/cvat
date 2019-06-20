@@ -49,7 +49,7 @@ def rq_handler(job, exc_type, exc_value, traceback):
 ############################# Internal implementation for server API
 
 class _FrameExtractor:
-    def __init__(self, source_path, compress_quality, step=1, start=0, stop=0, flip_flag=False):
+    def __init__(self, source_path, compress_quality, step=1, start=0, stop=0):
         # translate inversed range 1:95 to 2:32
         translated_quality = 96 - compress_quality
         translated_quality = round((((translated_quality - 1) * (31 - 2)) / (95 - 1)) + 2)
@@ -66,8 +66,6 @@ class _FrameExtractor:
             filters += ('*' if filters else '') + 'not(mod(n-' + str(start) + ',' + str(step) + '))'
         if filters:
             filters = "select=\"'" + filters + "'\""
-        if flip_flag:
-            filters += (',' if filters else '') + 'transpose=2,transpose=2'
         if filters:
             output_opts += ' -vf ' + filters
         ff = FFmpeg(

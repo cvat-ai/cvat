@@ -7,22 +7,16 @@
 /* global
     AnnotationParser:false
     userConfirm:false
-    createExportContainer:false
     dumpAnnotationRequest: false
-    dumpAnnotation:false
     LabelsInfo:false
     showMessage:false
     showOverlay:false
 */
 
-'use strict';
-
 class TaskView {
-    constructor(details, ondelete, onupdate) {
-        this.init(details);
+    constructor(task) {
+        this.init(task);
 
-        this._ondelete = ondelete;
-        this._onupdate = onupdate;
         this._UI = null;
     }
 
@@ -31,73 +25,74 @@ class TaskView {
         this._UI.find('.dashboardJobList').empty();
     }
 
-    _remove() {
-        $.ajax ({
-            url: `/api/v1/tasks/${this._id}`,
-            type: 'DELETE',
-            success: () => {
-                this._ondelete(this._id);
-                this._disable();
-            },
-            error: (errorData) => {
-                const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.responseText || errorData.statusText}`;
-                showMessage(message);
+    async _remove() {
+        try {
+            await this._task.delete();
+        } catch (exception) {
+            let { message } = exception;
+            if (exception instanceof window.cvat.exceptions.ServerError) {
+                message += ` Code: ${exception.code}`;
             }
-        });
+            showMessage(message);
+        }
+
+        this._disable();
     }
 
     _update() {
         $('#dashboardUpdateModal').remove();
-        const dashboardUpdateModal = $($('#dashboardUpdateTemplate').html()).appendTo('body');
-        $('#dashboardOldLabels').prop('value', LabelsInfo.serialize(this._labels));
 
+        const dashboardUpdateModal = $($('#dashboardUpdateTemplate').html()).appendTo('body');
+
+        // TODO: Use JSON labels format instead of custom
+        $('#dashboardOldLabels').prop('value', LabelsInfo.serialize(this._task.labels.map(el => el.toJSON())));
         $('#dashboardCancelUpdate').on('click', () => {
             dashboardUpdateModal.remove();
         });
-
         $('#dashboardSubmitUpdate').on('click', () => {
+            let jsonLabels = null;
             try {
-                const body = {
-                    labels: LabelsInfo.deserialize($('#dashboardNewLabels').prop('value'))
-                };
-                $.ajax({
-                    url: `/api/v1/tasks/${this._id}`,
-                    type: 'PATCH',
-                    contentType: 'application/json',
-                    data: JSON.stringify(body)
-                }).done(() => {
-                    this._onupdate();
-                    dashboardUpdateModal.remove();
-                    showMessage('Task has been successfully updated');
-                }).fail((errorData) => {
-                    const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
-                        `Message: ${errorData.responseText || errorData.statusText}`;
-                    showMessage(message);
-                });
+                jsonLabels = LabelsInfo.deserialize($('#dashboardNewLabels').prop('value'));
             } catch (exception) {
                 showMessage(exception);
+                return;
             }
+
+            try {
+                const labels = jsonLabels.map(label => new window.cvat.classes.Label(label));
+                this._task.labels = labels;
+                this._task.save();
+                showMessage('Task has been successfully updated');
+            } catch (exception) {
+                let { message } = exception;
+                if (exception instanceof window.cvat.exceptions.ServerError) {
+                    message += ` Code: ${exception.code}`;
+                }
+                showMessage(message);
+            }
+
+            dashboardUpdateModal.remove();
         });
     }
 
     _upload() {
         async function saveChunk(parsed) {
             const CHUNK_SIZE = 30000;
+            let chunk = null;
 
             class Chunk {
                 constructor() {
                     this.shapes = [];
                     this.tracks = [];
-                    this.tags   = [];
+                    this.tags = [];
                     this.capasity = CHUNK_SIZE;
                     this.version = 0;
                 }
 
                 length() {
-                    return this.tags.length +
-                           this.shapes.length +
-                           this.tracks.reduce((sum, track) => sum + track.shapes.length, 0);
+                    return this.tags.length
+                           + this.shapes.length
+                           + this.tracks.reduce((sum, track) => sum + track.shapes.length, 0);
                 }
 
                 isFull() {
@@ -111,8 +106,9 @@ class TaskView {
                 clear() {
                     this.shapes = [];
                     this.tracks = [];
-                    this.tags   = [];
+                    this.tags = [];
                 }
+
                 export() {
                     return {
                         shapes: this.shapes,
@@ -121,6 +117,7 @@ class TaskView {
                         version: this.version,
                     };
                 }
+
                 async save(taskID) {
                     try {
                         const response = await $.ajax({
@@ -137,29 +134,30 @@ class TaskView {
                 }
             }
 
-            const splitAndSave = async (chunk, prop, splitStep) => {
-                for(let start = 0; start < parsed[prop].length; start += splitStep) {
-                    Array.prototype.push.apply(chunk[prop], parsed[prop].slice(start, start + splitStep));
-                    if (chunk.isFull()) {
-                        await chunk.save(this._id);
+            const splitAndSave = async (chunkForSave, prop, splitStep) => {
+                for (let start = 0; start < parsed[prop].length; start += splitStep) {
+                    Array.prototype.push.apply(chunkForSave[prop],
+                        parsed[prop].slice(start, start + splitStep));
+                    if (chunkForSave.isFull()) {
+                        await chunkForSave.save(this._task.id);
                     }
                 }
                 // save tail
-                if (!chunk.isEmpty()) {
-                    await chunk.save(this._id);
+                if (!chunkForSave.isEmpty()) {
+                    await chunkForSave.save(this._task.id);
                 }
             };
 
-            let chunk = new Chunk();
-            // FIXME tags aren't supported by parser
+            chunk = new Chunk();
+            // TODO tags aren't supported by parser
             // await split(chunk, "tags", CHUNK_SIZE);
-            await splitAndSave(chunk, "shapes", CHUNK_SIZE);
-            await splitAndSave(chunk, "tracks", 1);
+            await splitAndSave(chunk, 'shapes', CHUNK_SIZE);
+            await splitAndSave(chunk, 'tracks', 1);
         }
 
         async function save(parsed) {
             await $.ajax({
-                url: `/api/v1/tasks/${this._id}/annotations`,
+                url: `/api/v1/tasks/${this._task.id}/annotations`,
                 type: 'DELETE',
             });
 
@@ -169,12 +167,12 @@ class TaskView {
         async function onload(overlay, text) {
             try {
                 overlay.setMessage('Required data are being downloaded from the server..');
-                const imageCache = await $.get(`/api/v1/tasks/${this._id}/frames/meta`);
-                const labelsCopy = JSON.parse(JSON.stringify(this._labels));
+                const imageCache = await $.get(`/api/v1/tasks/${this._task.id}/frames/meta`);
+                const labelsCopy = JSON.parse(JSON.stringify(this._task.labels
+                    .map(el => el.toJSON())));
                 const parser = new AnnotationParser({
                     start: 0,
-                    stop: this._size,
-                    flipped: this._flipped,
+                    stop: this._task.size,
                     image_meta_data: imageCache,
                 }, new LabelsInfo(labelsCopy));
 
@@ -186,13 +184,13 @@ class TaskView {
 
                 const message = 'Annotation have been successfully uploaded';
                 showMessage(message);
-            } catch(errorData) {
+            } catch (errorData) {
                 let message = null;
-                if (typeof(errorData) === 'string') {
+                if (typeof (errorData) === 'string') {
                     message = `Can not upload annotations. ${errorData}`;
                 } else {
-                    message = `Can not upload annotations. Code: ${errorData.status}. ` +
-                        `Message: ${errorData.responseText || errorData.statusText}`;
+                    message = `Can not upload annotations. Code: ${errorData.status}. `
+                        + `Message: ${errorData.responseText || errorData.statusText}`;
                 }
                 showMessage(message);
             } finally {
@@ -200,15 +198,15 @@ class TaskView {
             }
         }
 
-        $('<input type="file" accept="text/xml">').on('change', (e) => {
-            const file = e.target.files[0];
-            $(e.target).remove();
+        $('<input type="file" accept="text/xml">').on('change', (onChangeEvent) => {
+            const file = onChangeEvent.target.files[0];
+            $(onChangeEvent.target).remove();
             if (file) {
                 const overlay = showOverlay('File is being parsed..');
                 const fileReader = new FileReader();
-                fileReader.onload = (e) => {
-                    onload.call(this, overlay, e.target.result);
-                }
+                fileReader.onload = (onloadEvent) => {
+                    onload.call(this, overlay, onloadEvent.target.result);
+                };
                 fileReader.readAsText(file);
             }
         }).click();
@@ -217,7 +215,7 @@ class TaskView {
     async _dump(button) {
         button.disabled = true;
         try {
-            await dumpAnnotationRequest(this._id, this._name);
+            await dumpAnnotationRequest(this._task.id, this._task.name);
         } catch (error) {
             showMessage(error.message);
         } finally {
@@ -225,59 +223,53 @@ class TaskView {
         }
     }
 
-    init(details) {
-        for (let prop in details) {
-            this[`_${prop}`] = details[prop];
-        }
+    init(task) {
+        this._task = task;
     }
 
     render(baseURL) {
-        const self = this;
-        this._UI = $(`<div tid=${this._id} class="dashboardItem"> </div>`).append(
+        this._UI = $(`<div tid=${this._task.id} class="dashboardItem"> </div>`).append(
             $(`<center class="dashboardTitleWrapper">
-                <label class="semiBold h1 selectable"> ${this._name} </label>
-            </center>`)
+                <label class="semiBold h1 selectable"> ${this._task.name} </label>
+            </center>`),
         ).append(
             $(`<center class="dashboardTitleWrapper">
-                <label class="regular selectable"> ${this._status} </label>
-            </center>`)
+                <label class="regular selectable"> ${this._task.status} </label>
+            </center>`),
         ).append(
             $('<div class="dashboardTaskIntro"> </div>').css({
-                'background-image': `url("/api/v1/tasks/${this._id}/frames/0")`
-            })
+                'background-image': `url("/api/v1/tasks/${this._task.id}/frames/0")`,
+            }),
         );
 
 
-        const buttonsContainer = $(`<div class="dashboardButtonsUI"> </div>`).appendTo(this._UI);
+        const buttonsContainer = $('<div class="dashboardButtonsUI"> </div>').appendTo(this._UI);
         $('<button class="regular dashboardButtonUI"> Dump Annotation </button>').on('click', (e) => {
-            self._dump(e.target);
+            this._dump(e.target);
         }).appendTo(buttonsContainer);
 
         $('<button class="regular dashboardButtonUI"> Upload Annotation </button>').on('click', () => {
-            userConfirm("The current annotation will be lost. Are you sure?", () => self._upload());
+            userConfirm('The current annotation will be lost. Are you sure?', () => this._upload());
         }).appendTo(buttonsContainer);
 
         $('<button class="regular dashboardButtonUI"> Update Task </button>').on('click', () => {
-            self._update();
+            this._update();
         }).appendTo(buttonsContainer);
 
         $('<button class="regular dashboardButtonUI"> Delete Task </button>').on('click', () => {
-            userConfirm("The task will be removed. Are you sure?", () => self._remove());
+            userConfirm('The task will be removed. Are you sure?', () => this._remove());
         }).appendTo(buttonsContainer);
 
-        if (this._bug_tracker) {
+        if (this._task.bugTracker) {
             $('<button class="regular dashboardButtonUI"> Open Bug Tracker </button>').on('click', () => {
-                window.open(this._bug_tracker);
+                window.open.call(window, this._task.bugTracker);
             }).appendTo(buttonsContainer);
         }
 
-
-        const jobsContainer = $(`<table class="dashboardJobList regular">`);
-        for (let segment of this._segments) {
-            for (let job of segment.jobs) {
-                const link = `${baseURL}?id=${job.id}`;
-                jobsContainer.append($(`<tr> <td> <a href="${link}"> ${link} </a> </td> </tr>`));
-            }
+        const jobsContainer = $('<table class="dashboardJobList regular">');
+        for (const job of this._task.jobs) {
+            const link = `${baseURL}?id=${job.id}`;
+            jobsContainer.append($(`<tr> <td> <a href="${link}"> ${link} </a> </td> </tr>`));
         }
 
         this._UI.append($(`
@@ -304,6 +296,7 @@ class DashboardView {
         this._maxUploadCount = metaData.max_upload_count;
         this._baseURL = metaData.base_url;
         this._sharePath = metaData.share_path;
+        this._params = {};
 
         this._setupList();
         this._setupTaskSearch();
@@ -313,114 +306,105 @@ class DashboardView {
     _setupList() {
         const dashboardList = $('#dashboardList');
         const dashboardPagination = $('#dashboardPagination');
-
         const baseURL = this._baseURL;
-        let overlay = null;
-        dashboardPagination.pagination({
-            dataSource: `/api/v1/tasks${window.location.search}`,
-            locator: 'results',
-            alias: {
-                pageNumber: 'page',
-            },
-            totalNumberLocator: function(response) {
-                return response.count;
-            },
-            ajax: {
-                beforeSend() {
-                    overlay = showOverlay('Loading..');
-                },
-            },
-            callback: function(pageList) {
-                if (overlay) {
-                    overlay.remove();
-                    overlay = null;
-                }
+
+        const defaults = {
+            totalPages: 1,
+            visiblePages: 7,
+            onPageClick: async (_, page) => {
+                dashboardPagination.css({
+                    visibility: 'hidden',
+                });
+
+                const overlay = showOverlay('Loading..');
                 dashboardList.empty();
-                for (let details of pageList) {
-                    const detailsCopy = JSON.parse(JSON.stringify(details));
-                    const taskView = new TaskView(detailsCopy, () => {
-                        // on delete task callback
-                        details.removed = true
-                    }, () => {
-                        // on update task callback
-                        $.get(`/api/v1/tasks/${details.id}`).done((taskData) => {
-                            Object.assign(details, taskData);
-                            taskView.init(details);
-                        }).fail((errorData) => {
-                            const message = `Can not get task from server. Showed info may be obsolete. Code: ${errorData.status}. ` +
-                                `Message: ${errorData.responseText || errorData.statusText}`;
-                            showMessage(message);
-                        })
-                    });
+
+                let tasks = null;
+                try {
+                    tasks = await window.cvat.tasks.get(Object.assign({}, {
+                        page,
+                    }, this._params));
+                } catch (exception) {
+                    let { message } = exception;
+                    if (exception instanceof window.cvat.exceptions.ServerError) {
+                        message += ` Code: ${exception.code}`;
+                    }
+                    showMessage(message);
+                    return;
+                } finally {
+                    overlay.remove();
+                }
+
+                let startPage = dashboardPagination.twbsPagination('getCurrentPage');
+                if (!Number.isInteger(startPage)) {
+                    startPage = 1;
+                }
+
+                dashboardPagination.twbsPagination('destroy');
+                dashboardPagination.twbsPagination(Object.assign({}, defaults, {
+                    totalPages: Math.max(1, Math.ceil(tasks.count / 10)),
+                    startPage,
+                    initiateStartPageClick: false,
+                }));
+
+                for (const task of tasks) {
+                    const taskView = new TaskView(task);
                     dashboardList.append(taskView.render(baseURL));
                 }
 
-                window.dispatchEvent(new CustomEvent('dashboardReady', {
-                    detail: JSON.parse(JSON.stringify(pageList))
-                }));
+                dashboardPagination.css({
+                    'margin-left': (window.screen.width - dashboardPagination.width()) / 2,
+                    visibility: 'visible',
+                });
 
-                const pages = $('.paginationjs-pages');
-                pages.css('margin-left', (window.screen.width - pages.width()) / 2);
-            }
-        });
+                window.dispatchEvent(new CustomEvent('dashboardReady', {
+                    detail: tasks,
+                }));
+            },
+        };
+
+        dashboardPagination.twbsPagination(defaults);
     }
 
     _setupTaskSearch() {
+        const dashboardPagination = $('#dashboardPagination');
         const searchInput = $('#dashboardSearchInput');
         const searchSubmit = $('#dashboardSearchSubmit');
 
         searchInput.on('keypress', (e) => {
-            if (e.keyCode != 13) {
+            if (e.keyCode !== 13) {
                 return;
             }
 
-            const params = {};
+            this._params = {};
             const search = e.target.value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim();
-            for (let field of ['name', 'mode', 'owner', 'assignee', 'status', 'id']) {
-                for (let param of search.split(' and ')) {
+            for (const field of ['name', 'mode', 'owner', 'assignee', 'status', 'id']) {
+                for (let param of search.split(/[\s]+and[\s]+|[\s]+AND[\s]+/)) {
                     if (param.includes(':')) {
                         param = param.split(':');
                         if (param[0] === field && param[1]) {
-                            params[field] = param[1];
+                            [, this._params[field]] = param;
                         }
                     }
                 }
             }
 
-            if (!Object.keys(params).length && search.length) {
-                params['search'] = search;
+            if ('id' in this._params) {
+                this._params.id = +this._params.id;
             }
 
-            if (Object.keys(params).length) {
-                const searchParams = new URLSearchParams();
-                for (let key in params) {
-                    searchParams.set(key, params[key]);
-                }
-                window.location.search = searchParams.toString();
-            } else {
-                window.location.search = '';
+            if (!Object.keys(this._params).length) {
+                this._params.search = search;
             }
+
+            dashboardPagination.twbsPagination('show', 1);
         });
 
-        searchSubmit.on('click', function() {
-            let e = $.Event('keypress');
+        searchSubmit.on('click', () => {
+            const e = $.Event('keypress');
             e.keyCode = 13;
             searchInput.trigger(e);
         });
-
-        const searchParams = new URLSearchParams(window.location.search.substring(1));
-        if (searchParams.get('all')) {
-            searchInput.prop('value', searchParams.get('all'));
-        } else {
-            let search = '';
-            for (let field of ['name', 'mode', 'owner', 'assignee', 'status']) {
-                const fieldVal = searchParams.get(field);
-                if (fieldVal) {
-                    search += `${field}: ${fieldVal} and `;
-                }
-            }
-            searchInput.prop('value', search.slice(0, -5));
-        }
     }
 
     _setupCreateDialog() {
@@ -544,13 +528,61 @@ class DashboardView {
         let frameFilter = '';
         let files = [];
 
+        function updateSelectedFiles() {
+            switch (files.length) {
+            case 0:
+                filesLabel.text('No Files');
+                break;
+            case 1:
+                filesLabel.text(typeof (files[0]) === 'string' ? files[0] : files[0].name);
+                break;
+            default:
+                filesLabel.text(`${files.length} files`);
+            }
+        }
+
+
+        function validateName() {
+            const math = name.match('[a-zA-Z0-9_]+');
+            return math !== null;
+        }
+
+        function validateLabels() {
+            try {
+                const result = LabelsInfo.deserialize(labels);
+                return result.length;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function validateBugTracker() {
+            return !bugTrackerLink || !!bugTrackerLink.match(/^http[s]?/);
+        }
+
+        function validateSegmentSize() {
+            return (segmentSize >= 100 && segmentSize <= 50000);
+        }
+
+        function validateOverlapSize() {
+            return (overlapSize >= 0 && overlapSize <= segmentSize - 1);
+        }
+
         dashboardCreateTaskButton.on('click', () => {
             $('#dashboardCreateModal').removeClass('hidden');
         });
 
-        nameInput.on('change', (e) => name = e.target.value);
-        bugTrackerInput.on('change', (e) => bugTrackerLink = e.target.value.trim());
-        labelsInput.on('change', (e) => labels = e.target.value);
+        nameInput.on('change', (e) => {
+            name = e.target.value;
+        });
+
+        bugTrackerInput.on('change', (e) => {
+            bugTrackerLink = e.target.value.trim();
+        });
+
+        labelsInput.on('change', (e) => {
+            labels = e.target.value;
+        });
 
         localSourceRadio.on('click', () => {
             if (source === 'local') {
@@ -573,46 +605,44 @@ class DashboardView {
         selectFiles.on('click', () => {
             if (source === 'local') {
                 localFileSelector.click();
-            }
-            else {
+            } else {
                 shareBrowseTree.jstree('refresh');
                 shareFileSelector.removeClass('hidden');
                 shareBrowseTree.jstree({
                     core: {
-                        data: async function (obj, callback) {
-                            let url = '/api/v1/server/share';
+                        async data(obj, callback) {
+                            const directory = obj.id === '#' ? '' : `${obj.id}/`;
 
-                            if (obj.id != '#') {
-                                url += `?directory=${obj.id.substr(2)}`;
-                            }
-
-                            const response = await $.get(url);
-                            const files = Array.from(response, (element) => {
-                                return {
-                                    id: `${obj.id}/${element.name}`,
+                            let shareFiles = await window.cvat.server.share(directory);
+                            shareFiles = Array.from(shareFiles, (element) => {
+                                const shareFileInfo = {
+                                    id: `${directory}${element.name}`,
                                     children: element.type === 'DIR',
                                     text: element.name,
                                     icon: element.type === 'DIR' ? 'jstree-folder' : 'jstree-file',
-                                }
+                                };
+
+                                return shareFileInfo;
                             });
 
-                            callback.call(this, files);
-                        }
+                            callback.call(this, shareFiles);
+                        },
                     },
                     plugins: ['checkbox', 'sort'],
                 });
             }
         });
 
-        localFileSelector.on('change', function(e) {
-            files = e.target.files;
+        localFileSelector.on('change', (e) => {
+            const localFiles = e.target.files;
+            files = localFiles;
             updateSelectedFiles();
         });
 
         cancelBrowseServer.on('click', () => shareFileSelector.addClass('hidden'));
         submitBrowseServer.on('click', () => {
             if (!createModal.hasClass('hidden')) {
-                files = Array.from(shareBrowseTree.jstree(true).get_selected(), (el) => el.substr(2));
+                files = Array.from(shareBrowseTree.jstree(true).get_selected());
                 cancelBrowseServer.click();
                 updateSelectedFiles();
             }
@@ -633,7 +663,7 @@ class DashboardView {
             const value = Math.clamp(
                 +segmentSizeInput.prop('value'),
                 +segmentSizeInput.prop('min'),
-                +segmentSizeInput.prop('max')
+                +segmentSizeInput.prop('max'),
             );
 
             segmentSizeInput.prop('value', value);
@@ -644,7 +674,7 @@ class DashboardView {
             const value = Math.clamp(
                 +overlapSizeInput.prop('value'),
                 +overlapSizeInput.prop('min'),
-                +overlapSizeInput.prop('max')
+                +overlapSizeInput.prop('max'),
             );
 
             overlapSizeInput.prop('value', value);
@@ -655,7 +685,7 @@ class DashboardView {
             const value = Math.clamp(
                 +imageQualityInput.prop('value'),
                 +imageQualityInput.prop('min'),
-                +imageQualityInput.prop('max')
+                +imageQualityInput.prop('max'),
             );
 
             imageQualityInput.prop('value', value);
@@ -684,32 +714,32 @@ class DashboardView {
             frameFilter = frameFilterInput.prop('value');
         });
 
-        submitCreate.on('click', () => {
+        submitCreate.on('click', async () => {
             if (!validateName(name)) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Bad task name');
                 return;
             }
 
-            if (!validateLabels(labels)) {
+            if (!validateLabels()) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Bad labels specification');
                 return;
             }
 
-            if (!validateSegmentSize(segmentSize)) {
+            if (!validateSegmentSize()) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Segment size out of range');
                 return;
             }
 
-            if (!validateBugTracker(bugTrackerLink)) {
+            if (!validateBugTracker()) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Bad bag tracker link');
                 return;
             }
 
-            if (!validateOverlapSize(overlapSize, segmentSize)) {
+            if (!validateOverlapSize()) {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Overlap size must be positive and not more then segment size');
                 return;
@@ -726,16 +756,20 @@ class DashboardView {
                 taskMessage.text('No files specified for the task');
                 return;
             }
-            else if (files.length > window.maxUploadCount && source === 'local') {
+
+            if (files.length > window.maxUploadCount && source === 'local') {
                 taskMessage.css('color', 'red');
                 taskMessage.text('Too many files were specified. Please use share to upload');
                 return;
             }
-            else if (source === 'local') {
+
+            if (source === 'local') {
                 let commonSize = 0;
-                for (let file of files) {
+
+                for (const file of files) {
                     commonSize += file.size;
                 }
+
                 if (commonSize > window.maxUploadSize) {
                     taskMessage.css('color', 'red');
                     taskMessage.text('Too big files size. Please use share to upload');
@@ -744,20 +778,17 @@ class DashboardView {
             }
 
             const description = {
-                name: name,
+                name,
                 labels: LabelsInfo.deserialize(labels),
-                image_quality: compressQuality
-            }
+                image_quality: compressQuality,
+                z_order: zOrder,
+                bug_tracker: bugTrackerLink,
+            };
 
-            if (bugTrackerLink) {
-                description.bug_tracker = bugTrackerLink;
-            }
-            if (zOrder) {
-                description.z_order = zOrder;
-            }
             if (customSegmentSize.prop('checked')) {
                 description.segment_size = segmentSize;
             }
+
             if (customOverlapSize.prop('checked')) {
                 description.overlap = overlapSize;
             }
@@ -771,103 +802,39 @@ class DashboardView {
                 description.frame_filter = frameFilter;
             }
 
-            function cleanupTask(tid) {
-                $.ajax({
-                    url: `/api/v1/tasks/${tid}`,
-                    type: 'DELETE'
-                });
-            }
-
-            submitCreate.prop('disabled', true);
-            $.ajax({
-                url: '/api/v1/tasks',
-                type: 'POST',
-                data: JSON.stringify(description),
-                contentType: 'application/json'
-            }).done((taskData) => {
-                taskMessage.css('color', 'green');
-                taskMessage.text('Task has been created. Uploading the data..');
-
-                const batchOfFiles = new FormData();
-                for (let j = 0; j < files.length; j++) {
-                    if (source === "local") {
-                        batchOfFiles.append(`client_files[${j}]`, files[j]);
-                    } else {
-                        batchOfFiles.append(`server_files[${j}]`, files[j]);
-                    }
+            try {
+                let task = new window.cvat.classes.Task(description);
+                if (source === 'local') {
+                    task.clientFiles = Array.from(files);
+                } else {
+                    task.serverFiles = Array.from(files);
                 }
-
-                $.ajax({
-                    url: `/api/v1/tasks/${taskData.id}/data`,
-                    type: 'POST',
-                    data: batchOfFiles,
-                    contentType: false,
-                    processData: false
-                }).done(() => {
-                    taskMessage.text('The data has been sent. Task is being created..');
-
-                    requestCreatingStatus(taskData.id, (status) => {
-                        taskMessage.css('color', 'blue');
-                        taskMessage.text(status);
-                    }, () => {
-                        const decorators = DashboardView.decorators('createTask');
-                        let idx = 0;
-
-                        function next() {
-                            const decorator = decorators[idx++];
-                            if (decorator) {
-                                decorator(taskData, next, () => {
-                                    submitCreate.prop('disabled', false);
-                                    cleanupTask(tid);
-                                });
-                            } else {
-                                window.location.reload();
-                            }
-                        }
-
-                        next();
-                    }, (errorMessage) => {
-                        submitCreate.prop('disabled', false);
-                        taskMessage.css('color', 'red');
-                        taskMessage.text(errorMessage);
-                        cleanupTask(taskData.id);
-                    });
-                }).fail((errorData) => {
-                    const message = `Can not put the data for the task. Code: ${errorData.status}. ` +
-                        `Message: ${errorData.responseText || errorData.statusText}`;
-                    taskMessage.css('color', 'red');
+                submitCreate.attr('disabled', true);
+                cancelCreate.attr('disabled', true);
+                task = await task.save((message) => {
+                    taskMessage.css('color', 'green');
                     taskMessage.text(message);
-                    submitCreate.prop('disabled', false);
-                    cleanupTask(taskData.id);
                 });
-            }).fail((errorData) => {
-                const message = `Task has not been created. Code: ${errorData.status}. ` +
-                    `Message: ${errorData.responseText || errorData.statusText}`;
+                window.location.reload();
+            } catch (exception) {
+                let { message } = exception;
+                if (exception instanceof window.cvat.exceptions.ServerError) {
+                    message += ` Code: ${exception.code}`;
+                }
                 taskMessage.css('color', 'red');
                 taskMessage.text(message);
-                submitCreate.prop('disabled', false);
-                cleanupTask(taskData.id);
-            });
+                submitCreate.attr('disabled', false);
+                cancelCreate.attr('disabled', false);
+            }
         });
 
         cancelCreate.on('click', () => createModal.addClass('hidden'));
     }
 }
 
-DashboardView.decorators = (action) => {
-    DashboardView._decorators = DashboardView._decorators || {};
-    return DashboardView._decorators[action] || [];
-}
-
-DashboardView.registerDecorator = (action, decorator) => {
-    DashboardView._decorators = DashboardView._decorators || {};
-    DashboardView._decorators[action] = DashboardView._decorators[action] || [];
-    DashboardView._decorators[action].push(decorator);
-}
-
-
 // DASHBOARD ENTRYPOINT
 window.addEventListener('DOMContentLoaded', () => {
+    window.cvat.config.backendAPI = `${window.location.origin}/api/v1`;
     $.when(
         // TODO: Use REST API in order to get meta
         $.get('/dashboard/meta'),
@@ -875,16 +842,15 @@ window.addEventListener('DOMContentLoaded', () => {
     ).then((metaData, taskData) => {
         try {
             new DashboardView(metaData[0], taskData[0]);
-        }
-        catch(exception) {
+        } catch (exception) {
             $('#content').empty();
             const message = `Can not build CVAT dashboard. Exception: ${exception}.`;
             showMessage(message);
         }
     }).fail((errorData) => {
         $('#content').empty();
-        const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
-            `Message: ${errorData.responseText || errorData.statusText}`;
+        const message = `Can not build CVAT dashboard. Code: ${errorData.status}. `
+            + `Message: ${errorData.responseText || errorData.statusText}`;
         showMessage(message);
     }).always(() => {
         $('#loadingOverlay').remove();

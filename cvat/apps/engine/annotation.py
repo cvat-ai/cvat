@@ -1227,13 +1227,6 @@ class TaskAnnotation:
             overlap = self.db_task.overlap
             self._merge_data(annotation.data, start_frame, overlap)
 
-    @staticmethod
-    def _flip_shape(shape, im_w, im_h):
-        for x in range(0, len(shape["points"]), 2):
-            y = x + 1
-            shape["points"][x] = im_w - shape["points"][x]
-            shape["points"][y] = im_w - shape["points"][y]
-
     def dump(self, file_path, scheme, host, query_params):
         db_task = self.db_task
         db_segments = db_task.segment_set.all().prefetch_related('job_set')
@@ -1252,7 +1245,6 @@ class TaskAnnotation:
                 ("mode", db_task.mode),
                 ("overlap", str(db_task.overlap)),
                 ("bugtracker", db_task.bug_tracker),
-                ("flipped", str(db_task.flipped)),
                 ("created", str(timezone.localtime(db_task.created_date))),
                 ("updated", str(timezone.localtime(db_task.updated_date))),
                 ("start_frame", str(db_task.start_frame)),
@@ -1332,9 +1324,6 @@ class TaskAnnotation:
                     ]))
 
                     for shape in shapes.get(frame, []):
-                        if db_task.flipped:
-                            self._flip_shape(shape, im_w, im_h)
-
                         db_label = db_label_by_id[shape["label_id"]]
 
                         dump_data = OrderedDict([
@@ -1415,8 +1404,6 @@ class TaskAnnotation:
                     dumper.open_track(dump_data)
                     for shape in TrackManager.get_interpolated_shapes(
                         track, 0, db_task.size):
-                        if db_task.flipped:
-                            self._flip_shape(shape, im_w, im_h)
 
                         dump_data = OrderedDict([
                             ("frame", str(db_task.start_frame + shape["frame"] * db_task.get_frame_step())),

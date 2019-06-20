@@ -118,6 +118,32 @@
             "cwd": "${workspaceFolder}",
             "env": {}
         },
+        {
+            "name": "cvat.js debug",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/cvatjs",
+            "runtimeExecutable": "node",
+            "runtimeArgs": [
+                "--nolazy",
+                "--inspect-brk=9230",
+                "src/api.js"
+            ],
+            "port": 9230
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "jest debug",
+            "program": "${workspaceFolder}/cvatjs/node_modules/.bin/jest",
+            "args": [
+              "--config",
+              "${workspaceFolder}/cvatjs/jest.config.js"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "disableOptimisticBPs": true,
+          }
     ],
     "compounds": [
         {
@@ -129,6 +155,6 @@
                 "RQ - low",
                 "git",
             ]
-        }
+        },
     ]
 }

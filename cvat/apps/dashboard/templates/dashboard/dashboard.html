@@ -16,7 +16,7 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'dashboard/stylesheet.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/jstree/themes/default/style.min.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/pagination/pagination.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/pagination/bootstrap.css' %}">
     {% for css_file in css_3rdparty %}
         <link rel="stylesheet" type="text/css" href="{% static css_file %}">
     {% endfor %}
@@ -25,7 +25,7 @@
 {% block head_js_3rdparty %}
     {{ block.super }}
     <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/jstree/jstree.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/pagination/pagination.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/pagination/jquery.twbsPagination.js' %}"></script>
     {% for js_file in js_3rdparty %}
         <script type="text/javascript" src="{% static js_file %}" defer></script>
     {% endfor %}
@@ -33,6 +33,7 @@
 
 {% block head_js_cvat %}
     {{ block.super }}
+    <script type="text/javascript" src="{% static 'engine/js/cvat.js' %}"></script>
     <script type="text/javascript" src="{% static 'dashboard/js/dashboard.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/listener.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/labelsInfo.js' %}"></script>
@@ -57,9 +58,8 @@
             <div style="width: 50%; display: flex;"> </div>
         </div>
 
-        <div id="dashboardPagination">
-            <div id="dashboardList" style="float: left; width: 100%"> </div>
-        </div>
+        <div id="dashboardList" style="float: left; width: 100%"> </div>
+        <ul id="dashboardPagination" class="pagination-sm"></ul>
     </div>
 
     <div id="dashboardCreateModal" class="modal hidden">
