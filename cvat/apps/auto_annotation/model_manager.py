@@ -9,6 +9,7 @@ import os
 import rq
 import shutil
 import tempfile
+import itertools
 
 from django.db import transaction
 from django.utils import timezone
@@ -251,7 +252,7 @@ class Results():
         return {
             "label": label,
             "frame": frame_number,
-            "points": " ".join("{},{}".format(pair[0], pair[1]) for pair in points),
+            "points": list(itertools.chain.from_iterable(points)),
             "attributes": attributes or {},
         }
 
