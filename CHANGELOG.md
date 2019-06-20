@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed incorrect width of shapes borders in some cases
 - Fixed annotation parser for tracks with a start frame less than the first segment frame
 - Fixed interpolation on the server near outside frames
+- Fixed dump for case when task name has a slash
 
 ### Security
 -
