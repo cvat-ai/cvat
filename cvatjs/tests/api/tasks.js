@@ -175,7 +175,7 @@ describe('Feature: delete a task', () => {
             id: 3,
         });
 
-        result[0].delete();
+        await result[0].delete();
         result = await window.cvat.tasks.get({
             id: 3,
         });
