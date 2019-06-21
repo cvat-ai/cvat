@@ -158,6 +158,14 @@
                     }
                 }
 
+                // TODO: Perhaps we should redesign the authorization method on the server.
+                if (authentificationResponse.data.includes('didn\'t match')) {
+                    throw new window.cvat.exceptions.ServerError(
+                        'The pair login/password is invalid',
+                        403,
+                    );
+                }
+
                 setCookie(authentificationResponse);
             }
 
