@@ -5,6 +5,7 @@
 
 /* global
     require:false
+    global:false
 */
 
 (() => {
@@ -76,11 +77,12 @@
     FrameData.prototype.frame.implementation = async function getFrameImplementation() {
         if (!(this.number in frameCache[this.tid])) {
             const frame = await serverProxy.frames.getFrame(this.tid, this.number);
+
             if (window.URL.createObjectURL) { // browser env
-                frameCache[this.tid][this.number] = URL.createObjectURL(frame);
+                const url = window.URL.createObjectURL(new Blob([frame]));
+                frameCache[this.tid][this.number] = url;
             } else {
-                // TODO: Make convenience nodejs representation
-                frameCache[this.tid][this.number] = frame;
+                frameCache[this.tid][this.number] = global.Buffer.from(frame, 'binary').toString('base64');
             }
         }
 

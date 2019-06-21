@@ -403,6 +403,7 @@
                 try {
                     response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/${frame}`, {
                         proxy: window.cvat.config.proxy,
+                        responseType: 'blob',
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
