@@ -11,6 +11,10 @@
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const { getFrame } = require('./frames');
+    const {
+        getJobAnnotations,
+        getTaskAnnotations,
+    } = require('./annotations');
 
     function buildDublicatedAPI() {
         const annotations = Object.freeze({
@@ -503,6 +507,7 @@
             }));
 
             this.frames.get.implementation = this.frames.get.implementation.bind(this);
+            this.annotations.get.implementation = this.annotations.get.implementation.bind(this);
         }
 
         /**
@@ -526,7 +531,7 @@
     // So, we do it seperately
     Object.defineProperties(Job.prototype, buildDublicatedAPI());
 
-    Job.prototype.save.implementation = async function saveJobImplementation() {
+    Job.prototype.save.implementation = async function () {
         // TODO: Add ability to change an assignee
         if (this.id) {
             const jobData = {
@@ -542,16 +547,28 @@
         );
     };
 
-    Job.prototype.frames.get.implementation = async function getJobFrameImplementation(frame) {
+    Job.prototype.frames.get.implementation = async function (frame) {
         if (frame < this.startFrame || frame > this.stopFrame) {
             throw new window.cvat.exceptions.ArgumentError(
                 `Frame ${frame} does not exist in the job`,
             );
         }
+
         const frameData = await getFrame(this.task.id, this.task.mode, frame);
         return frameData;
     };
 
+    // TODO: Check filter for annotations
+    Job.prototype.annotations.get.implementation = async function (frame, filter) {
+        if (frame < this.startFrame || frame > this.stopFrame) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame ${frame} does not exist in the job`,
+            );
+        }
+
+        const annotationsData = await getJobAnnotations(this.task.id, frame, filter);
+        return annotationsData;
+    };
 
     /**
         * Class representing a task
@@ -927,6 +944,7 @@
             }));
 
             this.frames.get.implementation = this.frames.get.implementation.bind(this);
+            this.annotations.get.implementation = this.annotations.get.implementation.bind(this);
         }
 
         /**
@@ -1012,18 +1030,31 @@
         return new Task(task);
     };
 
-    Task.prototype.delete.implementation = async function deleteTaskFrameImplementation() {
+    Task.prototype.delete.implementation = async function () {
         serverProxy.tasks.deleteTask(this.id);
-    }
+    };
 
-    Task.prototype.frames.get.implementation = async function getTaskFrameImplementation(frame) {
+    Task.prototype.frames.get.implementation = async function (frame) {
         if (frame >= this.size) {
             throw new window.cvat.exceptions.ArgumentError(
                 `Frame ${frame} does not exist in the task`,
             );
         }
+
         const frameData = await getFrame(this.id, this.mode, frame);
         return frameData;
+    };
+
+    // TODO: Check filter for annotations
+    Task.prototype.annotations.get.implementation = async function (frame, filter) {
+        if (frame >= this.size) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame ${frame} does not exist in the task`,
+            );
+        }
+
+        const annotationsData = await getTaskAnnotations(this.id, frame, filter);
+        return annotationsData;
     };
 
     module.exports = {

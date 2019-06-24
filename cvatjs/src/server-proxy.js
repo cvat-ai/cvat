@@ -369,7 +369,7 @@
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        'Could not get users from a server',
+                        'Could not get users from the server',
                         code,
                     );
                 }
@@ -388,7 +388,7 @@
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        'Could not get users from a server',
+                        'Could not get users from the server',
                         code,
                     );
                 }
@@ -408,7 +408,7 @@
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        `Could not get frame ${frame} for a task ${tid} from a server`,
+                        `Could not get frame ${frame} for the task ${tid} from the server`,
                         code,
                     );
                 }
@@ -427,7 +427,45 @@
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        `Could not get frame meta info for a task ${tid} from a server`,
+                        `Could not get frame meta info for the task ${tid} from the server`,
+                        code,
+                    );
+                }
+
+                return response.data;
+            }
+
+            async function getTaskAnnotations(tid) {
+                const { backendAPI } = window.cvat.config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/annotations`, {
+                        proxy: window.cvat.config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        `Could not get annotations for the task ${tid} from the server`,
+                        code,
+                    );
+                }
+
+                return response.data;
+            }
+
+            async function getJobAnnotations(jid) {
+                const { backendAPI } = window.cvat.config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/jobs/${jid}/annotations`, {
+                        proxy: window.cvat.config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        `Could not get annotations for the job ${jid} from the server`,
                         code,
                     );
                 }
@@ -484,6 +522,14 @@
                     value: Object.freeze({
                         getFrame,
                         getMeta,
+                    }),
+                    writable: false,
+                },
+
+                annotations: {
+                    value: Object.freeze({
+                        getTaskAnnotations,
+                        getJobAnnotations,
                     }),
                     writable: false,
                 },

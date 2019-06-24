@@ -191,6 +191,20 @@
     }
 
     /**
+        * Unexpected problems with data which are not connected with a user input
+        * @memberof module:API.cvat.exceptions
+        * @extends module:API.cvat.exceptions.Exception
+    */
+    class DataError extends Exception {
+    /**
+        * @param {string} message - Exception message
+    */
+        constructor(message) {
+            super(message);
+        }
+    }
+
+    /**
         * Unexpected situations in code
         * @memberof module:API.cvat.exceptions
         * @extends module:API.cvat.exceptions.Exception
@@ -249,6 +263,7 @@
     module.exports = {
         Exception,
         ArgumentError,
+        DataError,
         ScriptingError,
         PluginError,
         ServerError,

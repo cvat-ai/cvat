@@ -34,6 +34,7 @@
     const {
         Exception,
         ArgumentError,
+        DataError,
         ScriptingError,
         PluginError,
         ServerError,
@@ -400,6 +401,7 @@
         exceptions: {
             Exception,
             ArgumentError,
+            DataError,
             ScriptingError,
             PluginError,
             ServerError,

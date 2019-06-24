@@ -47,5 +47,6 @@
         "security/detect-object-injection": 0,
         "indent": ["warn", 4],
         "no-useless-constructor": 0,
+        "func-names": [0],
     },
 };

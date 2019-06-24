@@ -74,7 +74,7 @@
         }
     }
 
-    FrameData.prototype.frame.implementation = async function getFrameImplementation() {
+    FrameData.prototype.frame.implementation = async function () {
         if (!(this.number in frameCache[this.tid])) {
             const frame = await serverProxy.frames.getFrame(this.tid, this.number);
 
