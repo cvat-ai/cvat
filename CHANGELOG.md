@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Installation guide
 - Linear interpolation for a single point
 - Video frame filter
+- Admins are no longer limited to a subset of python commands in the auto annotation application
 
 ### Changed
 - Outside and keyframe buttons in the side panel for all interpolation shapes (they were only for boxes before)
