@@ -9,6 +9,15 @@ DEBUG = True
 
 INSTALLED_APPS += [
     'django_extensions',
+    'corsheaders',
+]
+
+MIDDLEWARE += [
+    'corsheaders.middleware.CorsMiddleware',
+]
+
+CORS_ORIGIN_WHITELIST = [
+    "http://localhost:3000",
 ]
 
 ALLOWED_HOSTS.append('testserver')
