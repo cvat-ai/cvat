@@ -13,6 +13,9 @@ import numpy as np
 from PIL import Image
 from traceback import print_exception
 from ast import literal_eval
+from urllib import error as urlerror
+from urllib import parse as urlparse
+from urllib import request as urlrequest
 
 import mimetypes
 _SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
@@ -319,7 +322,7 @@ def _validate_data(data):
     counter = {"image": 0, "video": 0, "archive": 0, "directory": 0}
 
     client_video, client_archive = count_files(
-        file_mapping={ f:f for f in data['client_files']},
+        file_mapping={ f:f for f in data['remote_files'] or data['client_files']},
         counter=counter,
     )
 
@@ -343,6 +346,33 @@ def _validate_data(data):
 
     return client_video or server_video, client_archive or server_archive
 
+def _download_data(urls, upload_dir):
+    job = rq.get_current_job()
+    local_files = {}
+    for url in urls:
+        name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
+        if name in local_files:
+            raise Exception("filename collision: {}".format(name))
+        slogger.glob.info("Downloading: {}".format(url))
+        job.meta['status'] = '{} is being downloaded..'.format(url)
+        job.save_meta()
+
+        req = urlrequest.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        try:
+            with urlrequest.urlopen(req) as fp, open(os.path.join(upload_dir, name), 'wb') as tfp:
+                while True:
+                    block = fp.read(8192)
+                    if not block:
+                        break
+                    tfp.write(block)
+        except urlerror.HTTPError as err:
+            raise Exception("Failed to download " + url + ". " + str(err.code) + ' - ' + err.reason)
+        except urlerror.URLError as err:
+            raise Exception("Invalid URL: " + url + ". " + err.reason)
+
+        local_files[name] = True
+    return list(local_files.keys())
+
 @transaction.atomic
 def _create_thread(tid, data):
     slogger.glob.info("create task #{}".format(tid))
@@ -352,6 +382,8 @@ def _create_thread(tid, data):
         raise NotImplementedError("Adding more data is not implemented")
 
     upload_dir = db_task.get_upload_dirname()
+    if data['remote_files']:
+        data['remote_files'] = _download_data(data['remote_files'], upload_dir)
     video, archive = _validate_data(data)
 
     if data['server_files']:

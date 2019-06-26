@@ -96,6 +96,14 @@ class RemoteFileSerializer(serializers.ModelSerializer):
         model = models.RemoteFile
         fields = ('file', )
 
+    # pylint: disable=no-self-use
+    def to_internal_value(self, data):
+        return {'file': data}
+
+    # pylint: disable=no-self-use
+    def to_representation(self, instance):
+        return instance.file
+
 class RqStatusSerializer(serializers.Serializer):
     state = serializers.ChoiceField(choices=[
         "Queued", "Started", "Finished", "Failed"])
