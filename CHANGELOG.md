@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Installation guide
 - Linear interpolation for a single point
 - Video frame filter
+- Admins are no longer limited to a subset of python commands in the auto annotation application
 - Remote data source (list of URLs to create an annotation task)
 
 ### Changed

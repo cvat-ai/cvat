@@ -188,6 +188,7 @@ def start_annotation(request, mid, tid):
         weights_file_path = dl_model.weights_file.name
         labelmap_file = dl_model.labelmap_file.name
         convertation_file_path = dl_model.interpretation_file.name
+        restricted = not has_admin_role(dl_model.owner)
 
         db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
         db_attributes = {db_label.id:
@@ -215,6 +216,7 @@ def start_annotation(request, mid, tid):
                 convertation_file_path,
                 should_reset,
                 request.user,
+                restricted,
             ),
             job_id = rq_id,
             timeout=604800)     # 7 days
