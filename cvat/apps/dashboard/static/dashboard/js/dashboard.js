@@ -660,7 +660,7 @@ class DashboardView {
 
         remoteFileInput.on('change', function(e) {
             let text = remoteFileInput.prop('value');
-            files = text.split('\n').map(e => e.trim()).filter(e => e.length > 0);
+            files = text.split('\n').map(f => f.trim()).filter(f => f.length > 0);
         });
 
         cancelBrowseServer.on('click', () => shareFileSelector.addClass('hidden'));
