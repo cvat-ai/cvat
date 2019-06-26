@@ -1179,10 +1179,12 @@ class TaskAnnotation:
             stop = db_job.segment.stop_frame
             jobs[jid] = { "start": start, "stop": stop }
             is_frame_inside = lambda x: (start <= int(x['frame']) <= stop)
+            # patch_job_data function changes 'data' argument by assign IDs for saved shapes,
+            # in case of overlapped jobs need to make deepcopy of data here to save all shapes properly
             splitted_data[jid] = {
-                "tags":   list(filter(is_frame_inside, data['tags'])),
-                "shapes": list(filter(is_frame_inside, data['shapes'])),
-                "tracks": list(filter(lambda y: len(list(filter(is_frame_inside, y['shapes']))), data['tracks']))
+                "tags":   copy.deepcopy(list(filter(is_frame_inside, data['tags']))),
+                "shapes": copy.deepcopy(list(filter(is_frame_inside, data['shapes']))),
+                "tracks": copy.deepcopy(list(filter(lambda y: len(list(filter(is_frame_inside, y['shapes']))), data['tracks']))),
             }
 
         for jid, job_data in splitted_data.items():

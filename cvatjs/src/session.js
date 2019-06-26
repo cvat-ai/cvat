@@ -761,6 +761,34 @@
                         Array.prototype.push.apply(data.files.client_files, clientFiles);
                     },
                 },
+                /**
+                    * List of files from remote host
+                    * @name remoteFiles
+                    * @type {File[]}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                remoteFiles: {
+                    get: () => [...data.files.remote_files],
+                    set: (remoteFiles) => {
+                        if (!Array.isArray(remoteFiles)) {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                `Value must be an array. But ${typeof (remoteFiles)} has been got.`,
+                            );
+                        }
+
+                        for (const value of remoteFiles) {
+                            if (typeof (value) !== 'string') {
+                                throw new window.cvat.exceptions.ArgumentError(
+                                    `Array values must be a string. But ${typeof (value)} has been got.`,
+                                );
+                            }
+                        }
+
+                        Array.prototype.push.apply(data.files.remote_files, remoteFiles);
+                    },
+                },
             }));
         }
 

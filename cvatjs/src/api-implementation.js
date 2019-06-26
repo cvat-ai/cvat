@@ -230,7 +230,7 @@
                 const taskFiles = {
                     client_files: this.clientFiles,
                     server_files: this.serverFiles,
-                    remote_files: [], // hasn't been supported yet
+                    remote_files: this.remoteFiles,
                 };
 
                 const task = await serverProxy.tasks.createTask(taskData, taskFiles, onUpdate);
