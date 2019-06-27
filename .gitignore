@@ -19,3 +19,9 @@ docker-compose.override.yml
 __pycache__
 *.pyc
 ._*
+
+# Ignore development npm files
+package-lock.json
+node_modules
+
+.DS_Store

@@ -96,6 +96,14 @@ class RemoteFileSerializer(serializers.ModelSerializer):
         model = models.RemoteFile
         fields = ('file', )
 
+    # pylint: disable=no-self-use
+    def to_internal_value(self, data):
+        return {'file': data}
+
+    # pylint: disable=no-self-use
+    def to_representation(self, instance):
+        return instance.file
+
 class RqStatusSerializer(serializers.Serializer):
     state = serializers.ChoiceField(choices=[
         "Queued", "Started", "Finished", "Failed"])
@@ -187,7 +195,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         model = models.Task
         fields = ('url', 'id', 'name', 'size', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
-            'segment_size', 'z_order', 'flipped', 'status', 'labels', 'segments',
+            'segment_size', 'z_order', 'status', 'labels', 'segments',
             'image_quality', 'start_frame', 'stop_frame', 'frame_filter')
         read_only_fields = ('size', 'mode', 'created_date', 'updated_date',
             'status')
@@ -232,7 +240,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.bug_tracker = validated_data.get('bug_tracker',
             instance.bug_tracker)
         instance.z_order = validated_data.get('z_order', instance.z_order)
-        instance.flipped = validated_data.get('flipped', instance.flipped)
         instance.image_quality = validated_data.get('image_quality',
             instance.image_quality)
         instance.start_frame = validated_data.get('start_frame', instance.start_frame)

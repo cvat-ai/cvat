@@ -27,6 +27,8 @@
         "airbnb",
     ],
     "rules": {
+        "no-await-in-loop": [0],
+        "global-require": [0],
         "no-new": [0],
         "class-methods-use-this": [0],
         "no-restricted-properties": [0, {

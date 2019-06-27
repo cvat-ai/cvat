@@ -128,7 +128,7 @@ RUN if [ "$OPENVINO_TOOLKIT" = "yes" ]; then \
 # TODO: CHANGE URL
 ARG WITH_DEXTR
 ENV WITH_DEXTR=${WITH_DEXTR}
-ENV DEXTR_MODEL_DIR=${HOME}/models/dextr
+ENV DEXTR_MODEL_DIR=${HOME}/dextr
 RUN if [ "$WITH_DEXTR" = "yes" ]; then \
         mkdir ${DEXTR_MODEL_DIR} -p && \
         wget https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip -O ${DEXTR_MODEL_DIR}/dextr.zip && \
