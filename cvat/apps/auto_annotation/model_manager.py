@@ -17,6 +17,7 @@ from django.conf import settings
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task as TaskModel
+from cvat.apps.authentication.auth import has_admin_role
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data, patch_task_data
 
@@ -29,7 +30,7 @@ def _remove_old_file(model_file_field):
         os.remove(model_file_field.name)
 
 def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_file, labelmap_file,
-        interpretation_file, run_tests, is_local_storage, delete_if_test_fails):
+        interpretation_file, run_tests, is_local_storage, delete_if_test_fails, restricted=True):
     def _get_file_content(filename):
         return os.path.basename(filename), open(filename, "rb")
 
@@ -48,6 +49,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
                 labels_mapping=labelmap_file,
                 attribute_spec={},
                 convertation_file=interpretation_file,
+                restricted=restricted
             )
         except Exception as e:
             return False, str(e)
@@ -151,6 +153,11 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
         labelmap_file = save_file_as_tmp(labelmap_file)
         interpretation_file = save_file_as_tmp(interpretation_file)
 
+    if owner:
+        restricted = not has_admin_role(owner)
+    else:
+        restricted = not has_admin_role(AnnotationModel.objects.get(pk=dl_model_id).owner)
+
     rq_id = "auto_annotation.create.{}".format(dl_model_id)
     queue = django_rq.get_queue("default")
     queue.enqueue_call(
@@ -166,6 +173,7 @@ def create_or_update(dl_model_id, name, model_file, weights_file, labelmap_file,
             run_tests,
             storage == "local",
             is_create_request,
+            restricted
         ),
         job_id=rq_id
     )
@@ -256,27 +264,33 @@ class Results():
             "attributes": attributes or {},
         }
 
-def _process_detections(detections, path_to_conv_script):
+def _process_detections(detections, path_to_conv_script, restricted=True):
     results = Results()
-    global_vars = {
-        "__builtins__": {
-            "str": str,
-            "int": int,
-            "float": float,
-            "max": max,
-            "min": min,
-            "range": range,
-            },
-        }
     local_vars = {
         "detections": detections,
         "results": results,
         }
+
+    if restricted:
+        global_vars = {
+            "__builtins__": {
+                "str": str,
+                "int": int,
+                "float": float,
+                "max": max,
+                "min": min,
+                "range": range,
+                },
+            }
+    else:
+        global_vars = globals()
+
     exec (open(path_to_conv_script).read(), global_vars, local_vars)
+
     return results
 
 def _run_inference_engine_annotation(data, model_file, weights_file,
-       labels_mapping, attribute_spec, convertation_file, job=None, update_progress=None):
+       labels_mapping, attribute_spec, convertation_file, job=None, update_progress=None, restricted=True):
     def process_attributes(shape_attributes, label_attr_spec):
         attributes = []
         for attr_text, attr_value in shape_attributes.items():
@@ -332,14 +346,14 @@ def _run_inference_engine_annotation(data, model_file, weights_file,
         if job and update_progress and not update_progress(job, frame_counter * 100 / data_len):
             return None
 
-    processed_detections = _process_detections(detections, convertation_file)
+    processed_detections = _process_detections(detections, convertation_file, restricted=restricted)
 
     add_shapes(processed_detections.get_shapes(), result["shapes"])
 
 
     return result
 
-def run_inference_thread(tid, model_file, weights_file, labels_mapping, attributes, convertation_file, reset, user):
+def run_inference_thread(tid, model_file, weights_file, labels_mapping, attributes, convertation_file, reset, user, restricted=True):
     def update_progress(job, progress):
         job.refresh()
         if "cancel" in job.meta:
@@ -367,6 +381,7 @@ def run_inference_thread(tid, model_file, weights_file, labels_mapping, attribut
             convertation_file= convertation_file,
             job=job,
             update_progress=update_progress,
+            restricted=restricted
         )
 
         if result is None:
