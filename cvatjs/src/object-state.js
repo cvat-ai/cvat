@@ -16,30 +16,29 @@
     */
     class ObjectState {
         /**
-            * @param {module:API.cvat.enums.ObjectType} type - a type of an object
-            * @param {module:API.cvat.enums.ObjectShape} shape -
-            * a type of a shape if an object is a shape of a track
-            * @param {module:API.cvat.classes.Label} label - a label of an object
+            * @param {Object} type - an object which contains initialization information
+            * about points, group, zOrder, outside, occluded,
+            * attributes, lock, type, label, mode, etc.
+            * Types of data equal to listed below
         */
-        constructor(type, shape, label) {
+        constructor(serialized) {
             const data = {
-                position: null,
+                points: null,
                 group: null,
                 zOrder: null,
-                outside: false,
-                occluded: false,
-                attributes: null,
-                lock: false,
-                type,
-                shape,
-                label,
+                outside: null,
+                occluded: null,
+                lock: null,
+                attributes: {},
+                type: serialized.type,
+                shape: serialized.shape,
             };
 
             Object.defineProperties(this, Object.freeze({
                 type: {
                     /**
                         * @name type
-                        * @type {module:API.cvat.enums.ShapeType}
+                        * @type {module:API.cvat.enums.ObjectType}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @readonly
                         * @instance
@@ -49,7 +48,7 @@
                 shape: {
                     /**
                         * @name shape
-                        * @type {module:API.cvat.enums.ShapeType}
+                        * @type {module:API.cvat.enums.ObjectShape}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @readonly
                         * @instance
@@ -67,7 +66,7 @@
                     get: () => data.label,
                     set: (labelInstance) => {
                         if (!(labelInstance instanceof window.cvat.classes.Label)) {
-                            throw new window.cvat.exceptions.ArgumentException(
+                            throw new window.cvat.exceptions.ArgumentError(
                                 `Expected Label instance, but got "${typeof (labelInstance.constructor.name)}"`,
                             );
                         }
@@ -75,7 +74,7 @@
                         data.label = labelInstance;
                     },
                 },
-                position: {
+                points: {
                     /**
                         * @typedef {Object} Point
                         * @property {number} x
@@ -83,7 +82,7 @@
                         * @global
                     */
                     /**
-                        * @name position
+                        * @name points
                         * @type {Point[]}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @instance
@@ -95,13 +94,13 @@
                             for (const point of position) {
                                 if (typeof (point) !== 'object'
                                     || !('x' in point) || !('y' in point)) {
-                                    throw new window.cvat.exceptions.ArgumentException(
+                                    throw new window.cvat.exceptions.ArgumentError(
                                         `Got invalid point ${point}`,
                                     );
                                 }
                             }
                         } else {
-                            throw new window.cvat.exceptions.ArgumentException(
+                            throw new window.cvat.exceptions.ArgumentError(
                                 `Got invalid type "${typeof (position.constructor.name)}"`,
                             );
                         }
@@ -120,7 +119,7 @@
                     get: () => data.group,
                     set: (groupID) => {
                         if (!Number.isInteger(groupID)) {
-                            throw new window.cvat.exceptions.ArgumentException(
+                            throw new window.cvat.exceptions.ArgumentError(
                                 `Expected integer, but got ${groupID.constructor.name}`,
                             );
                         }
@@ -139,7 +138,7 @@
                     get: () => data.zOrder,
                     set: (zOrder) => {
                         if (!Number.isInteger(zOrder)) {
-                            throw new window.cvat.exceptions.ArgumentException(
+                            throw new window.cvat.exceptions.ArgumentError(
                                 `Expected integer, but got ${zOrder.constructor.name}`,
                             );
                         }
@@ -157,9 +156,9 @@
                     */
                     get: () => data.outside,
                     set: (outside) => {
-                        if (!(typeof (outside) !== 'boolean')) {
-                            throw new window.cvat.exceptions.ArgumentException(
-                                `Expected integer, but got ${outside.constructor.name}`,
+                        if (typeof (outside) !== 'boolean') {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                `Expected boolean, but got ${outside.constructor.name}`,
                             );
                         }
 
@@ -176,9 +175,9 @@
                     */
                     get: () => data.occluded,
                     set: (occluded) => {
-                        if (!(typeof (occluded) !== 'boolean')) {
-                            throw new window.cvat.exceptions.ArgumentException(
-                                `Expected integer, but got ${occluded.constructor.name}`,
+                        if (typeof (occluded) !== 'boolean') {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                `Expected boolean, but got ${occluded.constructor.name}`,
                             );
                         }
 
@@ -195,9 +194,9 @@
                     */
                     get: () => data.lock,
                     set: (lock) => {
-                        if (!(typeof (lock) !== 'boolean')) {
-                            throw new window.cvat.exceptions.ArgumentException(
-                                `Expected integer, but got ${lock.constructor.name}`,
+                        if (typeof (lock) !== 'boolean') {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                `Expected boolean, but got ${lock.constructor.name}`,
                             );
                         }
 
@@ -217,7 +216,7 @@
                     get: () => data.attributes,
                     set: (attributes) => {
                         if (typeof (attributes) !== 'object') {
-                            throw new window.cvat.exceptions.ArgumentException(
+                            throw new window.cvat.exceptions.ArgumentError(
                                 `Expected object, but got ${attributes.constructor.name}`,
                             );
                         }
@@ -226,7 +225,7 @@
                             if (Object.prototype.hasOwnProperty.call(attributes, attrId)) {
                                 attrId = +attrId;
                                 if (!Number.isInteger(attrId)) {
-                                    throw new window.cvat.exceptions.ArgumentException(
+                                    throw new window.cvat.exceptions.ArgumentError(
                                         `Expected integer attribute id, but got ${attrId.constructor.name}`,
                                     );
                                 }
@@ -236,7 +235,25 @@
                         }
                     },
                 },
+
             }));
+
+            this.label = serialized.label;
+            this.group = serialized.group;
+            this.zOrder = serialized.zOrder;
+            this.outside = serialized.outside;
+            this.occluded = serialized.occluded;
+            this.attributes = serialized.attributes;
+            this.lock = false;
+
+            const points = [];
+            for (let i = 0; i < serialized.points.length; i += 2) {
+                points.push({
+                    x: serialized.points[i],
+                    y: serialized.points[i + 1],
+                });
+            }
+            this.points = points;
         }
 
         /**

@@ -13,65 +13,67 @@
 
     class Annotation {
         constructor(data, clientID, injection) {
-            this._clientID = clientID;
-            this._serverID = data.id;
-            this._labelID = data.label_id;
-            this._frame = data.frame;
-            this._attributes = data.attributes.reduce((attributeAccumulator, attr) => {
+            this.clientID = clientID;
+            this.serverID = data.id;
+            this.labelID = data.label_id;
+            this.frame = data.frame;
+            this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
             }, {});
-            this._taskLabels = injection.labels;
+            this.taskLabels = injection.labels;
         }
     }
 
     class Shape extends Annotation {
         constructor(data, clientID, color, injection) {
             super(data, clientID, injection);
-            this._points = data.points;
-            this._occluded = data.occluded;
-            this._zOrder = data.z_order;
-            this._color = color;
-            this._type = null;
+            this.points = data.points;
+            this.occluded = data.occluded;
+            this.zOrder = data.z_order;
+            this.group = data.group;
+            this.color = color;
+            this.shape = null;
         }
 
         toJSON() {
             return {
-                type: this._type,
-                occluded: this._occluded,
-                z_order: this._zOrder,
-                points: [...this._points],
-                attributes: Object.keys(this._attributes).reduce((attributeAccumulator, attrId) => {
+                occluded: this.occluded,
+                z_order: this.zOrder,
+                points: [...this.points],
+                attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     attributeAccumulator.push({
                         spec_id: attrId,
-                        value: this._attributes[attrId],
+                        value: this.attributes[attrId],
                     });
 
                     return attributeAccumulator;
                 }, []),
-                id: this._serverID,
-                frame: this._frame,
-                label_id: this._labelID,
-                group: this._group,
+                id: this.serverID,
+                frame: this.frame,
+                label_id: this.labelID,
+                group: this.group,
             };
         }
 
         get(frame) {
-            if (frame !== this._frame) {
+            if (frame !== this.frame) {
                 throw new window.cvat.exceptions.ScriptingError(
                     'Got frame is not equal to the frame of the shape',
                 );
             }
 
             return {
-                clientID: this._clientID,
-                type: this._type,
-                occluded: this._occluded,
-                zOrder: this._zOrder,
-                points: [...this._points],
-                attributes: Object.assign({}, this._attributes),
-                label: this._labelID,
-                group: this._group,
+                type: window.cvat.enums.ObjectType.SHAPE,
+                shape: this.shape,
+                clientID: this.clientID,
+                occluded: this.occluded,
+                outside: false,
+                zOrder: this.zOrder,
+                points: [...this.points],
+                attributes: Object.assign({}, this.attributes),
+                label: this.taskLabels[this.labelID],
+                group: this.group,
             };
         }
     }
@@ -79,7 +81,7 @@
     class Track extends Annotation {
         constructor(data, clientID, color, injection) {
             super(data, clientID, injection);
-            this._shapes = data.shapes.reduce((shapeAccumulator, value) => {
+            this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
                 shapeAccumulator[value.frame] = {
                     serverID: value.id,
                     occluded: value.occluded,
@@ -97,49 +99,50 @@
                 return shapeAccumulator;
             }, {});
 
-            this._attributes = data.attributes.reduce((attributeAccumulator, attr) => {
+            this.group = data.group;
+            this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
             }, {});
-            this._color = color;
-            this._type = null;
+            this.color = color;
+            this.shape = null;
         }
 
         toJSON() {
             return {
-                occluded: this._occluded,
-                z_order: this._zOrder,
-                points: [...this._points],
-                attributes: Object.keys(this._attributes).reduce((attributeAccumulator, attrId) => {
+                occluded: this.occluded,
+                z_order: this.zOrder,
+                points: [...this.points],
+                attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     attributeAccumulator.push({
                         spec_id: attrId,
-                        value: this._attributes[attrId],
+                        value: this.attributes[attrId],
                     });
 
                     return attributeAccumulator;
                 }, []),
 
-                id: this._serverID,
-                frame: this._frame,
-                label_id: this._labelID,
-                group: this._group,
-                shapes: Object.keys(this._shapes).reduce((shapesAccumulator, frame) => {
+                id: this.serverID,
+                frame: this.frame,
+                label_id: this.labelID,
+                group: this.group,
+                shapes: Object.keys(this.shapes).reduce((shapesAccumulator, frame) => {
                     shapesAccumulator.push({
-                        type: this._type,
-                        occluded: this._shapes[frame].occluded,
-                        z_order: this._shapes[frame].zOrder,
-                        points: [...this._shapes[frame].points],
-                        outside: [...this._shapes[frame].outside],
-                        attributes: Object.keys(...this._shapes[frame].attributes)
+                        type: this.type,
+                        occluded: this.shapes[frame].occluded,
+                        z_order: this.shapes[frame].zOrder,
+                        points: [...this.shapes[frame].points],
+                        outside: [...this.shapes[frame].outside],
+                        attributes: Object.keys(...this.shapes[frame].attributes)
                             .reduce((attributeAccumulator, attrId) => {
                                 attributeAccumulator.push({
                                     spec_id: attrId,
-                                    value: this._shapes[frame].attributes[attrId],
+                                    value: this.shapes[frame].attributes[attrId],
                                 });
 
                                 return attributeAccumulator;
                             }, []),
-                        id: this._shapes[frame].serverID,
+                        id: this.shapes[frame].serverID,
                         frame: +frame,
                     });
 
@@ -150,20 +153,20 @@
 
         get(targetFrame) {
             return Object.assign(
-                {},
-                this.interpolatePosition(targetFrame),
-                this.interpolateAttributes(targetFrame),
+                {}, this.interpolatePosition(targetFrame),
                 {
-                    label: this._labelID,
-                    group: this._group,
-                    type: this._type,
-                    clientID: this._clientID,
+                    attributes: this.interpolateAttributes(targetFrame),
+                    label: this.taskLabels[this.labelID],
+                    group: this.group,
+                    type: window.cvat.enums.ObjectType.TRACK,
+                    shape: this.shape,
+                    clientID: this.clientID,
                 },
             );
         }
 
         neighborsFrames(targetFrame) {
-            const frames = Object.keys(this._shapes).map(frame => +frame);
+            const frames = Object.keys(this.shapes).map(frame => +frame);
             let lDiff = Number.MAX_SAFE_INTEGER;
             let rDiff = Number.MAX_SAFE_INTEGER;
 
@@ -180,9 +183,109 @@
             const rightFrame = rDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame + rDiff;
 
             return {
-                left: leftFrame,
-                right: rightFrame,
+                leftFrame,
+                rightFrame,
             };
+        }
+
+        interpolateAttributes(targetFrame) {
+            const result = {};
+
+            // First of all copy all unmutable attributes
+            for (const attrID in this.attributes) {
+                if (Object.prototype.hasOwnProperty.call(this.attributes, attrID)) {
+                    result[attrID] = this.attributes[attrID];
+                }
+            }
+
+            // Secondly get latest mutable attributes up to target frame
+            const frames = Object.keys(this.shapes).sort((a, b) => +a - +b);
+            for (const frame of frames) {
+                if (frame <= targetFrame) {
+                    const { attributes } = this.shapes[frame];
+
+                    for (const attrID in attributes) {
+                        if (Object.prototype.hasOwnProperty.call(attributes, attrID)) {
+                            result[attrID] = attributes[attrID];
+                        }
+                    }
+                }
+            }
+
+            // Finally fill up remained attributes if they exist
+            const labelAttributes = this.taskLabels[this.labelID].attributes;
+            const defValuesByID = labelAttributes.reduce((accumulator, attr) => {
+                accumulator[attr.id] = attr.defaultValue;
+                return accumulator;
+            }, {});
+
+            for (const attrID of Object.keys(defValuesByID)) {
+                if (!(attrID in result)) {
+                    result[attrID] = defValuesByID[attrID];
+                }
+            }
+
+            return result;
+        }
+    }
+
+    class Tag extends Annotation {
+        constructor(data, clientID, injection) {
+            super(data, clientID, injection);
+        }
+
+        toJSON() {
+            // TODO: Tags support
+            return {};
+        }
+
+        get(frame) {
+            if (frame !== this.frame) {
+                throw new window.cvat.exceptions.ScriptingError(
+                    'Got frame is not equal to the frame of the shape',
+                );
+            }
+        }
+    }
+
+    class RectangleShape extends Shape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shape = window.cvat.enums.ObjectShape.RECTANGLE;
+        }
+    }
+
+    class PolyShape extends Shape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+        }
+    }
+
+    class PolygonShape extends PolyShape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shape = window.cvat.enums.ObjectShape.POLYGON;
+        }
+    }
+
+    class PolylineShape extends PolyShape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shape = window.cvat.enums.ObjectShape.POLYLINE;
+        }
+    }
+
+    class PointsShape extends PolyShape {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shape = window.cvat.enums.ObjectShape.POINTS;
+        }
+    }
+
+    class RectangleTrack extends Track {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
+            this.shape = window.cvat.enums.ObjectShape.RECTANGLE;
         }
 
         interpolatePosition(targetFrame) {
@@ -191,8 +294,8 @@
                 rightFrame,
             } = this.neighborsFrames(targetFrame);
 
-            const rightPosition = rightFrame ? this._shapes[rightFrame] : null;
-            const leftPosition = leftFrame ? this._shapes[leftFrame] : null;
+            const rightPosition = rightFrame ? this.shapes[rightFrame] : null;
+            const leftPosition = leftFrame ? this.shapes[leftFrame] : null;
 
             if (leftPosition && leftFrame === targetFrame) {
                 return {
@@ -244,108 +347,8 @@
             }
 
             throw new window.cvat.exceptions.ScriptingError(
-                `No one neightbour frame found for the track with client ID: "${this._id}"`,
+                `No one neightbour frame found for the track with client ID: "${this.id}"`,
             );
-        }
-
-        interpolateAttributes(targetFrame) {
-            const result = {};
-
-            // First of all copy all unmutable attributes
-            for (const attrID in this._attributes) {
-                if (Object.prototype.hasOwnProperty.call(this._attributes, attrID)) {
-                    result[attrID] = this._attributes[attrID];
-                }
-            }
-
-            // Secondly get latest mutable attributes up to target frame
-            const frames = Object.keys(this._shapes).sort((a, b) => +a - +b);
-            for (const frame of frames) {
-                if (frame <= targetFrame) {
-                    const { attributes } = this._shapes[frame];
-
-                    for (const attrID in attributes) {
-                        if (Object.prototype.hasOwnProperty.call(attributes, attrID)) {
-                            result[attrID] = attributes[attrID];
-                        }
-                    }
-                }
-            }
-
-            // Finally fill up remained attributes if they exist
-            const labelAttributes = this._taskLabels.attributes;
-            const defValuesByID = labelAttributes.reduce((accumulator, attr) => {
-                accumulator[attr.id] = attr.defaultValue;
-                return accumulator;
-            }, {});
-
-            for (const attrID of Object.keys(defValuesByID)) {
-                if (!(attrID in result)) {
-                    result[attrID] = defValuesByID[attrID];
-                }
-            }
-
-            return result;
-        }
-    }
-
-    class Tag extends Annotation {
-        constructor(data, clientID, injection) {
-            super(data, clientID, injection);
-        }
-
-        toJSON() {
-            // TODO: Tags support
-            return {};
-        }
-
-        get(frame) {
-            if (frame !== this._frame) {
-                throw new window.cvat.exceptions.ScriptingError(
-                    'Got frame is not equal to the frame of the shape',
-                );
-            }
-        }
-    }
-
-    class RectangleShape extends Shape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this._type = 'rectangle';
-        }
-    }
-
-    class PolyShape extends Shape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-        }
-    }
-
-    class PolygonShape extends PolyShape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this._type = 'polygon';
-        }
-    }
-
-    class PolylineShape extends PolyShape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this._type = 'polyline';
-        }
-    }
-
-    class PointsShape extends PolyShape {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this._type = 'points';
-        }
-    }
-
-    class RectangleTrack extends Track {
-        constructor(data, clientID, color, injection) {
-            super(data, clientID, color, injection);
-            this._type = 'rectangle';
         }
     }
 
@@ -358,21 +361,21 @@
     class PolygonTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this._type = 'polygon';
+            this.shape = window.cvat.enums.ObjectShape.POLYGON;
         }
     }
 
     class PolylineTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this._type = 'polyline';
+            this.shape = window.cvat.enums.ObjectShape.POLYLINE;
         }
     }
 
     class PointsTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this._type = 'points';
+            this.shape = window.cvat.enums.ObjectShape.POINTS;
         }
     }
 
@@ -396,14 +399,19 @@
 
 
     class Collection {
-        constructor() {
+        constructor(labels) {
+            this.labels = labels.reduce((labelAccumulator, label) => {
+                labelAccumulator[label.id] = label;
+                return labelAccumulator;
+            }, {});
+
             this.empty();
         }
 
-        import(data, labels) {
+        import(data) {
             this.empty();
             const injection = {
-                labels,
+                labels: this.labels,
             };
 
             function shapeFactory(shapeData, clientID) {
@@ -467,58 +475,58 @@
             }
 
             for (const tag of data.tags) {
-                const clientID = ++this._count;
+                const clientID = ++this.count;
                 const tagModel = new Tag(tag, clientID, injection);
-                this._tags[tagModel.frame] = this._tags[tagModel.frame] || [];
-                this._tags[tagModel.frame].push(tagModel);
-                this._objects[clientID] = tagModel;
+                this.tags[tagModel.frame] = this.tags[tagModel.frame] || [];
+                this.tags[tagModel.frame].push(tagModel);
+                this.objects[clientID] = tagModel;
             }
 
             for (const shape of data.shapes) {
-                const clientID = ++this._count;
+                const clientID = ++this.count;
                 const shapeModel = shapeFactory(shape, clientID);
-                this._shapes[shapeModel.frame] = this._shapes[shapeModel.frame] || [];
-                this._shapes[shapeModel.frame].push(shapeModel);
-                this._objects[clientID] = shapeModel;
+                this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
+                this.shapes[shapeModel.frame].push(shapeModel);
+                this.objects[clientID] = shapeModel;
             }
 
             for (const track of data.tracks) {
-                const clientID = ++this._count;
+                const clientID = ++this.count;
                 const trackModel = trackFactory(track, clientID);
                 // The function can return null if track doesn't have any shapes.
                 // In this case a corresponded message will be sent to the console
                 if (trackModel) {
-                    this._tracks.push(trackModel);
-                    this._objects[clientID] = trackModel;
+                    this.tracks.push(trackModel);
+                    this.objects[clientID] = trackModel;
                 }
             }
         }
 
         export() {
             const data = {
-                tracks: Object.values(this._tracks).reduce((accumulator, value) => {
+                tracks: Object.values(this.tracks).reduce((accumulator, value) => {
                     accumulator.push(...value);
                     return accumulator;
                 }, []).map(track => track.toJSON()),
-                shapes: this._shapes.map(shape => shape.toJSON()),
-                tags: this._shapes.map(tag => tag.toJSON()),
+                shapes: this.shapes.map(shape => shape.toJSON()),
+                tags: this.shapes.map(tag => tag.toJSON()),
             };
 
             return data;
         }
 
         empty() {
-            this._shapes = {};
-            this._tags = {};
-            this._tracks = [];
-            this._objects = {}; // by id
-            this._count = 0;
+            this.shapes = {};
+            this.tags = {};
+            this.tracks = [];
+            this.objects = {}; // by id
+            this.count = 0;
         }
 
         get(frame, filters) {
-            const tracks = this._tracks;
-            const shapes = this._shapes[frame];
-            const tags = this._tags[frame];
+            const tracks = this.tracks;
+            const shapes = this.shapes[frame] || [];
+            const tags = this.tags[frame] || [];
 
             const states = tracks.map(track => track.get(frame))
                 .concat(shapes.map(shape => shape.get(frame)))
@@ -528,11 +536,7 @@
 
             const objectStates = [];
             for (const state of states) {
-                const { clientID } = state;
-                const objectModel = this._objects[clientID];
                 const objectState = new ObjectState(state);
-                objectState.save = objectModel.save.bind(objectState);
-                objectState.delete = objectModel.save.bind(objectState);
                 objectStates.push(objectState);
             }
 

@@ -548,6 +548,12 @@
     };
 
     Job.prototype.frames.get.implementation = async function (frame) {
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame must be a positive integer. Got: "${frame}"`,
+            );
+        }
+
         if (frame < this.startFrame || frame > this.stopFrame) {
             throw new window.cvat.exceptions.ArgumentError(
                 `Frame ${frame} does not exist in the job`,
@@ -566,7 +572,7 @@
             );
         }
 
-        const annotationsData = await getJobAnnotations(this.task.id, frame, filter);
+        const annotationsData = await getJobAnnotations(this, frame, filter);
         return annotationsData;
     };
 
@@ -1075,13 +1081,19 @@
 
     // TODO: Check filter for annotations
     Task.prototype.annotations.get.implementation = async function (frame, filter) {
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame must be a positive integer. Got: "${frame}"`,
+            );
+        }
+
         if (frame >= this.size) {
             throw new window.cvat.exceptions.ArgumentError(
                 `Frame ${frame} does not exist in the task`,
             );
         }
 
-        const annotationsData = await getTaskAnnotations(this.id, frame, filter);
+        const annotationsData = await getTaskAnnotations(this, frame, filter);
         return annotationsData;
     };
 
