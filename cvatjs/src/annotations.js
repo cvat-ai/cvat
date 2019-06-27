@@ -12,7 +12,7 @@
     const ObjectState = require('./object-state');
 
     class Annotation {
-        constructor(data, clientID) {
+        constructor(data, clientID, injection) {
             this._clientID = clientID;
             this._serverID = data.id;
             this._labelID = data.label_id;
@@ -21,12 +21,13 @@
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
             }, {});
+            this._taskLabels = injection.labels;
         }
     }
 
     class Shape extends Annotation {
-        constructor(data, clientID, color) {
-            super(data, clientID);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, injection);
             this._points = data.points;
             this._occluded = data.occluded;
             this._zOrder = data.z_order;
@@ -54,11 +55,30 @@
                 group: this._group,
             };
         }
+
+        get(frame) {
+            if (frame !== this._frame) {
+                throw new window.cvat.exceptions.ScriptingError(
+                    'Got frame is not equal to the frame of the shape',
+                );
+            }
+
+            return {
+                clientID: this._clientID,
+                type: this._type,
+                occluded: this._occluded,
+                zOrder: this._zOrder,
+                points: [...this._points],
+                attributes: Object.assign({}, this._attributes),
+                label: this._labelID,
+                group: this._group,
+            };
+        }
     }
 
     class Track extends Annotation {
-        constructor(data, clientID, color) {
-            super(data, clientID);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, injection);
             this._shapes = data.shapes.reduce((shapeAccumulator, value) => {
                 shapeAccumulator[value.frame] = {
                     serverID: value.id,
@@ -127,83 +147,231 @@
                 }, []),
             };
         }
+
+        get(targetFrame) {
+            return Object.assign(
+                {},
+                this.interpolatePosition(targetFrame),
+                this.interpolateAttributes(targetFrame),
+                {
+                    label: this._labelID,
+                    group: this._group,
+                    type: this._type,
+                    clientID: this._clientID,
+                },
+            );
+        }
+
+        neighborsFrames(targetFrame) {
+            const frames = Object.keys(this._shapes).map(frame => +frame);
+            let lDiff = Number.MAX_SAFE_INTEGER;
+            let rDiff = Number.MAX_SAFE_INTEGER;
+
+            for (const frame of frames) {
+                const diff = Math.abs(targetFrame - frame);
+                if (frame <= targetFrame && diff < lDiff) {
+                    lDiff = diff;
+                } else if (diff < rDiff) {
+                    rDiff = diff;
+                }
+            }
+
+            const leftFrame = lDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame - lDiff;
+            const rightFrame = rDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame + rDiff;
+
+            return {
+                left: leftFrame,
+                right: rightFrame,
+            };
+        }
+
+        interpolatePosition(targetFrame) {
+            const {
+                leftFrame,
+                rightFrame,
+            } = this.neighborsFrames(targetFrame);
+
+            const rightPosition = rightFrame ? this._shapes[rightFrame] : null;
+            const leftPosition = leftFrame ? this._shapes[leftFrame] : null;
+
+            if (leftPosition && leftFrame === targetFrame) {
+                return {
+                    points: [...leftPosition.points],
+                    occluded: leftPosition.occluded,
+                    outside: leftPosition.outside,
+                    zOrder: leftPosition.zOrder,
+                };
+            }
+
+            if (rightPosition && leftPosition) {
+                const offset = (targetFrame - leftFrame) / (rightPosition - leftPosition);
+                const positionOffset = [
+                    rightPosition.points[0] - leftPosition.points[0],
+                    rightPosition.points[1] - leftPosition.points[1],
+                    rightPosition.points[2] - leftPosition.points[2],
+                    rightPosition.points[3] - leftPosition.points[3],
+                ];
+
+                return { // xtl, ytl, xbr, ybr
+                    points: [
+                        leftPosition.points[0] + positionOffset[0] * offset,
+                        leftPosition.points[1] + positionOffset[1] * offset,
+                        leftPosition.points[2] + positionOffset[2] * offset,
+                        leftPosition.points[3] + positionOffset[3] * offset,
+                    ],
+                    occluded: leftPosition.occluded,
+                    outside: leftPosition.outside,
+                    zOrder: leftPosition.zOrder,
+                };
+            }
+
+            if (rightPosition) {
+                return {
+                    points: [...rightPosition.points],
+                    occluded: rightPosition.occluded,
+                    outside: true,
+                    zOrder: 0,
+                };
+            }
+
+            if (leftPosition) {
+                return {
+                    points: [...leftPosition.points],
+                    occluded: leftPosition.occluded,
+                    outside: leftPosition.outside,
+                    zOrder: 0,
+                };
+            }
+
+            throw new window.cvat.exceptions.ScriptingError(
+                `No one neightbour frame found for the track with client ID: "${this._id}"`,
+            );
+        }
+
+        interpolateAttributes(targetFrame) {
+            const result = {};
+
+            // First of all copy all unmutable attributes
+            for (const attrID in this._attributes) {
+                if (Object.prototype.hasOwnProperty.call(this._attributes, attrID)) {
+                    result[attrID] = this._attributes[attrID];
+                }
+            }
+
+            // Secondly get latest mutable attributes up to target frame
+            const frames = Object.keys(this._shapes).sort((a, b) => +a - +b);
+            for (const frame of frames) {
+                if (frame <= targetFrame) {
+                    const { attributes } = this._shapes[frame];
+
+                    for (const attrID in attributes) {
+                        if (Object.prototype.hasOwnProperty.call(attributes, attrID)) {
+                            result[attrID] = attributes[attrID];
+                        }
+                    }
+                }
+            }
+
+            // Finally fill up remained attributes if they exist
+            const labelAttributes = this._taskLabels.attributes;
+            const defValuesByID = labelAttributes.reduce((accumulator, attr) => {
+                accumulator[attr.id] = attr.defaultValue;
+                return accumulator;
+            }, {});
+
+            for (const attrID of Object.keys(defValuesByID)) {
+                if (!(attrID in result)) {
+                    result[attrID] = defValuesByID[attrID];
+                }
+            }
+
+            return result;
+        }
     }
 
     class Tag extends Annotation {
-        constructor(data, clientID) {
-            super(data, clientID);
+        constructor(data, clientID, injection) {
+            super(data, clientID, injection);
         }
 
         toJSON() {
             // TODO: Tags support
             return {};
         }
+
+        get(frame) {
+            if (frame !== this._frame) {
+                throw new window.cvat.exceptions.ScriptingError(
+                    'Got frame is not equal to the frame of the shape',
+                );
+            }
+        }
     }
 
     class RectangleShape extends Shape {
-        constructor(data, clientID, color) {
-            super(data, clientID, color);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
             this._type = 'rectangle';
         }
     }
 
     class PolyShape extends Shape {
-        constructor(data, clientID, color) {
-            super(data, clientID, color);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
         }
     }
 
     class PolygonShape extends PolyShape {
-        constructor(data, clientID, color) {
-            super(data, clientID, color);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
             this._type = 'polygon';
         }
     }
 
     class PolylineShape extends PolyShape {
-        constructor(data, clientID, color) {
-            super(data, clientID, color);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
             this._type = 'polyline';
         }
     }
 
     class PointsShape extends PolyShape {
-        constructor(data, clientID, color) {
-            super(data, clientID, color);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
             this._type = 'points';
         }
     }
 
     class RectangleTrack extends Track {
-        constructor(data, clientID, color) {
-            super(data, clientID, color);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
             this._type = 'rectangle';
         }
     }
 
     class PolyTrack extends Track {
-        constructor(data, clientID, color) {
-            super(data, clientID, color);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
         }
     }
 
     class PolygonTrack extends PolyTrack {
-        constructor(data, clientID, color) {
-            super(data, clientID, color);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
             this._type = 'polygon';
         }
     }
 
     class PolylineTrack extends PolyTrack {
-        constructor(data, clientID, color) {
-            super(data, clientID, color);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
             this._type = 'polyline';
         }
     }
 
     class PointsTrack extends PolyTrack {
-        constructor(data, clientID, color) {
-            super(data, clientID, color);
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
             this._type = 'points';
         }
     }
@@ -232,8 +400,11 @@
             this.empty();
         }
 
-        import(data) {
+        import(data, labels) {
             this.empty();
+            const injection = {
+                labels,
+            };
 
             function shapeFactory(shapeData, clientID) {
                 const { type } = shapeData;
@@ -241,16 +412,16 @@
                 let shapeModel = null;
                 switch (type) {
                 case 'rectangle':
-                    shapeModel = new RectangleShape(shapeData, clientID, color);
+                    shapeModel = new RectangleShape(shapeData, clientID, color, injection);
                     break;
                 case 'polygon':
-                    shapeModel = new PolygonShape(shapeData, clientID, color);
+                    shapeModel = new PolygonShape(shapeData, clientID, color, injection);
                     break;
                 case 'polyline':
-                    shapeModel = new PolylineShape(shapeData, clientID, color);
+                    shapeModel = new PolylineShape(shapeData, clientID, color, injection);
                     break;
                 case 'points':
-                    shapeModel = new PointsShape(shapeData, clientID, color);
+                    shapeModel = new PointsShape(shapeData, clientID, color, injection);
                     break;
                 default:
                     throw new window.cvat.exceptions.DataError(
@@ -266,19 +437,21 @@
                 if (trackData.shapes.length) {
                     const { type } = trackData.shapes[0];
                     const color = colors[clientID % colors.length];
+
+
                     let trackModel = null;
                     switch (type) {
                     case 'rectangle':
-                        trackModel = new RectangleTrack(trackData, clientID, color);
+                        trackModel = new RectangleTrack(trackData, clientID, color, injection);
                         break;
                     case 'polygon':
-                        trackModel = new PolygonTrack(trackData, clientID, color);
+                        trackModel = new PolygonTrack(trackData, clientID, color, injection);
                         break;
                     case 'polyline':
-                        trackModel = new PolylineTrack(trackData, clientID, color);
+                        trackModel = new PolylineTrack(trackData, clientID, color, injection);
                         break;
                     case 'points':
-                        trackModel = new PointsTrack(trackData, clientID, color);
+                        trackModel = new PointsTrack(trackData, clientID, color, injection);
                         break;
                     default:
                         throw new window.cvat.exceptions.DataError(
@@ -294,21 +467,29 @@
             }
 
             for (const tag of data.tags) {
-                const tagModel = new Tag(tag, ++this._count);
+                const clientID = ++this._count;
+                const tagModel = new Tag(tag, clientID, injection);
                 this._tags[tagModel.frame] = this._tags[tagModel.frame] || [];
                 this._tags[tagModel.frame].push(tagModel);
+                this._objects[clientID] = tagModel;
             }
 
             for (const shape of data.shapes) {
-                const shapeModel = shapeFactory(shape, this._count++);
+                const clientID = ++this._count;
+                const shapeModel = shapeFactory(shape, clientID);
                 this._shapes[shapeModel.frame] = this._shapes[shapeModel.frame] || [];
                 this._shapes[shapeModel.frame].push(shapeModel);
+                this._objects[clientID] = shapeModel;
             }
 
             for (const track of data.tracks) {
-                const trackModel = trackFactory(track, ++this._count);
+                const clientID = ++this._count;
+                const trackModel = trackFactory(track, clientID);
+                // The function can return null if track doesn't have any shapes.
+                // In this case a corresponded message will be sent to the console
                 if (trackModel) {
                     this._tracks.push(trackModel);
+                    this._objects[clientID] = trackModel;
                 }
             }
         }
@@ -330,6 +511,7 @@
             this._shapes = {};
             this._tags = {};
             this._tracks = [];
+            this._objects = {}; // by id
             this._count = 0;
         }
 
@@ -338,46 +520,47 @@
             const shapes = this._shapes[frame];
             const tags = this._tags[frame];
 
-            return [];
-/*
-            const map = new WeakMap();
-            for (const object of tracks.concat(shapes).concat(tags)) {
-                map.set(object, object.get(frame));
-            }
-
-            let objects = tracks.map(track => track.get(frame))
+            const states = tracks.map(track => track.get(frame))
                 .concat(shapes.map(shape => shape.get(frame)))
                 .concat(tags.map(tag => tag.get(frame)));
 
-            if (Object.keys(filters).length) {
-                objects = objects.filter(object => object.filter(filters));
+            // filtering here
+
+            const objectStates = [];
+            for (const state of states) {
+                const { clientID } = state;
+                const objectModel = this._objects[clientID];
+                const objectState = new ObjectState(state);
+                objectState.save = objectModel.save.bind(objectState);
+                objectState.delete = objectModel.save.bind(objectState);
+                objectStates.push(objectState);
             }
 
-            return objects; */
+            return objectStates;
         }
     }
 
     const jobCache = {};
     const taskCache = {};
 
-    async function getJobAnnotations(jobID, frame, filter) {
-        if (!(jobID in jobCache)) {
-            const rawAnnotations = await serverProxy.annotations.getJobAnnotations(jobID);
-            jobCache[jobID] = new Collection();
-            jobCache[jobID].import(rawAnnotations);
+    async function getJobAnnotations(job, frame, filter) {
+        if (!(job.id in jobCache)) {
+            const rawAnnotations = await serverProxy.annotations.getJobAnnotations(job.id);
+            jobCache[job.id] = new Collection(job.task.labels);
+            jobCache[job.id].import(rawAnnotations);
         }
 
-        return jobCache[jobID].get(frame, filter);
+        return jobCache[job.id].get(frame, filter);
     }
 
-    async function getTaskAnnotations(taskID, frame, filter) {
-        if (!(taskID in jobCache)) {
-            const rawAnnotations = await serverProxy.annotations.getTaskAnnotations(taskID);
-            taskCache[taskID] = new Collection();
-            taskCache[taskID].import(rawAnnotations);
+    async function getTaskAnnotations(task, frame, filter) {
+        if (!(task.id in jobCache)) {
+            const rawAnnotations = await serverProxy.annotations.getTaskAnnotations(task.id);
+            taskCache[task.id] = new Collection(task.labels);
+            taskCache[task.id].import(rawAnnotations);
         }
 
-        return taskCache[taskID].get(frame, filter);
+        return taskCache[task.id].get(frame, filter);
     }
 
     module.exports = {
