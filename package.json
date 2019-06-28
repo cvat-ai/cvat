@@ -1,6 +1,6 @@
 {
   "name": "cvat",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Powerful and efficient Computer Vision Annotation Tool (CVAT)",
   "main": "index.js",
   "scripts": {
@@ -8,12 +8,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gauharbains/cvat.git"
+    "url": "git+https://github.com/LabShare/cvat.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gauharbains/cvat/issues"
+    "url": "https://github.com/LabShare/cvat/issues"
   },
-  "homepage": "https://github.com/gauharbains/cvat#readme"
+  "homepage": "https://github.com/LabShare/cvat#readme"
 }
