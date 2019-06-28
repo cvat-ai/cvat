@@ -11,8 +11,6 @@
     const Platform = require('platform');
     const ErrorStackParser = require('error-stack-parser');
 
-    const hidden = require('./hidden');
-
     /**
         * Base exception class
         * @memberof module:API.cvat.exceptions
@@ -30,14 +28,14 @@
             const system = Platform.os.toString();
             const client = `${Platform.name} ${Platform.version}`;
             const info = ErrorStackParser.parse(this)[0];
-            const filename = `${hidden.location}${info.fileName}`;
+            const filename = `${info.fileName}`;
             const line = info.lineNumber;
             const column = info.columnNumber;
             const {
                 jobID,
                 taskID,
                 clientID,
-            } = hidden;
+            } = window.cvat.config;
 
             const projID = undefined; // wasn't implemented
 
@@ -193,6 +191,20 @@
     }
 
     /**
+        * Unexpected problems with data which are not connected with a user input
+        * @memberof module:API.cvat.exceptions
+        * @extends module:API.cvat.exceptions.Exception
+    */
+    class DataError extends Exception {
+    /**
+        * @param {string} message - Exception message
+    */
+        constructor(message) {
+            super(message);
+        }
+    }
+
+    /**
         * Unexpected situations in code
         * @memberof module:API.cvat.exceptions
         * @extends module:API.cvat.exceptions.Exception
@@ -251,6 +263,7 @@
     module.exports = {
         Exception,
         ArgumentError,
+        DataError,
         ScriptingError,
         PluginError,
         ServerError,

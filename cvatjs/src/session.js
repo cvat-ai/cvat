@@ -9,6 +9,141 @@
 
 (() => {
     const PluginRegistry = require('./plugins');
+    const serverProxy = require('./server-proxy');
+    const { getFrame } = require('./frames');
+    const {
+        getJobAnnotations,
+        getTaskAnnotations,
+    } = require('./annotations');
+
+    function buildDublicatedAPI() {
+        const annotations = Object.freeze({
+            value: {
+                async upload(file) {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, annotations.value.upload, file);
+                    return result;
+                },
+
+                async save() {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, annotations.value.save);
+                    return result;
+                },
+
+                async clear() {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, annotations.value.clear);
+                    return result;
+                },
+
+                async dump() {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, annotations.value.dump);
+                    return result;
+                },
+
+                async statistics() {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, annotations.value.statistics);
+                    return result;
+                },
+
+                async put(arrayOfObjects = []) {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, annotations.value.put, arrayOfObjects);
+                    return result;
+                },
+
+                async get(frame, filter = {}) {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, annotations.value.get, frame, filter);
+                    return result;
+                },
+
+                async search(filter, frameFrom, frameTo) {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, annotations.value.search,
+                            filter, frameFrom, frameTo);
+                    return result;
+                },
+
+                async select(frame, x, y) {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, annotations.value.select, frame, x, y);
+                    return result;
+                },
+            },
+        });
+
+        const frames = Object.freeze({
+            value: {
+                async get(frame) {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, frames.value.get, frame);
+                    return result;
+                },
+            },
+        });
+
+        const logs = Object.freeze({
+            value: {
+                async put(logType, details) {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, logs.value.put, logType, details);
+                    return result;
+                },
+                async save() {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, logs.value.save);
+                    return result;
+                },
+            },
+        });
+
+        const actions = Object.freeze({
+            value: {
+                async undo(count) {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, actions.value.undo, count);
+                    return result;
+                },
+                async redo(count) {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, actions.value.redo, count);
+                    return result;
+                },
+                async clear() {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, actions.value.clear);
+                    return result;
+                },
+            },
+        });
+
+        const events = Object.freeze({
+            value: {
+                async subscribe(eventType, callback) {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, events.value.subscribe, eventType, callback);
+                    return result;
+                },
+                async unsubscribe(eventType, callback = null) {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, events.value.unsubscribe, eventType, callback);
+                    return result;
+                },
+            },
+        });
+
+        return Object.freeze({
+            annotations,
+            frames,
+            logs,
+            actions,
+            events,
+        });
+    }
 
     /**
         * Base abstract class for Task and Job. It contains common members.
@@ -370,6 +505,9 @@
                     get: () => data.task,
                 },
             }));
+
+            this.frames.get.implementation = this.frames.get.implementation.bind(this);
+            this.annotations.get.implementation = this.annotations.get.implementation.bind(this);
         }
 
         /**
@@ -389,6 +527,54 @@
         }
     }
 
+    // Fill up the prototype by properties. Class syntax doesn't allow do it
+    // So, we do it seperately
+    Object.defineProperties(Job.prototype, buildDublicatedAPI());
+
+    Job.prototype.save.implementation = async function () {
+        // TODO: Add ability to change an assignee
+        if (this.id) {
+            const jobData = {
+                status: this.status,
+            };
+
+            await serverProxy.jobs.saveJob(this.id, jobData);
+            return this;
+        }
+
+        throw window.cvat.exceptions.ArgumentError(
+            'Can not save job without and id',
+        );
+    };
+
+    Job.prototype.frames.get.implementation = async function (frame) {
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame must be a positive integer. Got: "${frame}"`,
+            );
+        }
+
+        if (frame < this.startFrame || frame > this.stopFrame) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame ${frame} does not exist in the job`,
+            );
+        }
+
+        const frameData = await getFrame(this.task.id, this.task.mode, frame);
+        return frameData;
+    };
+
+    // TODO: Check filter for annotations
+    Job.prototype.annotations.get.implementation = async function (frame, filter) {
+        if (frame < this.startFrame || frame > this.stopFrame) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame ${frame} does not exist in the job`,
+            );
+        }
+
+        const annotationsData = await getJobAnnotations(this, frame, filter);
+        return annotationsData;
+    };
 
     /**
         * Class representing a task
@@ -790,6 +976,9 @@
                     },
                 },
             }));
+
+            this.frames.get.implementation = this.frames.get.implementation.bind(this);
+            this.annotations.get.implementation = this.annotations.get.implementation.bind(this);
         }
 
         /**
@@ -828,6 +1017,85 @@
             return result;
         }
     }
+
+    // Fill up the prototype by properties. Class syntax doesn't allow do it
+    // So, we do it seperately
+    Object.defineProperties(Task.prototype, buildDublicatedAPI());
+
+    Task.prototype.save.implementation = async function saveTaskImplementation(onUpdate) {
+        // TODO: Add ability to change an owner and an assignee
+        if (typeof (this.id) !== 'undefined') {
+            // If the task has been already created, we update it
+            const taskData = {
+                name: this.name,
+                bug_tracker: this.bugTracker,
+                z_order: this.zOrder,
+                labels: [...this.labels.map(el => el.toJSON())],
+            };
+
+            await serverProxy.tasks.saveTask(this.id, taskData);
+            return this;
+        }
+
+        const taskData = {
+            name: this.name,
+            labels: this.labels.map(el => el.toJSON()),
+            image_quality: this.imageQuality,
+            z_order: Boolean(this.zOrder),
+        };
+
+        if (this.bugTracker) {
+            taskData.bug_tracker = this.bugTracker;
+        }
+        if (this.segmentSize) {
+            taskData.segment_size = this.segmentSize;
+        }
+        if (this.overlap) {
+            taskData.overlap = this.overlap;
+        }
+
+        const taskFiles = {
+            client_files: this.clientFiles,
+            server_files: this.serverFiles,
+            remote_files: [], // hasn't been supported yet
+        };
+
+        const task = await serverProxy.tasks.createTask(taskData, taskFiles, onUpdate);
+        return new Task(task);
+    };
+
+    Task.prototype.delete.implementation = async function () {
+        serverProxy.tasks.deleteTask(this.id);
+    };
+
+    Task.prototype.frames.get.implementation = async function (frame) {
+        if (frame >= this.size) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame ${frame} does not exist in the task`,
+            );
+        }
+
+        const frameData = await getFrame(this.id, this.mode, frame);
+        return frameData;
+    };
+
+    // TODO: Check filter for annotations
+    Task.prototype.annotations.get.implementation = async function (frame, filter) {
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame must be a positive integer. Got: "${frame}"`,
+            );
+        }
+
+        if (frame >= this.size) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame ${frame} does not exist in the task`,
+            );
+        }
+
+        const annotationsData = await getTaskAnnotations(this, frame, filter);
+        return annotationsData;
+    };
 
     module.exports = {
         Job,
