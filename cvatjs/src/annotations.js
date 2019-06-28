@@ -68,7 +68,6 @@
                 shape: this.shape,
                 clientID: this.clientID,
                 occluded: this.occluded,
-                const tracks
                 zOrder: this.zOrder,
                 points: [...this.points],
                 attributes: Object.assign({}, this.attributes),
