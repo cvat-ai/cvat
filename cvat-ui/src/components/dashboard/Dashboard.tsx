@@ -8,6 +8,7 @@ class Dashboard extends Component {
   constructor(props: any) {
     super(props);
   }
+
   componentWillMount() {
     window.cvat.server.login('admin', 'admin').then(
       (response: any) => {
@@ -30,9 +31,7 @@ class Dashboard extends Component {
 
   render() {
     return(
-      <div className="Dashboard">
-
-      </div>
+      <div className="Dashboard"></div>
     );
   }
 }
