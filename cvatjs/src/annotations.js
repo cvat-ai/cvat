@@ -68,7 +68,7 @@
                 shape: this.shape,
                 clientID: this.clientID,
                 occluded: this.occluded,
-                outside: false,
+                const tracks
                 zOrder: this.zOrder,
                 points: [...this.points],
                 attributes: Object.assign({}, this.attributes),
@@ -523,8 +523,8 @@
             this.count = 0;
         }
 
-        get(frame, filters) {
-            const tracks = this.tracks;
+        get(frame) {
+            const { tracks } = this;
             const shapes = this.shapes[frame] || [];
             const tags = this.tags[frame] || [];
 
