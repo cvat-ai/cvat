@@ -19,6 +19,9 @@
                 Axios.defaults.headers.patch['X-CSRFToken'] = header;
                 Axios.defaults.headers.post['X-CSRFToken'] = header;
                 Axios.defaults.headers.put['X-CSRFToken'] = header;
+
+                // Allows to move authentification headers to backend
+                Axios.defaults.withCredentials = true;
             }
 
             async function about() {
@@ -98,14 +101,20 @@
                         Axios.defaults.headers.common.Cookie = cookies;
                     } else {
                         // Browser code. We need set additinal header for authentification
-                        const csrftoken = Cookie.get('csrftoken');
+                        let csrftoken = response.data.csrf;
                         if (csrftoken) {
                             setCSRFHeader(csrftoken);
+                            Cookie.set('csrftoken', csrftoken);
                         } else {
-                            throw new window.cvat.exceptions.ScriptingError(
-                                'An environment has been detected as a browser'
-                                + ', but CSRF token has not been found in cookies',
-                            );
+                            csrftoken = Cookie.get('csrftoken');
+                            if (csrftoken) {
+                                setCSRFHeader(csrftoken);
+                            } else {
+                                throw new window.cvat.exceptions.ScriptingError(
+                                    'An environment has been detected as a browser'
+                                    + ', but CSRF token has not been found in cookies',
+                                );
+                            }
                         }
                     }
                 }
@@ -113,7 +122,7 @@
                 const host = window.cvat.config.backendAPI.slice(0, -7);
                 let csrf = null;
                 try {
-                    csrf = await Axios.get(`${host}/auth/login`, {
+                    csrf = await Axios.get(`${host}/auth/csrf`, {
                         proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
