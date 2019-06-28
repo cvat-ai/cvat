@@ -24,6 +24,8 @@ from cvat.apps.engine.annotation import put_task_data, patch_task_data
 from .models import AnnotationModel, FrameworkChoice
 from .model_loader import ModelLoader
 from .image_loader import ImageLoader
+from .import_modules import import_modules
+
 
 def _remove_old_file(model_file_field):
     if model_file_field and os.path.exists(model_file_field.name):
@@ -270,6 +272,7 @@ def _process_detections(detections, path_to_conv_script, restricted=True):
         "detections": detections,
         "results": results,
         }
+    source_code = open(path_to_conv_script).read()
 
     if restricted:
         global_vars = {
@@ -284,8 +287,10 @@ def _process_detections(detections, path_to_conv_script, restricted=True):
             }
     else:
         global_vars = globals()
+        imports = import_modules(source_code)
+        global_vars.update(imports)
 
-    exec (open(path_to_conv_script).read(), global_vars, local_vars)
+    exec(source_code, global_vars, local_vars)
 
     return results
 
