@@ -14,11 +14,6 @@
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
 
-    const {
-        Task,
-        Job,
-    } = require('./session');
-
     function isBoolean(value) {
         return typeof (value) === 'boolean';
     }
@@ -58,28 +53,6 @@
                 }
             }
         }
-    }
-
-    const hidden = require('./hidden');
-    function setupEnv(wrappedFunction) {
-        return async function wrapper(...args) {
-            try {
-                if (this instanceof window.cvat.classes.Task) {
-                    hidden.taskID = this.id;
-                } else if (this instanceof window.cvat.classes.Job) {
-                    hidden.jobID = this.id;
-                    hidden.taskID = this.task.id;
-                } else {
-                    throw new window.cvat.exceptions.ScriptingError('Bad context for the function');
-                }
-
-                const result = await wrappedFunction.call(this, ...args);
-                return result;
-            } finally {
-                delete hidden.taskID;
-                delete hidden.jobID;
-            }
-        };
     }
 
     function implementAPI(cvat) {
@@ -193,75 +166,6 @@
 
             return tasks;
         };
-
-        Task.prototype.save.implementation = setupEnv(
-            async function saveTaskImplementation(onUpdate) {
-                // TODO: Add ability to change an owner and an assignee
-                if (typeof (this.id) !== 'undefined') {
-                    // If the task has been already created, we update it
-                    const taskData = {
-                        name: this.name,
-                        bug_tracker: this.bugTracker,
-                        z_order: this.zOrder,
-                        labels: [...this.labels.map(el => el.toJSON())],
-                    };
-
-                    await serverProxy.tasks.saveTask(this.id, taskData);
-                    return this;
-                }
-
-                const taskData = {
-                    name: this.name,
-                    labels: this.labels.map(el => el.toJSON()),
-                    image_quality: this.imageQuality,
-                    z_order: Boolean(this.zOrder),
-                };
-
-                if (this.bugTracker) {
-                    taskData.bug_tracker = this.bugTracker;
-                }
-                if (this.segmentSize) {
-                    taskData.segment_size = this.segmentSize;
-                }
-                if (this.overlap) {
-                    taskData.overlap = this.overlap;
-                }
-
-                const taskFiles = {
-                    client_files: this.clientFiles,
-                    server_files: this.serverFiles,
-                    remote_files: this.remoteFiles,
-                };
-
-                const task = await serverProxy.tasks.createTask(taskData, taskFiles, onUpdate);
-                return new Task(task);
-            },
-        );
-
-        Task.prototype.delete.implementation = setupEnv(
-            async function deleteTaskImplementation() {
-                await serverProxy.tasks.deleteTask(this.id);
-            },
-        );
-
-        Job.prototype.save.implementation = setupEnv(
-            async function saveJobImplementation() {
-                // TODO: Add ability to change an assignee
-                if (this.id) {
-                    const jobData = {
-                        status: this.status,
-                    };
-
-                    await serverProxy.jobs.saveJob(this.id, jobData);
-                    return this;
-                }
-
-                throw window.cvat.exceptions.ArgumentError(
-                    'Can not save job without and id',
-                );
-            },
-        );
-
 
         return cvat;
     }

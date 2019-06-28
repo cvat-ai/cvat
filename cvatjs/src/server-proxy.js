@@ -19,6 +19,9 @@
                 Axios.defaults.headers.patch['X-CSRFToken'] = header;
                 Axios.defaults.headers.post['X-CSRFToken'] = header;
                 Axios.defaults.headers.put['X-CSRFToken'] = header;
+
+                // Allows to move authentification headers to backend
+                Axios.defaults.withCredentials = true;
             }
 
             async function about() {
@@ -98,14 +101,20 @@
                         Axios.defaults.headers.common.Cookie = cookies;
                     } else {
                         // Browser code. We need set additinal header for authentification
-                        const csrftoken = Cookie.get('csrftoken');
+                        let csrftoken = response.data.csrf;
                         if (csrftoken) {
                             setCSRFHeader(csrftoken);
+                            Cookie.set('csrftoken', csrftoken);
                         } else {
-                            throw new window.cvat.exceptions.ScriptingError(
-                                'An environment has been detected as a browser'
-                                + ', but CSRF token has not been found in cookies',
-                            );
+                            csrftoken = Cookie.get('csrftoken');
+                            if (csrftoken) {
+                                setCSRFHeader(csrftoken);
+                            } else {
+                                throw new window.cvat.exceptions.ScriptingError(
+                                    'An environment has been detected as a browser'
+                                    + ', but CSRF token has not been found in cookies',
+                                );
+                            }
                         }
                     }
                 }
@@ -113,7 +122,7 @@
                 const host = window.cvat.config.backendAPI.slice(0, -7);
                 let csrf = null;
                 try {
-                    csrf = await Axios.get(`${host}/auth/login`, {
+                    csrf = await Axios.get(`${host}/auth/csrf`, {
                         proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
@@ -156,6 +165,14 @@
                             code,
                         );
                     }
+                }
+
+                // TODO: Perhaps we should redesign the authorization method on the server.
+                if (authentificationResponse.data.includes('didn\'t match')) {
+                    throw new window.cvat.exceptions.ServerError(
+                        'The pair login/password is invalid',
+                        403,
+                    );
                 }
 
                 setCookie(authentificationResponse);
@@ -361,7 +378,7 @@
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        'Could not get users from a server',
+                        'Could not get users from the server',
                         code,
                     );
                 }
@@ -380,7 +397,7 @@
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        'Could not get users from a server',
+                        'Could not get users from the server',
                         code,
                     );
                 }
@@ -395,11 +412,12 @@
                 try {
                     response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/${frame}`, {
                         proxy: window.cvat.config.proxy,
+                        responseType: 'blob',
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        `Could not get frame ${frame} for a task ${tid} from a server`,
+                        `Could not get frame ${frame} for the task ${tid} from the server`,
                         code,
                     );
                 }
@@ -418,7 +436,45 @@
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        `Could not get frame meta info for a task ${tid} from a server`,
+                        `Could not get frame meta info for the task ${tid} from the server`,
+                        code,
+                    );
+                }
+
+                return response.data;
+            }
+
+            async function getTaskAnnotations(tid) {
+                const { backendAPI } = window.cvat.config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/annotations`, {
+                        proxy: window.cvat.config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        `Could not get annotations for the task ${tid} from the server`,
+                        code,
+                    );
+                }
+
+                return response.data;
+            }
+
+            async function getJobAnnotations(jid) {
+                const { backendAPI } = window.cvat.config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/jobs/${jid}/annotations`, {
+                        proxy: window.cvat.config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        `Could not get annotations for the job ${jid} from the server`,
                         code,
                     );
                 }
@@ -475,6 +531,14 @@
                     value: Object.freeze({
                         getFrame,
                         getMeta,
+                    }),
+                    writable: false,
+                },
+
+                annotations: {
+                    value: Object.freeze({
+                        getTaskAnnotations,
+                        getJobAnnotations,
                     }),
                     writable: false,
                 },
