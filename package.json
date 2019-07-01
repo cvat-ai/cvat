@@ -15,5 +15,13 @@
   "bugs": {
     "url": "https://github.com/LabShare/cvat/issues"
   },
-  "homepage": "https://github.com/LabShare/cvat#readme"
+  "homepage": "https://github.com/LabShare/cvat#readme",
+  "devDependencies": {
+    "@semantic-release/changelog": "^3.0.4",
+    "@semantic-release/commit-analyzer": "^6.2.0",
+    "@semantic-release/exec": "^3.3.5",
+    "@semantic-release/github": "^5.4.0",
+    "@semantic-release/release-notes-generator": "^7.2.1",
+    "semantic-release": "^15.13.18"
+  }
 }
