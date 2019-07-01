@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Installation guide
 - Linear interpolation for a single point
 - Video frame filter
+- Admins are no longer limited to a subset of python commands in the auto annotation application
+- Remote data source (list of URLs to create an annotation task)
 
 ### Changed
 - Outside and keyframe buttons in the side panel for all interpolation shapes (they were only for boxes before)
@@ -24,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed incorrect width of shapes borders in some cases
 - Fixed annotation parser for tracks with a start frame less than the first segment frame
 - Fixed interpolation on the server near outside frames
+- Fixed dump for case when task name has a slash
+- Fixed auto annotation fail for multijob tasks
 
 ### Security
 -
