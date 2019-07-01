@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/LabShare/cvat/issues"
   },
-  "homepage": "https://github.com/LabShare/cvat#readme"
+  "homepage": "https://github.com/LabShare/cvat#readme",
+  "devDependencies": {
+    "husky": "^2.7.0"
+  }
 }
