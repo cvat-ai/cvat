@@ -1,14 +1,15 @@
 {
   "name": "cvat",
-  "version": "0.1.0",
+  "version": "0.0.0-development",
   "description": "Powerful and efficient Computer Vision Annotation Tool (CVAT)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "semantic-release": "semantic-release"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LabShare/cvat.git"
+    "url": "https://github.com/LabShare/cvat.git"
   },
   "author": "Shannon Jin",
   "license": "ISC",
@@ -17,6 +18,8 @@
   },
   "homepage": "https://github.com/LabShare/cvat#readme",
   "devDependencies": {
-    "husky": "^2.7.0"
+    "@semantic-release/commit-analyzer": "^6.2.0",
+    "husky": "^2.7.0",
+    "semantic-release": "^15.13.18"
   }
 }
