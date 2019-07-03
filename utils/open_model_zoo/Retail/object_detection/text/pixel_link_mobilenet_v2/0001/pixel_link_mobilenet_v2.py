@@ -3,9 +3,7 @@ import numpy as np
 
 
 class PixelLinkDecoder():
-    def __init__(self, height, width):
-        self.image_height = height
-        self.image_width = width
+    def __init__(self):
         four_neighbours = False
         if four_neighbours:
             self._get_neighbours = self._get_neighbours_4
@@ -14,7 +12,9 @@ class PixelLinkDecoder():
         self.pixel_conf_threshold = 0.8 
         self.link_conf_threshold = 0.8 
 
-    def decode(self, detections: dict):
+    def decode(self, height, width, detections: dict):
+        self.image_height = height
+        self.image_width = width
         self.pixel_scores = self._set_pixel_scores(detections['pixel_cls/add_2'])
         self.link_scores = self._set_link_scores(detections['pixel_link/add_2'])
 
@@ -131,7 +131,6 @@ class PixelLinkDecoder():
         return [i for i in tmp if i[1] >= 0 and i[1] < w and i[2] >= 0 and i[2] < h]
 
     def _mask_to_bboxes(self, min_area=300, min_height=10):
-        image_h, image_w = self.image_shape
         self.bboxes = []
         max_bbox_idx = self.mask.max()
         mask_tmp = cv2.resize(self.mask, (self.image_width, self.image_height), interpolation=cv2.INTER_NEAREST)
