@@ -287,7 +287,8 @@ function setupSettingsWindow() {
 
 
 function setupMenu(job, task, shapeCollectionModel,
-    annotationParser, aamModel, playerModel, historyModel) {
+    annotationParser, aamModel, playerModel, historyModel,
+    annotationFormats) {
     const annotationMenu = $('#annotationMenu');
     const menuButton = $('#menuButton');
 
@@ -406,14 +407,22 @@ function setupMenu(job, task, shapeCollectionModel,
     $('#settingsButton').attr('title', `
         ${shortkeys.open_settings.view_value} - ${shortkeys.open_settings.description}`);
 
-    $('#downloadAnnotationButton').on('click', async (e) => {
-        e.target.disabled = true;
-        try {
-            await dumpAnnotationRequest(task.id, task.name);
-        } catch (error) {
-            showMessage(error.message);
-        } finally {
-            e.target.disabled = false;
+    for (const downloadFormat of annotationFormats.download) {
+        $(`<li>${downloadFormat}</li>`).on('click', async (e) => {
+                $('#downloadAnnotationButton')[0].disabled = true;
+                $('#downloadDropdownMenu').addClass('hidden');
+                try {
+                    await dumpAnnotationRequest(task.id, task.name, downloadFormat);
+                } catch (error) {
+                    showMessage(error.message);
+                } finally {
+                    $('#downloadAnnotationButton')[0].disabled = false;
+                }
+            }).appendTo('#downloadDropdownMenu');
+    }
+
+    $('#downloadAnnotationButton').on('click', () => {
+            $('#downloadDropdownMenu').removeClass('hidden');
         }
     });
 
@@ -460,7 +469,7 @@ function setupMenu(job, task, shapeCollectionModel,
 }
 
 
-function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loadJobEvent) {
+function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, annotationFormats, loadJobEvent) {
     // Setup some API
     window.cvat = {
         labelsInfo: new LabelsInfo(taskData.labels),
@@ -620,7 +629,8 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
     setupHelpWindow(shortkeys);
     setupSettingsWindow();
     setupMenu(jobData, taskData, shapeCollectionModel,
-        annotationParser, aamModel, playerModel, historyModel);
+        annotationParser, aamModel, playerModel, historyModel,
+        annotationFormats);
     setupFrameFilters();
     setupShortkeys(shortkeys, {
         aam: aamModel,
@@ -677,11 +687,12 @@ function callAnnotationUI(jid) {
             $.get(`/api/v1/tasks/${jobData.task_id}`),
             $.get(`/api/v1/tasks/${jobData.task_id}/frames/meta`),
             $.get(`/api/v1/jobs/${jid}/annotations`),
-        ).then((taskData, imageMetaData, annotationData) => {
+            $.get('/api/v1/server/annotation_formats'),
+        ).then((taskData, imageMetaData, annotationData, annotationFormats) => {
             $('#loadingOverlay').remove();
             setTimeout(() => {
                 buildAnnotationUI(jobData, taskData[0],
-                    imageMetaData[0], annotationData[0], loadJobEvent);
+                    imageMetaData[0], annotationData[0], annotationFormats[0], loadJobEvent);
             });
         }).fail(onError);
     }).fail(onError);

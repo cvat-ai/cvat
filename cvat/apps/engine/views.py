@@ -35,7 +35,8 @@ from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
 from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
    RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
-   PluginSerializer, FileInfoSerializer, LogEventSerializer)
+   PluginSerializer, FileInfoSerializer, LogEventSerializer,
+   AnnotationFormatSerializer)
 from django.contrib.auth.models import User
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
@@ -147,6 +148,18 @@ class ServerViewSet(viewsets.ViewSet):
             return Response("{} is an invalid directory".format(param),
                 status=status.HTTP_400_BAD_REQUEST)
 
+    @staticmethod
+    @action(detail=False, methods=['GET'], serializer_class=AnnotationFormatSerializer)
+    def annotation_formats(request):
+        dummy_response = {
+            'upload': ['cvat'],
+            'download': ['cvat_interpolation', 'cvat_annotations'],
+        }
+
+        serializer = AnnotationFormatSerializer(data=dummy_response)
+        if serializer.is_valid(raise_exception=True):
+            return Response(serializer.data)
+
 class TaskFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     owner = filters.CharFilter(field_name="owner__username", lookup_expr="icontains")
@@ -247,11 +260,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         url_path='annotations/(?P<filename>[^/]+)')
     def dump(self, request, pk, filename):
         filename = re.sub(r'[\\/*?:"<>|]', '_', filename)
-        queue = django_rq.get_queue("default")
         username = request.user.username
         db_task = self.get_object()
         timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         file_ext = request.query_params.get("format", "xml")
+        dump_format = request.query_params.get("dump_format")
         action = request.query_params.get("action")
         if action not in [None, "download"]:
             raise serializers.ValidationError(
@@ -260,6 +273,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         file_path = os.path.join(db_task.get_task_dirname(),
             filename + ".{}.{}.".format(username, timestamp) + "xml")
 
+        queue = django_rq.get_queue("default")
         rq_id = "{}@/api/v1/tasks/{}/annotations/{}".format(username, pk, filename)
         rq_job = queue.fetch_job(rq_id)
 
