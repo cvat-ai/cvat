@@ -1,37 +1,50 @@
 import React, { Component } from 'react';
 
-import './Dashboard.css';
+import { Layout } from 'antd';
 
-declare const window: any;
+import DashboardHeader from './header/dashboard-header';
+import DashboardContent from './content/dashboard-content';
+import DashboardFooter from './footer/dashboard-footer';
 
-class Dashboard extends Component {
+import './dashboard.scss';
+
+interface DashboardState {
+  tasks: [];
+}
+
+class Dashboard extends Component<any, DashboardState> {
   constructor(props: any) {
     super(props);
+
+    this.state = { tasks: [] };
   }
 
-  componentWillMount() {
-    window.cvat.server.login('admin', 'admin').then(
-      (response: any) => {
-        console.log(response);
-      },
-      (error: any) => {
-        console.log(error);
-      }
-    );
-
-    window.cvat.tasks.get().then(
-      (response: any) => {
-        console.log(response);
-      },
-      (error: any) => {
-        console.log(error);
-      }
-    );
+  componentDidMount() {
+    this.getTasks();
   }
 
   render() {
-    return(
-      <div className="Dashboard"></div>
+    return (
+      <Layout>
+        <DashboardHeader onSearch={ this.getTasks }/>
+        <DashboardContent tasks={ this.state.tasks } />
+        <DashboardFooter />
+      </Layout>
+    );
+  }
+
+  private getTasks = (query?: string) => {
+    const queryObject = {
+      search: query
+    };
+
+    (window as any).cvat.tasks.get(query ? queryObject : {}).then(
+      (tasks: any) => {
+        this.setState({ tasks });
+      },
+      (error: any) => {
+        console.log(error);
+      }
     );
   }
 }
