@@ -78,7 +78,7 @@ def parse_anno_file(cvat_xml):
     return anno
 
 def create_mask_file(mask_path, width, height, bitness, color_map, background, shapes):
-    mask = np.zeros((height, width, bitness // 8), dtype=np.uint8)
+    mask = np.full((height, width, bitness // 8), background, dtype=np.uint8)
     for shape in shapes:
         color = color_map.get(shape['label'], background)
         points = [tuple(map(float, p.split(','))) for p in shape['points'].split(';')]
