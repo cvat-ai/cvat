@@ -1,16 +1,12 @@
 import React, { Component } from 'react';
 
-import { Layout } from 'antd';
+import { Layout, Pagination } from 'antd';
 
 import './dashboard-footer.scss';
 
 const { Footer } = Layout;
 
-interface DashboardFooterState {
-
-}
-
-class DashboardFooter extends Component<any, DashboardFooterState> {
+class DashboardFooter extends Component<any, any> {
   constructor(props: any) {
     super(props);
 
@@ -20,7 +16,7 @@ class DashboardFooter extends Component<any, DashboardFooterState> {
   render() {
     return(
       <Footer>
-        Pagination here
+        <Pagination onChange={ this.props.onPageChange } total={ this.props.tasksCount } />
       </Footer>
     );
   }

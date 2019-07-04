@@ -9,14 +9,10 @@ const { Content } = Layout;
 interface DashboardContentAction {
   id: number,
   name: string,
-  trigger: any,
+  trigger: Function,
 }
 
-interface DashboardContentState {
-
-}
-
-class DashboardContent extends Component<any, DashboardContentState> {
+class DashboardContent extends Component<any, any> {
   hostUrl: string;
   apiUrl: string;
   actions: DashboardContentAction[];
@@ -29,25 +25,27 @@ class DashboardContent extends Component<any, DashboardContentState> {
     this.apiUrl = 'http://localhost:7000/api/v1';
 
     this.actions = [
-      {
-        id: 1,
-        name: 'Dump annotation',
-        trigger: this.props.onSearch,
-      },
-      {
-        id: 2,
-        name: 'Upload annotation',
-        trigger: this.props.onSearch,
-      },
-      {
-        id: 3,
-        name: 'Update task',
-        trigger: this.props.onSearch,
-      },
+      // {
+      //   id: 1,
+      //   name: 'Dump annotation',
+      //   trigger: () => {},
+      // },
+      // {
+      //   id: 2,
+      //   name: 'Upload annotation',
+      //   trigger: () => {},
+      // },
+      // {
+      //   id: 3,
+      //   name: 'Update task',
+      //   trigger: () => {},
+      // },
       {
         id: 4,
         name: 'Delete task',
-        trigger: this.props.onSearch,
+        trigger: (task: any) => {
+          this.props.deleteTask(task);
+        },
       },
     ];
   }
@@ -88,7 +86,7 @@ class DashboardContent extends Component<any, DashboardContentState> {
                 </Row>
 
                 <Row className="dashboard-content-сard__content" type="flex">
-                  <Col className="сard-cover" span={8}>
+                  <Col className="card-cover" span={8}>
                     <img alt="Task cover" src={ `${this.apiUrl}/tasks/${task.id}/frames/0` } />
                   </Col>
 
@@ -97,7 +95,7 @@ class DashboardContent extends Component<any, DashboardContentState> {
                       this.actions.map(
                         (action: DashboardContentAction) => (
                           <Row type="flex" key={ action.id }>
-                            <Button type="primary" onClick={ () => action.trigger() }>
+                            <Button type="primary" onClick={ () => action.trigger(task) }>
                               { action.name }
                             </Button>
                           </Row>

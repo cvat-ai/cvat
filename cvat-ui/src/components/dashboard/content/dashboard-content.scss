@@ -4,21 +4,20 @@
   }
 
   &__content {
-    img {
-      max-width: 300px;
+
+    .card-cover {
+
+      img {
+        max-width: 300px;
+      }
     }
-  }
 
-  .card-cover {
-    cursor: pointer;
+    .card-actions {
 
-  }
+    }
 
-  .card-actions {
+    .card-jobs {
 
-  }
-
-  .card-jobs {
-
+    }
   }
 }

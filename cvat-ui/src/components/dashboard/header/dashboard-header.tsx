@@ -13,11 +13,7 @@ interface DashboardHeaderAction {
   trigger: any,
 }
 
-interface DashboardHeaderState {
-
-}
-
-class DashboardHeader extends Component<any, DashboardHeaderState> {
+class DashboardHeader extends Component<any, any> {
   actions: DashboardHeaderAction[];
   hostUrl: string;
 
@@ -29,11 +25,11 @@ class DashboardHeader extends Component<any, DashboardHeaderState> {
     this.hostUrl = 'http://localhost:7000';
 
     this.actions = [
-      {
-        id: 1,
-        name: 'Create task',
-        trigger: this.props.onSearch,
-      },
+      // {
+      //   id: 1,
+      //   name: 'Create task',
+      //   trigger: this.props.onSearch,
+      // },
       {
         id: 2,
         name: 'User guide',
