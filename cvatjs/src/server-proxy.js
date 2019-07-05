@@ -179,10 +179,10 @@
             }
 
             async function logout() {
-                const { backendAPI } = window.cvat.config;
+                const host = window.cvat.config.backendAPI.slice(0, -7);
 
                 try {
-                    await Axios.get(`${backendAPI}/auth/logout`, {
+                    await Axios.get(`${host}/auth/logout`, {
                         proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
