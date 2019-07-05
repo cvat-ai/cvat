@@ -98,8 +98,8 @@
                 );
             }
 
+            let savedAttributes = null;
             const savedLabelID = this.labelID;
-            const savedAttributes = this.attributes;
             const savedPoints = this.points;
             const savedOccluded = this.occluded;
             const savedZOrder = this.zOrder;
@@ -114,12 +114,15 @@
                         );
                     }
 
+                    savedAttributes = JSON.stringify(this.attributes);
                     this.labelID = data.label.id;
                     this.attributes = {};
                     this.appendDefaultAttributes();
                 }
 
                 if (JSON.stringify(this.attributes) !== JSON.stringify(data.attributes)) {
+                    savedAttributes = savedAttributes || JSON.stringify(this.attributes);
+
                     const labelAttributes = this.taskLabels[this.labelID]
                         .attributes.map(attr => `${attr.id}`);
 
@@ -214,12 +217,17 @@
             } catch (exception) {
                 // reverse all changes if any error
                 this.labelID = savedLabelID;
-                this.attributes = savedAttributes;
                 this.points = savedPoints;
                 this.occluded = savedOccluded;
                 this.zOrder = savedZOrder;
                 this.group = savedGroup;
                 this.color = savedColor;
+
+                // If savedAttributes === null, attributes haven't been changed
+                if (savedAttributes) {
+                    this.attributes = JSON.parse(savedAttributes);
+                }
+
 
                 throw exception;
             }
@@ -366,25 +374,194 @@
                     }
                 }
             }
-
-            // Finally fill up remained attributes if they exist
-            const labelAttributes = this.taskLabels[this.labelID].attributes;
-            const defValuesByID = labelAttributes.reduce((accumulator, attr) => {
-                accumulator[attr.id] = attr.defaultValue;
-                return accumulator;
-            }, {});
-
-            for (const attrID of Object.keys(defValuesByID)) {
-                if (!(attrID in result)) {
-                    result[attrID] = defValuesByID[attrID];
-                }
-            }
-
-            return result;
         }
 
         save(frame, data) {
+            let savedAttributes = null;
+            let savedShapeArray = null;
+            let savedOccluded;
+            let savedZOrder;
+            let savedPoints;
+            let savedOutside;
 
+            const savedLabelID = this.shapes;
+            const savedGroup = this.group;
+            const savedColor = this.color;
+            const savedKeyFrame = frame in this.shapes;
+
+            try {
+                if (this.labelID !== data.labelID) {
+                    if (!(data.label instanceof window.cvat.classes.Label)) {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Expected Label instance, but got "${typeof (data.label.constructor.name)}"`,
+                        );
+                    }
+
+                    this.labelID = data.label.id;
+
+                    // deep copy before removing all attributes
+                    savedAttributes = JSON.stringify(this.attributes);
+                    savedShapeArray = JSON.stringify(this.shapes);
+                    this.attributes = {};
+                    for (const shape of this.shapes) {
+                        shape.attributes = {};
+                    }
+
+                    this.appendDefaultAttributes();
+                }
+
+                if (JSON.stringify(this.attributes) !== JSON.stringify(data.attributes)) {
+                    savedAttributes = savedAttributes || JSON.stringify(this.attributes);
+
+                    const labelAttributes = this.taskLabels[this.labelID]
+                        .attributes.map(attr => `${attr.id}`);
+
+                    for (const attrID of Object.keys(data.attributes)) {
+                        // separate on mutable and unmutable
+                        if (labelAttributes.includes(attrID)) {
+                            this.attributes[attrID] = data.attributes[attrID];
+                        }
+                    }
+                }
+
+                if (this.group !== data.group) {
+                    if (!Number.isInteger(data.group)) {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Expected integer, but got ${data.group.constructor.name}`,
+                        );
+                    }
+
+                    this.group = data.group;
+                }
+
+                if (this.color !== data.color) {
+                    if (typeof (data.color) !== 'string') {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Expected color represented by a string, but got ${data.color.constructor.name}`,
+                        );
+                    }
+
+                    if (/^#[0-9A-F]{6}$/i.test(data.color)) {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Got invalid color value: "${data.color}"`,
+                        );
+                    }
+
+                    this.color = data.color;
+                }
+
+                if (!data.keyframe && savedKeyFrame) {
+                    savedShapeArray = savedShapeArray || JSON.stringify(this.shapes);
+                    delete this.shapes[frame];
+                } else {
+                    if (!savedKeyFrame) {
+                        this.shapes[frame] = {};
+                    }
+
+                    const shape = this.shapes[frame];
+                    savedOccluded = shape.occluded;
+                    savedOutside = shape.outside;
+                    savedZOrder = shape.zOrder;
+                    savedPoints = shape.points;
+
+                    if (JSON.stringify(shape.points) !== JSON.stringify(data.points)) {
+                        const points = [];
+                        if (!Array.isArray(data.points)) {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                `Got invalid points type "${typeof (data.points.constructor.name)}". Array is expected`,
+                            );
+                        }
+
+                        for (const coordinate of data.points) {
+                            if (typeof (coordinate) !== 'number') {
+                                throw new window.cvat.exceptions.ArgumentError(
+                                    `Got invalid point coordinate: "${coordinate}"`,
+                                );
+                            }
+
+                            points.push(coordinate);
+                        }
+
+                        // truncate in frame size if it is need
+                        shape.points = points;
+                    }
+
+                    if (shape.occluded !== data.occluded) {
+                        if (typeof (data.occluded) !== 'boolean') {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                `Expected boolean, but got ${data.occluded.constructor.name}`,
+                            );
+                        }
+
+                        shape.occluded = data.occluded;
+                    }
+
+                    if (shape.outside !== data.outside) {
+                        if (typeof (data.outside) !== 'boolean') {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                `Expected boolean, but got ${data.outside.constructor.name}`,
+                            );
+                        }
+
+                        shape.outside = data.outside;
+                    }
+
+                    if (shape.zOrder !== data.zOrder) {
+                        if (!Number.isInteger(data.zOrder)) {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                `Expected integer, but got ${data.zOrder.constructor.name}`,
+                            );
+                        }
+
+                        shape.zOrder = data.zOrder;
+                    }
+
+                    data.outside = shape.outside;
+                    data.points = [...shape.points];
+                    data.occluded = shape.occluded;
+                    data.zOrder = shape.zOrder;
+                }
+            } catch (exception) {
+                this.labelID = savedLabelID;
+                this.color = savedColor;
+                this.group = savedGroup;
+
+                // If savedAttributes === null, attributes haven't been changed
+                if (savedAttributes) {
+                    this.attributes = JSON.parse(savedAttributes);
+                }
+
+                // If savedShapeArray === null, mutable attributes haven't been changed
+                // or a shape has been removed
+                if (savedShapeArray) {
+                    this.shapes = JSON.parse(savedShapeArray);
+                }
+
+                if (!savedKeyFrame) {
+                    delete this.shapes[frame];
+                } else {
+                    if (savedOccluded !== null) {
+                        this.shapes[frame].occluded = savedOccluded;
+                    }
+
+                    if (savedOutside !== null) {
+                        this.shapes[frame].outside = savedOutside;
+                    }
+
+                    if (savedZOrder !== null) {
+                        this.shapes[frame].zOrder = savedZOrder;
+                    }
+
+                    if (savedPoints !== null) {
+                        this.shapes[frame].points = savedPoints;
+                    }
+                }
+            }
+
+            data.label = this.taskLabels[this.labelID];
+            data.group = this.group;
+            data.color = this.color;
+            data.lock = this.lock;
 
             if (this.removed) {
                 return null;
@@ -412,15 +589,18 @@
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: leftPosition.zOrder,
+                    keyframe: true,
                 };
             }
 
             if (rightPosition && leftPosition) {
-                return this.interpolatePosition(
+                return Object.assign({}, this.interpolatePosition(
                     leftPosition,
                     rightPosition,
                     targetFrame,
-                );
+                ), {
+                    keyframe: false,
+                });
             }
 
             if (rightPosition) {
@@ -429,6 +609,7 @@
                     occluded: rightPosition.occluded,
                     outside: true,
                     zOrder: 0,
+                    keyframe: false,
                 };
             }
 
@@ -438,6 +619,7 @@
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: 0,
+                    keyframe: false,
                 };
             }
 

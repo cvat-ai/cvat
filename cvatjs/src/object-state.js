@@ -22,7 +22,7 @@
             * Necessary fields for ObjectStates which haven't been saved in a collection yet:
             * jobID, frame;
             * Optional fields: points, group, zOrder, outside, occluded,
-            * attributes, lock, label, mode, color;
+            * attributes, lock, label, mode, color, keyframe
             * These fields can be set later via setters
         */
         constructor(serialized) {
@@ -34,6 +34,7 @@
                 occluded: null,
                 lock: null,
                 color: null,
+                keyframe: null,
                 attributes: {},
                 jobID: serialized.jobID,
                 frame: serialized.frame,
@@ -155,6 +156,18 @@
                         data.outside = outside;
                     },
                 },
+                keyframe: {
+                    /**
+                        * @name keyframe
+                        * @type {boolean}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @instance
+                    */
+                    get: () => data.keyframe,
+                    set: (keyframe) => {
+                        data.keyframe = keyframe;
+                    },
+                },
                 occluded: {
                     /**
                         * @name occluded
@@ -208,6 +221,7 @@
             this.group = serialized.group;
             this.zOrder = serialized.zOrder;
             this.outside = serialized.outside;
+            this.keyframe = serialized.keyframe;
             this.occluded = serialized.occluded;
             this.attributes = serialized.attributes;
             this.points = serialized.points;
