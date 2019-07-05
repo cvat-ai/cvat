@@ -462,6 +462,12 @@
             }
 
             // https://en.wikipedia.org/wiki/Stable_marriage_problem
+            // TODO: One of important part of the algorithm is to correctly match
+            // "corner" points. Thus it is possible for each of such point calculate
+            // a descriptor (d) and use (x, y, d) to calculate the distance. One more
+            // idea is to be sure that order or matched points is preserved. For example,
+            // if p1 matches q1 and p2 matches q2 and between p1 and p2 we don't have any
+            // points thus we should not have points between q1 and q2 as well.
             function stableMarriageProblem(men, women, distances) {
                 const menPreferences = {};
                 for (const man of men) {
