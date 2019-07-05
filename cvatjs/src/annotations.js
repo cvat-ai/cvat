@@ -152,9 +152,9 @@
 
         get(targetFrame) {
             return Object.assign(
-                {}, this.interpolatePosition(targetFrame),
+                {}, this.getPosition(targetFrame),
                 {
-                    attributes: this.interpolateAttributes(targetFrame),
+                    attributes: this.getAttributes(targetFrame),
                     label: this.taskLabels[this.labelID],
                     group: this.group,
                     type: window.cvat.enums.ObjectType.TRACK,
@@ -187,7 +187,7 @@
             };
         }
 
-        interpolateAttributes(targetFrame) {
+        getAttributes(targetFrame) {
             const result = {};
 
             // First of all copy all unmutable attributes
@@ -225,6 +225,55 @@
             }
 
             return result;
+        }
+
+        getPosition(targetFrame) {
+            const {
+                leftFrame,
+                rightFrame,
+            } = this.neighborsFrames(targetFrame);
+
+            const rightPosition = Number.isInteger(rightFrame) ? this.shapes[rightFrame] : null;
+            const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
+
+            if (leftPosition && leftFrame === targetFrame) {
+                return {
+                    points: [...leftPosition.points],
+                    occluded: leftPosition.occluded,
+                    outside: leftPosition.outside,
+                    zOrder: leftPosition.zOrder,
+                };
+            }
+
+            if (rightPosition && leftPosition) {
+                return this.interpolatePosition(
+                    leftPosition,
+                    rightPosition,
+                    targetFrame,
+                );
+            }
+
+            if (rightPosition) {
+                return {
+                    points: [...rightPosition.points],
+                    occluded: rightPosition.occluded,
+                    outside: true,
+                    zOrder: 0,
+                };
+            }
+
+            if (leftPosition) {
+                return {
+                    points: [...leftPosition.points],
+                    occluded: leftPosition.occluded,
+                    outside: leftPosition.outside,
+                    zOrder: 0,
+                };
+            }
+
+            throw new window.cvat.exceptions.ScriptingError(
+                `No one neightbour frame found for the track with client ID: "${this.id}"`,
+            );
         }
     }
 
@@ -287,73 +336,408 @@
             this.shape = window.cvat.enums.ObjectShape.RECTANGLE;
         }
 
-        interpolatePosition(targetFrame) {
-            const {
-                leftFrame,
-                rightFrame,
-            } = this.neighborsFrames(targetFrame);
+        interpolatePosition(leftPosition, rightPosition, targetFrame) {
+            const offset = (targetFrame - leftPosition.frame) / (
+                rightPosition.frame - leftPosition.frame);
+            const positionOffset = [
+                rightPosition.points[0] - leftPosition.points[0],
+                rightPosition.points[1] - leftPosition.points[1],
+                rightPosition.points[2] - leftPosition.points[2],
+                rightPosition.points[3] - leftPosition.points[3],
+            ];
 
-            const rightPosition = rightFrame ? this.shapes[rightFrame] : null;
-            const leftPosition = leftFrame ? this.shapes[leftFrame] : null;
-
-            if (leftPosition && leftFrame === targetFrame) {
-                return {
-                    points: [...leftPosition.points],
-                    occluded: leftPosition.occluded,
-                    outside: leftPosition.outside,
-                    zOrder: leftPosition.zOrder,
-                };
-            }
-
-            if (rightPosition && leftPosition) {
-                const offset = (targetFrame - leftFrame) / (rightPosition - leftPosition);
-                const positionOffset = [
-                    rightPosition.points[0] - leftPosition.points[0],
-                    rightPosition.points[1] - leftPosition.points[1],
-                    rightPosition.points[2] - leftPosition.points[2],
-                    rightPosition.points[3] - leftPosition.points[3],
-                ];
-
-                return { // xtl, ytl, xbr, ybr
-                    points: [
-                        leftPosition.points[0] + positionOffset[0] * offset,
-                        leftPosition.points[1] + positionOffset[1] * offset,
-                        leftPosition.points[2] + positionOffset[2] * offset,
-                        leftPosition.points[3] + positionOffset[3] * offset,
-                    ],
-                    occluded: leftPosition.occluded,
-                    outside: leftPosition.outside,
-                    zOrder: leftPosition.zOrder,
-                };
-            }
-
-            if (rightPosition) {
-                return {
-                    points: [...rightPosition.points],
-                    occluded: rightPosition.occluded,
-                    outside: true,
-                    zOrder: 0,
-                };
-            }
-
-            if (leftPosition) {
-                return {
-                    points: [...leftPosition.points],
-                    occluded: leftPosition.occluded,
-                    outside: leftPosition.outside,
-                    zOrder: 0,
-                };
-            }
-
-            throw new window.cvat.exceptions.ScriptingError(
-                `No one neightbour frame found for the track with client ID: "${this.id}"`,
-            );
+            return { // xtl, ytl, xbr, ybr
+                points: [
+                    leftPosition.points[0] + positionOffset[0] * offset,
+                    leftPosition.points[1] + positionOffset[1] * offset,
+                    leftPosition.points[2] + positionOffset[2] * offset,
+                    leftPosition.points[3] + positionOffset[3] * offset,
+                ],
+                occluded: leftPosition.occluded,
+                outside: leftPosition.outside,
+                zOrder: leftPosition.zOrder,
+            };
         }
     }
 
     class PolyTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
+        }
+
+        interpolatePosition(leftPosition, rightPosition, targetFrame) {
+            function findBox(points) {
+                let xmin = Number.MAX_SAFE_INTEGER;
+                let ymin = Number.MAX_SAFE_INTEGER;
+                let xmax = Number.MIN_SAFE_INTEGER;
+                let ymax = Number.MIN_SAFE_INTEGER;
+
+                for (let i = 0; i < points.length; i += 2) {
+                    if (points[i] < xmin) xmin = points[i];
+                    if (points[i + 1] < ymin) ymin = points[i + 1];
+                    if (points[i] > xmax) xmax = points[i];
+                    if (points[i + 1] > ymax) ymax = points[i + 1];
+                }
+
+                return {
+                    xmin,
+                    ymin,
+                    xmax,
+                    ymax,
+                };
+            }
+
+            function normalize(points, box) {
+                const normalized = [];
+                const width = box.xmax - box.xmin;
+                const height = box.ymax - box.ymin;
+
+                for (let i = 0; i < points.length; i += 2) {
+                    normalized.push(
+                        (points[i] - box.xmin) / width,
+                        (points[i + 1] - box.ymin) / height,
+                    );
+                }
+
+                return normalized;
+            }
+
+            function denormalize(points, box) {
+                const denormalized = [];
+                const width = box.xmax - box.xmin;
+                const height = box.ymax - box.ymin;
+
+                for (let i = 0; i < points.length; i += 2) {
+                    denormalized.push(
+                        points[i] * width + box.xmin,
+                        points[i + 1] * height + box.ymin,
+                    );
+                }
+
+                return denormalized;
+            }
+
+            function toPoints(array) {
+                const points = [];
+                for (let i = 0; i < array.length; i += 2) {
+                    points.push({
+                        x: array[i],
+                        y: array[i + 1],
+                    });
+                }
+
+                return points;
+            }
+
+            function toArray(points) {
+                const array = [];
+                for (const point of points) {
+                    array.push(point.x, point.y);
+                }
+
+                return array;
+            }
+
+            function computeDistances(source, target) {
+                const distances = {};
+                for (let i = 0; i < source.length; i++) {
+                    distances[i] = distances[i] || {};
+                    for (let j = 0; j < target.length; j++) {
+                        const dx = source[i].x - target[j].x;
+                        const dy = source[i].y - target[j].y;
+
+                        distances[i][j] = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+                    }
+                }
+
+                return distances;
+            }
+
+            function truncateByThreshold(mapping, threshold) {
+                for (const key of Object.keys(mapping)) {
+                    if (mapping[key].distance > threshold) {
+                        delete mapping[key];
+                    }
+                }
+            }
+
+            // https://en.wikipedia.org/wiki/Stable_marriage_problem
+            // TODO: One of important part of the algorithm is to correctly match
+            // "corner" points. Thus it is possible for each of such point calculate
+            // a descriptor (d) and use (x, y, d) to calculate the distance. One more
+            // idea is to be sure that order or matched points is preserved. For example,
+            // if p1 matches q1 and p2 matches q2 and between p1 and p2 we don't have any
+            // points thus we should not have points between q1 and q2 as well.
+            function stableMarriageProblem(men, women, distances) {
+                const menPreferences = {};
+                for (const man of men) {
+                    menPreferences[man] = women.concat()
+                        .sort((w1, w2) => distances[man][w1] - distances[man][w2]);
+                }
+
+                // Start alghoritm with max N^2 complexity
+                const womenMaybe = {}; // id woman:id man,distance
+                const menBusy = {}; // id man:boolean
+                let prefIndex = 0;
+
+                // While there is at least one free man
+                while (Object.values(menBusy).length !== men.length) {
+                    // Every man makes offer to the best woman
+                    for (const man of men) {
+                        // The man have already found a woman
+                        if (menBusy[man]) {
+                            continue;
+                        }
+
+                        const woman = menPreferences[man][prefIndex];
+                        const distance = distances[man][woman];
+
+                        // A women chooses the best offer and says "maybe"
+                        if (woman in womenMaybe && womenMaybe[woman].distance > distance) {
+                            // A woman got better offer
+                            const prevChoice = womenMaybe[woman].value;
+                            delete womenMaybe[woman];
+                            delete menBusy[prevChoice];
+                        }
+
+                        if (!(woman in womenMaybe)) {
+                            womenMaybe[woman] = {
+                                value: man,
+                                distance,
+                            };
+
+                            menBusy[man] = true;
+                        }
+                    }
+
+                    prefIndex++;
+                }
+
+                const result = {};
+                for (const woman of Object.keys(womenMaybe)) {
+                    result[womenMaybe[woman].value] = {
+                        value: woman,
+                        distance: womenMaybe[woman].distance,
+                    };
+                }
+
+                return result;
+            }
+
+            function getMapping(source, target) {
+                function sumEdges(points) {
+                    let result = 0;
+                    for (let i = 1; i < points.length; i += 2) {
+                        const distance = Math.sqrt(Math.pow(points[i].x - points[i - 1].x, 2)
+                            + Math.pow(points[i].y - points[i - 1].y, 2));
+                        result += distance;
+                    }
+
+                    // Corner case when work with one point
+                    // Mapping in this case can't be wrong
+                    if (!result) {
+                        return Number.MAX_SAFE_INTEGER;
+                    }
+
+                    return result;
+                }
+
+                function computeDeviation(points, average) {
+                    let result = 0;
+                    for (let i = 1; i < points.length; i += 2) {
+                        const distance = Math.sqrt(Math.pow(points[i].x - points[i - 1].x, 2)
+                            + Math.pow(points[i].y - points[i - 1].y, 2));
+                        result += Math.pow(distance - average, 2);
+                    }
+
+                    return result;
+                }
+
+                const processedSource = [];
+                const processedTarget = [];
+
+                const distances = computeDistances(source, target);
+                const mapping = stableMarriageProblem(Array.from(source.keys()),
+                    Array.from(target.keys()), distances);
+
+                const average = (sumEdges(target)
+                    + sumEdges(source)) / (target.length + source.length);
+                const meanSquareDeviation = Math.sqrt((computeDeviation(source, average)
+                    + computeDeviation(target, average)) / (source.length + target.length));
+                const threshold = average + 3 * meanSquareDeviation; // 3 sigma rule
+                truncateByThreshold(mapping, threshold);
+                for (const key of Object.keys(mapping)) {
+                    mapping[key] = mapping[key].value;
+                }
+
+                // const receivingOrder = Object.keys(mapping).map(x => +x).sort((a,b) => a - b);
+                const receivingOrder = this.appendMapping(mapping, source, target);
+
+                for (const pointIdx of receivingOrder) {
+                    processedSource.push(source[pointIdx]);
+                    processedTarget.push(target[mapping[pointIdx]]);
+                }
+
+                return [processedSource, processedTarget];
+            }
+
+            let leftBox = findBox(leftPosition.points);
+            let rightBox = findBox(rightPosition.points);
+
+            // Sometimes (if shape has one point or shape is line),
+            // We can get box with zero area
+            // Next computation will be with NaN in this case
+            // We have to prevent it
+            const delta = 1;
+            if (leftBox.xmax - leftBox.xmin < delta || rightBox.ymax - rightBox.ymin < delta) {
+                leftBox = {
+                    xmin: 0,
+                    xmax: 1024, // TODO: Get actual image size
+                    ymin: 0,
+                    ymax: 768,
+                };
+
+                rightBox = leftBox;
+            }
+
+            const leftPoints = toPoints(normalize(leftPosition.points, leftBox));
+            const rightPoints = toPoints(normalize(rightPosition.points, rightBox));
+
+            let newLeftPoints = [];
+            let newRightPoints = [];
+            if (leftPoints.length > rightPoints.length) {
+                const [
+                    processedRight,
+                    processedLeft,
+                ] = getMapping.call(this, rightPoints, leftPoints);
+                newLeftPoints = processedLeft;
+                newRightPoints = processedRight;
+            } else {
+                const [
+                    processedLeft,
+                    processedRight,
+                ] = getMapping.call(this, leftPoints, rightPoints);
+                newLeftPoints = processedLeft;
+                newRightPoints = processedRight;
+            }
+
+            const absoluteLeftPoints = denormalize(toArray(newLeftPoints), leftBox);
+            const absoluteRightPoints = denormalize(toArray(newRightPoints), rightBox);
+
+            const offset = (targetFrame - leftPosition.frame) / (
+                rightPosition.frame - leftPosition.frame);
+
+            const interpolation = [];
+            for (let i = 0; i < absoluteLeftPoints.length; i++) {
+                interpolation.push(absoluteLeftPoints[i] + (
+                    absoluteRightPoints[i] - absoluteLeftPoints[i]) * offset);
+            }
+
+            return {
+                points: interpolation,
+                occluded: leftPosition.occluded,
+                outside: leftPosition.outside,
+                zOrder: leftPosition.zOrder,
+            };
+        }
+
+        // mapping is predicted order of points sourse_idx:target_idx
+        // some points from source and target can absent in mapping
+        // source, target - arrays of points. Target array size >= sourse array size
+        appendMapping(mapping, source, target) {
+            const targetMatched = Object.values(mapping).map(x => +x);
+            const sourceMatched = Object.keys(mapping).map(x => +x);
+            const orderForReceive = [];
+
+            function findNeighbors(point) {
+                let prev = point;
+                let next = point;
+
+                if (!targetMatched.length) {
+                    // Prevent infinity loop
+                    throw window.cvat.exceptions.ScriptingError('Interpolation mapping is empty');
+                }
+
+                while (!targetMatched.includes(prev)) {
+                    prev--;
+                    if (prev < 0) {
+                        prev = target.length - 1;
+                    }
+                }
+
+                while (!targetMatched.includes(next)) {
+                    next++;
+                    if (next >= target.length) {
+                        next = 0;
+                    }
+                }
+
+                return [prev, next];
+            }
+
+            function computeOffset(point, prev, next) {
+                const pathPoints = [];
+
+                while (prev !== next) {
+                    pathPoints.push(target[prev]);
+                    prev++;
+                    if (prev >= target.length) {
+                        prev = 0;
+                    }
+                }
+                pathPoints.push(target[next]);
+
+                let curveLength = 0;
+                let offset = 0;
+                let iCrossed = false;
+                for (let k = 1; k < pathPoints.length; k++) {
+                    const p1 = pathPoints[k];
+                    const p2 = pathPoints[k - 1];
+                    const distance = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+
+                    if (!iCrossed) {
+                        offset += distance;
+                    }
+                    curveLength += distance;
+                    if (target[point] === pathPoints[k]) {
+                        iCrossed = true;
+                    }
+                }
+
+                if (!curveLength) {
+                    return 0;
+                }
+
+                return offset / curveLength;
+            }
+
+            for (let i = 0; i < target.length; i++) {
+                const index = targetMatched.indexOf(i);
+                if (index === -1) {
+                    // We have to find a neighbours which have been mapped
+                    const [prev, next] = findNeighbors(i);
+
+                    // Now compute edge offset
+                    const offset = computeOffset(i, prev, next);
+
+                    // Get point between two neighbors points
+                    const prevPoint = target[prev];
+                    const nextPoint = target[next];
+                    const autoPoint = {
+                        x: prevPoint.x + (nextPoint.x - prevPoint.x) * offset,
+                        y: prevPoint.y + (nextPoint.y - prevPoint.y) * offset,
+                    };
+
+                    // Put it into matched
+                    source.push(autoPoint);
+                    mapping[source.length - 1] = i;
+                    orderForReceive.push(source.length - 1);
+                } else {
+                    orderForReceive.push(sourceMatched[index]);
+                }
+            }
+
+            return orderForReceive;
         }
     }
 
@@ -368,6 +752,10 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shape = window.cvat.enums.ObjectShape.POLYLINE;
+        }
+
+        appendMapping(leftRightMapping, leftPoints, rightPoints) {
+            // TODO after checking how it works with polygons
         }
     }
 
