@@ -178,6 +178,22 @@
                 setCookie(authentificationResponse);
             }
 
+            async function logout() {
+                const { backendAPI } = window.cvat.config;
+
+                try {
+                    await Axios.get(`${backendAPI}/auth/logout`, {
+                        proxy: window.cvat.config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not logout from the server',
+                        code,
+                    );
+                }
+            }
+
             async function getTasks(filter = '') {
                 const { backendAPI } = window.cvat.config;
 
@@ -309,7 +325,7 @@
                         proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    deleteTask(response.data.id);
+                    await deleteTask(response.data.id);
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
                         'Could not put data to the server',
@@ -320,7 +336,7 @@
                 try {
                     await wait(response.data.id);
                 } catch (createException) {
-                    deleteTask(response.data.id);
+                    await deleteTask(response.data.id);
                     throw createException;
                 }
 
@@ -497,6 +513,7 @@
                         share,
                         exception,
                         login,
+                        logout,
                     }),
                     writable: false,
                 },
