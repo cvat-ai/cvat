@@ -17,11 +17,23 @@
             this.serverID = data.id;
             this.labelID = data.label_id;
             this.frame = data.frame;
+            this.removed = false;
+            this.lock = false;
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
             }, {});
             this.taskLabels = injection.labels;
+            this.appendDefaultAttributes();
+        }
+
+        appendDefaultAttributes() {
+            const labelAttributes = this.taskLabels[this.labelID].attributes;
+            for (const attribute of labelAttributes) {
+                if (!(attribute.id in this.attributes)) {
+                    this.attributes[attribute.id] = attribute.defaultValue;
+                }
+            }
         }
     }
 
@@ -36,6 +48,7 @@
             this.shape = null;
         }
 
+        // Method used to export data to the server
         toJSON() {
             return {
                 occluded: this.occluded,
@@ -56,6 +69,7 @@
             };
         }
 
+        // Method used for ObjectStates creating
         get(frame) {
             if (frame !== this.frame) {
                 throw new window.cvat.exceptions.ScriptingError(
@@ -68,12 +82,151 @@
                 shape: this.shape,
                 clientID: this.clientID,
                 occluded: this.occluded,
+                lock: this.lock,
                 zOrder: this.zOrder,
                 points: [...this.points],
                 attributes: Object.assign({}, this.attributes),
                 label: this.taskLabels[this.labelID],
                 group: this.group,
             };
+        }
+
+        save(frame, data) {
+            if (frame !== this.frame) {
+                throw new window.cvat.exceptions.ScriptingError(
+                    'Got frame is not equal to the frame of the shape',
+                );
+            }
+
+            const savedLabelID = this.labelID;
+            const savedAttributes = this.attributes;
+            const savedPoints = this.points;
+            const savedOccluded = this.occluded;
+            const savedZOrder = this.zOrder;
+            const savedGroup = this.group;
+            const savedColor = this.color;
+
+            try {
+                if (this.labelID !== data.labelID) {
+                    if (!(data.label instanceof window.cvat.classes.Label)) {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Expected Label instance, but got "${typeof (data.label.constructor.name)}"`,
+                        );
+                    }
+
+                    this.labelID = data.label.id;
+                    this.attributes = {};
+                    this.appendDefaultAttributes();
+                }
+
+                if (JSON.stringify(this.attributes) !== JSON.stringify(data.attributes)) {
+                    const labelAttributes = this.taskLabels[this.labelID]
+                        .attributes.map(attr => `${attr.id}`);
+
+                    for (const attrID of Object.keys(data.attributes)) {
+                        if (labelAttributes.includes(attrID)) {
+                            this.attributes[attrID] = data.attributes[attrID];
+                        }
+                    }
+                }
+
+                if (JSON.stringify(this.points) !== JSON.stringify(data.points)) {
+                    const points = [];
+                    if (!Array.isArray(data.points)) {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Got invalid points type "${typeof (data.points.constructor.name)}". Array is expected`,
+                        );
+                    }
+
+                    for (const coordinate of data.points) {
+                        if (typeof (coordinate) !== 'number') {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                `Got invalid point coordinate: "${coordinate}"`,
+                            );
+                        }
+
+                        points.push(coordinate);
+                    }
+
+                    // truncate in frame size if it is need
+                    this.points = points;
+                }
+
+                if (this.occluded !== data.occluded) {
+                    if (typeof (data.occluded) !== 'boolean') {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Expected boolean, but got ${data.occluded.constructor.name}`,
+                        );
+                    }
+
+                    this.occluded = data.occluded;
+                }
+
+                if (this.zOrder !== data.zOrder) {
+                    if (!Number.isInteger(data.zOrder)) {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Expected integer, but got ${data.zOrder.constructor.name}`,
+                        );
+                    }
+
+                    this.zOrder = data.zOrder;
+                }
+
+                if (this.group !== data.group) {
+                    if (!Number.isInteger(data.group)) {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Expected integer, but got ${data.group.constructor.name}`,
+                        );
+                    }
+
+                    this.group = data.group;
+                }
+
+                if (this.color !== data.color) {
+                    if (typeof (data.color) !== 'string') {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Expected color represented by a string, but got ${data.color.constructor.name}`,
+                        );
+                    }
+
+                    if (/^#[0-9A-F]{6}$/i.test(data.color)) {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Got invalid color value: "${data.color}"`,
+                        );
+                    }
+
+                    this.color = data.color;
+                }
+
+                data.label = this.taskLabels[this.labelID];
+                data.points = [...this.points];
+                data.occluded = this.occluded;
+                data.zOrder = this.zOrder;
+                data.group = this.group;
+                data.color = this.color;
+                data.lock = this.lock;
+
+                if (this.removed) {
+                    return null;
+                }
+
+                return data;
+            } catch (exception) {
+                // reverse all changes if any error
+                this.labelID = savedLabelID;
+                this.attributes = savedAttributes;
+                this.points = savedPoints;
+                this.occluded = savedOccluded;
+                this.zOrder = savedZOrder;
+                this.group = savedGroup;
+                this.color = savedColor;
+
+                throw exception;
+            }
+        }
+
+        delete() {
+            this.removed = true;
         }
     }
 
@@ -107,6 +260,7 @@
             this.shape = null;
         }
 
+        // Method used to export data to the server
         toJSON() {
             return {
                 occluded: this.occluded,
@@ -150,6 +304,7 @@
             };
         }
 
+        // Method used for ObjectStates creating
         get(targetFrame) {
             return Object.assign(
                 {}, this.interpolatePosition(targetFrame),
@@ -160,6 +315,7 @@
                     type: window.cvat.enums.ObjectType.TRACK,
                     shape: this.shape,
                     clientID: this.clientID,
+                    lock: this.lock,
                 },
             );
         }
@@ -226,6 +382,20 @@
 
             return result;
         }
+
+        save(frame, data) {
+
+
+            if (this.removed) {
+                return null;
+            }
+
+            return data;
+        }
+
+        delete() {
+            this.removed = true;
+        }
     }
 
     class Tag extends Annotation {
@@ -233,17 +403,29 @@
             super(data, clientID, injection);
         }
 
+        // Method used to export data to the server
         toJSON() {
             // TODO: Tags support
             return {};
         }
 
+        // Method used for ObjectStates creating
         get(frame) {
             if (frame !== this.frame) {
                 throw new window.cvat.exceptions.ScriptingError(
                     'Got frame is not equal to the frame of the shape',
                 );
             }
+
+            // TODO: Tags support
+        }
+
+        save(frame, objectState) {
+
+        }
+
+        delete() {
+            this.removed = true;
         }
     }
 
@@ -527,15 +709,21 @@
             const shapes = this.shapes[frame] || [];
             const tags = this.tags[frame] || [];
 
-            const states = tracks.map(track => track.get(frame))
-                .concat(shapes.map(shape => shape.get(frame)))
-                .concat(tags.map(tag => tag.get(frame)));
+            const objects = tracks.concat(shapes).concat(tags).filter(object => !object.removed);
+            const states = objects.map(object => object.get(frame));
 
             // filtering here
 
             const objectStates = [];
-            for (const state of states) {
+            for (let i = 0; i < objects.length; i++) {
+                const state = states[i];
+                const object = objects[i];
                 const objectState = new ObjectState(state);
+
+                // Rewrite default implementations of save/delete
+                objectState.save.implementation = object.save.bind(object, frame, objectState);
+                objectState.delete.implementation = object.delete.bind(object);
+
                 objectStates.push(objectState);
             }
 
