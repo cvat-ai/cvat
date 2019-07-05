@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import Dashboard from './dashboard';
+import DashboardContent from './dashboard-content';
 
 it('renders without crashing', () => {
   const div = document.createElement('div');
-  ReactDOM.render(<Dashboard />, div);
+  ReactDOM.render(<DashboardContent />, div);
   ReactDOM.unmountComponentAtNode(div);
 });
