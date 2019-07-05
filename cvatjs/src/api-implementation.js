@@ -73,6 +73,10 @@
             await serverProxy.server.login(username, password);
         };
 
+        cvat.server.logout.implementation = async () => {
+            await serverProxy.server.logout();
+        };
+
         cvat.users.get.implementation = async (filter) => {
             checkFilter(filter, {
                 self: isBoolean,
