@@ -570,6 +570,8 @@
     z-index: 1;
     list-style-type: none;
     padding-inline-start: 0;
+    margin-left: 20%;
+    margin-top: -1%;
 }
 
 .dropdown-content li {

@@ -38,6 +38,7 @@ from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    PluginSerializer, FileInfoSerializer, LogEventSerializer,
    AnnotationFormatSerializer)
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
 
@@ -151,12 +152,12 @@ class ServerViewSet(viewsets.ViewSet):
     @staticmethod
     @action(detail=False, methods=['GET'], serializer_class=AnnotationFormatSerializer)
     def annotation_formats(request):
-        dummy_response = {
-            'upload': ['cvat'],
-            'download': ['cvat_interpolation', 'cvat_annotations'],
+        response = {
+            'upload': [p.name for p in models.AnnoParser.objects.all()],
+            'download': [d.name for d in models.AnnoDumper.objects.all()],
         }
 
-        serializer = AnnotationFormatSerializer(data=dummy_response)
+        serializer = AnnotationFormatSerializer(data=response)
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data)
 
@@ -263,15 +264,20 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         username = request.user.username
         db_task = self.get_object()
         timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        file_ext = request.query_params.get("format", "xml")
-        dump_format = request.query_params.get("dump_format")
         action = request.query_params.get("action")
         if action not in [None, "download"]:
             raise serializers.ValidationError(
                 "Please specify a correct 'action' for the request")
 
+        dump_format = request.query_params.get("dump_format", "")
+        try:
+            db_dumper = models.AnnoDumper.objects.get(name=dump_format)
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError(
+                "Please specify a correct 'dump_format' parameter for the request")
+
         file_path = os.path.join(db_task.get_task_dirname(),
-            filename + ".{}.{}.".format(username, timestamp) + "xml")
+            "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.file_extension))
 
         queue = django_rq.get_queue("default")
         rq_id = "{}@/api/v1/tasks/{}/annotations/{}".format(username, pk, filename)
@@ -284,7 +290,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                         rq_job.meta[action] = True
                         rq_job.save_meta()
                         return sendfile(request, rq_job.meta["file_path"], attachment=True,
-                            attachment_filename=filename + "." + file_ext)
+                            attachment_filename="{}.{}".format(filename, db_dumper.file_extension))
                     else:
                         return Response(status=status.HTTP_201_CREATED)
                 else: # Remove the old dump file
@@ -302,7 +308,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         rq_job = queue.enqueue_call(func=annotation.dump_task_data,
             args=(pk, request.user, file_path, request.scheme,
-                request.get_host(), request.query_params),
+                request.get_host(), request.query_params, db_dumper),
             job_id=rq_id)
         rq_job.meta["file_path"] = file_path
         rq_job.save_meta()

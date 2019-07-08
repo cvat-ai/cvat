@@ -422,8 +422,7 @@ function setupMenu(job, task, shapeCollectionModel,
     }
 
     $('#downloadAnnotationButton').on('click', () => {
-            $('#downloadDropdownMenu').removeClass('hidden');
-        }
+        $('#downloadDropdownMenu').removeClass('hidden');
     });
 
     $('#uploadAnnotationButton').on('click', () => {

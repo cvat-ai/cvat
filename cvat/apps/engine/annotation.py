@@ -9,8 +9,7 @@ from django.utils import timezone
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from collections import OrderedDict
-from xml.sax.saxutils import XMLGenerator
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from PIL import Image
 from shapely import geometry
 
@@ -23,6 +22,7 @@ from . import models
 from .task import get_image_meta_cache
 from .log import slogger
 from . import serializers
+from .utils.import_modules import import_modules
 
 class PatchAction(str, Enum):
     CREATE = "create"
@@ -108,7 +108,7 @@ def delete_task_data(pk, user):
     annotation.delete()
 
 
-def dump_task_data(pk, user, file_path, scheme, host, query_params):
+def dump_task_data(pk, user, file_path, scheme, host, query_params, dumper):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after _AnnotationForTask instance
     # has been initialized from DB.
@@ -118,7 +118,7 @@ def dump_task_data(pk, user, file_path, scheme, host, query_params):
         annotation = TaskAnnotation(pk, user)
         annotation.init_from_db()
 
-    annotation.dump(file_path, scheme, host, query_params)
+    annotation.dump(file_path, scheme, host, query_params, dumper)
 
 ######
 
@@ -174,6 +174,218 @@ def _merge_table_rows(rows, keys_for_merge, field_id):
 
     return list(merged_rows.values())
 
+class AnnotationIR:
+    def __init__(self):
+        self.reset()
+
+    def add_tag(self, tag):
+        raise NotImplementedError
+
+    def add_shape(self, shape):
+        raise NotImplementedError
+
+    def add_track(self, track):
+        raise NotImplementedError
+
+    @property
+    def frame_info(self):
+        return self._frame_info
+
+    @property
+    def tags(self):
+        return self._tags
+
+    @property
+    def shapes(self):
+        return self._shapes
+
+    @property
+    def tracks(self):
+        return self._tracks
+
+    @property
+    def version(self):
+        return self._version
+
+    @property
+    def meta(self):
+        return self._meta
+
+    @tags.setter
+    def tags(self, tags):
+        self._tags = tags
+
+    @shapes.setter
+    def shapes(self, shapes):
+        self._shapes = shapes
+
+    @tracks.setter
+    def tracks(self, tracks):
+        self._tracks = tracks
+
+    @version.setter
+    def version(self, version):
+        self._version = version
+
+    def reset(self):
+        self._version = 0
+        self._tags = []
+        self._shapes = []
+        self._tracks = []
+
+class AnnotationExporter:
+    def __init__(self, annotation_ir, db_task, scheme, host):
+        self._annotation_ir = annotation_ir
+        self._db_task = db_task
+        self._scheme = scheme
+        self._host = host
+
+        db_labels = self._db_task.label_set.all().prefetch_related('attributespec_set')
+        self._label_mapping = {db_label.id:db_label for db_label in db_labels}
+        self._attribute_mapping = {db_attribute.id:db_attribute
+            for db_label in db_labels
+            for db_attribute in db_label.attributespec_set.all()}
+
+        self._init_frame_info()
+        self._init_meta()
+
+    def _init_frame_info(self):
+        if self._db_task.mode == "interpolation":
+            self._frame_info = {
+                frame: {
+                    "path": str(frame),
+                    "width": self._db_task.video.width,
+                    "height": self._db_task.video.height,
+                } for frame in range(self._db_task.size)
+            }
+        else:
+            self._frame_info = {db_image.frame: db_image
+                for db_image in self._db_task.image_set.all()}
+
+    def _init_meta(self):
+        db_segments = self._db_task.segment_set.all().prefetch_related('job_set')
+        self._meta = OrderedDict([
+            ("task", OrderedDict([
+                ("id", str(self._db_task.id)),
+                ("name", self._db_task.name),
+                ("size", str(self._db_task.size)),
+                ("mode", self._db_task.mode),
+                ("overlap", str(self._db_task.overlap)),
+                ("bugtracker", self._db_task.bug_tracker),
+                ("created", str(timezone.localtime(self._db_task.created_date))),
+                ("updated", str(timezone.localtime(self._db_task.updated_date))),
+                ("start_frame", str(self._db_task.start_frame)),
+                ("stop_frame", str(self._db_task.stop_frame)),
+                ("frame_filter", self._db_task.frame_filter),
+                ("z_order", self._db_task.z_order),
+
+                ("labels", [
+                    ("label", OrderedDict([
+                        ("name", db_label.name),
+                        ("attributes", [
+                            ("attribute", OrderedDict([
+                                ("name", db_attr.name),
+                                ("mutable", str(db_attr.mutable)),
+                                ("input_type", db_attr.input_type),
+                                ("default_value", db_attr.default_value),
+                                ("values", db_attr.values)]))
+                            for db_attr in db_label.attributespec_set.all()])
+                    ])) for db_label in self._label_mapping.values()
+                ]),
+
+                ("segments", [
+                    ("segment", OrderedDict([
+                        ("id", str(db_segment.id)),
+                        ("start", str(db_segment.start_frame)),
+                        ("stop", str(db_segment.stop_frame)),
+                        ("url", "{0}://{1}/?id={2}".format(
+                            self._scheme, self._host, db_segment.job_set.all()[0].id))]
+                    )) for db_segment in db_segments
+                ]),
+
+                ("owner", OrderedDict([
+                    ("username", self._db_task.owner.username),
+                    ("email", self._db_task.owner.email)
+                ]) if self._db_task.owner else ""),
+            ])),
+            ("dumped", str(timezone.localtime(timezone.now())))
+        ])
+
+        if self._db_task.mode == "interpolation":
+            self._meta["task"]["original_size"] = OrderedDict([
+                ("width", str(self._db_task.video.width)),
+                ("height", str(self._db_task.video.height))
+            ])
+            # Add source to dumped file
+            self._meta["source"] = str(self._db_task.video.path)
+
+    def _export_shape(self, shape):
+        exported_shape = {
+            "type": shape["type"],
+            "label": self._label_mapping[shape["label_id"]].name,
+            "outside": str(int(shape.get("outside", False))),
+            "occluded": str(int(shape["occluded"])),
+            "points": shape["points"],
+            "z_order": shape["z_order"],
+            "keyframe": shape.get("keyframe", True),
+            "attributes": {},
+        }
+        if "group" in shape and shape["group"]:
+            exported_shape["group"] = shape["group"]
+
+        if "track_id" in shape:
+            exported_shape["track_id"] = shape["track_id"]
+
+        for attr in shape["attributes"]:
+            db_attribute = self._attribute_mapping[attr["spec_id"]]
+            exported_shape["attributes"][db_attribute.name] = attr["value"]
+
+        return exported_shape
+
+    def export_as_shapes(self):
+        if self._frame_info == None or self._meta == None or self._label_mapping == None or self._attribute_mapping == None:
+            raise Exception("Annotation exporter is not initialized properly")
+
+        annotations = []
+        data_manager = DataManager(self._annotation_ir)
+        for shape in data_manager.to_shapes(int(self._db_task.size)):
+            frame = self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step()
+            db_image = self._frame_info[frame]
+            rpath = db_image['path'].split(os.path.sep)
+            if len(rpath) != 1:
+                rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
+            else:
+                rpath = rpath[0]
+            annotations.append({
+                "frame": frame,
+                "height": db_image["height"],
+                "width": db_image["width"],
+                "name": rpath,
+                "shapes": [],
+            })
+
+            annotations[frame]["shapes"].append(self._export_shape(shape))
+        return annotations
+
+    def get_meta(self):
+        return self._meta
+
+class AnnoDumper(ABC):
+    def __init__(self, anno_IR):
+        self._ir = anno_IR
+
+    @abstractmethod
+    def dump(self, filename):
+        pass
+
+class AnnoParser(ABC):
+    def __init__(self, anno_IR):
+        self._ir = anno_IR
+
+    @abstractmethod
+    def parse(self, filename):
+        pass
+
 class JobAnnotation:
     def __init__(self, pk, user):
         self.user = user
@@ -183,7 +395,7 @@ class JobAnnotation:
         db_segment = self.db_job.segment
         self.start_frame = db_segment.start_frame
         self.stop_frame = db_segment.stop_frame
-        self.reset()
+        self.ir_data = AnnotationIR()
 
         # pylint: disable=bad-continuation
         self.logger = slogger.job[self.db_job.id]
@@ -194,12 +406,7 @@ class JobAnnotation:
                 label__task__id=db_segment.task.id)}
 
     def reset(self):
-        self.data = {
-            "version": 0,
-            "tags": [],
-            "shapes": [],
-            "tracks": []
-        }
+        self.ir_data.reset()
 
     def _save_tracks_to_db(self, tracks):
         db_tracks = []
@@ -281,7 +488,7 @@ class JobAnnotation:
                 shape["id"] = db_shapes[shape_idx].id
                 shape_idx += 1
 
-        self.data["tracks"] = tracks
+        self.ir_data.tracks = tracks
 
     def _save_shapes_to_db(self, shapes):
         db_shapes = []
@@ -323,7 +530,7 @@ class JobAnnotation:
         for shape, db_shape in zip(shapes, db_shapes):
             shape["id"] = db_shape.id
 
-        self.data["shapes"] = shapes
+        self.ir_data.shapes = shapes
 
     def _save_tags_to_db(self, tags):
         db_tags = []
@@ -363,7 +570,7 @@ class JobAnnotation:
         for tag, db_tag in zip(tags, db_tags):
             tag["id"] = db_tag.id
 
-        self.data["tags"] = tags
+        self.ir_data.tags = tags
 
     def _commit(self):
         db_prev_commit = self.db_job.commits.last()
@@ -374,9 +581,9 @@ class JobAnnotation:
             db_curr_commit.version = 1
         db_curr_commit.job = self.db_job
         db_curr_commit.message = "Changes: tags - {}; shapes - {}; tracks - {}".format(
-            len(self.data["tags"]), len(self.data["shapes"]), len(self.data["tracks"]))
+            len(self.ir_data.tags), len(self.ir_data.shapes), len(self.ir_data.tracks))
         db_curr_commit.save()
-        self.data["version"] = db_curr_commit.version
+        self.ir_data.version = db_curr_commit.version
 
     def _save_to_db(self, data):
         self.reset()
@@ -384,7 +591,7 @@ class JobAnnotation:
         self._save_shapes_to_db(data["shapes"])
         self._save_tracks_to_db(data["tracks"])
 
-        return self.data["tags"] or self.data["shapes"] or self.data["tracks"]
+        return self.ir_data.tags or self.ir_data.shapes or self.ir_data.tracks
 
     def _create(self, data):
         if self._save_to_db(data):
@@ -426,7 +633,9 @@ class JobAnnotation:
             # It is not important for us that data had some "invalid" objects
             # which were skipped (not acutally deleted). The main idea is to
             # say that all requested objects are absent in DB after the method.
-            self.data = data
+            self.ir_data.tags = data['tags']
+            self.ir_data.shapes = data['shapes']
+            self.ir_data.tracks = data['tracks']
 
             labeledimage_set.delete()
             labeledshape_set.delete()
@@ -462,7 +671,7 @@ class JobAnnotation:
             field_id='id',
         )
         serializer = serializers.LabeledImageSerializer(db_tags, many=True)
-        self.data["tags"] = serializer.data
+        self.ir_data.tags = serializer.data
 
     def _init_shapes_from_db(self):
         db_shapes = self.db_job.labeledshape_set.prefetch_related(
@@ -495,7 +704,7 @@ class JobAnnotation:
         )
 
         serializer = serializers.LabeledShapeSerializer(db_shapes, many=True)
-        self.data["shapes"] = serializer.data
+        self.ir_data.shapes = serializer.data
 
     def _init_tracks_from_db(self):
         db_tracks = self.db_job.labeledtrack_set.prefetch_related(
@@ -564,14 +773,11 @@ class JobAnnotation:
                 )
 
         serializer = serializers.LabeledTrackSerializer(db_tracks, many=True)
-        self.data["tracks"] = serializer.data
+        self.ir_data.tracks = serializer.data
 
     def _init_version_from_db(self):
         db_commit = self.db_job.commits.last()
-        if db_commit:
-            self.data["version"] = db_commit.version
-        else:
-            self.data["version"] = 0
+        self.ir_data.version = db_commit.version if db_commit else 0
 
     def init_from_db(self):
         self._init_tags_from_db()
@@ -579,225 +785,38 @@ class JobAnnotation:
         self._init_tracks_from_db()
         self._init_version_from_db()
 
-class AnnotationWriter:
-    __metaclass__ = ABCMeta
-
-    def __init__(self, file, version):
-        self.version = version
-        self.file = file
-
-    @abstractmethod
-    def open_root(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def add_meta(self, meta):
-        raise NotImplementedError
-
-    @abstractmethod
-    def open_track(self, track):
-        raise NotImplementedError
-
-    @abstractmethod
-    def open_image(self, image):
-        raise NotImplementedError
-
-    @abstractmethod
-    def open_box(self, box):
-        raise NotImplementedError
-
-    @abstractmethod
-    def open_polygon(self, polygon):
-        raise NotImplementedError
-
-    @abstractmethod
-    def open_polyline(self, polyline):
-        raise NotImplementedError
-
-    @abstractmethod
-    def open_points(self, points):
-        raise NotImplementedError
-
-    @abstractmethod
-    def add_attribute(self, attribute):
-        raise NotImplementedError
-
-    @abstractmethod
-    def close_box(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def close_polygon(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def close_polyline(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def close_points(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def close_image(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def close_track(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def close_root(self):
-        raise NotImplementedError
-
-class XmlAnnotationWriter(AnnotationWriter):
-    def __init__(self, file):
-        super().__init__(file, "1.1")
-        self.xmlgen = XMLGenerator(self.file, 'utf-8')
-        self._level = 0
-
-    def _indent(self, newline = True):
-        if newline:
-            self.xmlgen.ignorableWhitespace("\n")
-        self.xmlgen.ignorableWhitespace("  " * self._level)
-
-    def _add_version(self):
-        self._indent()
-        self.xmlgen.startElement("version", {})
-        self.xmlgen.characters(self.version)
-        self.xmlgen.endElement("version")
-
-    def open_root(self):
-        self.xmlgen.startDocument()
-        self.xmlgen.startElement("annotations", {})
-        self._level += 1
-        self._add_version()
-
-    def _add_meta(self, meta):
-        self._level += 1
-        for k, v in meta.items():
-            if isinstance(v, OrderedDict):
-                self._indent()
-                self.xmlgen.startElement(k, {})
-                self._add_meta(v)
-                self._indent()
-                self.xmlgen.endElement(k)
-            elif isinstance(v, list):
-                self._indent()
-                self.xmlgen.startElement(k, {})
-                for tup in v:
-                    self._add_meta(OrderedDict([tup]))
-                self._indent()
-                self.xmlgen.endElement(k)
-            else:
-                self._indent()
-                self.xmlgen.startElement(k, {})
-                self.xmlgen.characters(v)
-                self.xmlgen.endElement(k)
-        self._level -= 1
-
-    def add_meta(self, meta):
-        self._indent()
-        self.xmlgen.startElement("meta", {})
-        self._add_meta(meta)
-        self._indent()
-        self.xmlgen.endElement("meta")
-
-    def open_track(self, track):
-        self._indent()
-        self.xmlgen.startElement("track", track)
-        self._level += 1
-
-    def open_image(self, image):
-        self._indent()
-        self.xmlgen.startElement("image", image)
-        self._level += 1
-
-    def open_box(self, box):
-        self._indent()
-        self.xmlgen.startElement("box", box)
-        self._level += 1
-
-    def open_polygon(self, polygon):
-        self._indent()
-        self.xmlgen.startElement("polygon", polygon)
-        self._level += 1
-
-    def open_polyline(self, polyline):
-        self._indent()
-        self.xmlgen.startElement("polyline", polyline)
-        self._level += 1
-
-    def open_points(self, points):
-        self._indent()
-        self.xmlgen.startElement("points", points)
-        self._level += 1
-
-    def add_attribute(self, attribute):
-        self._indent()
-        self.xmlgen.startElement("attribute", {"name": attribute["name"]})
-        self.xmlgen.characters(attribute["value"])
-        self.xmlgen.endElement("attribute")
-
-    def close_box(self):
-        self._level -= 1
-        self._indent()
-        self.xmlgen.endElement("box")
-
-    def close_polygon(self):
-        self._level -= 1
-        self._indent()
-        self.xmlgen.endElement("polygon")
-
-    def close_polyline(self):
-        self._level -= 1
-        self._indent()
-        self.xmlgen.endElement("polyline")
-
-    def close_points(self):
-        self._level -= 1
-        self._indent()
-        self.xmlgen.endElement("points")
-
-    def close_image(self):
-        self._level -= 1
-        self._indent()
-        self.xmlgen.endElement("image")
-
-    def close_track(self):
-        self._level -= 1
-        self._indent()
-        self.xmlgen.endElement("track")
-
-    def close_root(self):
-        self._level -= 1
-        self._indent()
-        self.xmlgen.endElement("annotations")
-        self.xmlgen.endDocument()
+    @property
+    def data(self):
+        return {
+            'version': self.ir_data.version,
+            'tags': self.ir_data.tags,
+            'shapes': self.ir_data.shapes,
+            'tracks': self.ir_data.tracks,
+        }
 
 class DataManager:
     def __init__(self, data):
         self.data = data
 
     def merge(self, data, start_frame, overlap):
-        tags = TagManager(self.data["tags"])
-        tags.merge(data["tags"], start_frame, overlap)
+        tags = TagManager(self.data.tags)
+        tags.merge(data.tags, start_frame, overlap)
 
-        shapes = ShapeManager(self.data["shapes"])
-        shapes.merge(data["shapes"], start_frame, overlap)
+        shapes = ShapeManager(self.data.shapes)
+        shapes.merge(data.shapes, start_frame, overlap)
 
-        tracks = TrackManager(self.data["tracks"])
-        tracks.merge(data["tracks"], start_frame, overlap)
+        tracks = TrackManager(self.data.tracks)
+        tracks.merge(data.tracks, start_frame, overlap)
 
     def to_shapes(self, end_frame):
-        shapes = self.data["shapes"]
-        tracks = TrackManager(self.data["tracks"])
+        shapes = self.data.shapes
+        tracks = TrackManager(self.data.tracks)
 
         return shapes + tracks.to_shapes(end_frame)
 
     def to_tracks(self):
-        tracks = self.data["tracks"]
-        shapes = ShapeManager(self.data["shapes"])
+        tracks = self.data.tracks
+        shapes = ShapeManager(self.data.shapes)
 
         return tracks + shapes.to_tracks()
 
@@ -988,13 +1007,13 @@ class ShapeManager(ObjectManager):
 class TrackManager(ObjectManager):
     def to_shapes(self, end_frame):
         shapes = []
+        counter = 0
         for track in self.objects:
             for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame):
                 if not shape["outside"]:
-                    shape.pop("outside")
-                    shape.pop("keyframe", None)
                     shape["label_id"] = track["label_id"]
                     shape["group"] = track["group"]
+                    shape["track_id"] = counter
                     shape["attributes"] += track["attributes"]
 
                     shapes.append(shape)
@@ -1160,15 +1179,10 @@ class TaskAnnotation:
         self.user = user
         self.db_task = models.Task.objects.prefetch_related("image_set").get(id=pk)
         self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk)
-        self.reset()
+        self.ir_data = AnnotationIR()
 
     def reset(self):
-        self.data = {
-            "version": 0,
-            "tags": [],
-            "shapes": [],
-            "tracks": []
-        }
+        self.ir_data.reset()
 
     def _patch_data(self, data, action):
         splitted_data = {}
@@ -1192,12 +1206,12 @@ class TaskAnnotation:
                 _data = put_job_data(jid, self.user, job_data)
             else:
                 _data = patch_job_data(jid, self.user, job_data, action)
-            if _data["version"] > self.data["version"]:
-                self.data["version"] = _data["version"]
+            if _data["version"] > self.ir_data.version:
+                self.ir_data.version = _data["version"]
             self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
 
     def _merge_data(self, data, start_frame, overlap):
-        data_manager = DataManager(self.data)
+        data_manager = DataManager(self.ir_data)
         data_manager.merge(data, start_frame, overlap)
 
     def put(self, data):
@@ -1222,241 +1236,33 @@ class TaskAnnotation:
         for db_job in self.db_jobs:
             annotation = JobAnnotation(db_job.id, self.user)
             annotation.init_from_db()
-            if annotation.data["version"] > self.data["version"]:
-                self.data["version"] = annotation.data["version"]
+            if annotation.ir_data.version > self.ir_data.version:
+                self.ir_data.version = annotation.ir_data.version
             db_segment = db_job.segment
             start_frame = db_segment.start_frame
             overlap = self.db_task.overlap
-            self._merge_data(annotation.data, start_frame, overlap)
+            self._merge_data(annotation.ir_data, start_frame, overlap)
 
-    def dump(self, file_path, scheme, host, query_params):
-        db_task = self.db_task
-        db_segments = db_task.segment_set.all().prefetch_related('job_set')
-        db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
-        db_label_by_id = {db_label.id:db_label for db_label in db_labels}
-        db_attribute_by_id = {db_attribute.id:db_attribute
-            for db_label in db_labels
-            for db_attribute in db_label.attributespec_set.all()}
-        im_meta_data = get_image_meta_cache(db_task)['original_size']
+    def dump(self, file_path, scheme, host, query_params, dumper):
+        anno_exporter = AnnotationExporter(
+            annotation_ir=self.ir_data,
+            db_task=self.db_task,
+            scheme=scheme,
+            host=host,
+        )
+        annotations = anno_exporter.export_as_shapes()
 
-        meta = OrderedDict([
-            ("task", OrderedDict([
-                ("id", str(db_task.id)),
-                ("name", db_task.name),
-                ("size", str(db_task.size)),
-                ("mode", db_task.mode),
-                ("overlap", str(db_task.overlap)),
-                ("bugtracker", db_task.bug_tracker),
-                ("created", str(timezone.localtime(db_task.created_date))),
-                ("updated", str(timezone.localtime(db_task.updated_date))),
-                ("start_frame", str(db_task.start_frame)),
-                ("stop_frame", str(db_task.stop_frame)),
-                ("frame_filter", db_task.frame_filter),
+        local_vars = {
+            "annotations": annotations,
+            "task_meta": anno_exporter.get_meta(),
+            "filename": file_path,
+            "ShapeType": models.ShapeType,
+            "dump_format": dumper.name,
+            }
+        source_code = open(os.path.join(settings.ANNO_DUMPERS_ROOT, dumper.handler_file.name)).read()
+        global_vars = globals()
+        imports = import_modules(source_code)
+        global_vars.update(imports)
 
-                ("labels", [
-                    ("label", OrderedDict([
-                        ("name", db_label.name),
-                        ("attributes", [
-                            ("attribute", OrderedDict([
-                                ("name", db_attr.name),
-                                ("mutable", str(db_attr.mutable)),
-                                ("input_type", db_attr.input_type),
-                                ("default_value", db_attr.default_value),
-                                ("values", db_attr.values)]))
-                            for db_attr in db_label.attributespec_set.all()])
-                    ])) for db_label in db_labels
-                ]),
+        exec(source_code, global_vars, local_vars)
 
-                ("segments", [
-                    ("segment", OrderedDict([
-                        ("id", str(db_segment.id)),
-                        ("start", str(db_segment.start_frame)),
-                        ("stop", str(db_segment.stop_frame)),
-                        ("url", "{0}://{1}/?id={2}".format(
-                            scheme, host, db_segment.job_set.all()[0].id))]
-                    )) for db_segment in db_segments
-                ]),
-
-                ("owner", OrderedDict([
-                    ("username", db_task.owner.username),
-                    ("email", db_task.owner.email)
-                ]) if db_task.owner else ""),
-            ])),
-            ("dumped", str(timezone.localtime(timezone.now())))
-        ])
-
-        if db_task.mode == "interpolation":
-            meta["task"]["original_size"] = OrderedDict([
-                ("width", str(im_meta_data[0]["width"])),
-                ("height", str(im_meta_data[0]["height"]))
-            ])
-            # Add source to dumped file
-            meta["source"] = str(db_task.video.path)
-
-        with open(file_path, "w") as dump_file:
-            dumper = XmlAnnotationWriter(dump_file)
-            dumper.open_root()
-            dumper.add_meta(meta)
-
-            if db_task.mode == "annotation":
-                db_image_by_frame = {db_image.frame:db_image
-                    for db_image in db_task.image_set.all()}
-                shapes = {}
-                data_manager = DataManager(self.data)
-                for shape in data_manager.to_shapes(db_task.size):
-                    frame = shape["frame"]
-                    if frame not in shapes:
-                        shapes[frame] = []
-                    shapes[frame].append(shape)
-
-                for frame in sorted(list(shapes.keys())):
-                    db_image = db_image_by_frame[frame]
-
-                    rpath = db_image.path.split(os.path.sep)
-                    rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
-
-                    im_w = db_image.width
-                    im_h = db_image.height
-
-                    dumper.open_image(OrderedDict([
-                        ("id", str(frame)),
-                        ("name", rpath),
-                        ("width", str(im_w)),
-                        ("height", str(im_h))
-                    ]))
-
-                    for shape in shapes.get(frame, []):
-                        db_label = db_label_by_id[shape["label_id"]]
-
-                        dump_data = OrderedDict([
-                            ("label", db_label.name),
-                            ("occluded", str(int(shape["occluded"]))),
-                        ])
-
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dump_data.update(OrderedDict([
-                                ("xtl", "{:.2f}".format(shape["points"][0])),
-                                ("ytl", "{:.2f}".format(shape["points"][1])),
-                                ("xbr", "{:.2f}".format(shape["points"][2])),
-                                ("ybr", "{:.2f}".format(shape["points"][3]))
-                            ]))
-                        else:
-                            dump_data.update(OrderedDict([
-                                ("points", ';'.join((
-                                    ','.join((
-                                        "{:.2f}".format(x),
-                                        "{:.2f}".format(y)
-                                    )) for x,y in pairwise(shape["points"]))
-                                )),
-                            ]))
-
-                        if db_task.z_order:
-                            dump_data['z_order'] = str(shape["z_order"])
-                        if shape["group"]:
-                            dump_data['group_id'] = str(shape["group"])
-
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dumper.open_box(dump_data)
-                        elif shape["type"] == models.ShapeType.POLYGON:
-                            dumper.open_polygon(dump_data)
-                        elif shape["type"] == models.ShapeType.POLYLINE:
-                            dumper.open_polyline(dump_data)
-                        elif shape["type"] == models.ShapeType.POINTS:
-                            dumper.open_points(dump_data)
-                        else:
-                            raise NotImplementedError("unknown shape type")
-
-                        for attr in shape["attributes"]:
-                            db_attribute = db_attribute_by_id[attr["spec_id"]]
-                            dumper.add_attribute(OrderedDict([
-                                ("name", db_attribute.name),
-                                ("value", attr["value"])
-                            ]))
-
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dumper.close_box()
-                        elif shape["type"] == models.ShapeType.POLYGON:
-                            dumper.close_polygon()
-                        elif shape["type"] == models.ShapeType.POLYLINE:
-                            dumper.close_polyline()
-                        elif shape["type"] == models.ShapeType.POINTS:
-                            dumper.close_points()
-                        else:
-                            raise NotImplementedError("unknown shape type")
-
-                    dumper.close_image()
-            else:
-                data_manager = DataManager(self.data)
-                tracks = data_manager.to_tracks()
-
-                im_w = im_meta_data[0]['width']
-                im_h = im_meta_data[0]['height']
-
-                counter = 0
-                for track in tracks:
-                    track_id = counter
-                    counter += 1
-                    db_label = db_label_by_id[track["label_id"]]
-                    dump_data = OrderedDict([
-                        ("id", str(track_id)),
-                        ("label", db_label.name),
-                    ])
-                    if track["group"]:
-                        dump_data['group_id'] = str(track["group"])
-                    dumper.open_track(dump_data)
-                    for shape in TrackManager.get_interpolated_shapes(
-                        track, 0, db_task.size):
-
-                        dump_data = OrderedDict([
-                            ("frame", str(db_task.start_frame + shape["frame"] * db_task.get_frame_step())),
-                            ("outside", str(int(shape["outside"]))),
-                            ("occluded", str(int(shape["occluded"]))),
-                            ("keyframe", str(int(shape["keyframe"])))
-                        ])
-
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dump_data.update(OrderedDict([
-                                ("xtl", "{:.2f}".format(shape["points"][0])),
-                                ("ytl", "{:.2f}".format(shape["points"][1])),
-                                ("xbr", "{:.2f}".format(shape["points"][2])),
-                                ("ybr", "{:.2f}".format(shape["points"][3])),
-                            ]))
-                        else:
-                            dump_data.update(OrderedDict([
-                                ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
-                                    for x,y in pairwise(shape["points"])]))
-                            ]))
-
-                        if db_task.z_order:
-                            dump_data["z_order"] = str(shape["z_order"])
-
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dumper.open_box(dump_data)
-                        elif shape["type"] == models.ShapeType.POLYGON:
-                            dumper.open_polygon(dump_data)
-                        elif shape["type"] == models.ShapeType.POLYLINE:
-                            dumper.open_polyline(dump_data)
-                        elif shape["type"] == models.ShapeType.POINTS:
-                            dumper.open_points(dump_data)
-                        else:
-                            raise NotImplementedError("unknown shape type")
-
-                        for attr in shape.get("attributes", []) + track.get("attributes", []):
-                            db_attribute = db_attribute_by_id[attr["spec_id"]]
-                            dumper.add_attribute(OrderedDict([
-                                ("name", db_attribute.name),
-                                ("value", attr["value"])
-                            ]))
-
-                        if shape["type"] == models.ShapeType.RECTANGLE:
-                            dumper.close_box()
-                        elif shape["type"] == models.ShapeType.POLYGON:
-                            dumper.close_polygon()
-                        elif shape["type"] == models.ShapeType.POLYLINE:
-                            dumper.close_polyline()
-                        elif shape["type"] == models.ShapeType.POINTS:
-                            dumper.close_points()
-                        else:
-                            raise NotImplementedError("unknown shape type")
-                    dumper.close_track()
-            dumper.close_root()

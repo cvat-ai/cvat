@@ -29,6 +29,18 @@ services:
           - redis
     restart: always
 
+  cvat_setup:
+    container_name: cvat_setup
+    image: busybox
+    volumes:
+      - ./cvat/apps/engine:/cvat:ro
+      - cvat_anno_dumpers:/anno_dumpers:rw
+      - cvat_anno_parsers:/anno_parsers:rw
+    entrypoint: [
+      'sh',
+      '-c',
+      'cp -r /cvat/anno_dumpers/. /anno_dumpers && chown -R 1000:1000 /anno_dumpers && cp -r /cvat/anno_parsers/. /anno_parsers && chown -R 1000:1000 /anno_parsers']
+
   cvat:
     container_name: cvat
     image: cvat
@@ -36,6 +48,7 @@ services:
     depends_on:
       - cvat_redis
       - cvat_db
+      - cvat_setup
     ports:
       - "8080:8080"
     build:
@@ -56,6 +69,8 @@ services:
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
       - cvat_models:/home/django/models
+      - cvat_anno_dumpers:/home/django/anno_dumpers
+      - cvat_anno_parsers:/home/django/anno_parsers
 
 volumes:
   cvat_db:
@@ -63,3 +78,5 @@ volumes:
   cvat_keys:
   cvat_logs:
   cvat_models:
+  cvat_anno_dumpers:
+  cvat_anno_parsers:

@@ -1,0 +1,26 @@
+[
+  {
+    "model": "engine.AnnoDumper",
+    "pk": 1,
+    "fields": {
+      "name": "cvat_annotation",
+      "owner": null,
+      "created_date": "2019-06-24T12:21:36.067Z",
+      "updated_date": "2019-06-24T12:21:36.067Z",
+      "file_extension": "xml",
+      "handler_file":"1/cvat.py"
+    }
+  },
+  {
+    "model": "engine.AnnoDumper",
+    "pk": 2,
+    "fields": {
+      "name": "cvat_interpolation",
+      "owner": null,
+      "created_date": "2019-06-24T12:21:36.067Z",
+      "updated_date": "2019-06-24T12:21:36.067Z",
+      "file_extension": "xml",
+      "handler_file":"1/cvat.py"
+    }
+  }
+]

@@ -133,15 +133,17 @@ async function dumpAnnotationRequest(tid, taskName, format) {
     taskName = taskName.replace(/\//g, '_');
     const name = encodeURIComponent(`${tid}_${taskName}`);
     return new Promise((resolve, reject) => {
-        const url = `/api/v1/tasks/${tid}/annotations/${name}?dump_format=${format}`;
+        const url = `/api/v1/tasks/${tid}/annotations/${name}`;
+        let queryString = `dump_format=${format}`
         async function request() {
-            $.get(url)
+            $.get(`${url}?${queryString}`)
                 .done((...args) => {
                     if (args[2].status === 202) {
                         setTimeout(request, 3000);
                     } else {
                         const a = document.createElement('a');
-                        a.href = `${url}?action=download`;
+                        queryString = `${queryString}&action=download`
+                        a.href = `${url}?${queryString}`;
                         document.body.appendChild(a);
                         a.click();
                         a.remove();
