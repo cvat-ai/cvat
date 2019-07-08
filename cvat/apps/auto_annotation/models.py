@@ -41,6 +41,7 @@ class AnnotationModel(models.Model):
     weights_file = models.FileField(upload_to=upload_path_handler, storage=fs)
     labelmap_file = models.FileField(upload_to=upload_path_handler, storage=fs)
     interpretation_file = models.FileField(upload_to=upload_path_handler, storage=fs)
+    preprocessing_file = models.FileField(upload_to=upload_path_handler, storage=fs, null=True)
     shared = models.BooleanField(default=False)
     primary = models.BooleanField(default=False)
     framework = models.CharField(max_length=32, default=FrameworkChoice.OPENVINO)

@@ -243,11 +243,17 @@ class AutoAnnotationModelManagerView {
             }
 
             function addFile(file, extention) {
+                // Note: the below method call always returns false
                 if (extention in files) {
                     throw Error(`More than one file with the extension .${extention} have been found`);
                 }
+                if (file.name === 'preprocessing.py') {
+                    extractedFiles['preprocessing'] = file;
 
+                }
+                else {
                 extractedFiles[extention] = file;
+                }
             }
 
             files.forEach((file) => {
@@ -362,7 +368,7 @@ class AutoAnnotationModelManagerView {
                 modelData.append('storage', this.source);
                 modelData.append('shared', this.globallyBox.prop('checked'));
 
-                ['xml', 'bin', 'json', 'py'].filter(e => e in validatedFiles).forEach((ext) => {
+                ['xml', 'bin', 'json', 'py', 'preprocessing'].filter(e => e in validatedFiles).forEach((ext) => {
                     modelData.append(ext, validatedFiles[ext]);
                 });
 

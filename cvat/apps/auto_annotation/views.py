@@ -60,6 +60,7 @@ def create_model(request):
         weights = files["bin"]
         labelmap = files["json"]
         interpretation_script = files["py"]
+        preprocessing_script = files.get('preprocessing')
         owner = request.user
 
         rq_id = model_manager.create_or_update(
@@ -72,6 +73,7 @@ def create_model(request):
             owner=owner,
             storage=storage,
             is_shared=is_shared,
+            preprocessing_file=preprocessing_script
         )
 
         return JsonResponse({"id": rq_id})
@@ -98,6 +100,7 @@ def update_model(request, mid):
         weights = files.get("bin")
         labelmap = files.get("json")
         interpretation_script = files.get("py")
+        preprocessing_script = files.get('preprocessing')
 
         rq_id = model_manager.create_or_update(
             dl_model_id=mid,
@@ -109,6 +112,7 @@ def update_model(request, mid):
             owner=None,
             storage=storage,
             is_shared=is_shared,
+            preprocessing_file=preprocessing_script
         )
 
         return JsonResponse({"id": rq_id})
@@ -188,6 +192,7 @@ def start_annotation(request, mid, tid):
         weights_file_path = dl_model.weights_file.name
         labelmap_file = dl_model.labelmap_file.name
         convertation_file_path = dl_model.interpretation_file.name
+        preprocessing_file_path = dl_model.preprocessing_file.name
         restricted = not has_admin_role(dl_model.owner)
 
         db_labels = db_task.label_set.prefetch_related("attributespec_set").all()
@@ -217,6 +222,7 @@ def start_annotation(request, mid, tid):
                 should_reset,
                 request.user,
                 restricted,
+                preprocessing_file_path
             ),
             job_id = rq_id,
             timeout=604800)     # 7 days
