@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Video frame filter
 - Admins are no longer limited to a subset of python commands in the auto annotation application
 - Remote data source (list of URLs to create an annotation task)
+- Ability to create a custom extractors for unsupported media types
 
 ### Changed
 - Outside and keyframe buttons in the side panel for all interpolation shapes (they were only for boxes before)
