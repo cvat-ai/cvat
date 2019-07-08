@@ -14,7 +14,7 @@ from urllib import error as urlerror
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
-from cvat.apps.engine.settings import _get_mime, MEDIA_TYPES
+from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES
 
 import django_rq
 from django.conf import settings
@@ -60,7 +60,7 @@ def make_image_meta_cache(db_task):
             filenames = []
             for root, _, files in os.walk(db_task.get_upload_dirname()):
                 fullnames = map(lambda f: os.path.join(root, f), files)
-                images = filter(lambda x: _get_mime(x) == 'image', fullnames)
+                images = filter(lambda x: get_mime(x) == 'image', fullnames)
                 filenames.extend(images)
             filenames.sort()
 
@@ -152,7 +152,7 @@ def _validate_data(data):
         if '..' in path.split(os.path.sep):
             raise ValueError("Don't use '..' inside file paths")
         full_path = os.path.abspath(os.path.join(share_root, path))
-        if 'directory' == _get_mime(full_path):
+        if 'directory' == get_mime(full_path):
             server_files['dirs'].append(path)
         else:
             server_files['files'].append(path)
@@ -165,7 +165,7 @@ def _validate_data(data):
 
     def count_files(file_mapping, counter):
         for rel_path, full_path in file_mapping.items():
-            mime = _get_mime(full_path)
+            mime = get_mime(full_path)
             counter[mime].append(rel_path)
 
     counter = { media_type: [] for media_type in MEDIA_TYPES.keys() }
