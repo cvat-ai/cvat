@@ -40,3 +40,7 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+ANNO_DUMPERS_ROOT = os.path.join(BASE_DIR, 'cvat', 'apps', 'engine', 'anno_dumpers')
+
+ANNO_PARSERS_ROOT = os.path.join(BASE_DIR, 'cvat', 'apps', 'engine', 'anno_parsers')

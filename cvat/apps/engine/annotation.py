@@ -259,8 +259,11 @@ class AnnotationExporter:
                 } for frame in range(self._db_task.size)
             }
         else:
-            self._frame_info = {db_image.frame: db_image
-                for db_image in self._db_task.image_set.all()}
+            self._frame_info = {db_image.frame: {
+                "path": db_image.path,
+                "width": db_image.width,
+                "height": db_image.height,
+            } for db_image in self._db_task.image_set.all()}
 
     def _init_meta(self):
         db_segments = self._db_task.segment_set.all().prefetch_related('job_set')
