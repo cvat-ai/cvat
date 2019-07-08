@@ -91,17 +91,11 @@ class DirectoryExtractor(ImageListExtractor):
         )
 
 #Note step, start, stop have no affect
-class ArchiveExtractor(ImageListExtractor):
+class ArchiveExtractor(DirectoryExtractor):
     def __init__(self, source_path, dest_path, image_quality, step=1, start=0, stop=0):
         Archive(source_path[0]).extractall(dest_path)
-        os.remove(source_path[0])
-        image_paths = []
-        for root, _, files in os.walk(dest_path):
-            paths = [os.path.join(root, f) for f in files]
-            paths = filter(lambda x: get_mime(x) == 'image', paths)
-            image_paths.extend(paths)
         super().__init__(
-            source_path=sorted(image_paths),
+            source_path=[dest_path],
             dest_path=dest_path,
             image_quality=image_quality,
             step=1,
