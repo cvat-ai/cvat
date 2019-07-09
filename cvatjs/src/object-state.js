@@ -283,7 +283,7 @@
             * @async
             * @throws {module:API.cvat.exceptions.PluginError}
             * @throws {module:API.cvat.exceptions.ArgumentError}
-            * @returns {module:API.cvat.classes.ObjectState}
+            * @returns {module:API.cvat.classes.ObjectState} updated state of an object
         */
         async save() {
             const result = await PluginRegistry
@@ -297,8 +297,9 @@
             * @memberof module:API.cvat.classes.ObjectState
             * @readonly
             * @instance
-            * @param {boolean} [force=false]
+            * @param {boolean} [force=false] delete object even if it is locked
             * @async
+            * @returns {boolean} wheter object was deleted
             * @throws {module:API.cvat.exceptions.PluginError}
         */
         async delete(force = false) {
@@ -311,15 +312,19 @@
     // Default implementation saves element in collection
     ObjectState.prototype.save.implementation = async function () {
         if (this.updateInCollection) {
-            this.updateInCollection();
-        } else {
-            // add new object into collection
+            return this.updateInCollection();
         }
+
+        return this;
     };
 
     // Default implementation do nothing
-    ObjectState.prototype.delete.implementation = function (force) {
-        force = true;
+    ObjectState.prototype.delete.implementation = async function (force) {
+        if (this.deleteFromCollection) {
+            return this.deleteFromCollection(force);
+        }
+
+        return false;
     };
 
 

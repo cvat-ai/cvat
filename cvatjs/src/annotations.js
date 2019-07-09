@@ -84,8 +84,12 @@
             }
         }
 
-        delete() {
-            this.removed = true;
+        delete(force) {
+            if (!this.lock || force) {
+                this.removed = true;
+            }
+
+            return true;
         }
     }
 
@@ -628,10 +632,6 @@
 
         save(frame, objectState) {
 
-        }
-
-        delete() {
-            this.removed = true;
         }
     }
 
