@@ -63,11 +63,11 @@
             this.taskLabels = injection.labels;
             this.clientID = clientID;
             this.serverID = data.id;
+            this.group = data.group;
             this.label = this.taskLabels[data.label_id];
             this.frame = data.frame;
             this.removed = false;
             this.lock = false;
-            this.cache = {};
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
@@ -99,12 +99,11 @@
             this.points = data.points;
             this.occluded = data.occluded;
             this.zOrder = data.z_order;
-            this.group = data.group;
             this.color = color;
             this.shape = null;
         }
 
-        // Method used to export data to the server
+        // Method is used to export data to the server
         toJSON() {
             return {
                 occluded: this.occluded,
@@ -125,7 +124,7 @@
             };
         }
 
-        // Method used for ObjectStates creating
+        // Method is used to construct ObjectState objects
         get(frame) {
             if (frame !== this.frame) {
                 throw new window.cvat.exceptions.ScriptingError(
@@ -133,25 +132,19 @@
                 );
             }
 
-            if (!(frame in this.cache)) {
-                const interpolation = {
-                    type: window.cvat.enums.ObjectType.SHAPE,
-                    shape: this.shape,
-                    clientID: this.clientID,
-                    occluded: this.occluded,
-                    lock: this.lock,
-                    zOrder: this.zOrder,
-                    points: [...this.points],
-                    attributes: Object.assign({}, this.attributes),
-                    label: this.label,
-                    group: this.group,
-                    color: this.color,
-                };
-
-                this.cache[frame] = interpolation;
-            }
-
-            return this.cache[frame];
+            return {
+                type: window.cvat.enums.ObjectType.SHAPE,
+                shape: this.shape,
+                clientID: this.clientID,
+                occluded: this.occluded,
+                lock: this.lock,
+                zOrder: this.zOrder,
+                points: [...this.points],
+                attributes: Object.assign({}, this.attributes),
+                label: this.label,
+                group: this.group,
+                color: this.color,
+            };
         }
 
         save(frame, data) {
@@ -166,10 +159,7 @@
             }
 
             // All changes are done in this temporary object
-            const copy = Object.assign(this.get(frame));
-            copy.attributes = Object.assign(copy.attributes);
-            copy.points = [...copy.points];
-
+            const copy = this.get(frame);
             const updated = data.updateFlags;
 
             if (updated.label) {
@@ -180,7 +170,7 @@
             }
 
             if (updated.attributes) {
-                const labelAttributes = this.label
+                const labelAttributes = copy.label
                     .attributes.map(attr => `${attr.id}`);
 
                 for (const attrID of Object.keys(data.attributes)) {
@@ -233,8 +223,9 @@
             // Reset flags and commit all changes
             updated.reset();
             for (const prop of Object.keys(copy)) {
-                this[prop] = copy[prop];
-                this.cache[frame][prop] = copy[prop];
+                if (prop in this) {
+                    this[prop] = copy[prop];
+                }
             }
 
             return objectStateFactory.call(this, frame, this.get(frame));
@@ -261,16 +252,17 @@
                 return shapeAccumulator;
             }, {});
 
-            this.group = data.group;
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
             }, {});
+
+            this.cache = {};
             this.color = color;
             this.shape = null;
         }
 
-        // Method used to export data to the server
+        // Method is used to export data to the server
         toJSON() {
             return {
                 occluded: this.occluded,
@@ -314,7 +306,7 @@
             };
         }
 
-        // Method used for ObjectStates creating
+        // Method is used to construct ObjectState objects
         get(frame) {
             if (!(frame in this.cache)) {
                 const interpolation = Object.assign(
@@ -411,7 +403,7 @@
             }
 
             if (updated.attributes) {
-                const labelAttributes = this.label.attributes
+                const labelAttributes = copy.label.attributes
                     .reduce((accumulator, value) => {
                         accumulator[value.id] = value;
                         return accumulator;
@@ -481,7 +473,7 @@
 
             // Commit all changes
             for (const prop of Object.keys(copy)) {
-                if (Object.hasOwnProperty.call(this, prop)) {
+                if (prop in this) {
                     this[prop] = copy[prop];
                 }
 
@@ -578,8 +570,8 @@
                     rightPosition,
                     targetFrame,
                 ), {
-                        keyframe: false,
-                    });
+                    keyframe: false,
+                });
             }
 
             if (rightPosition) {
@@ -613,13 +605,25 @@
             super(data, clientID, injection);
         }
 
-        // Method used to export data to the server
+        // Method is used to export data to the server
         toJSON() {
-            // TODO: Tags support
-            return {};
+            return {
+                id: this.serverID,
+                frame: this.frame,
+                label_id: this.label.id,
+                group: this.group,
+                attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
+                    attributeAccumulator.push({
+                        spec_id: attrId,
+                        value: this.attributes[attrId],
+                    });
+
+                    return attributeAccumulator;
+                }, []),
+            };
         }
 
-        // Method used for ObjectStates creating
+        // Method is used to construct ObjectState objects
         get(frame) {
             if (frame !== this.frame) {
                 throw new window.cvat.exceptions.ScriptingError(
@@ -627,11 +631,68 @@
                 );
             }
 
-            // TODO: Tags support
+            return {
+                type: window.cvat.enums.ObjectType.TAG,
+                clientID: this.clientID,
+                lock: this.lock,
+                attributes: Object.assign({}, this.attributes),
+                label: this.label,
+                group: this.group,
+            };
         }
 
-        save(frame, objectState) {
+        save(frame, data) {
+            if (frame !== this.frame) {
+                throw new window.cvat.exceptions.ScriptingError(
+                    'Got frame is not equal to the frame of the shape',
+                );
+            }
 
+            if (this.lock && data.lock) {
+                return objectStateFactory.call(this, frame, this.get(frame));
+            }
+
+            // All changes are done in this temporary object
+            const copy = this.get(frame);
+            const updated = data.updateFlags;
+
+            if (updated.label) {
+                checkObjectType('label', data.label, null, window.cvat.classes.Label);
+                copy.label = data.label;
+                copy.attributes = {};
+                this.appendDefaultAttributes.call(copy, copy.label);
+            }
+
+            if (updated.attributes) {
+                const labelAttributes = copy.label
+                    .attributes.map(attr => `${attr.id}`);
+
+                for (const attrID of Object.keys(data.attributes)) {
+                    if (labelAttributes.includes(attrID)) {
+                        copy.attributes[attrID] = data.attributes[attrID];
+                    }
+                }
+            }
+
+            if (updated.group) {
+                checkObjectType('group', data.group, 'integer', null);
+                copy.group = data.group;
+            }
+
+            if (updated.lock) {
+                checkObjectType('lock', data.lock, 'boolean', null);
+                copy.lock = data.lock;
+            }
+
+            // Reset flags and commit all changes
+            updated.reset();
+            for (const prop of Object.keys(copy)) {
+                if (prop in this) {
+                    this[prop] = copy[prop];
+                }
+            }
+
+            return objectStateFactory.call(this, frame, this.get(frame));
         }
     }
 
