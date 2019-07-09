@@ -48,5 +48,6 @@
         "indent": ["warn", 4],
         "no-useless-constructor": 0,
         "func-names": [0],
+        "valid-typeof": [0],
     },
 };

@@ -11,17 +11,85 @@
     const serverProxy = require('./server-proxy');
     const ObjectState = require('./object-state');
 
+    function objectStateFactory(frame, data) {
+        const objectState = new ObjectState(data);
+
+        // Rewrite default implementations of save/delete
+        objectState.updateInCollection = this.save.bind(this, frame, objectState);
+        objectState.deleteFromCollection = this.delete.bind(this);
+
+        return objectState;
+    }
+
+    function checkObjectType(name, value, type, instance) {
+        if (type) {
+            if (typeof (value) !== type) {
+                // specific case for integers which aren't native type in JS
+                if (type === 'integer' && Number.isInteger(value)) {
+                    return;
+                }
+
+                if (value !== undefined) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        `Got ${typeof (value)} value for ${name}. `
+                        + `Expected ${type}`,
+                    );
+                }
+
+                throw new window.cvat.exceptions.ArgumentError(
+                    `Got undefined value for ${name}. `
+                    + `Expected ${type}`,
+                );
+            }
+        } else if (instance) {
+            if (!(value instanceof instance)) {
+                if (value !== undefined) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        `Got ${value.constructor.name} value for ${name}. `
+                        + `Expected instance of ${instance.name}`,
+                    );
+                }
+
+                throw new window.cvat.exceptions.ArgumentError(
+                    `Got undefined value for ${name}. `
+                    + `Expected instance of ${instance.name}`,
+                );
+            }
+        }
+    }
+
     class Annotation {
         constructor(data, clientID, injection) {
+            this.taskLabels = injection.labels;
             this.clientID = clientID;
             this.serverID = data.id;
-            this.labelID = data.label_id;
+            this.group = data.group;
+            this.label = this.taskLabels[data.label_id];
             this.frame = data.frame;
+            this.removed = false;
+            this.lock = false;
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
             }, {});
-            this.taskLabels = injection.labels;
+            this.appendDefaultAttributes(this.label);
+        }
+
+        appendDefaultAttributes(label) {
+            const labelAttributes = label.attributes;
+            for (const attribute of labelAttributes) {
+                if (!(attribute.id in this.attributes)) {
+                    this.attributes[attribute.id] = attribute.defaultValue;
+                }
+            }
+        }
+
+        delete(force) {
+            if (!this.lock || force) {
+                this.removed = true;
+            }
+
+            return true;
         }
     }
 
@@ -31,11 +99,11 @@
             this.points = data.points;
             this.occluded = data.occluded;
             this.zOrder = data.z_order;
-            this.group = data.group;
             this.color = color;
             this.shape = null;
         }
 
+        // Method is used to export data to the server
         toJSON() {
             return {
                 occluded: this.occluded,
@@ -51,11 +119,12 @@
                 }, []),
                 id: this.serverID,
                 frame: this.frame,
-                label_id: this.labelID,
+                label_id: this.label.id,
                 group: this.group,
             };
         }
 
+        // Method is used to construct ObjectState objects
         get(frame) {
             if (frame !== this.frame) {
                 throw new window.cvat.exceptions.ScriptingError(
@@ -68,12 +137,98 @@
                 shape: this.shape,
                 clientID: this.clientID,
                 occluded: this.occluded,
+                lock: this.lock,
                 zOrder: this.zOrder,
                 points: [...this.points],
                 attributes: Object.assign({}, this.attributes),
-                label: this.taskLabels[this.labelID],
+                label: this.label,
                 group: this.group,
+                color: this.color,
             };
+        }
+
+        save(frame, data) {
+            if (frame !== this.frame) {
+                throw new window.cvat.exceptions.ScriptingError(
+                    'Got frame is not equal to the frame of the shape',
+                );
+            }
+
+            if (this.lock && data.lock) {
+                return objectStateFactory.call(this, frame, this.get(frame));
+            }
+
+            // All changes are done in this temporary object
+            const copy = this.get(frame);
+            const updated = data.updateFlags;
+
+            if (updated.label) {
+                checkObjectType('label', data.label, null, window.cvat.classes.Label);
+                copy.label = data.label;
+                copy.attributes = {};
+                this.appendDefaultAttributes.call(copy, copy.label);
+            }
+
+            if (updated.attributes) {
+                const labelAttributes = copy.label
+                    .attributes.map(attr => `${attr.id}`);
+
+                for (const attrID of Object.keys(data.attributes)) {
+                    if (labelAttributes.includes(attrID)) {
+                        copy.attributes[attrID] = data.attributes[attrID];
+                    }
+                }
+            }
+
+            if (updated.points) {
+                checkObjectType('points', data.points, null, Array);
+                copy.points = [];
+                for (const coordinate of data.points) {
+                    checkObjectType('coordinate', coordinate, 'number', null);
+                    copy.points.push(coordinate);
+                }
+            }
+
+            if (updated.occluded) {
+                checkObjectType('occluded', data.occluded, 'boolean', null);
+                copy.occluded = data.occluded;
+            }
+
+            if (updated.group) {
+                checkObjectType('group', data.group, 'integer', null);
+                copy.group = data.group;
+            }
+
+            if (updated.zOrder) {
+                checkObjectType('zOrder', data.zOrder, 'integer', null);
+                copy.zOrder = data.zOrder;
+            }
+
+            if (updated.lock) {
+                checkObjectType('lock', data.lock, 'boolean', null);
+                copy.lock = data.lock;
+            }
+
+            if (updated.color) {
+                checkObjectType('color', data.color, 'string', null);
+                if (/^#[0-9A-F]{6}$/i.test(data.color)) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        `Got invalid color value: "${data.color}"`,
+                    );
+                }
+
+                copy.color = data.color;
+            }
+
+            // Reset flags and commit all changes
+            updated.reset();
+            for (const prop of Object.keys(copy)) {
+                if (prop in this) {
+                    this[prop] = copy[prop];
+                }
+            }
+
+            return objectStateFactory.call(this, frame, this.get(frame));
         }
     }
 
@@ -86,7 +241,6 @@
                     occluded: value.occluded,
                     zOrder: value.z_order,
                     points: value.points,
-                    id: value.id,
                     frame: value.frame,
                     outside: value.outside,
                     attributes: value.attributes.reduce((attributeAccumulator, attr) => {
@@ -98,15 +252,17 @@
                 return shapeAccumulator;
             }, {});
 
-            this.group = data.group;
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
             }, {});
+
+            this.cache = {};
             this.color = color;
             this.shape = null;
         }
 
+        // Method is used to export data to the server
         toJSON() {
             return {
                 occluded: this.occluded,
@@ -123,7 +279,7 @@
 
                 id: this.serverID,
                 frame: this.frame,
-                label_id: this.labelID,
+                label_id: this.label.id,
                 group: this.group,
                 shapes: Object.keys(this.shapes).reduce((shapesAccumulator, frame) => {
                     shapesAccumulator.push({
@@ -150,18 +306,27 @@
             };
         }
 
-        get(targetFrame) {
-            return Object.assign(
-                {}, this.getPosition(targetFrame),
-                {
-                    attributes: this.getAttributes(targetFrame),
-                    label: this.taskLabels[this.labelID],
-                    group: this.group,
-                    type: window.cvat.enums.ObjectType.TRACK,
-                    shape: this.shape,
-                    clientID: this.clientID,
-                },
-            );
+        // Method is used to construct ObjectState objects
+        get(frame) {
+            if (!(frame in this.cache)) {
+                const interpolation = Object.assign(
+                    {}, this.getPosition(frame),
+                    {
+                        attributes: this.getAttributes(frame),
+                        label: this.label,
+                        group: this.group,
+                        type: window.cvat.enums.ObjectType.TRACK,
+                        shape: this.shape,
+                        clientID: this.clientID,
+                        lock: this.lock,
+                        color: this.color,
+                    },
+                );
+
+                this.cache[frame] = interpolation;
+            }
+
+            return JSON.parse(JSON.stringify(this.cache[frame]));
         }
 
         neighborsFrames(targetFrame) {
@@ -211,20 +376,173 @@
                 }
             }
 
-            // Finally fill up remained attributes if they exist
-            const labelAttributes = this.taskLabels[this.labelID].attributes;
-            const defValuesByID = labelAttributes.reduce((accumulator, attr) => {
-                accumulator[attr.id] = attr.defaultValue;
-                return accumulator;
-            }, {});
+            return result;
+        }
 
-            for (const attrID of Object.keys(defValuesByID)) {
-                if (!(attrID in result)) {
-                    result[attrID] = defValuesByID[attrID];
+        save(frame, data) {
+            if (this.lock || data.lock) {
+                this.lock = data.lock;
+                return objectStateFactory.call(this, frame, this.get(frame));
+            }
+
+            // All changes are done in this temporary object
+            const copy = Object.assign(this.get(frame));
+            copy.attributes = Object.assign(copy.attributes);
+            copy.points = [...copy.points];
+
+            const updated = data.updateFlags;
+            let positionUpdated = false;
+
+            if (updated.label) {
+                checkObjectType('label', data.label, null, window.cvat.classes.Label);
+                copy.label = data.label;
+                copy.attributes = {};
+
+                // Shape attributes will be removed later after all checks
+                this.appendDefaultAttributes.call(copy, copy.label);
+            }
+
+            if (updated.attributes) {
+                const labelAttributes = copy.label.attributes
+                    .reduce((accumulator, value) => {
+                        accumulator[value.id] = value;
+                        return accumulator;
+                    }, {});
+
+                for (const attrID of Object.keys(data.attributes)) {
+                    if (attrID in labelAttributes) {
+                        copy.attributes[attrID] = data.attributes[attrID];
+                        if (!labelAttributes[attrID].mutable) {
+                            this.attributes[attrID] = data.attributes[attrID];
+                        } else {
+                            // Mutable attributes will be updated later
+                            positionUpdated = true;
+                        }
+                    }
                 }
             }
 
-            return result;
+            if (updated.points) {
+                checkObjectType('points', data.points, null, Array);
+                copy.points = [];
+                for (const coordinate of data.points) {
+                    checkObjectType('coordinate', coordinate, 'number', null);
+                    copy.points.push(coordinate);
+                }
+                positionUpdated = true;
+            }
+
+            if (updated.occluded) {
+                checkObjectType('occluded', data.occluded, 'boolean', null);
+                copy.occluded = data.occluded;
+                positionUpdated = true;
+            }
+
+            if (updated.outside) {
+                checkObjectType('outside', data.outside, 'boolean', null);
+                copy.outside = data.outside;
+                positionUpdated = true;
+            }
+
+            if (updated.group) {
+                checkObjectType('group', data.group, 'integer', null);
+                copy.group = data.group;
+            }
+
+            if (updated.zOrder) {
+                checkObjectType('zOrder', data.zOrder, 'integer', null);
+                copy.zOrder = data.zOrder;
+                positionUpdated = true;
+            }
+
+            if (updated.lock) {
+                checkObjectType('lock', data.lock, 'boolean', null);
+                copy.lock = data.lock;
+            }
+
+            if (updated.color) {
+                checkObjectType('color', data.color, 'string', null);
+                if (/^#[0-9A-F]{6}$/i.test(data.color)) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        `Got invalid color value: "${data.color}"`,
+                    );
+                }
+
+                copy.color = data.color;
+            }
+
+            // Commit all changes
+            for (const prop of Object.keys(copy)) {
+                if (prop in this) {
+                    this[prop] = copy[prop];
+                }
+
+                this.cache[frame][prop] = copy[prop];
+            }
+
+            if (updated.label) {
+                for (const shape of this.shapes) {
+                    shape.attributes = {};
+                }
+            }
+
+            // Remove keyframe
+            if (updated.keyframe && !data.keyframe) {
+                // Remove all cache after this keyframe because it have just become outdated
+                for (const cacheFrame in this.cache) {
+                    if (+cacheFrame > frame) {
+                        delete this.cache[frame];
+                    }
+                }
+
+                this.cache[frame].keyframe = false;
+                delete this.shapes[frame];
+                updated.reset();
+
+                return objectStateFactory.call(this, frame, this.get(frame));
+            }
+
+            // Add/update keyframe
+            if (positionUpdated || (updated.keyframe && data.keyframe)) {
+                // Remove all cache after this keyframe because it have just become outdated
+                for (const cacheFrame in this.cache) {
+                    if (+cacheFrame > frame) {
+                        delete this.cache[frame];
+                    }
+                }
+
+                this.cache[frame].keyframe = true;
+                data.keyframe = true;
+
+                this.shapes[frame] = {
+                    frame,
+                    zOrder: copy.zOrder,
+                    points: copy.points,
+                    outside: copy.outside,
+                    occluded: copy.occluded,
+                    attributes: {},
+                };
+
+                if (updated.attributes) {
+                    const labelAttributes = this.label.attributes
+                        .reduce((accumulator, value) => {
+                            accumulator[value.id] = value;
+                            return accumulator;
+                        }, {});
+
+                    // Unmutable attributes were updated above
+                    for (const attrID of Object.keys(data.attributes)) {
+                        if (attrID in labelAttributes && labelAttributes[attrID].mutable) {
+                            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                        }
+                    }
+                }
+            }
+
+            updated.reset();
+
+            return objectStateFactory.call(this, frame, this.get(frame));
         }
 
         getPosition(targetFrame) {
@@ -242,15 +560,18 @@
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: leftPosition.zOrder,
+                    keyframe: true,
                 };
             }
 
             if (rightPosition && leftPosition) {
-                return this.interpolatePosition(
+                return Object.assign({}, this.interpolatePosition(
                     leftPosition,
                     rightPosition,
                     targetFrame,
-                );
+                ), {
+                    keyframe: false,
+                });
             }
 
             if (rightPosition) {
@@ -259,6 +580,7 @@
                     occluded: rightPosition.occluded,
                     outside: true,
                     zOrder: 0,
+                    keyframe: false,
                 };
             }
 
@@ -268,6 +590,7 @@
                     occluded: leftPosition.occluded,
                     outside: leftPosition.outside,
                     zOrder: 0,
+                    keyframe: false,
                 };
             }
 
@@ -282,17 +605,94 @@
             super(data, clientID, injection);
         }
 
+        // Method is used to export data to the server
         toJSON() {
-            // TODO: Tags support
-            return {};
+            return {
+                id: this.serverID,
+                frame: this.frame,
+                label_id: this.label.id,
+                group: this.group,
+                attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
+                    attributeAccumulator.push({
+                        spec_id: attrId,
+                        value: this.attributes[attrId],
+                    });
+
+                    return attributeAccumulator;
+                }, []),
+            };
         }
 
+        // Method is used to construct ObjectState objects
         get(frame) {
             if (frame !== this.frame) {
                 throw new window.cvat.exceptions.ScriptingError(
                     'Got frame is not equal to the frame of the shape',
                 );
             }
+
+            return {
+                type: window.cvat.enums.ObjectType.TAG,
+                clientID: this.clientID,
+                lock: this.lock,
+                attributes: Object.assign({}, this.attributes),
+                label: this.label,
+                group: this.group,
+            };
+        }
+
+        save(frame, data) {
+            if (frame !== this.frame) {
+                throw new window.cvat.exceptions.ScriptingError(
+                    'Got frame is not equal to the frame of the shape',
+                );
+            }
+
+            if (this.lock && data.lock) {
+                return objectStateFactory.call(this, frame, this.get(frame));
+            }
+
+            // All changes are done in this temporary object
+            const copy = this.get(frame);
+            const updated = data.updateFlags;
+
+            if (updated.label) {
+                checkObjectType('label', data.label, null, window.cvat.classes.Label);
+                copy.label = data.label;
+                copy.attributes = {};
+                this.appendDefaultAttributes.call(copy, copy.label);
+            }
+
+            if (updated.attributes) {
+                const labelAttributes = copy.label
+                    .attributes.map(attr => `${attr.id}`);
+
+                for (const attrID of Object.keys(data.attributes)) {
+                    if (labelAttributes.includes(attrID)) {
+                        copy.attributes[attrID] = data.attributes[attrID];
+                    }
+                }
+            }
+
+            if (updated.group) {
+                checkObjectType('group', data.group, 'integer', null);
+                copy.group = data.group;
+            }
+
+            if (updated.lock) {
+                checkObjectType('lock', data.lock, 'boolean', null);
+                copy.lock = data.lock;
+            }
+
+            // Reset flags and commit all changes
+            updated.reset();
+            for (const prop of Object.keys(copy)) {
+                if (prop in this) {
+                    this[prop] = copy[prop];
+                }
+            }
+
+            return objectStateFactory.call(this, frame, this.get(frame));
         }
     }
 
@@ -915,15 +1315,12 @@
             const shapes = this.shapes[frame] || [];
             const tags = this.tags[frame] || [];
 
-            const states = tracks.map(track => track.get(frame))
-                .concat(shapes.map(shape => shape.get(frame)))
-                .concat(tags.map(tag => tag.get(frame)));
-
+            const objects = tracks.concat(shapes).concat(tags).filter(object => !object.removed);
             // filtering here
 
             const objectStates = [];
-            for (const state of states) {
-                const objectState = new ObjectState(state);
+            for (const object of objects) {
+                const objectState = objectStateFactory.call(object, frame, object.get(frame));
                 objectStates.push(objectState);
             }
 

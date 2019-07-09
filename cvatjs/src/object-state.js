@@ -16,25 +16,69 @@
     */
     class ObjectState {
         /**
-            * @param {Object} type - an object which contains initialization information
-            * about points, group, zOrder, outside, occluded,
-            * attributes, lock, type, label, mode, etc.
-            * Types of data equal to listed below
+            * @param {Object} serialized - is an dictionary which contains
+            * initial information about an ObjectState;
+            * Necessary fields: type, shape
+            * Necessary fields for objects which haven't been added to collection yet: frame
+            * Optional fields: points, group, zOrder, outside, occluded,
+            * attributes, lock, label, mode, color, keyframe
+            * These fields can be set later via setters
         */
         constructor(serialized) {
             const data = {
+                label: null,
+                attributes: {},
+
                 points: null,
-                group: null,
-                zOrder: null,
                 outside: null,
                 occluded: null,
+                keyframe: null,
+
+                group: null,
+                zOrder: null,
                 lock: null,
-                attributes: {},
+                color: null,
+
+                frame: serialized.frame,
                 type: serialized.type,
                 shape: serialized.shape,
+                updateFlags: {},
             };
 
+            // Shows whether any properties updated since last reset() or interpolation
+            Object.defineProperty(data.updateFlags, 'reset', {
+                value: function reset() {
+                    this.label = false;
+                    this.attributes = false;
+
+                    this.points = false;
+                    this.outside = false;
+                    this.occluded = false;
+                    this.keyframe = false;
+
+                    this.group = false;
+                    this.zOrder = false;
+                    this.lock = false;
+                    this.color = false;
+                },
+                writable: false,
+            });
+
             Object.defineProperties(this, Object.freeze({
+                // Internal property. We don't need document it.
+                updateFlags: {
+                    get: () => data.updateFlags,
+                },
+                frame: {
+                    /**
+                        * @name frame
+                        * @type {integer}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @readonly
+                        * @instance
+                    */
+                    get: () => data.frame,
+                },
                 type: {
                     /**
                         * @name type
@@ -61,51 +105,37 @@
                         * @type {module:API.cvat.classes.Label}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
                     */
                     get: () => data.label,
                     set: (labelInstance) => {
-                        if (!(labelInstance instanceof window.cvat.classes.Label)) {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Expected Label instance, but got "${typeof (labelInstance.constructor.name)}"`,
-                            );
-                        }
-
+                        data.updateFlags.label = true;
                         data.label = labelInstance;
+                    },
+                },
+                color: {
+                    /**
+                        * @name color
+                        * @type {string}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @instance
+                    */
+                    get: () => data.color,
+                    set: (color) => {
+                        data.updateFlags.color = true;
+                        data.color = color;
                     },
                 },
                 points: {
                     /**
-                        * @typedef {Object} Point
-                        * @property {number} x
-                        * @property {number} y
-                        * @global
-                    */
-                    /**
                         * @name points
-                        * @type {Point[]}
+                        * @type {number[]}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
                     */
-                    get: () => data.position,
-                    set: (position) => {
-                        if (Array.isArray(position)) {
-                            for (const point of position) {
-                                if (typeof (point) !== 'object'
-                                    || !('x' in point) || !('y' in point)) {
-                                    throw new window.cvat.exceptions.ArgumentError(
-                                        `Got invalid point ${point}`,
-                                    );
-                                }
-                            }
-                        } else {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Got invalid type "${typeof (position.constructor.name)}"`,
-                            );
-                        }
-
-                        data.position = position;
+                    get: () => data.points,
+                    set: (points) => {
+                        data.updateFlags.points = true;
+                        data.points = [...points];
                     },
                 },
                 group: {
@@ -114,17 +144,11 @@
                         * @type {integer}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
                     */
                     get: () => data.group,
-                    set: (groupID) => {
-                        if (!Number.isInteger(groupID)) {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Expected integer, but got ${groupID.constructor.name}`,
-                            );
-                        }
-
-                        data.group = groupID;
+                    set: (group) => {
+                        data.updateFlags.group = true;
+                        data.group = group;
                     },
                 },
                 zOrder: {
@@ -133,16 +157,10 @@
                         * @type {integer}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
                     */
                     get: () => data.zOrder,
                     set: (zOrder) => {
-                        if (!Number.isInteger(zOrder)) {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Expected integer, but got ${zOrder.constructor.name}`,
-                            );
-                        }
-
+                        data.updateFlags.zOrder = true;
                         data.zOrder = zOrder;
                     },
                 },
@@ -152,17 +170,24 @@
                         * @type {boolean}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
                     */
                     get: () => data.outside,
                     set: (outside) => {
-                        if (typeof (outside) !== 'boolean') {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Expected boolean, but got ${outside.constructor.name}`,
-                            );
-                        }
-
+                        data.updateFlags.outside = true;
                         data.outside = outside;
+                    },
+                },
+                keyframe: {
+                    /**
+                        * @name keyframe
+                        * @type {boolean}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @instance
+                    */
+                    get: () => data.keyframe,
+                    set: (keyframe) => {
+                        data.updateFlags.keyframe = true;
+                        data.keyframe = keyframe;
                     },
                 },
                 occluded: {
@@ -171,16 +196,10 @@
                         * @type {boolean}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
                     */
                     get: () => data.occluded,
                     set: (occluded) => {
-                        if (typeof (occluded) !== 'boolean') {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Expected boolean, but got ${occluded.constructor.name}`,
-                            );
-                        }
-
+                        data.updateFlags.occluded = true;
                         data.occluded = occluded;
                     },
                 },
@@ -190,16 +209,10 @@
                         * @type {boolean}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @instance
-                        * @throws {module:API.cvat.exceptions.ArgumentError}
                     */
                     get: () => data.lock,
                     set: (lock) => {
-                        if (typeof (lock) !== 'boolean') {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Expected boolean, but got ${lock.constructor.name}`,
-                            );
-                        }
-
+                        data.updateFlags.lock = true;
                         data.lock = lock;
                     },
                 },
@@ -210,60 +223,55 @@
                         * @name attributes
                         * @type {Object}
                         * @memberof module:API.cvat.classes.ObjectState
-                        * @instance
                         * @throws {module:API.cvat.exceptions.ArgumentError}
+                        * @instance
                     */
                     get: () => data.attributes,
                     set: (attributes) => {
                         if (typeof (attributes) !== 'object') {
+                            if (typeof (attributes) === 'undefined') {
+                                throw new window.cvat.exceptions.ArgumentError(
+                                    'Expected attributes are object, but got undefined',
+                                );
+                            }
+
                             throw new window.cvat.exceptions.ArgumentError(
-                                `Expected object, but got ${attributes.constructor.name}`,
+                                `Expected attributes are object, but got ${attributes.constructor.name}`,
                             );
                         }
 
-                        for (let attrId in attributes) {
-                            if (Object.prototype.hasOwnProperty.call(attributes, attrId)) {
-                                attrId = +attrId;
-                                if (!Number.isInteger(attrId)) {
-                                    throw new window.cvat.exceptions.ArgumentError(
-                                        `Expected integer attribute id, but got ${attrId.constructor.name}`,
-                                    );
-                                }
-
-                                data.attributes[attrId] = attributes[attrId];
-                            }
+                        for (const attrID of Object.keys(attributes)) {
+                            data.updateFlags.attributes = true;
+                            data.attributes[attrID] = attributes[attrID];
                         }
                     },
                 },
-
             }));
 
             this.label = serialized.label;
             this.group = serialized.group;
             this.zOrder = serialized.zOrder;
             this.outside = serialized.outside;
+            this.keyframe = serialized.keyframe;
             this.occluded = serialized.occluded;
             this.attributes = serialized.attributes;
-            this.lock = false;
+            this.points = serialized.points;
+            this.color = serialized.color;
+            this.lock = serialized.lock;
 
-            const points = [];
-            for (let i = 0; i < serialized.points.length; i += 2) {
-                points.push({
-                    x: serialized.points[i],
-                    y: serialized.points[i + 1],
-                });
-            }
-            this.points = points;
+            data.updateFlags.reset();
         }
 
         /**
-            * Method saves object state in a collection
+            * Method saves/updates an object state in a collection
             * @method save
             * @memberof module:API.cvat.classes.ObjectState
             * @readonly
             * @instance
             * @async
             * @throws {module:API.cvat.exceptions.PluginError}
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+            * @returns {module:API.cvat.classes.ObjectState} updated state of an object
         */
         async save() {
             const result = await PluginRegistry
@@ -272,20 +280,40 @@
         }
 
         /**
-            * Method deletes object from a collection
+            * Method deletes an object from a collection
             * @method delete
             * @memberof module:API.cvat.classes.ObjectState
             * @readonly
             * @instance
+            * @param {boolean} [force=false] delete object even if it is locked
             * @async
+            * @returns {boolean} wheter object was deleted
             * @throws {module:API.cvat.exceptions.PluginError}
         */
-        async delete() {
+        async delete(force = false) {
             const result = await PluginRegistry
-                .apiWrapper.call(this, ObjectState.prototype.delete);
+                .apiWrapper.call(this, ObjectState.prototype.delete, force);
             return result;
         }
     }
+
+    // Default implementation saves element in collection
+    ObjectState.prototype.save.implementation = async function () {
+        if (this.updateInCollection) {
+            return this.updateInCollection();
+        }
+
+        return this;
+    };
+
+    // Default implementation do nothing
+    ObjectState.prototype.delete.implementation = async function (force) {
+        if (this.deleteFromCollection) {
+            return this.deleteFromCollection(force);
+        }
+
+        return false;
+    };
 
 
     module.exports = ObjectState;
