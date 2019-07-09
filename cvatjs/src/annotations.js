@@ -11,29 +11,81 @@
     const serverProxy = require('./server-proxy');
     const ObjectState = require('./object-state');
 
+    function objectStateFactory(frame, data) {
+        const objectState = new ObjectState(data);
+
+        // Rewrite default implementations of save/delete
+        objectState.updateInCollection = this.save.bind(this, frame, objectState);
+        objectState.deleteFromCollection = this.delete.bind(this);
+
+        return objectState;
+    }
+
+    function checkObjectType(name, value, type, instance) {
+        if (type) {
+            if (typeof (value) !== type) {
+                // specific case for integers which aren't native type in JS
+                if (type === 'integer' && Number.isInteger(value)) {
+                    return;
+                }
+
+                if (value !== undefined) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        `Got ${typeof (value)} value for ${name}. `
+                        + `Expected ${type}`,
+                    );
+                }
+
+                throw new window.cvat.exceptions.ArgumentError(
+                    `Got undefined value for ${name}. `
+                    + `Expected ${type}`,
+                );
+            }
+        } else if (instance) {
+            if (!(value instanceof instance)) {
+                if (value !== undefined) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        `Got ${value.constructor.name} value for ${name}. `
+                        + `Expected instance of ${instance.name}`,
+                    );
+                }
+
+                throw new window.cvat.exceptions.ArgumentError(
+                    `Got undefined value for ${name}. `
+                    + `Expected instance of ${instance.name}`,
+                );
+            }
+        }
+    }
+
     class Annotation {
         constructor(data, clientID, injection) {
+            this.taskLabels = injection.labels;
             this.clientID = clientID;
             this.serverID = data.id;
-            this.labelID = data.label_id;
+            this.label = this.taskLabels[data.label_id];
             this.frame = data.frame;
             this.removed = false;
             this.lock = false;
+            this.cache = {};
             this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
                 attributeAccumulator[attr.spec_id] = attr.value;
                 return attributeAccumulator;
             }, {});
-            this.taskLabels = injection.labels;
-            this.appendDefaultAttributes();
+            this.appendDefaultAttributes(this.label);
         }
 
-        appendDefaultAttributes() {
-            const labelAttributes = this.taskLabels[this.labelID].attributes;
+        appendDefaultAttributes(label) {
+            const labelAttributes = label.attributes;
             for (const attribute of labelAttributes) {
                 if (!(attribute.id in this.attributes)) {
                     this.attributes[attribute.id] = attribute.defaultValue;
                 }
             }
+        }
+
+        delete() {
+            this.removed = true;
         }
     }
 
@@ -64,7 +116,7 @@
                 }, []),
                 id: this.serverID,
                 frame: this.frame,
-                label_id: this.labelID,
+                label_id: this.label.id,
                 group: this.group,
             };
         }
@@ -77,18 +129,25 @@
                 );
             }
 
-            return {
-                type: window.cvat.enums.ObjectType.SHAPE,
-                shape: this.shape,
-                clientID: this.clientID,
-                occluded: this.occluded,
-                lock: this.lock,
-                zOrder: this.zOrder,
-                points: [...this.points],
-                attributes: Object.assign({}, this.attributes),
-                label: this.taskLabels[this.labelID],
-                group: this.group,
-            };
+            if (!(frame in this.cache)) {
+                const interpolation = {
+                    type: window.cvat.enums.ObjectType.SHAPE,
+                    shape: this.shape,
+                    clientID: this.clientID,
+                    occluded: this.occluded,
+                    lock: this.lock,
+                    zOrder: this.zOrder,
+                    points: [...this.points],
+                    attributes: Object.assign({}, this.attributes),
+                    label: this.label,
+                    group: this.group,
+                    color: this.color,
+                };
+
+                this.cache[frame] = interpolation;
+            }
+
+            return this.cache[frame];
         }
 
         save(frame, data) {
@@ -98,143 +157,83 @@
                 );
             }
 
-            let savedAttributes = null;
-            const savedLabelID = this.labelID;
-            const savedPoints = this.points;
-            const savedOccluded = this.occluded;
-            const savedZOrder = this.zOrder;
-            const savedGroup = this.group;
-            const savedColor = this.color;
-
-            try {
-                if (this.labelID !== data.labelID) {
-                    if (!(data.label instanceof window.cvat.classes.Label)) {
-                        throw new window.cvat.exceptions.ArgumentError(
-                            `Expected Label instance, but got "${typeof (data.label.constructor.name)}"`,
-                        );
-                    }
-
-                    savedAttributes = JSON.stringify(this.attributes);
-                    this.labelID = data.label.id;
-                    this.attributes = {};
-                    this.appendDefaultAttributes();
-                }
-
-                if (JSON.stringify(this.attributes) !== JSON.stringify(data.attributes)) {
-                    savedAttributes = savedAttributes || JSON.stringify(this.attributes);
-
-                    const labelAttributes = this.taskLabels[this.labelID]
-                        .attributes.map(attr => `${attr.id}`);
-
-                    for (const attrID of Object.keys(data.attributes)) {
-                        if (labelAttributes.includes(attrID)) {
-                            this.attributes[attrID] = data.attributes[attrID];
-                        }
-                    }
-                }
-
-                if (JSON.stringify(this.points) !== JSON.stringify(data.points)) {
-                    const points = [];
-                    if (!Array.isArray(data.points)) {
-                        throw new window.cvat.exceptions.ArgumentError(
-                            `Got invalid points type "${typeof (data.points.constructor.name)}". Array is expected`,
-                        );
-                    }
-
-                    for (const coordinate of data.points) {
-                        if (typeof (coordinate) !== 'number') {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Got invalid point coordinate: "${coordinate}"`,
-                            );
-                        }
-
-                        points.push(coordinate);
-                    }
-
-                    // truncate in frame size if it is need
-                    this.points = points;
-                }
-
-                if (this.occluded !== data.occluded) {
-                    if (typeof (data.occluded) !== 'boolean') {
-                        throw new window.cvat.exceptions.ArgumentError(
-                            `Expected boolean, but got ${data.occluded.constructor.name}`,
-                        );
-                    }
-
-                    this.occluded = data.occluded;
-                }
-
-                if (this.zOrder !== data.zOrder) {
-                    if (!Number.isInteger(data.zOrder)) {
-                        throw new window.cvat.exceptions.ArgumentError(
-                            `Expected integer, but got ${data.zOrder.constructor.name}`,
-                        );
-                    }
-
-                    this.zOrder = data.zOrder;
-                }
-
-                if (this.group !== data.group) {
-                    if (!Number.isInteger(data.group)) {
-                        throw new window.cvat.exceptions.ArgumentError(
-                            `Expected integer, but got ${data.group.constructor.name}`,
-                        );
-                    }
-
-                    this.group = data.group;
-                }
-
-                if (this.color !== data.color) {
-                    if (typeof (data.color) !== 'string') {
-                        throw new window.cvat.exceptions.ArgumentError(
-                            `Expected color represented by a string, but got ${data.color.constructor.name}`,
-                        );
-                    }
-
-                    if (/^#[0-9A-F]{6}$/i.test(data.color)) {
-                        throw new window.cvat.exceptions.ArgumentError(
-                            `Got invalid color value: "${data.color}"`,
-                        );
-                    }
-
-                    this.color = data.color;
-                }
-
-                data.label = this.taskLabels[this.labelID];
-                data.points = [...this.points];
-                data.occluded = this.occluded;
-                data.zOrder = this.zOrder;
-                data.group = this.group;
-                data.color = this.color;
-                data.lock = this.lock;
-
-                if (this.removed) {
-                    return null;
-                }
-
-                return data;
-            } catch (exception) {
-                // reverse all changes if any error
-                this.labelID = savedLabelID;
-                this.points = savedPoints;
-                this.occluded = savedOccluded;
-                this.zOrder = savedZOrder;
-                this.group = savedGroup;
-                this.color = savedColor;
-
-                // If savedAttributes === null, attributes haven't been changed
-                if (savedAttributes) {
-                    this.attributes = JSON.parse(savedAttributes);
-                }
-
-
-                throw exception;
+            if (this.lock && data.lock) {
+                return objectStateFactory.call(this, frame, this.get(frame));
             }
-        }
 
-        delete() {
-            this.removed = true;
+            // All changes are done in this temporary object
+            const copy = Object.assign(this.get(frame));
+            copy.attributes = Object.assign(copy.attributes);
+            copy.points = [...copy.points];
+
+            const updated = data.updateFlags;
+
+            if (updated.label) {
+                checkObjectType('label', data.label, null, window.cvat.classes.Label);
+                copy.label = data.label;
+                copy.attributes = {};
+                this.appendDefaultAttributes.call(copy, copy.label);
+            }
+
+            if (updated.attributes) {
+                const labelAttributes = this.label
+                    .attributes.map(attr => `${attr.id}`);
+
+                for (const attrID of Object.keys(data.attributes)) {
+                    if (labelAttributes.includes(attrID)) {
+                        copy.attributes[attrID] = data.attributes[attrID];
+                    }
+                }
+            }
+
+            if (updated.points) {
+                checkObjectType('points', data.points, null, Array);
+                copy.points = [];
+                for (const coordinate of data.points) {
+                    checkObjectType('coordinate', coordinate, 'number', null);
+                    copy.points.push(coordinate);
+                }
+            }
+
+            if (updated.occluded) {
+                checkObjectType('occluded', data.occluded, 'boolean', null);
+                copy.occluded = data.occluded;
+            }
+
+            if (updated.group) {
+                checkObjectType('group', data.group, 'integer', null);
+                copy.group = data.group;
+            }
+
+            if (updated.zOrder) {
+                checkObjectType('zOrder', data.zOrder, 'integer', null);
+                copy.zOrder = data.zOrder;
+            }
+
+            if (updated.lock) {
+                checkObjectType('lock', data.lock, 'boolean', null);
+                copy.lock = data.lock;
+            }
+
+            if (updated.color) {
+                checkObjectType('color', data.color, 'string', null);
+                if (/^#[0-9A-F]{6}$/i.test(data.color)) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        `Got invalid color value: "${data.color}"`,
+                    );
+                }
+
+                copy.color = data.color;
+            }
+
+            // Reset flags and commit all changes
+            updated.reset();
+            for (const prop of Object.keys(copy)) {
+                this[prop] = copy[prop];
+                this.cache[frame][prop] = copy[prop];
+            }
+
+            return objectStateFactory.call(this, frame, this.get(frame));
         }
     }
 
@@ -247,7 +246,6 @@
                     occluded: value.occluded,
                     zOrder: value.z_order,
                     points: value.points,
-                    id: value.id,
                     frame: value.frame,
                     outside: value.outside,
                     attributes: value.attributes.reduce((attributeAccumulator, attr) => {
@@ -285,7 +283,7 @@
 
                 id: this.serverID,
                 frame: this.frame,
-                label_id: this.labelID,
+                label_id: this.label.id,
                 group: this.group,
                 shapes: Object.keys(this.shapes).reduce((shapesAccumulator, frame) => {
                     shapesAccumulator.push({
@@ -313,19 +311,26 @@
         }
 
         // Method used for ObjectStates creating
-        get(targetFrame) {
-            return Object.assign(
-                {}, this.getPosition(targetFrame),
-                {
-                    attributes: this.getAttributes(targetFrame),
-                    label: this.taskLabels[this.labelID],
-                    group: this.group,
-                    type: window.cvat.enums.ObjectType.TRACK,
-                    shape: this.shape,
-                    clientID: this.clientID,
-                    lock: this.lock,
-                },
-            );
+        get(frame) {
+            if (!(frame in this.cache)) {
+                const interpolation = Object.assign(
+                    {}, this.getPosition(frame),
+                    {
+                        attributes: this.getAttributes(frame),
+                        label: this.label,
+                        group: this.group,
+                        type: window.cvat.enums.ObjectType.TRACK,
+                        shape: this.shape,
+                        clientID: this.clientID,
+                        lock: this.lock,
+                        color: this.color,
+                    },
+                );
+
+                this.cache[frame] = interpolation;
+            }
+
+            return JSON.parse(JSON.stringify(this.cache[frame]));
         }
 
         neighborsFrames(targetFrame) {
@@ -374,204 +379,174 @@
                     }
                 }
             }
+
+            return result;
         }
 
         save(frame, data) {
-            let savedAttributes = null;
-            let savedShapeArray = null;
-            let savedOccluded;
-            let savedZOrder;
-            let savedPoints;
-            let savedOutside;
+            if (this.lock || data.lock) {
+                this.lock = data.lock;
+                return objectStateFactory.call(this, frame, this.get(frame));
+            }
 
-            const savedLabelID = this.shapes;
-            const savedGroup = this.group;
-            const savedColor = this.color;
-            const savedKeyFrame = frame in this.shapes;
+            // All changes are done in this temporary object
+            const copy = Object.assign(this.get(frame));
+            copy.attributes = Object.assign(copy.attributes);
+            copy.points = [...copy.points];
 
-            try {
-                if (this.labelID !== data.labelID) {
-                    if (!(data.label instanceof window.cvat.classes.Label)) {
-                        throw new window.cvat.exceptions.ArgumentError(
-                            `Expected Label instance, but got "${typeof (data.label.constructor.name)}"`,
-                        );
-                    }
+            const updated = data.updateFlags;
+            let positionUpdated = false;
 
-                    this.labelID = data.label.id;
+            if (updated.label) {
+                checkObjectType('label', data.label, null, window.cvat.classes.Label);
+                copy.label = data.label;
+                copy.attributes = {};
 
-                    // deep copy before removing all attributes
-                    savedAttributes = JSON.stringify(this.attributes);
-                    savedShapeArray = JSON.stringify(this.shapes);
-                    this.attributes = {};
-                    for (const shape of this.shapes) {
-                        shape.attributes = {};
-                    }
+                // Shape attributes will be removed later after all checks
+                this.appendDefaultAttributes.call(copy, copy.label);
+            }
 
-                    this.appendDefaultAttributes();
-                }
+            if (updated.attributes) {
+                const labelAttributes = this.label.attributes
+                    .reduce((accumulator, value) => {
+                        accumulator[value.id] = value;
+                        return accumulator;
+                    }, {});
 
-                if (JSON.stringify(this.attributes) !== JSON.stringify(data.attributes)) {
-                    savedAttributes = savedAttributes || JSON.stringify(this.attributes);
-
-                    const labelAttributes = this.taskLabels[this.labelID]
-                        .attributes.map(attr => `${attr.id}`);
-
-                    for (const attrID of Object.keys(data.attributes)) {
-                        // separate on mutable and unmutable
-                        if (labelAttributes.includes(attrID)) {
+                for (const attrID of Object.keys(data.attributes)) {
+                    if (attrID in labelAttributes) {
+                        copy.attributes[attrID] = data.attributes[attrID];
+                        if (!labelAttributes[attrID].mutable) {
                             this.attributes[attrID] = data.attributes[attrID];
+                        } else {
+                            // Mutable attributes will be updated later
+                            positionUpdated = true;
                         }
-                    }
-                }
-
-                if (this.group !== data.group) {
-                    if (!Number.isInteger(data.group)) {
-                        throw new window.cvat.exceptions.ArgumentError(
-                            `Expected integer, but got ${data.group.constructor.name}`,
-                        );
-                    }
-
-                    this.group = data.group;
-                }
-
-                if (this.color !== data.color) {
-                    if (typeof (data.color) !== 'string') {
-                        throw new window.cvat.exceptions.ArgumentError(
-                            `Expected color represented by a string, but got ${data.color.constructor.name}`,
-                        );
-                    }
-
-                    if (/^#[0-9A-F]{6}$/i.test(data.color)) {
-                        throw new window.cvat.exceptions.ArgumentError(
-                            `Got invalid color value: "${data.color}"`,
-                        );
-                    }
-
-                    this.color = data.color;
-                }
-
-                if (!data.keyframe && savedKeyFrame) {
-                    savedShapeArray = savedShapeArray || JSON.stringify(this.shapes);
-                    delete this.shapes[frame];
-                } else {
-                    if (!savedKeyFrame) {
-                        this.shapes[frame] = {};
-                    }
-
-                    const shape = this.shapes[frame];
-                    savedOccluded = shape.occluded;
-                    savedOutside = shape.outside;
-                    savedZOrder = shape.zOrder;
-                    savedPoints = shape.points;
-
-                    if (JSON.stringify(shape.points) !== JSON.stringify(data.points)) {
-                        const points = [];
-                        if (!Array.isArray(data.points)) {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Got invalid points type "${typeof (data.points.constructor.name)}". Array is expected`,
-                            );
-                        }
-
-                        for (const coordinate of data.points) {
-                            if (typeof (coordinate) !== 'number') {
-                                throw new window.cvat.exceptions.ArgumentError(
-                                    `Got invalid point coordinate: "${coordinate}"`,
-                                );
-                            }
-
-                            points.push(coordinate);
-                        }
-
-                        // truncate in frame size if it is need
-                        shape.points = points;
-                    }
-
-                    if (shape.occluded !== data.occluded) {
-                        if (typeof (data.occluded) !== 'boolean') {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Expected boolean, but got ${data.occluded.constructor.name}`,
-                            );
-                        }
-
-                        shape.occluded = data.occluded;
-                    }
-
-                    if (shape.outside !== data.outside) {
-                        if (typeof (data.outside) !== 'boolean') {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Expected boolean, but got ${data.outside.constructor.name}`,
-                            );
-                        }
-
-                        shape.outside = data.outside;
-                    }
-
-                    if (shape.zOrder !== data.zOrder) {
-                        if (!Number.isInteger(data.zOrder)) {
-                            throw new window.cvat.exceptions.ArgumentError(
-                                `Expected integer, but got ${data.zOrder.constructor.name}`,
-                            );
-                        }
-
-                        shape.zOrder = data.zOrder;
-                    }
-
-                    data.outside = shape.outside;
-                    data.points = [...shape.points];
-                    data.occluded = shape.occluded;
-                    data.zOrder = shape.zOrder;
-                }
-            } catch (exception) {
-                this.labelID = savedLabelID;
-                this.color = savedColor;
-                this.group = savedGroup;
-
-                // If savedAttributes === null, attributes haven't been changed
-                if (savedAttributes) {
-                    this.attributes = JSON.parse(savedAttributes);
-                }
-
-                // If savedShapeArray === null, mutable attributes haven't been changed
-                // or a shape has been removed
-                if (savedShapeArray) {
-                    this.shapes = JSON.parse(savedShapeArray);
-                }
-
-                if (!savedKeyFrame) {
-                    delete this.shapes[frame];
-                } else {
-                    if (savedOccluded !== null) {
-                        this.shapes[frame].occluded = savedOccluded;
-                    }
-
-                    if (savedOutside !== null) {
-                        this.shapes[frame].outside = savedOutside;
-                    }
-
-                    if (savedZOrder !== null) {
-                        this.shapes[frame].zOrder = savedZOrder;
-                    }
-
-                    if (savedPoints !== null) {
-                        this.shapes[frame].points = savedPoints;
                     }
                 }
             }
 
-            data.label = this.taskLabels[this.labelID];
-            data.group = this.group;
-            data.color = this.color;
-            data.lock = this.lock;
-
-            if (this.removed) {
-                return null;
+            if (updated.points) {
+                checkObjectType('points', data.points, null, Array);
+                copy.points = [];
+                for (const coordinate of data.points) {
+                    checkObjectType('coordinate', coordinate, 'number', null);
+                    copy.points.push(coordinate);
+                }
+                positionUpdated = true;
             }
 
-            return data;
-        }
+            if (updated.occluded) {
+                checkObjectType('occluded', data.occluded, 'boolean', null);
+                copy.occluded = data.occluded;
+                positionUpdated = true;
+            }
 
-        delete() {
-            this.removed = true;
+            if (updated.outside) {
+                checkObjectType('outside', data.outside, 'boolean', null);
+                copy.outside = data.outside;
+                positionUpdated = true;
+            }
+
+            if (updated.group) {
+                checkObjectType('group', data.group, 'integer', null);
+                copy.group = data.group;
+            }
+
+            if (updated.zOrder) {
+                checkObjectType('zOrder', data.zOrder, 'integer', null);
+                copy.zOrder = data.zOrder;
+                positionUpdated = true;
+            }
+
+            if (updated.lock) {
+                checkObjectType('lock', data.lock, 'boolean', null);
+                copy.lock = data.lock;
+            }
+
+            if (updated.color) {
+                checkObjectType('color', data.color, 'string', null);
+                if (/^#[0-9A-F]{6}$/i.test(data.color)) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        `Got invalid color value: "${data.color}"`,
+                    );
+                }
+
+                copy.color = data.color;
+            }
+
+            // Commit all changes
+            for (const prop of Object.keys(copy)) {
+                if (Object.hasOwnProperty.call(this, prop)) {
+                    this[prop] = copy[prop];
+                }
+
+                this.cache[frame][prop] = copy[prop];
+            }
+
+            if (updated.label) {
+                for (const shape of this.shapes) {
+                    shape.attributes = {};
+                }
+            }
+
+            // Remove keyframe
+            if (updated.keyframe && !data.keyframe) {
+                // Remove all cache after this keyframe because it have just become outdated
+                for (const cacheFrame in this.cache) {
+                    if (+cacheFrame > frame) {
+                        delete this.cache[frame];
+                    }
+                }
+
+                this.cache[frame].keyframe = false;
+                delete this.shapes[frame];
+                updated.reset();
+
+                return objectStateFactory.call(this, frame, this.get(frame));
+            }
+
+            // Add/update keyframe
+            if (positionUpdated || (updated.keyframe && data.keyframe)) {
+                // Remove all cache after this keyframe because it have just become outdated
+                for (const cacheFrame in this.cache) {
+                    if (+cacheFrame > frame) {
+                        delete this.cache[frame];
+                    }
+                }
+
+                this.cache[frame].keyframe = true;
+                data.keyframe = true;
+
+                this.shapes[frame] = {
+                    frame,
+                    zOrder: copy.zOrder,
+                    points: copy.points,
+                    outside: copy.outside,
+                    occluded: copy.occluded,
+                    attributes: {},
+                };
+
+                if (updated.attributes) {
+                    const labelAttributes = this.label.attributes
+                        .reduce((accumulator, value) => {
+                            accumulator[value.id] = value;
+                            return accumulator;
+                        }, {});
+
+                    // Unmutable attributes were updated above
+                    for (const attrID of Object.keys(data.attributes)) {
+                        if (attrID in labelAttributes && labelAttributes[attrID].mutable) {
+                            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                        }
+                    }
+                }
+            }
+
+            updated.reset();
+
+            return objectStateFactory.call(this, frame, this.get(frame));
         }
 
         getPosition(targetFrame) {
@@ -1170,22 +1145,22 @@
                 const color = colors[clientID % colors.length];
                 let shapeModel = null;
                 switch (type) {
-                case 'rectangle':
-                    shapeModel = new RectangleShape(shapeData, clientID, color, injection);
-                    break;
-                case 'polygon':
-                    shapeModel = new PolygonShape(shapeData, clientID, color, injection);
-                    break;
-                case 'polyline':
-                    shapeModel = new PolylineShape(shapeData, clientID, color, injection);
-                    break;
-                case 'points':
-                    shapeModel = new PointsShape(shapeData, clientID, color, injection);
-                    break;
-                default:
-                    throw new window.cvat.exceptions.DataError(
-                        `An unexpected type of shape "${type}"`,
-                    );
+                    case 'rectangle':
+                        shapeModel = new RectangleShape(shapeData, clientID, color, injection);
+                        break;
+                    case 'polygon':
+                        shapeModel = new PolygonShape(shapeData, clientID, color, injection);
+                        break;
+                    case 'polyline':
+                        shapeModel = new PolylineShape(shapeData, clientID, color, injection);
+                        break;
+                    case 'points':
+                        shapeModel = new PointsShape(shapeData, clientID, color, injection);
+                        break;
+                    default:
+                        throw new window.cvat.exceptions.DataError(
+                            `An unexpected type of shape "${type}"`,
+                        );
                 }
 
                 return shapeModel;
@@ -1200,22 +1175,22 @@
 
                     let trackModel = null;
                     switch (type) {
-                    case 'rectangle':
-                        trackModel = new RectangleTrack(trackData, clientID, color, injection);
-                        break;
-                    case 'polygon':
-                        trackModel = new PolygonTrack(trackData, clientID, color, injection);
-                        break;
-                    case 'polyline':
-                        trackModel = new PolylineTrack(trackData, clientID, color, injection);
-                        break;
-                    case 'points':
-                        trackModel = new PointsTrack(trackData, clientID, color, injection);
-                        break;
-                    default:
-                        throw new window.cvat.exceptions.DataError(
-                            `An unexpected type of track "${type}"`,
-                        );
+                        case 'rectangle':
+                            trackModel = new RectangleTrack(trackData, clientID, color, injection);
+                            break;
+                        case 'polygon':
+                            trackModel = new PolygonTrack(trackData, clientID, color, injection);
+                            break;
+                        case 'polyline':
+                            trackModel = new PolylineTrack(trackData, clientID, color, injection);
+                            break;
+                        case 'points':
+                            trackModel = new PointsTrack(trackData, clientID, color, injection);
+                            break;
+                        default:
+                            throw new window.cvat.exceptions.DataError(
+                                `An unexpected type of track "${type}"`,
+                            );
                     }
 
                     return trackModel;
@@ -1280,20 +1255,11 @@
             const tags = this.tags[frame] || [];
 
             const objects = tracks.concat(shapes).concat(tags).filter(object => !object.removed);
-            const states = objects.map(object => object.get(frame));
-
             // filtering here
 
             const objectStates = [];
-            for (let i = 0; i < objects.length; i++) {
-                const state = states[i];
-                const object = objects[i];
-                const objectState = new ObjectState(state);
-
-                // Rewrite default implementations of save/delete
-                objectState.save.implementation = object.save.bind(object, frame, objectState);
-                objectState.delete.implementation = object.delete.bind(object);
-
+            for (const object of objects) {
+                const objectState = objectStateFactory.call(object, frame, object.get(frame));
                 objectStates.push(objectState);
             }
 

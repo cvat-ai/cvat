@@ -27,22 +27,50 @@
         */
         constructor(serialized) {
             const data = {
+                label: null,
+                attributes: {},
+
                 points: null,
-                group: null,
-                zOrder: null,
                 outside: null,
                 occluded: null,
+                keyframe: null,
+
+                group: null,
+                zOrder: null,
                 lock: null,
                 color: null,
-                keyframe: null,
-                attributes: {},
+
                 jobID: serialized.jobID,
                 frame: serialized.frame,
                 type: serialized.type,
                 shape: serialized.shape,
+                updateFlags: {},
             };
 
+            // Shows whether any properties updated since last reset() or interpolation
+            Object.defineProperty(data.updateFlags, 'reset', {
+                value: function reset() {
+                    this.label = false;
+                    this.attributes = false;
+
+                    this.points = false;
+                    this.outside = false;
+                    this.occluded = false;
+                    this.keyframe = false;
+
+                    this.group = false;
+                    this.zOrder = false;
+                    this.lock = false;
+                    this.color = false;
+                },
+                writable: false,
+            });
+
             Object.defineProperties(this, Object.freeze({
+                // Internal property. We don't need document it.
+                updateFlags: {
+                    get: () => data.updateFlags,
+                },
                 jobID: {
                     /**
                         * @name jobID
@@ -92,6 +120,7 @@
                     */
                     get: () => data.label,
                     set: (labelInstance) => {
+                        data.updateFlags.label = true;
                         data.label = labelInstance;
                     },
                 },
@@ -104,20 +133,21 @@
                     */
                     get: () => data.color,
                     set: (color) => {
+                        data.updateFlags.color = true;
                         data.color = color;
                     },
                 },
                 points: {
-
                     /**
                         * @name points
                         * @type {number[]}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @instance
                     */
-                    get: () => data.position,
-                    set: (position) => {
-                        data.position = position;
+                    get: () => data.points,
+                    set: (points) => {
+                        data.updateFlags.points = true;
+                        data.points = [...points];
                     },
                 },
                 group: {
@@ -128,8 +158,9 @@
                         * @instance
                     */
                     get: () => data.group,
-                    set: (groupID) => {
-                        data.group = groupID;
+                    set: (group) => {
+                        data.updateFlags.group = true;
+                        data.group = group;
                     },
                 },
                 zOrder: {
@@ -141,6 +172,7 @@
                     */
                     get: () => data.zOrder,
                     set: (zOrder) => {
+                        data.updateFlags.zOrder = true;
                         data.zOrder = zOrder;
                     },
                 },
@@ -153,6 +185,7 @@
                     */
                     get: () => data.outside,
                     set: (outside) => {
+                        data.updateFlags.outside = true;
                         data.outside = outside;
                     },
                 },
@@ -165,6 +198,7 @@
                     */
                     get: () => data.keyframe,
                     set: (keyframe) => {
+                        data.updateFlags.keyframe = true;
                         data.keyframe = keyframe;
                     },
                 },
@@ -177,6 +211,7 @@
                     */
                     get: () => data.occluded,
                     set: (occluded) => {
+                        data.updateFlags.occluded = true;
                         data.occluded = occluded;
                     },
                 },
@@ -189,6 +224,7 @@
                     */
                     get: () => data.lock,
                     set: (lock) => {
+                        data.updateFlags.lock = true;
                         data.lock = lock;
                     },
                 },
@@ -205,12 +241,19 @@
                     get: () => data.attributes,
                     set: (attributes) => {
                         if (typeof (attributes) !== 'object') {
+                            if (typeof (attributes) === 'undefined') {
+                                throw new window.cvat.exceptions.ArgumentError(
+                                    'Expected attributes are object, but got undefined',
+                                );
+                            }
+
                             throw new window.cvat.exceptions.ArgumentError(
-                                `Expected object, but got ${attributes.constructor.name}`,
+                                `Expected attributes are object, but got ${attributes.constructor.name}`,
                             );
                         }
 
                         for (const attrID of Object.keys(attributes)) {
+                            data.updateFlags.attributes = true;
                             data.attributes[attrID] = attributes[attrID];
                         }
                     },
@@ -226,7 +269,9 @@
             this.attributes = serialized.attributes;
             this.points = serialized.points;
             this.color = serialized.color;
-            this.lock = false;
+            this.lock = serialized.lock;
+
+            data.updateFlags.reset();
         }
 
         /**
@@ -252,24 +297,29 @@
             * @memberof module:API.cvat.classes.ObjectState
             * @readonly
             * @instance
+            * @param {boolean} [force=false]
             * @async
             * @throws {module:API.cvat.exceptions.PluginError}
         */
-        async delete() {
+        async delete(force = false) {
             const result = await PluginRegistry
-                .apiWrapper.call(this, ObjectState.prototype.delete);
+                .apiWrapper.call(this, ObjectState.prototype.delete, force);
             return result;
         }
     }
 
     // Default implementation saves element in collection
     ObjectState.prototype.save.implementation = async function () {
-
+        if (this.updateInCollection) {
+            this.updateInCollection();
+        } else {
+            // add new object into collection
+        }
     };
 
     // Default implementation do nothing
-    ObjectState.prototype.delete.implementation = function () {
-
+    ObjectState.prototype.delete.implementation = function (force) {
+        force = true;
     };
 
 

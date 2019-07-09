@@ -116,7 +116,7 @@
             if ('taskID' in filter) {
                 task = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
             } else {
-                const [job] = await serverProxy.jobs.getJob(filter.jobID);
+                const job = await serverProxy.jobs.getJob(filter.jobID);
                 task = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
             }
 
