@@ -574,8 +574,8 @@
                     rightPosition,
                     targetFrame,
                 ), {
-                    keyframe: false,
-                });
+                        keyframe: false,
+                    });
             }
 
             if (rightPosition) {
@@ -1145,22 +1145,22 @@
                 const color = colors[clientID % colors.length];
                 let shapeModel = null;
                 switch (type) {
-                    case 'rectangle':
-                        shapeModel = new RectangleShape(shapeData, clientID, color, injection);
-                        break;
-                    case 'polygon':
-                        shapeModel = new PolygonShape(shapeData, clientID, color, injection);
-                        break;
-                    case 'polyline':
-                        shapeModel = new PolylineShape(shapeData, clientID, color, injection);
-                        break;
-                    case 'points':
-                        shapeModel = new PointsShape(shapeData, clientID, color, injection);
-                        break;
-                    default:
-                        throw new window.cvat.exceptions.DataError(
-                            `An unexpected type of shape "${type}"`,
-                        );
+                case 'rectangle':
+                    shapeModel = new RectangleShape(shapeData, clientID, color, injection);
+                    break;
+                case 'polygon':
+                    shapeModel = new PolygonShape(shapeData, clientID, color, injection);
+                    break;
+                case 'polyline':
+                    shapeModel = new PolylineShape(shapeData, clientID, color, injection);
+                    break;
+                case 'points':
+                    shapeModel = new PointsShape(shapeData, clientID, color, injection);
+                    break;
+                default:
+                    throw new window.cvat.exceptions.DataError(
+                        `An unexpected type of shape "${type}"`,
+                    );
                 }
 
                 return shapeModel;
@@ -1175,22 +1175,22 @@
 
                     let trackModel = null;
                     switch (type) {
-                        case 'rectangle':
-                            trackModel = new RectangleTrack(trackData, clientID, color, injection);
-                            break;
-                        case 'polygon':
-                            trackModel = new PolygonTrack(trackData, clientID, color, injection);
-                            break;
-                        case 'polyline':
-                            trackModel = new PolylineTrack(trackData, clientID, color, injection);
-                            break;
-                        case 'points':
-                            trackModel = new PointsTrack(trackData, clientID, color, injection);
-                            break;
-                        default:
-                            throw new window.cvat.exceptions.DataError(
-                                `An unexpected type of track "${type}"`,
-                            );
+                    case 'rectangle':
+                        trackModel = new RectangleTrack(trackData, clientID, color, injection);
+                        break;
+                    case 'polygon':
+                        trackModel = new PolygonTrack(trackData, clientID, color, injection);
+                        break;
+                    case 'polyline':
+                        trackModel = new PolylineTrack(trackData, clientID, color, injection);
+                        break;
+                    case 'points':
+                        trackModel = new PointsTrack(trackData, clientID, color, injection);
+                        break;
+                    default:
+                        throw new window.cvat.exceptions.DataError(
+                            `An unexpected type of track "${type}"`,
+                        );
                     }
 
                     return trackModel;
