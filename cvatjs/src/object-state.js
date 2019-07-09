@@ -18,9 +18,8 @@
         /**
             * @param {Object} serialized - is an dictionary which contains
             * initial information about an ObjectState;
-            * Necessary fields: type, shape;
-            * Necessary fields for ObjectStates which haven't been saved in a collection yet:
-            * jobID, frame;
+            * Necessary fields: type, shape
+            * Necessary fields for objects which haven't been added to collection yet: frame
             * Optional fields: points, group, zOrder, outside, occluded,
             * attributes, lock, label, mode, color, keyframe
             * These fields can be set later via setters
@@ -40,7 +39,6 @@
                 lock: null,
                 color: null,
 
-                jobID: serialized.jobID,
                 frame: serialized.frame,
                 type: serialized.type,
                 shape: serialized.shape,
@@ -70,16 +68,6 @@
                 // Internal property. We don't need document it.
                 updateFlags: {
                     get: () => data.updateFlags,
-                },
-                jobID: {
-                    /**
-                        * @name jobID
-                        * @type {integer}
-                        * @memberof module:API.cvat.classes.ObjectState
-                        * @readonly
-                        * @instance
-                    */
-                    get: () => data.jobID,
                 },
                 frame: {
                     /**
