@@ -63,13 +63,7 @@ class Dashboard extends Component<any, DashboardState> {
   private deleteTask = (task: any) => {
     task.delete().then(
       (_deleted: any) => {
-        setTimeout(() => {
-
-          this.getTasks();
-        }, 1000);
-        // const tasks = this.state.tasks.filter((taskToDelete: any) => taskToDelete.id !== task.id) as any;
-
-        // this.setState({ tasks, tasksCount: this.state.tasksCount - 1 });
+        this.getTasks();
       },
       (error: any) => {
         console.log(error);
