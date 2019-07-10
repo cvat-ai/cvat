@@ -13,16 +13,16 @@ interface DashboardContentAction {
 }
 
 class DashboardContent extends Component<any, any> {
-  hostUrl: string;
-  apiUrl: string;
+  hostUrl: string | undefined;
+  apiUrl: string | undefined;
   actions: DashboardContentAction[];
 
   constructor(props: any) {
     super(props);
 
     this.state = {};
-    this.hostUrl = 'http://localhost:7000';
-    this.apiUrl = 'http://localhost:7000/api/v1';
+    this.hostUrl = process.env.REACT_APP_API_HOST_URL;
+    this.apiUrl = process.env.REACT_APP_API_FULL_URL;
 
     this.actions = [
       // {
