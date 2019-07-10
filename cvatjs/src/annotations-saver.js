@@ -3,6 +3,10 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* global
+    require:false
+*/
+
 (() => {
     const serverProxy = require('./server-proxy');
 
