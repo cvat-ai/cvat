@@ -180,7 +180,7 @@ class AnnotationSaverModel extends Listener {
     }
 
     _updateCreatedObjects(objectsToSave, savedObjects, mapping) {
-        // Method setups IDs of created objects after saving on a server
+        
         const allSavedObjects = savedObjects.shapes.concat(savedObjects.tracks);
         const allObjectsToSave = objectsToSave.shapes.concat(objectsToSave.tracks);
         if (allSavedObjects.length !== allObjectsToSave.length) {
