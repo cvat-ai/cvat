@@ -498,6 +498,38 @@
                 return response.data;
             }
 
+            // Session is 'task' or 'job'
+            async function updateAnnotations(session, id, data, action) {
+                const { backendAPI } = window.cvat.config;
+                let requestFunc = null;
+                let url = null;
+                if (action.toUpperCase() === 'PUT') {
+                    requestFunc = Axios.put.bind(Axios);
+                    url = `${backendAPI}/${session}s/${id}/annotations`;
+                } else {
+                    requestFunc = Axios.patch.bind(Axios);
+                    url = `${backendAPI}/${session}s/${id}/annotations?action=${action}`;
+                }
+
+                let response = null;
+                try {
+                    response = await requestFunc(url, JSON.stringify(data), {
+                        proxy: window.cvat.config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        `Could not updated annotations for the ${session} ${id} on the server`,
+                        code,
+                    );
+                }
+
+                return response.data;
+            }
+
             // Set csrftoken header from browser cookies if it exists
             // NodeJS env returns 'undefined'
             // So in NodeJS we need login after each run
@@ -556,6 +588,7 @@
                     value: Object.freeze({
                         getTaskAnnotations,
                         getJobAnnotations,
+                        updateAnnotations,
                     }),
                     writable: false,
                 },

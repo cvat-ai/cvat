@@ -47,11 +47,15 @@
                 return labelAccumulator;
             }, {});
 
-            this.empty();
+            this.shapes = {}; // key is frame
+            this.tags = {}; // key is frame
+            this.tracks = [];
+            this.objects = {}; // key is client id
+            this.count = 0;
+            this.flush = false;
         }
 
         import(data) {
-            this.empty();
             const injection = {
                 labels: this.labels,
             };
@@ -142,16 +146,21 @@
                     this.objects[clientID] = trackModel;
                 }
             }
+
+            return this;
         }
 
         export() {
             const data = {
-                tracks: Object.values(this.tracks).reduce((accumulator, value) => {
+                tracks: this.tracks.map(track => track.toJSON()),
+                shapes: Object.values(this.shapes).reduce((accumulator, value) => {
                     accumulator.push(...value);
                     return accumulator;
-                }, []).map(track => track.toJSON()),
-                shapes: this.shapes.map(shape => shape.toJSON()),
-                tags: this.shapes.map(tag => tag.toJSON()),
+                }, []).map(shape => shape.toJSON()),
+                tags: Object.values(this.tags).reduce((accumulator, value) => {
+                    accumulator.push(...value);
+                    return accumulator;
+                }, []).map(tag => tag.toJSON()),
             };
 
             return data;
@@ -163,6 +172,8 @@
             this.tracks = [];
             this.objects = {}; // by id
             this.count = 0;
+
+            this.flush = true;
         }
 
         get(frame) {
