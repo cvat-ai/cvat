@@ -11,8 +11,8 @@ import './app.scss';
 declare const window: any;
 
 const mapDispatchToProps = (dispatch: any) => ({
-  login: () => dispatch(loginAction()),
-  logout: () => dispatch(logoutAction()),
+  login: () => { dispatch(loginAction()) },
+  logout: () => { dispatch(logoutAction()) },
 })
 
 const mapStateToProps = (state: any) => ({
