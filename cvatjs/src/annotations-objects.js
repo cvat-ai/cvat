@@ -105,6 +105,7 @@
         // Method is used to export data to the server
         toJSON() {
             return {
+                clientID: this.clientID,
                 occluded: this.occluded,
                 z_order: this.zOrder,
                 points: [...this.points],
@@ -264,9 +265,11 @@
         // Method is used to export data to the server
         toJSON() {
             return {
-                occluded: this.occluded,
-                z_order: this.zOrder,
-                points: [...this.points],
+                clientID: this.clientID,
+                id: this.serverID,
+                frame: this.frame,
+                label_id: this.label.id,
+                group: this.group,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
                     attributeAccumulator.push({
                         spec_id: attrId,
@@ -275,19 +278,14 @@
 
                     return attributeAccumulator;
                 }, []),
-
-                id: this.serverID,
-                frame: this.frame,
-                label_id: this.label.id,
-                group: this.group,
                 shapes: Object.keys(this.shapes).reduce((shapesAccumulator, frame) => {
                     shapesAccumulator.push({
-                        type: this.type,
+                        type: this.shape,
                         occluded: this.shapes[frame].occluded,
                         z_order: this.shapes[frame].zOrder,
                         points: [...this.shapes[frame].points],
-                        outside: [...this.shapes[frame].outside],
-                        attributes: Object.keys(...this.shapes[frame].attributes)
+                        outside: this.shapes[frame].outside,
+                        attributes: Object.keys(this.shapes[frame].attributes)
                             .reduce((attributeAccumulator, attrId) => {
                                 attributeAccumulator.push({
                                     spec_id: attrId,
@@ -607,6 +605,7 @@
         // Method is used to export data to the server
         toJSON() {
             return {
+                clientID: this.clientID,
                 id: this.serverID,
                 frame: this.frame,
                 label_id: this.label.id,

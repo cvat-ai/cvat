@@ -14,6 +14,8 @@
     const {
         getJobAnnotations,
         getTaskAnnotations,
+        saveJobAnnotations,
+        saveTaskAnnotations,
     } = require('./annotations');
 
     function buildDublicatedAPI() {
@@ -93,9 +95,9 @@
                         .apiWrapper.call(this, logs.value.put, logType, details);
                     return result;
                 },
-                async save() {
+                async save(onUpdate) {
                     const result = await PluginRegistry
-                        .apiWrapper.call(this, logs.value.save);
+                        .apiWrapper.call(this, logs.value.save, onUpdate);
                     return result;
                 },
             },
@@ -169,13 +171,16 @@
                 * @throws {module:API.cvat.exceptions.ArgumentError}
             */
             /**
-                * Save annotation changes on a server
+                * Save all changes in annotations on a server
                 * @method save
                 * @memberof Session.annotations
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
                 * @instance
                 * @async
+                * @param {function} [onUpdate] saving can be long.
+                * This callback can be used to notify a user about current progress
+                * Its argument is a text string
             */
             /**
                 * Remove all annotations from a session
@@ -508,6 +513,7 @@
 
             this.frames.get.implementation = this.frames.get.implementation.bind(this);
             this.annotations.get.implementation = this.annotations.get.implementation.bind(this);
+            this.annotations.save.implementation = this.annotations.save.implementation.bind(this);
         }
 
         /**
@@ -574,6 +580,10 @@
 
         const annotationsData = await getJobAnnotations(this, frame, filter);
         return annotationsData;
+    };
+
+    Job.prototype.annotations.save.implementation = async function (onUpdate) {
+        await saveJobAnnotations(this, onUpdate);
     };
 
     /**
@@ -979,6 +989,7 @@
 
             this.frames.get.implementation = this.frames.get.implementation.bind(this);
             this.annotations.get.implementation = this.annotations.get.implementation.bind(this);
+            this.annotations.save.implementation = this.annotations.save.implementation.bind(this);
         }
 
         /**
@@ -1095,6 +1106,10 @@
 
         const annotationsData = await getTaskAnnotations(this, frame, filter);
         return annotationsData;
+    };
+
+    Task.prototype.annotations.save.implementation = async function (onUpdate) {
+        await saveTaskAnnotations(this, onUpdate);
     };
 
     module.exports = {
