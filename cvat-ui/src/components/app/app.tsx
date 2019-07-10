@@ -1,32 +1,32 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import { BrowserRouter as Router, Route, Redirect } from 'react-router-dom';
+import { connect } from 'react-redux';
 
 import Dashboard from '../dashboard/dashboard';
+
+import { loginAction, logoutAction } from '../../actions/authentication-action';
 
 import './app.scss';
 
 declare const window: any;
 
-interface AppState {
-  isLoggedIn: boolean;
-}
+const mapDispatchToProps = (dispatch: any) => ({
+  login: () => dispatch(loginAction()),
+  logout: () => dispatch(logoutAction()),
+})
 
-class App extends Component<any, AppState> {
-  constructor(props: any) {
-    super(props);
+const mapStateToProps = (state: any) => ({
+  ...state.authenticateReducer,
+})
 
-    this.state = {
-      isLoggedIn: false
-    };
-  }
-
+class App extends PureComponent<any, any> {
   componentDidMount() {
-    window.cvat.server.login('admin', 'admin').then(
+    window.cvat.server.login(process.env.REACT_APP_LOGIN, process.env.REACT_APP_PASSWORD).then(
       (_response: any) => {
-        this.setState({ isLoggedIn: true });
+        this.props.login();
       },
       (_error: any) => {
-        this.setState({ isLoggedIn: false });
+        this.props.logout();
       }
     );
   }
@@ -43,4 +43,4 @@ class App extends Component<any, AppState> {
   }
 }
 
-export default App;
+export default connect(mapStateToProps, mapDispatchToProps)(App);
