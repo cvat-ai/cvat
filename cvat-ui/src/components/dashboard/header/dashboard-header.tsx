@@ -15,14 +15,14 @@ interface DashboardHeaderAction {
 
 class DashboardHeader extends Component<any, any> {
   actions: DashboardHeaderAction[];
-  hostUrl: string;
+  hostUrl: string | undefined;
 
   constructor(props: any) {
     super(props);
 
     this.state = {};
 
-    this.hostUrl = 'http://localhost:7000';
+    this.hostUrl = process.env.REACT_APP_API_HOST_URL;
 
     this.actions = [
       // {
