@@ -92,14 +92,14 @@ class PDFExtractor(MediaExtractor):
         file_ = convert_from_path(self._source_path)
         self._basename = os.path.splitext(os.path.basename(self._source_path))[0]
         for page_num, page in enumerate(file_):
-            output = os.path.join(self._temp_directory, self._basename + f'{page_num}' + '.jpg')
+            output = os.path.join(self._temp_directory, self._basename + str(page_num) + '.jpg')
             self._dimensions.append(page.size)
             page.save(output, 'JPEG')
 
         self._length = len(os.listdir(self._temp_directory))
 
     def _get_imagepath(self, k):
-        img_path = os.path.join(self._temp_directory, self._basename + f'{k}' + '.jpg')
+        img_path = os.path.join(self._temp_directory, self._basename + str(k) + '.jpg')
         return img_path
 
     def __iter__(self):
