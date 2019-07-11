@@ -60,6 +60,45 @@
         // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
     }
 
+    function mergeAnnotations(session, objectStates) {
+        const sessionType = session.constructor.name.toLowerCase();
+        const cache = getCache(sessionType);
+
+        if (session.id in cache) {
+            return cache[session.id].collection.merge(objectStates);
+        }
+
+        throw window.cvat.exceptions.DataError(
+            'Collection has not been initialized yet. Call annotations.get() before',
+        );
+    }
+
+    function splitAnnotations(session, objectState, frame) {
+        const sessionType = session.constructor.name.toLowerCase();
+        const cache = getCache(sessionType);
+
+        if (session.id in cache) {
+            return cache[session.id].collection.split(objectState, frame);
+        }
+
+        throw window.cvat.exceptions.DataError(
+            'Collection has not been initialized yet. Call annotations.get() before',
+        );
+    }
+
+    function groupAnnotations(session, objectStates) {
+        const sessionType = session.constructor.name.toLowerCase();
+        const cache = getCache(sessionType);
+
+        if (session.id in cache) {
+            return cache[session.id].collection.group(objectStates);
+        }
+
+        throw window.cvat.exceptions.DataError(
+            'Collection has not been initialized yet. Call annotations.get() before',
+        );
+    }
+
     function hasUnsavedChanges(session) {
         const sessionType = session.constructor.name.toLowerCase();
         const cache = getCache(sessionType);
@@ -75,5 +114,8 @@
         getAnnotations,
         saveAnnotations,
         hasUnsavedChanges,
+        mergeAnnotations,
+        splitAnnotations,
+        groupAnnotations,
     };
 })();

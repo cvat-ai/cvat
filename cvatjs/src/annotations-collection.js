@@ -155,15 +155,19 @@
 
         export() {
             const data = {
-                tracks: this.tracks.map(track => track.toJSON()),
-                shapes: Object.values(this.shapes).reduce((accumulator, value) => {
-                    accumulator.push(...value);
-                    return accumulator;
-                }, []).map(shape => shape.toJSON()),
+                tracks: this.tracks.filter(track => !track.removed)
+                    .map(track => track.toJSON()),
+                shapes: Object.values(this.shapes)
+                    .reduce((accumulator, value) => {
+                        accumulator.push(...value);
+                        return accumulator;
+                    }, []).filter(shape => !shape.removed)
+                    .map(shape => shape.toJSON()),
                 tags: Object.values(this.tags).reduce((accumulator, value) => {
                     accumulator.push(...value);
                     return accumulator;
-                }, []).map(tag => tag.toJSON()),
+                }, []).filter(tag => !tag.removed)
+                    .map(tag => tag.toJSON()),
             };
 
             return data;
@@ -189,7 +193,12 @@
 
             const objectStates = [];
             for (const object of objects) {
-                const objectState = objectStateFactory.call(object, frame, object.get(frame));
+                const stateData = object.get(frame);
+                if (stateData.outside && !stateData.keyframe) {
+                    continue;
+                }
+
+                const objectState = objectStateFactory.call(object, frame, stateData);
                 objectStates.push(objectState);
             }
 
@@ -197,15 +206,22 @@
         }
 
         merge(objectStates) {
-            checkObjectType('merged shapes', objectStates, Array, null);
+            checkObjectType('merged shapes', objectStates, null, Array);
             if (!objectStates.length) return;
             const objectsForMerge = objectStates.map((state) => {
-                checkObjectType('object state', state, window.cvat.classes.ObjectState, null);
-                return this.objects[state.clientID];
+                checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
+                const object = this.objects[state.clientID];
+                if (typeof (object) === 'undefined') {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        'The object has not been saved yet. Call ObjectState.save() before you can merge it',
+                    );
+                }
+                return object;
             });
 
             const keyframes = {}; // frame: position
-            const { label, shapeType } = objectStates[0];
+            const { label } = objectStates[0];
+            const shapeType = objectStates[0].shape;
             const labelAttributes = label.attributes.reduce((accumulator, attribute) => {
                 accumulator[attribute.id] = attribute;
                 return accumulator;
@@ -215,14 +231,14 @@
                 // For each state get corresponding object
                 const object = objectsForMerge[i];
                 const state = objectStates[i];
-                if (state.label !== label) {
-                    throw window.cvat.exceptions.ArgumentError(
+                if (state.label.id !== label.id) {
+                    throw new window.cvat.exceptions.ArgumentError(
                         `All shape labels are expected to be ${label.name}, but got ${state.label.name}`,
                     );
                 }
 
                 if (state.shape !== shapeType) {
-                    throw window.cvat.exceptions.ArgumentError(
+                    throw new window.cvat.exceptions.ArgumentError(
                         `All shapes are expected to be ${shapeType}, but got ${state.shape}`,
                     );
                 }
@@ -231,10 +247,14 @@
                 if (object instanceof Shape) {
                     // Frame already saved and it is not outside
                     if (object.frame in keyframes && !keyframes[object.frame].outside) {
-                        // error
+                        throw new window.cvat.exceptions.ArgumentError(
+                            'Expected only one visible shape per frame',
+                        );
                     }
 
                     keyframes[object.frame] = {
+                        type: shapeType,
+                        frame: object.frame,
                         points: [...object.points],
                         occluded: object.occluded,
                         zOrder: object.zOrder,
@@ -242,10 +262,13 @@
                         attributes: Object.keys(object.attributes).reduce((accumulator, attrID) => {
                             // We save only mutable attributes inside a keyframe
                             if (attrID in labelAttributes && labelAttributes[attrID].mutable) {
-                                accumulator[attrID] = object.attributes[attrID];
+                                accumulator.push({
+                                    spec_id: +attrID,
+                                    value: object.attributes[attrID],
+                                });
                             }
                             return accumulator;
-                        }, {}),
+                        }, []),
                     };
 
                     // Push outside shape after each annotation shape
@@ -253,6 +276,8 @@
                     if (!((object.frame + 1) in keyframes)) {
                         keyframes[object.frame + 1] = JSON
                             .parse(JSON.stringify(keyframes[object.frame]));
+                        keyframes[object.frame + 1].outside = true;
+                        keyframes[object.frame + 1].frame++;
                     }
                 } else if (object instanceof Track) {
                     // If this object is track, iterate through all its
@@ -267,7 +292,7 @@
                                 continue;
                             }
 
-                            throw window.cvat.exceptions.ArgumentError(
+                            throw new window.cvat.exceptions.ArgumentError(
                                 'Expected only one visible shape per frame',
                             );
                         }
@@ -284,15 +309,25 @@
                         }
 
                         keyframes[keyframe] = {
+                            type: shapeType,
+                            frame: +keyframe,
                             points: [...shape.points],
-                            occluded: shape.occuded,
+                            occluded: shape.occluded,
                             outside: shape.outside,
                             zOrder: shape.zOrder,
-                            attributes: updatedAttributes ? Object.assign({}, attributes) : {},
+                            attributes: updatedAttributes ? Object.keys(attributes)
+                                .reduce((accumulator, attrID) => {
+                                    accumulator.push({
+                                        spec_id: +attrID,
+                                        value: attributes[attrID],
+                                    });
+
+                                    return accumulator;
+                                }, []) : [],
                         };
                     }
                 } else {
-                    throw window.cvat.exceptions.ArgumentError(
+                    throw new window.cvat.exceptions.ArgumentError(
                         `Trying to merge unknown object type: ${object.constructor.name}. `
                             + 'Only shapes and tracks are expected.',
                     );
@@ -303,7 +338,7 @@
             for (const frame of Object.keys(keyframes).sort((a, b) => +a - +b)) {
                 // Remove all outside frames at the begin
                 firstNonOutside = firstNonOutside || keyframes[frame].outside;
-                if (!firstNonOutside) {
+                if (!firstNonOutside && keyframes[frame].outside) {
                     delete keyframes[frame];
                 } else {
                     break;
@@ -312,6 +347,8 @@
 
             const clientID = ++this.count;
             const track = {
+                frame: Math.min.apply(null, Object.keys(keyframes).map(frame => +frame)),
+                shapes: Object.values(keyframes),
                 group: 0,
                 label_id: label.id,
                 attributes: Object.keys(objectStates[0].attributes)

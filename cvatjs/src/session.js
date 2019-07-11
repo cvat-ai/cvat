@@ -15,6 +15,9 @@
         getAnnotations,
         saveAnnotations,
         hasUnsavedChanges,
+        mergeAnnotations,
+        splitAnnotations,
+        groupAnnotations,
     } = require('./annotations');
 
     function buildDublicatedAPI(prototype) {
@@ -665,6 +668,18 @@
         await saveAnnotations(this, onUpdate);
     };
 
+    Job.prototype.annotations.merge.implementation = async function (objectStates) {
+        await mergeAnnotations(this, objectStates);
+    };
+
+    Job.prototype.annotations.split.implementation = async function (objectState, frame) {
+        await splitAnnotations(this, objectState, frame);
+    };
+
+    Job.prototype.annotations.group.implementation = async function (objectStates) {
+        await groupAnnotations(this, objectStates);
+    };
+
     Job.prototype.annotations.hasUnsavedChanges.implementation = async function () {
         return hasUnsavedChanges(this);
     };
@@ -1206,6 +1221,18 @@
 
     Task.prototype.annotations.save.implementation = async function (onUpdate) {
         await saveAnnotations(this, onUpdate);
+    };
+
+    Task.prototype.annotations.merge.implementation = async function (objectStates) {
+        await mergeAnnotations(this, objectStates);
+    };
+
+    Task.prototype.annotations.split.implementation = async function (objectState, frame) {
+        await splitAnnotations(this, objectState, frame);
+    };
+
+    Task.prototype.annotations.group.implementation = async function (objectStates) {
+        await groupAnnotations(this, objectStates);
     };
 
     Task.prototype.annotations.hasUnsavedChanges.implementation = async function () {

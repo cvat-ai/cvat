@@ -126,6 +126,7 @@
         // Method is used to export data to the server
         toJSON() {
             return {
+                type: this.shape,
                 clientID: this.clientID,
                 occluded: this.occluded,
                 z_order: this.zOrder,
@@ -1193,6 +1194,8 @@
         PolygonTrack,
         PolylineTrack,
         PointsTrack,
+        Track,
+        Shape,
         Tag,
         objectStateFactory,
     };
