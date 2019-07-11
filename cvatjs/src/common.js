@@ -1,0 +1,86 @@
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+(() => {
+    function isBoolean(value) {
+        return typeof (value) === 'boolean';
+    }
+
+    function isInteger(value) {
+        return typeof (value) === 'number' && Number.isInteger(value);
+    }
+
+    // Called with specific Enum context
+    function isEnum(value) {
+        for (const key in this) {
+            if (Object.prototype.hasOwnProperty.call(this, key)) {
+                if (this[key] === value) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    function isString(value) {
+        return typeof (value) === 'string';
+    }
+
+    function checkFilter(filter, fields) {
+        for (const prop in filter) {
+            if (Object.prototype.hasOwnProperty.call(filter, prop)) {
+                if (!(prop in fields)) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        `Unsupported filter property has been recieved: "${prop}"`,
+                    );
+                } else if (!fields[prop](filter[prop])) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        `Received filter property ${prop} is not satisfied for checker`,
+                    );
+                }
+            }
+        }
+    }
+
+    function checkObjectType(name, value, type, instance) {
+        if (type) {
+            if (typeof (value) !== type) {
+                // specific case for integers which aren't native type in JS
+                if (type === 'integer' && Number.isInteger(value)) {
+                    return;
+                }
+
+                throw new window.cvat.exceptions.ArgumentError(
+                    `Got "${name}" value of type: "${typeof (value)}". `
+                        + `Expected "${type}"`,
+                );
+            }
+        } else if (instance) {
+            if (!(value instanceof instance)) {
+                if (value !== undefined) {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        `Got ${value.constructor.name} value for ${name}. `
+                        + `Expected instance of ${instance.name}`,
+                    );
+                }
+
+                throw new window.cvat.exceptions.ArgumentError(
+                    `Got undefined value for ${name}. `
+                    + `Expected instance of ${instance.name}`,
+                );
+            }
+        }
+    }
+
+    module.exports = {
+        isBoolean,
+        isInteger,
+        isEnum,
+        isString,
+        checkFilter,
+        checkObjectType,
+    };
+})();
