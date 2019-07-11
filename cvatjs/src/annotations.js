@@ -30,7 +30,7 @@
     }
 
     async function getAnnotations(session, frame, filter) {
-        const sessionType = session.constructor.name.toLowerCase();
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (!(session.id in cache)) {
@@ -50,7 +50,7 @@
     }
 
     async function saveAnnotations(session, onUpdate) {
-        const sessionType = session.constructor.name.toLowerCase();
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (session.id in cache) {
@@ -61,7 +61,7 @@
     }
 
     function mergeAnnotations(session, objectStates) {
-        const sessionType = session.constructor.name.toLowerCase();
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (session.id in cache) {
@@ -74,7 +74,7 @@
     }
 
     function splitAnnotations(session, objectState, frame) {
-        const sessionType = session.constructor.name.toLowerCase();
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (session.id in cache) {
@@ -87,7 +87,7 @@
     }
 
     function groupAnnotations(session, objectStates) {
-        const sessionType = session.constructor.name.toLowerCase();
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (session.id in cache) {
@@ -100,7 +100,7 @@
     }
 
     function hasUnsavedChanges(session) {
-        const sessionType = session.constructor.name.toLowerCase();
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (session.id in cache) {
