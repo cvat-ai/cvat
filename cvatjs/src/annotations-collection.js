@@ -216,11 +216,15 @@
                 const object = objectsForMerge[i];
                 const state = objectStates[i];
                 if (state.label !== label) {
-                    // error
+                    throw window.cvat.exceptions.ArgumentError(
+                        `All shape labels are expected to be ${label.name}, but got ${state.label.name}`,
+                    );
                 }
 
                 if (state.shape !== shapeType) {
-                    // error
+                    throw window.cvat.exceptions.ArgumentError(
+                        `All shapes are expected to be ${shapeType}, but got ${state.shape}`,
+                    );
                 }
 
                 // If this object is shape, get it position and save as a keyframe
@@ -263,7 +267,9 @@
                                 continue;
                             }
 
-                            // error
+                            throw window.cvat.exceptions.ArgumentError(
+                                'Expected only one visible shape per frame',
+                            );
                         }
 
                         // We do not save an attribute if it has the same value
@@ -286,7 +292,10 @@
                         };
                     }
                 } else {
-                    // error
+                    throw window.cvat.exceptions.ArgumentError(
+                        `Trying to merge unknown object type: ${object.constructor.name}. `
+                            + 'Only shapes and tracks are expected.',
+                    );
                 }
             }
 

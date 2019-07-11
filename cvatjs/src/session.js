@@ -81,6 +81,24 @@
                             .apiWrapper.call(this, prototype.annotations.hasUnsavedChanges);
                         return result;
                     },
+
+                    async merge(objectStates) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.merge, objectStates);
+                        return result;
+                    },
+
+                    async split(objectState, frame) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.split, objectState, frame);
+                        return result;
+                    },
+
+                    async group(objectStates) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.group, objectStates);
+                        return result;
+                    },
                 },
                 writable: true,
             }),
@@ -268,9 +286,47 @@
                 * @param {float} x horizontal coordinate
                 * @param {float} y vertical coordinate
                 * @returns {(integer|null)}
-                * identifier of a selected object or null if no one of objects is on position
+                * an ID of a selected object or null if no one of objects is on position
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
+            */
+            /**
+                * Method unites several shapes and tracks into the one
+                * All shapes must be the same (rectangle, polygon, etc)
+                * All labels must be the same
+                * After successful merge you need to update object states on a frame
+                * @method merge
+                * @memberof Session.annotations
+                * @param {module:API.cvat.classes.ObjectState[]} objectStates
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
+            */
+            /**
+                * Method splits a track into two parts
+                * (start frame: previous frame), (frame, last frame)
+                * After successful split you need to update object states on a frame
+                * @method split
+                * @memberof Session.annotations
+                * @param {module:API.cvat.classes.ObjectState} objectState
+                * @param {integer} frame
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+            /**
+                * Method creates a new group and put all passed objects into it
+                * After successful split you need to update object states on a frame
+                * @method group
+                * @memberof Session.annotations
+                * @param {module:API.cvat.classes.ObjectState[]} objectStates
+                * @returns {integer} an ID of created group
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @throws {module:API.cvat.exceptions.PluginError}
                 * @instance
                 * @async
             */
@@ -527,6 +583,9 @@
             this.annotations = {
                 get: Object.getPrototypeOf(this).annotations.get.bind(this),
                 save: Object.getPrototypeOf(this).annotations.save.bind(this),
+                merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
+                split: Object.getPrototypeOf(this).annotations.split.bind(this),
+                group: Object.getPrototypeOf(this).annotations.group.bind(this),
                 hasUnsavedChanges: Object.getPrototypeOf(this)
                     .annotations.hasUnsavedChanges.bind(this),
             };
@@ -1017,6 +1076,9 @@
             this.annotations = {
                 get: Object.getPrototypeOf(this).annotations.get.bind(this),
                 save: Object.getPrototypeOf(this).annotations.save.bind(this),
+                merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
+                split: Object.getPrototypeOf(this).annotations.split.bind(this),
+                group: Object.getPrototypeOf(this).annotations.group.bind(this),
                 hasUnsavedChanges: Object.getPrototypeOf(this)
                     .annotations.hasUnsavedChanges.bind(this),
             };
