@@ -453,3 +453,13 @@
 
     window.cvat = Object.freeze(implementAPI(cvat));
 })();
+
+async function tmp() {
+    await window.cvat.server.login('admin', 'nimda760');
+    const task = (await window.cvat.tasks.get({id : 2}))[0];
+    const annotations = await task.annotations.get(0);
+    await annotations[0].up();
+    await annotations[0].down();
+}
+
+tmp();

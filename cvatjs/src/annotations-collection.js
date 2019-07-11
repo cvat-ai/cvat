@@ -47,17 +47,19 @@
                 return labelAccumulator;
             }, {});
 
-            this.shapes = {}; // key is frame
-            this.tags = {}; // key is frame
+            this.shapes = {}; // key is a frame
+            this.tags = {}; // key is a frame
             this.tracks = [];
-            this.objects = {}; // key is client id
+            this.objects = {}; // key is a client id
             this.count = 0;
             this.flush = false;
+            this.collectionZ = {}; // key is a frame
         }
 
         import(data) {
             const injection = {
                 labels: this.labels,
+                collectionZ: this.collectionZ,
             };
 
             function shapeFactory(shapeData, clientID) {

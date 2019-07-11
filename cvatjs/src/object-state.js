@@ -287,12 +287,42 @@
             * @instance
             * @param {boolean} [force=false] delete object even if it is locked
             * @async
-            * @returns {boolean} wheter object was deleted
+            * @returns {boolean} true if object has been deleted
             * @throws {module:API.cvat.exceptions.PluginError}
         */
         async delete(force = false) {
             const result = await PluginRegistry
                 .apiWrapper.call(this, ObjectState.prototype.delete, force);
+            return result;
+        }
+
+        /**
+            * Set the highest ZOrder within a frame
+            * @method up
+            * @memberof module:API.cvat.classes.ObjectState
+            * @readonly
+            * @instance
+            * @async
+            * @throws {module:API.cvat.exceptions.PluginError}
+        */
+        async up() {
+            const result = await PluginRegistry
+                .apiWrapper.call(this, ObjectState.prototype.up);
+            return result;
+        }
+
+        /**
+            * Set the lowest ZOrder within a frame
+            * @method down
+            * @memberof module:API.cvat.classes.ObjectState
+            * @readonly
+            * @instance
+            * @async
+            * @throws {module:API.cvat.exceptions.PluginError}
+        */
+        async down() {
+            const result = await PluginRegistry
+                .apiWrapper.call(this, ObjectState.prototype.down);
             return result;
         }
     }
@@ -310,6 +340,22 @@
     ObjectState.prototype.delete.implementation = async function (force) {
         if (this.deleteFromCollection) {
             return this.deleteFromCollection(force);
+        }
+
+        return false;
+    };
+
+    ObjectState.prototype.up.implementation = async function () {
+        if (this.upZOrder) {
+            return this.upZOrder();
+        }
+
+        return false;
+    };
+
+    ObjectState.prototype.down.implementation = async function () {
+        if (this.downZOrder) {
+            return this.downZOrder();
         }
 
         return false;

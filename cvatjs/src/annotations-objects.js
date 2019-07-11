@@ -14,8 +14,11 @@
         const objectState = new ObjectState(data);
 
         // Rewrite default implementations of save/delete
-        objectState.updateInCollection = this.save.bind(this, frame, objectState);
-        objectState.deleteFromCollection = this.delete.bind(this);
+        const proto = Object.getPrototypeOf(objectState);
+        proto.updateInCollection = this.save.bind(this, frame, objectState);
+        proto.deleteFromCollection = this.delete.bind(this);
+        proto.upZOrder = this.up.bind(this, frame, objectState);
+        proto.downZOrder = this.down.bind(this, frame, objectState);
 
         return objectState;
     }
@@ -92,14 +95,67 @@
         }
     }
 
-    class Shape extends Annotation {
+    class Drawn extends Annotation {
         constructor(data, clientID, color, injection) {
             super(data, clientID, injection);
+
+            this.collectionZ = injection.collectionZ;
+            const z = this._getZ(this.frame);
+            z.max = Math.max(z.max, this.zOrder || 0);
+            z.min = Math.min(z.min, this.zOrder || 0);
+
+            this.color = color;
+            this.shape = null;
+        }
+
+        _getZ(frame) {
+            this.collectionZ[frame] = this.collectionZ[frame] || {
+                max: 0,
+                min: 0,
+            };
+
+            return this.collectionZ[frame];
+        }
+
+        save() {
+            throw window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        get() {
+            throw window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        toJSON() {
+            throw window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        // Increase ZOrder within frame
+        up(frame, objectState) {
+            const z = this._getZ(frame);
+            z.max++;
+            objectState.zOrder = z.max;
+        }
+
+        // Decrease ZOrder within frame
+        down(frame, objectState) {
+            const z = this._getZ(frame);
+            z.min--;
+            objectState.zOrder = z.min;
+        }
+    }
+
+    class Shape extends Drawn {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
             this.points = data.points;
             this.occluded = data.occluded;
             this.zOrder = data.z_order;
-            this.color = color;
-            this.shape = null;
         }
 
         // Method is used to export data to the server
@@ -232,9 +288,9 @@
         }
     }
 
-    class Track extends Annotation {
+    class Track extends Drawn {
         constructor(data, clientID, color, injection) {
-            super(data, clientID, injection);
+            super(data, clientID, color, injection);
             this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
                 shapeAccumulator[value.frame] = {
                     serverID: value.id,
@@ -249,6 +305,10 @@
                     }, {}),
                 };
 
+                const z = this._getZ(value.frame);
+                z.max = Math.max(z.max, value.z_order);
+                z.min = Math.min(z.min, value.z_order);
+
                 return shapeAccumulator;
             }, {});
 
@@ -258,8 +318,6 @@
             }, {});
 
             this.cache = {};
-            this.color = color;
-            this.shape = null;
         }
 
         // Method is used to export data to the server
