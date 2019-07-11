@@ -78,17 +78,19 @@
                 );
             }
 
-            let task = null;
+            let tasks = null;
             if ('taskID' in filter) {
-                task = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
+                tasks = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
             } else {
                 const job = await serverProxy.jobs.getJob(filter.jobID);
-                task = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
+                if (typeof (job.task_id) !== 'undefined') {
+                    tasks = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
+                }
             }
 
             // If task was found by its id, then create task instance and get Job instance from it
-            if (task.length) {
-                task = new window.cvat.classes.Task(task[0]);
+            if (tasks !== null && tasks.length) {
+                const task = new window.cvat.classes.Task(tasks[0]);
                 return filter.jobID ? task.jobs.filter(job => job.id === filter.jobID) : task.jobs;
             }
 
