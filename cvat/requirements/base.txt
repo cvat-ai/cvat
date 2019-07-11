@@ -33,3 +33,4 @@ djangorestframework==3.9.1
 Pygments==2.3.1
 drf-yasg==1.15.0
 Shapely==1.6.4.post2
+pdf2image==1.6.0
