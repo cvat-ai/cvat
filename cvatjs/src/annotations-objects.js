@@ -9,7 +9,9 @@
 
 (() => {
     const ObjectState = require('./object-state');
+    const { checkObjectType } = require('./common');
 
+    // Called with the Annotation context
     function objectStateFactory(frame, data) {
         const objectState = new ObjectState(data);
 
@@ -21,43 +23,6 @@
         };
 
         return objectState;
-    }
-
-    function checkObjectType(name, value, type, instance) {
-        if (type) {
-            if (typeof (value) !== type) {
-                // specific case for integers which aren't native type in JS
-                if (type === 'integer' && Number.isInteger(value)) {
-                    return;
-                }
-
-                if (value !== undefined) {
-                    throw new window.cvat.exceptions.ArgumentError(
-                        `Got ${typeof (value)} value for ${name}. `
-                        + `Expected ${type}`,
-                    );
-                }
-
-                throw new window.cvat.exceptions.ArgumentError(
-                    `Got undefined value for ${name}. `
-                    + `Expected ${type}`,
-                );
-            }
-        } else if (instance) {
-            if (!(value instanceof instance)) {
-                if (value !== undefined) {
-                    throw new window.cvat.exceptions.ArgumentError(
-                        `Got ${value.constructor.name} value for ${name}. `
-                        + `Expected instance of ${instance.name}`,
-                    );
-                }
-
-                throw new window.cvat.exceptions.ArgumentError(
-                    `Got undefined value for ${name}. `
-                    + `Expected instance of ${instance.name}`,
-                );
-            }
-        }
     }
 
     class Annotation {
@@ -192,6 +157,7 @@
                 type: window.cvat.enums.ObjectType.SHAPE,
                 shape: this.shape,
                 clientID: this.clientID,
+                serverID: this.serverID,
                 occluded: this.occluded,
                 lock: this.lock,
                 zOrder: this.zOrder,
@@ -297,7 +263,6 @@
                     occluded: value.occluded,
                     zOrder: value.z_order,
                     points: value.points,
-                    frame: value.frame,
                     outside: value.outside,
                     attributes: value.attributes.reduce((attributeAccumulator, attr) => {
                         attributeAccumulator[attr.spec_id] = attr.value;
@@ -310,11 +275,6 @@
                 z.min = Math.min(z.min, value.z_order);
 
                 return shapeAccumulator;
-            }, {});
-
-            this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
-                attributeAccumulator[attr.spec_id] = attr.value;
-                return attributeAccumulator;
             }, {});
 
             this.cache = {};
@@ -373,6 +333,7 @@
                         type: window.cvat.enums.ObjectType.TRACK,
                         shape: this.shape,
                         clientID: this.clientID,
+                        serverID: this.serverID,
                         lock: this.lock,
                         color: this.color,
                     },
@@ -690,6 +651,7 @@
             return {
                 type: window.cvat.enums.ObjectType.TAG,
                 clientID: this.clientID,
+                serverID: this.serverID,
                 lock: this.lock,
                 attributes: Object.assign({}, this.attributes),
                 label: this.label,

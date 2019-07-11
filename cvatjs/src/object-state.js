@@ -21,7 +21,7 @@
             * Necessary fields: type, shape
             * Necessary fields for objects which haven't been added to collection yet: frame
             * Optional fields: points, group, zOrder, outside, occluded,
-            * attributes, lock, label, mode, color, keyframe
+            * attributes, lock, label, mode, color, keyframe, clientID, serverID
             * These fields can be set later via setters
         */
         constructor(serialized) {
@@ -38,6 +38,9 @@
                 zOrder: null,
                 lock: null,
                 color: null,
+
+                clientID: serialized.clientID,
+                serverID: serialized.serverID,
 
                 frame: serialized.frame,
                 type: serialized.type,
@@ -98,6 +101,26 @@
                         * @instance
                     */
                     get: () => data.shape,
+                },
+                clientID: {
+                    /**
+                        * @name clientID
+                        * @type {integer}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @readonly
+                        * @instance
+                    */
+                    get: () => data.clientID,
+                },
+                serverID: {
+                    /**
+                        * @name serverID
+                        * @type {integer}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @readonly
+                        * @instance
+                    */
+                    get: () => data.serverID,
                 },
                 label: {
                     /**
