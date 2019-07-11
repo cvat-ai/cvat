@@ -15,56 +15,65 @@
     const jobCache = {};
     const taskCache = {};
 
-    async function getJobAnnotations(job, frame, filter) {
-        if (!(job.id in jobCache)) {
-            const rawAnnotations = await serverProxy.annotations.getJobAnnotations(job.id);
-            const collection = new Collection(job.task.labels).import(rawAnnotations);
-            const saver = new AnnotationsSaver(rawAnnotations.version, collection, job);
+    function getCache(sessionType) {
+        if (sessionType === 'task') {
+            return taskCache;
+        }
 
-            jobCache[job.id] = {
+        if (sessionType === 'job') {
+            return jobCache;
+        }
+
+        throw window.cvat.exceptions.ScriptingError(
+            `Unknown session type was received ${sessionType}`,
+        );
+    }
+
+    async function getAnnotations(session, frame, filter) {
+        const sessionType = session.constructor.name.toLowerCase();
+        const cache = getCache(sessionType);
+
+        if (!(session.id in cache)) {
+            const rawAnnotations = await serverProxy.annotations
+                .getAnnotations(sessionType, session.id);
+            const collection = new Collection(session.labels || session.task.labels)
+                .import(rawAnnotations);
+            const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
+
+            cache[session.id] = {
                 collection,
                 saver,
             };
         }
 
-        return jobCache[job.id].collection.get(frame, filter);
+        return cache[session.id].collection.get(frame, filter);
     }
 
-    async function getTaskAnnotations(task, frame, filter) {
-        if (!(task.id in jobCache)) {
-            const rawAnnotations = await serverProxy.annotations.getTaskAnnotations(task.id);
-            const collection = new Collection(task.labels).import(rawAnnotations);
-            const saver = new AnnotationsSaver(rawAnnotations.version, collection, task);
+    async function saveAnnotations(session, onUpdate) {
+        const sessionType = session.constructor.name.toLowerCase();
+        const cache = getCache(sessionType);
 
-            taskCache[task.id] = {
-                collection,
-                saver,
-            };
-        }
-
-        return taskCache[task.id].collection.get(frame, filter);
-    }
-
-    async function saveJobAnnotations(job, onUpdate) {
-        if (job.id in jobCache) {
-            await jobCache[job.id].saver.save(onUpdate);
+        if (session.id in cache) {
+            await cache[session.id].saver.save(onUpdate);
         }
 
         // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
     }
 
-    async function saveTaskAnnotations(task, onUpdate) {
-        if (task.id in taskCache) {
-            await taskCache[task.id].saver.save(onUpdate);
+    async function hasUnsavedChanges(session) {
+        const sessionType = session.constructor.name.toLowerCase();
+        const cache = getCache(sessionType);
+
+        if (!(session.id in cache)) {
+            return cache[session.id].saver.hasUnsavedChanges();
         }
 
-        // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
+        return false;
     }
 
     module.exports = {
-        getJobAnnotations,
-        getTaskAnnotations,
-        saveJobAnnotations,
-        saveTaskAnnotations,
+        getAnnotations,
+        saveAnnotations,
+        hasUnsavedChanges,
     };
 })();

@@ -13,12 +13,12 @@
     function objectStateFactory(frame, data) {
         const objectState = new ObjectState(data);
 
-        // Rewrite default implementations of save/delete
-        const proto = Object.getPrototypeOf(objectState);
-        proto.updateInCollection = this.save.bind(this, frame, objectState);
-        proto.deleteFromCollection = this.delete.bind(this);
-        proto.upZOrder = this.up.bind(this, frame, objectState);
-        proto.downZOrder = this.down.bind(this, frame, objectState);
+        objectState.callbacks = {
+            updateInCollection: this.save.bind(this, frame, objectState),
+            deleteFromCollection: this.delete.bind(this),
+            upZOrder: this.up.bind(this, frame, objectState),
+            downZOrder: this.down.bind(this, frame, objectState),
+        };
 
         return objectState;
     }

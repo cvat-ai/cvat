@@ -12,10 +12,8 @@
     const serverProxy = require('./server-proxy');
     const { getFrame } = require('./frames');
     const {
-        getJobAnnotations,
-        getTaskAnnotations,
-        saveJobAnnotations,
-        saveTaskAnnotations,
+        getAnnotations,
+        saveAnnotations,
     } = require('./annotations');
 
     function buildDublicatedAPI() {
@@ -73,6 +71,12 @@
                 async select(frame, x, y) {
                     const result = await PluginRegistry
                         .apiWrapper.call(this, annotations.value.select, frame, x, y);
+                    return result;
+                },
+
+                async hasUnsavedChanges() {
+                    const result = await PluginRegistry
+                        .apiWrapper.call(this, annotations.value.hasUnsavedChanges);
                     return result;
                 },
             },
@@ -271,6 +275,16 @@
                 * identifier of a selected object or null if no one of objects is on position
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
+            */
+            /**
+                * Indicate if there are any changes in
+                * annotations which haven't been saved on a server
+                * @method hasUnsavedChanges
+                * @memberof Session.annotations
+                * @returns {boolean}
+                * @throws {module:API.cvat.exceptions.PluginError}
                 * @instance
                 * @async
             */
@@ -578,12 +592,16 @@
             );
         }
 
-        const annotationsData = await getJobAnnotations(this, frame, filter);
+        const annotationsData = await getAnnotations(this, frame, filter);
         return annotationsData;
     };
 
     Job.prototype.annotations.save.implementation = async function (onUpdate) {
-        await saveJobAnnotations(this, onUpdate);
+        await saveAnnotations(this, onUpdate);
+    };
+
+    Job.prototype.annotations.hasUnsavedChanges.implementation = async function() {
+
     };
 
     /**
@@ -1104,12 +1122,16 @@
             );
         }
 
-        const annotationsData = await getTaskAnnotations(this, frame, filter);
+        const annotationsData = await getAnnotations(this, frame, filter);
         return annotationsData;
     };
 
     Task.prototype.annotations.save.implementation = async function (onUpdate) {
-        await saveTaskAnnotations(this, onUpdate);
+        await saveAnnotations(this, onUpdate);
+    };
+
+    Task.prototype.annotations.hasUnsavedChanges.implementation = async function() {
+
     };
 
     module.exports = {
