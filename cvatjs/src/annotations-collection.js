@@ -220,8 +220,7 @@
             });
 
             const keyframes = {}; // frame: position
-            const { label } = objectStates[0];
-            const shapeType = objectStates[0].shape;
+            const { label, shapeType } = objectStates[0];
             const labelAttributes = label.attributes.reduce((accumulator, attribute) => {
                 accumulator[attribute.id] = attribute;
                 return accumulator;
@@ -237,9 +236,9 @@
                     );
                 }
 
-                if (state.shape !== shapeType) {
+                if (state.shapeType !== shapeType) {
                     throw new window.cvat.exceptions.ArgumentError(
-                        `All shapes are expected to be ${shapeType}, but got ${state.shape}`,
+                        `All shapes are expected to be ${shapeType}, but got ${state.shapeType}`,
                     );
                 }
 

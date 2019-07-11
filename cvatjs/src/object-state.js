@@ -43,8 +43,8 @@
                 serverID: serialized.serverID,
 
                 frame: serialized.frame,
-                type: serialized.type,
-                shape: serialized.shape,
+                objectType: serialized.objectType,
+                shapeType: serialized.shapeType,
                 updateFlags: {},
             };
 
@@ -82,25 +82,25 @@
                     */
                     get: () => data.frame,
                 },
-                type: {
+                objectType: {
                     /**
-                        * @name type
+                        * @name objectType
                         * @type {module:API.cvat.enums.ObjectType}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @readonly
                         * @instance
                     */
-                    get: () => data.type,
+                    get: () => data.objectType,
                 },
-                shape: {
+                shapeType: {
                     /**
-                        * @name shape
+                        * @name shapeType
                         * @type {module:API.cvat.enums.ObjectShape}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @readonly
                         * @instance
                     */
-                    get: () => data.shape,
+                    get: () => data.shapeType,
                 },
                 clientID: {
                     /**

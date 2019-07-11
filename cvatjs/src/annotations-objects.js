@@ -70,7 +70,7 @@
             z.min = Math.min(z.min, this.zOrder || 0);
 
             this.color = color;
-            this.shape = null;
+            this.shapeType = null;
         }
 
         _getZ(frame) {
@@ -126,7 +126,7 @@
         // Method is used to export data to the server
         toJSON() {
             return {
-                type: this.shape,
+                type: this.shapeType,
                 clientID: this.clientID,
                 occluded: this.occluded,
                 z_order: this.zOrder,
@@ -155,8 +155,8 @@
             }
 
             return {
-                type: window.cvat.enums.ObjectType.SHAPE,
-                shape: this.shape,
+                objectType: window.cvat.enums.ObjectType.SHAPE,
+                shapeType: this.shapeType,
                 clientID: this.clientID,
                 serverID: this.serverID,
                 occluded: this.occluded,
@@ -299,7 +299,7 @@
                 }, []),
                 shapes: Object.keys(this.shapes).reduce((shapesAccumulator, frame) => {
                     shapesAccumulator.push({
-                        type: this.shape,
+                        type: this.shapeType,
                         occluded: this.shapes[frame].occluded,
                         z_order: this.shapes[frame].zOrder,
                         points: [...this.shapes[frame].points],
@@ -331,8 +331,8 @@
                         attributes: this.getAttributes(frame),
                         label: this.label,
                         group: this.group,
-                        type: window.cvat.enums.ObjectType.TRACK,
-                        shape: this.shape,
+                        objectType: window.cvat.enums.ObjectType.TRACK,
+                        shapeType: this.shapeType,
                         clientID: this.clientID,
                         serverID: this.serverID,
                         lock: this.lock,
@@ -650,7 +650,7 @@
             }
 
             return {
-                type: window.cvat.enums.ObjectType.TAG,
+                objectType: window.cvat.enums.ObjectType.TAG,
                 clientID: this.clientID,
                 serverID: this.serverID,
                 lock: this.lock,
@@ -718,7 +718,7 @@
     class RectangleShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.RECTANGLE;
+            this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
         }
     }
 
@@ -731,28 +731,28 @@
     class PolygonShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYGON;
+            this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
         }
     }
 
     class PolylineShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYLINE;
+            this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
         }
     }
 
     class PointsShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POINTS;
+            this.shapeType = window.cvat.enums.ObjectShape.POINTS;
         }
     }
 
     class RectangleTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.RECTANGLE;
+            this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
         }
 
         interpolatePosition(leftPosition, rightPosition, targetFrame) {
@@ -1163,25 +1163,21 @@
     class PolygonTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYGON;
+            this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
         }
     }
 
     class PolylineTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYLINE;
-        }
-
-        appendMapping() {
-            // TODO after checking how it works with polygons
+            this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
         }
     }
 
     class PointsTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POINTS;
+            this.shapeType = window.cvat.enums.ObjectShape.POINTS;
         }
     }
 
