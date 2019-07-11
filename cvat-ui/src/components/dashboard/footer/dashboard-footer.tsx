@@ -1,23 +1,23 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 
-import { Layout, Pagination } from 'antd';
+import { Layout, Pagination, Affix } from 'antd';
 
 import './dashboard-footer.scss';
 
 const { Footer } = Layout;
 
-class DashboardFooter extends Component<any, any> {
-  constructor(props: any) {
-    super(props);
-
-    this.state = {};
-  }
-
+class DashboardFooter extends PureComponent<any, any> {
   render() {
     return(
-      <Footer>
-        <Pagination onChange={ this.props.onPageChange } total={ this.props.tasksCount } />
-      </Footer>
+      <Affix offsetBottom={0}>
+        <Footer className="dashboard-footer">
+          <Pagination
+            className="dashboard-footer__pagination"
+            onChange={ this.props.onPageChange }
+            total={ this.props.tasksCount }>
+          </Pagination>
+        </Footer>
+      </Affix>
     );
   }
 }
