@@ -460,37 +460,19 @@
                 return response.data;
             }
 
-            async function getTaskAnnotations(tid) {
+            // Session is 'task' or 'job'
+            async function getAnnotations(session, id) {
                 const { backendAPI } = window.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/annotations`, {
+                    response = await Axios.get(`${backendAPI}/${session}s/${id}/annotations`, {
                         proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        `Could not get annotations for the task ${tid} from the server`,
-                        code,
-                    );
-                }
-
-                return response.data;
-            }
-
-            async function getJobAnnotations(jid) {
-                const { backendAPI } = window.cvat.config;
-
-                let response = null;
-                try {
-                    response = await Axios.get(`${backendAPI}/jobs/${jid}/annotations`, {
-                        proxy: window.cvat.config.proxy,
-                    });
-                } catch (errorData) {
-                    const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
-                        `Could not get annotations for the job ${jid} from the server`,
+                        `Could not get annotations for the ${session} ${id} from the server`,
                         code,
                     );
                 }
@@ -586,9 +568,8 @@
 
                 annotations: {
                     value: Object.freeze({
-                        getTaskAnnotations,
-                        getJobAnnotations,
                         updateAnnotations,
+                        getAnnotations,
                     }),
                     writable: false,
                 },

@@ -9,52 +9,20 @@
 
 (() => {
     const ObjectState = require('./object-state');
+    const { checkObjectType } = require('./common');
 
+    // Called with the Annotation context
     function objectStateFactory(frame, data) {
         const objectState = new ObjectState(data);
 
-        // Rewrite default implementations of save/delete
-        objectState.updateInCollection = this.save.bind(this, frame, objectState);
-        objectState.deleteFromCollection = this.delete.bind(this);
+        objectState.hidden = {
+            save: this.save.bind(this, frame, objectState),
+            delete: this.delete.bind(this),
+            up: this.up.bind(this, frame, objectState),
+            down: this.down.bind(this, frame, objectState),
+        };
 
         return objectState;
-    }
-
-    function checkObjectType(name, value, type, instance) {
-        if (type) {
-            if (typeof (value) !== type) {
-                // specific case for integers which aren't native type in JS
-                if (type === 'integer' && Number.isInteger(value)) {
-                    return;
-                }
-
-                if (value !== undefined) {
-                    throw new window.cvat.exceptions.ArgumentError(
-                        `Got ${typeof (value)} value for ${name}. `
-                        + `Expected ${type}`,
-                    );
-                }
-
-                throw new window.cvat.exceptions.ArgumentError(
-                    `Got undefined value for ${name}. `
-                    + `Expected ${type}`,
-                );
-            }
-        } else if (instance) {
-            if (!(value instanceof instance)) {
-                if (value !== undefined) {
-                    throw new window.cvat.exceptions.ArgumentError(
-                        `Got ${value.constructor.name} value for ${name}. `
-                        + `Expected instance of ${instance.name}`,
-                    );
-                }
-
-                throw new window.cvat.exceptions.ArgumentError(
-                    `Got undefined value for ${name}. `
-                    + `Expected instance of ${instance.name}`,
-                );
-            }
-        }
     }
 
     class Annotation {
@@ -92,19 +60,73 @@
         }
     }
 
-    class Shape extends Annotation {
+    class Drawn extends Annotation {
         constructor(data, clientID, color, injection) {
             super(data, clientID, injection);
+
+            this.collectionZ = injection.collectionZ;
+            const z = this._getZ(this.frame);
+            z.max = Math.max(z.max, this.zOrder || 0);
+            z.min = Math.min(z.min, this.zOrder || 0);
+
+            this.color = color;
+            this.shapeType = null;
+        }
+
+        _getZ(frame) {
+            this.collectionZ[frame] = this.collectionZ[frame] || {
+                max: 0,
+                min: 0,
+            };
+
+            return this.collectionZ[frame];
+        }
+
+        save() {
+            throw window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        get() {
+            throw window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        toJSON() {
+            throw window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        // Increase ZOrder within frame
+        up(frame, objectState) {
+            const z = this._getZ(frame);
+            z.max++;
+            objectState.zOrder = z.max;
+        }
+
+        // Decrease ZOrder within frame
+        down(frame, objectState) {
+            const z = this._getZ(frame);
+            z.min--;
+            objectState.zOrder = z.min;
+        }
+    }
+
+    class Shape extends Drawn {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
             this.points = data.points;
             this.occluded = data.occluded;
             this.zOrder = data.z_order;
-            this.color = color;
-            this.shape = null;
         }
 
         // Method is used to export data to the server
         toJSON() {
             return {
+                type: this.shapeType,
                 clientID: this.clientID,
                 occluded: this.occluded,
                 z_order: this.zOrder,
@@ -133,9 +155,10 @@
             }
 
             return {
-                type: window.cvat.enums.ObjectType.SHAPE,
-                shape: this.shape,
+                objectType: window.cvat.enums.ObjectType.SHAPE,
+                shapeType: this.shapeType,
                 clientID: this.clientID,
+                serverID: this.serverID,
                 occluded: this.occluded,
                 lock: this.lock,
                 zOrder: this.zOrder,
@@ -232,16 +255,15 @@
         }
     }
 
-    class Track extends Annotation {
+    class Track extends Drawn {
         constructor(data, clientID, color, injection) {
-            super(data, clientID, injection);
+            super(data, clientID, color, injection);
             this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
                 shapeAccumulator[value.frame] = {
                     serverID: value.id,
                     occluded: value.occluded,
                     zOrder: value.z_order,
                     points: value.points,
-                    frame: value.frame,
                     outside: value.outside,
                     attributes: value.attributes.reduce((attributeAccumulator, attr) => {
                         attributeAccumulator[attr.spec_id] = attr.value;
@@ -249,17 +271,14 @@
                     }, {}),
                 };
 
+                const z = this._getZ(value.frame);
+                z.max = Math.max(z.max, value.z_order);
+                z.min = Math.min(z.min, value.z_order);
+
                 return shapeAccumulator;
             }, {});
 
-            this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
-                attributeAccumulator[attr.spec_id] = attr.value;
-                return attributeAccumulator;
-            }, {});
-
             this.cache = {};
-            this.color = color;
-            this.shape = null;
         }
 
         // Method is used to export data to the server
@@ -280,7 +299,7 @@
                 }, []),
                 shapes: Object.keys(this.shapes).reduce((shapesAccumulator, frame) => {
                     shapesAccumulator.push({
-                        type: this.shape,
+                        type: this.shapeType,
                         occluded: this.shapes[frame].occluded,
                         z_order: this.shapes[frame].zOrder,
                         points: [...this.shapes[frame].points],
@@ -312,9 +331,10 @@
                         attributes: this.getAttributes(frame),
                         label: this.label,
                         group: this.group,
-                        type: window.cvat.enums.ObjectType.TRACK,
-                        shape: this.shape,
+                        objectType: window.cvat.enums.ObjectType.TRACK,
+                        shapeType: this.shapeType,
                         clientID: this.clientID,
+                        serverID: this.serverID,
                         lock: this.lock,
                         color: this.color,
                     },
@@ -630,8 +650,9 @@
             }
 
             return {
-                type: window.cvat.enums.ObjectType.TAG,
+                objectType: window.cvat.enums.ObjectType.TAG,
                 clientID: this.clientID,
+                serverID: this.serverID,
                 lock: this.lock,
                 attributes: Object.assign({}, this.attributes),
                 label: this.label,
@@ -697,7 +718,7 @@
     class RectangleShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.RECTANGLE;
+            this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
         }
     }
 
@@ -710,28 +731,28 @@
     class PolygonShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYGON;
+            this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
         }
     }
 
     class PolylineShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYLINE;
+            this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
         }
     }
 
     class PointsShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POINTS;
+            this.shapeType = window.cvat.enums.ObjectShape.POINTS;
         }
     }
 
     class RectangleTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.RECTANGLE;
+            this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
         }
 
         interpolatePosition(leftPosition, rightPosition, targetFrame) {
@@ -1142,25 +1163,21 @@
     class PolygonTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYGON;
+            this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
         }
     }
 
     class PolylineTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYLINE;
-        }
-
-        appendMapping() {
-            // TODO after checking how it works with polygons
+            this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
         }
     }
 
     class PointsTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POINTS;
+            this.shapeType = window.cvat.enums.ObjectShape.POINTS;
         }
     }
 
@@ -1173,6 +1190,8 @@
         PolygonTrack,
         PolylineTrack,
         PointsTrack,
+        Track,
+        Shape,
         Tag,
         objectStateFactory,
     };

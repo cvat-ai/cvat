@@ -15,56 +15,107 @@
     const jobCache = {};
     const taskCache = {};
 
-    async function getJobAnnotations(job, frame, filter) {
-        if (!(job.id in jobCache)) {
-            const rawAnnotations = await serverProxy.annotations.getJobAnnotations(job.id);
-            const collection = new Collection(job.task.labels).import(rawAnnotations);
-            const saver = new AnnotationsSaver(rawAnnotations.version, collection, job);
+    function getCache(sessionType) {
+        if (sessionType === 'task') {
+            return taskCache;
+        }
 
-            jobCache[job.id] = {
+        if (sessionType === 'job') {
+            return jobCache;
+        }
+
+        throw new window.cvat.exceptions.ScriptingError(
+            `Unknown session type was received ${sessionType}`,
+        );
+    }
+
+    async function getAnnotations(session, frame, filter) {
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (!(session.id in cache)) {
+            const rawAnnotations = await serverProxy.annotations
+                .getAnnotations(sessionType, session.id);
+            const collection = new Collection(session.labels || session.task.labels)
+                .import(rawAnnotations);
+            const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
+
+            cache[session.id] = {
                 collection,
                 saver,
             };
         }
 
-        return jobCache[job.id].collection.get(frame, filter);
+        return cache[session.id].collection.get(frame, filter);
     }
 
-    async function getTaskAnnotations(task, frame, filter) {
-        if (!(task.id in jobCache)) {
-            const rawAnnotations = await serverProxy.annotations.getTaskAnnotations(task.id);
-            const collection = new Collection(task.labels).import(rawAnnotations);
-            const saver = new AnnotationsSaver(rawAnnotations.version, collection, task);
+    async function saveAnnotations(session, onUpdate) {
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
 
-            taskCache[task.id] = {
-                collection,
-                saver,
-            };
-        }
-
-        return taskCache[task.id].collection.get(frame, filter);
-    }
-
-    async function saveJobAnnotations(job, onUpdate) {
-        if (job.id in jobCache) {
-            await jobCache[job.id].saver.save(onUpdate);
+        if (session.id in cache) {
+            await cache[session.id].saver.save(onUpdate);
         }
 
         // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
     }
 
-    async function saveTaskAnnotations(task, onUpdate) {
-        if (task.id in taskCache) {
-            await taskCache[task.id].saver.save(onUpdate);
+    function mergeAnnotations(session, objectStates) {
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (session.id in cache) {
+            return cache[session.id].collection.merge(objectStates);
         }
 
-        // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
+        throw window.cvat.exceptions.DataError(
+            'Collection has not been initialized yet. Call annotations.get() before',
+        );
+    }
+
+    function splitAnnotations(session, objectState, frame) {
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (session.id in cache) {
+            return cache[session.id].collection.split(objectState, frame);
+        }
+
+        throw window.cvat.exceptions.DataError(
+            'Collection has not been initialized yet. Call annotations.get() before',
+        );
+    }
+
+    function groupAnnotations(session, objectStates) {
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (session.id in cache) {
+            return cache[session.id].collection.group(objectStates);
+        }
+
+        throw window.cvat.exceptions.DataError(
+            'Collection has not been initialized yet. Call annotations.get() before',
+        );
+    }
+
+    function hasUnsavedChanges(session) {
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
+        const cache = getCache(sessionType);
+
+        if (session.id in cache) {
+            return cache[session.id].saver.hasUnsavedChanges();
+        }
+
+        return false;
     }
 
     module.exports = {
-        getJobAnnotations,
-        getTaskAnnotations,
-        saveJobAnnotations,
-        saveTaskAnnotations,
+        getAnnotations,
+        saveAnnotations,
+        hasUnsavedChanges,
+        mergeAnnotations,
+        splitAnnotations,
+        groupAnnotations,
     };
 })();

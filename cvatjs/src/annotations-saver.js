@@ -12,7 +12,7 @@
 
     class AnnotationsSaver {
         constructor(version, collection, session) {
-            this.session = session.constructor.name.toLowerCase();
+            this.sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
             this.id = session.id;
             this.version = version;
             this.collection = collection;
@@ -42,7 +42,7 @@
 
         async _request(data, action) {
             const result = await serverProxy.annotations.updateAnnotations(
-                this.session,
+                this.sessionType,
                 this.id,
                 data,
                 action,
@@ -249,6 +249,9 @@
                         delete this.initialObjects[object.id];
                     }
                 }
+
+                this.hash = this._getHash();
+                onUpdate('Saving is done');
             } catch (error) {
                 onUpdate(`Can not save annotations: ${error.message}`);
                 throw error;
@@ -256,7 +259,7 @@
         }
 
         hasUnsavedChanges() {
-            return this._getHash() !== this._hash;
+            return this._getHash() !== this.hash;
         }
     }
 
