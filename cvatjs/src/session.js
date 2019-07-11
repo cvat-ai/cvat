@@ -14,140 +14,136 @@
     const {
         getAnnotations,
         saveAnnotations,
+        hasUnsavedChanges,
     } = require('./annotations');
 
-    function buildDublicatedAPI() {
-        const annotations = Object.freeze({
-            value: {
-                async upload(file) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.upload, file);
-                    return result;
-                },
+    function buildDublicatedAPI(prototype) {
+        Object.defineProperties(prototype, {
+            annotations: Object.freeze({
+                value: {
+                    async upload(file) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.upload, file);
+                        return result;
+                    },
 
-                async save() {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.save);
-                    return result;
-                },
+                    async save() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.save);
+                        return result;
+                    },
 
-                async clear() {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.clear);
-                    return result;
-                },
+                    async clear() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.clear);
+                        return result;
+                    },
 
-                async dump() {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.dump);
-                    return result;
-                },
+                    async dump() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.dump);
+                        return result;
+                    },
 
-                async statistics() {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.statistics);
-                    return result;
-                },
+                    async statistics() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.statistics);
+                        return result;
+                    },
 
-                async put(arrayOfObjects = []) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.put, arrayOfObjects);
-                    return result;
-                },
+                    async put(arrayOfObjects = []) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.put, arrayOfObjects);
+                        return result;
+                    },
 
-                async get(frame, filter = {}) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.get, frame, filter);
-                    return result;
-                },
+                    async get(frame, filter = {}) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.get, frame, filter);
+                        return result;
+                    },
 
-                async search(filter, frameFrom, frameTo) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.search,
-                            filter, frameFrom, frameTo);
-                    return result;
-                },
+                    async search(filter, frameFrom, frameTo) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.search,
+                                filter, frameFrom, frameTo);
+                        return result;
+                    },
 
-                async select(frame, x, y) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.select, frame, x, y);
-                    return result;
-                },
+                    async select(frame, x, y) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.select, frame, x, y);
+                        return result;
+                    },
 
-                async hasUnsavedChanges() {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.hasUnsavedChanges);
-                    return result;
+                    async hasUnsavedChanges() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.hasUnsavedChanges);
+                        return result;
+                    },
                 },
-            },
-        });
-
-        const frames = Object.freeze({
-            value: {
-                async get(frame) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, frames.value.get, frame);
-                    return result;
+                writable: true,
+            }),
+            frames: Object.freeze({
+                value: {
+                    async get(frame) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.frames.get, frame);
+                        return result;
+                    },
                 },
-            },
-        });
-
-        const logs = Object.freeze({
-            value: {
-                async put(logType, details) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, logs.value.put, logType, details);
-                    return result;
+                writable: true,
+            }),
+            logs: Object.freeze({
+                value: {
+                    async put(logType, details) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.logs.put, logType, details);
+                        return result;
+                    },
+                    async save(onUpdate) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.logs.save, onUpdate);
+                        return result;
+                    },
                 },
-                async save(onUpdate) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, logs.value.save, onUpdate);
-                    return result;
+                writable: true,
+            }),
+            actions: Object.freeze({
+                value: {
+                    async undo(count) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.actions.undo, count);
+                        return result;
+                    },
+                    async redo(count) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.actions.redo, count);
+                        return result;
+                    },
+                    async clear() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.actions.clear);
+                        return result;
+                    },
                 },
-            },
-        });
-
-        const actions = Object.freeze({
-            value: {
-                async undo(count) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, actions.value.undo, count);
-                    return result;
+                writable: true,
+            }),
+            events: Object.freeze({
+                value: {
+                    async subscribe(evType, callback) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.events.subscribe, evType, callback);
+                        return result;
+                    },
+                    async unsubscribe(evType, callback = null) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.events.unsubscribe, evType, callback);
+                        return result;
+                    },
                 },
-                async redo(count) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, actions.value.redo, count);
-                    return result;
-                },
-                async clear() {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, actions.value.clear);
-                    return result;
-                },
-            },
-        });
-
-        const events = Object.freeze({
-            value: {
-                async subscribe(eventType, callback) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, events.value.subscribe, eventType, callback);
-                    return result;
-                },
-                async unsubscribe(eventType, callback = null) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, events.value.unsubscribe, eventType, callback);
-                    return result;
-                },
-            },
-        });
-
-        return Object.freeze({
-            annotations,
-            frames,
-            logs,
-            actions,
-            events,
+                writable: true,
+            }),
         });
     }
 
@@ -525,9 +521,19 @@
                 },
             }));
 
-            this.frames.get.implementation = this.frames.get.implementation.bind(this);
-            this.annotations.get.implementation = this.annotations.get.implementation.bind(this);
-            this.annotations.save.implementation = this.annotations.save.implementation.bind(this);
+            // When we call a function, for example: task.annotations.get()
+            // In the method get we lose the task context
+            // So, we need return it
+            this.annotations = {
+                get: Object.getPrototypeOf(this).annotations.get.bind(this),
+                save: Object.getPrototypeOf(this).annotations.save.bind(this),
+                hasUnsavedChanges: Object.getPrototypeOf(this)
+                    .annotations.hasUnsavedChanges.bind(this),
+            };
+
+            this.frames = {
+                get: Object.getPrototypeOf(this).frames.get.bind(this),
+            };
         }
 
         /**
@@ -549,7 +555,7 @@
 
     // Fill up the prototype by properties. Class syntax doesn't allow do it
     // So, we do it seperately
-    Object.defineProperties(Job.prototype, buildDublicatedAPI());
+    buildDublicatedAPI(Job.prototype);
 
     Job.prototype.save.implementation = async function () {
         // TODO: Add ability to change an assignee
@@ -600,8 +606,8 @@
         await saveAnnotations(this, onUpdate);
     };
 
-    Job.prototype.annotations.hasUnsavedChanges.implementation = async function() {
-
+    Job.prototype.annotations.hasUnsavedChanges.implementation = async function () {
+        return hasUnsavedChanges(this);
     };
 
     /**
@@ -1005,9 +1011,19 @@
                 },
             }));
 
-            this.frames.get.implementation = this.frames.get.implementation.bind(this);
-            this.annotations.get.implementation = this.annotations.get.implementation.bind(this);
-            this.annotations.save.implementation = this.annotations.save.implementation.bind(this);
+            // When we call a function, for example: task.annotations.get()
+            // In the method get we lose the task context
+            // So, we need return it
+            this.annotations = {
+                get: Object.getPrototypeOf(this).annotations.get.bind(this),
+                save: Object.getPrototypeOf(this).annotations.save.bind(this),
+                hasUnsavedChanges: Object.getPrototypeOf(this)
+                    .annotations.hasUnsavedChanges.bind(this),
+            };
+
+            this.frames = {
+                get: Object.getPrototypeOf(this).frames.get.bind(this),
+            };
         }
 
         /**
@@ -1049,7 +1065,7 @@
 
     // Fill up the prototype by properties. Class syntax doesn't allow do it
     // So, we do it seperately
-    Object.defineProperties(Task.prototype, buildDublicatedAPI());
+    buildDublicatedAPI(Task.prototype);
 
     Task.prototype.save.implementation = async function saveTaskImplementation(onUpdate) {
         // TODO: Add ability to change an owner and an assignee
@@ -1130,8 +1146,8 @@
         await saveAnnotations(this, onUpdate);
     };
 
-    Task.prototype.annotations.hasUnsavedChanges.implementation = async function() {
-
+    Task.prototype.annotations.hasUnsavedChanges.implementation = async function () {
+        return hasUnsavedChanges(this);
     };
 
     module.exports = {

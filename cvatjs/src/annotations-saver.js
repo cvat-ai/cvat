@@ -249,6 +249,9 @@
                         delete this.initialObjects[object.id];
                     }
                 }
+
+                this.hash = this._getHash();
+                onUpdate('Saving is done');
             } catch (error) {
                 onUpdate(`Can not save annotations: ${error.message}`);
                 throw error;
@@ -256,7 +259,7 @@
         }
 
         hasUnsavedChanges() {
-            return this._getHash() !== this._hash;
+            return this._getHash() !== this.hash;
         }
     }
 

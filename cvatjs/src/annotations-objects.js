@@ -13,11 +13,11 @@
     function objectStateFactory(frame, data) {
         const objectState = new ObjectState(data);
 
-        objectState.callbacks = {
-            updateInCollection: this.save.bind(this, frame, objectState),
-            deleteFromCollection: this.delete.bind(this),
-            upZOrder: this.up.bind(this, frame, objectState),
-            downZOrder: this.down.bind(this, frame, objectState),
+        objectState.hidden = {
+            save: this.save.bind(this, frame, objectState),
+            delete: this.delete.bind(this),
+            up: this.up.bind(this, frame, objectState),
+            down: this.down.bind(this, frame, objectState),
         };
 
         return objectState;

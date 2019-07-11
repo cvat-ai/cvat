@@ -329,8 +329,8 @@
 
     // Default implementation saves element in collection
     ObjectState.prototype.save.implementation = async function () {
-        if (this.callbacks && this.callbacks.updateInCollection) {
-            return this.callbacks.updateInCollection();
+        if (this.hidden && this.hidden.save) {
+            return this.hidden.save();
         }
 
         return this;
@@ -338,24 +338,24 @@
 
     // Default implementation do nothing
     ObjectState.prototype.delete.implementation = async function (force) {
-        if (this.callbacks && this.callbacks.deleteFromCollection) {
-            return this.callbacks.deleteFromCollection(force);
+        if (this.hidden && this.hidden.delete) {
+            return this.hidden.delete(force);
         }
 
         return false;
     };
 
     ObjectState.prototype.up.implementation = async function () {
-        if (this.callbacks && this.callbacks.upZOrder) {
-            return this.callbacks.upZOrder();
+        if (this.hidden && this.hidden.up) {
+            return this.hidden.up();
         }
 
         return false;
     };
 
     ObjectState.prototype.down.implementation = async function () {
-        if (this.callbacks && this.callbacks.downZOrder) {
-            return this.callbacks.downZOrder();
+        if (this.hidden && this.hidden.down) {
+            return this.hidden.down();
         }
 
         return false;

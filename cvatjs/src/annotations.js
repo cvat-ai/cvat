@@ -24,7 +24,7 @@
             return jobCache;
         }
 
-        throw window.cvat.exceptions.ScriptingError(
+        throw new window.cvat.exceptions.ScriptingError(
             `Unknown session type was received ${sessionType}`,
         );
     }
@@ -60,11 +60,11 @@
         // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
     }
 
-    async function hasUnsavedChanges(session) {
+    function hasUnsavedChanges(session) {
         const sessionType = session.constructor.name.toLowerCase();
         const cache = getCache(sessionType);
 
-        if (!(session.id in cache)) {
+        if (session.id in cache) {
             return cache[session.id].saver.hasUnsavedChanges();
         }
 
