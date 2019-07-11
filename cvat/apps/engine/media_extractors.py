@@ -72,6 +72,56 @@ class ImageListExtractor(MediaExtractor):
         image.close()
         return width, height
 
+class PDFExtractor(MediaExtractor):
+    def __init__(self, source_path, dest_path, image_quality, step=1, start=0, stop=0):
+        if not source_path:
+            raise Exception('No PDF found')
+
+        from pdf2image import convert_from_path
+        self._temp_directory = tempfile.mkdtemp(prefix='cvat-')
+        super().__init__(
+            source_path=source_path[0],
+            dest_path=dest_path,
+            image_quality=image_quality,
+            step=1,
+            start=0,
+            stop=0,
+        )
+
+        self._dimensions = []
+        file_ = convert_from_path(self._source_path)
+        self._basename = os.path.splitext(os.path.basename(self._source_path))[0]
+        for page_num, page in enumerate(file_):
+            output = os.path.join(self._temp_directory, self._basename + f'{page_num}' + '.jpg')
+            self._dimensions.append(page.size)
+            page.save(output, 'JPEG')
+
+        self._length = len(os.listdir(self._temp_directory))
+
+    def _get_imagepath(self, k):
+        img_path = os.path.join(self._temp_directory, self._basename + f'{k}' + '.jpg')
+        return img_path
+
+    def __iter__(self):
+        i = 0
+        while os.path.exists(self._get_imagepath(i)):
+            yield self._get_imagepath(i)
+            i += 1
+
+    def __del__(self):
+        if self._temp_directory:
+            shutil.rmtree(self._temp_directory)
+
+    def __getitem__(self, k):
+        return self._get_imagepath(k)
+
+    def __len__(self):
+        return self._length
+
+    def save_image(self, k, dest_path):
+        shutil.copyfile(self[k], dest_path)
+        return self._dimensions[k]
+
 #Note step, start, stop have no affect
 class DirectoryExtractor(ImageListExtractor):
     def __init__(self, source_path, dest_path, image_quality, step=1, start=0, stop=0):
@@ -180,6 +230,10 @@ def _is_image(path):
 def _is_dir(path):
     return os.path.isdir(path)
 
+def _is_pdf(path):
+    mime = mimetypes.guess_type(path)
+    return mime[0] == 'application/pdf'
+
 # 'has_mime_type': function receives 1 argument - path to file.
 #                  Should return True if file has specified media type.
 # 'extractor': class that extracts images from specified media.
@@ -212,5 +266,11 @@ MEDIA_TYPES = {
         'extractor': DirectoryExtractor,
         'mode': 'annotation',
         'unique': False,
+    },
+    'pdf': {
+        'has_mime_type': _is_pdf,
+        'extractor': PDFExtractor,
+        'mode': 'annotation',
+        'unique': True,
     },
 }
