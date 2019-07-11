@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto annotation using Pixel Link mobilenet v2 - text detection (utils/open_model_zoo)
 - Ability to create a custom extractors for unsupported media types
 - Added in PDF extractor
+- Added in a command line model manager tester
 
 ### Changed
 - Outside and keyframe buttons in the side panel for all interpolation shapes (they were only for boxes before)
