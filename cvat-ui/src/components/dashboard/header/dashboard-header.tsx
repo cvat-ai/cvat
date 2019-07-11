@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-import { Layout, Row, Col, Button, Input, Affix } from 'antd';
+import { Layout, Row, Col, Button, Input } from 'antd';
 import Title from 'antd/lib/typography/Title';
 
 import './dashboard-header.scss';
@@ -41,38 +41,36 @@ class DashboardHeader extends Component<any, any> {
 
   render() {
     return(
-      <Affix offsetTop={0}>
-        <Header className="dashboard-header">
-          <Row type="flex" gutter={16}>
-            <Col className="dashboard-header__logo" span={8}>
-              <Title className="logo">Tasks</Title>
-            </Col>
-            <Col span={8} className="dashboard-header__search">
-              <Search
-                className="search"
-                placeholder="Search for tasks"
-                onSearch={ query => this.props.onSearch(query) }
-                enterButton>
-              </Search>
-            </Col>
-            <Col className="dashboard-header__actions" span={8}>
-              {
-                this.actions.map(
-                  (action: DashboardHeaderAction) => (
-                    <Button
-                      className="action"
-                      type="primary"
-                      key={ action.id }
-                      onClick={ () => action.trigger() }>
-                      { action.name }
-                    </Button>
-                  )
+      <Header className="dashboard-header">
+        <Row type="flex" gutter={16}>
+          <Col className="dashboard-header__logo" span={8}>
+            <Title className="logo">Tasks</Title>
+          </Col>
+          <Col className="dashboard-header__search" span={8}>
+            <Search
+              className="search"
+              placeholder="Search for tasks"
+              onSearch={ query => this.props.onSearch(query) }
+              enterButton>
+            </Search>
+          </Col>
+          <Col className="dashboard-header__actions" span={8}>
+            {
+              this.actions.map(
+                (action: DashboardHeaderAction) => (
+                  <Button
+                    className="action"
+                    type="primary"
+                    key={ action.id }
+                    onClick={ () => action.trigger() }>
+                    { action.name }
+                  </Button>
                 )
-              }
-            </Col>
-          </Row>
-        </Header>
-      </Affix>
+              )
+            }
+          </Col>
+        </Row>
+      </Header>
     );
   }
 
