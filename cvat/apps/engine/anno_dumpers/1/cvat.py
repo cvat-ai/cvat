@@ -1,11 +1,9 @@
+from xml.sax.saxutils import XMLGenerator
 from collections import OrderedDict
 
 def pairwise(iterable):
     a = iter(iterable)
     return zip(a, a)
-
-from xml.sax.saxutils import XMLGenerator
-from collections import OrderedDict
 
 class XmlAnnotationWriter:
     def __init__(self, file):

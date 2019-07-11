@@ -22,5 +22,17 @@
       "file_extension": "xml",
       "handler_file":"1/cvat.py"
     }
+  },
+  {
+    "model": "engine.AnnoDumper",
+    "pk": 3,
+    "fields": {
+      "name": "pascal_voc",
+      "owner": null,
+      "created_date": "2019-06-24T12:21:36.067Z",
+      "updated_date": "2019-06-24T12:21:36.067Z",
+      "file_extension": "zip",
+      "handler_file":"3/pascal_voc.py"
+    }
   }
 ]
