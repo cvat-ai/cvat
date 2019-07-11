@@ -64,52 +64,30 @@ function blurAllElements() {
     document.activeElement.blur();
 }
 
-
-function uploadAnnotation(shapeCollectionModel, historyModel,
-    annotationParser, uploadAnnotationButton) {
-    $('#annotationFileSelector').one('change', (changedFileEvent) => {
+function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationSaverModel, uploadAnnotationButton) {
+    $('#annotationFileSelector').one('change', async (changedFileEvent) => {
         const file = changedFileEvent.target.files['0'];
         changedFileEvent.target.value = '';
         if (!file || file.type !== 'text/xml') return;
-        uploadAnnotationButton.text('Preparing..');
+        uploadAnnotationButton.text('Uploading..');
         uploadAnnotationButton.prop('disabled', true);
-        const overlay = showOverlay('File is being uploaded..');
+        // const overlay = showOverlay('File is being uploaded..');
+        const annotationData = new FormData();
+        annotationData.append('annotation_file', file);
+        try {
+            const data = await uploadJobAnnotationRequest(jobId, annotationData, 'cvat');
+            historyModel.empty();
+            shapeCollectionModel.empty();
+            shapeCollectionModel.import(data);
+            shapeCollectionModel.update();
+            annotationSaverModel.update();
+        } catch (error) {
+            showMessage(error.message);
+        } finally {
+            uploadAnnotationButton.prop('disabled', false);
+            uploadAnnotationButton.text('Upload Annotation');
+        }
 
-        const fileReader = new FileReader();
-        fileReader.onload = (loadedFileEvent) => {
-            let data = null;
-
-            const asyncParse = () => {
-                try {
-                    data = annotationParser.parse(loadedFileEvent.target.result);
-                } catch (err) {
-                    overlay.remove();
-                    showMessage(err.message);
-                    return;
-                } finally {
-                    uploadAnnotationButton.text('Upload Annotation');
-                    uploadAnnotationButton.prop('disabled', false);
-                }
-
-                const asyncImport = () => {
-                    try {
-                        historyModel.empty();
-                        shapeCollectionModel.empty();
-                        shapeCollectionModel.import(data);
-                        shapeCollectionModel.update();
-                    } finally {
-                        overlay.remove();
-                    }
-                };
-
-                overlay.setMessage('Data are being imported..');
-                setTimeout(asyncImport);
-            };
-
-            overlay.setMessage('File is being parsed..');
-            setTimeout(asyncParse);
-        };
-        fileReader.readAsText(file);
     }).click();
 }
 
@@ -288,7 +266,7 @@ function setupSettingsWindow() {
 
 function setupMenu(job, task, shapeCollectionModel,
     annotationParser, aamModel, playerModel, historyModel,
-    annotationFormats) {
+    annotationFormats, annotationSaverModel) {
     const annotationMenu = $('#annotationMenu');
     const menuButton = $('#menuButton');
 
@@ -429,7 +407,7 @@ function setupMenu(job, task, shapeCollectionModel,
         hide();
         userConfirm('Current annotation will be removed from the client. Continue?',
             () => {
-                uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, $('#uploadAnnotationButton'));
+                uploadAnnotation(job.id, shapeCollectionModel, historyModel, annotationSaverModel, $('#uploadAnnotationButton'));
             });
     });
 
@@ -545,7 +523,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
     const shapeCollectionView = new ShapeCollectionView(shapeCollectionModel,
         shapeCollectionController);
 
-    buildAnnotationSaver(annotationData, shapeCollectionModel);
+    const annotationSaverModel = buildAnnotationSaver(annotationData, shapeCollectionModel);
 
     window.cvat.data = {
         get: () => shapeCollectionModel.export()[0],
@@ -629,7 +607,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
     setupSettingsWindow();
     setupMenu(jobData, taskData, shapeCollectionModel,
         annotationParser, aamModel, playerModel, historyModel,
-        annotationFormats);
+        annotationFormats, annotationSaverModel);
     setupFrameFilters();
     setupShortkeys(shortkeys, {
         aam: aamModel,

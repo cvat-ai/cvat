@@ -207,7 +207,6 @@ def dump_as_cvat_interpolation(dumper, annotations, meta, ShapeType):
     single_shapes = []
     for frame_annotation in annotations:
         for shape in frame_annotation["shapes"]:
-            print(shape)
             if "track_id" in shape:
                 track_id = int(shape["track_id"])
                 if track_id not in tracks:

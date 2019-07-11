@@ -160,6 +160,35 @@ async function dumpAnnotationRequest(tid, taskName, format) {
     });
 }
 
+async function uploadJobAnnotationRequest(jid, formData, format) {
+    return new Promise((resolve, reject) => {
+        const url = `/api/v1/jobs/${jid}/annotations`;
+        let queryString = `upload_format=${format}`
+        async function request() {
+            $.ajax({
+                url: `${url}?${queryString}`,
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+            }).done((...args) => {
+                if (args[2].status === 202) {
+                    formData = new FormData();
+                    setTimeout(request, 3000);
+                } else {
+                    resolve(args[0]);
+                }
+            }).fail((errorData) => {
+                const message = `Can not upload annotations for the job. Code: ${errorData.status}. `
+                    + `Message: ${errorData.responseText || errorData.statusText}`;
+                reject(new Error(message));
+            });
+        }
+
+        setTimeout(request);
+    });
+}
+
 
 /* These HTTP methods do not require CSRF protection */
 function csrfSafeMethod(method) {

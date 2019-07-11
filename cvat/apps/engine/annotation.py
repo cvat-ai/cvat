@@ -101,6 +101,16 @@ def patch_task_data(pk, user, data, action):
 
     return annotation.data
 
+@transaction.atomic
+def upload_task_anno(pk, user, filename, parser):
+    annotation = TaskAnnotation(pk, user)
+    annotation.upload(filename, parser)
+
+@transaction.atomic
+def upload_job_anno(pk, user, filename, parser):
+    annotation = JobAnnotation(pk, user)
+    annotation.upload(filename, parser)
+
 @silk_profile(name="DELETE task data")
 @transaction.atomic
 def delete_task_data(pk, user):
@@ -108,7 +118,7 @@ def delete_task_data(pk, user):
     annotation.delete()
 
 
-def dump_task_data(pk, user, file_path, scheme, host, query_params, dumper):
+def dump_task_data(pk, user, file_path, scheme, host, dumper):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after _AnnotationForTask instance
     # has been initialized from DB.
@@ -118,9 +128,19 @@ def dump_task_data(pk, user, file_path, scheme, host, query_params, dumper):
         annotation = TaskAnnotation(pk, user)
         annotation.init_from_db()
 
-    annotation.dump(file_path, scheme, host, query_params, dumper)
+    annotation.dump(file_path, scheme, host, dumper)
 
-######
+def _parse_task_annotation(annotation_file, annotation_importer, parser):
+    local_vars = {
+        "annotation_file": annotation_file,
+        "annotation_importer": annotation_importer,
+        }
+    source_code = open(os.path.join(settings.ANNO_PARSERS_ROOT, parser.handler_file.name)).read()
+    global_vars = globals()
+    imports = import_modules(source_code)
+    global_vars.update(imports)
+
+    exec(source_code, global_vars, local_vars)
 
 def bulk_create(db_model, objects, flt_param):
     if objects:
@@ -182,14 +202,14 @@ class AnnotationIR:
         raise NotImplementedError
 
     def add_shape(self, shape):
-        raise NotImplementedError
+        serializer = serializers.LabeledShapeSerializer(data=shape, many=False)
+        if serializer.is_valid(raise_exception=True):
+            self._shapes.append(serializer.data)
 
     def add_track(self, track):
-        raise NotImplementedError
-
-    @property
-    def frame_info(self):
-        return self._frame_info
+        serializer = serializers.LabeledTrackSerializer(data=track, many=False)
+        if serializer.is_valid(raise_exception=True):
+            self._tracks.append(serializer.data)
 
     @property
     def tags(self):
@@ -207,10 +227,6 @@ class AnnotationIR:
     def version(self):
         return self._version
 
-    @property
-    def meta(self):
-        return self._meta
-
     @tags.setter
     def tags(self, tags):
         self._tags = tags
@@ -226,6 +242,41 @@ class AnnotationIR:
     @version.setter
     def version(self, version):
         self._version = version
+
+    def __getitem__(self, key):
+        if key == 'tags':
+            return self.tags
+        elif key == 'shapes':
+            return self.shapes
+        elif key == 'tracks':
+            return self.tracks
+        raise KeyError('annotation IR has no \'{}\' key'.format(key))
+
+    @property
+    def data(self):
+        return {
+            'version': self.version,
+            'tags': self.tags,
+            'shapes': self.shapes,
+            'tracks': self.tracks,
+        }
+
+    #makes a data copy from specified frame interval
+    def slice(self, start, stop):
+        is_frame_inside = lambda x: (start <= int(x['frame']) <= stop)
+        splitted_data = AnnotationIR()
+        splitted_data.tags = copy.deepcopy(list(filter(is_frame_inside, self.tags)))
+        splitted_data.shapes = copy.deepcopy(list(filter(is_frame_inside, self.shapes)))
+        splitted_data.tracks = copy.deepcopy(list(filter(lambda y: len(list(filter(is_frame_inside, y['shapes']))), self.tracks)))
+
+        return splitted_data
+
+    @data.setter
+    def data(self, data):
+        self.version = data['version']
+        self.tags = data['tags']
+        self.shapes = data['shapes']
+        self.tracks = data['tracks']
 
     def reset(self):
         self._version = 0
@@ -280,7 +331,7 @@ class AnnotationExporter:
                 ("start_frame", str(self._db_task.start_frame)),
                 ("stop_frame", str(self._db_task.stop_frame)),
                 ("frame_filter", self._db_task.frame_filter),
-                ("z_order", self._db_task.z_order),
+                ("z_order", str(self._db_task.z_order)),
 
                 ("labels", [
                     ("label", OrderedDict([
@@ -345,11 +396,12 @@ class AnnotationExporter:
 
         return exported_shape
 
-    def export_as_shapes(self):
+    @property
+    def shapes(self):
         if self._frame_info == None or self._meta == None or self._label_mapping == None or self._attribute_mapping == None:
             raise Exception("Annotation exporter is not initialized properly")
 
-        annotations = []
+        annotations = {}
         data_manager = DataManager(self._annotation_ir)
         for shape in data_manager.to_shapes(int(self._db_task.size)):
             frame = self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step()
@@ -359,35 +411,81 @@ class AnnotationExporter:
                 rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
             else:
                 rpath = rpath[0]
-            annotations.append({
+            if frame not in annotations:
+                annotations[frame] = {
                 "frame": frame,
                 "height": db_image["height"],
                 "width": db_image["width"],
                 "name": rpath,
                 "shapes": [],
-            })
+            }
 
             annotations[frame]["shapes"].append(self._export_shape(shape))
-        return annotations
+        return list(annotations.values())
 
-    def get_meta(self):
+    @property
+    def meta(self):
         return self._meta
 
-class AnnoDumper(ABC):
-    def __init__(self, anno_IR):
-        self._ir = anno_IR
+class AnnotationImporter:
+    def __init__(self, db_task, annotation_IR):
+        self._anno_ir = annotation_IR
 
-    @abstractmethod
-    def dump(self, filename):
-        pass
+        db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
+        self._label_mapping = {db_label.name: db_label.id for db_label in db_labels}
 
-class AnnoParser(ABC):
-    def __init__(self, anno_IR):
-        self._ir = anno_IR
+        self._attribute_mapping = {
+            'mutable': {},
+            'immutable': {},
+        }
+        for db_label in db_labels:
+            for db_attribute in db_label.attributespec_set.all():
+                if db_attribute.mutable:
+                    self._attribute_mapping['mutable'][db_attribute.name] = db_attribute.id
+                else:
+                    self._attribute_mapping['immutable'][db_attribute.name] = db_attribute.id
+        self._attribute_mapping_merged = {
+            **self._attribute_mapping['mutable'],
+            **self._attribute_mapping['immutable'],
+            }
 
-    @abstractmethod
-    def parse(self, filename):
-        pass
+    def _process_tag(self, tag):
+        raise NotImplementedError
+
+    def _process_attribute(self, attribute):
+        attribute['spec_id'] = self._attribute_mapping_merged[attribute.pop('name')]
+
+    def _process_shape(self, shape):
+        shape['label_id'] = self._label_mapping[shape.pop('label')]
+        for attribute in shape['attributes']:
+            self._process_attribute(attribute)
+        return shape
+
+    def _process_track(self, track):
+        track['label_id'] = self._label_mapping[track.pop('label')]
+        track['attributes'] = []
+        for shape in track['shapes']:
+            track['attributes'] = [attrib for attrib in shape['attributes'] if attrib['name'] in self._attribute_mapping['immutable']]
+            shape['attributes'] = [attrib for attrib in shape['attributes'] if attrib['name'] in self._attribute_mapping['mutable']]
+            for attribute in shape['attributes']:
+                self._process_attribute(attribute)
+
+        for attribute in track['attributes']:
+            self._process_attribute(attribute)
+        return track
+
+    def add_tag(self, tag):
+        raise NotImplementedError
+
+    def add_shape(self, shape):
+        self._anno_ir.add_shape(self._process_shape(shape))
+
+    def add_track(self, track):
+        self._anno_ir.add_track(self._process_track(track))
+
+    @property
+    def data(self):
+        return self._anno_ir
 
 class JobAnnotation:
     def __init__(self, pk, user):
@@ -790,12 +888,12 @@ class JobAnnotation:
 
     @property
     def data(self):
-        return {
-            'version': self.ir_data.version,
-            'tags': self.ir_data.tags,
-            'shapes': self.ir_data.shapes,
-            'tracks': self.ir_data.tracks,
-        }
+        return self.ir_data.data
+
+    def upload(self, annotation_file, parser):
+        anno_importer = AnnotationImporter(self.db_job.segment.task, self.ir_data)
+        _parse_task_annotation(annotation_file, anno_importer, parser)
+        self.put(anno_importer.data.slice(self.start_frame, self.stop_frame))
 
 class DataManager:
     def __init__(self, data):
@@ -1010,17 +1108,14 @@ class ShapeManager(ObjectManager):
 class TrackManager(ObjectManager):
     def to_shapes(self, end_frame):
         shapes = []
-        counter = 0
-        for track in self.objects:
+        for idx, track in enumerate(self.objects):
             for shape in TrackManager.get_interpolated_shapes(track, 0, end_frame):
                 if not shape["outside"]:
                     shape["label_id"] = track["label_id"]
                     shape["group"] = track["group"]
-                    shape["track_id"] = counter
+                    shape["track_id"] = idx
                     shape["attributes"] += track["attributes"]
-
                     shapes.append(shape)
-
         return shapes
 
     @staticmethod
@@ -1196,22 +1291,17 @@ class TaskAnnotation:
             stop = db_job.segment.stop_frame
             jobs[jid] = { "start": start, "stop": stop }
             is_frame_inside = lambda x: (start <= int(x['frame']) <= stop)
-            # patch_job_data function changes 'data' argument by assign IDs for saved shapes,
-            # in case of overlapped jobs need to make deepcopy of data here to save all shapes properly
-            splitted_data[jid] = {
-                "tags":   copy.deepcopy(list(filter(is_frame_inside, data['tags']))),
-                "shapes": copy.deepcopy(list(filter(is_frame_inside, data['shapes']))),
-                "tracks": copy.deepcopy(list(filter(lambda y: len(list(filter(is_frame_inside, y['shapes']))), data['tracks']))),
-            }
+            splitted_data[jid] = self.ir_data.slice(start, stop)
 
         for jid, job_data in splitted_data.items():
+            merged_data = AnnotationIR()
             if action is None:
-                _data = put_job_data(jid, self.user, job_data)
+                merged_data.data = put_job_data(jid, self.user, job_data)
             else:
-                _data = patch_job_data(jid, self.user, job_data, action)
-            if _data["version"] > self.ir_data.version:
-                self.ir_data.version = _data["version"]
-            self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
+                merged_data.data = patch_job_data(jid, self.user, job_data, action)
+            if merged_data.version > self.ir_data.version:
+                self.ir_data.version = merged_data.version
+            self._merge_data(merged_data, jobs[jid]["start"], self.db_task.overlap)
 
     def _merge_data(self, data, start_frame, overlap):
         data_manager = DataManager(self.ir_data)
@@ -1246,18 +1336,17 @@ class TaskAnnotation:
             overlap = self.db_task.overlap
             self._merge_data(annotation.ir_data, start_frame, overlap)
 
-    def dump(self, file_path, scheme, host, query_params, dumper):
+    def dump(self, file_path, scheme, host, dumper):
         anno_exporter = AnnotationExporter(
             annotation_ir=self.ir_data,
             db_task=self.db_task,
             scheme=scheme,
             host=host,
         )
-        annotations = anno_exporter.export_as_shapes()
 
         local_vars = {
-            "annotations": annotations,
-            "task_meta": anno_exporter.get_meta(),
+            "annotations": anno_exporter.shapes,
+            "task_meta": anno_exporter.meta,
             "filename": file_path,
             "ShapeType": models.ShapeType,
             "dump_format": dumper.name,
@@ -1269,3 +1358,7 @@ class TaskAnnotation:
 
         exec(source_code, global_vars, local_vars)
 
+    def upload(self, file_object, parser):
+        anno_importer = AnnotationImporter(self.db_task, self.ir_data)
+        _parse_task_annotation(file_object, anno_importer, parser)
+        self.put(anno_importer.data)

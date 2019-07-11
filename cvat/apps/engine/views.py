@@ -8,6 +8,7 @@ import traceback
 from ast import literal_eval
 import shutil
 from datetime import datetime
+from tempfile import mkstemp
 
 from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
@@ -36,7 +37,7 @@ from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
    RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
    PluginSerializer, FileInfoSerializer, LogEventSerializer,
-   AnnotationFormatSerializer)
+   AnnotationFormatSerializer, AnnotationFileSerializer)
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.authentication import auth
@@ -228,7 +229,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             task.create(db_task.id, serializer.data)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
+    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
         if request.method == 'GET':
@@ -256,6 +257,54 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
+        elif request.method == 'POST':
+            queue = django_rq.get_queue("default")
+            rq_id = "{}@/api/v1/jobs/{}/annotations/upload".format(request.user, pk)
+            rq_job = queue.fetch_job(rq_id)
+
+            if not rq_job:
+                serializer =  AnnotationFileSerializer(data=request.data)
+                if serializer.is_valid(raise_exception=True):
+                    upload_format = request.query_params.get("upload_format", "")
+                    try:
+                        db_parser = models.AnnoParser.objects.get(name=upload_format)
+                    except ObjectDoesNotExist:
+                        raise serializers.ValidationError(
+                            "Please specify a correct 'upload_format' parameter for the request")
+
+                    anno_file = serializer.validated_data['annotation_file']
+                    fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
+                    with open(filename, 'wb+') as f:
+                        for chunk in anno_file.chunks():
+                            f.write(chunk)
+                    rq_job = queue.enqueue_call(
+                        func=annotation.upload_task_anno,
+                        args=(pk, request.user, filename, db_parser),
+                        job_id=rq_id
+                    )
+                    rq_job.meta['tmp_file'] = filename
+                    rq_job.meta['tmp_file_descriptor'] = fd
+                    rq_job.save_meta()
+            else:
+                if rq_job.is_finished:
+                    data = annotation.get_job_data(pk, request.user)
+                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    os.remove(rq_job.meta['tmp_file'])
+                    rq_job.delete()
+                    return Response(data)
+                elif rq_job.is_failed:
+                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    os.remove(rq_job.meta['tmp_file'])
+                    rq_job.delete()
+                    return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response(status=status.HTTP_202_ACCEPTED)
+            serializer =  AnnotationFileSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                anno_file = serializer.validated_data['annotation_file']
+                annotation.upload_task_anno(pk, request.user, anno_file)
+                return Response(status=status.HTTP_202_ACCEPTED)
+
 
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='annotations/(?P<filename>[^/]+)')
@@ -308,7 +357,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         rq_job = queue.enqueue_call(func=annotation.dump_task_data,
             args=(pk, request.user, file_path, request.scheme,
-                request.get_host(), request.query_params, db_dumper),
+                request.get_host(), db_dumper),
             job_id=rq_id)
         rq_job.meta["file_path"] = file_path
         rq_job.save_meta()
@@ -393,7 +442,7 @@ class JobViewSet(viewsets.GenericViewSet,
         return [perm() for perm in permissions]
 
 
-    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
+    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
         if request.method == 'GET':
@@ -423,6 +472,48 @@ class JobViewSet(viewsets.GenericViewSet,
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
+        elif request.method == 'POST':
+            queue = django_rq.get_queue("default")
+            rq_id = "{}@/api/v1/jobs/{}/annotations/upload".format(request.user, pk)
+            rq_job = queue.fetch_job(rq_id)
+
+            if not rq_job:
+                serializer =  AnnotationFileSerializer(data=request.data)
+                if serializer.is_valid(raise_exception=True):
+                    upload_format = request.query_params.get("upload_format", "")
+                    try:
+                        db_parser = models.AnnoParser.objects.get(name=upload_format)
+                    except ObjectDoesNotExist:
+                        raise serializers.ValidationError(
+                            "Please specify a correct 'upload_format' parameter for the request")
+
+                    anno_file = serializer.validated_data['annotation_file']
+                    fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
+                    with open(filename, 'wb+') as f:
+                        for chunk in anno_file.chunks():
+                            f.write(chunk)
+                    rq_job = queue.enqueue_call(
+                        func=annotation.upload_job_anno,
+                        args=(pk, request.user, filename, db_parser),
+                        job_id=rq_id
+                    )
+                    rq_job.meta['tmp_file'] = filename
+                    rq_job.meta['tmp_file_descriptor'] = fd
+                    rq_job.save_meta()
+            else:
+                if rq_job.is_finished:
+                    data = annotation.get_job_data(pk, request.user)
+                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    os.remove(rq_job.meta['tmp_file'])
+                    rq_job.delete()
+                    return Response(data)
+                elif rq_job.is_failed:
+                    os.close(rq_job.meta['tmp_file_descriptor'])
+                    os.remove(rq_job.meta['tmp_file'])
+                    rq_job.delete()
+                    return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response(status=status.HTTP_202_ACCEPTED)
 
 
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,

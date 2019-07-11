@@ -392,3 +392,6 @@ class AnnotationFormatSerializer(serializers.Serializer):
     download = serializers.ListField(
         child=serializers.CharField(max_length=64)
     )
+
+class AnnotationFileSerializer(serializers.Serializer):
+    annotation_file = serializers.FileField()
