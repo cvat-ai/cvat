@@ -269,9 +269,11 @@ function setupMenu(job, task, shapeCollectionModel,
     annotationFormats, annotationSaverModel) {
     const annotationMenu = $('#annotationMenu');
     const menuButton = $('#menuButton');
+    const downloadDropdownMenu = $('#downloadDropdownMenu');
 
     function hide() {
         annotationMenu.addClass('hidden');
+        downloadDropdownMenu.addClass('hidden');
     }
 
     function setupVisibility() {
@@ -386,7 +388,7 @@ function setupMenu(job, task, shapeCollectionModel,
         ${shortkeys.open_settings.view_value} - ${shortkeys.open_settings.description}`);
 
     for (const downloadFormat of annotationFormats.download) {
-        $(`<li>${downloadFormat}</li>`).on('click', async (e) => {
+        $(`<li>${downloadFormat}</li>`).on('click', async () => {
                 $('#downloadAnnotationButton')[0].disabled = true;
                 $('#downloadDropdownMenu').addClass('hidden');
                 try {
@@ -400,7 +402,7 @@ function setupMenu(job, task, shapeCollectionModel,
     }
 
     $('#downloadAnnotationButton').on('click', () => {
-        $('#downloadDropdownMenu').removeClass('hidden');
+        $('#downloadDropdownMenu').toggleClass('hidden');
     });
 
     $('#uploadAnnotationButton').on('click', () => {
