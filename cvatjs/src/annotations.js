@@ -86,12 +86,12 @@
         );
     }
 
-    function groupAnnotations(session, objectStates) {
+    function groupAnnotations(session, objectStates, reset) {
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (session.id in cache) {
-            return cache[session.id].collection.group(objectStates);
+            return cache[session.id].collection.group(objectStates, reset);
         }
 
         throw window.cvat.exceptions.DataError(

@@ -116,9 +116,13 @@
             this.count = 0;
             this.flush = false;
             this.collectionZ = {}; // key is a frame
+            this.groups = {
+                max: 0,
+            }; // object in order to pass as an argument by a reference
             this.injection = {
                 labels: this.labels,
                 collectionZ: this.collectionZ,
+                groups: this.groups,
             };
         }
 
@@ -456,13 +460,24 @@
             object.removed = true;
         }
 
-        group(objectStates) {
-            checkObjectType('merged shapes', objectStates, Array, null);
-            for (const state of objectStates) {
-                checkObjectType('object state', state, window.cvat.classes.ObjectState, null);
-            }
+        group(objectStates, reset) {
+            checkObjectType('merged shapes', objectStates, null, Array);
 
-            // TODO:
+            const objectsForGroup = objectStates.map((state) => {
+                checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
+                const object = this.objects[state.clientID];
+                if (typeof (object) === 'undefined') {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        'The object has not been saved yet. Call ObjectState.save() before you can merge it',
+                    );
+                }
+                return object;
+            });
+
+            const groupIdx = reset ? 0 : ++this.groups.max;
+            for (const object of objectsForGroup) {
+                object.group = groupIdx;
+            }
         }
     }
 

@@ -97,9 +97,10 @@
                         return result;
                     },
 
-                    async group(objectStates) {
+                    async group(objectStates, reset = false) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.group, objectStates);
+                            .apiWrapper.call(this, prototype.annotations.group,
+                                objectStates, reset);
                         return result;
                     },
                 },
@@ -327,6 +328,7 @@
                 * @method group
                 * @memberof Session.annotations
                 * @param {module:API.cvat.classes.ObjectState[]} objectStates
+                * @param {boolean} reset pass "true" to reset group value (set it to 0)
                 * @returns {integer} an ID of created group
                 * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -1231,8 +1233,8 @@
         await splitAnnotations(this, objectState, frame);
     };
 
-    Task.prototype.annotations.group.implementation = async function (objectStates) {
-        await groupAnnotations(this, objectStates);
+    Task.prototype.annotations.group.implementation = async function (objectStates, reset) {
+        await groupAnnotations(this, objectStates, reset);
     };
 
     Task.prototype.annotations.hasUnsavedChanges.implementation = async function () {

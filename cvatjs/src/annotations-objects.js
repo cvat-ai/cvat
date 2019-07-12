@@ -40,6 +40,8 @@
                 return attributeAccumulator;
             }, {});
             this.appendDefaultAttributes(this.label);
+
+            injection.groups.max = Math.max(injection.groups.max, this.group);
         }
 
         appendDefaultAttributes(label) {
