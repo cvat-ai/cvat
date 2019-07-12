@@ -41,6 +41,4 @@ DATABASES = {
     }
 }
 
-ANNO_DUMPERS_ROOT = os.path.join(BASE_DIR, 'cvat', 'apps', 'engine', 'anno_dumpers')
-
-ANNO_PARSERS_ROOT = os.path.join(BASE_DIR, 'cvat', 'apps', 'engine', 'anno_parsers')
+ANNO_FORMATS_ROOT = os.path.join(BASE_DIR, 'cvat', 'apps', 'engine')

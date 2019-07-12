@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from pascal_voc_writer import Writer
 import os
 import shutil
@@ -11,6 +10,7 @@ def dumps_as_pascal_voc(output_dir, extension, image_dir, annotations, ShapeType
 
         image_path = os.path.join(image_dir, image_name)
         writer = Writer(image_path, width, height)
+        writer.template_parameters['path'] = image_dir
 
         for shape in frame_annotation["shapes"]:
             if shape["type"] != ShapeType.RECTANGLE:

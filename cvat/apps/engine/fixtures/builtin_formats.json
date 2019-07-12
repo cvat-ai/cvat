@@ -8,7 +8,7 @@
       "created_date": "2019-06-24T12:21:36.067Z",
       "updated_date": "2019-06-24T12:21:36.067Z",
       "file_extension": "xml",
-      "handler_file":"1/cvat.py"
+      "handler_file": "builtin/cvat_dumper.py"
     }
   },
   {
@@ -20,7 +20,7 @@
       "created_date": "2019-06-24T12:21:36.067Z",
       "updated_date": "2019-06-24T12:21:36.067Z",
       "file_extension": "xml",
-      "handler_file":"1/cvat.py"
+      "handler_file": "builtin/cvat_dumper.py"
     }
   },
   {
@@ -32,7 +32,18 @@
       "created_date": "2019-06-24T12:21:36.067Z",
       "updated_date": "2019-06-24T12:21:36.067Z",
       "file_extension": "zip",
-      "handler_file":"3/pascal_voc.py"
+      "handler_file": "builtin/pascal_voc_dumper.py"
+    }
+  },
+  {
+    "model": "engine.AnnoParser",
+    "pk": 1,
+    "fields": {
+      "name": "cvat",
+      "owner": null,
+      "created_date": "2019-06-24T12:21:36.067Z",
+      "updated_date": "2019-06-24T12:21:36.067Z",
+      "handler_file": "builtin/cvat_parser.py"
     }
   }
 ]

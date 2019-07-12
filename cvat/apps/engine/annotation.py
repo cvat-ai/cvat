@@ -135,7 +135,7 @@ def _parse_task_annotation(annotation_file, annotation_importer, parser):
         "annotation_file": annotation_file,
         "annotation_importer": annotation_importer,
         }
-    source_code = open(os.path.join(settings.ANNO_PARSERS_ROOT, parser.handler_file.name)).read()
+    source_code = open(os.path.join(settings.ANNO_FORMATS_ROOT, parser.handler_file.name)).read()
     global_vars = globals()
     imports = import_modules(source_code)
     global_vars.update(imports)
@@ -1351,7 +1351,7 @@ class TaskAnnotation:
             "ShapeType": models.ShapeType,
             "dump_format": dumper.name,
             }
-        source_code = open(os.path.join(settings.ANNO_DUMPERS_ROOT, dumper.handler_file.name)).read()
+        source_code = open(os.path.join(settings.ANNO_FORMATS_ROOT, dumper.handler_file.name)).read()
         global_vars = globals()
         imports = import_modules(source_code)
         global_vars.update(imports)

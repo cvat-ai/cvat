@@ -329,8 +329,11 @@ class PluginOption(models.Model):
     name = SafeCharField(max_length=32)
     value = SafeCharField(max_length=1024)
 
-def upload_handler(instance, filename):
-    return os.path.join(instance.id, filename)
+def upload_dumper_handler(instance, filename):
+    return os.path.join('user', 'dumpers', instance.id, filename)
+
+def upload_parser_handler(instance, filename):
+    return os.path.join('user', 'parsers', instance.id, filename)
 
 class AnnoHandler(models.Model):
     name = SafeCharField(max_length=256)
@@ -346,12 +349,12 @@ class AnnoHandler(models.Model):
 
 class AnnoDumper(AnnoHandler):
     handler_file = models.FileField(
-        upload_to=upload_handler,
-        storage=FileSystemStorage(location=settings.ANNO_DUMPERS_ROOT),
+        upload_to=upload_dumper_handler,
+        storage=FileSystemStorage(location=os.path.join(settings.ANNO_FORMATS_ROOT)),
     )
 
 class AnnoParser(AnnoHandler):
     handler_file = models.FileField(
-        upload_to=upload_handler,
-        storage=FileSystemStorage(location=settings.ANNO_PARSERS_ROOT),
+        upload_to=upload_parser_handler,
+        storage=FileSystemStorage(location=os.path.join(settings.ANNO_FORMATS_ROOT)),
     )
