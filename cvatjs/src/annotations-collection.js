@@ -472,7 +472,7 @@
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
                     throw new window.cvat.exceptions.ArgumentError(
-                        'The object has not been saved yet. Call ObjectState.save() before you can merge it',
+                        'The object has not been saved yet. Call ObjectState.save() before you can group it',
                     );
                 }
                 return object;
