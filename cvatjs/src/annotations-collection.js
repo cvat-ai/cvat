@@ -484,6 +484,30 @@
                 object.resetCache();
             }
         }
+
+        clear() {
+            throw new window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        statistics() {
+            throw new window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        put() {
+            throw new window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        select() {
+            throw new window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
     }
 
     module.exports = Collection;
