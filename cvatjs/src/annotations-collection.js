@@ -23,6 +23,7 @@
         objectStateFactory,
     } = require('./annotations-objects');
     const { checkObjectType } = require('./common');
+    const Statistics = require('./statistics');
 
     const colors = [
         '#0066FF', '#AF593E', '#01A368', '#FF861F', '#ED0A3F', '#FF3F34', '#76D7EA',
@@ -175,16 +176,6 @@
             };
 
             return data;
-        }
-
-        empty() {
-            this.shapes = {};
-            this.tags = {};
-            this.tracks = [];
-            this.objects = {}; // by id
-            this.count = 0;
-
-            this.flush = true;
         }
 
         get(frame) {
@@ -486,15 +477,109 @@
         }
 
         clear() {
-            throw new window.cvat.exceptions.ScriptingError(
-                'Is not implemented',
-            );
+            this.shapes = {};
+            this.tags = {};
+            this.tracks = [];
+            this.objects = {}; // by id
+            this.count = 0;
+
+            this.flush = true;
         }
 
         statistics() {
-            throw new window.cvat.exceptions.ScriptingError(
-                'Is not implemented',
-            );
+            const labels = {};
+            const skeleton = {
+                rectangle: {
+                    shape: 0,
+                    track: 0,
+                },
+                polygon: {
+                    shape: 0,
+                    track: 0,
+                },
+                polyline: {
+                    shape: 0,
+                    track: 0,
+                },
+                points: {
+                    shape: 0,
+                    track: 0,
+                },
+                tags: 0,
+                manually: 0,
+                interpolated: 0,
+                total: 0,
+            };
+
+            const total = JSON.parse(JSON.stringify(skeleton));
+            for (const label of Object.values(this.labels)) {
+                const { name } = label;
+                labels[name] = JSON.parse(JSON.stringify(skeleton));
+            }
+
+            for (const object of Object.values(this.objects)) {
+                let objectType = null;
+                if (object instanceof Shape) {
+                    objectType = 'shape';
+                } else if (object instanceof Track) {
+                    objectType = 'track';
+                } else if (object instanceof Tag) {
+                    objectType = 'tag';
+                } else {
+                    throw window.cvat.exceptions.ScriptingError(
+                        `Unexpected object type: "${objectType}"`,
+                    );
+                }
+
+                const label = object.label.name;
+                if (objectType === 'tag') {
+                    labels[label].tags++;
+                    labels[label].manually++;
+                    labels[label].total++;
+                } else {
+                    const { shapeType } = object;
+                    labels[label][shapeType][objectType]++;
+
+                    if (objectType === 'track') {
+                        const keyframes = Object.keys(object.shapes)
+                            .sort((a, b) => +a - +b).map(el => +el);
+                        let prevKeyframe = keyframes[0];
+                        let visible = false;
+
+                        for (const keyframe of keyframes) {
+                            if (visible) {
+                                const interpolated = keyframe - prevKeyframe - 1;
+                                labels[label].interpolated += interpolated;
+                                labels[label].total += interpolated;
+                            }
+                            visible = !object.shapes[keyframe].outside;
+                            prevKeyframe = keyframe;
+
+                            if (visible) {
+                                labels[label].manually++;
+                                labels[label].total++;
+                            }
+                        }
+                    } else {
+                        labels[label].manually++;
+                        labels[label].total++;
+                    }
+                }
+            }
+
+            for (const label of Object.keys(labels)) {
+                for (const key of Object.keys(labels[label])) {
+                    if (typeof (labels[label][key]) === 'object') {
+                        for (const objectType of Object.keys(labels[label][key])) {
+                            total[key][objectType] += labels[label][key][objectType];
+                        }
+                    } else {
+                        total[key] += labels[label][key];
+                    }
+                }
+            }
+
+            return new Statistics(labels, total);
         }
 
         put() {

@@ -6,7 +6,7 @@
 
 (() => {
     /**
-        * Class representing statistics inside a session
+        * Class representing collection statistics
         * @memberof module:API.cvat.classes
         * @hideconstructor
     */
@@ -14,27 +14,28 @@
         constructor(label, total) {
             Object.defineProperties(this, Object.freeze({
                 /**
-                    * Statistics by labels which have a structure:
+                    * Statistics by labels with a structure:
                     * @example
                     * {
-                    *     label1: {
+                    *     label: {
                     *         boxes: {
                     *             tracks: 10,
                     *             shapes: 11,
                     *         },
                     *         polygons: {
-                    *             tracks: 12,
-                    *             shapes: 13,
+                    *             tracks: 13,
+                    *             shapes: 14,
                     *         },
                     *         polylines: {
-                    *             tracks: 14,
-                    *             shapes: 15,
-                    *         },
-                    *         points: {
                     *             tracks: 16,
                     *             shapes: 17,
                     *         },
-                    *         manually: 108,
+                    *         points: {
+                    *             tracks: 19,
+                    *             shapes: 20,
+                    *         },
+                    *         tags: 66,
+                    *         manually: 186,
                     *         interpolated: 500,
                     *         total: 608,
                     *     }
@@ -49,30 +50,29 @@
                     get: () => JSON.parse(JSON.stringify(label)),
                 },
                 /**
-                    * Total statistics (summed by all labels) which have a structure:
+                    * Total statistics (covers all labels) with a structure:
                     * @example
                     * {
-                    *     total: {
-                    *         boxes: {
+                    *     boxes: {
                     *             tracks: 10,
                     *             shapes: 11,
-                    *         },
-                    *         polygons: {
-                    *             tracks: 12,
-                    *             shapes: 13,
-                    *         },
-                    *         polylines: {
-                    *             tracks: 14,
-                    *             shapes: 15,
-                    *         },
-                    *         points: {
-                    *             tracks: 16,
-                    *             shapes: 17,
-                    *         },
-                    *         manually: 108,
-                    *         interpolated: 500,
-                    *         total: 608,
-                    *     }
+                    *     },
+                    *     polygons: {
+                    *         tracks: 13,
+                    *         shapes: 14,
+                    *     },
+                    *     polylines: {
+                    *        tracks: 16,
+                    *        shapes: 17,
+                    *    },
+                    *    points: {
+                    *        tracks: 19,
+                    *        shapes: 20,
+                    *    },
+                    *    tags: 66,
+                    *    manually: 186,
+                    *    interpolated: 500,
+                    *    total: 608,
                     * }
                     * @name total
                     * @type {Object}

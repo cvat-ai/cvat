@@ -718,12 +718,12 @@
     };
 
     Job.prototype.annotations.statistics.implementation = function () {
-        const result = annotationsStatistics();
+        const result = annotationsStatistics(this);
         return result;
     };
 
     Job.prototype.annotations.put.implementation = function (objectStates) {
-        const result = putAnnotations(objectStates);
+        const result = putAnnotations(this, objectStates);
         return result;
     };
 
@@ -1303,12 +1303,12 @@
     };
 
     Task.prototype.annotations.statistics.implementation = function () {
-        const result = annotationsStatistics();
+        const result = annotationsStatistics(this);
         return result;
     };
 
     Task.prototype.annotations.put.implementation = function (objectStates) {
-        const result = putAnnotations(objectStates);
+        const result = putAnnotations(this, objectStates);
         return result;
     };
 
