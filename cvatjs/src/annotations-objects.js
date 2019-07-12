@@ -627,6 +627,15 @@
             );
         }
 
+        delete(force) {
+            if (!this.lock || force) {
+                this.removed = true;
+                this.resetCache();
+            }
+
+            return true;
+        }
+
         resetCache() {
             this.cache = {};
         }

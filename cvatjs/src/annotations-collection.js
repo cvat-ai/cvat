@@ -374,6 +374,7 @@
             // Remove other shapes
             for (const object of objectsForMerge) {
                 object.removed = true;
+                object.resetCache();
             }
         }
 
@@ -436,6 +437,7 @@
 
             next.shapes.push(JSON.parse(JSON.stringify(position)));
             exported.shapes.map((shape) => {
+                delete shape.id;
                 if (shape.frame < frame) {
                     prev.shapes.push(JSON.parse(JSON.stringify(shape)));
                 } else if (shape.frame > frame) {
@@ -445,6 +447,7 @@
                 return shape;
             });
             prev.shapes.push(position);
+            prev.shapes[prev.shapes.length - 1].outside = true;
 
             let clientID = ++this.count;
             const prevTrack = trackFactory(prev, clientID, this.injection);
@@ -458,6 +461,7 @@
 
             // Remove source object
             object.removed = true;
+            object.resetCache();
         }
 
         group(objectStates, reset) {
@@ -477,6 +481,7 @@
             const groupIdx = reset ? 0 : ++this.groups.max;
             for (const object of objectsForGroup) {
                 object.group = groupIdx;
+                object.resetCache();
             }
         }
     }
