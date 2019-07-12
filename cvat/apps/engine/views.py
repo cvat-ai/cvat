@@ -259,11 +259,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 return Response(data)
         elif request.method == 'POST':
             queue = django_rq.get_queue("default")
-            rq_id = "{}@/api/v1/jobs/{}/annotations/upload".format(request.user, pk)
+            rq_id = "{}@/api/v1/tasks/{}/annotations/upload".format(request.user, pk)
             rq_job = queue.fetch_job(rq_id)
 
             if not rq_job:
-                serializer =  AnnotationFileSerializer(data=request.data)
+                serializer = AnnotationFileSerializer(data=request.data)
                 if serializer.is_valid(raise_exception=True):
                     upload_format = request.query_params.get("upload_format", "")
                     try:
@@ -287,11 +287,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     rq_job.save_meta()
             else:
                 if rq_job.is_finished:
-                    data = annotation.get_job_data(pk, request.user)
                     os.close(rq_job.meta['tmp_file_descriptor'])
                     os.remove(rq_job.meta['tmp_file'])
                     rq_job.delete()
-                    return Response(data)
+                    return Response(status=status.HTTP_201_CREATED)
                 elif rq_job.is_failed:
                     os.close(rq_job.meta['tmp_file_descriptor'])
                     os.remove(rq_job.meta['tmp_file'])

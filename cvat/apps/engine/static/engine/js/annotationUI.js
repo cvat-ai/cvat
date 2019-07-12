@@ -68,7 +68,7 @@ function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationS
     $('#annotationFileSelector').one('change', async (changedFileEvent) => {
         const file = changedFileEvent.target.files['0'];
         changedFileEvent.target.value = '';
-        if (!file || file.type !== 'text/xml') return;
+        if (!file) return;
         uploadAnnotationButton.text('Uploading..');
         uploadAnnotationButton.prop('disabled', true);
         // const overlay = showOverlay('File is being uploaded..');

@@ -1,5 +1,6 @@
 from xml.sax.saxutils import XMLGenerator
 from collections import OrderedDict
+from copy import deepcopy
 
 def pairwise(iterable):
     a = iter(iterable)
@@ -230,15 +231,15 @@ def dump_as_cvat_interpolation(dumper, annotations, meta, ShapeType):
         tracks[max_track_id] = [single_shape]
         max_track_id += 1
 
-    counter = 0
-    for track_shapes in tracks.values():
-        # if not track_shapes:
-        #     continue
+    for idx, track in enumerate(tracks.values()):
+        first_shape = track[0]["shape"]
+        closing_item = deepcopy(track[-1])
+        if closing_item['frame'] < int(meta["task"]["stop_frame"]):
+            closing_item['shape']['outside'] = 1
+            closing_item['frame'] += 1
+            track.append(closing_item)
 
-        first_shape = track_shapes[0]["shape"]
-        track_id = counter
-        counter += 1
-
+        track_id = idx
         dump_data = OrderedDict([
             ("id", str(track_id)),
             ("label", first_shape["label"]),
@@ -248,7 +249,7 @@ def dump_as_cvat_interpolation(dumper, annotations, meta, ShapeType):
             dump_data['group_id'] = str(first_shape["group"])
         dumper.open_track(dump_data)
 
-        for shape in track_shapes:
+        for shape in track:
             dump_data = OrderedDict([
                 ("frame", str(shape["frame"])),
                 ("outside", str(int(shape["shape"]["outside"]))),

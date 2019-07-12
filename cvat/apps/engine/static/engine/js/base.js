@@ -160,9 +160,8 @@ async function dumpAnnotationRequest(tid, taskName, format) {
     });
 }
 
-async function uploadJobAnnotationRequest(jid, formData, format) {
+async function uploadAnnoRequest(url, formData, format) {
     return new Promise((resolve, reject) => {
-        const url = `/api/v1/jobs/${jid}/annotations`;
         let queryString = `upload_format=${format}`
         async function request() {
             $.ajax({
@@ -189,6 +188,13 @@ async function uploadJobAnnotationRequest(jid, formData, format) {
     });
 }
 
+async function uploadJobAnnotationRequest(jid, formData, format) {
+    return uploadAnnoRequest(`/api/v1/jobs/${jid}/annotations`, formData, format);
+}
+
+async function uploadTaskAnnotationRequest(tid, formData, format) {
+    return uploadAnnoRequest(`/api/v1/tasks/${tid}/annotations`, formData, format);
+}
 
 /* These HTTP methods do not require CSRF protection */
 function csrfSafeMethod(method) {
