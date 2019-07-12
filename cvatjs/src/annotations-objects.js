@@ -283,6 +283,11 @@
 
         // Method is used to export data to the server
         toJSON() {
+            const labelAttributes = this.label.attributes.reduce((accumulator, attribute) => {
+                accumulator[attribute.id] = attribute;
+                return accumulator;
+            }, {});
+
             return {
                 clientID: this.clientID,
                 id: this.serverID,
@@ -290,10 +295,12 @@
                 label_id: this.label.id,
                 group: this.group,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
-                    attributeAccumulator.push({
-                        spec_id: attrId,
-                        value: this.attributes[attrId],
-                    });
+                    if (!labelAttributes[attrId].mutable) {
+                        attributeAccumulator.push({
+                            spec_id: attrId,
+                            value: this.attributes[attrId],
+                        });
+                    }
 
                     return attributeAccumulator;
                 }, []),
@@ -306,10 +313,12 @@
                         outside: this.shapes[frame].outside,
                         attributes: Object.keys(this.shapes[frame].attributes)
                             .reduce((attributeAccumulator, attrId) => {
-                                attributeAccumulator.push({
-                                    spec_id: attrId,
-                                    value: this.shapes[frame].attributes[attrId],
-                                });
+                                if (labelAttributes[attrId].mutable) {
+                                    attributeAccumulator.push({
+                                        spec_id: attrId,
+                                        value: this.shapes[frame].attributes[attrId],
+                                    });
+                                }
 
                                 return attributeAccumulator;
                             }, []),

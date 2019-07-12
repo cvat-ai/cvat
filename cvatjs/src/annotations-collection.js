@@ -364,10 +364,8 @@
             };
 
             const trackModel = trackFactory(track, clientID, this.injection);
-            if (trackModel) {
-                this.tracks.push(trackModel);
-                this.objects[clientID] = trackModel;
-            }
+            this.tracks.push(trackModel);
+            this.objects[clientID] = trackModel;
 
             // Remove other shapes
             for (const object of objectsForMerge) {
@@ -375,16 +373,93 @@
             }
         }
 
-        split(objectState) {
-            checkObjectType('object state', objectState, window.cvat.classes.ObjectState, null);
+        split(objectState, frame) {
+            checkObjectType('object state', objectState, null, window.cvat.classes.ObjectState);
+            checkObjectType('frame', frame, 'integer', null);
 
-            // TODO: split
+            const object = this.objects[objectState.clientID];
+            if (typeof (object) === 'undefined') {
+                throw new window.cvat.exceptions.ArgumentError(
+                    'The object has not been saved yet. Call ObjectState.save() before you can split it',
+                );
+            }
+
+            if (objectState.objectType !== window.cvat.enums.ObjectType.TRACK) {
+                return;
+            }
+
+            const keyframes = Object.keys(object.shapes).sort((a, b) => +a - +b);
+            if (frame <= +keyframes[0]) {
+                return;
+            }
+
+            const labelAttributes = object.label.attributes.reduce((accumulator, attribute) => {
+                accumulator[attribute.id] = attribute;
+                return accumulator;
+            }, {});
+
+            const exported = object.toJSON();
+            const position = {
+                type: objectState.shapeType,
+                points: [...objectState.points],
+                occluded: objectState.occluded,
+                outside: objectState.outside,
+                zOrder: 0,
+                attributes: Object.keys(objectState.attributes)
+                    .reduce((accumulator, attrID) => {
+                        if (!labelAttributes[attrID].mutable) {
+                            accumulator.push({
+                                spec_id: +attrID,
+                                value: objectState.attributes[attrID],
+                            });
+                        }
+
+                        return accumulator;
+                    }, []),
+                frame,
+            };
+
+            const prev = {
+                frame: exported.frame,
+                group: 0,
+                label_id: exported.label_id,
+                attributes: exported.attributes,
+                shapes: [],
+            };
+
+            const next = JSON.parse(JSON.stringify(prev));
+            next.frame = frame;
+
+            next.shapes.push(JSON.parse(JSON.stringify(position)));
+            exported.shapes.map((shape) => {
+                if (shape.frame < frame) {
+                    prev.shapes.push(JSON.parse(JSON.stringify(shape)));
+                } else if (shape.frame > frame) {
+                    next.shapes.push(JSON.parse(JSON.stringify(shape)));
+                }
+
+                return shape;
+            });
+            prev.shapes.push(position);
+
+            let clientID = ++this.count;
+            const prevTrack = trackFactory(prev, clientID, this.injection);
+            this.tracks.push(prevTrack);
+            this.objects[clientID] = prevTrack;
+
+            clientID = ++this.count;
+            const nextTrack = trackFactory(next, clientID, this.injection);
+            this.tracks.push(nextTrack);
+            this.objects[clientID] = nextTrack;
+
+            // Remove source object
+            object.removed = true;
         }
 
-        group(array) {
-            checkObjectType('merged shapes', array, Array, null);
-            for (const shape of array) {
-                checkObjectType('object state', shape, window.cvat.classes.ObjectState, null);
+        group(objectStates) {
+            checkObjectType('merged shapes', objectStates, Array, null);
+            for (const state of objectStates) {
+                checkObjectType('object state', state, window.cvat.classes.ObjectState, null);
             }
 
             // TODO:
