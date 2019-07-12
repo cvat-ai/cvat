@@ -626,6 +626,10 @@
                 `No one neightbour frame found for the track with client ID: "${this.id}"`,
             );
         }
+
+        resetCache() {
+            this.cache = {};
+        }
     }
 
     class Tag extends Annotation {

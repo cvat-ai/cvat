@@ -194,6 +194,10 @@
             */
             /**
                 * Save all changes in annotations on a server
+                * Objects which hadn't been saved on a server before,
+                * get a serverID after saving. But received object states aren't updated.
+                * So, after successful saving it's recommended to update them manually
+                * (call the annotations.get() again)
                 * @method save
                 * @memberof Session.annotations
                 * @throws {module:API.cvat.exceptions.PluginError}

@@ -115,10 +115,10 @@
             this.objects = {}; // key is a client id
             this.count = 0;
             this.flush = false;
-            this.collectionZ = {}; // key is a frame
+            this.collectionZ = {}; // key is a frame, {max, min} are values
             this.groups = {
                 max: 0,
-            }; // object in order to pass as an argument by a reference
+            }; // it is an object to we can pass it as an argument by a reference
             this.injection = {
                 labels: this.labels,
                 collectionZ: this.collectionZ,
