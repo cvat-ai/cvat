@@ -83,7 +83,8 @@ def create_task(path, bug_tracker, cur_user_info,
 
     print("")
     print_hrule("BEGIN: Point video to task")
-    server_files_resp = requests.post(cvat_uri + '/api/v1/tasks/{}/data'.format(task_id), verify=False, auth=(user, password), data=data_server_files)
+    server_files_resp = requests.post(cvat_uri + '/api/v1/tasks/{}/data'.format(task_id),
+            verify=False, auth=(user, password), data=data_server_files)
     print_hrule("END: Point video to task")
 
     print("server_files_resp.status_code =", server_files_resp.status_code)
@@ -193,8 +194,9 @@ def main():
             "inserted into the corresponding ticket on a bug tracker.",
             epilog=epilog_help_string,
             formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--password_file", help="Path to a password file: text file with "
-            "one line in format <username>:<password>")
+    parser.add_argument("--password-file", dest="password_file",
+            help="Path to a password file: text file with one line in "
+            "format <username>:<password>")
     parser.add_argument("--file-list", dest="filelist", required=True,
             help="Path to a text file each line of which is a path to a video to create "
             "task. The videos should be on the file share connected to CVAT, the paths "
@@ -208,7 +210,7 @@ def main():
     parser.add_argument("--labels-config", dest="labels_config", required=True,
             help="Path to a json file that contains structure that should be used as "
             "a description of labels for the task.")
-    parser.add_argument("--cvat_root_uri", required=True,
+    parser.add_argument("--cvat-server", dest="cvat_server", default="localhost:8080",
             help="URI of the CVAT server (without 'https://' prefix).")
 
     args = parser.parse_args()
@@ -232,7 +234,7 @@ def main():
     else:
         user, password = get_user_password_from_input()
 
-    cvat_uri = "https://" + args.cvat_root_uri
+    cvat_uri = "https://" + args.cvat_server
     print_hrule("BEGIN: User info")
     resp = requests.get(cvat_uri + '/api/v1/users/self', verify=False,
             auth=(user, password))
