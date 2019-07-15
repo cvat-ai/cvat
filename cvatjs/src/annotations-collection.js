@@ -609,10 +609,8 @@
                 checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
                 checkObjectType('state client ID', state.clientID, 'undefined', null);
                 checkObjectType('state frame', state.frame, 'integer', null);
-                checkObjectType('state attributes', state.frame, null, Object);
-                checkObjectType('state label', state.frame, null, window.cvat.classes.Label);
-                checkObjectType('state occluded', state.frame, 'boolean', null);
-                checkObjectType('state points', state.frame, null, Array);
+                checkObjectType('state attributes', state.attributes, null, Object);
+                checkObjectType('state label', state.label, null, window.cvat.classes.Label);
 
                 const attributes = Object.keys(state.attributes)
                     .reduce(convertAttributes.bind(state), []);
@@ -621,41 +619,8 @@
                     return accumulator;
                 }, {});
 
-                for (const coord of state.points) {
-                    checkObjectType('point coordinate', coord, 'number', null);
-                }
-
                 // Construct whole objects from states
-                if (state.objectType === 'shape') {
-                    constructed.shapes.push({
-                        attributes,
-                        frame: state.frame,
-                        group: 0,
-                        label_id: state.label.id,
-                        occluded: state.occluded,
-                        points: [...state.points],
-                        type: state.objectType,
-                        z_order: 0,
-                    });
-                } else if (state.objectType === 'track') {
-                    constructed.tracks.push({
-                        attributes: attributes
-                            .filter(attr => !labelAttributes[attr.spec_id].mutable),
-                        frame: state.frame,
-                        group: 0,
-                        label_id: state.label.id,
-                        shapes: [{
-                            attributes: attributes
-                                .filter(attr => labelAttributes[attr.spec_id].mutable),
-                            frame: state.frame,
-                            occluded: state.occluded,
-                            outside: false,
-                            points: [...state.points],
-                            type: state.objectType,
-                            z_order: 0,
-                        }],
-                    });
-                } else if (state.objectType === 'tag') {
+                if (state.objectType === 'tag') {
                     constructed.tags.push({
                         attributes,
                         frame: state.frame,
@@ -663,10 +628,55 @@
                         group: 0,
                     });
                 } else {
-                    throw new window.cvat.exceptions.ArgumentError(
-                        'Object type must be one of: '
-                            + `${JSON.stringify(Object.values(window.cvat.enums.ObjectType))}`,
-                    );
+                    checkObjectType('state occluded', state.occluded, 'boolean', null);
+                    checkObjectType('state points', state.points, null, Array);
+
+                    for (const coord of state.points) {
+                        checkObjectType('point coordinate', coord, 'number', null);
+                    }
+
+                    if (!Object.values(window.cvat.enums.ObjectShape).includes(state.shapeType)) {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            'Object shape must be one of: '
+                                + `${JSON.stringify(Object.values(window.cvat.enums.ObjectShape))}`,
+                        );
+                    }
+
+                    if (state.objectType === 'shape') {
+                        constructed.shapes.push({
+                            attributes,
+                            frame: state.frame,
+                            group: 0,
+                            label_id: state.label.id,
+                            occluded: state.occluded,
+                            points: [...state.points],
+                            type: state.shapeType,
+                            z_order: 0,
+                        });
+                    } else if (state.objectType === 'track') {
+                        constructed.tracks.push({
+                            attributes: attributes
+                                .filter(attr => !labelAttributes[attr.spec_id].mutable),
+                            frame: state.frame,
+                            group: 0,
+                            label_id: state.label.id,
+                            shapes: [{
+                                attributes: attributes
+                                    .filter(attr => labelAttributes[attr.spec_id].mutable),
+                                frame: state.frame,
+                                occluded: state.occluded,
+                                outside: false,
+                                points: [...state.points],
+                                type: state.shapeType,
+                                z_order: 0,
+                            }],
+                        });
+                    } else {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            'Object type must be one of: '
+                                + `${JSON.stringify(Object.values(window.cvat.enums.ObjectType))}`,
+                        );
+                    }
                 }
             }
 

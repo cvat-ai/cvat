@@ -247,7 +247,7 @@
             */
             /**
                 * Create new objects from one-frame states
-                * After successful add you need to update object states on a frame
+                * After successful adding you need to update object states on a frame
                 * @method put
                 * @memberof Session.annotations
                 * @param {module:API.cvat.classes.ObjectState[]} data
