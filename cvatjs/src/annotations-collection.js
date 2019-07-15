@@ -607,7 +607,7 @@
                 }
 
                 const distance = object.constructor.distance(state.points, x, y);
-                if (distance !== null && distance < minimumDistance) {
+                if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                     minimumDistance = distance;
                     minimumState = state;
                 }
