@@ -54,22 +54,20 @@
                 }
 
                 throw new window.cvat.exceptions.ArgumentError(
-                    `Got "${name}" value of type: "${typeof (value)}". `
-                        + `Expected "${type}"`,
+                    `"${name}" is expected to be "${type}", but "${typeof (value)}" has been got.`,
                 );
             }
         } else if (instance) {
             if (!(value instanceof instance)) {
                 if (value !== undefined) {
                     throw new window.cvat.exceptions.ArgumentError(
-                        `Got ${value.constructor.name} value for ${name}. `
-                        + `Expected instance of ${instance.name}`,
+                        `${name} is expected to be ${instance.name}, but `
+                            + `"${value.constructor.name}" has been got`,
                     );
                 }
 
                 throw new window.cvat.exceptions.ArgumentError(
-                    `Got undefined value for ${name}. `
-                    + `Expected instance of ${instance.name}`,
+                    `"${name}" is expected to be ${instance.name}, but "undefined" has been got.`,
                 );
             }
         }

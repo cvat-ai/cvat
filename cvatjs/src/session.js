@@ -247,7 +247,7 @@
                 * @async
             */
             /**
-                * Add some annotations to a session
+                * Create new objects from one-frame states
                 * @method put
                 * @memberof Session.annotations
                 * @param {module:API.cvat.classes.ObjectState[]} data
@@ -296,7 +296,7 @@
                 * @async
             */
             /**
-                * Select shape under a cursor using smart alghorithms
+                * Select shape under a cursor using math alghorithms
                 * @method select
                 * @memberof Session.annotations
                 * @param {module:API.cvat.classes.ObjectState[]} objectStates

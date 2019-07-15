@@ -201,7 +201,7 @@
         }
 
         merge(objectStates) {
-            checkObjectType('merged shapes', objectStates, null, Array);
+            checkObjectType('shapes for merge', objectStates, null, Array);
             if (!objectStates.length) return;
             const objectsForMerge = objectStates.map((state) => {
                 checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
@@ -456,7 +456,7 @@
         }
 
         group(objectStates, reset) {
-            checkObjectType('merged shapes', objectStates, null, Array);
+            checkObjectType('shapes for group', objectStates, null, Array);
 
             const objectsForGroup = objectStates.map((state) => {
                 checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
@@ -589,7 +589,7 @@
         }
 
         select(objectStates, x, y) {
-            checkObjectType('merged shapes', objectStates, null, Array);
+            checkObjectType('shapes for select', objectStates, null, Array);
             checkObjectType('x coordinate', x, 'number', null);
             checkObjectType('y coordinate', y, 'number', null);
 
