@@ -77,9 +77,10 @@
                         return result;
                     },
 
-                    async select(frame, x, y) {
+                    async select(objectStates, x, y) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.select, frame, x, y);
+                            .apiWrapper.call(this,
+                                prototype.annotations.select, objectStates, x, y);
                         return result;
                     },
 
@@ -298,11 +299,13 @@
                 * Select shape under a cursor using smart alghorithms
                 * @method select
                 * @memberof Session.annotations
-                * @param {integer} frame frame for selecting
+                * @param {module:API.cvat.classes.ObjectState[]} objectStates
+                * object which can be selected
                 * @param {float} x horizontal coordinate
                 * @param {float} y vertical coordinate
-                * @returns {(integer|null)}
-                * an ID of a selected object or null if no one of objects is on position
+                * @returns {Object}
+                * a pair of {state: ObjectState, distance: number} for selected object.
+                * Pair values can be null if there aren't any sutisfied objects
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance

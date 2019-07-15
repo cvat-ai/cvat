@@ -744,6 +744,18 @@
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
         }
+
+        static distance(points, x, y) {
+            const [xtl, ytl, xbr, ybr] = points;
+
+            if (!(x >= xtl && x <= xbr && y >= ytl && y <= ybr)) {
+                // Cursor is outside of a box
+                return null;
+            }
+
+            // The shortest distance from point to an edge
+            return Math.min.apply(null, [x - xtl, y - ytl, xbr - x, ybr - y]);
+        }
     }
 
     class PolyShape extends Shape {
@@ -757,6 +769,66 @@
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
         }
+
+        static distance(points, x, y) {
+            function position(x1, y1, x2, y2) {
+                return ((x1 - x) * (y2 - y) - (x2 - x) * (y1 - y));
+            }
+
+            let wn = 0;
+            const distances = [];
+            for (let i = 0; i < points.length; i += 2) {
+                // Current point
+                const x1 = points[i];
+                const y1 = points[i + 1];
+
+                // Next point
+                const x2 = i + 2 < points.length ? points[i + 2] : points[0];
+                const y2 = i + 3 < points.length ? points[i + 3] : points[1];
+
+                // Check if a point is inside a polygon
+                // with a winding numbers algorithm
+                // https://en.wikipedia.org/wiki/Point_in_polygon#Winding_number_algorithm
+                if (y1 <= y) {
+                    if (y2 > y) {
+                        if (position(x1, y1, x2, y2) > 0) {
+                            wn++;
+                        }
+                    }
+                } else if (y2 < y) {
+                    if (position(x1, y1, x2, y2) > 0) {
+                        wn--;
+                    }
+                }
+
+                // Find the shortest distance from point to an edge
+                if (((x - x1) * (x2 - x)) >= 0 && ((y - y1) * (y2 - y)) >= 0) {
+                    // Find the length of a perpendicular
+                    // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+                    distances.push(
+                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / Math
+                            .sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)),
+                    );
+                } else {
+                    // The link below works for lines (which have infinit length)
+                    // There is a case when perpendicular doesn't cross the edge
+                    // In this case we don't use the computed distance
+                    // Instead we use just distance to the nearest point
+                    distances.push(
+                        Math.min(
+                            Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
+                            Math.sqrt(Math.pow(x2 - x, 2) + Math.pow(y2 - y, 2)),
+                        ),
+                    );
+                }
+            }
+
+            if (wn !== 0) {
+                return Math.min.apply(null, distances);
+            }
+
+            return null;
+        }
     }
 
     class PolylineShape extends PolyShape {
@@ -764,12 +836,62 @@
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
         }
+
+        static distance(points, x, y) {
+            const distances = [];
+            for (let i = 0; i < points.length - 2; i += 2) {
+                // Current point
+                const x1 = points[i];
+                const y1 = points[i + 1];
+
+                // Next point
+                const x2 = points[i + 2];
+                const y2 = points[i + 3];
+
+                // Find the shortest distance from point to an edge
+                if (((x - x1) * (x2 - x)) >= 0 && ((y - y1) * (y2 - y)) >= 0) {
+                    // Find the length of a perpendicular
+                    // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+                    distances.push(
+                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / Math
+                            .sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)),
+                    );
+                } else {
+                    // The link below works for lines (which have infinit length)
+                    // There is a case when perpendicular doesn't cross the edge
+                    // In this case we don't use the computed distance
+                    // Instead we use just distance to the nearest point
+                    distances.push(
+                        Math.min(
+                            Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
+                            Math.sqrt(Math.pow(x2 - x, 2) + Math.pow(y2 - y, 2)),
+                        ),
+                    );
+                }
+            }
+
+            return Math.min.apply(null, distances);
+        }
     }
 
     class PointsShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POINTS;
+        }
+
+        static distance(points, x, y) {
+            const distances = [];
+            for (let i = 0; i < points.length; i += 2) {
+                const x1 = points[i];
+                const y1 = points[i + 1];
+
+                distances.push(
+                    Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
+                );
+            }
+
+            return Math.min.apply(null, distances);
         }
     }
 
@@ -1204,6 +1326,11 @@
             this.shapeType = window.cvat.enums.ObjectShape.POINTS;
         }
     }
+
+    RectangleTrack.distance = RectangleShape.distance;
+    PolygonTrack.distance = PolygonShape.distance;
+    PolylineTrack.distance = PolylineShape.distance;
+    PointsTrack.distance = PointsShape.distance;
 
     module.exports = {
         RectangleShape,

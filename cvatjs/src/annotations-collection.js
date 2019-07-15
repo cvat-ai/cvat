@@ -376,7 +376,7 @@
             const object = this.objects[objectState.clientID];
             if (typeof (object) === 'undefined') {
                 throw new window.cvat.exceptions.ArgumentError(
-                    'The object has not been saved yet. Call ObjectState.save() before you can split it',
+                    'The object has not been saved yet. Call annotations.put(state) before',
                 );
             }
 
@@ -463,7 +463,7 @@
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
                     throw new window.cvat.exceptions.ArgumentError(
-                        'The object has not been saved yet. Call ObjectState.save() before you can group it',
+                        'The object has not been saved yet. Call annotations.put(state) before',
                     );
                 }
                 return object;
@@ -588,10 +588,35 @@
             );
         }
 
-        select() {
-            throw new window.cvat.exceptions.ScriptingError(
-                'Is not implemented',
-            );
+        select(objectStates, x, y) {
+            checkObjectType('merged shapes', objectStates, null, Array);
+            checkObjectType('x coordinate', x, 'number', null);
+            checkObjectType('y coordinate', y, 'number', null);
+
+            let minimumDistance = null;
+            let minimumState = null;
+            for (const state of objectStates) {
+                checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
+                if (state.outside) continue;
+
+                const object = this.objects[state.clientID];
+                if (typeof (object) === 'undefined') {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        'The object has not been saved yet. Call annotations.put(state) before',
+                    );
+                }
+
+                const distance = object.constructor.distance(state.points, x, y);
+                if (distance !== null && distance < minimumDistance) {
+                    minimumDistance = distance;
+                    minimumState = state;
+                }
+            }
+
+            return {
+                state: minimumState,
+                distance: minimumDistance,
+            };
         }
     }
 

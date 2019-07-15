@@ -155,12 +155,12 @@
         );
     }
 
-    function selectObject(session, frame, x, y) {
+    function selectObject(session, objectStates, x, y) {
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
         if (session.id in cache) {
-            return cache[session.id].collection.select(frame, x, y);
+            return cache[session.id].collection.select(objectStates, x, y);
         }
 
         throw window.cvat.exceptions.DataError(
