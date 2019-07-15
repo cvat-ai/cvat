@@ -237,8 +237,7 @@
                 * @async
             */
             /**
-                * Collect some statistics from a session.
-                * For example number of shapes, tracks, polygons etc
+                * Collect short statistics about a task or a job.
                 * @method statistics
                 * @memberof Session.annotations
                 * @returns {module:API.cvat.classes.Statistics} statistics object
@@ -248,6 +247,7 @@
             */
             /**
                 * Create new objects from one-frame states
+                * After successful add you need to update object states on a frame
                 * @method put
                 * @memberof Session.annotations
                 * @param {module:API.cvat.classes.ObjectState[]} data
