@@ -69,14 +69,16 @@ class DashboardContent extends Component<any, any> {
           </span>
         }
       >
-        <Button type="primary">Create a new task</Button>
+        <Button type="primary">
+          Create a new task
+        </Button>
       </Empty>
     )
   }
 
   private renderTasks() {
     return(
-      <Content>
+      <Content className="dashboard-content">
         {
           this.props.tasks.map(
             (task: any) => (

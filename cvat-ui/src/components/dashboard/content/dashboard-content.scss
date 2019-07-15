@@ -1,31 +1,41 @@
-.dashboard-content-сard {
-  margin: 20px;
-  padding: 20px;
-  border: 1px solid;
-  border-radius: 3px;
-  background: white;
+.dashboard-content {
+  width: 1024px;
+  min-height: calc(100vh - 64px - 64px);
+  margin: 0 auto;
 
-  &__header {
-    text-align: center;
-  }
+  .dashboard-content-сard {
+    margin: 20px;
+    padding: 20px;
+    border: 1px solid;
+    border-radius: 3px;
+    background: white;
 
-  &__content {
+    &__header {
+      text-align: center;
+    }
 
-    .card-cover {
+    &__content {
 
-      img {
-        max-width: 300px;
+      .card-cover {
+
+        img {
+          max-width: 300px;
+        }
       }
-    }
 
-    .card-actions {
-      display: flex;
-      flex-flow: column wrap;
-      justify-content: space-between;
-    }
+      .card-actions {
+        display: flex;
+        flex-flow: column wrap;
+        justify-content: space-between;
 
-    .card-jobs {
+        button {
+          min-width: 200px;
+        }
+      }
 
+      .card-jobs {
+
+      }
     }
   }
 }
@@ -34,5 +44,5 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: calc(100vh - 64px - 80px);
+  height: calc(100vh - 64px - 64px);
 }
