@@ -62,9 +62,10 @@ class DashboardContent extends Component<any, any> {
   private renderPlaceholder() {
     return (
       <Empty
+        className="empty"
         description={
           <span>
-            No tasks in this workspace yet...
+            No tasks found...
           </span>
         }
       >
