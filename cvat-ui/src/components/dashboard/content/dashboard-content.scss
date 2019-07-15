@@ -1,6 +1,12 @@
 .dashboard-content-сard {
-  &__header {
+  margin: 20px;
+  padding: 20px;
+  border: 1px solid;
+  border-radius: 3px;
+  background: white;
 
+  &__header {
+    text-align: center;
   }
 
   &__content {
@@ -13,7 +19,9 @@
     }
 
     .card-actions {
-
+      display: flex;
+      flex-flow: column wrap;
+      justify-content: space-between;
     }
 
     .card-jobs {

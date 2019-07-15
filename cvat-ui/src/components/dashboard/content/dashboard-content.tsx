@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 
 import { Layout, Empty, Button, Col, Row } from 'antd';
+import Title from 'antd/lib/typography/Title';
 
 import './dashboard-content.scss';
 
@@ -25,21 +26,21 @@ class DashboardContent extends Component<any, any> {
     this.apiUrl = process.env.REACT_APP_API_FULL_URL;
 
     this.actions = [
-      // {
-      //   id: 1,
-      //   name: 'Dump annotation',
-      //   trigger: () => {},
-      // },
-      // {
-      //   id: 2,
-      //   name: 'Upload annotation',
-      //   trigger: () => {},
-      // },
-      // {
-      //   id: 3,
-      //   name: 'Update task',
-      //   trigger: () => {},
-      // },
+      {
+        id: 1,
+        name: 'Dump annotation',
+        trigger: () => {},
+      },
+      {
+        id: 2,
+        name: 'Upload annotation',
+        trigger: () => {},
+      },
+      {
+        id: 3,
+        name: 'Update task',
+        trigger: () => {},
+      },
       {
         id: 4,
         name: 'Delete task',
@@ -81,7 +82,7 @@ class DashboardContent extends Component<any, any> {
               <div className="dashboard-content-сard" key={ task.id }>
                 <Row className="dashboard-content-сard__header" type="flex">
                   <Col span={24}>
-                    <h2>{ `${task.name}: ${task.mode}` }</h2>
+                    <Title level={2}>{ `${task.name}: ${task.mode}` }</Title>
                   </Col>
                 </Row>
 
@@ -90,7 +91,7 @@ class DashboardContent extends Component<any, any> {
                     <img alt="Task cover" src={ `${this.apiUrl}/tasks/${task.id}/frames/0` } />
                   </Col>
 
-                  <Col className="сard-actions" span={8}>
+                  <Col className="card-actions" span={8}>
                     {
                       this.actions.map(
                         (action: DashboardContentAction) => (
