@@ -23,6 +23,7 @@
         objectStateFactory,
     } = require('./annotations-objects');
     const { checkObjectType } = require('./common');
+    const Statistics = require('./statistics');
 
     const colors = [
         '#0066FF', '#AF593E', '#01A368', '#FF861F', '#ED0A3F', '#FF3F34', '#76D7EA',
@@ -115,10 +116,14 @@
             this.objects = {}; // key is a client id
             this.count = 0;
             this.flush = false;
-            this.collectionZ = {}; // key is a frame
+            this.collectionZ = {}; // key is a frame, {max, min} are values
+            this.groups = {
+                max: 0,
+            }; // it is an object to we can pass it as an argument by a reference
             this.injection = {
                 labels: this.labels,
                 collectionZ: this.collectionZ,
+                groups: this.groups,
             };
         }
 
@@ -173,16 +178,6 @@
             return data;
         }
 
-        empty() {
-            this.shapes = {};
-            this.tags = {};
-            this.tracks = [];
-            this.objects = {}; // by id
-            this.count = 0;
-
-            this.flush = true;
-        }
-
         get(frame) {
             const { tracks } = this;
             const shapes = this.shapes[frame] || [];
@@ -206,7 +201,7 @@
         }
 
         merge(objectStates) {
-            checkObjectType('merged shapes', objectStates, null, Array);
+            checkObjectType('shapes for merge', objectStates, null, Array);
             if (!objectStates.length) return;
             const objectsForMerge = objectStates.map((state) => {
                 checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
@@ -364,30 +359,264 @@
             };
 
             const trackModel = trackFactory(track, clientID, this.injection);
-            if (trackModel) {
-                this.tracks.push(trackModel);
-                this.objects[clientID] = trackModel;
-            }
+            this.tracks.push(trackModel);
+            this.objects[clientID] = trackModel;
 
             // Remove other shapes
             for (const object of objectsForMerge) {
                 object.removed = true;
+                object.resetCache();
             }
         }
 
-        split(objectState) {
-            checkObjectType('object state', objectState, window.cvat.classes.ObjectState, null);
+        split(objectState, frame) {
+            checkObjectType('object state', objectState, null, window.cvat.classes.ObjectState);
+            checkObjectType('frame', frame, 'integer', null);
 
-            // TODO: split
-        }
-
-        group(array) {
-            checkObjectType('merged shapes', array, Array, null);
-            for (const shape of array) {
-                checkObjectType('object state', shape, window.cvat.classes.ObjectState, null);
+            const object = this.objects[objectState.clientID];
+            if (typeof (object) === 'undefined') {
+                throw new window.cvat.exceptions.ArgumentError(
+                    'The object has not been saved yet. Call annotations.put(state) before',
+                );
             }
 
-            // TODO:
+            if (objectState.objectType !== window.cvat.enums.ObjectType.TRACK) {
+                return;
+            }
+
+            const keyframes = Object.keys(object.shapes).sort((a, b) => +a - +b);
+            if (frame <= +keyframes[0]) {
+                return;
+            }
+
+            const labelAttributes = object.label.attributes.reduce((accumulator, attribute) => {
+                accumulator[attribute.id] = attribute;
+                return accumulator;
+            }, {});
+
+            const exported = object.toJSON();
+            const position = {
+                type: objectState.shapeType,
+                points: [...objectState.points],
+                occluded: objectState.occluded,
+                outside: objectState.outside,
+                zOrder: 0,
+                attributes: Object.keys(objectState.attributes)
+                    .reduce((accumulator, attrID) => {
+                        if (!labelAttributes[attrID].mutable) {
+                            accumulator.push({
+                                spec_id: +attrID,
+                                value: objectState.attributes[attrID],
+                            });
+                        }
+
+                        return accumulator;
+                    }, []),
+                frame,
+            };
+
+            const prev = {
+                frame: exported.frame,
+                group: 0,
+                label_id: exported.label_id,
+                attributes: exported.attributes,
+                shapes: [],
+            };
+
+            const next = JSON.parse(JSON.stringify(prev));
+            next.frame = frame;
+
+            next.shapes.push(JSON.parse(JSON.stringify(position)));
+            exported.shapes.map((shape) => {
+                delete shape.id;
+                if (shape.frame < frame) {
+                    prev.shapes.push(JSON.parse(JSON.stringify(shape)));
+                } else if (shape.frame > frame) {
+                    next.shapes.push(JSON.parse(JSON.stringify(shape)));
+                }
+
+                return shape;
+            });
+            prev.shapes.push(position);
+            prev.shapes[prev.shapes.length - 1].outside = true;
+
+            let clientID = ++this.count;
+            const prevTrack = trackFactory(prev, clientID, this.injection);
+            this.tracks.push(prevTrack);
+            this.objects[clientID] = prevTrack;
+
+            clientID = ++this.count;
+            const nextTrack = trackFactory(next, clientID, this.injection);
+            this.tracks.push(nextTrack);
+            this.objects[clientID] = nextTrack;
+
+            // Remove source object
+            object.removed = true;
+            object.resetCache();
+        }
+
+        group(objectStates, reset) {
+            checkObjectType('shapes for group', objectStates, null, Array);
+
+            const objectsForGroup = objectStates.map((state) => {
+                checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
+                const object = this.objects[state.clientID];
+                if (typeof (object) === 'undefined') {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        'The object has not been saved yet. Call annotations.put(state) before',
+                    );
+                }
+                return object;
+            });
+
+            const groupIdx = reset ? 0 : ++this.groups.max;
+            for (const object of objectsForGroup) {
+                object.group = groupIdx;
+                object.resetCache();
+            }
+        }
+
+        clear() {
+            this.shapes = {};
+            this.tags = {};
+            this.tracks = [];
+            this.objects = {}; // by id
+            this.count = 0;
+
+            this.flush = true;
+        }
+
+        statistics() {
+            const labels = {};
+            const skeleton = {
+                rectangle: {
+                    shape: 0,
+                    track: 0,
+                },
+                polygon: {
+                    shape: 0,
+                    track: 0,
+                },
+                polyline: {
+                    shape: 0,
+                    track: 0,
+                },
+                points: {
+                    shape: 0,
+                    track: 0,
+                },
+                tags: 0,
+                manually: 0,
+                interpolated: 0,
+                total: 0,
+            };
+
+            const total = JSON.parse(JSON.stringify(skeleton));
+            for (const label of Object.values(this.labels)) {
+                const { name } = label;
+                labels[name] = JSON.parse(JSON.stringify(skeleton));
+            }
+
+            for (const object of Object.values(this.objects)) {
+                let objectType = null;
+                if (object instanceof Shape) {
+                    objectType = 'shape';
+                } else if (object instanceof Track) {
+                    objectType = 'track';
+                } else if (object instanceof Tag) {
+                    objectType = 'tag';
+                } else {
+                    throw window.cvat.exceptions.ScriptingError(
+                        `Unexpected object type: "${objectType}"`,
+                    );
+                }
+
+                const label = object.label.name;
+                if (objectType === 'tag') {
+                    labels[label].tags++;
+                    labels[label].manually++;
+                    labels[label].total++;
+                } else {
+                    const { shapeType } = object;
+                    labels[label][shapeType][objectType]++;
+
+                    if (objectType === 'track') {
+                        const keyframes = Object.keys(object.shapes)
+                            .sort((a, b) => +a - +b).map(el => +el);
+                        let prevKeyframe = keyframes[0];
+                        let visible = false;
+
+                        for (const keyframe of keyframes) {
+                            if (visible) {
+                                const interpolated = keyframe - prevKeyframe - 1;
+                                labels[label].interpolated += interpolated;
+                                labels[label].total += interpolated;
+                            }
+                            visible = !object.shapes[keyframe].outside;
+                            prevKeyframe = keyframe;
+
+                            if (visible) {
+                                labels[label].manually++;
+                                labels[label].total++;
+                            }
+                        }
+                    } else {
+                        labels[label].manually++;
+                        labels[label].total++;
+                    }
+                }
+            }
+
+            for (const label of Object.keys(labels)) {
+                for (const key of Object.keys(labels[label])) {
+                    if (typeof (labels[label][key]) === 'object') {
+                        for (const objectType of Object.keys(labels[label][key])) {
+                            total[key][objectType] += labels[label][key][objectType];
+                        }
+                    } else {
+                        total[key] += labels[label][key];
+                    }
+                }
+            }
+
+            return new Statistics(labels, total);
+        }
+
+        put() {
+            throw new window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        select(objectStates, x, y) {
+            checkObjectType('shapes for select', objectStates, null, Array);
+            checkObjectType('x coordinate', x, 'number', null);
+            checkObjectType('y coordinate', y, 'number', null);
+
+            let minimumDistance = null;
+            let minimumState = null;
+            for (const state of objectStates) {
+                checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
+                if (state.outside) continue;
+
+                const object = this.objects[state.clientID];
+                if (typeof (object) === 'undefined') {
+                    throw new window.cvat.exceptions.ArgumentError(
+                        'The object has not been saved yet. Call annotations.put(state) before',
+                    );
+                }
+
+                const distance = object.constructor.distance(state.points, x, y);
+                if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
+                    minimumDistance = distance;
+                    minimumState = state;
+                }
+            }
+
+            return {
+                state: minimumState,
+                distance: minimumDistance,
+            };
         }
     }
 
