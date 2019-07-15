@@ -66,5 +66,5 @@ class ModelLoader():
 
 
 def load_label_map(labels_path):
-        with open(labels_path, "r") as f:
-            return json.load(f)["label_map"]
+    with open(labels_path, "r") as f:
+        return json.load(f)["label_map"]
