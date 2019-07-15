@@ -9,7 +9,8 @@ import http.client as http_client
 import time
 
 import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) # to suppress warnings that "Unverified HTTPS request is being made"
+# to suppress warnings that "Unverified HTTPS request is being made"
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def set_http_verbose():
     http_client.HTTPConnection.debuglevel = 1
@@ -46,23 +47,25 @@ def get_user_password_from_input():
     password = getpass.getpass()
     return user, password
 
-def create_task(full_relative_path, bug_tracker, cur_user_info, user, password, labels_descr, cvat_uri):
-    res = {"status": False, "full_relative_path": full_relative_path}
+def create_task(path, bug_tracker, cur_user_info,
+        user, password, labels_descr, cvat_uri):
+    res = {"status": False, "path": path}
 
     data_task_create = {
-        "name": full_relative_path,
+        "name": path,
         "owner": cur_user_info["id"],
         "image_quality": 75,
         "bug_tracker": bug_tracker,
         "labels": []
     }
-    assert type(labels_descr) is list
+    assert isinstance(labels_descr, list)
     data_task_create["labels"] = labels_descr
 
 
     print("")
     print_hrule("BEGIN: Create task")
-    task_creation_resp = requests.post(cvat_uri + '/api/v1/tasks', verify=False, auth=(user, password), json=data_task_create)
+    task_creation_resp = requests.post(cvat_uri + '/api/v1/tasks', verify=False,
+            auth=(user, password), json=data_task_create)
     print_hrule("END: Create task")
 
     print("task_creation_resp.status_code =", task_creation_resp.status_code)
@@ -75,7 +78,7 @@ def create_task(full_relative_path, bug_tracker, cur_user_info, user, password, 
     res["task_id"] = task_id
 
     data_server_files = {
-            "server_files[0]": [full_relative_path]
+            "server_files[0]": [path]
     }
 
     print("")
@@ -90,12 +93,14 @@ def create_task(full_relative_path, bug_tracker, cur_user_info, user, password, 
         print("CANNOT SET SERVER FILES")
         return res
 
-    print("Task for full_relative_path='{}' is added".format(full_relative_path))
+    print("Task for path='{}' is added".format(path))
 
     status_resp_json = {}
     while True:
         print_hrule("BEGIN: Status")
-        status_files_resp = requests.get(cvat_uri + '/api/v1/tasks/{}/status'.format(task_id), verify=False, auth=(user, password))
+        status_files_resp = requests.get(
+                cvat_uri + '/api/v1/tasks/{}/status'.format(task_id), verify=False,
+                auth=(user, password))
         print_hrule("END: Status")
 
         print("status_files_resp.status_code =", status_files_resp.status_code)
@@ -111,13 +116,14 @@ def create_task(full_relative_path, bug_tracker, cur_user_info, user, password, 
         time.sleep(1)
 
     if status_resp_json.get('state', "") == "Finished":
-        print("Task is created and video is decoded for full_relative_path = '{}'".format(full_relative_path))
+        print("Task is created and video is decoded for path = '{}'".format(path))
     else:
-        print("ERROR DURING CREATION OF THE TASK '{}'".format(full_relative_path))
+        print("ERROR DURING CREATION OF THE TASK '{}'".format(path))
         return res
 
     print_hrule("BEGIN: Get Job Id")
-    job_id_resp = requests.get(cvat_uri + '/api/v1/tasks/{}'.format(task_id), verify=False, auth=(user, password))
+    job_id_resp = requests.get(cvat_uri + '/api/v1/tasks/{}'.format(task_id),
+            verify=False, auth=(user, password))
     print_hrule("END: Get Job Id")
     if job_id_resp.status_code != 200:
         print("CANNOT GET JOB ID, status code =", job_id_resp.status_code)
@@ -143,12 +149,14 @@ def print_table_for_jira(list_all_done_res):
     print_hrule("CURRENT RESULTS:")
     for res in list_all_done_res:
         assert res["status"]
-        print("|{}|[{}]|".format(res["full_relative_path"], res["url_for_job"]))
+        print("|{}|[{}]|".format(res["path"], res["url_for_job"]))
     print_hrule("END OF CURRENT RESULTS")
 
 def main():
     epilog_help_string = ("""
-    Please, note that argument path_json_labels_descr should point to a json file that describes labels for a task.
+    Please, note that command line parameter --labels-config should point to a json file
+    that describes labels for a task.
+
     Example 1:
         [
             {
@@ -174,27 +182,41 @@ def main():
                 ]
             }
         ]
-    -- this will create for the task one bbox property with name 'obj' with one non-mutable text attribute 'class',
-    it is equivalent to CVAT label string'obj @text=class:""'
+    -- this will create for the task one bbox property with name 'obj' with one
+    non-mutable text attribute 'class', it is equivalent to CVAT label string
+    'obj @text=class:""'
     """)
 
-    parser = ArgumentParser(description = "Script that receives list of videos and to creates CVAT tasks (one for the video), "
-            "upload the video to the task from the share, and print the table of created tasks that may be inserted into a JIRA ticket.",
+    parser = ArgumentParser(description = "Script that receives list of videos and to "
+            "creates CVAT tasks (one for the video), uploads the video to the task from "
+            "the share, and prints the markdown table of created tasks that may be "
+            "inserted into the corresponding ticket on a bug tracker.",
             epilog=epilog_help_string,
             formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--password_file', help='Path to a password file: text file with one line in format <username>:<password>')
-    parser.add_argument('--filelist', required=True, help='Path to a text file each line of which is a path to a video to create task. The videos should be on the file share connected to CVAT, the paths should be relative to the root folder of the CVAT file share. The name of each created task will be equal to the corresponding relative path.')
-    parser.add_argument('--bug_tracker', required=True, help='URI of JIRA ticket.')
-    parser.add_argument("-v", "--verbose", action="store_true", help="If HTTP requests should be logged.")
-    parser.add_argument("--path_json_labels_descr", required=True, help="Path to a json file that contains structure that should be used as description of labels for the task.")
-    parser.add_argument("--cvat_root_uri", required=True, help="URI of the CVAT server (without 'https://' prefix).")
+    parser.add_argument("--password_file", help="Path to a password file: text file with "
+            "one line in format <username>:<password>")
+    parser.add_argument("--file-list", dest="filelist", required=True,
+            help="Path to a text file each line of which is a path to a video to create "
+            "task. The videos should be on the file share connected to CVAT, the paths "
+            "should be relative to the root folder of the CVAT file share. "
+            "The name of each created task will be equal to the corresponding relative "
+            "path.")
+    parser.add_argument("--bug-tracker", dest="bug_tracker", required=True,
+            help="URI of the bug tracker ticket that will be pointed by new tasks.")
+    parser.add_argument("-v", "--verbose", action="store_true",
+            help="If HTTP requests should be logged.")
+    parser.add_argument("--labels-config", dest="labels_config", required=True,
+            help="Path to a json file that contains structure that should be used as "
+            "a description of labels for the task.")
+    parser.add_argument("--cvat_root_uri", required=True,
+            help="URI of the CVAT server (without 'https://' prefix).")
 
     args = parser.parse_args()
 
-    print("path_json_labels_descr =", args.path_json_labels_descr)
+    print("labels_config =", args.labels_config)
     labels_descr = []
-    with open(args.path_json_labels_descr) as f_descr:
-        labels_descr = json.load(f_descr)
+    with open(args.labels_config) as f_labels_config:
+        labels_descr = json.load(f_labels_config)
 
     assert type(labels_descr) is list
     print("labels_descr as json =")
@@ -212,7 +234,8 @@ def main():
 
     cvat_uri = "https://" + args.cvat_root_uri
     print_hrule("BEGIN: User info")
-    resp = requests.get(cvat_uri + '/api/v1/users/self', verify=False, auth=(user, password))
+    resp = requests.get(cvat_uri + '/api/v1/users/self', verify=False,
+            auth=(user, password))
     print_hrule("END: User info")
 
     if resp.status_code != 200:
@@ -230,17 +253,17 @@ def main():
             path = path.strip()
             assert not path.startswith(".")
 
-            full_relative_path = path
-            print("full_relative_path = '{}'".format(full_relative_path))
+            print("path = '{}'".format(path))
 
-            res = create_task(full_relative_path, args.bug_tracker, cur_user_info, user, password, labels_descr=labels_descr, cvat_uri=cvat_uri)
+            res = create_task(path, args.bug_tracker, cur_user_info, user,
+                    password, labels_descr=labels_descr, cvat_uri=cvat_uri)
             print("")
             if res["status"]:
                 print("DONE")
                 list_all_done_res.append(res)
             else:
-                print("FAILED {}!!!".format(full_relative_path))
-                list_failed_videos.append(full_relative_path)
+                print("FAILED {}!!!".format(path))
+                list_failed_videos.append(path)
             print("")
             print_table_for_jira(list_all_done_res)
             print("")
