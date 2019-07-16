@@ -529,6 +529,8 @@
                             if (response.status === 202) {
                                 annotationData = new FormData();
                                 setTimeout(request, 3000);
+                            } else {
+                                resolve();
                             }
                         } catch (errorData) {
                             const code = errorData.response
