@@ -15,7 +15,7 @@ from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.authentication.auth import has_admin_role
 from cvat.apps.engine.log import slogger
 
-from .model_loader import load_label_map
+from .model_loader import load_labelmap
 from . import model_manager
 from .models import AnnotationModel
 
@@ -195,7 +195,7 @@ def start_annotation(request, mid, tid):
             {db_attr.name: db_attr.id for db_attr in db_label.attributespec_set.all()} for db_label in db_labels}
         db_labels = {db_label.name:db_label.id for db_label in db_labels}
 
-        model_labels = {value: key for key, value in load_label_map(labelmap_file).items()}
+        model_labels = {value: key for key, value in load_labelmap(labelmap_file).items()}
 
         labels_mapping = {}
         for user_model_label, user_db_label in user_defined_labels_mapping.items():

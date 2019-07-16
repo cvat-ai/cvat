@@ -24,7 +24,7 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data, patch_task_data
 
 from .models import AnnotationModel, FrameworkChoice
-from .model_loader import ModelLoader, load_label_map
+from .model_loader import ModelLoader, load_labelmap
 from .image_loader import ImageLoader
 from .import_modules import import_modules
 
@@ -46,7 +46,7 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
     def _run_test(model_file, weights_file, labelmap_file, interpretation_file):
         test_image = np.ones((1024, 1980, 3), np.uint8) * 255
         try:
-            dummy_labelmap = {key: key for key in load_label_map(labelmap_file).keys()}
+            dummy_labelmap = {key: key for key in load_labelmap(labelmap_file).keys()}
             run_inference_engine_annotation(
                 data=[test_image,],
                 model_file=model_file,
