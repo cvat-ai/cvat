@@ -22,15 +22,17 @@
         clearAnnotations,
         selectObject,
         annotationsStatistics,
+        uploadAnnotations,
+        dumpAnnotations,
     } = require('./annotations');
 
     function buildDublicatedAPI(prototype) {
         Object.defineProperties(prototype, {
             annotations: Object.freeze({
                 value: {
-                    async upload(file) {
+                    async upload(file, format) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.upload, file);
+                            .apiWrapper.call(this, prototype.annotations.upload, file, format);
                         return result;
                     },
 
@@ -46,9 +48,9 @@
                         return result;
                     },
 
-                    async dump() {
+                    async dump(name, format) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.dump);
+                            .apiWrapper.call(this, prototype.annotations.dump, name, format);
                         return result;
                     },
 
@@ -188,9 +190,11 @@
             */
             /**
                 * Upload annotations from a dump file
+                * You need upload annotations from a server again after successful executing
                 * @method upload
                 * @memberof Session.annotations
-                * @param {File} [annotations] - text file with annotations
+                * @param {File} annotations - a text file with annotations
+                * @param {string} format - a format of the file
                 * @instance
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -230,6 +234,8 @@
                 * Method always dumps annotations for a whole task.
                 * @method dump
                 * @memberof Session.annotations
+                * @param {string} name - a name of a file with annotations
+                * @param {string} format - a format of the file
                 * @returns {string} URL which can be used in order to get a dump file
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
@@ -727,6 +733,16 @@
 
     Job.prototype.annotations.put.implementation = function (objectStates) {
         const result = putAnnotations(this, objectStates);
+        return result;
+    };
+
+    Job.prototype.annotations.upload.implementation = async function (file, format) {
+        const result = await uploadAnnotations(this, file, format);
+        return result;
+    };
+
+    Job.prototype.annotations.dump.implementation = async function (name, format) {
+        const result = await dumpAnnotations(this, name, format);
         return result;
     };
 
@@ -1312,6 +1328,16 @@
 
     Task.prototype.annotations.put.implementation = function (objectStates) {
         const result = putAnnotations(this, objectStates);
+        return result;
+    };
+
+    Task.prototype.annotations.upload.implementation = async function (file, format) {
+        const result = await uploadAnnotations(this, file, format);
+        return result;
+    };
+
+    Task.prototype.annotations.dump.implementation = async function (name, format) {
+        const result = await dumpAnnotations(this, name, format);
         return result;
     };
 
