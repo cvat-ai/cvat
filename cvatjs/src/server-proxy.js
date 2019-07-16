@@ -523,7 +523,7 @@
                     async function request() {
                         try {
                             const response = await Axios
-                                .post(`${backendAPI}/${session}s/${id}?upload_format=${format}`, annotationData, {
+                                .post(`${backendAPI}/${session}s/${id}/annotations?upload_format=${format}`, annotationData, {
                                     proxy: window.cvat.config.proxy,
                                 });
                             if (response.status === 202) {
