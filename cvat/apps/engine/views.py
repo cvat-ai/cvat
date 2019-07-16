@@ -298,12 +298,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             return Response(status=status.HTTP_202_ACCEPTED)
-            serializer =  AnnotationFileSerializer(data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                anno_file = serializer.validated_data['annotation_file']
-                annotation.upload_task_anno(pk, request.user, anno_file)
-                return Response(status=status.HTTP_202_ACCEPTED)
-
 
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='annotations/(?P<filename>[^/]+)')

@@ -66,6 +66,6 @@ for ev, el in context:
         elif el.tag == 'track':
             annotation_importer.add_track(track)
             track = None
-        elif el.tag == 'iamge':
+        elif el.tag == 'image':
             image_is_opened = False
         el.clear()
