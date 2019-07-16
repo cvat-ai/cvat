@@ -145,13 +145,18 @@ def create_task(path, bug_tracker, cur_user_info,
     res["status"] = True
     return res
 
-def print_table_for_jira(list_all_done_res):
-    print("CURRENT RESULTS:")
-    all_res_str = []
+def print_result_table(list_all_done_res):
+    all_res_strings = []
     for res in list_all_done_res:
         assert res["status"]
-        print("|{}|[{}]|".format(res["path"], res["url_for_job"]))
+        all_res_strings.append("|{}|[{}]|".format(res["path"], res["url_for_job"]))
+    res_str = "\n".join(all_res_strings)
+    log.info("CURRENT RESULTS =\n" + res_str)
+    print()
+    print("CURRENT RESULTS:")
+    print(res_str)
     print("END OF CURRENT RESULTS")
+    print()
 
 def main():
     epilog_help_string = ("""
@@ -268,10 +273,10 @@ def main():
                 log.warning("FAILED {}!!!".format(path))
                 list_failed_videos.append(path)
             log.info("")
-            print_table_for_jira(list_all_done_res)
+            print_result_table(list_all_done_res)
             log.info("")
             log.info("")
-    print_table_for_jira(list_all_done_res)
+    print_result_table(list_all_done_res)
     log.info("ALL DONE")
     log.info("")
 
