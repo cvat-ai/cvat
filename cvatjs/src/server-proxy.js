@@ -178,6 +178,22 @@
                 setCookie(authentificationResponse);
             }
 
+            async function logout() {
+                const host = window.cvat.config.backendAPI.slice(0, -7);
+
+                try {
+                    await Axios.get(`${host}/auth/logout`, {
+                        proxy: window.cvat.config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new window.cvat.exceptions.ServerError(
+                        'Could not logout from the server',
+                        code,
+                    );
+                }
+            }
+
             async function getTasks(filter = '') {
                 const { backendAPI } = window.cvat.config;
 
@@ -309,7 +325,7 @@
                         proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
-                    deleteTask(response.data.id);
+                    await deleteTask(response.data.id);
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
                         'Could not put data to the server',
@@ -320,7 +336,7 @@
                 try {
                     await wait(response.data.id);
                 } catch (createException) {
-                    deleteTask(response.data.id);
+                    await deleteTask(response.data.id);
                     throw createException;
                 }
 
@@ -444,18 +460,19 @@
                 return response.data;
             }
 
-            async function getTaskAnnotations(tid) {
+            // Session is 'task' or 'job'
+            async function getAnnotations(session, id) {
                 const { backendAPI } = window.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/annotations`, {
+                    response = await Axios.get(`${backendAPI}/${session}s/${id}/annotations`, {
                         proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        `Could not get annotations for the task ${tid} from the server`,
+                        `Could not get annotations for the ${session} ${id} from the server`,
                         code,
                     );
                 }
@@ -463,18 +480,31 @@
                 return response.data;
             }
 
-            async function getJobAnnotations(jid) {
+            // Session is 'task' or 'job'
+            async function updateAnnotations(session, id, data, action) {
                 const { backendAPI } = window.cvat.config;
+                let requestFunc = null;
+                let url = null;
+                if (action.toUpperCase() === 'PUT') {
+                    requestFunc = Axios.put.bind(Axios);
+                    url = `${backendAPI}/${session}s/${id}/annotations`;
+                } else {
+                    requestFunc = Axios.patch.bind(Axios);
+                    url = `${backendAPI}/${session}s/${id}/annotations?action=${action}`;
+                }
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/jobs/${jid}/annotations`, {
+                    response = await requestFunc(url, JSON.stringify(data), {
                         proxy: window.cvat.config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        `Could not get annotations for the job ${jid} from the server`,
+                        `Could not updated annotations for the ${session} ${id} on the server`,
                         code,
                     );
                 }
@@ -497,6 +527,7 @@
                         share,
                         exception,
                         login,
+                        logout,
                     }),
                     writable: false,
                 },
@@ -537,8 +568,8 @@
 
                 annotations: {
                     value: Object.freeze({
-                        getTaskAnnotations,
-                        getJobAnnotations,
+                        updateAnnotations,
+                        getAnnotations,
                     }),
                     writable: false,
                 },

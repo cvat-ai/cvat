@@ -10,6 +10,8 @@ import rq
 import shutil
 import tempfile
 import itertools
+import sys
+import traceback
 
 from django.db import transaction
 from django.utils import timezone
@@ -22,7 +24,7 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data, patch_task_data
 
 from .models import AnnotationModel, FrameworkChoice
-from .model_loader import ModelLoader
+from .model_loader import ModelLoader, load_labelmap
 from .image_loader import ImageLoader
 from cvat.apps.engine.utils.import_modules import import_modules
 
@@ -44,11 +46,12 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
     def _run_test(model_file, weights_file, labelmap_file, interpretation_file):
         test_image = np.ones((1024, 1980, 3), np.uint8) * 255
         try:
-            _run_inference_engine_annotation(
+            dummy_labelmap = {key: key for key in load_labelmap(labelmap_file).keys()}
+            run_inference_engine_annotation(
                 data=[test_image,],
                 model_file=model_file,
                 weights_file=weights_file,
-                labels_mapping=labelmap_file,
+                labels_mapping=dummy_labelmap,
                 attribute_spec={},
                 convertation_file=interpretation_file,
                 restricted=restricted
@@ -266,6 +269,9 @@ class Results():
             "attributes": attributes or {},
         }
 
+class InterpreterError(Exception):
+    pass
+
 def _process_detections(detections, path_to_conv_script, restricted=True):
     results = Results()
     local_vars = {
@@ -290,11 +296,23 @@ def _process_detections(detections, path_to_conv_script, restricted=True):
         imports = import_modules(source_code)
         global_vars.update(imports)
 
-    exec(source_code, global_vars, local_vars)
+    try:
+        exec(source_code, global_vars, local_vars)
+    except SyntaxError as err:
+        error_class = err.__class__.__name__
+        detail = err.args[0]
+        line_number = err.lineno
+    except Exception as err:
+        error_class = err.__class__.__name__
+        detail = err.args[0]
+        cl, exc, tb = sys.exc_info()
+        line_number = traceback.extract_tb(tb)[-1][1]
+    else:
+        return results
 
-    return results
+    raise InterpreterError("%s at line %d: %s" % (error_class, line_number, detail))
 
-def _run_inference_engine_annotation(data, model_file, weights_file,
+def run_inference_engine_annotation(data, model_file, weights_file,
        labels_mapping, attribute_spec, convertation_file, job=None, update_progress=None, restricted=True):
     def process_attributes(shape_attributes, label_attr_spec):
         attributes = []
@@ -355,7 +373,6 @@ def _run_inference_engine_annotation(data, model_file, weights_file,
 
     add_shapes(processed_detections.get_shapes(), result["shapes"])
 
-
     return result
 
 def run_inference_thread(tid, model_file, weights_file, labels_mapping, attributes, convertation_file, reset, user, restricted=True):
@@ -377,7 +394,7 @@ def run_inference_thread(tid, model_file, weights_file, labels_mapping, attribut
 
         result = None
         slogger.glob.info("auto annotation with openvino toolkit for task {}".format(tid))
-        result = _run_inference_engine_annotation(
+        result = run_inference_engine_annotation(
             data=get_image_data(db_task.get_data_dirname()),
             model_file=model_file,
             weights_file=weights_file,

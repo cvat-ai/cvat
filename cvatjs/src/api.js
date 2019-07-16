@@ -117,6 +117,19 @@
                     .apiWrapper(cvat.server.login, username, password);
                 return result;
             },
+            /**
+                * Method allows to logout from the server
+                * @method logout
+                * @async
+                * @memberof module:API.cvat.server
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async logout() {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.server.logout);
+                return result;
+            },
         },
         /**
             * Namespace is used for getting tasks

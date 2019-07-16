@@ -48,5 +48,7 @@
         "indent": ["warn", 4],
         "no-useless-constructor": 0,
         "func-names": [0],
+        "valid-typeof": [0],
+        "no-console": [0], // this rule deprecates console.log, console.warn etc. because "it is not good in production code"
     },
 };

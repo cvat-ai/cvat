@@ -5,7 +5,7 @@ from io import StringIO
 from PIL import Image
 from django.db import migrations
 from django.conf import settings
-from cvat.apps.engine.task import _get_mime
+from cvat.apps.engine.media_extractors import get_mime
 
 def parse_attribute(value):
     match = re.match(r'^([~@])(\w+)=(\w+):(.+)?$', value)
@@ -81,7 +81,7 @@ def fill_task_meta_data_forward(apps, schema_editor):
             video = ""
             for root, _, files in os.walk(_get_upload_dirname(db_task)):
                 fullnames = map(lambda f: os.path.join(root, f), files)
-                videos = list(filter(lambda x: _get_mime(x) == 'video', fullnames))
+                videos = list(filter(lambda x: get_mime(x) == 'video', fullnames))
                 if len(videos):
                     video = videos[0]
                     break
@@ -100,7 +100,7 @@ def fill_task_meta_data_forward(apps, schema_editor):
             filenames = []
             for root, _, files in os.walk(_get_upload_dirname(db_task)):
                 fullnames = map(lambda f: os.path.join(root, f), files)
-                images = filter(lambda x: _get_mime(x) == 'image', fullnames)
+                images = filter(lambda x: get_mime(x) == 'image', fullnames)
                 filenames.extend(images)
             filenames.sort()
 

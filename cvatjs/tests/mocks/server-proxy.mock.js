@@ -54,6 +54,10 @@ class ServerProxy {
             return null;
         }
 
+        async function logout() {
+            return null;
+        }
+
         async function getTasks(filter = '') {
             function QueryStringToJSON(query) {
                 const pairs = [...new URLSearchParams(query).entries()];
@@ -134,7 +138,7 @@ class ServerProxy {
         }
 
         async function getJob(jobID) {
-            return tasksDummyData.results.reduce((acc, task) => {
+            const jobs = tasksDummyData.results.reduce((acc, task) => {
                 for (const segment of task.segments) {
                     for (const job of segment.jobs) {
                         const copy = JSON.parse(JSON.stringify(job));
@@ -148,6 +152,10 @@ class ServerProxy {
 
                 return acc;
             }, []).filter(job => job.id === jobID);
+
+            return jobs[0] || {
+                detail: 'Not found.',
+            };
         }
 
         async function saveJob(id, jobData) {
@@ -185,6 +193,14 @@ class ServerProxy {
             return null;
         }
 
+        async function getAnnotations() {
+            return null;
+        }
+
+        async function updateAnnotations() {
+            return null;
+        }
+
         Object.defineProperties(this, Object.freeze({
             server: {
                 value: Object.freeze({
@@ -192,6 +208,7 @@ class ServerProxy {
                     share,
                     exception,
                     login,
+                    logout,
                 }),
                 writable: false,
             },
@@ -226,6 +243,14 @@ class ServerProxy {
                 value: Object.freeze({
                     getFrame,
                     getMeta,
+                }),
+                writable: false,
+            },
+
+            annotations: {
+                value: Object.freeze({
+                    updateAnnotations,
+                    getAnnotations,
                 }),
                 writable: false,
             },
