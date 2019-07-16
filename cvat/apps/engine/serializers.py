@@ -384,14 +384,3 @@ class LogEventSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=4096, required=False)
     payload = serializers.DictField(required=False)
     is_active = serializers.BooleanField()
-
-class AnnotationFormatSerializer(serializers.Serializer):
-    upload = serializers.ListField(
-        child=serializers.CharField(max_length=64)
-    )
-    download = serializers.ListField(
-        child=serializers.CharField(max_length=64)
-    )
-
-class AnnotationFileSerializer(serializers.Serializer):
-    annotation_file = serializers.FileField()

@@ -1,6 +1,6 @@
 [
   {
-    "model": "engine.AnnoDumper",
+    "model": "annotation.AnnoDumper",
     "pk": 1,
     "fields": {
       "name": "cvat_annotation",
@@ -12,7 +12,7 @@
     }
   },
   {
-    "model": "engine.AnnoDumper",
+    "model": "annotation.AnnoDumper",
     "pk": 2,
     "fields": {
       "name": "cvat_interpolation",
@@ -24,7 +24,7 @@
     }
   },
   {
-    "model": "engine.AnnoDumper",
+    "model": "annotation.AnnoDumper",
     "pk": 3,
     "fields": {
       "name": "pascal_voc",
@@ -36,7 +36,7 @@
     }
   },
   {
-    "model": "engine.AnnoParser",
+    "model": "annotation.AnnoParser",
     "pk": 1,
     "fields": {
       "name": "cvat",

@@ -8,10 +8,10 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
+    initial = True
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('engine', '0020_remove_task_flipped'),
     ]
 
     operations = [
@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 ('created_date', models.DateTimeField(auto_now_add=True)),
                 ('updated_date', models.DateTimeField(auto_now_add=True)),
                 ('file_extension', models.CharField(max_length=32)),
-                ('handler_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(location=settings.ANNO_FORMATS_ROOT), upload_to=cvat.apps.engine.models.upload_dumper_handler)),
+                ('handler_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(location=settings.ANNO_FORMATS_ROOT), upload_to=cvat.apps.annotation.models.upload_dumper_handler)),
                 ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
         ),
@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
                 ('created_date', models.DateTimeField(auto_now_add=True)),
                 ('updated_date', models.DateTimeField(auto_now_add=True)),
                 ('file_extension', models.CharField(max_length=32)),
-                ('handler_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(location=settings.ANNO_FORMATS_ROOT), upload_to=cvat.apps.engine.models.upload_parser_handler)),
+                ('handler_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(location=settings.ANNO_FORMATS_ROOT), upload_to=cvat.apps.annotation.models.upload_parser_handler)),
                 ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
         ),

@@ -36,12 +36,13 @@ from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
 from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
    RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
-   PluginSerializer, FileInfoSerializer, LogEventSerializer,
-   AnnotationFormatSerializer, AnnotationFileSerializer)
+   PluginSerializer, FileInfoSerializer, LogEventSerializer)
+from cvat.apps.annotation.serializers import AnnotationFormatSerializer, AnnotationFileSerializer
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
+from cvat.apps.annotation.models import AnnoDumper, AnnoParser
 
 # Server REST API
 @login_required
@@ -154,8 +155,8 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'], serializer_class=AnnotationFormatSerializer)
     def annotation_formats(request):
         response = {
-            'upload': [p.name for p in models.AnnoParser.objects.all()],
-            'download': [d.name for d in models.AnnoDumper.objects.all()],
+            'upload': [p.name for p in AnnoParser.objects.all()],
+            'download': [d.name for d in AnnoDumper.objects.all()],
         }
 
         serializer = AnnotationFormatSerializer(data=response)
@@ -267,7 +268,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 if serializer.is_valid(raise_exception=True):
                     upload_format = request.query_params.get("upload_format", "")
                     try:
-                        db_parser = models.AnnoParser.objects.get(name=upload_format)
+                        db_parser = AnnoParser.objects.get(name=upload_format)
                     except ObjectDoesNotExist:
                         raise serializers.ValidationError(
                             "Please specify a correct 'upload_format' parameter for the request")
@@ -313,7 +314,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         dump_format = request.query_params.get("dump_format", "")
         try:
-            db_dumper = models.AnnoDumper.objects.get(name=dump_format)
+            db_dumper = AnnoDumper.objects.get(name=dump_format)
         except ObjectDoesNotExist:
             raise serializers.ValidationError(
                 "Please specify a correct 'dump_format' parameter for the request")
@@ -475,7 +476,7 @@ class JobViewSet(viewsets.GenericViewSet,
                 if serializer.is_valid(raise_exception=True):
                     upload_format = request.query_params.get("upload_format", "")
                     try:
-                        db_parser = models.AnnoParser.objects.get(name=upload_format)
+                        db_parser = AnnoParser.objects.get(name=upload_format)
                     except ObjectDoesNotExist:
                         raise serializers.ValidationError(
                             "Please specify a correct 'upload_format' parameter for the request")

@@ -328,33 +328,3 @@ class PluginOption(models.Model):
     plugin = models.ForeignKey(Plugin, on_delete=models.CASCADE)
     name = SafeCharField(max_length=32)
     value = SafeCharField(max_length=1024)
-
-def upload_dumper_handler(instance, filename):
-    return os.path.join('user', 'dumpers', instance.id, filename)
-
-def upload_parser_handler(instance, filename):
-    return os.path.join('user', 'parsers', instance.id, filename)
-
-class AnnoHandler(models.Model):
-    name = SafeCharField(max_length=256)
-    owner = models.ForeignKey(User, null=True, blank=True,
-        on_delete=models.SET_NULL)
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now_add=True)
-    file_extension = models.CharField(max_length=32)
-
-    class Meta:
-        abstract = True
-        default_permissions = ()
-
-class AnnoDumper(AnnoHandler):
-    handler_file = models.FileField(
-        upload_to=upload_dumper_handler,
-        storage=FileSystemStorage(location=os.path.join(settings.ANNO_FORMATS_ROOT)),
-    )
-
-class AnnoParser(AnnoHandler):
-    handler_file = models.FileField(
-        upload_to=upload_parser_handler,
-        storage=FileSystemStorage(location=os.path.join(settings.ANNO_FORMATS_ROOT)),
-    )
