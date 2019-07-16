@@ -6,12 +6,16 @@
   .dashboard-content-сard {
     margin: 20px;
     padding: 20px;
-    border: 1px solid;
+    border: 1px solid #001529;
     border-radius: 3px;
     background: white;
 
     &__header {
       text-align: center;
+
+      h2 {
+        margin-bottom: 20px;
+      }
     }
 
     &__content {
@@ -26,10 +30,10 @@
       .card-actions {
         display: flex;
         flex-flow: column wrap;
-        justify-content: space-between;
 
         button {
           min-width: 200px;
+          margin-bottom: 1px;
         }
       }
 
