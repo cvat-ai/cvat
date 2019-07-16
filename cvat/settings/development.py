@@ -41,4 +41,4 @@ DATABASES = {
     }
 }
 
-ANNO_FORMATS_ROOT = os.path.join(BASE_DIR, 'cvat', 'apps', 'engine')
+ANNO_FORMATS_ROOT = os.path.join(BASE_DIR, 'cvat', 'apps', 'annotation')

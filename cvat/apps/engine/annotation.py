@@ -15,7 +15,7 @@ from django.db import transaction
 
 from cvat.apps.profiler import silk_profile
 from cvat.apps.engine.plugins import plugin_decorator
-from cvat.apps.annotation.annotation import AnnotationIR, AnnotationImporter, AnnotationExporter
+from cvat.apps.annotation.annotation import AnnotationIR, Annotation
 
 from . import models
 from .data_manager import DataManager
@@ -597,7 +597,10 @@ class JobAnnotation:
         return self.ir_data.data
 
     def upload(self, annotation_file, parser):
-        anno_importer = AnnotationImporter(self.db_job.segment.task, self.ir_data)
+        anno_importer = Annotation(
+            annotation_ir=self.ir_data,
+            db_task=self.db_job.segment.task,
+            )
         _parse_task_annotation(annotation_file, anno_importer, parser)
         self.put(anno_importer.data.slice(self.start_frame, self.stop_frame))
 
@@ -666,12 +669,12 @@ class TaskAnnotation:
             self._merge_data(annotation.ir_data, start_frame, overlap)
 
     def dump(self, file_path, scheme, host, dumper):
-        anno_exporter = AnnotationExporter(
+        anno_exporter = Annotation(
             annotation_ir=self.ir_data,
             db_task=self.db_task,
             scheme=scheme,
             host=host,
-        )
+            )
 
         local_vars = {
             "annotations": anno_exporter.shapes,
@@ -688,6 +691,9 @@ class TaskAnnotation:
         exec(source_code, global_vars, local_vars)
 
     def upload(self, file_object, parser):
-        anno_importer = AnnotationImporter(self.db_task, self.ir_data)
+        anno_importer = Annotation(
+            annotation_ir=self.ir_data,
+            db_task=self.db_task,
+            )
         _parse_task_annotation(file_object, anno_importer, parser)
         self.put(anno_importer.data)

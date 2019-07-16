@@ -9,7 +9,7 @@ from collections import OrderedDict
 from django.utils import timezone
 
 from cvat.apps.engine.data_manager import DataManager
-from . import serializers
+from cvat.apps.engine.serializers import LabeledShapeSerializer, LabeledTrackSerializer
 
 class AnnotationIR:
     def __init__(self):
@@ -19,12 +19,12 @@ class AnnotationIR:
         raise NotImplementedError
 
     def add_shape(self, shape):
-        serializer = serializers.LabeledShapeSerializer(data=shape, many=False)
+        serializer = LabeledShapeSerializer(data=shape, many=False)
         if serializer.is_valid(raise_exception=True):
             self._shapes.append(serializer.data)
 
     def add_track(self, track):
-        serializer = serializers.LabeledTrackSerializer(data=track, many=False)
+        serializer = LabeledTrackSerializer(data=track, many=False)
         if serializer.is_valid(raise_exception=True):
             self._tracks.append(serializer.data)
 
@@ -101,21 +101,63 @@ class AnnotationIR:
         self._shapes = []
         self._tracks = []
 
-class AnnotationExporter:
-    def __init__(self, annotation_ir, db_task, scheme, host):
+class Annotation:
+    def __init__(self, annotation_ir, db_task, scheme='', host=''):
         self._annotation_ir = annotation_ir
         self._db_task = db_task
         self._scheme = scheme
         self._host = host
 
         db_labels = self._db_task.label_set.all().prefetch_related('attributespec_set')
-        self._label_mapping = {db_label.id:db_label for db_label in db_labels}
-        self._attribute_mapping = {db_attribute.id:db_attribute
-            for db_label in db_labels
-            for db_attribute in db_label.attributespec_set.all()}
+
+        self._label_mapping = {db_label.id: db_label for db_label in db_labels}
+
+        self._attribute_mapping = {
+            'mutable': {},
+            'immutable': {},
+        }
+        for db_label in db_labels:
+            for db_attribute in db_label.attributespec_set.all():
+                if db_attribute.mutable:
+                    self._attribute_mapping['mutable'][db_attribute.id] = db_attribute.name
+                else:
+                    self._attribute_mapping['immutable'][db_attribute.id] = db_attribute.name
+
+        self._attribute_mapping_merged = {
+            **self._attribute_mapping['mutable'],
+            **self._attribute_mapping['immutable'],
+            }
 
         self._init_frame_info()
         self._init_meta()
+
+    def _get_label_id(self, label_name):
+        for db_label in self._label_mapping.values():
+            if label_name == db_label.name:
+                return db_label.id
+
+    def _get_label_name(self, label_id):
+        return self._label_mapping[label_id].name
+
+    def _get_attribute_name(self, attribute_id):
+        return self._attribute_mapping_merged[attribute_id]
+
+    def _get_attribute_id(self, attribute_name, attribute_type=None):
+        if attribute_type:
+            container = self._attribute_mapping[attribute_type]
+        else:
+            container = self._attribute_mapping_merged
+
+        for attr_id, attr_name in container:
+            if attribute_name == attr_name:
+                return attr_id
+        return None
+
+    def _get_mutable_attribute_id(self, attribute_name):
+        return self._get_attribute_id(attribute_name, 'mutable')
+
+    def _get_immutable_attribute_id(self, attribute_name):
+        return self._get_attribute_id(attribute_name, 'immutable')
 
     def _init_frame_info(self):
         if self._db_task.mode == "interpolation":
@@ -193,7 +235,7 @@ class AnnotationExporter:
     def _export_shape(self, shape):
         exported_shape = {
             "type": shape["type"],
-            "label": self._label_mapping[shape["label_id"]].name,
+            "label": self._get_label_name(shape["label_id"]),
             "outside": str(int(shape.get("outside", False))),
             "occluded": str(int(shape["occluded"])),
             "points": shape["points"],
@@ -244,62 +286,40 @@ class AnnotationExporter:
     def meta(self):
         return self._meta
 
-class AnnotationImporter:
-    def __init__(self, db_task, annotation_IR):
-        self._anno_ir = annotation_IR
-
-        db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
-        self._label_mapping = {db_label.name: db_label.id for db_label in db_labels}
-
-        self._attribute_mapping = {
-            'mutable': {},
-            'immutable': {},
-        }
-        for db_label in db_labels:
-            for db_attribute in db_label.attributespec_set.all():
-                if db_attribute.mutable:
-                    self._attribute_mapping['mutable'][db_attribute.name] = db_attribute.id
-                else:
-                    self._attribute_mapping['immutable'][db_attribute.name] = db_attribute.id
-        self._attribute_mapping_merged = {
-            **self._attribute_mapping['mutable'],
-            **self._attribute_mapping['immutable'],
-            }
-
-    def _process_tag(self, tag):
+    def _import_tag(self, tag):
         raise NotImplementedError
 
-    def _process_attribute(self, attribute):
-        attribute['spec_id'] = self._attribute_mapping_merged[attribute.pop('name')]
+    def _import_attribute(self, attribute):
+        attribute['spec_id'] = self._get_attribute_id(attribute.pop('name'))
 
-    def _process_shape(self, shape):
-        shape['label_id'] = self._label_mapping[shape.pop('label')]
+    def _import_shape(self, shape):
+        shape['label_id'] = self._get_label_id(shape.pop('label'))
         for attribute in shape['attributes']:
-            self._process_attribute(attribute)
+            self._import_attribute(attribute)
         return shape
 
-    def _process_track(self, track):
-        track['label_id'] = self._label_mapping[track.pop('label')]
+    def _import_track(self, track):
+        track['label_id'] = self._get_label_id(track.pop('label'))
         track['attributes'] = []
         for shape in track['shapes']:
-            track['attributes'] = [attrib for attrib in shape['attributes'] if attrib['name'] in self._attribute_mapping['immutable']]
-            shape['attributes'] = [attrib for attrib in shape['attributes'] if attrib['name'] in self._attribute_mapping['mutable']]
+            track['attributes'] = [attrib for attrib in shape['attributes'] if self._get_immutable_attribute_id(attrib['name'])]
+            shape['attributes'] = [attrib for attrib in shape['attributes'] if self._get_mutable_attribute_id(attrib['name'])]
             for attribute in shape['attributes']:
-                self._process_attribute(attribute)
+                self._import_attribute(attribute)
 
         for attribute in track['attributes']:
-            self._process_attribute(attribute)
+            self._import_attribute(attribute)
         return track
 
     def add_tag(self, tag):
         raise NotImplementedError
 
     def add_shape(self, shape):
-        self._anno_ir.add_shape(self._process_shape(shape))
+        self._annotation_ir.add_shape(self._import_shape(shape))
 
     def add_track(self, track):
-        self._anno_ir.add_track(self._process_track(track))
+        self._annotation_ir.add_track(self._import_track(track))
 
     @property
     def data(self):
-        return self._anno_ir
+        return self._annotation_ir
