@@ -46,12 +46,12 @@ def _update_dl_model_thread(dl_model_id, name, is_shared, model_file, weights_fi
     def _run_test(model_file, weights_file, labelmap_file, interpretation_file):
         test_image = np.ones((1024, 1980, 3), np.uint8) * 255
         try:
-            dummy_label_map = {key: key for key in load_label_map(labelmap_file).keys()}
+            dummy_labelmap = {key: key for key in load_label_map(labelmap_file).keys()}
             run_inference_engine_annotation(
                 data=[test_image,],
                 model_file=model_file,
                 weights_file=weights_file,
-                labels_mapping=dummy_label_map,
+                labels_mapping=dummy_labelmap,
                 attribute_spec={},
                 convertation_file=interpretation_file,
                 restricted=restricted
