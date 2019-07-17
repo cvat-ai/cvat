@@ -106,10 +106,436 @@ const shareDummyData = [
 ]
 
 const tasksDummyData = {
-    "count": 3,
+    "count": 4,
     "next": null,
     "previous": null,
     "results": [
+        {
+            "url": "http://localhost:7000/api/v1/tasks/1",
+            "id": 100,
+            "name": "Image Task",
+            "size": 9,
+            "mode": "annotation",
+            "owner": 1,
+            "assignee": null,
+            "bug_tracker": "",
+            "created_date": "2019-06-18T13:05:08.941304+03:00",
+            "updated_date": "2019-07-16T15:51:29.142871+03:00",
+            "overlap": 0,
+            "segment_size": 0,
+            "z_order": false,
+            "status": "annotation",
+            "labels": [
+               {
+                  "id": 1,
+                  "name": "car,",
+                  "attributes": [
+
+                  ]
+               },
+               {
+                  "id": 2,
+                  "name": "person",
+                  "attributes": [
+
+                  ]
+               }
+            ],
+            "segments": [
+               {
+                  "start_frame": 0,
+                  "stop_frame": 8,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/1",
+                        "id": 100,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               }
+            ],
+            "image_quality": 50,
+            "start_frame": 0,
+            "stop_frame": 0,
+            "frame_filter": ""
+        },
+        {
+            "url": "http://localhost:7000/api/v1/tasks/10",
+            "id": 101,
+            "name": "Video Task",
+            "size": 5002,
+            "mode": "interpolation",
+            "owner": 1,
+            "assignee": null,
+            "bug_tracker": "",
+            "created_date": "2019-06-21T16:34:49.199691+03:00",
+            "updated_date": "2019-07-12T16:43:58.904892+03:00",
+            "overlap": 5,
+            "segment_size": 500,
+            "z_order": false,
+            "status": "annotation",
+            "labels": [
+               {
+                  "id": 22,
+                  "name": "bicycle",
+                  "attributes":[
+                     {
+                        "id": 13,
+                        "name": "driver",
+                        "mutable": false,
+                        "input_type": "radio",
+                        "default_value": "man",
+                        "values": [
+                           "man",
+                           "woman"
+                        ]
+                     },
+                     {
+                        "id": 14,
+                        "name": "sport",
+                        "mutable": true,
+                        "input_type": "checkbox",
+                        "default_value": "false",
+                        "values": [
+                           "false"
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "id": 21,
+                  "name": "car",
+                  "attributes": [
+                     {
+                        "id": 10,
+                        "name": "model",
+                        "mutable": false,
+                        "input_type": "select",
+                        "default_value": "__undefined__",
+                        "values": [
+                           "__undefined__",
+                           "bmw",
+                           "mazda",
+                           "suzuki",
+                           "kia"
+                        ]
+                     },
+                     {
+                        "id": 11,
+                        "name": "driver",
+                        "mutable": false,
+                        "input_type": "select",
+                        "default_value": "__undefined__",
+                        "values": [
+                           "__undefined__",
+                           "man",
+                           "woman"
+                        ]
+                     },
+                     {
+                        "id": 12,
+                        "name": "parked",
+                        "mutable": true,
+                        "input_type": "checkbox",
+                        "default_value": "true",
+                        "values": [
+                           "true"
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "id": 20,
+                  "name": "face",
+                  "attributes": [
+                     {
+                        "id": 6,
+                        "name": "age",
+                        "mutable": false,
+                        "input_type": "select",
+                        "default_value": "__undefined__",
+                        "values": [
+                           "__undefined__",
+                           "skip",
+                           "baby (0-5)",
+                           "child (6-12)",
+                           "adolescent (13-19)",
+                           "adult (20-45)",
+                           "middle-age (46-64)",
+                           "old (65-)"
+                        ]
+                     },
+                     {
+                        "id": 7,
+                        "name": "glass",
+                        "mutable": false,
+                        "input_type": "select",
+                        "default_value": "__undefined__",
+                        "values": [
+                           "__undefined__",
+                           "skip",
+                           "no",
+                           "sunglass",
+                           "transparent",
+                           "other"
+                        ]
+                     },
+                     {
+                        "id": 8,
+                        "name": "beard",
+                        "mutable": false,
+                        "input_type": "select",
+                        "default_value": "__undefined__",
+                        "values": [
+                           "__undefined__",
+                           "skip",
+                           "no",
+                           "yes"
+                        ]
+                     },
+                     {
+                        "id": 9,
+                        "name": "race",
+                        "mutable": false,
+                        "input_type": "select",
+                        "default_value": "__undefined__",
+                        "values": [
+                           "__undefined__",
+                           "skip",
+                           "asian",
+                           "black",
+                           "caucasian",
+                           "other"
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "id": 23,
+                  "name": "motorcycle",
+                  "attributes": [
+                     {
+                        "id": 15,
+                        "name": "model",
+                        "mutable": false,
+                        "input_type": "text",
+                        "default_value": "unknown",
+                        "values": [
+                           "unknown"
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "id": 19,
+                  "name": "person, pedestrian",
+                  "attributes": [
+                     {
+                        "id": 1,
+                        "name": "action",
+                        "mutable": true,
+                        "input_type": "select",
+                        "default_value": "__undefined__",
+                        "values": [
+                           "__undefined__",
+                           "sitting",
+                           "raising_hand",
+                           "standing"
+                        ]
+                     },
+                     {
+                        "id": 2,
+                        "name": "age",
+                        "mutable": false,
+                        "input_type": "number",
+                        "default_value": "1",
+                        "values": [
+                           "1",
+                           "100",
+                           "1"
+                        ]
+                     },
+                     {
+                        "id": 3,
+                        "name": "gender",
+                        "mutable" :false,
+                        "input_type": "select",
+                        "default_value": "male",
+                        "values": [
+                           "male",
+                           "female"
+                        ]
+                     },
+                     {
+                        "id": 4,
+                        "name": "false positive",
+                        "mutable": false,
+                        "input_type": "checkbox",
+                        "default_value": "false",
+                        "values": [
+                           "false"
+                        ]
+                     },
+                     {
+                        "id": 5,
+                        "name": "clother",
+                        "mutable": true,
+                        "input_type": "text",
+                        "default_value": "non, initialized",
+                        "values": [
+                           "non, initialized"
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "id": 24,
+                  "name": "road",
+                  "attributes": [
+
+                  ]
+               }
+            ],
+            "segments": [
+               {
+                  "start_frame": 0,
+                  "stop_frame": 499,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/10",
+                        "id": 101,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               },
+               {
+                  "start_frame": 495,
+                  "stop_frame": 994,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/11",
+                        "id": 102,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               },
+               {
+                  "start_frame": 990,
+                  "stop_frame": 1489,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/12",
+                        "id": 103,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               },
+               {
+                  "start_frame": 1485,
+                  "stop_frame": 1984,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/13",
+                        "id": 104,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               },
+               {
+                  "start_frame": 1980,
+                  "stop_frame": 2479,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/14",
+                        "id": 105,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               },
+               {
+                  "start_frame": 2475,
+                  "stop_frame": 2974,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/15",
+                        "id": 106,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               },
+               {
+                  "start_frame": 2970,
+                  "stop_frame": 3469,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/16",
+                        "id": 107,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               },
+               {
+                  "start_frame": 3465,
+                  "stop_frame": 3964,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/17",
+                        "id": 108,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               },
+               {
+                  "start_frame": 3960,
+                  "stop_frame": 4459,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/18",
+                        "id": 109,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               },
+               {
+                  "start_frame": 4455,
+                  "stop_frame": 4954,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/19",
+                        "id": 110,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               },
+               {
+                  "start_frame": 4950,
+                  "stop_frame": 5001,
+                  "jobs": [
+                     {
+                        "url": "http://localhost:7000/api/v1/jobs/20",
+                        "id": 111,
+                        "assignee": null,
+                        "status": "annotation"
+                     }
+                  ]
+               }
+            ],
+            "image_quality": 50,
+            "start_frame": 0,
+            "stop_frame": 5001,
+            "frame_filter": ""
+        },
         {
             "url": "http://localhost:7000/api/v1/tasks/3",
             "id": 3,
@@ -882,7 +1308,7 @@ const tasksDummyData = {
 }
 
 const taskAnnotationsDummyData = {
-    '10': {
+    '101': {
         "version":21,
         "tags":[],
         "shapes":[],
@@ -1257,7 +1683,7 @@ const taskAnnotationsDummyData = {
             }
         ]
     },
-    '1': {
+    '100': {
         "version": 16,
         "tags": [],
         "shapes": [{

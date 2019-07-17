@@ -26,7 +26,7 @@ describe('Feature: get a list of tasks', () => {
     test('get all tasks', async () => {
         const result = await window.cvat.tasks.get();
         expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(3);
+        expect(result).toHaveLength(5);
         for (const el of result) {
             expect(el).toBeInstanceOf(Task);
         }
@@ -61,7 +61,7 @@ describe('Feature: get a list of tasks', () => {
             mode: 'interpolation',
         });
         expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(2);
+        expect(result).toHaveLength(3);
         for (const el of result) {
             expect(el).toBeInstanceOf(Task);
             expect(el.mode).toBe('interpolation');
