@@ -18,7 +18,7 @@
         /**
             * @param {Object} serialized - is an dictionary which contains
             * initial information about an ObjectState;
-            * Necessary fields: type, shape
+            * Necessary fields: objectType, shapeType
             * Necessary fields for objects which haven't been added to collection yet: frame
             * Optional fields: points, group, zOrder, outside, occluded,
             * attributes, lock, label, mode, color, keyframe, clientID, serverID
