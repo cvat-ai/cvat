@@ -519,7 +519,7 @@
                 // Remove all cache after this keyframe because it have just become outdated
                 for (const cacheFrame in this.cache) {
                     if (+cacheFrame > frame) {
-                        delete this.cache[frame];
+                        delete this.cache[cacheFrame];
                     }
                 }
 
@@ -535,7 +535,7 @@
                 // Remove all cache after this keyframe because it have just become outdated
                 for (const cacheFrame in this.cache) {
                     if (+cacheFrame > frame) {
-                        delete this.cache[frame];
+                        delete this.cache[cacheFrame];
                     }
                 }
 

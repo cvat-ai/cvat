@@ -12,8 +12,8 @@
     const Collection = require('./annotations-collection');
     const AnnotationsSaver = require('./annotations-saver');
 
-    const jobCache = {};
-    const taskCache = {};
+    const jobCache = new WeakMap();
+    const taskCache = new WeakMap();
 
     function getCache(sessionType) {
         if (sessionType === 'task') {
@@ -33,17 +33,17 @@
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
-        if (!(session.id in cache)) {
+        if (!cache.has(session)) {
             const rawAnnotations = await serverProxy.annotations
                 .getAnnotations(sessionType, session.id);
             const collection = new Collection(session.labels || session.task.labels)
                 .import(rawAnnotations);
             const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
 
-            cache[session.id] = {
+            cache.set(session, {
                 collection,
                 saver,
-            };
+            });
         }
     }
 
@@ -51,15 +51,15 @@
         await getAnnotationsFromServer(session);
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
-        return cache[session.id].collection.get(frame, filter);
+        return cache.get(session).collection.get(frame, filter);
     }
 
     async function saveAnnotations(session, onUpdate) {
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
-        if (session.id in cache) {
-            await cache[session.id].saver.save(onUpdate);
+        if (cache.has(session)) {
+            await cache.get(session).saver.save(onUpdate);
         }
 
         // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
@@ -69,8 +69,8 @@
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
-        if (session.id in cache) {
-            return cache[session.id].collection.merge(objectStates);
+        if (cache.has(session)) {
+            return cache.get(session).collection.merge(objectStates);
         }
 
         throw window.cvat.exceptions.DataError(
@@ -82,8 +82,8 @@
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
-        if (session.id in cache) {
-            return cache[session.id].collection.split(objectState, frame);
+        if (cache.has(session)) {
+            return cache.get(session).collection.split(objectState, frame);
         }
 
         throw window.cvat.exceptions.DataError(
@@ -95,8 +95,8 @@
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
-        if (session.id in cache) {
-            return cache[session.id].collection.group(objectStates, reset);
+        if (cache.has(session)) {
+            return cache.get(session).collection.group(objectStates, reset);
         }
 
         throw window.cvat.exceptions.DataError(
@@ -108,8 +108,8 @@
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
-        if (session.id in cache) {
-            return cache[session.id].saver.hasUnsavedChanges();
+        if (cache.has(session)) {
+            return cache.get(session).saver.hasUnsavedChanges();
         }
 
         return false;
@@ -119,12 +119,12 @@
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
-        if (session.id in cache) {
-            cache[session.id].collection.clear();
+        if (cache.has(session)) {
+            cache.get(session).collection.clear();
         }
 
         if (reload) {
-            delete cache[session.id];
+            cache.delete(session);
             await getAnnotationsFromServer(session);
         }
     }
@@ -133,8 +133,8 @@
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
-        if (session.id in cache) {
-            return cache[session.id].collection.statistics();
+        if (cache.has(session)) {
+            return cache.get(session).collection.statistics();
         }
 
         throw window.cvat.exceptions.DataError(
@@ -146,8 +146,8 @@
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
-        if (session.id in cache) {
-            return cache[session.id].collection.put(objectStates);
+        if (cache.has(session)) {
+            return cache.get(session).collection.put(objectStates);
         }
 
         throw window.cvat.exceptions.DataError(
@@ -159,8 +159,8 @@
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 
-        if (session.id in cache) {
-            return cache[session.id].collection.select(objectStates, x, y);
+        if (cache.has(session)) {
+            return cache.get(session).collection.select(objectStates, x, y);
         }
 
         throw window.cvat.exceptions.DataError(
