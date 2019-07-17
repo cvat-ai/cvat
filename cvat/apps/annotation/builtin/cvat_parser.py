@@ -1,5 +1,5 @@
 import xml.etree.ElementTree as et
-context = et.iterparse(annotation_file, events=("start", "end"))
+context = et.iterparse(file_object, events=("start", "end"))
 context = iter(context)
 ev, root = next(context)
 
@@ -11,12 +11,11 @@ image_is_opened = False
 for ev, el in context:
     if ev == 'start':
         if el.tag == 'track':
-            track = {
-                'frame': 0,
-                'shapes': [],
-                'label': el.attrib['label'],
-                'group': int(el.attrib.get('group_id', 0))
-            }
+            track = annotations.Track(
+                label=el.attrib['label'],
+                group=int(el.attrib.get('group_id', 0)),
+                shapes=[],
+            )
         elif el.tag == 'image':
             image_is_opened = True
             frame_id = int(el.attrib['id'])
@@ -27,10 +26,10 @@ for ev, el in context:
             }
     elif ev == 'end':
         if el.tag == 'attribute' and shape is not None:
-            shape['attributes'].append({
-                'name': el.attrib['name'],
-                'value': el.text,
-                })
+            shape['attributes'].append(annotations.Attribute(
+                name=el.attrib['name'],
+                value=el.text,
+            ))
         if el.tag in supported_shapes:
             if track is not None:
                 shape['frame'] = el.attrib['frame']
@@ -39,14 +38,11 @@ for ev, el in context:
             else:
                 shape['frame'] = frame_id
                 shape['label'] = el.attrib['label']
+                shape['group'] = int(el.attrib.get('group_id', 0))
 
-            shape['type'] =  'rectangle' if el.tag == 'box' else el.tag
+            shape['type'] = 'rectangle' if el.tag == 'box' else el.tag
             shape['occluded'] = el.attrib['occluded'] == '1'
-
-            if 'z_order' in el.attrib:
-                shape['z_order'] = int(el.attrib['z_order'])
-
-            shape['group'] = int(el.attrib.get('group_id', 0))
+            shape['z_order'] = int(el.attrib.get('z_order', 0))
 
             if el.tag == 'box':
                 shape['points'].append(el.attrib['xtl'])
@@ -58,13 +54,13 @@ for ev, el in context:
                     shape['points'].extend(map(float, pair.split(',')))
 
             if track is not None:
-                track['shapes'].append(shape)
+                track.shapes.append(annotations.Shape(**shape))
             else:
-                annotation_importer.add_shape(shape)
+                annotations.add_shape(annotations.Shape(**shape))
             shape = None
 
         elif el.tag == 'track':
-            annotation_importer.add_track(track)
+            annotations.add_track(track)
             track = None
         elif el.tag == 'image':
             image_is_opened = False

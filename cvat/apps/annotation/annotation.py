@@ -4,7 +4,7 @@
 
 import os
 import copy
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 
 from django.utils import timezone
 
@@ -19,14 +19,10 @@ class AnnotationIR:
         raise NotImplementedError
 
     def add_shape(self, shape):
-        serializer = LabeledShapeSerializer(data=shape, many=False)
-        if serializer.is_valid(raise_exception=True):
-            self._shapes.append(serializer.data)
+        self._shapes.append(shape)
 
     def add_track(self, track):
-        serializer = LabeledTrackSerializer(data=track, many=False)
-        if serializer.is_valid(raise_exception=True):
-            self._tracks.append(serializer.data)
+        self._tracks.append(track)
 
     @property
     def tags(self):
@@ -102,6 +98,12 @@ class AnnotationIR:
         self._tracks = []
 
 class Annotation:
+    Attribute = namedtuple('Attribute', 'name, value')
+    Shape = namedtuple('Shape', 'type, points, occluded, attributes, label, outside, keyframe, z_order, group, track_id, frame')
+    Shape.__new__.__defaults__ = (None, False, False, 0, 0, None, None)
+    Track = namedtuple('Track', 'label, group, shapes')
+    Frame = namedtuple('Frame', 'frame, name, width, height, shapes')
+
     def __init__(self, annotation_ir, db_task, scheme='', host=''):
         self._annotation_ir = annotation_ir
         self._db_task = db_task
@@ -148,7 +150,7 @@ class Annotation:
         else:
             container = self._attribute_mapping_merged
 
-        for attr_id, attr_name in container:
+        for attr_id, attr_name in container.items():
             if attribute_name == attr_name:
                 return attr_id
         return None
@@ -163,7 +165,7 @@ class Annotation:
         if self._db_task.mode == "interpolation":
             self._frame_info = {
                 frame: {
-                    "path": str(frame),
+                    "path": "frame_{:06d}".format(frame),
                     "width": self._db_task.video.width,
                     "height": self._db_task.video.height,
                 } for frame in range(self._db_task.size)
@@ -233,25 +235,24 @@ class Annotation:
             self._meta["source"] = str(self._db_task.video.path)
 
     def _export_shape(self, shape):
-        exported_shape = {
-            "type": shape["type"],
-            "label": self._get_label_name(shape["label_id"]),
-            "outside": str(int(shape.get("outside", False))),
-            "occluded": str(int(shape["occluded"])),
-            "points": shape["points"],
-            "z_order": shape["z_order"],
-            "keyframe": shape.get("keyframe", True),
-            "attributes": {},
-        }
-        if "group" in shape and shape["group"]:
-            exported_shape["group"] = shape["group"]
-
-        if "track_id" in shape:
-            exported_shape["track_id"] = shape["track_id"]
-
+        exported_shape = Annotation.Shape(
+            type=shape["type"],
+            label=self._get_label_name(shape["label_id"]),
+            points=shape["points"],
+            occluded=str(int(shape["occluded"])),
+            outside=str(int(shape.get("outside", False))),
+            keyframe=shape.get("keyframe", True),
+            z_order=shape["z_order"],
+            group=shape["group"] if "group" in shape else 0,
+            track_id=shape["track_id"] if "track_id" in shape else -1,
+            attributes=[],
+        )
         for attr in shape["attributes"]:
-            db_attribute = self._attribute_mapping[attr["spec_id"]]
-            exported_shape["attributes"][db_attribute.name] = attr["value"]
+            db_attribute = self._attribute_mapping_merged[attr["spec_id"]]
+            exported_shape.attributes.append(Annotation.Attribute(
+                name=db_attribute,
+                value=attr["value"],
+            ))
 
         return exported_shape
 
@@ -271,15 +272,14 @@ class Annotation:
             else:
                 rpath = rpath[0]
             if frame not in annotations:
-                annotations[frame] = {
-                "frame": frame,
-                "height": db_image["height"],
-                "width": db_image["width"],
-                "name": rpath,
-                "shapes": [],
-            }
-
-            annotations[frame]["shapes"].append(self._export_shape(shape))
+                annotations[frame] = Annotation.Frame(
+                    frame=frame,
+                    name=rpath,
+                    height=db_image["height"],
+                    width=db_image["width"],
+                    shapes=[]
+                )
+            annotations[frame].shapes.append(self._export_shape(shape))
         return list(annotations.values())
 
     @property
@@ -290,35 +290,45 @@ class Annotation:
         raise NotImplementedError
 
     def _import_attribute(self, attribute):
-        attribute['spec_id'] = self._get_attribute_id(attribute.pop('name'))
+        return {
+            'spec_id': self._get_attribute_id(attribute.name),
+            'value': attribute.value,
+        }
 
     def _import_shape(self, shape):
-        shape['label_id'] = self._get_label_id(shape.pop('label'))
-        for attribute in shape['attributes']:
-            self._import_attribute(attribute)
-        return shape
+        _shape = shape._asdict()
+        _shape['label_id'] = self._get_label_id(_shape.pop('label'))
+        _shape['attributes'] = [self._import_attribute(attr) for attr in _shape['attributes']]
+        return _shape
 
     def _import_track(self, track):
-        track['label_id'] = self._get_label_id(track.pop('label'))
-        track['attributes'] = []
-        for shape in track['shapes']:
-            track['attributes'] = [attrib for attrib in shape['attributes'] if self._get_immutable_attribute_id(attrib['name'])]
-            shape['attributes'] = [attrib for attrib in shape['attributes'] if self._get_mutable_attribute_id(attrib['name'])]
-            for attribute in shape['attributes']:
-                self._import_attribute(attribute)
+        _track = track._asdict()
+        _track['frame'] = 0 # dummy value, need to serializer
+        _track['label_id'] = self._get_label_id(track.label)
+        _track['attributes'] = []
+        _track['shapes'] = [shape._asdict() for shape in _track['shapes']]
+        for shape in _track['shapes']:
+            _track['attributes'] = [self._import_attribute(attrib) for attrib in shape['attributes'] if self._get_immutable_attribute_id(attrib.name)]
+            shape['attributes'] = [self._import_attribute(attrib) for attrib in shape['attributes'] if self._get_mutable_attribute_id(attrib.name)]
 
-        for attribute in track['attributes']:
-            self._import_attribute(attribute)
-        return track
+        # _track['attributes'] = [self._import_attribute(attr) for attr in _track['attributes']]
+        return _track
 
     def add_tag(self, tag):
         raise NotImplementedError
 
     def add_shape(self, shape):
-        self._annotation_ir.add_shape(self._import_shape(shape))
+        _shape = self._import_shape(shape)
+        serializer = LabeledShapeSerializer(data=_shape, many=False)
+        if serializer.is_valid(raise_exception=True):
+            self._annotation_ir.add_shape(serializer.data)
 
     def add_track(self, track):
-        self._annotation_ir.add_track(self._import_track(track))
+        _track = self._import_track(track)
+        print(_track)
+        serializer = LabeledTrackSerializer(data=_track, many=False)
+        if serializer.is_valid(raise_exception=True):
+            self._annotation_ir.add_track(serializer.data)
 
     @property
     def data(self):
