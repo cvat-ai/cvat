@@ -632,15 +632,50 @@ describe('Feature: get statistics', () => {
 
 describe('Feature: select object', () => {
     test('select object in a task', async () => {
-
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const annotations = await task.annotations.get(0);
+        let result = await task.annotations.select(annotations, 1430, 765);
+        expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.RECTANGLE);
+        result = await task.annotations.select(annotations, 1415, 765);
+        expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.POLYGON);
+        expect(result.state.points.length).toBe(10);
+        result = await task.annotations.select(annotations, 1083, 543);
+        expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.POINTS);
+        expect(result.state.points.length).toBe(16);
+        result = await task.annotations.select(annotations, 613, 811);
+        expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.POLYGON);
+        expect(result.state.points.length).toBe(94);
     });
 
     test('select object in a job', async () => {
-
+        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const annotations = await job.annotations.get(0);
+        let result = await job.annotations.select(annotations, 490, 540);
+        expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.RECTANGLE);
+        result = await job.annotations.select(annotations, 430, 260);
+        expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.POLYLINE);
+        result = await job.annotations.select(annotations, 1473, 250);
+        expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.RECTANGLE);
+        result = await job.annotations.select(annotations, 1490, 237);
+        expect(result.state.shapeType).toBe(window.cvat.enums.ObjectShape.POLYGON);
+        expect(result.state.points.length).toBe(94);
     });
 
-    // TODO: select with bad parameters
-    // frame outside of range
-    // frame is not a number
-    // bad coordinates (not number)
+    test('trying to select from not object states', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const annotations = await task.annotations.get(0);
+        expect(task.annotations.select(annotations.concat({}), 500, 500))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('trying to select with invalid coordinates', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const annotations = await task.annotations.get(0);
+        expect(task.annotations.select(annotations, null, null))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.select(annotations, null, null))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+        expect(task.annotations.select(annotations, '5', '10'))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
 });

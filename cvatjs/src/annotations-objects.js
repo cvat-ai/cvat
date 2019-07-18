@@ -806,19 +806,20 @@
 
         static distance(points, x, y) {
             function position(x1, y1, x2, y2) {
-                return ((x1 - x) * (y2 - y) - (x2 - x) * (y1 - y));
+                return ((x2 - x1) * (y - y1) - (x - x1) * (y2 - y1));
             }
 
             let wn = 0;
             const distances = [];
-            for (let i = 0; i < points.length; i += 2) {
+
+            for (let i = 0, j = points.length - 2; i < points.length - 1; j = i, i += 2) {
                 // Current point
-                const x1 = points[i];
-                const y1 = points[i + 1];
+                const x1 = points[j];
+                const y1 = points[j + 1];
 
                 // Next point
-                const x2 = i + 2 < points.length ? points[i + 2] : points[0];
-                const y2 = i + 3 < points.length ? points[i + 3] : points[1];
+                const x2 = points[i];
+                const y2 = points[i + 1];
 
                 // Check if a point is inside a polygon
                 // with a winding numbers algorithm
@@ -829,25 +830,31 @@
                             wn++;
                         }
                     }
-                } else if (y2 < y) {
-                    if (position(x1, y1, x2, y2) > 0) {
+                } else if (y2 <= y) {
+                    if (position(x1, y1, x2, y2) < 0) {
                         wn--;
                     }
                 }
 
                 // Find the shortest distance from point to an edge
-                if (((x - x1) * (x2 - x)) >= 0 && ((y - y1) * (y2 - y)) >= 0) {
-                    // Find the length of a perpendicular
-                    // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-                    distances.push(
-                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / Math
-                            .sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)),
-                    );
+                // Get an equation of a line in general
+                const aCoef = (y1 - y2);
+                const bCoef = (x2 - x1);
+
+                // Vector (aCoef, bCoef) is a perpendicular to line
+                // Now find the point where two lines
+                // (edge and its perpendicular through the point (x,y)) are cross
+                const xCross = x - aCoef;
+                const yCross = y - bCoef;
+
+                if (((xCross - x1) * (x2 - xCross)) >= 0
+                    && ((yCross - y1) * (y2 - yCross)) >= 0) {
+                    // Cross point is on segment between p1(x1,y1) and p2(x2,y2)
+                    distances.push(Math.sqrt(
+                        Math.pow(x - xCross, 2)
+                        + Math.pow(y - yCross, 2),
+                    ));
                 } else {
-                    // The link below works for lines (which have infinit length)
-                    // There is a case when perpendicular doesn't cross the edge
-                    // In this case we don't use the computed distance
-                    // Instead we use just distance to the nearest point
                     distances.push(
                         Math.min(
                             Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
