@@ -477,26 +477,86 @@ describe('Feature: merge annotations', () => {
 
 describe('Feature: split annotations', () => {
     test('split annotations in a task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const annotations4 = await task.annotations.get(4);
+        const annotations5 = await task.annotations.get(5);
 
+        expect(annotations4[0].clientID).toBe(annotations5[0].clientID);
+        await task.annotations.split(annotations5[0], 5);
+        const splitted4 = await task.annotations.get(4);
+        const splitted5 = (await task.annotations.get(5)).filter(state => !state.outside);
+        expect(splitted4[0].clientID).not.toBe(splitted5[0].clientID);
     });
 
     test('split annotations in a job', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 101 }))[0];
+        const annotations4 = await job.annotations.get(4);
+        const annotations5 = await job.annotations.get(5);
 
+        expect(annotations4[0].clientID).toBe(annotations5[0].clientID);
+        await job.annotations.split(annotations5[0], 5);
+        const splitted4 = await job.annotations.get(4);
+        const splitted5 = (await job.annotations.get(5)).filter(state => !state.outside);
+        expect(splitted4[0].clientID).not.toBe(splitted5[0].clientID);
     });
 
-    // TODO: split with bad parameters (bad frame, frame outside of shape etc.)
+    test('split on a bad frame', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const annotations4 = await task.annotations.get(4);
+        const annotations5 = await task.annotations.get(5);
+
+        expect(annotations4[0].clientID).toBe(annotations5[0].clientID);
+        expect(task.annotations.split(annotations5[0], 'bad frame'))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
 });
 
 describe('Feature: group annotations', () => {
     test('group annotations in a task', async () => {
-
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        let annotations = await task.annotations.get(0);
+        const groupID = await task.annotations.group(annotations);
+        expect(typeof (groupID)).toBe('number');
+        annotations = await task.annotations.get(0);
+        for (const state of annotations) {
+            expect(state.group).toBe(groupID);
+        }
     });
 
     test('group annotations in a job', async () => {
-
+        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        let annotations = await job.annotations.get(0);
+        const groupID = await job.annotations.group(annotations);
+        expect(typeof (groupID)).toBe('number');
+        annotations = await job.annotations.get(0);
+        for (const state of annotations) {
+            expect(state.group).toBe(groupID);
+        }
     });
 
-    // TODO: group with bad parameters (some values are bad)
+    test('trying to group object state which has not been saved in a collection', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        await task.annotations.clear(true);
+
+        const state = new window.cvat.classes.ObjectState({
+            frame: 0,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            shapeType: window.cvat.enums.ObjectShape.POLYGON,
+            points: [0, 0, 100, 0, 100, 50],
+            occluded: true,
+            label: task.labels[0],
+        });
+
+        expect(task.annotations.group([state]))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('trying to group not object state', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const annotations = await task.annotations.get(0);
+        expect(task.annotations.group(annotations.concat({})))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
 });
 
 describe('Feature: clear annotations', () => {

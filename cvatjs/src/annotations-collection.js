@@ -399,7 +399,7 @@
             }
 
             const keyframes = Object.keys(object.shapes).sort((a, b) => +a - +b);
-            if (frame <= +keyframes[0]) {
+            if (frame <= +keyframes[0] || frame > keyframes[keyframes.length - 1]) {
                 return;
             }
 
@@ -490,6 +490,8 @@
                     object.resetCache();
                 }
             }
+
+            return groupIdx;
         }
 
         clear() {
