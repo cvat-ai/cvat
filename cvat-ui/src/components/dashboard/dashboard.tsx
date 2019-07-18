@@ -25,10 +25,20 @@ class Dashboard extends Component<any, DashboardState> {
 
   render() {
     return (
-      <Layout>
-        <DashboardHeader onSearch={ this.getTasks } />
-        <DashboardContent tasks={ this.state.tasks } deleteTask={ this.deleteTask } />
-        <DashboardFooter tasksCount={ (this.state.tasks as any)['count'] } onPageChange={ this.onPageChange } />
+      <Layout className="layout">
+        <DashboardHeader
+          onSearch={ this.getTasks }>
+        </DashboardHeader>
+
+        <DashboardContent
+          tasks={ this.state.tasks }
+          deleteTask={ this.deleteTask }>
+        </DashboardContent>
+
+        <DashboardFooter
+          tasksCount={ (this.state.tasks as any)['count'] }
+          onPageChange={ this.onPageChange }>
+        </DashboardFooter>
       </Layout>
     );
   }

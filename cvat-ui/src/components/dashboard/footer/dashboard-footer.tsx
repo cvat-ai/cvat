@@ -1,22 +1,29 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 
-import { Layout, Pagination } from 'antd';
+import { Layout, Pagination, Row, Col } from 'antd';
 
 import './dashboard-footer.scss';
 
 const { Footer } = Layout;
 
-class DashboardFooter extends Component<any, any> {
-  constructor(props: any) {
-    super(props);
-
-    this.state = {};
-  }
-
+class DashboardFooter extends PureComponent<any, any> {
   render() {
+    const pagination = (
+      <Col span={24}>
+        <Pagination
+          className="dashboard-footer__pagination"
+          hideOnSinglePage
+          onChange={ this.props.onPageChange }
+          total={ this.props.tasksCount }>
+        </Pagination>
+      </Col>
+    );
+
     return(
-      <Footer>
-        <Pagination onChange={ this.props.onPageChange } total={ this.props.tasksCount } />
+      <Footer className="dashboard-footer">
+        <Row type="flex" gutter={16}>
+          { this.props.tasksCount ? pagination : '' }
+        </Row>
       </Footer>
     );
   }

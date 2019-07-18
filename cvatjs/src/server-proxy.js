@@ -512,6 +512,75 @@
                 return response.data;
             }
 
+            // Session is 'task' or 'job'
+            async function uploadAnnotations(session, id, file, format) {
+                const { backendAPI } = window.cvat.config;
+
+                let annotationData = new FormData();
+                annotationData.append('annotation_file', file);
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios
+                                .post(`${backendAPI}/${session}s/${id}/annotations?upload_format=${format}`, annotationData, {
+                                    proxy: window.cvat.config.proxy,
+                                });
+                            if (response.status === 202) {
+                                annotationData = new FormData();
+                                setTimeout(request, 3000);
+                            } else {
+                                resolve();
+                            }
+                        } catch (errorData) {
+                            const code = errorData.response
+                                ? errorData.response.status : errorData.code;
+                            const error = new window.cvat.exceptions.ServerError(
+                                `Could not upload annotations for the ${session} ${id}`,
+                                code,
+                            );
+                            reject(error);
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
+            // Session is 'task' or 'job'
+            async function dumpAnnotations(id, name, format) {
+                const { backendAPI } = window.cvat.config;
+                const filename = name.replace(/\//g, '_');
+                let url = `${backendAPI}/tasks/${id}/annotations/${filename}?dump_format=${format}`;
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios
+                                .get(`${url}`, {
+                                    proxy: window.cvat.config.proxy,
+                                });
+                            if (response.status === 202) {
+                                setTimeout(request, 3000);
+                            } else {
+                                url = `${url}&action=download`;
+                                resolve(url);
+                            }
+                        } catch (errorData) {
+                            const code = errorData.response
+                                ? errorData.response.status : errorData.code;
+                            const error = new window.cvat.exceptions.ServerError(
+                                `Could not dump annotations for the task ${id} from the server`,
+                                code,
+                            );
+                            reject(error);
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
             // Set csrftoken header from browser cookies if it exists
             // NodeJS env returns 'undefined'
             // So in NodeJS we need login after each run
@@ -570,6 +639,8 @@
                     value: Object.freeze({
                         updateAnnotations,
                         getAnnotations,
+                        dumpAnnotations,
+                        uploadAnnotations,
                     }),
                     writable: false,
                 },

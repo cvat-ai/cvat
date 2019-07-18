@@ -168,6 +168,18 @@
         );
     }
 
+    async function uploadAnnotations(session, file, format) {
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
+        await serverProxy.annotations.uploadAnnotations(sessionType, session.id, file, format);
+    }
+
+    async function dumpAnnotations(session, name, format) {
+        const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
+        const result = await serverProxy.annotations
+            .dumpAnnotations(sessionType, session.id, name, format);
+        return result;
+    }
+
     module.exports = {
         getAnnotations,
         putAnnotations,
@@ -179,5 +191,7 @@
         clearAnnotations,
         annotationsStatistics,
         selectObject,
+        uploadAnnotations,
+        dumpAnnotations,
     };
 })();

@@ -22,15 +22,17 @@
         clearAnnotations,
         selectObject,
         annotationsStatistics,
+        uploadAnnotations,
+        dumpAnnotations,
     } = require('./annotations');
 
     function buildDublicatedAPI(prototype) {
         Object.defineProperties(prototype, {
             annotations: Object.freeze({
                 value: {
-                    async upload(file) {
+                    async upload(file, format) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.upload, file);
+                            .apiWrapper.call(this, prototype.annotations.upload, file, format);
                         return result;
                     },
 
@@ -46,9 +48,9 @@
                         return result;
                     },
 
-                    async dump() {
+                    async dump(name, format) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.dump);
+                            .apiWrapper.call(this, prototype.annotations.dump, name, format);
                         return result;
                     },
 
@@ -188,9 +190,11 @@
             */
             /**
                 * Upload annotations from a dump file
+                * You need upload annotations from a server again after successful executing
                 * @method upload
                 * @memberof Session.annotations
-                * @param {File} [annotations] - text file with annotations
+                * @param {File} annotations - a text file with annotations
+                * @param {string} format - a format of the file
                 * @instance
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -230,6 +234,8 @@
                 * Method always dumps annotations for a whole task.
                 * @method dump
                 * @memberof Session.annotations
+                * @param {string} name - a name of a file with annotations
+                * @param {string} format - a format of the file
                 * @returns {string} URL which can be used in order to get a dump file
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
@@ -237,8 +243,7 @@
                 * @async
             */
             /**
-                * Collect some statistics from a session.
-                * For example number of shapes, tracks, polygons etc
+                * Collect short statistics about a task or a job.
                 * @method statistics
                 * @memberof Session.annotations
                 * @returns {module:API.cvat.classes.Statistics} statistics object
@@ -248,6 +253,7 @@
             */
             /**
                 * Create new objects from one-frame states
+                * After successful adding you need to update object states on a frame
                 * @method put
                 * @memberof Session.annotations
                 * @param {module:API.cvat.classes.ObjectState[]} data
@@ -604,10 +610,12 @@
                 get: Object.getPrototypeOf(this).annotations.get.bind(this),
                 put: Object.getPrototypeOf(this).annotations.put.bind(this),
                 save: Object.getPrototypeOf(this).annotations.save.bind(this),
+                dump: Object.getPrototypeOf(this).annotations.dump.bind(this),
                 merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
                 split: Object.getPrototypeOf(this).annotations.split.bind(this),
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
                 clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
+                upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
                 select: Object.getPrototypeOf(this).annotations.select.bind(this),
                 statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
                 hasUnsavedChanges: Object.getPrototypeOf(this)
@@ -727,6 +735,16 @@
 
     Job.prototype.annotations.put.implementation = function (objectStates) {
         const result = putAnnotations(this, objectStates);
+        return result;
+    };
+
+    Job.prototype.annotations.upload.implementation = async function (file, format) {
+        const result = await uploadAnnotations(this, file, format);
+        return result;
+    };
+
+    Job.prototype.annotations.dump.implementation = async function (name, format) {
+        const result = await dumpAnnotations(this, name, format);
         return result;
     };
 
@@ -1138,10 +1156,12 @@
                 get: Object.getPrototypeOf(this).annotations.get.bind(this),
                 put: Object.getPrototypeOf(this).annotations.put.bind(this),
                 save: Object.getPrototypeOf(this).annotations.save.bind(this),
+                dump: Object.getPrototypeOf(this).annotations.dump.bind(this),
                 merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
                 split: Object.getPrototypeOf(this).annotations.split.bind(this),
                 group: Object.getPrototypeOf(this).annotations.group.bind(this),
                 clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
+                upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
                 select: Object.getPrototypeOf(this).annotations.select.bind(this),
                 statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
                 hasUnsavedChanges: Object.getPrototypeOf(this)
@@ -1229,7 +1249,7 @@
         const taskFiles = {
             client_files: this.clientFiles,
             server_files: this.serverFiles,
-            remote_files: [], // hasn't been supported yet
+            remote_files: this.remoteFiles,
         };
 
         const task = await serverProxy.tasks.createTask(taskData, taskFiles, onUpdate);
@@ -1312,6 +1332,16 @@
 
     Task.prototype.annotations.put.implementation = function (objectStates) {
         const result = putAnnotations(this, objectStates);
+        return result;
+    };
+
+    Task.prototype.annotations.upload.implementation = async function (file, format) {
+        const result = await uploadAnnotations(this, file, format);
+        return result;
+    };
+
+    Task.prototype.annotations.dump.implementation = async function (name, format) {
+        const result = await dumpAnnotations(this, name, format);
         return result;
     };
 

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 
 import { Layout, Row, Col, Button, Input } from 'antd';
+import Title from 'antd/lib/typography/Title';
 
 import './dashboard-header.scss';
 
@@ -10,7 +11,7 @@ const { Search } = Input;
 interface DashboardHeaderAction {
   id: number,
   name: string,
-  trigger: any,
+  trigger: Function,
 }
 
 class DashboardHeader extends Component<any, any> {
@@ -25,11 +26,11 @@ class DashboardHeader extends Component<any, any> {
     this.hostUrl = process.env.REACT_APP_API_HOST_URL;
 
     this.actions = [
-      // {
-      //   id: 1,
-      //   name: 'Create task',
-      //   trigger: this.props.onSearch,
-      // },
+      {
+        id: 1,
+        name: 'Create task',
+        trigger: () => {},
+      },
       {
         id: 2,
         name: 'User guide',
@@ -40,19 +41,28 @@ class DashboardHeader extends Component<any, any> {
 
   render() {
     return(
-      <Header>
-        <Row type="flex">
-          <Col span={8}>
-            Tasks
+      <Header className="dashboard-header">
+        <Row type="flex" gutter={16}>
+          <Col className="dashboard-header__logo" span={8}>
+            <Title className="logo">Tasks</Title>
           </Col>
-          <Col span={8}>
-            <Search placeholder="Search for tasks" onSearch={ query => this.props.onSearch(query) } enterButton />
+          <Col className="dashboard-header__search" span={8}>
+            <Search
+              className="search"
+              placeholder="Search for tasks"
+              onSearch={ query => this.props.onSearch(query) }
+              enterButton>
+            </Search>
           </Col>
-          <Col span={8}>
+          <Col className="dashboard-header__actions" span={8}>
             {
               this.actions.map(
                 (action: DashboardHeaderAction) => (
-                  <Button type="primary" key={ action.id } onClick={ () => action.trigger() }>
+                  <Button
+                    className="action"
+                    type="primary"
+                    key={ action.id }
+                    onClick={ () => action.trigger() }>
                     { action.name }
                   </Button>
                 )

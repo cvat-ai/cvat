@@ -1,10 +1,12 @@
 import React, { Component } from 'react';
 
-import { Layout, Empty, Button, Col, Row } from 'antd';
+import { Layout, Empty, Button, Modal, Col, Row } from 'antd';
+import Title from 'antd/lib/typography/Title';
 
 import './dashboard-content.scss';
 
 const { Content } = Layout;
+const { confirm } = Modal;
 
 interface DashboardContentAction {
   id: number,
@@ -25,26 +27,32 @@ class DashboardContent extends Component<any, any> {
     this.apiUrl = process.env.REACT_APP_API_FULL_URL;
 
     this.actions = [
-      // {
-      //   id: 1,
-      //   name: 'Dump annotation',
-      //   trigger: () => {},
-      // },
-      // {
-      //   id: 2,
-      //   name: 'Upload annotation',
-      //   trigger: () => {},
-      // },
-      // {
-      //   id: 3,
-      //   name: 'Update task',
-      //   trigger: () => {},
-      // },
+      {
+        id: 1,
+        name: 'Dump annotation',
+        trigger: () => {
+          this.onDumpAnnotation();
+        },
+      },
+      {
+        id: 2,
+        name: 'Upload annotation',
+        trigger: () => {
+          this.onUploadAnnotation();
+        },
+      },
+      {
+        id: 3,
+        name: 'Update task',
+        trigger: (task: any) => {
+          this.onUpdateTask(task);
+        },
+      },
       {
         id: 4,
         name: 'Delete task',
         trigger: (task: any) => {
-          this.props.deleteTask(task);
+          this.onDeleteTask(task);
         },
       },
     ];
@@ -58,30 +66,63 @@ class DashboardContent extends Component<any, any> {
     );
   }
 
+  private onDumpAnnotation() {
+    console.log('Dump');
+  }
+
+  private onUploadAnnotation() {
+    console.log('Upload');
+  }
+
+  private onUpdateTask(task: any) {
+    console.log('Update');
+  }
+
+  private onDeleteTask(task: any) {
+    const props = this.props;
+
+    confirm({
+      title: 'Do you want to delete this task?',
+      okText: 'Yes',
+      okType: 'danger',
+      centered: true,
+      onOk() {
+        return props.deleteTask(task);
+      },
+      cancelText: 'No',
+      onCancel() {
+        return;
+      },
+    });
+  }
+
   private renderPlaceholder() {
     return (
       <Empty
+        className="empty"
         description={
           <span>
-            No tasks in this workspace yet...
+            No tasks found...
           </span>
         }
       >
-        <Button type="primary">Create a new task</Button>
+        <Button type="primary">
+          Create a new task
+        </Button>
       </Empty>
     )
   }
 
   private renderTasks() {
     return(
-      <Content>
+      <Content className="dashboard-content">
         {
           this.props.tasks.map(
             (task: any) => (
               <div className="dashboard-content-сard" key={ task.id }>
                 <Row className="dashboard-content-сard__header" type="flex">
                   <Col span={24}>
-                    <h2>{ `${task.name}: ${task.mode}` }</h2>
+                    <Title level={2}>{ `${task.name}: ${task.mode}` }</Title>
                   </Col>
                 </Row>
 
@@ -90,7 +131,7 @@ class DashboardContent extends Component<any, any> {
                     <img alt="Task cover" src={ `${this.apiUrl}/tasks/${task.id}/frames/0` } />
                   </Col>
 
-                  <Col className="сard-actions" span={8}>
+                  <Col className="card-actions" span={8}>
                     {
                       this.actions.map(
                         (action: DashboardContentAction) => (
@@ -105,7 +146,7 @@ class DashboardContent extends Component<any, any> {
                   </Col>
 
                   <Col className="сard-jobs" span={8}>
-                    Jobs
+                    <Title level={3}>Jobs</Title>
                     {
                       task.jobs.map(
                         (job: any) => (
