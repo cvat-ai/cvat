@@ -162,29 +162,30 @@ async function dumpAnnotationRequest(tid, taskName, format) {
 
 async function uploadAnnoRequest(url, formData, format) {
     return new Promise((resolve, reject) => {
-        let queryString = `upload_format=${format}`
-        async function request() {
-            $.ajax({
-                url: `${url}?${queryString}`,
-                type: 'POST',
-                data: formData,
-                contentType: false,
-                processData: false,
-            }).done((...args) => {
-                if (args[2].status === 202) {
-                    formData = new FormData();
-                    setTimeout(request, 3000);
-                } else {
-                    resolve(args[0]);
-                }
-            }).fail((errorData) => {
+        const queryString = `upload_format=${format}`
+        async function request(data) {
+            try {
+                await $.ajax({
+                    url: `${url}?${queryString}`,
+                    type: 'POST',
+                    data: data,
+                    contentType: false,
+                    processData: false,
+                }).done((...args) => {
+                    if (args[2].status === 202) {
+                        setTimeout(() => request(""), 3000);
+                    } else {
+                        resolve();
+                    }
+                });
+            } catch (errorData) {
                 const message = `Can not upload annotations for the job. Code: ${errorData.status}. `
                     + `Message: ${errorData.responseText || errorData.statusText}`;
                 reject(new Error(message));
-            });
+            }
         }
 
-        setTimeout(request);
+        setTimeout(() => request(formData));
     });
 }
 
