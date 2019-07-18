@@ -11,6 +11,7 @@
     const serverProxy = require('./server-proxy');
     const Collection = require('./annotations-collection');
     const AnnotationsSaver = require('./annotations-saver');
+    const { checkObjectType } = require('./common');
 
     const jobCache = new WeakMap();
     const taskCache = new WeakMap();
@@ -116,6 +117,7 @@
     }
 
     async function clearAnnotations(session, reload) {
+        checkObjectType('reload', reload, 'boolean', null);
         const sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
         const cache = getCache(sessionType);
 

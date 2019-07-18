@@ -192,7 +192,7 @@ describe('Feature: put annotations', () => {
             label: task.labels[0],
         });
 
-        expect(task.annotations.put([state]))
+        await expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.DataError);
 
         state.points = ['150,50 250,30'];
@@ -226,15 +226,15 @@ describe('Feature: put annotations', () => {
             occluded: true,
         });
 
-        expect(task.annotations.put([state]))
+        await expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
 
         state.label = 'bad label';
-        expect(task.annotations.put([state]))
+        await expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
 
         state.label = {};
-        expect(task.annotations.put([state]))
+        await expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
@@ -561,22 +561,55 @@ describe('Feature: group annotations', () => {
 
 describe('Feature: clear annotations', () => {
     test('clear annotations in a task', async () => {
-
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        let annotations = await task.annotations.get(0);
+        expect(annotations.length).not.toBe(0);
+        await task.annotations.clear();
+        annotations = await task.annotations.get(0);
+        expect(annotations.length).toBe(0);
     });
 
     test('clear annotations in a job', async () => {
-
+        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        let annotations = await job.annotations.get(0);
+        expect(annotations.length).not.toBe(0);
+        await job.annotations.clear();
+        annotations = await job.annotations.get(0);
+        expect(annotations.length).toBe(0);
     });
 
     test('clear annotations with reload in a task', async () => {
-
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        let annotations = await task.annotations.get(0);
+        expect(annotations.length).not.toBe(0);
+        annotations[0].occluded = true;
+        await annotations[0].save();
+        expect(await task.annotations.hasUnsavedChanges()).toBe(true);
+        await task.annotations.clear(true);
+        annotations = await task.annotations.get(0);
+        expect(annotations.length).not.toBe(0);
+        expect(await task.annotations.hasUnsavedChanges()).toBe(false);
     });
 
     test('clear annotations with reload in a job', async () => {
-
+        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        let annotations = await job.annotations.get(0);
+        expect(annotations.length).not.toBe(0);
+        annotations[0].occluded = true;
+        await annotations[0].save();
+        expect(await job.annotations.hasUnsavedChanges()).toBe(true);
+        await job.annotations.clear(true);
+        annotations = await job.annotations.get(0);
+        expect(annotations.length).not.toBe(0);
+        expect(await job.annotations.hasUnsavedChanges()).toBe(false);
     });
 
-    // TODO: clear with bad parameter (not a boolean)
+    test('clear annotations with bad reload parameter', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        await task.annotations.clear(true);
+        expect(task.annotations.clear('reload'))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
 });
 
 describe('Feature: get statistics', () => {
