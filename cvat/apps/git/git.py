@@ -10,6 +10,7 @@ from cvat.apps.engine.models import Task, Job, User
 from cvat.apps.engine.annotation import dump_task_data
 from cvat.apps.engine.plugins import add_plugin
 from cvat.apps.git.models import GitStatusChoice
+from cvat.apps.annotation.models import AnnoDumper
 
 from cvat.apps.git.models import GitData
 from collections import OrderedDict
@@ -62,6 +63,7 @@ class Git:
         }
         self._cwd = os.path.join(os.getcwd(), "data", str(tid), "repos")
         self._diffs_dir = os.path.join(os.getcwd(), "data", str(tid), "repos_diffs_v2")
+        self._task_mode = Task.objects.get(pk = tid).mode
         self._task_name = re.sub(r'[\\/*?:"<>|\s]', '_', Task.objects.get(pk = tid).name)[:100]
         self._branch_name = 'cvat_{}_{}'.format(tid, self._task_name)
         self._annotation_file = os.path.join(self._cwd, self._path)
@@ -261,6 +263,7 @@ class Git:
         # Dump an annotation
         # TODO: Fix dump, query params
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        dumper = AnnoDumper.objects.get(name='cvat_{}'.format(self._task_mode)),
         dump_name = os.path.join(db_task.get_task_dirname(),
             "git_annotation_{}.".format(timestamp) + "dump")
         dump_task_data(
@@ -269,7 +272,7 @@ class Git:
             file_path=dump_name,
             scheme=scheme,
             host=host,
-            query_params={},
+            dumper=dumper,
         )
 
         ext = os.path.splitext(self._path)[1]

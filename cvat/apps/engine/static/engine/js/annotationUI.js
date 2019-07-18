@@ -667,7 +667,7 @@ function callAnnotationUI(jid) {
             $.get(`/api/v1/tasks/${jobData.task_id}`),
             $.get(`/api/v1/tasks/${jobData.task_id}/frames/meta`),
             $.get(`/api/v1/jobs/${jid}/annotations`),
-            $.get('/api/v1/server/annotation_formats'),
+            $.get('/api/v1/server/formats'),
         ).then((taskData, imageMetaData, annotationData, annotationFormats) => {
             $('#loadingOverlay').remove();
             setTimeout(() => {

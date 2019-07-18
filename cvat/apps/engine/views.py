@@ -153,7 +153,7 @@ class ServerViewSet(viewsets.ViewSet):
 
     @staticmethod
     @action(detail=False, methods=['GET'], serializer_class=AnnotationFormatSerializer)
-    def annotation_formats(request):
+    def formats(request):
         response = {
             'upload': [p.name for p in AnnoParser.objects.all()],
             'download': [d.name for d in AnnoDumper.objects.all()],
