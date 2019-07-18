@@ -259,6 +259,7 @@
                 * @param {module:API.cvat.classes.ObjectState[]} data
                 * array of objects on the specific frame
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.DataError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
                 * @async
@@ -659,7 +660,7 @@
             return this;
         }
 
-        throw window.cvat.exceptions.ArgumentError(
+        throw new window.cvat.exceptions.ArgumentError(
             'Can not save job without and id',
         );
     };

@@ -72,7 +72,7 @@ describe('Feature: get annotations', () => {
 
 
 describe('Feature: put annotations', () => {
-    test('put annotations to a task', async () => {
+    test('put a shape to a task', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         let annotations = await task.annotations.get(1);
         const { length } = annotations;
@@ -81,12 +81,9 @@ describe('Feature: put annotations', () => {
             frame: 1,
             objectType: window.cvat.enums.ObjectType.SHAPE,
             shapeType: window.cvat.enums.ObjectShape.POLYGON,
-            attributes: {},
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
-            group: 0,
-            zOrder: 0,
         });
 
         await task.annotations.put([state]);
@@ -94,31 +91,168 @@ describe('Feature: put annotations', () => {
         expect(annotations).toHaveLength(length + 1);
     });
 
-    test('put annotations to a job', async () => {
+    test('put a shape to a job', async () => {
         const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
         let annotations = await job.annotations.get(5);
-        expect(Array.isArray(annotations)).toBeTruthy();
-        expect(annotations).toHaveLength(2);
+        const { length } = annotations;
 
         const state = new window.cvat.classes.ObjectState({
             frame: 5,
             objectType: window.cvat.enums.ObjectType.SHAPE,
             shapeType: window.cvat.enums.ObjectShape.RECTANGLE,
-            attributes: {},
             points: [0, 0, 100, 100],
             occluded: false,
             label: job.task.labels[0],
-            group: 0,
-            zOrder: 0,
         });
 
         await job.annotations.put([state]);
         annotations = await job.annotations.get(5);
-        expect(Array.isArray(annotations)).toBeTruthy();
-        expect(annotations).toHaveLength(3);
+        expect(annotations).toHaveLength(length + 1);
     });
 
-    // TODO: Put with invalid arguments (2-3 tests)
+    test('put a track to a task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        let annotations = await task.annotations.get(1);
+        const { length } = annotations;
+
+        const state = new window.cvat.classes.ObjectState({
+            frame: 1,
+            objectType: window.cvat.enums.ObjectType.TRACK,
+            shapeType: window.cvat.enums.ObjectShape.POLYGON,
+            points: [0, 0, 100, 0, 100, 50],
+            occluded: true,
+            label: task.labels[0],
+        });
+
+        await task.annotations.put([state]);
+        annotations = await task.annotations.get(1);
+        expect(annotations).toHaveLength(length + 1);
+    });
+
+    test('put a track to a job', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        let annotations = await job.annotations.get(5);
+        const { length } = annotations;
+
+        const state = new window.cvat.classes.ObjectState({
+            frame: 5,
+            objectType: window.cvat.enums.ObjectType.TRACK,
+            shapeType: window.cvat.enums.ObjectShape.RECTANGLE,
+            points: [0, 0, 100, 100],
+            occluded: false,
+            label: job.task.labels[0],
+        });
+
+        await job.annotations.put([state]);
+        annotations = await job.annotations.get(5);
+        expect(annotations).toHaveLength(length + 1);
+    });
+
+    test('put object without objectType to a task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        await task.annotations.clear(true);
+        const state = new window.cvat.classes.ObjectState({
+            frame: 1,
+            shapeType: window.cvat.enums.ObjectShape.POLYGON,
+            points: [0, 0, 100, 0, 100, 50],
+            occluded: true,
+            label: task.labels[0],
+        });
+
+        await expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('put shape with bad attributes to a task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        await task.annotations.clear(true);
+        const state = new window.cvat.classes.ObjectState({
+            frame: 1,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            shapeType: window.cvat.enums.ObjectShape.POLYGON,
+            points: [0, 0, 100, 0, 100, 50],
+            attributes: { 'bad key': 55 },
+            occluded: true,
+            label: task.labels[0],
+        });
+
+        await expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('put shape without points and with invalud points to a task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        await task.annotations.clear(true);
+        const state = new window.cvat.classes.ObjectState({
+            frame: 1,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            shapeType: window.cvat.enums.ObjectShape.POLYGON,
+            occluded: true,
+            points: [],
+            label: task.labels[0],
+        });
+
+        await expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.DataError);
+
+        state.points = ['150,50 250,30'];
+        await expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('put shape without type to a task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        await task.annotations.clear(true);
+        const state = new window.cvat.classes.ObjectState({
+            frame: 1,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            points: [0, 0, 100, 0, 100, 50],
+            occluded: true,
+            label: task.labels[0],
+        });
+
+        await expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('put shape without label and with bad label to a task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        await task.annotations.clear(true);
+        const state = new window.cvat.classes.ObjectState({
+            frame: 1,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            shapeType: window.cvat.enums.ObjectShape.POLYGON,
+            points: [0, 0, 100, 0, 100, 50],
+            occluded: true,
+        });
+
+        await expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+
+        state.label = 'bad label';
+        await expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+
+        state.label = {};
+        await expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('put shape with bad frame to a task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        await task.annotations.clear(true);
+        const state = new window.cvat.classes.ObjectState({
+            frame: '5',
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            shapeType: window.cvat.enums.ObjectShape.POLYGON,
+            points: [0, 0, 100, 0, 100, 50],
+            occluded: true,
+            label: task.labels[0],
+        });
+
+        await expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
 });
 
 describe('Feature: check unsaved changes', () => {
@@ -154,12 +288,9 @@ describe('Feature: save annotations', () => {
             frame: 0,
             objectType: window.cvat.enums.ObjectType.SHAPE,
             shapeType: window.cvat.enums.ObjectShape.POLYGON,
-            attributes: {},
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: task.labels[0],
-            group: 0,
-            zOrder: 0,
         });
 
         expect(await task.annotations.hasUnsavedChanges()).toBe(false);
@@ -202,12 +333,9 @@ describe('Feature: save annotations', () => {
             frame: 0,
             objectType: window.cvat.enums.ObjectType.SHAPE,
             shapeType: window.cvat.enums.ObjectShape.POLYGON,
-            attributes: {},
             points: [0, 0, 100, 0, 100, 50],
             occluded: true,
             label: job.task.labels[0],
-            group: 0,
-            zOrder: 0,
         });
 
         expect(await job.annotations.hasUnsavedChanges()).toBe(false);
@@ -252,7 +380,7 @@ describe('Feature: merge annotations', () => {
 
     });
 
-    // TODO: merge with invalid parameters
+    // TODO: merge with bad parameters
     // Not object states
     // Created object state
 });
@@ -266,7 +394,7 @@ describe('Feature: split annotations', () => {
 
     });
 
-    // TODO: split with invalid parameters (invalid frame, frame outside of shape etc.)
+    // TODO: split with bad parameters (bad frame, frame outside of shape etc.)
 });
 
 describe('Feature: group annotations', () => {
@@ -278,7 +406,7 @@ describe('Feature: group annotations', () => {
 
     });
 
-    // TODO: group with invalid parameters (some values are invalid)
+    // TODO: group with bad parameters (some values are bad)
 });
 
 describe('Feature: clear annotations', () => {
@@ -298,7 +426,7 @@ describe('Feature: clear annotations', () => {
 
     });
 
-    // TODO: clear with invalid parameter (not a boolean)
+    // TODO: clear with bad parameter (not a boolean)
 });
 
 describe('Feature: get statistics', () => {
@@ -320,12 +448,13 @@ describe('Feature: select object', () => {
 
     });
 
-    // TODO: select with invalid parameters
+    // TODO: select with bad parameters
     // frame outside of range
     // frame is not a number
-    // invalid coordinates (not number)
+    // bad coordinates (not number)
 });
 
 
-// TODO: Tests for object state
 // TODO: Tests for frames
+// TODO: Tests for plugins
+// TODO: Tests for ObjectState.setAttributes, save(), setPoints

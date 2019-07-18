@@ -102,7 +102,7 @@
                     } else if (typeof (object.id) === 'undefined') {
                         splitted.created[type].push(object);
                     } else {
-                        throw window.cvat.exceptions.ScriptingError(
+                        throw new window.cvat.exceptions.ScriptingError(
                             `Id of object is defined "${object.id}"`
                             + 'but it absents in initial state',
                         );
@@ -140,7 +140,7 @@
                 + indexes.shapes.length + indexes.tags.length;
 
             if (indexesLength !== savedLength) {
-                throw window.cvat.exception.ScriptingError(
+                throw new window.cvat.exception.ScriptingError(
                     'Number of indexes is differed by number of saved objects'
                         + `${indexesLength} vs ${savedLength}`,
                 );

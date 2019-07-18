@@ -38,7 +38,7 @@
                     );
                 } else if (!fields[prop](filter[prop])) {
                     throw new window.cvat.exceptions.ArgumentError(
-                        `Received filter property ${prop} is not satisfied for checker`,
+                        `Received filter property "${prop}" is not satisfied for checker`,
                     );
                 }
             }
@@ -61,7 +61,7 @@
             if (!(value instanceof instance)) {
                 if (value !== undefined) {
                     throw new window.cvat.exceptions.ArgumentError(
-                        `${name} is expected to be ${instance.name}, but `
+                        `"${name}" is expected to be ${instance.name}, but `
                             + `"${value.constructor.name}" has been got`,
                     );
                 }

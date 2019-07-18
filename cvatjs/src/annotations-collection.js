@@ -526,7 +526,7 @@
                 } else if (object instanceof Tag) {
                     objectType = 'tag';
                 } else {
-                    throw window.cvat.exceptions.ScriptingError(
+                    throw new window.cvat.exceptions.ScriptingError(
                         `Unexpected object type: "${objectType}"`,
                     );
                 }
@@ -648,7 +648,7 @@
                             frame: state.frame,
                             group: 0,
                             label_id: state.label.id,
-                            occluded: state.occluded,
+                            occluded: state.occluded || false,
                             points: [...state.points],
                             type: state.shapeType,
                             z_order: 0,
@@ -664,7 +664,7 @@
                                 attributes: attributes
                                     .filter(attr => labelAttributes[attr.spec_id].mutable),
                                 frame: state.frame,
-                                occluded: state.occluded,
+                                occluded: state.occluded || false,
                                 outside: false,
                                 points: [...state.points],
                                 type: state.shapeType,

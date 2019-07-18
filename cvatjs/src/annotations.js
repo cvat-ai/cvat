@@ -73,7 +73,7 @@
             return cache.get(session).collection.merge(objectStates);
         }
 
-        throw window.cvat.exceptions.DataError(
+        throw new window.cvat.exceptions.DataError(
             'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
         );
     }
@@ -86,7 +86,7 @@
             return cache.get(session).collection.split(objectState, frame);
         }
 
-        throw window.cvat.exceptions.DataError(
+        throw new window.cvat.exceptions.DataError(
             'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
         );
     }
@@ -99,7 +99,7 @@
             return cache.get(session).collection.group(objectStates, reset);
         }
 
-        throw window.cvat.exceptions.DataError(
+        throw new window.cvat.exceptions.DataError(
             'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
         );
     }
@@ -137,7 +137,7 @@
             return cache.get(session).collection.statistics();
         }
 
-        throw window.cvat.exceptions.DataError(
+        throw new window.cvat.exceptions.DataError(
             'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
         );
     }
@@ -150,7 +150,7 @@
             return cache.get(session).collection.put(objectStates);
         }
 
-        throw window.cvat.exceptions.DataError(
+        throw new window.cvat.exceptions.DataError(
             'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
         );
     }
@@ -163,7 +163,7 @@
             return cache.get(session).collection.select(objectStates, x, y);
         }
 
-        throw window.cvat.exceptions.DataError(
+        throw new window.cvat.exceptions.DataError(
             'Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before',
         );
     }

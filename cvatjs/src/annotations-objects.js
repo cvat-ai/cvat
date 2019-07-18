@@ -25,6 +25,38 @@
         return objectState;
     }
 
+    function checkNumberOfPoints(shapeType, points) {
+        if (shapeType === window.cvat.enums.ObjectShape.RECTANGLE) {
+            if (points.length / 2 !== 2) {
+                throw new window.cvat.exceptions.DataError(
+                    `Rectangle must have 2 points, but got ${points.length / 2}`,
+                );
+            }
+        } else if (shapeType === window.cvat.enums.ObjectShape.POLYGON) {
+            if (points.length / 2 < 3) {
+                throw new window.cvat.exceptions.DataError(
+                    `Polygon must have at least 3 points, but got ${points.length / 2}`,
+                );
+            }
+        } else if (shapeType === window.cvat.enums.ObjectShape.POLYLINE) {
+            if (points.length / 2 < 2) {
+                throw new window.cvat.exceptions.DataError(
+                    `Polyline must have at least 2 points, but got ${points.length / 2}`,
+                );
+            }
+        } else if (shapeType === window.cvat.enums.ObjectShape.POINTS) {
+            if (points.length / 2 < 1) {
+                throw new window.cvat.exceptions.DataError(
+                    `Points must have at least 1 points, but got ${points.length / 2}`,
+                );
+            }
+        } else {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Unknown value of shapeType has been recieved ${shapeType}`,
+            );
+        }
+    }
+
     class Annotation {
         constructor(data, clientID, injection) {
             this.taskLabels = injection.labels;
@@ -85,19 +117,19 @@
         }
 
         save() {
-            throw window.cvat.exceptions.ScriptingError(
+            throw new window.cvat.exceptions.ScriptingError(
                 'Is not implemented',
             );
         }
 
         get() {
-            throw window.cvat.exceptions.ScriptingError(
+            throw new window.cvat.exceptions.ScriptingError(
                 'Is not implemented',
             );
         }
 
         toJSON() {
-            throw window.cvat.exceptions.ScriptingError(
+            throw new window.cvat.exceptions.ScriptingError(
                 'Is not implemented',
             );
         }
@@ -743,6 +775,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
+            checkNumberOfPoints(this.shapeType, this.points);
         }
 
         static distance(points, x, y) {
@@ -768,6 +801,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
+            checkNumberOfPoints(this.shapeType, this.points);
         }
 
         static distance(points, x, y) {
@@ -835,6 +869,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
+            checkNumberOfPoints(this.shapeType, this.points);
         }
 
         static distance(points, x, y) {
@@ -878,6 +913,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POINTS;
+            checkNumberOfPoints(this.shapeType, this.points);
         }
 
         static distance(points, x, y) {
@@ -899,6 +935,9 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
 
         interpolatePosition(leftPosition, rightPosition, targetFrame) {
@@ -1220,7 +1259,7 @@
 
                 if (!targetMatched.length) {
                     // Prevent infinity loop
-                    throw window.cvat.exceptions.ScriptingError('Interpolation mapping is empty');
+                    throw new window.cvat.exceptions.ScriptingError('Interpolation mapping is empty');
                 }
 
                 while (!targetMatched.includes(prev)) {
@@ -1310,6 +1349,9 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
     }
 
@@ -1317,6 +1359,9 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
     }
 
@@ -1324,6 +1369,9 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POINTS;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
     }
 

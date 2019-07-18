@@ -157,8 +157,14 @@
                     */
                     get: () => data.points,
                     set: (points) => {
-                        data.updateFlags.points = true;
-                        data.points = [...points];
+                        if (Array.isArray(points)) {
+                            data.updateFlags.points = true;
+                            data.points = [...points];
+                        } else {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                `Points value must be an array, but got ${points.constructor.name}`,
+                            );
+                        }
                     },
                 },
                 group: {
