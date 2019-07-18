@@ -618,13 +618,15 @@ describe('Feature: get statistics', () => {
         await task.annotations.clear(true);
         const statistics = await task.annotations.statistics();
         expect(statistics).toBeInstanceOf(window.cvat.classes.Statistics);
+        expect(statistics.total.total).toBe(29);
     });
 
     test('get statistics from a job', async () => {
-        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const job = (await window.cvat.jobs.get({ jobID: 101 }))[0];
         await job.annotations.clear(true);
         const statistics = await job.annotations.statistics();
         expect(statistics).toBeInstanceOf(window.cvat.classes.Statistics);
+        expect(statistics.total.total).toBe(512);
     });
 });
 

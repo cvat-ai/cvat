@@ -37,13 +37,28 @@
         if (!cache.has(session)) {
             const rawAnnotations = await serverProxy.annotations
                 .getAnnotations(sessionType, session.id);
-            const collection = new Collection(session.labels || session.task.labels)
-                .import(rawAnnotations);
+
+            // Get meta information about frames
+            const startFrame = sessionType === 'job' ? session.startFrame : 0;
+            const stopFrame = sessionType === 'job' ? session.stopFrame : session.size - 1;
+            const frameMeta = {};
+            for (let i = startFrame; i <= stopFrame; i++) {
+                frameMeta[i] = await session.frames.get(i);
+            }
+
+            const collection = new Collection({
+                labels: session.labels || session.task.labels,
+                startFrame,
+                stopFrame,
+                frameMeta,
+            }).import(rawAnnotations);
+
             const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
 
             cache.set(session, {
                 collection,
                 saver,
+
             });
         }
     }

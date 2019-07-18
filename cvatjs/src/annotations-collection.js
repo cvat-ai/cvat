@@ -104,8 +104,12 @@
     }
 
     class Collection {
-        constructor(labels) {
-            this.labels = labels.reduce((labelAccumulator, label) => {
+        constructor(data) {
+            this.startFrame = data.startFrame;
+            this.stopFrame = data.stopFrame;
+            this.frameMeta = data.startFrame;
+
+            this.labels = data.labels.reduce((labelAccumulator, label) => {
                 labelAccumulator[label.id] = label;
                 return labelAccumulator;
             }, {});
@@ -561,6 +565,7 @@
                     if (objectType === 'track') {
                         const keyframes = Object.keys(object.shapes)
                             .sort((a, b) => +a - +b).map(el => +el);
+
                         let prevKeyframe = keyframes[0];
                         let visible = false;
 
@@ -577,6 +582,13 @@
                                 labels[label].manually++;
                                 labels[label].total++;
                             }
+                        }
+
+                        const lastKey = keyframes[keyframes.length - 1];
+                        if (lastKey !== this.stopFrame && !object.shapes[lastKey].outside) {
+                            const interpolated = this.stopFrame - lastKey;
+                            labels[label].interpolated += interpolated;
+                            labels[label].total += interpolated;
                         }
                     } else {
                         labels[label].manually++;

@@ -2366,6 +2366,77 @@ const taskAnnotationsDummyData = {
 
 const jobAnnotationsDummyData = JSON.parse(JSON.stringify(taskAnnotationsDummyData));
 
+const frameMetaDummyData = {
+    1: [{
+          "width": 1920,
+          "height": 1080
+        }, {
+          "width": 1600,
+          "height": 1143
+        }, {
+          "width": 1600,
+          "height": 859
+        }, {
+          "width": 3840,
+          "height": 2160
+        }, {
+          "width": 2560,
+          "height": 1920
+        }, {
+          "width": 1920,
+          "height": 1080
+        }, {
+          "width": 1920,
+          "height": 1080
+        }, {
+          "width": 700,
+          "height": 453
+        }, {
+          "width": 1920,
+          "height": 1200
+    }],
+    2: [{
+          "width": 1920,
+          "height": 1080
+    }],
+    3: [{
+          "width": 1888,
+          "height": 1408
+    }],
+    100: [{
+          "width": 1920,
+          "height": 1080
+        }, {
+          "width": 1600,
+          "height": 1143
+        }, {
+          "width": 1600,
+          "height": 859
+        }, {
+          "width": 3840,
+          "height": 2160
+        }, {
+          "width": 2560,
+          "height": 1920
+        }, {
+          "width": 1920,
+          "height": 1080
+        }, {
+          "width": 1920,
+          "height": 1080
+        }, {
+          "width": 700,
+          "height": 453
+        }, {
+          "width": 1920,
+          "height": 1200
+    }],
+    101: [{
+          "width": 1888,
+          "height": 1408
+    }],
+}
+
 module.exports = {
     tasksDummyData,
     aboutDummyData,
@@ -2373,4 +2444,5 @@ module.exports = {
     usersDummyData,
     taskAnnotationsDummyData,
     jobAnnotationsDummyData,
+    frameMetaDummyData,
 }

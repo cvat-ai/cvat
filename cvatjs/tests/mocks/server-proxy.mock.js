@@ -16,6 +16,7 @@ const {
     usersDummyData,
     taskAnnotationsDummyData,
     jobAnnotationsDummyData,
+    frameMetaDummyData,
 } = require('./dummy-data.mock');
 
 
@@ -192,7 +193,7 @@ class ServerProxy {
         }
 
         async function getMeta(tid) {
-            return null;
+            return JSON.parse(JSON.stringify(frameMetaDummyData[tid]));
         }
 
         async function getAnnotations(session, id) {
