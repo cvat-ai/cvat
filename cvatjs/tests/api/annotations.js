@@ -75,8 +75,7 @@ describe('Feature: put annotations', () => {
     test('put annotations to a task', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         let annotations = await task.annotations.get(1);
-        expect(Array.isArray(annotations)).toBeTruthy();
-        expect(annotations).toHaveLength(0);
+        const { length } = annotations;
 
         const state = new window.cvat.classes.ObjectState({
             frame: 1,
@@ -84,7 +83,7 @@ describe('Feature: put annotations', () => {
             shapeType: window.cvat.enums.ObjectShape.POLYGON,
             attributes: {},
             points: [0, 0, 100, 0, 100, 50],
-            occuded: true,
+            occluded: true,
             label: task.labels[0],
             group: 0,
             zOrder: 0,
@@ -92,8 +91,7 @@ describe('Feature: put annotations', () => {
 
         await task.annotations.put([state]);
         annotations = await task.annotations.get(1);
-        expect(Array.isArray(annotations)).toBeTruthy();
-        expect(annotations).toHaveLength(1);
+        expect(annotations).toHaveLength(length + 1);
     });
 
     test('put annotations to a job', async () => {
@@ -108,7 +106,7 @@ describe('Feature: put annotations', () => {
             shapeType: window.cvat.enums.ObjectShape.RECTANGLE,
             attributes: {},
             points: [0, 0, 100, 100],
-            occuded: false,
+            occluded: false,
             label: job.task.labels[0],
             group: 0,
             zOrder: 0,
@@ -153,19 +151,19 @@ describe('Feature: save annotations', () => {
         let annotations = await task.annotations.get(0);
         const { length } = annotations;
         const state = new window.cvat.classes.ObjectState({
-            frame: 1,
-            objectType: window.cvat.enums.ObjectType.TRACK,
+            frame: 0,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
             shapeType: window.cvat.enums.ObjectShape.POLYGON,
             attributes: {},
             points: [0, 0, 100, 0, 100, 50],
-            occuded: true,
+            occluded: true,
             label: task.labels[0],
             group: 0,
             zOrder: 0,
         });
 
         expect(await task.annotations.hasUnsavedChanges()).toBe(false);
-        await task.annotations.put(state);
+        await task.annotations.put([state]);
         expect(await task.annotations.hasUnsavedChanges()).toBe(true);
         await task.annotations.save();
         expect(await task.annotations.hasUnsavedChanges()).toBe(false);
@@ -201,19 +199,19 @@ describe('Feature: save annotations', () => {
         let annotations = await job.annotations.get(0);
         const { length } = annotations;
         const state = new window.cvat.classes.ObjectState({
-            frame: 1,
-            objectType: window.cvat.enums.ObjectType.TRACK,
+            frame: 0,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
             shapeType: window.cvat.enums.ObjectShape.POLYGON,
             attributes: {},
             points: [0, 0, 100, 0, 100, 50],
-            occuded: true,
+            occluded: true,
             label: job.task.labels[0],
             group: 0,
             zOrder: 0,
         });
 
         expect(await job.annotations.hasUnsavedChanges()).toBe(false);
-        await job.annotations.put(state);
+        await job.annotations.put([state]);
         expect(await job.annotations.hasUnsavedChanges()).toBe(true);
         await job.annotations.save();
         expect(await job.annotations.hasUnsavedChanges()).toBe(false);

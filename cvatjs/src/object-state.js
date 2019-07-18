@@ -277,10 +277,14 @@
             this.outside = serialized.outside;
             this.keyframe = serialized.keyframe;
             this.occluded = serialized.occluded;
-            this.attributes = serialized.attributes;
             this.points = serialized.points;
             this.color = serialized.color;
             this.lock = serialized.lock;
+
+            // It can be undefined in a constructor and it can be defined later
+            if (typeof (serialized.attributes) !== 'undefined') {
+                this.attributes = serialized.attributes;
+            }
 
             data.updateFlags.reset();
         }
