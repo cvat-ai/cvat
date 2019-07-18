@@ -263,7 +263,7 @@ class Git:
         # Dump an annotation
         # TODO: Fix dump, query params
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        dumper = AnnoDumper.objects.get(name='cvat_{}'.format(self._task_mode)),
+        dumper = AnnoDumper.objects.get(name='cvat_{}'.format(self._task_mode))
         dump_name = os.path.join(db_task.get_task_dirname(),
             "git_annotation_{}.".format(timestamp) + "dump")
         dump_task_data(
