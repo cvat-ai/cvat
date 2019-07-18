@@ -47,11 +47,11 @@ describe('Feature: get annotations', () => {
         const task = (await window.cvat.tasks.get({ id: 100 }))[0];
 
         // Out of task
-        await expect(task.annotations.get(500))
+        expect(task.annotations.get(500))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
 
         // Out of task
-        await expect(task.annotations.get(-1))
+        expect(task.annotations.get(-1))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
@@ -59,11 +59,11 @@ describe('Feature: get annotations', () => {
         const job = (await window.cvat.jobs.get({ jobID: 101 }))[0];
 
         // Out of segment
-        await expect(job.annotations.get(500))
+        expect(job.annotations.get(500))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
 
         // Out of segment
-        await expect(job.annotations.get(-1))
+        expect(job.annotations.get(-1))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
@@ -159,7 +159,7 @@ describe('Feature: put annotations', () => {
             label: task.labels[0],
         });
 
-        await expect(task.annotations.put([state]))
+        expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
@@ -176,7 +176,7 @@ describe('Feature: put annotations', () => {
             label: task.labels[0],
         });
 
-        await expect(task.annotations.put([state]))
+        expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
@@ -192,11 +192,11 @@ describe('Feature: put annotations', () => {
             label: task.labels[0],
         });
 
-        await expect(task.annotations.put([state]))
+        expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.DataError);
 
         state.points = ['150,50 250,30'];
-        await expect(task.annotations.put([state]))
+        expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
@@ -211,7 +211,7 @@ describe('Feature: put annotations', () => {
             label: task.labels[0],
         });
 
-        await expect(task.annotations.put([state]))
+        expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
@@ -226,15 +226,15 @@ describe('Feature: put annotations', () => {
             occluded: true,
         });
 
-        await expect(task.annotations.put([state]))
+        expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
 
         state.label = 'bad label';
-        await expect(task.annotations.put([state]))
+        expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
 
         state.label = {};
-        await expect(task.annotations.put([state]))
+        expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
@@ -250,7 +250,7 @@ describe('Feature: put annotations', () => {
             label: task.labels[0],
         });
 
-        await expect(task.annotations.put([state]))
+        expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 });
@@ -373,16 +373,106 @@ describe('Feature: save annotations', () => {
 
 describe('Feature: merge annotations', () => {
     test('merge annotations in a task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const annotations0 = await task.annotations.get(0);
+        const annotations1 = await task.annotations.get(1);
+        const states = [annotations0[0], annotations1[0]];
+        await task.annotations.merge(states);
+        const merged0 = (await task.annotations.get(0))
+            .filter(state => state.objectType === window.cvat.enums.ObjectType.TRACK);
+        const merged1 = (await task.annotations.get(1))
+            .filter(state => state.objectType === window.cvat.enums.ObjectType.TRACK);
+        expect(merged0).toHaveLength(1);
+        expect(merged1).toHaveLength(1);
 
+        expect(merged0[0].points).toEqual(states[0].points);
+        expect(merged1[0].points).toEqual(states[1].points);
     });
 
     test('merge annotations in a job', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const annotations0 = await job.annotations.get(0);
+        const annotations1 = await job.annotations.get(1);
+        const states = [annotations0[0], annotations1[0]];
+        await job.annotations.merge(states);
+        const merged0 = (await job.annotations.get(0))
+            .filter(state => state.objectType === window.cvat.enums.ObjectType.TRACK);
+        const merged1 = (await job.annotations.get(1))
+            .filter(state => state.objectType === window.cvat.enums.ObjectType.TRACK);
+        expect(merged0).toHaveLength(1);
+        expect(merged1).toHaveLength(1);
 
+        expect(merged0[0].points).toEqual(states[0].points);
+        expect(merged1[0].points).toEqual(states[1].points);
     });
 
-    // TODO: merge with bad parameters
-    // Not object states
-    // Created object state
+    test('trying to merge not object state', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const annotations0 = await task.annotations.get(0);
+        const states = [annotations0[0], {}];
+
+        expect(task.annotations.merge(states))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('trying to merge object state which is not saved in a collection', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const annotations0 = await task.annotations.get(0);
+
+        const state = new window.cvat.classes.ObjectState({
+            frame: 0,
+            objectType: window.cvat.enums.ObjectType.SHAPE,
+            shapeType: window.cvat.enums.ObjectShape.POLYGON,
+            points: [0, 0, 100, 0, 100, 50],
+            occluded: true,
+            label: task.labels[0],
+        });
+        const states = [annotations0[0], state];
+
+        expect(task.annotations.merge(states))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('trying to merge with bad label', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const annotations0 = await task.annotations.get(0);
+        const annotations1 = await task.annotations.get(1);
+        const states = [annotations0[0], annotations1[0]];
+        states[0].label = new window.cvat.classes.Label({
+            id: 500,
+            name: 'new_label',
+            attributes: [],
+        });
+
+        expect(task.annotations.merge(states))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('trying to merge with different shape types', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const annotations0 = await task.annotations.get(0);
+        const annotations1 = (await task.annotations.get(1))
+            .filter(state => state.shapeType === window.cvat.enums.ObjectShape.POLYGON);
+        const states = [annotations0[0], annotations1[0]];
+
+        expect(task.annotations.merge(states))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
+
+    test('trying to merge with different labels', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const annotations0 = await task.annotations.get(0);
+        const annotations1 = await task.annotations.get(1);
+        const states = [annotations0[0], annotations1[0]];
+        states[1].label = new window.cvat.classes.Label({
+            id: 500,
+            name: 'new_label',
+            attributes: [],
+        });
+
+        expect(task.annotations.merge(states))
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+    });
 });
 
 describe('Feature: split annotations', () => {
@@ -453,8 +543,3 @@ describe('Feature: select object', () => {
     // frame is not a number
     // bad coordinates (not number)
 });
-
-
-// TODO: Tests for frames
-// TODO: Tests for plugins
-// TODO: Tests for ObjectState.setAttributes, save(), setPoints

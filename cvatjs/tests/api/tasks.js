@@ -51,7 +51,7 @@ describe('Feature: get a list of tasks', () => {
     });
 
     test('get a task by an invalid id', async () => {
-        await expect(window.cvat.tasks.get({
+        expect(window.cvat.tasks.get({
             id: '50',
         })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
@@ -69,7 +69,7 @@ describe('Feature: get a list of tasks', () => {
     });
 
     test('get tasks by invalid filters', async () => {
-        await expect(window.cvat.tasks.get({
+        expect(window.cvat.tasks.get({
             unknown: '5',
         })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });

@@ -208,7 +208,7 @@
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
                     throw new window.cvat.exceptions.ArgumentError(
-                        'The object has not been saved yet. Call ObjectState.save() before you can merge it',
+                        'The object has not been saved yet. Call ObjectState.put([state]) before you can merge it',
                     );
                 }
                 return object;
@@ -216,6 +216,18 @@
 
             const keyframes = {}; // frame: position
             const { label, shapeType } = objectStates[0];
+            if (!(label.id in this.labels)) {
+                throw new window.cvat.exceptions.ArgumentError(
+                    `Unknown label for the task: ${label.id}`,
+                );
+            }
+
+            if (!Object.values(window.cvat.enums.ObjectShape).includes(shapeType)) {
+                throw new window.cvat.exceptions.ArgumentError(
+                    `Got unknown shapeType "${shapeType}"`,
+                );
+            }
+
             const labelAttributes = label.attributes.reduce((accumulator, attribute) => {
                 accumulator[attribute.id] = attribute;
                 return accumulator;
@@ -365,7 +377,9 @@
             // Remove other shapes
             for (const object of objectsForMerge) {
                 object.removed = true;
-                object.resetCache();
+                if (typeof (object.resetCache) === 'function') {
+                    object.resetCache();
+                }
             }
         }
 
@@ -376,7 +390,7 @@
             const object = this.objects[objectState.clientID];
             if (typeof (object) === 'undefined') {
                 throw new window.cvat.exceptions.ArgumentError(
-                    'The object has not been saved yet. Call annotations.put(state) before',
+                    'The object has not been saved yet. Call annotations.put([state]) before',
                 );
             }
 
@@ -463,7 +477,7 @@
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
                     throw new window.cvat.exceptions.ArgumentError(
-                        'The object has not been saved yet. Call annotations.put(state) before',
+                        'The object has not been saved yet. Call annotations.put([state]) before',
                     );
                 }
                 return object;
@@ -472,7 +486,9 @@
             const groupIdx = reset ? 0 : ++this.groups.max;
             for (const object of objectsForGroup) {
                 object.group = groupIdx;
-                object.resetCache();
+                if (typeof (object.resetCache) === 'function') {
+                    object.resetCache();
+                }
             }
         }
 
@@ -698,7 +714,7 @@
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
                     throw new window.cvat.exceptions.ArgumentError(
-                        'The object has not been saved yet. Call annotations.put(state) before',
+                        'The object has not been saved yet. Call annotations.put([state]) before',
                     );
                 }
 
