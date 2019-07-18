@@ -624,7 +624,7 @@ class TaskAnnotation:
             stop = db_job.segment.stop_frame
             jobs[jid] = { "start": start, "stop": stop }
             is_frame_inside = lambda x: (start <= int(x['frame']) <= stop)
-            splitted_data[jid] = self.ir_data.slice(start, stop)
+            splitted_data[jid] = data.slice(start, stop)
 
         for jid, job_data in splitted_data.items():
             merged_data = AnnotationIR()
@@ -693,7 +693,7 @@ class TaskAnnotation:
 
     def upload(self, file_object, parser):
         anno_importer = Annotation(
-            annotation_ir=self.ir_data,
+            annotation_ir=AnnotationIR(),
             db_task=self.db_task,
             )
         _parse_task_annotation(file_object, anno_importer, parser)
