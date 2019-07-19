@@ -140,7 +140,7 @@ class TaskView {
 
         $('<div class="dropdown"></div>').append(
             $('<button id="downloadAnnotationButton" class="regular dashboardButtonUI"> Dump Annotation </button>').on('click', () => {
-                    $('#downloadDropdownMenu').toggleClass('hidden');
+                $('#downloadDropdownMenu').toggleClass('hidden');
             }),
         ).append(dropdownMenu).appendTo(buttonsContainer);
 
