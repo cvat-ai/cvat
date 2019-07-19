@@ -40,5 +40,3 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
-ANNO_FORMATS_ROOT = os.path.join(BASE_DIR, 'cvat', 'apps', 'annotation')

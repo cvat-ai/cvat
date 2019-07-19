@@ -132,7 +132,7 @@ class XmlAnnotationWriter:
         self.xmlgen.endElement("annotations")
         self.xmlgen.endDocument()
 
-def dump_as_cvat_annotation(dumper, annotations, meta, ShapeType):
+def dump_as_cvat_annotation(dumper, annotations, meta):
     for frame_annotation in annotations:
         frame_id = frame_annotation.frame
         dumper.open_image(OrderedDict([
@@ -148,7 +148,7 @@ def dump_as_cvat_annotation(dumper, annotations, meta, ShapeType):
                 ("occluded", str(int(shape.occluded))),
             ])
 
-            if shape.type == ShapeType.RECTANGLE:
+            if shape.type == "rectangle":
                 dump_data.update(OrderedDict([
                     ("xtl", "{:.2f}".format(shape.points[0])),
                     ("ytl", "{:.2f}".format(shape.points[1])),
@@ -170,13 +170,13 @@ def dump_as_cvat_annotation(dumper, annotations, meta, ShapeType):
             if "group" in shape and shape.group:
                 dump_data['group_id'] = str(shape.group)
 
-            if shape.type == ShapeType.RECTANGLE:
+            if shape.type == "rectangle":
                 dumper.open_box(dump_data)
-            elif shape.type == ShapeType.POLYGON:
+            elif shape.type == "polygon":
                 dumper.open_polygon(dump_data)
-            elif shape.type == ShapeType.POLYLINE:
+            elif shape.type == "polyline":
                 dumper.open_polyline(dump_data)
-            elif shape.type == ShapeType.POINTS:
+            elif shape.type == "points":
                 dumper.open_points(dump_data)
             else:
                 raise NotImplementedError("unknown shape type")
@@ -187,20 +187,20 @@ def dump_as_cvat_annotation(dumper, annotations, meta, ShapeType):
                     ("value", attr.value)
                 ]))
 
-            if shape.type == ShapeType.RECTANGLE:
+            if shape.type == "rectangle":
                 dumper.close_box()
-            elif shape.type == ShapeType.POLYGON:
+            elif shape.type == "polygon":
                 dumper.close_polygon()
-            elif shape.type == ShapeType.POLYLINE:
+            elif shape.type == "polyline":
                 dumper.close_polyline()
-            elif shape.type == ShapeType.POINTS:
+            elif shape.type == "points":
                 dumper.close_points()
             else:
                 raise NotImplementedError("unknown shape type")
 
         dumper.close_image()
 
-def dump_as_cvat_interpolation(dumper, annotations, meta, ShapeType):
+def dump_as_cvat_interpolation(dumper, annotations, meta):
     #group shapes by track
     tracks = {}
     single_shapes = []
@@ -252,7 +252,7 @@ def dump_as_cvat_interpolation(dumper, annotations, meta, ShapeType):
                 ("keyframe", str(int(shape["shape"].keyframe))),
             ])
 
-            if shape["shape"].type == ShapeType.RECTANGLE:
+            if shape["shape"].type == "rectangle":
                 dump_data.update(OrderedDict([
                     ("xtl", "{:.2f}".format(shape["shape"].points[0])),
                     ("ytl", "{:.2f}".format(shape["shape"].points[1])),
@@ -268,13 +268,13 @@ def dump_as_cvat_interpolation(dumper, annotations, meta, ShapeType):
             if meta["task"]["z_order"] != "False":
                 dump_data["z_order"] = str(shape["shape"].z_order)
 
-            if shape["shape"].type == ShapeType.RECTANGLE:
+            if shape["shape"].type == "rectangle":
                 dumper.open_box(dump_data)
-            elif shape["shape"].type == ShapeType.POLYGON:
+            elif shape["shape"].type == "polygon":
                 dumper.open_polygon(dump_data)
-            elif shape["shape"].type == ShapeType.POLYLINE:
+            elif shape["shape"].type == "polyline":
                 dumper.open_polyline(dump_data)
-            elif shape["shape"].type == ShapeType.POINTS:
+            elif shape["shape"].type == "points":
                 dumper.open_points(dump_data)
             else:
                 raise NotImplementedError("unknown shape type")
@@ -285,13 +285,13 @@ def dump_as_cvat_interpolation(dumper, annotations, meta, ShapeType):
                     ("value", attr.value)
                 ]))
 
-            if shape["shape"].type == ShapeType.RECTANGLE:
+            if shape["shape"].type == "rectangle":
                 dumper.close_box()
-            elif shape["shape"].type == ShapeType.POLYGON:
+            elif shape["shape"].type == "polygon":
                 dumper.close_polygon()
-            elif shape["shape"].type == ShapeType.POLYLINE:
+            elif shape["shape"].type == "polyline":
                 dumper.close_polyline()
-            elif shape["shape"].type == ShapeType.POINTS:
+            elif shape["shape"].type == "points":
                 dumper.close_points()
             else:
                 raise NotImplementedError("unknown shape type")
@@ -303,8 +303,8 @@ dumper.open_root()
 dumper.add_meta(annotations.meta)
 
 if dump_format == "cvat_annotation":
-    dump_as_cvat_annotation(dumper, annotations.shapes, annotations.meta, ShapeType)
+    dump_as_cvat_annotation(dumper, annotations.shapes, annotations.meta)
 else:
-    dump_as_cvat_interpolation(dumper, annotations.shapes, annotations.meta, ShapeType)
+    dump_as_cvat_interpolation(dumper, annotations.shapes, annotations.meta)
 
 dumper.close_root()

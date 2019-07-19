@@ -325,7 +325,6 @@ class Annotation:
 
     def add_track(self, track):
         _track = self._import_track(track)
-        print(_track)
         serializer = LabeledTrackSerializer(data=_track, many=False)
         if serializer.is_valid(raise_exception=True):
             self._annotation_ir.add_track(serializer.data)

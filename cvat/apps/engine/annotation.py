@@ -681,7 +681,6 @@ class TaskAnnotation:
             local_vars = {
                 "annotations": anno_exporter,
                 "file_object": dump_file,
-                "ShapeType": models.ShapeType,
                 "dump_format": dumper.name,
                 }
             source_code = open(os.path.join(settings.ANNO_FORMATS_ROOT, dumper.handler_file.name)).read()
