@@ -676,7 +676,7 @@
 
         if (frame < this.startFrame || frame > this.stopFrame) {
             throw new window.cvat.exceptions.ArgumentError(
-                `Frame ${frame} does not exist in the job`,
+                `The frame with number ${frame} is out of the job`,
             );
         }
 
@@ -1265,9 +1265,15 @@
     };
 
     Task.prototype.frames.get.implementation = async function (frame) {
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame must be a positive integer. Got: "${frame}"`,
+            );
+        }
+
         if (frame >= this.size) {
             throw new window.cvat.exceptions.ArgumentError(
-                `Frame ${frame} does not exist in the task`,
+                `The frame with number ${frame} is out of the task`,
             );
         }
 

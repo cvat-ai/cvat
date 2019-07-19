@@ -188,8 +188,8 @@ class ServerProxy {
             return JSON.parse(JSON.stringify(usersDummyData)).results[0];
         }
 
-        async function getFrame(tid, frame) {
-            return null;
+        async function getFrame() {
+            return 'DUMMY_IMAGE';
         }
 
         async function getMeta(tid) {
