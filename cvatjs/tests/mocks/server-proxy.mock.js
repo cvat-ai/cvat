@@ -188,7 +188,7 @@ class ServerProxy {
             return JSON.parse(JSON.stringify(usersDummyData)).results[0];
         }
 
-        async function getFrame() {
+        async function getData() {
             return 'DUMMY_IMAGE';
         }
 
@@ -275,7 +275,7 @@ class ServerProxy {
 
             frames: {
                 value: Object.freeze({
-                    getFrame,
+                    getData,
                     getMeta,
                 }),
                 writable: false,

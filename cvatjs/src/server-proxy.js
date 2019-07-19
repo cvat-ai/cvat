@@ -421,7 +421,7 @@
                 return response.data;
             }
 
-            async function getFrame(tid, frame) {
+            async function getData(tid, frame) {
                 const { backendAPI } = window.cvat.config;
 
                 let response = null;
@@ -629,7 +629,7 @@
 
                 frames: {
                     value: Object.freeze({
-                        getFrame,
+                        getData,
                         getMeta,
                     }),
                     writable: false,

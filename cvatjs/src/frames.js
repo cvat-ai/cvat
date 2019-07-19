@@ -59,7 +59,7 @@
 
         /**
             * Method returns URL encoded image which can be placed in the img tag
-            * @method frame
+            * @method data
             * @returns {string}
             * @memberof module:API.cvat.classes.FrameData
             * @instance
@@ -67,16 +67,16 @@
             * @throws {module:API.cvat.exception.ServerError}
             * @throws {module:API.cvat.exception.PluginError}
         */
-        async frame() {
+        async data() {
             const result = await PluginRegistry
-                .apiWrapper.call(this, FrameData.prototype.frame);
+                .apiWrapper.call(this, FrameData.prototype.data);
             return result;
         }
     }
 
-    FrameData.prototype.frame.implementation = async function () {
+    FrameData.prototype.data.implementation = async function () {
         if (!(this.number in frameCache[this.tid])) {
-            const frame = await serverProxy.frames.getFrame(this.tid, this.number);
+            const frame = await serverProxy.frames.getData(this.tid, this.number);
 
             if (window.URL.createObjectURL) { // browser env
                 const url = window.URL.createObjectURL(new Blob([frame]));
