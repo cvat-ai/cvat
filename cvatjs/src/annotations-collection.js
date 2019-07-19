@@ -104,8 +104,12 @@
     }
 
     class Collection {
-        constructor(labels) {
-            this.labels = labels.reduce((labelAccumulator, label) => {
+        constructor(data) {
+            this.startFrame = data.startFrame;
+            this.stopFrame = data.stopFrame;
+            this.frameMeta = data.frameMeta;
+
+            this.labels = data.labels.reduce((labelAccumulator, label) => {
                 labelAccumulator[label.id] = label;
                 return labelAccumulator;
             }, {});
@@ -124,6 +128,7 @@
                 labels: this.labels,
                 collectionZ: this.collectionZ,
                 groups: this.groups,
+                frameMeta: this.frameMeta,
             };
         }
 
@@ -208,7 +213,7 @@
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
                     throw new window.cvat.exceptions.ArgumentError(
-                        'The object has not been saved yet. Call ObjectState.save() before you can merge it',
+                        'The object has not been saved yet. Call ObjectState.put([state]) before you can merge it',
                     );
                 }
                 return object;
@@ -216,6 +221,18 @@
 
             const keyframes = {}; // frame: position
             const { label, shapeType } = objectStates[0];
+            if (!(label.id in this.labels)) {
+                throw new window.cvat.exceptions.ArgumentError(
+                    `Unknown label for the task: ${label.id}`,
+                );
+            }
+
+            if (!Object.values(window.cvat.enums.ObjectShape).includes(shapeType)) {
+                throw new window.cvat.exceptions.ArgumentError(
+                    `Got unknown shapeType "${shapeType}"`,
+                );
+            }
+
             const labelAttributes = label.attributes.reduce((accumulator, attribute) => {
                 accumulator[attribute.id] = attribute;
                 return accumulator;
@@ -365,7 +382,9 @@
             // Remove other shapes
             for (const object of objectsForMerge) {
                 object.removed = true;
-                object.resetCache();
+                if (typeof (object.resetCache) === 'function') {
+                    object.resetCache();
+                }
             }
         }
 
@@ -376,7 +395,7 @@
             const object = this.objects[objectState.clientID];
             if (typeof (object) === 'undefined') {
                 throw new window.cvat.exceptions.ArgumentError(
-                    'The object has not been saved yet. Call annotations.put(state) before',
+                    'The object has not been saved yet. Call annotations.put([state]) before',
                 );
             }
 
@@ -385,7 +404,7 @@
             }
 
             const keyframes = Object.keys(object.shapes).sort((a, b) => +a - +b);
-            if (frame <= +keyframes[0]) {
+            if (frame <= +keyframes[0] || frame > keyframes[keyframes.length - 1]) {
                 return;
             }
 
@@ -463,7 +482,7 @@
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
                     throw new window.cvat.exceptions.ArgumentError(
-                        'The object has not been saved yet. Call annotations.put(state) before',
+                        'The object has not been saved yet. Call annotations.put([state]) before',
                     );
                 }
                 return object;
@@ -472,8 +491,12 @@
             const groupIdx = reset ? 0 : ++this.groups.max;
             for (const object of objectsForGroup) {
                 object.group = groupIdx;
-                object.resetCache();
+                if (typeof (object.resetCache) === 'function') {
+                    object.resetCache();
+                }
             }
+
+            return groupIdx;
         }
 
         clear() {
@@ -526,7 +549,7 @@
                 } else if (object instanceof Tag) {
                     objectType = 'tag';
                 } else {
-                    throw window.cvat.exceptions.ScriptingError(
+                    throw new window.cvat.exceptions.ScriptingError(
                         `Unexpected object type: "${objectType}"`,
                     );
                 }
@@ -543,6 +566,7 @@
                     if (objectType === 'track') {
                         const keyframes = Object.keys(object.shapes)
                             .sort((a, b) => +a - +b).map(el => +el);
+
                         let prevKeyframe = keyframes[0];
                         let visible = false;
 
@@ -559,6 +583,13 @@
                                 labels[label].manually++;
                                 labels[label].total++;
                             }
+                        }
+
+                        const lastKey = keyframes[keyframes.length - 1];
+                        if (lastKey !== this.stopFrame && !object.shapes[lastKey].outside) {
+                            const interpolated = this.stopFrame - lastKey;
+                            labels[label].interpolated += interpolated;
+                            labels[label].total += interpolated;
                         }
                     } else {
                         labels[label].manually++;
@@ -648,7 +679,7 @@
                             frame: state.frame,
                             group: 0,
                             label_id: state.label.id,
-                            occluded: state.occluded,
+                            occluded: state.occluded || false,
                             points: [...state.points],
                             type: state.shapeType,
                             z_order: 0,
@@ -664,7 +695,7 @@
                                 attributes: attributes
                                     .filter(attr => labelAttributes[attr.spec_id].mutable),
                                 frame: state.frame,
-                                occluded: state.occluded,
+                                occluded: state.occluded || false,
                                 outside: false,
                                 points: [...state.points],
                                 type: state.shapeType,
@@ -698,7 +729,7 @@
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
                     throw new window.cvat.exceptions.ArgumentError(
-                        'The object has not been saved yet. Call annotations.put(state) before',
+                        'The object has not been saved yet. Call annotations.put([state]) before',
                     );
                 }
 

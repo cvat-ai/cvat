@@ -259,6 +259,7 @@
                 * @param {module:API.cvat.classes.ObjectState[]} data
                 * array of objects on the specific frame
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.DataError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
                 * @async
@@ -302,11 +303,13 @@
                 * @async
             */
             /**
-                * Select shape under a cursor using math alghorithms
+                * Select shape under a cursor by using minimal distance
+                * between a cursor and a shape edge or a shape point
+                * For closed shapes a cursor is placed inside a shape
                 * @method select
                 * @memberof Session.annotations
                 * @param {module:API.cvat.classes.ObjectState[]} objectStates
-                * object which can be selected
+                * objects which can be selected
                 * @param {float} x horizontal coordinate
                 * @param {float} y vertical coordinate
                 * @returns {Object}
@@ -659,7 +662,7 @@
             return this;
         }
 
-        throw window.cvat.exceptions.ArgumentError(
+        throw new window.cvat.exceptions.ArgumentError(
             'Can not save job without and id',
         );
     };
@@ -673,7 +676,7 @@
 
         if (frame < this.startFrame || frame > this.stopFrame) {
             throw new window.cvat.exceptions.ArgumentError(
-                `Frame ${frame} does not exist in the job`,
+                `The frame with number ${frame} is out of the job`,
             );
         }
 
@@ -1262,9 +1265,15 @@
     };
 
     Task.prototype.frames.get.implementation = async function (frame) {
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Frame must be a positive integer. Got: "${frame}"`,
+            );
+        }
+
         if (frame >= this.size) {
             throw new window.cvat.exceptions.ArgumentError(
-                `Frame ${frame} does not exist in the task`,
+                `The frame with number ${frame} is out of the task`,
             );
         }
 

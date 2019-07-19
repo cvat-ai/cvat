@@ -64,26 +64,26 @@ describe('Feature: get a list of jobs', () => {
     });
 
     test('get jobs by invalid filter with both taskID and jobID', async () => {
-        await expect(window.cvat.jobs.get({
+        expect(window.cvat.jobs.get({
             taskID: 1,
             jobID: 1,
         })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('get jobs by invalid job id', async () => {
-        await expect(window.cvat.jobs.get({
+        expect(window.cvat.jobs.get({
             jobID: '1',
         })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('get jobs by invalid task id', async () => {
-        await expect(window.cvat.jobs.get({
+        expect(window.cvat.jobs.get({
             taskID: '1',
         })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('get jobs by unknown filter', async () => {
-        await expect(window.cvat.jobs.get({
+        expect(window.cvat.jobs.get({
             unknown: 50,
         })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });

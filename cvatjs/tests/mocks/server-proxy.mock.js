@@ -14,6 +14,9 @@ const {
     aboutDummyData,
     shareDummyData,
     usersDummyData,
+    taskAnnotationsDummyData,
+    jobAnnotationsDummyData,
+    frameMetaDummyData,
 } = require('./dummy-data.mock');
 
 
@@ -185,19 +188,50 @@ class ServerProxy {
             return JSON.parse(JSON.stringify(usersDummyData)).results[0];
         }
 
-        async function getFrame() {
+        async function getData() {
+            return 'DUMMY_IMAGE';
+        }
+
+        async function getMeta(tid) {
+            return JSON.parse(JSON.stringify(frameMetaDummyData[tid]));
+        }
+
+        async function getAnnotations(session, id) {
+            if (session === 'task') {
+                return JSON.parse(JSON.stringify(taskAnnotationsDummyData[id]));
+            }
+
+            if (session === 'job') {
+                return JSON.parse(JSON.stringify(jobAnnotationsDummyData[id]));
+            }
+
             return null;
         }
 
-        async function getMeta() {
-            return null;
-        }
+        async function updateAnnotations(session, id, data, action) {
+            // Actually we do not change our dummy data
+            // We just update the argument in some way and return it
 
-        async function getAnnotations() {
-            return null;
-        }
+            data.version += 1;
 
-        async function updateAnnotations() {
+            if (action === 'create') {
+                let idGenerator = 1000;
+                data.tracks.concat(data.tags).concat(data.shapes).map((el) => {
+                    el.id = ++idGenerator;
+                    return el;
+                });
+
+                return data;
+            }
+
+            if (action === 'update') {
+                return data;
+            }
+
+            if (action === 'delete') {
+                return data;
+            }
+
             return null;
         }
 
@@ -241,7 +275,7 @@ class ServerProxy {
 
             frames: {
                 value: Object.freeze({
-                    getFrame,
+                    getData,
                     getMeta,
                 }),
                 writable: false,

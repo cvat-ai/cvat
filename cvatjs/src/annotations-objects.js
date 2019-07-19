@@ -25,6 +25,94 @@
         return objectState;
     }
 
+    function checkNumberOfPoints(shapeType, points) {
+        if (shapeType === window.cvat.enums.ObjectShape.RECTANGLE) {
+            if (points.length / 2 !== 2) {
+                throw new window.cvat.exceptions.DataError(
+                    `Rectangle must have 2 points, but got ${points.length / 2}`,
+                );
+            }
+        } else if (shapeType === window.cvat.enums.ObjectShape.POLYGON) {
+            if (points.length / 2 < 3) {
+                throw new window.cvat.exceptions.DataError(
+                    `Polygon must have at least 3 points, but got ${points.length / 2}`,
+                );
+            }
+        } else if (shapeType === window.cvat.enums.ObjectShape.POLYLINE) {
+            if (points.length / 2 < 2) {
+                throw new window.cvat.exceptions.DataError(
+                    `Polyline must have at least 2 points, but got ${points.length / 2}`,
+                );
+            }
+        } else if (shapeType === window.cvat.enums.ObjectShape.POINTS) {
+            if (points.length / 2 < 1) {
+                throw new window.cvat.exceptions.DataError(
+                    `Points must have at least 1 points, but got ${points.length / 2}`,
+                );
+            }
+        } else {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Unknown value of shapeType has been recieved ${shapeType}`,
+            );
+        }
+    }
+
+    function checkShapeArea(shapeType, points) {
+        const MIN_SHAPE_LENGTH = 3;
+        const MIN_SHAPE_AREA = 9;
+
+        if (shapeType === window.cvat.enums.ObjectShape.POINTS) {
+            return true;
+        }
+
+        let xmin = Number.MAX_SAFE_INTEGER;
+        let xmax = Number.MIN_SAFE_INTEGER;
+        let ymin = Number.MAX_SAFE_INTEGER;
+        let ymax = Number.MIN_SAFE_INTEGER;
+
+        for (let i = 0; i < points.length - 1; i += 2) {
+            xmin = Math.min(xmin, points[i]);
+            xmax = Math.max(xmax, points[i]);
+            ymin = Math.min(ymin, points[i + 1]);
+            ymax = Math.max(ymax, points[i + 1]);
+        }
+
+        if (shapeType === window.cvat.enums.ObjectShape.POLYLINE) {
+            const length = Math.max(
+                xmax - xmin,
+                ymax - ymin,
+            );
+
+            return length >= MIN_SHAPE_LENGTH;
+        }
+
+        const area = (xmax - xmin) * (ymax - ymin);
+        return area >= MIN_SHAPE_AREA;
+    }
+
+    function validateAttributeValue(value, attr) {
+        const { values } = attr;
+        const type = attr.inputType;
+
+        if (typeof (value) !== 'string') {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Attribute value is expected to be string, but got ${typeof (value)}`,
+            );
+        }
+
+        if (type === window.cvat.enums.AttributeType.NUMBER) {
+            return +value >= +values[0]
+                && +value <= +values[1]
+                && !((+value - +values[0]) % +values[2]);
+        }
+
+        if (type === window.cvat.enums.AttributeType.CHECKBOX) {
+            return ['true', 'false'].includes(value.toLowerCase());
+        }
+
+        return values.includes(value);
+    }
+
     class Annotation {
         constructor(data, clientID, injection) {
             this.taskLabels = injection.labels;
@@ -66,10 +154,8 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, injection);
 
+            this.frameMeta = injection.frameMeta;
             this.collectionZ = injection.collectionZ;
-            const z = this._getZ(this.frame);
-            z.max = Math.max(z.max, this.zOrder || 0);
-            z.min = Math.min(z.min, this.zOrder || 0);
 
             this.color = color;
             this.shapeType = null;
@@ -85,19 +171,19 @@
         }
 
         save() {
-            throw window.cvat.exceptions.ScriptingError(
+            throw new window.cvat.exceptions.ScriptingError(
                 'Is not implemented',
             );
         }
 
         get() {
-            throw window.cvat.exceptions.ScriptingError(
+            throw new window.cvat.exceptions.ScriptingError(
                 'Is not implemented',
             );
         }
 
         toJSON() {
-            throw window.cvat.exceptions.ScriptingError(
+            throw new window.cvat.exceptions.ScriptingError(
                 'Is not implemented',
             );
         }
@@ -123,6 +209,10 @@
             this.points = data.points;
             this.occluded = data.occluded;
             this.zOrder = data.z_order;
+
+            const z = this._getZ(this.frame);
+            z.max = Math.max(z.max, this.zOrder || 0);
+            z.min = Math.min(z.min, this.zOrder || 0);
         }
 
         // Method is used to export data to the server
@@ -195,22 +285,47 @@
             }
 
             if (updated.attributes) {
-                const labelAttributes = copy.label
-                    .attributes.map(attr => `${attr.id}`);
+                const labelAttributes = copy.label.attributes
+                    .reduce((accumulator, value) => {
+                        accumulator[value.id] = value;
+                        return accumulator;
+                    }, {});
 
                 for (const attrID of Object.keys(data.attributes)) {
-                    if (labelAttributes.includes(attrID)) {
-                        copy.attributes[attrID] = data.attributes[attrID];
+                    const value = data.attributes[attrID];
+                    if (attrID in labelAttributes
+                        && validateAttributeValue(value, labelAttributes[attrID])) {
+                        copy.attributes[attrID] = value;
+                    } else {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Trying to save unknown attribute with id ${attrID} and value ${value}`,
+                        );
                     }
                 }
             }
 
             if (updated.points) {
                 checkObjectType('points', data.points, null, Array);
-                copy.points = [];
-                for (const coordinate of data.points) {
-                    checkObjectType('coordinate', coordinate, 'number', null);
-                    copy.points.push(coordinate);
+                checkNumberOfPoints(this.shapeType, data.points);
+
+                // cut points
+                const { width, height } = this.frameMeta[frame];
+                const cutPoints = [];
+                for (let i = 0; i < data.points.length - 1; i += 2) {
+                    const x = data.points[i];
+                    const y = data.points[i + 1];
+
+                    checkObjectType('coordinate', x, 'number', null);
+                    checkObjectType('coordinate', y, 'number', null);
+
+                    cutPoints.push(
+                        Math.clamp(x, 0, width),
+                        Math.clamp(y, 0, height),
+                    );
+                }
+
+                if (checkShapeArea(this.shapeType, cutPoints)) {
+                    copy.points = cutPoints;
                 }
             }
 
@@ -340,7 +455,6 @@
                     {}, this.getPosition(frame),
                     {
                         attributes: this.getAttributes(frame),
-                        label: this.label,
                         group: this.group,
                         objectType: window.cvat.enums.ObjectType.TRACK,
                         shapeType: this.shapeType,
@@ -354,7 +468,9 @@
                 this.cache[frame] = interpolation;
             }
 
-            return JSON.parse(JSON.stringify(this.cache[frame]));
+            const result = JSON.parse(JSON.stringify(this.cache[frame]));
+            result.label = this.label;
+            return result;
         }
 
         neighborsFrames(targetFrame) {
@@ -408,8 +524,7 @@
         }
 
         save(frame, data) {
-            if (this.lock || data.lock) {
-                this.lock = data.lock;
+            if (this.lock && data.lock) {
                 return objectStateFactory.call(this, frame, this.get(frame));
             }
 
@@ -430,34 +545,50 @@
                 this.appendDefaultAttributes.call(copy, copy.label);
             }
 
-            if (updated.attributes) {
-                const labelAttributes = copy.label.attributes
-                    .reduce((accumulator, value) => {
-                        accumulator[value.id] = value;
-                        return accumulator;
-                    }, {});
+            const labelAttributes = copy.label.attributes
+                .reduce((accumulator, value) => {
+                    accumulator[value.id] = value;
+                    return accumulator;
+                }, {});
 
+            if (updated.attributes) {
                 for (const attrID of Object.keys(data.attributes)) {
-                    if (attrID in labelAttributes) {
-                        copy.attributes[attrID] = data.attributes[attrID];
-                        if (!labelAttributes[attrID].mutable) {
-                            this.attributes[attrID] = data.attributes[attrID];
-                        } else {
-                            // Mutable attributes will be updated later
-                            positionUpdated = true;
-                        }
+                    const value = data.attributes[attrID];
+                    if (attrID in labelAttributes
+                        && validateAttributeValue(value, labelAttributes[attrID])) {
+                        copy.attributes[attrID] = value;
+                    } else {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Trying to save unknown attribute with id ${attrID} and value ${value}`,
+                        );
                     }
                 }
             }
 
             if (updated.points) {
                 checkObjectType('points', data.points, null, Array);
-                copy.points = [];
-                for (const coordinate of data.points) {
-                    checkObjectType('coordinate', coordinate, 'number', null);
-                    copy.points.push(coordinate);
+                checkNumberOfPoints(this.shapeType, data.points);
+
+                // cut points
+                const { width, height } = this.frameMeta[frame];
+                const cutPoints = [];
+                for (let i = 0; i < data.points.length - 1; i += 2) {
+                    const x = data.points[i];
+                    const y = data.points[i + 1];
+
+                    checkObjectType('coordinate', x, 'number', null);
+                    checkObjectType('coordinate', y, 'number', null);
+
+                    cutPoints.push(
+                        Math.clamp(x, 0, width),
+                        Math.clamp(y, 0, height),
+                    );
                 }
-                positionUpdated = true;
+
+                if (checkShapeArea(this.shapeType, cutPoints)) {
+                    copy.points = cutPoints;
+                    positionUpdated = true;
+                }
             }
 
             if (updated.occluded) {
@@ -499,6 +630,11 @@
                 copy.color = data.color;
             }
 
+            if (updated.keyframe) {
+                // Just check here
+                checkObjectType('keyframe', data.keyframe, 'boolean', null);
+            }
+
             // Commit all changes
             for (const prop of Object.keys(copy)) {
                 if (prop in this) {
@@ -508,8 +644,18 @@
                 this.cache[frame][prop] = copy[prop];
             }
 
+            if (updated.attributes) {
+                // Mutable attributes will be updated below
+                for (const attrID of Object.keys(copy.attributes)) {
+                    if (!labelAttributes[attrID].mutable) {
+                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                    }
+                }
+            }
+
             if (updated.label) {
-                for (const shape of this.shapes) {
+                for (const shape of Object.values(this.shapes)) {
                     shape.attributes = {};
                 }
             }
@@ -519,7 +665,7 @@
                 // Remove all cache after this keyframe because it have just become outdated
                 for (const cacheFrame in this.cache) {
                     if (+cacheFrame > frame) {
-                        delete this.cache[frame];
+                        delete this.cache[cacheFrame];
                     }
                 }
 
@@ -535,7 +681,7 @@
                 // Remove all cache after this keyframe because it have just become outdated
                 for (const cacheFrame in this.cache) {
                     if (+cacheFrame > frame) {
-                        delete this.cache[frame];
+                        delete this.cache[cacheFrame];
                     }
                 }
 
@@ -552,15 +698,9 @@
                 };
 
                 if (updated.attributes) {
-                    const labelAttributes = this.label.attributes
-                        .reduce((accumulator, value) => {
-                            accumulator[value.id] = value;
-                            return accumulator;
-                        }, {});
-
                     // Unmutable attributes were updated above
-                    for (const attrID of Object.keys(data.attributes)) {
-                        if (attrID in labelAttributes && labelAttributes[attrID].mutable) {
+                    for (const attrID of Object.keys(copy.attributes)) {
+                        if (labelAttributes[attrID].mutable) {
                             this.shapes[frame].attributes[attrID] = data.attributes[attrID];
                             this.shapes[frame].attributes[attrID] = data.attributes[attrID];
                         }
@@ -743,6 +883,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
+            checkNumberOfPoints(this.shapeType, this.points);
         }
 
         static distance(points, x, y) {
@@ -768,23 +909,25 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
+            checkNumberOfPoints(this.shapeType, this.points);
         }
 
         static distance(points, x, y) {
             function position(x1, y1, x2, y2) {
-                return ((x1 - x) * (y2 - y) - (x2 - x) * (y1 - y));
+                return ((x2 - x1) * (y - y1) - (x - x1) * (y2 - y1));
             }
 
             let wn = 0;
             const distances = [];
-            for (let i = 0; i < points.length; i += 2) {
+
+            for (let i = 0, j = points.length - 2; i < points.length - 1; j = i, i += 2) {
                 // Current point
-                const x1 = points[i];
-                const y1 = points[i + 1];
+                const x1 = points[j];
+                const y1 = points[j + 1];
 
                 // Next point
-                const x2 = i + 2 < points.length ? points[i + 2] : points[0];
-                const y2 = i + 3 < points.length ? points[i + 3] : points[1];
+                const x2 = points[i];
+                const y2 = points[i + 1];
 
                 // Check if a point is inside a polygon
                 // with a winding numbers algorithm
@@ -795,25 +938,31 @@
                             wn++;
                         }
                     }
-                } else if (y2 < y) {
-                    if (position(x1, y1, x2, y2) > 0) {
+                } else if (y2 <= y) {
+                    if (position(x1, y1, x2, y2) < 0) {
                         wn--;
                     }
                 }
 
                 // Find the shortest distance from point to an edge
-                if (((x - x1) * (x2 - x)) >= 0 && ((y - y1) * (y2 - y)) >= 0) {
-                    // Find the length of a perpendicular
-                    // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-                    distances.push(
-                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / Math
-                            .sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)),
-                    );
+                // Get an equation of a line in general
+                const aCoef = (y1 - y2);
+                const bCoef = (x2 - x1);
+
+                // Vector (aCoef, bCoef) is a perpendicular to line
+                // Now find the point where two lines
+                // (edge and its perpendicular through the point (x,y)) are cross
+                const xCross = x - aCoef;
+                const yCross = y - bCoef;
+
+                if (((xCross - x1) * (x2 - xCross)) >= 0
+                    && ((yCross - y1) * (y2 - yCross)) >= 0) {
+                    // Cross point is on segment between p1(x1,y1) and p2(x2,y2)
+                    distances.push(Math.sqrt(
+                        Math.pow(x - xCross, 2)
+                        + Math.pow(y - yCross, 2),
+                    ));
                 } else {
-                    // The link below works for lines (which have infinit length)
-                    // There is a case when perpendicular doesn't cross the edge
-                    // In this case we don't use the computed distance
-                    // Instead we use just distance to the nearest point
                     distances.push(
                         Math.min(
                             Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
@@ -835,6 +984,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
+            checkNumberOfPoints(this.shapeType, this.points);
         }
 
         static distance(points, x, y) {
@@ -878,6 +1028,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POINTS;
+            checkNumberOfPoints(this.shapeType, this.points);
         }
 
         static distance(points, x, y) {
@@ -899,6 +1050,9 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
 
         interpolatePosition(leftPosition, rightPosition, targetFrame) {
@@ -1220,7 +1374,7 @@
 
                 if (!targetMatched.length) {
                     // Prevent infinity loop
-                    throw window.cvat.exceptions.ScriptingError('Interpolation mapping is empty');
+                    throw new window.cvat.exceptions.ScriptingError('Interpolation mapping is empty');
                 }
 
                 while (!targetMatched.includes(prev)) {
@@ -1310,6 +1464,9 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
     }
 
@@ -1317,6 +1474,9 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
     }
 
@@ -1324,6 +1484,9 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
             this.shapeType = window.cvat.enums.ObjectShape.POINTS;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
     }
 
