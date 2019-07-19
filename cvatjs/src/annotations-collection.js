@@ -107,7 +107,7 @@
         constructor(data) {
             this.startFrame = data.startFrame;
             this.stopFrame = data.stopFrame;
-            this.frameMeta = data.startFrame;
+            this.frameMeta = data.frameMeta;
 
             this.labels = data.labels.reduce((labelAccumulator, label) => {
                 labelAccumulator[label.id] = label;
@@ -128,6 +128,7 @@
                 labels: this.labels,
                 collectionZ: this.collectionZ,
                 groups: this.groups,
+                frameMeta: this.frameMeta,
             };
         }
 

@@ -195,6 +195,10 @@ describe('Feature: put annotations', () => {
         await expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.DataError);
 
+        delete state.points;
+        await expect(task.annotations.put([state]))
+            .rejects.toThrow(window.cvat.exceptions.DataError);
+
         state.points = ['150,50 250,30'];
         expect(task.annotations.put([state]))
             .rejects.toThrow(window.cvat.exceptions.ArgumentError);

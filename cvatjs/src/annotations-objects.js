@@ -57,6 +57,62 @@
         }
     }
 
+    function checkShapeArea(shapeType, points) {
+        const MIN_SHAPE_LENGTH = 3;
+        const MIN_SHAPE_AREA = 9;
+
+        if (shapeType === window.cvat.enums.ObjectShape.POINTS) {
+            return true;
+        }
+
+        let xmin = Number.MAX_SAFE_INTEGER;
+        let xmax = Number.MIN_SAFE_INTEGER;
+        let ymin = Number.MAX_SAFE_INTEGER;
+        let ymax = Number.MIN_SAFE_INTEGER;
+
+        for (let i = 0; i < points.length - 1; i += 2) {
+            xmin = Math.min(xmin, points[i]);
+            xmax = Math.max(xmax, points[i]);
+            ymin = Math.min(ymin, points[i + 1]);
+            ymax = Math.max(ymax, points[i + 1]);
+        }
+
+        if (shapeType === window.cvat.enums.ObjectShape.POLYLINE) {
+            const length = Math.max(
+                xmax - xmin,
+                ymax - ymin,
+            );
+
+            return length >= MIN_SHAPE_LENGTH;
+        }
+
+        const area = (xmax - xmin) * (ymax - ymin);
+        return area >= MIN_SHAPE_AREA;
+    }
+
+    function validateAttributeValue(value, attr) {
+        const { values } = attr;
+        const type = attr.inputType;
+
+        if (typeof (value) !== 'string') {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Attribute value is expected to be string, but got ${typeof (value)}`,
+            );
+        }
+
+        if (type === window.cvat.enums.AttributeType.NUMBER) {
+            return +value >= +values[0]
+                && +value <= +values[1]
+                && !((+value - +values[0]) % +values[2]);
+        }
+
+        if (type === window.cvat.enums.AttributeType.CHECKBOX) {
+            return ['true', 'false'].includes(value.toLowerCase());
+        }
+
+        return values.includes(value);
+    }
+
     class Annotation {
         constructor(data, clientID, injection) {
             this.taskLabels = injection.labels;
@@ -98,6 +154,7 @@
         constructor(data, clientID, color, injection) {
             super(data, clientID, injection);
 
+            this.frameMeta = injection.frameMeta;
             this.collectionZ = injection.collectionZ;
             const z = this._getZ(this.frame);
             z.max = Math.max(z.max, this.zOrder || 0);
@@ -227,22 +284,47 @@
             }
 
             if (updated.attributes) {
-                const labelAttributes = copy.label
-                    .attributes.map(attr => `${attr.id}`);
+                const labelAttributes = copy.label.attributes
+                    .reduce((accumulator, value) => {
+                        accumulator[value.id] = value;
+                        return accumulator;
+                    }, {});
 
                 for (const attrID of Object.keys(data.attributes)) {
-                    if (labelAttributes.includes(attrID)) {
-                        copy.attributes[attrID] = data.attributes[attrID];
+                    const value = data.attributes[attrID];
+                    if (attrID in labelAttributes
+                        && validateAttributeValue(value, labelAttributes[attrID])) {
+                        copy.attributes[attrID] = value;
+                    } else {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Trying to save unknown attribute with id ${attrID} and value ${value}`,
+                        );
                     }
                 }
             }
 
             if (updated.points) {
                 checkObjectType('points', data.points, null, Array);
-                copy.points = [];
-                for (const coordinate of data.points) {
-                    checkObjectType('coordinate', coordinate, 'number', null);
-                    copy.points.push(coordinate);
+                checkNumberOfPoints(this.shapeType, data.points);
+
+                // cut points
+                const { width, height } = this.frameMeta[frame];
+                const cutPoints = [];
+                for (let i = 0; i < data.points.length - 1; i += 2) {
+                    const x = data.points[i];
+                    const y = data.points[i + 1];
+
+                    checkObjectType('coordinate', x, 'number', null);
+                    checkObjectType('coordinate', y, 'number', null);
+
+                    cutPoints.push(
+                        Math.clamp(x, 0, width),
+                        Math.clamp(y, 0, height),
+                    );
+                }
+
+                if (checkShapeArea(this.shapeType, cutPoints)) {
+                    copy.points = cutPoints;
                 }
             }
 
@@ -372,7 +454,6 @@
                     {}, this.getPosition(frame),
                     {
                         attributes: this.getAttributes(frame),
-                        label: this.label,
                         group: this.group,
                         objectType: window.cvat.enums.ObjectType.TRACK,
                         shapeType: this.shapeType,
@@ -386,7 +467,9 @@
                 this.cache[frame] = interpolation;
             }
 
-            return JSON.parse(JSON.stringify(this.cache[frame]));
+            const result = JSON.parse(JSON.stringify(this.cache[frame]));
+            result.label = this.label;
+            return result;
         }
 
         neighborsFrames(targetFrame) {
@@ -440,8 +523,7 @@
         }
 
         save(frame, data) {
-            if (this.lock || data.lock) {
-                this.lock = data.lock;
+            if (this.lock && data.lock) {
                 return objectStateFactory.call(this, frame, this.get(frame));
             }
 
@@ -462,34 +544,50 @@
                 this.appendDefaultAttributes.call(copy, copy.label);
             }
 
-            if (updated.attributes) {
-                const labelAttributes = copy.label.attributes
-                    .reduce((accumulator, value) => {
-                        accumulator[value.id] = value;
-                        return accumulator;
-                    }, {});
+            const labelAttributes = copy.label.attributes
+                .reduce((accumulator, value) => {
+                    accumulator[value.id] = value;
+                    return accumulator;
+                }, {});
 
+            if (updated.attributes) {
                 for (const attrID of Object.keys(data.attributes)) {
-                    if (attrID in labelAttributes) {
-                        copy.attributes[attrID] = data.attributes[attrID];
-                        if (!labelAttributes[attrID].mutable) {
-                            this.attributes[attrID] = data.attributes[attrID];
-                        } else {
-                            // Mutable attributes will be updated later
-                            positionUpdated = true;
-                        }
+                    const value = data.attributes[attrID];
+                    if (attrID in labelAttributes
+                        && validateAttributeValue(value, labelAttributes[attrID])) {
+                        copy.attributes[attrID] = value;
+                    } else {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Trying to save unknown attribute with id ${attrID} and value ${value}`,
+                        );
                     }
                 }
             }
 
             if (updated.points) {
                 checkObjectType('points', data.points, null, Array);
-                copy.points = [];
-                for (const coordinate of data.points) {
-                    checkObjectType('coordinate', coordinate, 'number', null);
-                    copy.points.push(coordinate);
+                checkNumberOfPoints(this.shapeType, data.points);
+
+                // cut points
+                const { width, height } = this.frameMeta[frame];
+                const cutPoints = [];
+                for (let i = 0; i < data.points.length - 1; i += 2) {
+                    const x = data.points[i];
+                    const y = data.points[i + 1];
+
+                    checkObjectType('coordinate', x, 'number', null);
+                    checkObjectType('coordinate', y, 'number', null);
+
+                    cutPoints.push(
+                        Math.clamp(x, 0, width),
+                        Math.clamp(y, 0, height),
+                    );
                 }
-                positionUpdated = true;
+
+                if (checkShapeArea(this.shapeType, cutPoints)) {
+                    copy.points = cutPoints;
+                    positionUpdated = true;
+                }
             }
 
             if (updated.occluded) {
@@ -540,8 +638,18 @@
                 this.cache[frame][prop] = copy[prop];
             }
 
+            if (updated.attributes) {
+                // Mutable attributes will be updated below
+                for (const attrID of Object.keys(copy.attributes)) {
+                    if (!labelAttributes[attrID].mutable) {
+                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                    }
+                }
+            }
+
             if (updated.label) {
-                for (const shape of this.shapes) {
+                for (const shape of Object.values(this.shapes)) {
                     shape.attributes = {};
                 }
             }
@@ -584,15 +692,9 @@
                 };
 
                 if (updated.attributes) {
-                    const labelAttributes = this.label.attributes
-                        .reduce((accumulator, value) => {
-                            accumulator[value.id] = value;
-                            return accumulator;
-                        }, {});
-
                     // Unmutable attributes were updated above
-                    for (const attrID of Object.keys(data.attributes)) {
-                        if (attrID in labelAttributes && labelAttributes[attrID].mutable) {
+                    for (const attrID of Object.keys(copy.attributes)) {
+                        if (labelAttributes[attrID].mutable) {
                             this.shapes[frame].attributes[attrID] = data.attributes[attrID];
                             this.shapes[frame].attributes[attrID] = data.attributes[attrID];
                         }

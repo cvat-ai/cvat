@@ -153,6 +153,7 @@
                         * @name points
                         * @type {number[]}
                         * @memberof module:API.cvat.classes.ObjectState
+                        * @throws {module:API.cvat.exceptions.ArgumentError}
                         * @instance
                     */
                     get: () => data.points,
@@ -162,7 +163,9 @@
                             data.points = [...points];
                         } else {
                             throw new window.cvat.exceptions.ArgumentError(
-                                `Points value must be an array, but got ${points.constructor.name}`,
+                                'Points are expected to be an array '
+                                    + `but got ${typeof (points) === 'object'
+                                        ? points.constructor.name : typeof (points)}`,
                             );
                         }
                     },
@@ -258,14 +261,10 @@
                     get: () => data.attributes,
                     set: (attributes) => {
                         if (typeof (attributes) !== 'object') {
-                            if (typeof (attributes) === 'undefined') {
-                                throw new window.cvat.exceptions.ArgumentError(
-                                    'Expected attributes are object, but got undefined',
-                                );
-                            }
-
                             throw new window.cvat.exceptions.ArgumentError(
-                                `Expected attributes are object, but got ${attributes.constructor.name}`,
+                                'Attributes are expected to be an object '
+                                    + `but got ${typeof (attributes) === 'object'
+                                        ? attributes.constructor.name : typeof (attributes)}`,
                             );
                         }
 
@@ -283,11 +282,13 @@
             this.outside = serialized.outside;
             this.keyframe = serialized.keyframe;
             this.occluded = serialized.occluded;
-            this.points = serialized.points;
             this.color = serialized.color;
             this.lock = serialized.lock;
 
             // It can be undefined in a constructor and it can be defined later
+            if (typeof (serialized.points) !== 'undefined') {
+                this.points = serialized.points;
+            }
             if (typeof (serialized.attributes) !== 'undefined') {
                 this.attributes = serialized.attributes;
             }
