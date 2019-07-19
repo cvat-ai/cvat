@@ -156,9 +156,6 @@
 
             this.frameMeta = injection.frameMeta;
             this.collectionZ = injection.collectionZ;
-            const z = this._getZ(this.frame);
-            z.max = Math.max(z.max, this.zOrder || 0);
-            z.min = Math.min(z.min, this.zOrder || 0);
 
             this.color = color;
             this.shapeType = null;
@@ -212,6 +209,10 @@
             this.points = data.points;
             this.occluded = data.occluded;
             this.zOrder = data.z_order;
+
+            const z = this._getZ(this.frame);
+            z.max = Math.max(z.max, this.zOrder || 0);
+            z.min = Math.min(z.min, this.zOrder || 0);
         }
 
         // Method is used to export data to the server
@@ -627,6 +628,11 @@
                 }
 
                 copy.color = data.color;
+            }
+
+            if (updated.keyframe) {
+                // Just check here
+                checkObjectType('keyframe', data.keyframe, 'boolean', null);
             }
 
             // Commit all changes

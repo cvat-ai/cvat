@@ -198,50 +198,109 @@ describe('Feature: save object from its state', () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
         const state = annotations[0];
+
+        state.occluded = 'false';
+        await expect(state.save())
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+
+        const oldPoints = state.points;
+        state.occluded = false;
+        state.points = ['100', '50', '100', {}];
+        await expect(state.save())
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+
+        state.points = oldPoints;
+        state.lock = 'true';
+        await expect(state.save())
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+
+        const oldLabel = state.label;
+        state.lock = false;
+        state.label = 1;
+        await expect(state.save())
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+
+        state.label = oldLabel;
+        state.outside = 5;
+        await expect(state.save())
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+
+        state.outside = false;
+        state.keyframe = '10';
+        await expect(state.save())
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
+
+        state.keyframe = true;
+        state.attributes = { 1: {}, 2: false, 3: () => {} };
+        await expect(state.save())
+            .rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('trying to change locked shape', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
-        const state = annotations[0];
+        let state = annotations[0];
+
+        state.lock = true;
+        state = await state.save();
+
+        const { points } = state;
+        state.points = [0, 0, 500, 500];
+        state = await state.save();
+        expect(state.points).toEqual(points);
     });
 
     test('trying to set too small area of a shape', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
-        const state = annotations[0];
+        let state = annotations[0];
+
+        const { points } = state;
+        state.points = [0, 0, 2, 2]; // area is 4
+        state = await state.save();
+        expect(state.points).toEqual(points);
     });
 
     test('trying to set too small area of a track', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
-        const state = annotations[0];
+        let state = annotations[0];
+
+        const { points } = state;
+        state.points = [0, 0, 2, 2]; // area is 4
+        state = await state.save();
+        expect(state.points).toEqual(points);
     });
 
     test('trying to set too small length of a shape', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
-        const state = annotations[0];
-    });
+        let state = annotations[8];
 
-    test('trying to set too small length of a track', async () => {
-        const task = (await window.cvat.tasks.get({ id: 101 }))[0];
-        const annotations = await task.annotations.get(0);
-        const state = annotations[0];
+        const { points } = state;
+        state.points = [0, 0, 2, 2]; // length is 2
+        state = await state.save();
+        expect(state.points).toEqual(points);
     });
 });
 
 describe('Feature: delete object', () => {
     test('delete a shape', async () => {
         const task = (await window.cvat.tasks.get({ id: 100 }))[0];
-        const annotations = await task.annotations.get(0);
-        const state = annotations[0];
+        const annotationsBefore = await task.annotations.get(0);
+        const { length } = annotationsBefore;
+        await annotationsBefore[0].delete();
+        const annotationsAfter = await task.annotations.get(0);
+        expect(annotationsAfter).toHaveLength(length - 1);
     });
 
     test('delete a track', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
-        const annotations = await task.annotations.get(0);
-        const state = annotations[0];
+        const annotationsBefore = await task.annotations.get(0);
+        const { length } = annotationsBefore;
+        await annotationsBefore[0].delete();
+        const annotationsAfter = await task.annotations.get(0);
+        expect(annotationsAfter).toHaveLength(length - 1);
     });
 });
 
@@ -250,23 +309,39 @@ describe('Feature: change z order of an object', () => {
         const task = (await window.cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
         const state = annotations[0];
+
+        const { zOrder } = state;
+        await state.up();
+        expect(state.zOrder).toBeGreaterThan(zOrder);
     });
 
     test('up z order for a track', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
         const state = annotations[0];
+
+        const { zOrder } = state;
+        await state.up();
+        expect(state.zOrder).toBeGreaterThan(zOrder);
     });
 
     test('down z order for a shape', async () => {
         const task = (await window.cvat.tasks.get({ id: 100 }))[0];
         const annotations = await task.annotations.get(0);
         const state = annotations[0];
+
+        const { zOrder } = state;
+        await state.down();
+        expect(state.zOrder).toBeLessThan(zOrder);
     });
 
     test('down z order for a track', async () => {
         const task = (await window.cvat.tasks.get({ id: 101 }))[0];
         const annotations = await task.annotations.get(0);
         const state = annotations[0];
+
+        const { zOrder } = state;
+        await state.down();
+        expect(state.zOrder).toBeLessThan(zOrder);
     });
 });
