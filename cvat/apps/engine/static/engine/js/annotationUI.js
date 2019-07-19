@@ -46,6 +46,7 @@
     showOverlay:false
     buildAnnotationSaver:false
     LabelsInfo:false
+    uploadJobAnnotationRequest:false
 */
 
 async function initLogger(jobID) {
@@ -64,7 +65,8 @@ function blurAllElements() {
     document.activeElement.blur();
 }
 
-function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationSaverModel, uploadAnnotationButton) {
+function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationSaverModel,
+    uploadAnnotationButton) {
     $('#annotationFileSelector').one('change', async (changedFileEvent) => {
         const file = changedFileEvent.target.files['0'];
         changedFileEvent.target.value = '';
@@ -88,7 +90,6 @@ function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationS
             uploadAnnotationButton.prop('disabled', false);
             uploadAnnotationButton.text('Upload Annotation');
         }
-
     }).click();
 }
 
@@ -390,16 +391,16 @@ function setupMenu(job, task, shapeCollectionModel,
 
     for (const downloadFormat of annotationFormats.download) {
         $(`<li>${downloadFormat}</li>`).on('click', async () => {
-                $('#downloadAnnotationButton')[0].disabled = true;
-                $('#downloadDropdownMenu').addClass('hidden');
-                try {
-                    await dumpAnnotationRequest(task.id, task.name, downloadFormat);
-                } catch (error) {
-                    showMessage(error.message);
-                } finally {
-                    $('#downloadAnnotationButton')[0].disabled = false;
-                }
-            }).appendTo('#downloadDropdownMenu');
+            $('#downloadAnnotationButton')[0].disabled = true;
+            $('#downloadDropdownMenu').addClass('hidden');
+            try {
+                await dumpAnnotationRequest(task.id, task.name, downloadFormat);
+            } catch (error) {
+                showMessage(error.message);
+            } finally {
+                $('#downloadAnnotationButton')[0].disabled = false;
+            }
+        }).appendTo('#downloadDropdownMenu');
     }
 
     $('#downloadAnnotationButton').on('click', () => {
@@ -449,7 +450,8 @@ function setupMenu(job, task, shapeCollectionModel,
 }
 
 
-function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, annotationFormats, loadJobEvent) {
+function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, annotationFormats,
+    loadJobEvent) {
     // Setup some API
     window.cvat = {
         labelsInfo: new LabelsInfo(taskData.labels),

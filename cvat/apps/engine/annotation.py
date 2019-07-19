@@ -3,11 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 import os
-import copy
 from enum import Enum
 from django.utils import timezone
-from collections import OrderedDict
-from abc import ABC, abstractmethod
 from PIL import Image
 
 from django.conf import settings
@@ -624,7 +621,6 @@ class TaskAnnotation:
             start = db_job.segment.start_frame
             stop = db_job.segment.stop_frame
             jobs[jid] = { "start": start, "stop": stop }
-            is_frame_inside = lambda x: (start <= int(x['frame']) <= stop)
             splitted_data[jid] = _data.slice(start, stop)
 
         for jid, job_data in splitted_data.items():

@@ -5,9 +5,9 @@
  */
 
 /* global
-    AnnotationParser:false
     userConfirm:false
-    dumpAnnotationRequest: false
+    dumpAnnotationRequest:false
+    uploadTaskAnnotationRequest:false
     LabelsInfo:false
     showMessage:false
     showOverlay:false
@@ -140,13 +140,10 @@ class TaskView {
             );
         }
 
-        $('<div class="dropdown"></div>')
-        .append(
+        $('<div class="dropdown"></div>').append(
             $('<button id="downloadAnnotationButton" class="regular dashboardButtonUI"> Dump Annotation </button>').on('click', () => {
                  $('#downloadDropdownMenu').toggleClass('hidden');
-                })
-        ).append(dropdownMenu
-        ).appendTo(buttonsContainer);
+            })).append(dropdownMenu).appendTo(buttonsContainer);
 
         $('<button class="regular dashboardButtonUI"> Upload Annotation </button>').on('click', (e) => {
             userConfirm('The current annotation will be lost. Are you sure?', () => this._upload(e.target));

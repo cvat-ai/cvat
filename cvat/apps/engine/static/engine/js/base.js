@@ -9,6 +9,8 @@
     dumpAnnotationRequest
     showMessage
     showOverlay
+    uploadJobAnnotationRequest
+    uploadTaskAnnotationRequest
 */
 
 /* global
@@ -134,7 +136,7 @@ async function dumpAnnotationRequest(tid, taskName, format) {
     const name = encodeURIComponent(`${tid}_${taskName}`);
     return new Promise((resolve, reject) => {
         const url = `/api/v1/tasks/${tid}/annotations/${name}`;
-        let queryString = `dump_format=${format}`
+        let queryString = `dump_format=${format}`;
         async function request() {
             $.get(`${url}?${queryString}`)
                 .done((...args) => {
@@ -142,7 +144,7 @@ async function dumpAnnotationRequest(tid, taskName, format) {
                         setTimeout(request, 3000);
                     } else {
                         const a = document.createElement('a');
-                        queryString = `${queryString}&action=download`
+                        queryString = `${queryString}&action=download`;
                         a.href = `${url}?${queryString}`;
                         document.body.appendChild(a);
                         a.click();
@@ -162,18 +164,18 @@ async function dumpAnnotationRequest(tid, taskName, format) {
 
 async function uploadAnnoRequest(url, formData, format) {
     return new Promise((resolve, reject) => {
-        const queryString = `upload_format=${format}`
+        const queryString = `upload_format=${format}`;
         async function request(data) {
             try {
                 await $.ajax({
                     url: `${url}?${queryString}`,
                     type: 'POST',
-                    data: data,
+                    data,
                     contentType: false,
                     processData: false,
                 }).done((...args) => {
                     if (args[2].status === 202) {
-                        setTimeout(() => request(""), 3000);
+                        setTimeout(() => request(''), 3000);
                     } else {
                         resolve();
                     }
