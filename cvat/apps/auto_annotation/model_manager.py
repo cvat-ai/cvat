@@ -319,7 +319,7 @@ def run_inference_engine_annotation(data, model_file, weights_file,
         for attr_text, attr_value in shape_attributes.items():
             if attr_text in label_attr_spec:
                 attributes.append({
-                    "id": label_attr_spec[attr_text],
+                    "spec_id": label_attr_spec[attr_text],
                     "value": attr_value,
                 })
 
