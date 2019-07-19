@@ -43,7 +43,6 @@
     ShapeMergerModel:false
     ShapeMergerView:false
     showMessage:false
-    showOverlay:false
     buildAnnotationSaver:false
     LabelsInfo:false
     uploadJobAnnotationRequest:false
@@ -73,7 +72,6 @@ function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationS
         if (!file) return;
         uploadAnnotationButton.text('Uploading..');
         uploadAnnotationButton.prop('disabled', true);
-        // const overlay = showOverlay('File is being uploaded..');
         const annotationData = new FormData();
         annotationData.append('annotation_file', file);
         try {

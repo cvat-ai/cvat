@@ -132,18 +132,17 @@ class TaskView {
 
         const dropdownMenu = $('<ul id="downloadDropdownMenu" class="dropdown-content hidden"></ul>');
         for (const downloadFormat of this._anno_formats.download) {
-            dropdownMenu.append(
-                $(`<li>${downloadFormat}</li>`).on('click', () => {
-                    dropdownMenu.addClass('hidden');
-                    this._dump($('#downloadAnnotationButton')[0], downloadFormat);
-                })
-            );
+            dropdownMenu.append($(`<li>${downloadFormat}</li>`).on('click', () => {
+                dropdownMenu.addClass('hidden');
+                this._dump($('#downloadAnnotationButton')[0], downloadFormat);
+            }));
         }
 
         $('<div class="dropdown"></div>').append(
             $('<button id="downloadAnnotationButton" class="regular dashboardButtonUI"> Dump Annotation </button>').on('click', () => {
-                 $('#downloadDropdownMenu').toggleClass('hidden');
-            })).append(dropdownMenu).appendTo(buttonsContainer);
+                    $('#downloadDropdownMenu').toggleClass('hidden');
+            }),
+        ).append(dropdownMenu).appendTo(buttonsContainer);
 
         $('<button class="regular dashboardButtonUI"> Upload Annotation </button>').on('click', (e) => {
             userConfirm('The current annotation will be lost. Are you sure?', () => this._upload(e.target));
