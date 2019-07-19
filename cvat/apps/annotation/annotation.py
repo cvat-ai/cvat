@@ -12,8 +12,12 @@ from cvat.apps.engine.data_manager import DataManager
 from cvat.apps.engine.serializers import LabeledShapeSerializer, LabeledTrackSerializer
 
 class AnnotationIR:
-    def __init__(self):
+    def __init__(self, data=None):
         self.reset()
+        if data:
+            self._tags   = getattr(data, 'tags', []) or data['tags']
+            self._shapes = getattr(data, 'shapes', []) or data['shapes']
+            self._tracks = getattr(data, 'tracks', []) or data['tracks']
 
     def add_tag(self, tag):
         raise NotImplementedError

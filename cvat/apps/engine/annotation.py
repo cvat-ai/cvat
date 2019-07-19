@@ -616,6 +616,7 @@ class TaskAnnotation:
         self.ir_data.reset()
 
     def _patch_data(self, data, action):
+        _data = data if isinstance(data, AnnotationIR) else AnnotationIR(data)
         splitted_data = {}
         jobs = {}
         for db_job in self.db_jobs:
@@ -624,7 +625,7 @@ class TaskAnnotation:
             stop = db_job.segment.stop_frame
             jobs[jid] = { "start": start, "stop": stop }
             is_frame_inside = lambda x: (start <= int(x['frame']) <= stop)
-            splitted_data[jid] = data.slice(start, stop)
+            splitted_data[jid] = _data.slice(start, stop)
 
         for jid, job_data in splitted_data.items():
             merged_data = AnnotationIR()
@@ -697,3 +698,7 @@ class TaskAnnotation:
             )
         _parse_task_annotation(file_object, anno_importer, parser)
         self.put(anno_importer.data)
+
+    @property
+    def data(self):
+        return self.ir_data.data

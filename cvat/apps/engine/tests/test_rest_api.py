@@ -1636,7 +1636,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
     def _dump_api_v1_tasks_id_annotations(self, pk, user, query_params=""):
         with ForceLogin(user, self.client):
             response = self.client.get(
-                "/api/v1/tasks/{0}/annotations/my_task_{0}{1}".format(pk, query_params))
+                "/api/v1/tasks/{0}/annotations/my_task_{0}?{1}".format(pk, query_params))
 
         return response
 
@@ -2022,15 +2022,16 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "create", data)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
-        response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator)
-        self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+        for dump_format in ("cvat_annotation", "cvat_interpolation"):
+            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "dump_format={}".format(dump_format))
+            self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
-        response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator)
-        self.assertEqual(response.status_code, HTTP_201_CREATED)
+            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "dump_format={}".format(dump_format))
+            self.assertEqual(response.status_code, HTTP_201_CREATED)
 
-        response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "?action=download")
-        self.assertEqual(response.status_code, HTTP_200_OK)
-        self._check_dump_response(response, task, jobs, data)
+            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "action=download&dump_format={}".format(dump_format))
+            self.assertEqual(response.status_code, HTTP_200_OK)
+            self._check_dump_response(response, task, jobs, data)
 
     def _check_dump_response(self, response, task, jobs, data):
         if response.status_code == status.HTTP_200_OK:
