@@ -130,17 +130,18 @@ class TaskView {
 
         const buttonsContainer = $('<div class="dashboardButtonsUI"> </div>').appendTo(this._UI);
 
-        const dropdownMenu = $('<ul id="downloadDropdownMenu" class="dropdown-content hidden"></ul>');
+        const downloadButton = $('<button class="regular dashboardButtonUI"> Dump Annotation </button>');
+        const dropdownMenu = $('<ul class="dropdown-content hidden"></ul>');
         for (const downloadFormat of this._anno_formats.download) {
             dropdownMenu.append($(`<li>${downloadFormat}</li>`).on('click', () => {
                 dropdownMenu.addClass('hidden');
-                this._dump($('#downloadAnnotationButton')[0], downloadFormat);
+                this._dump(downloadButton[0], downloadFormat);
             }));
         }
 
         $('<div class="dropdown"></div>').append(
-            $('<button id="downloadAnnotationButton" class="regular dashboardButtonUI"> Dump Annotation </button>').on('click', () => {
-                $('#downloadDropdownMenu').toggleClass('hidden');
+            downloadButton.on('click', () => {
+                dropdownMenu.toggleClass('hidden');
             }),
         ).append(dropdownMenu).appendTo(buttonsContainer);
 

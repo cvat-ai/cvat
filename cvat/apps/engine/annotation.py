@@ -127,7 +127,7 @@ def dump_task_data(pk, user, file_path, scheme, host, dumper):
     annotation.dump(file_path, scheme, host, dumper)
 
 def _parse_task_annotation(annotation_file, annotation_importer, parser):
-    with open(annotation_file, 'r') as file_object:
+    with open(annotation_file, 'rb') as file_object:
         local_vars = {
             "file_object": file_object,
             "annotations": annotation_importer,
