@@ -10,8 +10,8 @@
 const { defaults } = require('jest-config');
 
 module.exports = {
-    coverageDirectory: "reports/coverage",
-    coverageReporters: ["lcov"],
+    coverageDirectory: 'reports/coverage',
+    coverageReporters: ['lcov'],
     moduleFileExtensions: [
         ...defaults.moduleFileExtensions,
         'ts',
@@ -19,7 +19,7 @@ module.exports = {
     ],
     reporters: [
         'default',
-        [ "jest-junit", { outputDirectory: "reports/junit" } ]
+        ['jest-junit', { outputDirectory: 'reports/junit' }],
     ],
     testMatch: [
         '**/tests/**/*.js',
