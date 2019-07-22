@@ -4,29 +4,20 @@ import { connect } from 'react-redux';
 
 import Dashboard from '../dashboard/dashboard';
 
-import { loginAction, logoutAction } from '../../actions/authentication-action';
+import { login, logout } from '../../actions/auth.actions';
 
 import './app.scss';
 
 declare const window: any;
 
-const mapDispatchToProps = (dispatch: any) => ({
-  login: () => { dispatch(loginAction()) },
-  logout: () => { dispatch(logoutAction()) },
-})
-
-const mapStateToProps = (state: any) => ({
-  ...state.authenticateReducer,
-})
-
 class App extends PureComponent<any, any> {
   componentDidMount() {
     window.cvat.server.login(process.env.REACT_APP_LOGIN, process.env.REACT_APP_PASSWORD).then(
       (_response: any) => {
-        this.props.login();
+        this.props.dispatch(login());
       },
       (_error: any) => {
-        this.props.logout();
+        this.props.dispatch(logout());
       }
     );
   }
@@ -43,4 +34,4 @@ class App extends PureComponent<any, any> {
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(App);
+export default connect()(App);
