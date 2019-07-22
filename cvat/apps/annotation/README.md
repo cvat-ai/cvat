@@ -47,7 +47,7 @@ It allows to download and upload annotations in different formats and easily add
       Pseudocode for a dumper code
       ```python
       ...
-      # dump meta info if neccessary
+      # dump meta info if necessary
       ...
 
       # iterate over all frames
