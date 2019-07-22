@@ -5,8 +5,9 @@
   "main": "babel.config.js",
   "scripts": {
     "build": "webpack",
-    "test": "jest --config=jest.config.js",
-    "docs": "jsdoc --readme README.md src/*.js -p -c jsdoc.config.js -d docs"
+    "test": "jest --config=jest.config.js --coverage",
+    "docs": "jsdoc --readme README.md src/*.js -p -c jsdoc.config.js -d docs",
+    "coveralls": "cat ./reports/coverage/lcov.info | coveralls"
   },
   "author": "Intel",
   "license": "MIT",
@@ -17,6 +18,7 @@
     "babel-eslint": "^10.0.1",
     "babel-loader": "^8.0.6",
     "core-js": "^3.0.1",
+    "coveralls": "^3.0.5",
     "jest": "^24.8.0",
     "jest-junit": "^6.4.0",
     "jsdoc": "^3.6.2",
