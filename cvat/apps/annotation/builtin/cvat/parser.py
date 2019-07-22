@@ -33,7 +33,7 @@ for ev, el in context:
         if el.tag in supported_shapes:
             if track is not None:
                 shape['frame'] = el.attrib['frame']
-                shape['outside'] = el.attrib['outside']
+                shape['outside'] = el.attrib['outside'] == "1"
                 shape['keyframe'] = el.attrib['keyframe']
             else:
                 shape['frame'] = frame_id
