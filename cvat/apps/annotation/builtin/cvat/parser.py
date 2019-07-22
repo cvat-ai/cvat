@@ -34,7 +34,7 @@ for ev, el in context:
             if track is not None:
                 shape['frame'] = el.attrib['frame']
                 shape['outside'] = el.attrib['outside'] == "1"
-                shape['keyframe'] = el.attrib['keyframe']
+                shape['keyframe'] = el.attrib['keyframe'] == "1"
             else:
                 shape['frame'] = frame_id
                 shape['label'] = el.attrib['label']

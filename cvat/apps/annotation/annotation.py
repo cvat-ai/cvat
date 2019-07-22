@@ -236,7 +236,7 @@ class Annotation:
                 ("height", str(self._db_task.video.height))
             ])
             # Add source to dumped file
-            self._meta["source"] = str(self._db_task.video.path)
+            self._meta["source"] = str(os.path.basename(self._db_task.video.path))
 
     def _export_shape(self, shape):
         exported_shape = Annotation.Shape(
