@@ -226,6 +226,11 @@ class Annotation:
                     ("username", self._db_task.owner.username),
                     ("email", self._db_task.owner.email)
                 ]) if self._db_task.owner else ""),
+
+                ("assignee", OrderedDict([
+                    ("username", self._db_task.assignee.username),
+                    ("email", self._db_task.assignee.email)
+                ]) if self._db_task.assignee else ""),
             ])),
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
