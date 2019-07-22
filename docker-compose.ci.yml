@@ -9,5 +9,7 @@ services:
       network: host
     environment:
       COVERALLS_REPO_TOKEN:
+      TRAVIS:
       TRAVIS_JOB_ID:
       TRAVIS_BRANCH:
+      TRAVIS_PULL_REQUEST:
