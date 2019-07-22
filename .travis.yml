@@ -12,4 +12,5 @@ before_script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml up --build -d
 
 script:
-  - docker exec -it cvat /bin/bash -c 'python3 manage.py test cvat/apps/engine && tests/node_modules/.bin/karma start tests/karma.conf.js'
+  - docker exec -it cvat /bin/bash -c 'python3 manage.py test cvat/apps/engine'
+  - docker exec -it cvat /bin/bash -c 'cd cvatjs && npm install && npm run test && npm run coveralls'
