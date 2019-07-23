@@ -137,6 +137,7 @@ RUN if [ "$WITH_DEXTR" = "yes" ]; then \
 
 COPY ssh ${HOME}/.ssh
 COPY cvat/ ${HOME}/cvat
+COPY cvatjs/ ${HOME}/cvatjs
 COPY tests ${HOME}/tests
 # Binary option is necessary to correctly apply the patch on Windows platform.
 # https://unix.stackexchange.com/questions/239364/how-to-fix-hunk-1-failed-at-1-different-line-endings-message

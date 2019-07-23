@@ -348,13 +348,11 @@
         */
         config: {
             /**
+                * @memberof module:API.cvat.config
                 * @property {string} backendAPI host with a backend api
                 * @memberof module:API.cvat.config
                 * @property {string} proxy Axios proxy settings.
                 * For more details please read <a href="https://github.com/axios/axios"> here </a>
-                * @memberof module:API.cvat.config
-                * @property {integer} preloadFrames the number of subsequent frames which are
-                * loaded in background
                 * @memberof module:API.cvat.config
                 * @property {integer} taskID this value is displayed in a logs if available
                 * @memberof module:API.cvat.config
@@ -364,7 +362,6 @@
                 * value which is displayed in a logs
                 * @memberof module:API.cvat.config
             */
-            preloadFrames: 300,
             backendAPI: 'http://localhost:7000/api/v1',
             proxy: false,
             taskID: undefined,
@@ -450,6 +447,10 @@
         // Dummy browser environment
         require('browser-env')();
     }
+
+    Math.clamp = function (value, min, max) {
+        return Math.min(Math.max(value, min), max);
+    };
 
     window.cvat = Object.freeze(implementAPI(cvat));
 })();

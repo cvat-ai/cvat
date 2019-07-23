@@ -12,7 +12,7 @@
 
     class AnnotationsSaver {
         constructor(version, collection, session) {
-            this.session = session.constructor.name.toLowerCase();
+            this.sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
             this.id = session.id;
             this.version = version;
             this.collection = collection;
@@ -42,7 +42,7 @@
 
         async _request(data, action) {
             const result = await serverProxy.annotations.updateAnnotations(
-                this.session,
+                this.sessionType,
                 this.id,
                 data,
                 action,
@@ -102,7 +102,7 @@
                     } else if (typeof (object.id) === 'undefined') {
                         splitted.created[type].push(object);
                     } else {
-                        throw window.cvat.exceptions.ScriptingError(
+                        throw new window.cvat.exceptions.ScriptingError(
                             `Id of object is defined "${object.id}"`
                             + 'but it absents in initial state',
                         );
@@ -140,7 +140,7 @@
                 + indexes.shapes.length + indexes.tags.length;
 
             if (indexesLength !== savedLength) {
-                throw window.cvat.exception.ScriptingError(
+                throw new window.cvat.exception.ScriptingError(
                     'Number of indexes is differed by number of saved objects'
                         + `${indexesLength} vs ${savedLength}`,
                 );
@@ -151,6 +151,10 @@
                 for (let i = 0; i < indexes[type].length; i++) {
                     const clientID = indexes[type][i];
                     this.collection.objects[clientID].serverID = saved[type][i].id;
+                    if (type === 'tracks') {
+                        // We have to reset cache because of old value of serverID was saved there
+                        this.collection.objects[clientID].resetCache();
+                    }
                 }
             }
         }
@@ -249,6 +253,9 @@
                         delete this.initialObjects[object.id];
                     }
                 }
+
+                this.hash = this._getHash();
+                onUpdate('Saving is done');
             } catch (error) {
                 onUpdate(`Can not save annotations: ${error.message}`);
                 throw error;
@@ -256,7 +263,7 @@
         }
 
         hasUnsavedChanges() {
-            return this._getHash() !== this._hash;
+            return this._getHash() !== this.hash;
         }
     }
 

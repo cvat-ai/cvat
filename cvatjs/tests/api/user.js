@@ -41,13 +41,13 @@ describe('Feature: get a list of users', () => {
     });
 
     test('get users with unknown filter key', async () => {
-        await expect(window.cvat.users.get({
+        expect(window.cvat.users.get({
             unknown: '50',
         })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
 
     test('get users with invalid filter key', async () => {
-        await expect(window.cvat.users.get({
+        expect(window.cvat.users.get({
             self: 1,
         })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });

@@ -14,6 +14,9 @@ const {
     aboutDummyData,
     shareDummyData,
     usersDummyData,
+    taskAnnotationsDummyData,
+    jobAnnotationsDummyData,
+    frameMetaDummyData,
 } = require('./dummy-data.mock');
 
 
@@ -51,6 +54,10 @@ class ServerProxy {
         }
 
         async function login() {
+            return null;
+        }
+
+        async function logout() {
             return null;
         }
 
@@ -134,7 +141,7 @@ class ServerProxy {
         }
 
         async function getJob(jobID) {
-            return tasksDummyData.results.reduce((acc, task) => {
+            const jobs = tasksDummyData.results.reduce((acc, task) => {
                 for (const segment of task.segments) {
                     for (const job of segment.jobs) {
                         const copy = JSON.parse(JSON.stringify(job));
@@ -148,6 +155,10 @@ class ServerProxy {
 
                 return acc;
             }, []).filter(job => job.id === jobID);
+
+            return jobs[0] || {
+                detail: 'Not found.',
+            };
         }
 
         async function saveJob(id, jobData) {
@@ -177,11 +188,50 @@ class ServerProxy {
             return JSON.parse(JSON.stringify(usersDummyData)).results[0];
         }
 
-        async function getFrame() {
+        async function getData() {
+            return 'DUMMY_IMAGE';
+        }
+
+        async function getMeta(tid) {
+            return JSON.parse(JSON.stringify(frameMetaDummyData[tid]));
+        }
+
+        async function getAnnotations(session, id) {
+            if (session === 'task') {
+                return JSON.parse(JSON.stringify(taskAnnotationsDummyData[id]));
+            }
+
+            if (session === 'job') {
+                return JSON.parse(JSON.stringify(jobAnnotationsDummyData[id]));
+            }
+
             return null;
         }
 
-        async function getMeta() {
+        async function updateAnnotations(session, id, data, action) {
+            // Actually we do not change our dummy data
+            // We just update the argument in some way and return it
+
+            data.version += 1;
+
+            if (action === 'create') {
+                let idGenerator = 1000;
+                data.tracks.concat(data.tags).concat(data.shapes).map((el) => {
+                    el.id = ++idGenerator;
+                    return el;
+                });
+
+                return data;
+            }
+
+            if (action === 'update') {
+                return data;
+            }
+
+            if (action === 'delete') {
+                return data;
+            }
+
             return null;
         }
 
@@ -192,6 +242,7 @@ class ServerProxy {
                     share,
                     exception,
                     login,
+                    logout,
                 }),
                 writable: false,
             },
@@ -224,8 +275,16 @@ class ServerProxy {
 
             frames: {
                 value: Object.freeze({
-                    getFrame,
+                    getData,
                     getMeta,
+                }),
+                writable: false,
+            },
+
+            annotations: {
+                value: Object.freeze({
+                    updateAnnotations,
+                    getAnnotations,
                 }),
                 writable: false,
             },

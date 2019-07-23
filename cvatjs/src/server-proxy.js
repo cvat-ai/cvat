@@ -45,6 +45,7 @@
 
             async function share(directory) {
                 const { backendAPI } = window.cvat.config;
+                directory = encodeURIComponent(directory);
 
                 let response = null;
                 try {
@@ -421,7 +422,7 @@
                 return response.data;
             }
 
-            async function getFrame(tid, frame) {
+            async function getData(tid, frame) {
                 const { backendAPI } = window.cvat.config;
 
                 let response = null;
@@ -460,37 +461,19 @@
                 return response.data;
             }
 
-            async function getTaskAnnotations(tid) {
+            // Session is 'task' or 'job'
+            async function getAnnotations(session, id) {
                 const { backendAPI } = window.cvat.config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/annotations`, {
+                    response = await Axios.get(`${backendAPI}/${session}s/${id}/annotations`, {
                         proxy: window.cvat.config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new window.cvat.exceptions.ServerError(
-                        `Could not get annotations for the task ${tid} from the server`,
-                        code,
-                    );
-                }
-
-                return response.data;
-            }
-
-            async function getJobAnnotations(jid) {
-                const { backendAPI } = window.cvat.config;
-
-                let response = null;
-                try {
-                    response = await Axios.get(`${backendAPI}/jobs/${jid}/annotations`, {
-                        proxy: window.cvat.config.proxy,
-                    });
-                } catch (errorData) {
-                    const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
-                        `Could not get annotations for the job ${jid} from the server`,
+                        `Could not get annotations for the ${session} ${id} from the server`,
                         code,
                     );
                 }
@@ -528,6 +511,75 @@
                 }
 
                 return response.data;
+            }
+
+            // Session is 'task' or 'job'
+            async function uploadAnnotations(session, id, file, format) {
+                const { backendAPI } = window.cvat.config;
+
+                let annotationData = new FormData();
+                annotationData.append('annotation_file', file);
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios
+                                .post(`${backendAPI}/${session}s/${id}/annotations?upload_format=${format}`, annotationData, {
+                                    proxy: window.cvat.config.proxy,
+                                });
+                            if (response.status === 202) {
+                                annotationData = new FormData();
+                                setTimeout(request, 3000);
+                            } else {
+                                resolve();
+                            }
+                        } catch (errorData) {
+                            const code = errorData.response
+                                ? errorData.response.status : errorData.code;
+                            const error = new window.cvat.exceptions.ServerError(
+                                `Could not upload annotations for the ${session} ${id}`,
+                                code,
+                            );
+                            reject(error);
+                        }
+                    }
+
+                    setTimeout(request);
+                });
+            }
+
+            // Session is 'task' or 'job'
+            async function dumpAnnotations(id, name, format) {
+                const { backendAPI } = window.cvat.config;
+                const filename = name.replace(/\//g, '_');
+                let url = `${backendAPI}/tasks/${id}/annotations/${filename}?dump_format=${format}`;
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios
+                                .get(`${url}`, {
+                                    proxy: window.cvat.config.proxy,
+                                });
+                            if (response.status === 202) {
+                                setTimeout(request, 3000);
+                            } else {
+                                url = `${url}&action=download`;
+                                resolve(url);
+                            }
+                        } catch (errorData) {
+                            const code = errorData.response
+                                ? errorData.response.status : errorData.code;
+                            const error = new window.cvat.exceptions.ServerError(
+                                `Could not dump annotations for the task ${id} from the server`,
+                                code,
+                            );
+                            reject(error);
+                        }
+                    }
+
+                    setTimeout(request);
+                });
             }
 
             // Set csrftoken header from browser cookies if it exists
@@ -578,7 +630,7 @@
 
                 frames: {
                     value: Object.freeze({
-                        getFrame,
+                        getData,
                         getMeta,
                     }),
                     writable: false,
@@ -586,9 +638,10 @@
 
                 annotations: {
                     value: Object.freeze({
-                        getTaskAnnotations,
-                        getJobAnnotations,
                         updateAnnotations,
+                        getAnnotations,
+                        dumpAnnotations,
+                        uploadAnnotations,
                     }),
                     writable: false,
                 },

@@ -220,3 +220,6 @@ application/x-tarz tar.z
 application/x-tzo tar.lzo
 application/x-xz-compressed-tar txz
 application/zip zip
+
+# PDF
+application/pdf pdf

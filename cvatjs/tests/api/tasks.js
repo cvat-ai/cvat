@@ -26,7 +26,7 @@ describe('Feature: get a list of tasks', () => {
     test('get all tasks', async () => {
         const result = await window.cvat.tasks.get();
         expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(3);
+        expect(result).toHaveLength(5);
         for (const el of result) {
             expect(el).toBeInstanceOf(Task);
         }
@@ -51,7 +51,7 @@ describe('Feature: get a list of tasks', () => {
     });
 
     test('get a task by an invalid id', async () => {
-        await expect(window.cvat.tasks.get({
+        expect(window.cvat.tasks.get({
             id: '50',
         })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
@@ -61,7 +61,7 @@ describe('Feature: get a list of tasks', () => {
             mode: 'interpolation',
         });
         expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(2);
+        expect(result).toHaveLength(3);
         for (const el of result) {
             expect(el).toBeInstanceOf(Task);
             expect(el.mode).toBe('interpolation');
@@ -69,7 +69,7 @@ describe('Feature: get a list of tasks', () => {
     });
 
     test('get tasks by invalid filters', async () => {
-        await expect(window.cvat.tasks.get({
+        expect(window.cvat.tasks.get({
             unknown: '5',
         })).rejects.toThrow(window.cvat.exceptions.ArgumentError);
     });
@@ -184,77 +184,3 @@ describe('Feature: delete a task', () => {
         expect(result).toHaveLength(0);
     });
 });
-
-
-/*
-const plugin = {
-    name: 'Example Plugin',
-    description: 'This example plugin demonstrates how plugin system in CVAT works',
-    cvat: {
-        server: {
-            about: {
-                async leave(self, result) {
-                    result.plugins = await self.internal.getPlugins();
-                    return result;
-                },
-            },
-        },
-        classes: {
-            Job: {
-                prototype: {
-                    annotations: {
-                        put: {
-                            enter(self, objects) {
-                                for (const obj of objects) {
-                                    if (obj.type !== 'tag') {
-                                        const points = obj.position.map((point) => {
-                                            const roundPoint = {
-                                                x: Math.round(point.x),
-                                                y: Math.round(point.y),
-                                            };
-                                            return roundPoint;
-                                        });
-                                        obj.points = points;
-                                    }
-                                }
-                            },
-                        },
-                    },
-                },
-            },
-        },
-    },
-    internal: {
-        async getPlugins() {
-            const plugins = await window.cvat.plugins.list();
-            return plugins.map((el) => {
-                const obj = {
-                    name: el.name,
-                    description: el.description,
-                };
-                return obj;
-            });
-        },
-    },
-};
-
-
-async function test() {
-    await window.cvat.plugins.register(plugin);
-    await window.cvat.server.login('admin', 'nimda760');
-
-    try {
-        console.log(JSON.stringify(await window.cvat.server.about()));
-        console.log(await window.cvat.users.get({ self: false }));
-        console.log(await window.cvat.users.get({ self: true }));
-        console.log(JSON.stringify(await window.cvat.jobs.get({ taskID: 8 })));
-        console.log(JSON.stringify(await window.cvat.jobs.get({ jobID: 10 })));
-        console.log(await window.cvat.tasks.get());
-        console.log(await window.cvat.tasks.get({ id: 8 }));
-        console.log('Done.');
-    } catch (exception) {
-        console.log(exception.constructor.name);
-        console.log(exception.message);
-    }
-}
-*/

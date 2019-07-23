@@ -9,52 +9,108 @@
 
 (() => {
     const ObjectState = require('./object-state');
+    const { checkObjectType } = require('./common');
 
+    // Called with the Annotation context
     function objectStateFactory(frame, data) {
         const objectState = new ObjectState(data);
 
-        // Rewrite default implementations of save/delete
-        objectState.updateInCollection = this.save.bind(this, frame, objectState);
-        objectState.deleteFromCollection = this.delete.bind(this);
+        objectState.hidden = {
+            save: this.save.bind(this, frame, objectState),
+            delete: this.delete.bind(this),
+            up: this.up.bind(this, frame, objectState),
+            down: this.down.bind(this, frame, objectState),
+        };
 
         return objectState;
     }
 
-    function checkObjectType(name, value, type, instance) {
-        if (type) {
-            if (typeof (value) !== type) {
-                // specific case for integers which aren't native type in JS
-                if (type === 'integer' && Number.isInteger(value)) {
-                    return;
-                }
-
-                if (value !== undefined) {
-                    throw new window.cvat.exceptions.ArgumentError(
-                        `Got ${typeof (value)} value for ${name}. `
-                        + `Expected ${type}`,
-                    );
-                }
-
-                throw new window.cvat.exceptions.ArgumentError(
-                    `Got undefined value for ${name}. `
-                    + `Expected ${type}`,
+    function checkNumberOfPoints(shapeType, points) {
+        if (shapeType === window.cvat.enums.ObjectShape.RECTANGLE) {
+            if (points.length / 2 !== 2) {
+                throw new window.cvat.exceptions.DataError(
+                    `Rectangle must have 2 points, but got ${points.length / 2}`,
                 );
             }
-        } else if (instance) {
-            if (!(value instanceof instance)) {
-                if (value !== undefined) {
-                    throw new window.cvat.exceptions.ArgumentError(
-                        `Got ${value.constructor.name} value for ${name}. `
-                        + `Expected instance of ${instance.name}`,
-                    );
-                }
-
-                throw new window.cvat.exceptions.ArgumentError(
-                    `Got undefined value for ${name}. `
-                    + `Expected instance of ${instance.name}`,
+        } else if (shapeType === window.cvat.enums.ObjectShape.POLYGON) {
+            if (points.length / 2 < 3) {
+                throw new window.cvat.exceptions.DataError(
+                    `Polygon must have at least 3 points, but got ${points.length / 2}`,
                 );
             }
+        } else if (shapeType === window.cvat.enums.ObjectShape.POLYLINE) {
+            if (points.length / 2 < 2) {
+                throw new window.cvat.exceptions.DataError(
+                    `Polyline must have at least 2 points, but got ${points.length / 2}`,
+                );
+            }
+        } else if (shapeType === window.cvat.enums.ObjectShape.POINTS) {
+            if (points.length / 2 < 1) {
+                throw new window.cvat.exceptions.DataError(
+                    `Points must have at least 1 points, but got ${points.length / 2}`,
+                );
+            }
+        } else {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Unknown value of shapeType has been recieved ${shapeType}`,
+            );
         }
+    }
+
+    function checkShapeArea(shapeType, points) {
+        const MIN_SHAPE_LENGTH = 3;
+        const MIN_SHAPE_AREA = 9;
+
+        if (shapeType === window.cvat.enums.ObjectShape.POINTS) {
+            return true;
+        }
+
+        let xmin = Number.MAX_SAFE_INTEGER;
+        let xmax = Number.MIN_SAFE_INTEGER;
+        let ymin = Number.MAX_SAFE_INTEGER;
+        let ymax = Number.MIN_SAFE_INTEGER;
+
+        for (let i = 0; i < points.length - 1; i += 2) {
+            xmin = Math.min(xmin, points[i]);
+            xmax = Math.max(xmax, points[i]);
+            ymin = Math.min(ymin, points[i + 1]);
+            ymax = Math.max(ymax, points[i + 1]);
+        }
+
+        if (shapeType === window.cvat.enums.ObjectShape.POLYLINE) {
+            const length = Math.max(
+                xmax - xmin,
+                ymax - ymin,
+            );
+
+            return length >= MIN_SHAPE_LENGTH;
+        }
+
+        const area = (xmax - xmin) * (ymax - ymin);
+        return area >= MIN_SHAPE_AREA;
+    }
+
+    function validateAttributeValue(value, attr) {
+        const { values } = attr;
+        const type = attr.inputType;
+
+        if (typeof (value) !== 'string') {
+            throw new window.cvat.exceptions.ArgumentError(
+                `Attribute value is expected to be string, but got ${typeof (value)}`,
+            );
+        }
+
+        if (type === window.cvat.enums.AttributeType.NUMBER) {
+            return +value >= +values[0]
+                && +value <= +values[1]
+                && !((+value - +values[0]) % +values[2]);
+        }
+
+        if (type === window.cvat.enums.AttributeType.CHECKBOX) {
+            return ['true', 'false'].includes(value.toLowerCase());
+        }
+
+        return values.includes(value);
     }
 
     class Annotation {
@@ -72,6 +128,8 @@
                 return attributeAccumulator;
             }, {});
             this.appendDefaultAttributes(this.label);
+
+            injection.groups.max = Math.max(injection.groups.max, this.group);
         }
 
         appendDefaultAttributes(label) {
@@ -92,19 +150,75 @@
         }
     }
 
-    class Shape extends Annotation {
+    class Drawn extends Annotation {
         constructor(data, clientID, color, injection) {
             super(data, clientID, injection);
+
+            this.frameMeta = injection.frameMeta;
+            this.collectionZ = injection.collectionZ;
+
+            this.color = color;
+            this.shapeType = null;
+        }
+
+        _getZ(frame) {
+            this.collectionZ[frame] = this.collectionZ[frame] || {
+                max: 0,
+                min: 0,
+            };
+
+            return this.collectionZ[frame];
+        }
+
+        save() {
+            throw new window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        get() {
+            throw new window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        toJSON() {
+            throw new window.cvat.exceptions.ScriptingError(
+                'Is not implemented',
+            );
+        }
+
+        // Increase ZOrder within frame
+        up(frame, objectState) {
+            const z = this._getZ(frame);
+            z.max++;
+            objectState.zOrder = z.max;
+        }
+
+        // Decrease ZOrder within frame
+        down(frame, objectState) {
+            const z = this._getZ(frame);
+            z.min--;
+            objectState.zOrder = z.min;
+        }
+    }
+
+    class Shape extends Drawn {
+        constructor(data, clientID, color, injection) {
+            super(data, clientID, color, injection);
             this.points = data.points;
             this.occluded = data.occluded;
             this.zOrder = data.z_order;
-            this.color = color;
-            this.shape = null;
+
+            const z = this._getZ(this.frame);
+            z.max = Math.max(z.max, this.zOrder || 0);
+            z.min = Math.min(z.min, this.zOrder || 0);
         }
 
         // Method is used to export data to the server
         toJSON() {
             return {
+                type: this.shapeType,
                 clientID: this.clientID,
                 occluded: this.occluded,
                 z_order: this.zOrder,
@@ -133,9 +247,10 @@
             }
 
             return {
-                type: window.cvat.enums.ObjectType.SHAPE,
-                shape: this.shape,
+                objectType: window.cvat.enums.ObjectType.SHAPE,
+                shapeType: this.shapeType,
                 clientID: this.clientID,
+                serverID: this.serverID,
                 occluded: this.occluded,
                 lock: this.lock,
                 zOrder: this.zOrder,
@@ -170,22 +285,47 @@
             }
 
             if (updated.attributes) {
-                const labelAttributes = copy.label
-                    .attributes.map(attr => `${attr.id}`);
+                const labelAttributes = copy.label.attributes
+                    .reduce((accumulator, value) => {
+                        accumulator[value.id] = value;
+                        return accumulator;
+                    }, {});
 
                 for (const attrID of Object.keys(data.attributes)) {
-                    if (labelAttributes.includes(attrID)) {
-                        copy.attributes[attrID] = data.attributes[attrID];
+                    const value = data.attributes[attrID];
+                    if (attrID in labelAttributes
+                        && validateAttributeValue(value, labelAttributes[attrID])) {
+                        copy.attributes[attrID] = value;
+                    } else {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Trying to save unknown attribute with id ${attrID} and value ${value}`,
+                        );
                     }
                 }
             }
 
             if (updated.points) {
                 checkObjectType('points', data.points, null, Array);
-                copy.points = [];
-                for (const coordinate of data.points) {
-                    checkObjectType('coordinate', coordinate, 'number', null);
-                    copy.points.push(coordinate);
+                checkNumberOfPoints(this.shapeType, data.points);
+
+                // cut points
+                const { width, height } = this.frameMeta[frame];
+                const cutPoints = [];
+                for (let i = 0; i < data.points.length - 1; i += 2) {
+                    const x = data.points[i];
+                    const y = data.points[i + 1];
+
+                    checkObjectType('coordinate', x, 'number', null);
+                    checkObjectType('coordinate', y, 'number', null);
+
+                    cutPoints.push(
+                        Math.clamp(x, 0, width),
+                        Math.clamp(y, 0, height),
+                    );
+                }
+
+                if (checkShapeArea(this.shapeType, cutPoints)) {
+                    copy.points = cutPoints;
                 }
             }
 
@@ -232,16 +372,15 @@
         }
     }
 
-    class Track extends Annotation {
+    class Track extends Drawn {
         constructor(data, clientID, color, injection) {
-            super(data, clientID, injection);
+            super(data, clientID, color, injection);
             this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
                 shapeAccumulator[value.frame] = {
                     serverID: value.id,
                     occluded: value.occluded,
                     zOrder: value.z_order,
                     points: value.points,
-                    frame: value.frame,
                     outside: value.outside,
                     attributes: value.attributes.reduce((attributeAccumulator, attr) => {
                         attributeAccumulator[attr.spec_id] = attr.value;
@@ -249,21 +388,23 @@
                     }, {}),
                 };
 
+                const z = this._getZ(value.frame);
+                z.max = Math.max(z.max, value.z_order);
+                z.min = Math.min(z.min, value.z_order);
+
                 return shapeAccumulator;
             }, {});
 
-            this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
-                attributeAccumulator[attr.spec_id] = attr.value;
-                return attributeAccumulator;
-            }, {});
-
             this.cache = {};
-            this.color = color;
-            this.shape = null;
         }
 
         // Method is used to export data to the server
         toJSON() {
+            const labelAttributes = this.label.attributes.reduce((accumulator, attribute) => {
+                accumulator[attribute.id] = attribute;
+                return accumulator;
+            }, {});
+
             return {
                 clientID: this.clientID,
                 id: this.serverID,
@@ -271,26 +412,30 @@
                 label_id: this.label.id,
                 group: this.group,
                 attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
-                    attributeAccumulator.push({
-                        spec_id: attrId,
-                        value: this.attributes[attrId],
-                    });
+                    if (!labelAttributes[attrId].mutable) {
+                        attributeAccumulator.push({
+                            spec_id: attrId,
+                            value: this.attributes[attrId],
+                        });
+                    }
 
                     return attributeAccumulator;
                 }, []),
                 shapes: Object.keys(this.shapes).reduce((shapesAccumulator, frame) => {
                     shapesAccumulator.push({
-                        type: this.shape,
+                        type: this.shapeType,
                         occluded: this.shapes[frame].occluded,
                         z_order: this.shapes[frame].zOrder,
                         points: [...this.shapes[frame].points],
                         outside: this.shapes[frame].outside,
                         attributes: Object.keys(this.shapes[frame].attributes)
                             .reduce((attributeAccumulator, attrId) => {
-                                attributeAccumulator.push({
-                                    spec_id: attrId,
-                                    value: this.shapes[frame].attributes[attrId],
-                                });
+                                if (labelAttributes[attrId].mutable) {
+                                    attributeAccumulator.push({
+                                        spec_id: attrId,
+                                        value: this.shapes[frame].attributes[attrId],
+                                    });
+                                }
 
                                 return attributeAccumulator;
                             }, []),
@@ -310,11 +455,11 @@
                     {}, this.getPosition(frame),
                     {
                         attributes: this.getAttributes(frame),
-                        label: this.label,
                         group: this.group,
-                        type: window.cvat.enums.ObjectType.TRACK,
-                        shape: this.shape,
+                        objectType: window.cvat.enums.ObjectType.TRACK,
+                        shapeType: this.shapeType,
                         clientID: this.clientID,
+                        serverID: this.serverID,
                         lock: this.lock,
                         color: this.color,
                     },
@@ -323,7 +468,9 @@
                 this.cache[frame] = interpolation;
             }
 
-            return JSON.parse(JSON.stringify(this.cache[frame]));
+            const result = JSON.parse(JSON.stringify(this.cache[frame]));
+            result.label = this.label;
+            return result;
         }
 
         neighborsFrames(targetFrame) {
@@ -377,8 +524,7 @@
         }
 
         save(frame, data) {
-            if (this.lock || data.lock) {
-                this.lock = data.lock;
+            if (this.lock && data.lock) {
                 return objectStateFactory.call(this, frame, this.get(frame));
             }
 
@@ -399,34 +545,50 @@
                 this.appendDefaultAttributes.call(copy, copy.label);
             }
 
-            if (updated.attributes) {
-                const labelAttributes = copy.label.attributes
-                    .reduce((accumulator, value) => {
-                        accumulator[value.id] = value;
-                        return accumulator;
-                    }, {});
+            const labelAttributes = copy.label.attributes
+                .reduce((accumulator, value) => {
+                    accumulator[value.id] = value;
+                    return accumulator;
+                }, {});
 
+            if (updated.attributes) {
                 for (const attrID of Object.keys(data.attributes)) {
-                    if (attrID in labelAttributes) {
-                        copy.attributes[attrID] = data.attributes[attrID];
-                        if (!labelAttributes[attrID].mutable) {
-                            this.attributes[attrID] = data.attributes[attrID];
-                        } else {
-                            // Mutable attributes will be updated later
-                            positionUpdated = true;
-                        }
+                    const value = data.attributes[attrID];
+                    if (attrID in labelAttributes
+                        && validateAttributeValue(value, labelAttributes[attrID])) {
+                        copy.attributes[attrID] = value;
+                    } else {
+                        throw new window.cvat.exceptions.ArgumentError(
+                            `Trying to save unknown attribute with id ${attrID} and value ${value}`,
+                        );
                     }
                 }
             }
 
             if (updated.points) {
                 checkObjectType('points', data.points, null, Array);
-                copy.points = [];
-                for (const coordinate of data.points) {
-                    checkObjectType('coordinate', coordinate, 'number', null);
-                    copy.points.push(coordinate);
+                checkNumberOfPoints(this.shapeType, data.points);
+
+                // cut points
+                const { width, height } = this.frameMeta[frame];
+                const cutPoints = [];
+                for (let i = 0; i < data.points.length - 1; i += 2) {
+                    const x = data.points[i];
+                    const y = data.points[i + 1];
+
+                    checkObjectType('coordinate', x, 'number', null);
+                    checkObjectType('coordinate', y, 'number', null);
+
+                    cutPoints.push(
+                        Math.clamp(x, 0, width),
+                        Math.clamp(y, 0, height),
+                    );
                 }
-                positionUpdated = true;
+
+                if (checkShapeArea(this.shapeType, cutPoints)) {
+                    copy.points = cutPoints;
+                    positionUpdated = true;
+                }
             }
 
             if (updated.occluded) {
@@ -468,6 +630,11 @@
                 copy.color = data.color;
             }
 
+            if (updated.keyframe) {
+                // Just check here
+                checkObjectType('keyframe', data.keyframe, 'boolean', null);
+            }
+
             // Commit all changes
             for (const prop of Object.keys(copy)) {
                 if (prop in this) {
@@ -477,8 +644,18 @@
                 this.cache[frame][prop] = copy[prop];
             }
 
+            if (updated.attributes) {
+                // Mutable attributes will be updated below
+                for (const attrID of Object.keys(copy.attributes)) {
+                    if (!labelAttributes[attrID].mutable) {
+                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                        this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+                    }
+                }
+            }
+
             if (updated.label) {
-                for (const shape of this.shapes) {
+                for (const shape of Object.values(this.shapes)) {
                     shape.attributes = {};
                 }
             }
@@ -488,7 +665,7 @@
                 // Remove all cache after this keyframe because it have just become outdated
                 for (const cacheFrame in this.cache) {
                     if (+cacheFrame > frame) {
-                        delete this.cache[frame];
+                        delete this.cache[cacheFrame];
                     }
                 }
 
@@ -504,7 +681,7 @@
                 // Remove all cache after this keyframe because it have just become outdated
                 for (const cacheFrame in this.cache) {
                     if (+cacheFrame > frame) {
-                        delete this.cache[frame];
+                        delete this.cache[cacheFrame];
                     }
                 }
 
@@ -521,15 +698,9 @@
                 };
 
                 if (updated.attributes) {
-                    const labelAttributes = this.label.attributes
-                        .reduce((accumulator, value) => {
-                            accumulator[value.id] = value;
-                            return accumulator;
-                        }, {});
-
                     // Unmutable attributes were updated above
-                    for (const attrID of Object.keys(data.attributes)) {
-                        if (attrID in labelAttributes && labelAttributes[attrID].mutable) {
+                    for (const attrID of Object.keys(copy.attributes)) {
+                        if (labelAttributes[attrID].mutable) {
                             this.shapes[frame].attributes[attrID] = data.attributes[attrID];
                             this.shapes[frame].attributes[attrID] = data.attributes[attrID];
                         }
@@ -595,6 +766,19 @@
                 `No one neightbour frame found for the track with client ID: "${this.id}"`,
             );
         }
+
+        delete(force) {
+            if (!this.lock || force) {
+                this.removed = true;
+                this.resetCache();
+            }
+
+            return true;
+        }
+
+        resetCache() {
+            this.cache = {};
+        }
     }
 
     class Tag extends Annotation {
@@ -630,8 +814,9 @@
             }
 
             return {
-                type: window.cvat.enums.ObjectType.TAG,
+                objectType: window.cvat.enums.ObjectType.TAG,
                 clientID: this.clientID,
+                serverID: this.serverID,
                 lock: this.lock,
                 attributes: Object.assign({}, this.attributes),
                 label: this.label,
@@ -697,7 +882,20 @@
     class RectangleShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.RECTANGLE;
+            this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static distance(points, x, y) {
+            const [xtl, ytl, xbr, ybr] = points;
+
+            if (!(x >= xtl && x <= xbr && y >= ytl && y <= ybr)) {
+                // Cursor is outside of a box
+                return null;
+            }
+
+            // The shortest distance from point to an edge
+            return Math.min.apply(null, [x - xtl, y - ytl, xbr - x, ybr - y]);
         }
     }
 
@@ -710,28 +908,151 @@
     class PolygonShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYGON;
+            this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static distance(points, x, y) {
+            function position(x1, y1, x2, y2) {
+                return ((x2 - x1) * (y - y1) - (x - x1) * (y2 - y1));
+            }
+
+            let wn = 0;
+            const distances = [];
+
+            for (let i = 0, j = points.length - 2; i < points.length - 1; j = i, i += 2) {
+                // Current point
+                const x1 = points[j];
+                const y1 = points[j + 1];
+
+                // Next point
+                const x2 = points[i];
+                const y2 = points[i + 1];
+
+                // Check if a point is inside a polygon
+                // with a winding numbers algorithm
+                // https://en.wikipedia.org/wiki/Point_in_polygon#Winding_number_algorithm
+                if (y1 <= y) {
+                    if (y2 > y) {
+                        if (position(x1, y1, x2, y2) > 0) {
+                            wn++;
+                        }
+                    }
+                } else if (y2 <= y) {
+                    if (position(x1, y1, x2, y2) < 0) {
+                        wn--;
+                    }
+                }
+
+                // Find the shortest distance from point to an edge
+                // Get an equation of a line in general
+                const aCoef = (y1 - y2);
+                const bCoef = (x2 - x1);
+
+                // Vector (aCoef, bCoef) is a perpendicular to line
+                // Now find the point where two lines
+                // (edge and its perpendicular through the point (x,y)) are cross
+                const xCross = x - aCoef;
+                const yCross = y - bCoef;
+
+                if (((xCross - x1) * (x2 - xCross)) >= 0
+                    && ((yCross - y1) * (y2 - yCross)) >= 0) {
+                    // Cross point is on segment between p1(x1,y1) and p2(x2,y2)
+                    distances.push(Math.sqrt(
+                        Math.pow(x - xCross, 2)
+                        + Math.pow(y - yCross, 2),
+                    ));
+                } else {
+                    distances.push(
+                        Math.min(
+                            Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
+                            Math.sqrt(Math.pow(x2 - x, 2) + Math.pow(y2 - y, 2)),
+                        ),
+                    );
+                }
+            }
+
+            if (wn !== 0) {
+                return Math.min.apply(null, distances);
+            }
+
+            return null;
         }
     }
 
     class PolylineShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYLINE;
+            this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static distance(points, x, y) {
+            const distances = [];
+            for (let i = 0; i < points.length - 2; i += 2) {
+                // Current point
+                const x1 = points[i];
+                const y1 = points[i + 1];
+
+                // Next point
+                const x2 = points[i + 2];
+                const y2 = points[i + 3];
+
+                // Find the shortest distance from point to an edge
+                if (((x - x1) * (x2 - x)) >= 0 && ((y - y1) * (y2 - y)) >= 0) {
+                    // Find the length of a perpendicular
+                    // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+                    distances.push(
+                        Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / Math
+                            .sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)),
+                    );
+                } else {
+                    // The link below works for lines (which have infinit length)
+                    // There is a case when perpendicular doesn't cross the edge
+                    // In this case we don't use the computed distance
+                    // Instead we use just distance to the nearest point
+                    distances.push(
+                        Math.min(
+                            Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
+                            Math.sqrt(Math.pow(x2 - x, 2) + Math.pow(y2 - y, 2)),
+                        ),
+                    );
+                }
+            }
+
+            return Math.min.apply(null, distances);
         }
     }
 
     class PointsShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POINTS;
+            this.shapeType = window.cvat.enums.ObjectShape.POINTS;
+            checkNumberOfPoints(this.shapeType, this.points);
+        }
+
+        static distance(points, x, y) {
+            const distances = [];
+            for (let i = 0; i < points.length; i += 2) {
+                const x1 = points[i];
+                const y1 = points[i + 1];
+
+                distances.push(
+                    Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)),
+                );
+            }
+
+            return Math.min.apply(null, distances);
         }
     }
 
     class RectangleTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.RECTANGLE;
+            this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
 
         interpolatePosition(leftPosition, rightPosition, targetFrame) {
@@ -1053,7 +1374,7 @@
 
                 if (!targetMatched.length) {
                     // Prevent infinity loop
-                    throw window.cvat.exceptions.ScriptingError('Interpolation mapping is empty');
+                    throw new window.cvat.exceptions.ScriptingError('Interpolation mapping is empty');
                 }
 
                 while (!targetMatched.includes(prev)) {
@@ -1142,27 +1463,37 @@
     class PolygonTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYGON;
+            this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
     }
 
     class PolylineTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POLYLINE;
-        }
-
-        appendMapping() {
-            // TODO after checking how it works with polygons
+            this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
     }
 
     class PointsTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shape = window.cvat.enums.ObjectShape.POINTS;
+            this.shapeType = window.cvat.enums.ObjectShape.POINTS;
+            for (const shape of Object.values(this.shapes)) {
+                checkNumberOfPoints(this.shapeType, shape.points);
+            }
         }
     }
+
+    RectangleTrack.distance = RectangleShape.distance;
+    PolygonTrack.distance = PolygonShape.distance;
+    PolylineTrack.distance = PolylineShape.distance;
+    PointsTrack.distance = PointsShape.distance;
 
     module.exports = {
         RectangleShape,
@@ -1173,6 +1504,8 @@
         PolygonTrack,
         PolylineTrack,
         PointsTrack,
+        Track,
+        Shape,
         Tag,
         objectStateFactory,
     };

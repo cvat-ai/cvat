@@ -10,11 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Installation guide
 - Linear interpolation for a single point
 - Video frame filter
+- Running functional tests for REST API during a build
 - Admins are no longer limited to a subset of python commands in the auto annotation application
 - Remote data source (list of URLs to create an annotation task)
 - Auto annotation using Faster R-CNN with Inception v2 (utils/open_model_zoo)
 - Auto annotation using Pixel Link mobilenet v2 - text detection (utils/open_model_zoo)
 - Ability to create a custom extractors for unsupported media types
+- Added in PDF extractor
+- Added in a command line model manager tester
 
 ### Changed
 - Outside and keyframe buttons in the side panel for all interpolation shapes (they were only for boxes before)
@@ -33,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto annotation fail for multijob tasks
 - Installation of CVAT with OpenVINO on the Windows platform
 - Background color was always black in utils/mask/converter.py
+- Exception in attribute annotation mode when a label are switched to a value without any attributes
+- Handling of wrong labelamp json file in auto annotation (https://github.com/opencv/cvat/issues/554)
 
 ### Security
 -

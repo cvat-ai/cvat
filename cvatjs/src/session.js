@@ -12,138 +12,167 @@
     const serverProxy = require('./server-proxy');
     const { getFrame } = require('./frames');
     const {
-        getJobAnnotations,
-        getTaskAnnotations,
-        saveJobAnnotations,
-        saveTaskAnnotations,
+        getAnnotations,
+        putAnnotations,
+        saveAnnotations,
+        hasUnsavedChanges,
+        mergeAnnotations,
+        splitAnnotations,
+        groupAnnotations,
+        clearAnnotations,
+        selectObject,
+        annotationsStatistics,
+        uploadAnnotations,
+        dumpAnnotations,
     } = require('./annotations');
 
-    function buildDublicatedAPI() {
-        const annotations = Object.freeze({
-            value: {
-                async upload(file) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.upload, file);
-                    return result;
-                },
+    function buildDublicatedAPI(prototype) {
+        Object.defineProperties(prototype, {
+            annotations: Object.freeze({
+                value: {
+                    async upload(file, format) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.upload, file, format);
+                        return result;
+                    },
 
-                async save() {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.save);
-                    return result;
-                },
+                    async save() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.save);
+                        return result;
+                    },
 
-                async clear() {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.clear);
-                    return result;
-                },
+                    async clear(reload = false) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.clear, reload);
+                        return result;
+                    },
 
-                async dump() {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.dump);
-                    return result;
-                },
+                    async dump(name, format) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.dump, name, format);
+                        return result;
+                    },
 
-                async statistics() {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.statistics);
-                    return result;
-                },
+                    async statistics() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.statistics);
+                        return result;
+                    },
 
-                async put(arrayOfObjects = []) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.put, arrayOfObjects);
-                    return result;
-                },
+                    async put(arrayOfObjects = []) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.put, arrayOfObjects);
+                        return result;
+                    },
 
-                async get(frame, filter = {}) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.get, frame, filter);
-                    return result;
-                },
+                    async get(frame, filter = {}) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.get, frame, filter);
+                        return result;
+                    },
 
-                async search(filter, frameFrom, frameTo) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.search,
-                            filter, frameFrom, frameTo);
-                    return result;
-                },
+                    async search(filter, frameFrom, frameTo) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.search,
+                                filter, frameFrom, frameTo);
+                        return result;
+                    },
 
-                async select(frame, x, y) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, annotations.value.select, frame, x, y);
-                    return result;
-                },
-            },
-        });
+                    async select(objectStates, x, y) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this,
+                                prototype.annotations.select, objectStates, x, y);
+                        return result;
+                    },
 
-        const frames = Object.freeze({
-            value: {
-                async get(frame) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, frames.value.get, frame);
-                    return result;
-                },
-            },
-        });
+                    async hasUnsavedChanges() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.hasUnsavedChanges);
+                        return result;
+                    },
 
-        const logs = Object.freeze({
-            value: {
-                async put(logType, details) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, logs.value.put, logType, details);
-                    return result;
-                },
-                async save(onUpdate) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, logs.value.save, onUpdate);
-                    return result;
-                },
-            },
-        });
+                    async merge(objectStates) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.merge, objectStates);
+                        return result;
+                    },
 
-        const actions = Object.freeze({
-            value: {
-                async undo(count) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, actions.value.undo, count);
-                    return result;
-                },
-                async redo(count) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, actions.value.redo, count);
-                    return result;
-                },
-                async clear() {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, actions.value.clear);
-                    return result;
-                },
-            },
-        });
+                    async split(objectState, frame) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.split, objectState, frame);
+                        return result;
+                    },
 
-        const events = Object.freeze({
-            value: {
-                async subscribe(eventType, callback) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, events.value.subscribe, eventType, callback);
-                    return result;
+                    async group(objectStates, reset = false) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.group,
+                                objectStates, reset);
+                        return result;
+                    },
                 },
-                async unsubscribe(eventType, callback = null) {
-                    const result = await PluginRegistry
-                        .apiWrapper.call(this, events.value.unsubscribe, eventType, callback);
-                    return result;
+                writable: true,
+            }),
+            frames: Object.freeze({
+                value: {
+                    async get(frame) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.frames.get, frame);
+                        return result;
+                    },
                 },
-            },
-        });
-
-        return Object.freeze({
-            annotations,
-            frames,
-            logs,
-            actions,
-            events,
+                writable: true,
+            }),
+            logs: Object.freeze({
+                value: {
+                    async put(logType, details) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.logs.put, logType, details);
+                        return result;
+                    },
+                    async save(onUpdate) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.logs.save, onUpdate);
+                        return result;
+                    },
+                },
+                writable: true,
+            }),
+            actions: Object.freeze({
+                value: {
+                    async undo(count) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.actions.undo, count);
+                        return result;
+                    },
+                    async redo(count) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.actions.redo, count);
+                        return result;
+                    },
+                    async clear() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.actions.clear);
+                        return result;
+                    },
+                },
+                writable: true,
+            }),
+            events: Object.freeze({
+                value: {
+                    async subscribe(evType, callback) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.events.subscribe, evType, callback);
+                        return result;
+                    },
+                    async unsubscribe(evType, callback = null) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.events.unsubscribe, evType, callback);
+                        return result;
+                    },
+                },
+                writable: true,
+            }),
         });
     }
 
@@ -161,9 +190,11 @@
             */
             /**
                 * Upload annotations from a dump file
+                * You need upload annotations from a server again after successful executing
                 * @method upload
                 * @memberof Session.annotations
-                * @param {File} [annotations] - text file with annotations
+                * @param {File} annotations - a text file with annotations
+                * @param {string} format - a format of the file
                 * @instance
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -172,6 +203,10 @@
             */
             /**
                 * Save all changes in annotations on a server
+                * Objects which hadn't been saved on a server before,
+                * get a serverID after saving. But received object states aren't updated.
+                * So, after successful saving it's recommended to update them manually
+                * (call the annotations.get() again)
                 * @method save
                 * @memberof Session.annotations
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -183,10 +218,14 @@
                 * Its argument is a text string
             */
             /**
-                * Remove all annotations from a session
+                * Remove all annotations and optionally reinitialize it
                 * @method clear
                 * @memberof Session.annotations
+                * @param {boolean} [reload = false] reset all changes and
+                * reinitialize annotations by data from a server
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @throws {module:API.cvat.exceptions.ServerError}
                 * @instance
                 * @async
             */
@@ -195,6 +234,8 @@
                 * Method always dumps annotations for a whole task.
                 * @method dump
                 * @memberof Session.annotations
+                * @param {string} name - a name of a file with annotations
+                * @param {string} format - a format of the file
                 * @returns {string} URL which can be used in order to get a dump file
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
@@ -202,8 +243,7 @@
                 * @async
             */
             /**
-                * Collect some statistics from a session.
-                * For example number of shapes, tracks, polygons etc
+                * Collect short statistics about a task or a job.
                 * @method statistics
                 * @memberof Session.annotations
                 * @returns {module:API.cvat.classes.Statistics} statistics object
@@ -212,12 +252,14 @@
                 * @async
             */
             /**
-                * Add some annotations to a session
+                * Create new objects from one-frame states
+                * After successful adding you need to update object states on a frame
                 * @method put
                 * @memberof Session.annotations
                 * @param {module:API.cvat.classes.ObjectState[]} data
                 * array of objects on the specific frame
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.DataError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
                 * @async
@@ -261,16 +303,69 @@
                 * @async
             */
             /**
-                * Select shape under a cursor using smart alghorithms
+                * Select shape under a cursor by using minimal distance
+                * between a cursor and a shape edge or a shape point
+                * For closed shapes a cursor is placed inside a shape
                 * @method select
                 * @memberof Session.annotations
-                * @param {integer} frame frame for selecting
+                * @param {module:API.cvat.classes.ObjectState[]} objectStates
+                * objects which can be selected
                 * @param {float} x horizontal coordinate
                 * @param {float} y vertical coordinate
-                * @returns {(integer|null)}
-                * identifier of a selected object or null if no one of objects is on position
+                * @returns {Object}
+                * a pair of {state: ObjectState, distance: number} for selected object.
+                * Pair values can be null if there aren't any sutisfied objects
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
+            */
+            /**
+                * Method unites several shapes and tracks into the one
+                * All shapes must be the same (rectangle, polygon, etc)
+                * All labels must be the same
+                * After successful merge you need to update object states on a frame
+                * @method merge
+                * @memberof Session.annotations
+                * @param {module:API.cvat.classes.ObjectState[]} objectStates
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @instance
+                * @async
+            */
+            /**
+                * Method splits a track into two parts
+                * (start frame: previous frame), (frame, last frame)
+                * After successful split you need to update object states on a frame
+                * @method split
+                * @memberof Session.annotations
+                * @param {module:API.cvat.classes.ObjectState} objectState
+                * @param {integer} frame
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+            /**
+                * Method creates a new group and put all passed objects into it
+                * After successful split you need to update object states on a frame
+                * @method group
+                * @memberof Session.annotations
+                * @param {module:API.cvat.classes.ObjectState[]} objectStates
+                * @param {boolean} reset pass "true" to reset group value (set it to 0)
+                * @returns {integer} an ID of created group
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+            /**
+                * Indicate if there are any changes in
+                * annotations which haven't been saved on a server
+                * @method hasUnsavedChanges
+                * @memberof Session.annotations
+                * @returns {boolean}
+                * @throws {module:API.cvat.exceptions.PluginError}
                 * @instance
                 * @async
             */
@@ -511,9 +606,28 @@
                 },
             }));
 
-            this.frames.get.implementation = this.frames.get.implementation.bind(this);
-            this.annotations.get.implementation = this.annotations.get.implementation.bind(this);
-            this.annotations.save.implementation = this.annotations.save.implementation.bind(this);
+            // When we call a function, for example: task.annotations.get()
+            // In the method get we lose the task context
+            // So, we need return it
+            this.annotations = {
+                get: Object.getPrototypeOf(this).annotations.get.bind(this),
+                put: Object.getPrototypeOf(this).annotations.put.bind(this),
+                save: Object.getPrototypeOf(this).annotations.save.bind(this),
+                dump: Object.getPrototypeOf(this).annotations.dump.bind(this),
+                merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
+                split: Object.getPrototypeOf(this).annotations.split.bind(this),
+                group: Object.getPrototypeOf(this).annotations.group.bind(this),
+                clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
+                upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
+                select: Object.getPrototypeOf(this).annotations.select.bind(this),
+                statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
+                hasUnsavedChanges: Object.getPrototypeOf(this)
+                    .annotations.hasUnsavedChanges.bind(this),
+            };
+
+            this.frames = {
+                get: Object.getPrototypeOf(this).frames.get.bind(this),
+            };
         }
 
         /**
@@ -535,7 +649,7 @@
 
     // Fill up the prototype by properties. Class syntax doesn't allow do it
     // So, we do it seperately
-    Object.defineProperties(Job.prototype, buildDublicatedAPI());
+    buildDublicatedAPI(Job.prototype);
 
     Job.prototype.save.implementation = async function () {
         // TODO: Add ability to change an assignee
@@ -548,7 +662,7 @@
             return this;
         }
 
-        throw window.cvat.exceptions.ArgumentError(
+        throw new window.cvat.exceptions.ArgumentError(
             'Can not save job without and id',
         );
     };
@@ -562,7 +676,7 @@
 
         if (frame < this.startFrame || frame > this.stopFrame) {
             throw new window.cvat.exceptions.ArgumentError(
-                `Frame ${frame} does not exist in the job`,
+                `The frame with number ${frame} is out of the job`,
             );
         }
 
@@ -578,12 +692,63 @@
             );
         }
 
-        const annotationsData = await getJobAnnotations(this, frame, filter);
+        const annotationsData = await getAnnotations(this, frame, filter);
         return annotationsData;
     };
 
     Job.prototype.annotations.save.implementation = async function (onUpdate) {
-        await saveJobAnnotations(this, onUpdate);
+        const result = await saveAnnotations(this, onUpdate);
+        return result;
+    };
+
+    Job.prototype.annotations.merge.implementation = async function (objectStates) {
+        const result = await mergeAnnotations(this, objectStates);
+        return result;
+    };
+
+    Job.prototype.annotations.split.implementation = async function (objectState, frame) {
+        const result = await splitAnnotations(this, objectState, frame);
+        return result;
+    };
+
+    Job.prototype.annotations.group.implementation = async function (objectStates, reset) {
+        const result = await groupAnnotations(this, objectStates, reset);
+        return result;
+    };
+
+    Job.prototype.annotations.hasUnsavedChanges.implementation = function () {
+        const result = hasUnsavedChanges(this);
+        return result;
+    };
+
+    Job.prototype.annotations.clear.implementation = async function (reload) {
+        const result = await clearAnnotations(this, reload);
+        return result;
+    };
+
+    Job.prototype.annotations.select.implementation = function (frame, x, y) {
+        const result = selectObject(this, frame, x, y);
+        return result;
+    };
+
+    Job.prototype.annotations.statistics.implementation = function () {
+        const result = annotationsStatistics(this);
+        return result;
+    };
+
+    Job.prototype.annotations.put.implementation = function (objectStates) {
+        const result = putAnnotations(this, objectStates);
+        return result;
+    };
+
+    Job.prototype.annotations.upload.implementation = async function (file, format) {
+        const result = await uploadAnnotations(this, file, format);
+        return result;
+    };
+
+    Job.prototype.annotations.dump.implementation = async function (name, format) {
+        const result = await dumpAnnotations(this, name, format);
+        return result;
     };
 
     /**
@@ -987,9 +1152,28 @@
                 },
             }));
 
-            this.frames.get.implementation = this.frames.get.implementation.bind(this);
-            this.annotations.get.implementation = this.annotations.get.implementation.bind(this);
-            this.annotations.save.implementation = this.annotations.save.implementation.bind(this);
+            // When we call a function, for example: task.annotations.get()
+            // In the method get we lose the task context
+            // So, we need return it
+            this.annotations = {
+                get: Object.getPrototypeOf(this).annotations.get.bind(this),
+                put: Object.getPrototypeOf(this).annotations.put.bind(this),
+                save: Object.getPrototypeOf(this).annotations.save.bind(this),
+                dump: Object.getPrototypeOf(this).annotations.dump.bind(this),
+                merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
+                split: Object.getPrototypeOf(this).annotations.split.bind(this),
+                group: Object.getPrototypeOf(this).annotations.group.bind(this),
+                clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
+                upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
+                select: Object.getPrototypeOf(this).annotations.select.bind(this),
+                statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
+                hasUnsavedChanges: Object.getPrototypeOf(this)
+                    .annotations.hasUnsavedChanges.bind(this),
+            };
+
+            this.frames = {
+                get: Object.getPrototypeOf(this).frames.get.bind(this),
+            };
         }
 
         /**
@@ -1031,7 +1215,7 @@
 
     // Fill up the prototype by properties. Class syntax doesn't allow do it
     // So, we do it seperately
-    Object.defineProperties(Task.prototype, buildDublicatedAPI());
+    buildDublicatedAPI(Task.prototype);
 
     Task.prototype.save.implementation = async function saveTaskImplementation(onUpdate) {
         // TODO: Add ability to change an owner and an assignee
@@ -1068,7 +1252,7 @@
         const taskFiles = {
             client_files: this.clientFiles,
             server_files: this.serverFiles,
-            remote_files: [], // hasn't been supported yet
+            remote_files: this.remoteFiles,
         };
 
         const task = await serverProxy.tasks.createTask(taskData, taskFiles, onUpdate);
@@ -1076,18 +1260,25 @@
     };
 
     Task.prototype.delete.implementation = async function () {
-        await serverProxy.tasks.deleteTask(this.id);
+        const result = await serverProxy.tasks.deleteTask(this.id);
+        return result;
     };
 
     Task.prototype.frames.get.implementation = async function (frame) {
-        if (frame >= this.size) {
+        if (!Number.isInteger(frame) || frame < 0) {
             throw new window.cvat.exceptions.ArgumentError(
-                `Frame ${frame} does not exist in the task`,
+                `Frame must be a positive integer. Got: "${frame}"`,
             );
         }
 
-        const frameData = await getFrame(this.id, this.mode, frame);
-        return frameData;
+        if (frame >= this.size) {
+            throw new window.cvat.exceptions.ArgumentError(
+                `The frame with number ${frame} is out of the task`,
+            );
+        }
+
+        const result = await getFrame(this.id, this.mode, frame);
+        return result;
     };
 
     // TODO: Check filter for annotations
@@ -1104,12 +1295,63 @@
             );
         }
 
-        const annotationsData = await getTaskAnnotations(this, frame, filter);
-        return annotationsData;
+        const result = await getAnnotations(this, frame, filter);
+        return result;
     };
 
     Task.prototype.annotations.save.implementation = async function (onUpdate) {
-        await saveTaskAnnotations(this, onUpdate);
+        const result = await saveAnnotations(this, onUpdate);
+        return result;
+    };
+
+    Task.prototype.annotations.merge.implementation = async function (objectStates) {
+        const result = await mergeAnnotations(this, objectStates);
+        return result;
+    };
+
+    Task.prototype.annotations.split.implementation = async function (objectState, frame) {
+        const result = await splitAnnotations(this, objectState, frame);
+        return result;
+    };
+
+    Task.prototype.annotations.group.implementation = async function (objectStates, reset) {
+        const result = await groupAnnotations(this, objectStates, reset);
+        return result;
+    };
+
+    Task.prototype.annotations.hasUnsavedChanges.implementation = function () {
+        const result = hasUnsavedChanges(this);
+        return result;
+    };
+
+    Task.prototype.annotations.clear.implementation = async function (reload) {
+        const result = await clearAnnotations(this, reload);
+        return result;
+    };
+
+    Task.prototype.annotations.select.implementation = function (frame, x, y) {
+        const result = selectObject(this, frame, x, y);
+        return result;
+    };
+
+    Task.prototype.annotations.statistics.implementation = function () {
+        const result = annotationsStatistics(this);
+        return result;
+    };
+
+    Task.prototype.annotations.put.implementation = function (objectStates) {
+        const result = putAnnotations(this, objectStates);
+        return result;
+    };
+
+    Task.prototype.annotations.upload.implementation = async function (file, format) {
+        const result = await uploadAnnotations(this, file, format);
+        return result;
+    };
+
+    Task.prototype.annotations.dump.implementation = async function (name, format) {
+        const result = await dumpAnnotations(this, name, format);
+        return result;
     };
 
     module.exports = {

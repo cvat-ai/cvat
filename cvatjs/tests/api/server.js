@@ -44,7 +44,7 @@ describe('Feature: get share storage info', () => {
     });
 
     test('get files in a some unknown dir of a share storage', async () => {
-        await expect(window.cvat.server.share(
+        expect(window.cvat.server.share(
             'Unknown Directory',
         )).rejects.toThrow(window.cvat.exceptions.ServerError);
     });

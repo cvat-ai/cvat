@@ -13,47 +13,13 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
-
-    function isBoolean(value) {
-        return typeof (value) === 'boolean';
-    }
-
-    function isInteger(value) {
-        return typeof (value) === 'number' && Number.isInteger(value);
-    }
-
-    function isEnum(value) {
-        // Called with specific Enum context
-        for (const key in this) {
-            if (Object.prototype.hasOwnProperty.call(this, key)) {
-                if (this[key] === value) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    function isString(value) {
-        return typeof (value) === 'string';
-    }
-
-    function checkFilter(filter, fields) {
-        for (const prop in filter) {
-            if (Object.prototype.hasOwnProperty.call(filter, prop)) {
-                if (!(prop in fields)) {
-                    throw new window.cvat.exceptions.ArgumentError(
-                        `Unsupported filter property has been recieved: "${prop}"`,
-                    );
-                } else if (!fields[prop](filter[prop])) {
-                    throw new window.cvat.exceptions.ArgumentError(
-                        `Received filter property ${prop} is not satisfied for checker`,
-                    );
-                }
-            }
-        }
-    }
+    const {
+        isBoolean,
+        isInteger,
+        isEnum,
+        isString,
+        checkFilter,
+    } = require('./common');
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
@@ -112,17 +78,19 @@
                 );
             }
 
-            let task = null;
+            let tasks = null;
             if ('taskID' in filter) {
-                task = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
+                tasks = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
             } else {
                 const job = await serverProxy.jobs.getJob(filter.jobID);
-                task = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
+                if (typeof (job.task_id) !== 'undefined') {
+                    tasks = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
+                }
             }
 
             // If task was found by its id, then create task instance and get Job instance from it
-            if (task.length) {
-                task = new window.cvat.classes.Task(task[0]);
+            if (tasks !== null && tasks.length) {
+                const task = new window.cvat.classes.Task(tasks[0]);
                 return filter.jobID ? task.jobs.filter(job => job.id === filter.jobID) : task.jobs;
             }
 

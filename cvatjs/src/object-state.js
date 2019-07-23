@@ -18,10 +18,10 @@
         /**
             * @param {Object} serialized - is an dictionary which contains
             * initial information about an ObjectState;
-            * Necessary fields: type, shape
+            * Necessary fields: objectType, shapeType
             * Necessary fields for objects which haven't been added to collection yet: frame
             * Optional fields: points, group, zOrder, outside, occluded,
-            * attributes, lock, label, mode, color, keyframe
+            * attributes, lock, label, mode, color, keyframe, clientID, serverID
             * These fields can be set later via setters
         */
         constructor(serialized) {
@@ -39,9 +39,12 @@
                 lock: null,
                 color: null,
 
+                clientID: serialized.clientID,
+                serverID: serialized.serverID,
+
                 frame: serialized.frame,
-                type: serialized.type,
-                shape: serialized.shape,
+                objectType: serialized.objectType,
+                shapeType: serialized.shapeType,
                 updateFlags: {},
             };
 
@@ -79,25 +82,45 @@
                     */
                     get: () => data.frame,
                 },
-                type: {
+                objectType: {
                     /**
-                        * @name type
+                        * @name objectType
                         * @type {module:API.cvat.enums.ObjectType}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @readonly
                         * @instance
                     */
-                    get: () => data.type,
+                    get: () => data.objectType,
                 },
-                shape: {
+                shapeType: {
                     /**
-                        * @name shape
+                        * @name shapeType
                         * @type {module:API.cvat.enums.ObjectShape}
                         * @memberof module:API.cvat.classes.ObjectState
                         * @readonly
                         * @instance
                     */
-                    get: () => data.shape,
+                    get: () => data.shapeType,
+                },
+                clientID: {
+                    /**
+                        * @name clientID
+                        * @type {integer}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @readonly
+                        * @instance
+                    */
+                    get: () => data.clientID,
+                },
+                serverID: {
+                    /**
+                        * @name serverID
+                        * @type {integer}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @readonly
+                        * @instance
+                    */
+                    get: () => data.serverID,
                 },
                 label: {
                     /**
@@ -130,12 +153,21 @@
                         * @name points
                         * @type {number[]}
                         * @memberof module:API.cvat.classes.ObjectState
+                        * @throws {module:API.cvat.exceptions.ArgumentError}
                         * @instance
                     */
                     get: () => data.points,
                     set: (points) => {
-                        data.updateFlags.points = true;
-                        data.points = [...points];
+                        if (Array.isArray(points)) {
+                            data.updateFlags.points = true;
+                            data.points = [...points];
+                        } else {
+                            throw new window.cvat.exceptions.ArgumentError(
+                                'Points are expected to be an array '
+                                    + `but got ${typeof (points) === 'object'
+                                        ? points.constructor.name : typeof (points)}`,
+                            );
+                        }
                     },
                 },
                 group: {
@@ -229,14 +261,10 @@
                     get: () => data.attributes,
                     set: (attributes) => {
                         if (typeof (attributes) !== 'object') {
-                            if (typeof (attributes) === 'undefined') {
-                                throw new window.cvat.exceptions.ArgumentError(
-                                    'Expected attributes are object, but got undefined',
-                                );
-                            }
-
                             throw new window.cvat.exceptions.ArgumentError(
-                                `Expected attributes are object, but got ${attributes.constructor.name}`,
+                                'Attributes are expected to be an object '
+                                    + `but got ${typeof (attributes) === 'object'
+                                        ? attributes.constructor.name : typeof (attributes)}`,
                             );
                         }
 
@@ -254,10 +282,16 @@
             this.outside = serialized.outside;
             this.keyframe = serialized.keyframe;
             this.occluded = serialized.occluded;
-            this.attributes = serialized.attributes;
-            this.points = serialized.points;
             this.color = serialized.color;
             this.lock = serialized.lock;
+
+            // It can be undefined in a constructor and it can be defined later
+            if (typeof (serialized.points) !== 'undefined') {
+                this.points = serialized.points;
+            }
+            if (typeof (serialized.attributes) !== 'undefined') {
+                this.attributes = serialized.attributes;
+            }
 
             data.updateFlags.reset();
         }
@@ -287,7 +321,7 @@
             * @instance
             * @param {boolean} [force=false] delete object even if it is locked
             * @async
-            * @returns {boolean} wheter object was deleted
+            * @returns {boolean} true if object has been deleted
             * @throws {module:API.cvat.exceptions.PluginError}
         */
         async delete(force = false) {
@@ -295,12 +329,42 @@
                 .apiWrapper.call(this, ObjectState.prototype.delete, force);
             return result;
         }
+
+        /**
+            * Set the highest ZOrder within a frame
+            * @method up
+            * @memberof module:API.cvat.classes.ObjectState
+            * @readonly
+            * @instance
+            * @async
+            * @throws {module:API.cvat.exceptions.PluginError}
+        */
+        async up() {
+            const result = await PluginRegistry
+                .apiWrapper.call(this, ObjectState.prototype.up);
+            return result;
+        }
+
+        /**
+            * Set the lowest ZOrder within a frame
+            * @method down
+            * @memberof module:API.cvat.classes.ObjectState
+            * @readonly
+            * @instance
+            * @async
+            * @throws {module:API.cvat.exceptions.PluginError}
+        */
+        async down() {
+            const result = await PluginRegistry
+                .apiWrapper.call(this, ObjectState.prototype.down);
+            return result;
+        }
     }
 
     // Default implementation saves element in collection
     ObjectState.prototype.save.implementation = async function () {
-        if (this.updateInCollection) {
-            return this.updateInCollection();
+        if (this.hidden && this.hidden.save) {
+            return this.hidden.save();
         }
 
         return this;
@@ -308,8 +372,24 @@
 
     // Default implementation do nothing
     ObjectState.prototype.delete.implementation = async function (force) {
-        if (this.deleteFromCollection) {
-            return this.deleteFromCollection(force);
+        if (this.hidden && this.hidden.delete) {
+            return this.hidden.delete(force);
+        }
+
+        return false;
+    };
+
+    ObjectState.prototype.up.implementation = async function () {
+        if (this.hidden && this.hidden.up) {
+            return this.hidden.up();
+        }
+
+        return false;
+    };
+
+    ObjectState.prototype.down.implementation = async function () {
+        if (this.hidden && this.hidden.down) {
+            return this.hidden.down();
         }
 
         return false;
