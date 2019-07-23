@@ -56,7 +56,6 @@ services:
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
       - cvat_models:/home/django/models
-      - cvat_anno_formats:/home/django/formats/user
 
 volumes:
   cvat_db:
@@ -64,4 +63,3 @@ volumes:
   cvat_keys:
   cvat_logs:
   cvat_models:
-  cvat_anno_formats:

@@ -33,11 +33,11 @@ class AnnoHandler(models.Model):
 class AnnoDumper(AnnoHandler):
     handler_file = models.FileField(
         upload_to=upload_dumper_handler,
-        storage=FileSystemStorage(location=os.path.join(settings.ANNO_FORMATS_ROOT)),
+        storage=FileSystemStorage(location=os.path.join(settings.BASE_DIR)),
     )
 
 class AnnoParser(AnnoHandler):
     handler_file = models.FileField(
         upload_to=upload_parser_handler,
-        storage=FileSystemStorage(location=os.path.join(settings.ANNO_FORMATS_ROOT)),
+        storage=FileSystemStorage(location=os.path.join(settings.BASE_DIR)),
     )

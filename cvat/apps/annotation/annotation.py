@@ -9,7 +9,8 @@ from collections import OrderedDict, namedtuple
 from django.utils import timezone
 
 from cvat.apps.engine.data_manager import DataManager
-from cvat.apps.engine.serializers import LabeledShapeSerializer, LabeledTrackSerializer
+from cvat.apps.engine.serializers import (LabeledShapeSerializer, LabeledTrackSerializer,
+   LabeledImageSerializer, LabeledDataSerializer)
 
 class AnnotationIR:
     def __init__(self, data=None):
@@ -61,13 +62,7 @@ class AnnotationIR:
         self._version = version
 
     def __getitem__(self, key):
-        if key == 'tags':
-            return self.tags
-        elif key == 'shapes':
-            return self.shapes
-        elif key == 'tracks':
-            return self.tracks
-        raise KeyError('annotation IR has no \'{}\' key'.format(key))
+        return getattr(self, key)
 
     @property
     def data(self):
@@ -77,6 +72,11 @@ class AnnotationIR:
             'shapes': self.shapes,
             'tracks': self.tracks,
         }
+
+    def serialize(self):
+        serializer = LabeledDataSerializer(data=self.data)
+        if serializer.is_valid(raise_exception=True):
+            return serializer.data
 
     #makes a data copy from specified frame interval
     def slice(self, start, stop):
@@ -106,13 +106,17 @@ class Annotation:
     Shape = namedtuple('Shape', 'type, points, occluded, attributes, label, outside, keyframe, z_order, group, track_id, frame')
     Shape.__new__.__defaults__ = (None, False, False, 0, 0, None, None)
     Track = namedtuple('Track', 'label, group, shapes')
+    Tag = namedtuple('Tag', 'frame, label, attributes, group')
+    Tag.__new__.__defaults__ = (0,)
     Frame = namedtuple('Frame', 'frame, name, width, height, shapes')
 
-    def __init__(self, annotation_ir, db_task, scheme='', host=''):
+    def __init__(self, annotation_ir, db_task, scheme='', host='', create_callback=None):
         self._annotation_ir = annotation_ir
         self._db_task = db_task
         self._scheme = scheme
         self._host = host
+        self._create_callback=create_callback
+        self._MAX_ANNO_SIZE=30000
 
         db_labels = self._db_task.label_set.all().prefetch_related('attributespec_set')
 
@@ -296,7 +300,10 @@ class Annotation:
         return self._meta
 
     def _import_tag(self, tag):
-        raise NotImplementedError
+        _tag = tag._asdict()
+        _tag['label_id'] = self._get_label_id(_tag.pop('label'))
+        _tag['attributes'] = [self._import_attribute(attrib) for attrib in _tag['attributes'] if self._get_attribute_id(attrib.name)]
+        return _tag
 
     def _import_attribute(self, attribute):
         return {
@@ -307,37 +314,45 @@ class Annotation:
     def _import_shape(self, shape):
         _shape = shape._asdict()
         _shape['label_id'] = self._get_label_id(_shape.pop('label'))
-        _shape['attributes'] = [self._import_attribute(attr) for attr in _shape['attributes']]
+        _shape['attributes'] = [self._import_attribute(attrib) for attrib in _shape['attributes'] if self._get_attribute_id(attrib.name)]
         return _shape
 
     def _import_track(self, track):
         _track = track._asdict()
-        _track['frame'] = 0 # dummy value, need to serializer
-        _track['label_id'] = self._get_label_id(track.label)
+        _track['frame'] = min(shape.frame for shape in _track['shapes'])
+        _track['label_id'] = self._get_label_id(_track.pop('label'))
         _track['attributes'] = []
         _track['shapes'] = [shape._asdict() for shape in _track['shapes']]
         for shape in _track['shapes']:
             _track['attributes'] = [self._import_attribute(attrib) for attrib in shape['attributes'] if self._get_immutable_attribute_id(attrib.name)]
             shape['attributes'] = [self._import_attribute(attrib) for attrib in shape['attributes'] if self._get_mutable_attribute_id(attrib.name)]
 
-        # _track['attributes'] = [self._import_attribute(attr) for attr in _track['attributes']]
         return _track
 
+    def _call_callback(self):
+        if self._len() > self._MAX_ANNO_SIZE:
+            self._create_callback(self._annotation_ir.serialize())
+            self._annotation_ir.reset()
+
     def add_tag(self, tag):
-        raise NotImplementedError
+        self._annotation_ir.add_tag(self._import_tag(tag))
+        self._call_callback()
 
     def add_shape(self, shape):
-        _shape = self._import_shape(shape)
-        serializer = LabeledShapeSerializer(data=_shape, many=False)
-        if serializer.is_valid(raise_exception=True):
-            self._annotation_ir.add_shape(serializer.data)
+        self._annotation_ir.add_shape(self._import_shape(shape))
+        self._call_callback()
 
     def add_track(self, track):
-        _track = self._import_track(track)
-        serializer = LabeledTrackSerializer(data=_track, many=False)
-        if serializer.is_valid(raise_exception=True):
-            self._annotation_ir.add_track(serializer.data)
+        self._annotation_ir.add_track(self._import_track(track))
+        self._call_callback()
 
     @property
     def data(self):
         return self._annotation_ir
+
+    def _len(self):
+        track_len = 0
+        for track in self._annotation_ir.tracks:
+            track_len += len(track['shapes'])
+
+        return len(self._annotation_ir.tags) + len(self._annotation_ir.shapes) + track_len

@@ -169,7 +169,7 @@ async function uploadAnnoRequest(url, formData, format) {
             try {
                 await $.ajax({
                     url: `${url}?${queryString}`,
-                    type: 'POST',
+                    type: 'PUT',
                     data,
                     contentType: false,
                     processData: false,

@@ -132,7 +132,7 @@ def _parse_task_annotation(annotation_file, annotation_importer, parser):
             "file_object": file_object,
             "annotations": annotation_importer,
             }
-        source_code = open(os.path.join(settings.ANNO_FORMATS_ROOT, parser.handler_file.name)).read()
+        source_code = open(os.path.join(settings.BASE_DIR, parser.handler_file.name)).read()
         global_vars = globals()
         imports = import_modules(source_code)
         global_vars.update(imports)
@@ -598,9 +598,11 @@ class JobAnnotation:
         anno_importer = Annotation(
             annotation_ir=self.ir_data,
             db_task=self.db_job.segment.task,
+            create_callback=self.create,
             )
+        self.delete()
         _parse_task_annotation(annotation_file, anno_importer, parser)
-        self.put(anno_importer.data.slice(self.start_frame, self.stop_frame))
+        self.create(anno_importer.data.slice(self.start_frame, self.stop_frame).serialize())
 
 class TaskAnnotation:
     def __init__(self, pk, user):
@@ -624,14 +626,14 @@ class TaskAnnotation:
             splitted_data[jid] = _data.slice(start, stop)
 
         for jid, job_data in splitted_data.items():
-            merged_data = AnnotationIR()
+            _data = AnnotationIR()
             if action is None:
-                merged_data.data = put_job_data(jid, self.user, job_data)
+                _data.data = put_job_data(jid, self.user, job_data)
             else:
-                merged_data.data = patch_job_data(jid, self.user, job_data, action)
-            if merged_data.version > self.ir_data.version:
-                self.ir_data.version = merged_data.version
-            self._merge_data(merged_data, jobs[jid]["start"], self.db_task.overlap)
+                _data.data = patch_job_data(jid, self.user, job_data, action)
+            if _data.version > self.ir_data.version:
+                self.ir_data.version = _data.version
+            self._merge_data(_data, jobs[jid]["start"], self.db_task.overlap)
 
     def _merge_data(self, data, start_frame, overlap):
         data_manager = DataManager(self.ir_data)
@@ -680,7 +682,7 @@ class TaskAnnotation:
                 "file_object": dump_file,
                 "dump_format": dumper.name,
                 }
-            source_code = open(os.path.join(settings.ANNO_FORMATS_ROOT, dumper.handler_file.name)).read()
+            source_code = open(os.path.join(settings.BASE_DIR, dumper.handler_file.name)).read()
             global_vars = globals()
             imports = import_modules(source_code)
             global_vars.update(imports)
@@ -691,9 +693,11 @@ class TaskAnnotation:
         anno_importer = Annotation(
             annotation_ir=AnnotationIR(),
             db_task=self.db_task,
+            create_callback=self.create,
             )
+        self.delete()
         _parse_task_annotation(file_object, anno_importer, parser)
-        self.put(anno_importer.data)
+        self.create(anno_importer.data.serialize())
 
     @property
     def data(self):

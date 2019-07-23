@@ -12,34 +12,32 @@ def create_builtins(apps, schema_editor):
     AnnoDumperModel = apps.get_model('annotation', 'AnnoDumper')
     AnnoParserModel = apps.get_model('annotation', 'AnnoParser')
 
-    path_prefix = ""
-    if "development" == os.environ.get("DJANGO_CONFIGURATION", "development"):
-        path_prefix = os.path.join("..", "cvat", "apps", "annotation")
+    path_prefix = os.path.join("cvat", "apps", "annotation", "builtin")
 
     AnnoDumperModel(
         name="cvat_annotation",
         file_extension="xml",
-        handler_file=os.path.join(path_prefix, "builtin", "cvat", "dumper.py"),
+        handler_file=os.path.join(path_prefix, "cvat", "dumper.py"),
         owner=None,
     ).save()
 
     AnnoDumperModel(
         name="cvat_interpolation",
         file_extension="xml",
-        handler_file=os.path.join(path_prefix, "builtin", "cvat", "dumper.py"),
+        handler_file=os.path.join(path_prefix, "cvat", "dumper.py"),
         owner=None,
     ).save()
 
     AnnoParserModel(
         name="cvat",
-        handler_file=os.path.join(path_prefix, "builtin", "cvat", "parser.py"),
+        handler_file=os.path.join(path_prefix, "cvat", "parser.py"),
         owner=None,
     ).save()
 
     AnnoDumperModel(
         name="pascal_voc",
         file_extension="zip",
-        handler_file=os.path.join(path_prefix, "builtin", "pascal_voc", "dumper.py"),
+        handler_file=os.path.join(path_prefix, "pascal_voc", "dumper.py"),
         owner=None,
     ).save()
 
@@ -60,7 +58,7 @@ class Migration(migrations.Migration):
                 ('created_date', models.DateTimeField(auto_now_add=True)),
                 ('updated_date', models.DateTimeField(auto_now_add=True)),
                 ('file_extension', models.CharField(max_length=32)),
-                ('handler_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(location=settings.ANNO_FORMATS_ROOT), upload_to=cvat.apps.annotation.models.upload_dumper_handler)),
+                ('handler_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(location=settings.BASE_DIR), upload_to=cvat.apps.annotation.models.upload_dumper_handler)),
                 ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
         ),
@@ -72,7 +70,7 @@ class Migration(migrations.Migration):
                 ('created_date', models.DateTimeField(auto_now_add=True)),
                 ('updated_date', models.DateTimeField(auto_now_add=True)),
                 ('file_extension', models.CharField(max_length=32)),
-                ('handler_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(location=settings.ANNO_FORMATS_ROOT), upload_to=cvat.apps.annotation.models.upload_parser_handler)),
+                ('handler_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(location=settings.BASE_DIR), upload_to=cvat.apps.annotation.models.upload_parser_handler)),
                 ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
         ),

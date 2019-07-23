@@ -230,7 +230,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             task.create(db_task.id, serializer.data)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
-    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST'],
+    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
         if request.method == 'GET':
@@ -239,10 +239,20 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         elif request.method == 'PUT':
-            serializer = LabeledDataSerializer(data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                data = annotation.put_task_data(pk, request.user, serializer.data)
-                return Response(data)
+            upload_format = request.query_params.get("upload_format", "")
+            if upload_format:
+                return upload_anno_proxy(
+                    upload_format=upload_format,
+                    request=request,
+                    rq_id="{}@/api/v1/tasks/{}/annotations/upload".format(request.user, pk),
+                    rq_func=annotation.upload_task_anno,
+                    pk=pk,
+                )
+            else:
+                serializer = LabeledDataSerializer(data=request.data)
+                if serializer.is_valid(raise_exception=True):
+                    data = annotation.put_task_data(pk, request.user, serializer.data)
+                    return Response(data)
         elif request.method == 'DELETE':
             annotation.delete_task_data(pk, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -258,13 +268,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
-        elif request.method == 'POST':
-            return upload_anno_proxy(
-                request=request,
-                rq_id="{}@/api/v1/tasks/{}/annotations/upload".format(request.user, pk),
-                rq_func=annotation.upload_task_anno,
-                pk=pk,
-            )
 
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='annotations/(?P<filename>[^/]+)')
@@ -402,20 +405,30 @@ class JobViewSet(viewsets.GenericViewSet,
         return [perm() for perm in permissions]
 
 
-    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH', 'POST'],
+    @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
         if request.method == 'GET':
             data = annotation.get_job_data(pk, request.user)
             return Response(data)
         elif request.method == 'PUT':
-            serializer = LabeledDataSerializer(data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                try:
-                    data = annotation.put_job_data(pk, request.user, serializer.data)
-                except (AttributeError, IntegrityError) as e:
-                    return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
-                return Response(data)
+            upload_format = request.query_params.get("upload_format", "")
+            if upload_format:
+                return upload_anno_proxy(
+                    upload_format=upload_format,
+                    request=request,
+                    rq_id="{}@/api/v1/jobs/{}/annotations/upload".format(request.user, pk),
+                    rq_func=annotation.upload_job_anno,
+                    pk=pk,
+                )
+            else:
+                serializer = LabeledDataSerializer(data=request.data)
+                if serializer.is_valid(raise_exception=True):
+                    try:
+                        data = annotation.put_job_data(pk, request.user, serializer.data)
+                    except (AttributeError, IntegrityError) as e:
+                        return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
+                    return Response(data)
         elif request.method == 'DELETE':
             annotation.delete_job_data(pk, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
@@ -432,14 +445,6 @@ class JobViewSet(viewsets.GenericViewSet,
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
-        elif request.method == 'POST':
-            return upload_anno_proxy(
-                request=request,
-                rq_id="{}@/api/v1/jobs/{}/annotations/upload".format(request.user, pk),
-                rq_func=annotation.upload_job_anno,
-                pk=pk,
-            )
-
 
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
@@ -500,14 +505,13 @@ def rq_handler(job, exc_type, exc_value, tb):
 
     return True
 
-def upload_anno_proxy(request, rq_id, rq_func, pk):
+def upload_anno_proxy(upload_format, request, rq_id, rq_func, pk):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
 
     if not rq_job:
         serializer = AnnotationFileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            upload_format = request.query_params.get("upload_format", "")
             try:
                 db_parser = AnnoParser.objects.get(name=upload_format)
             except ObjectDoesNotExist:
