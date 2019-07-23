@@ -45,6 +45,7 @@
 
             async function share(directory) {
                 const { backendAPI } = window.cvat.config;
+                directory = encodeURIComponent(directory);
 
                 let response = null;
                 try {
