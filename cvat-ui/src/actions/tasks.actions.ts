@@ -5,9 +5,9 @@ export const getTasks = (tasks: []) => (dispatch: any) => {
   });
 }
 
-export const getTasksAsync = () => {
+export const getTasksAsync = (queryObject = {}) => {
   return (dispatch: any) => {
-    return (window as any).cvat.tasks.get().then(
+    return (window as any).cvat.tasks.get(queryObject).then(
       (tasks: any) => {
         dispatch(getTasks(tasks));
       },

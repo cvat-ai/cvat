@@ -1,13 +1,13 @@
-export const login = () => (dispatch: any) => {
+export const login = (isLoggedIn: boolean) => (dispatch: any) => {
   dispatch({
     type: 'LOGIN',
-    payload: true,
+    payload: isLoggedIn,
   });
 }
 
-export const logout = () => (dispatch: any) => {
+export const logout = (isLoggedIn: boolean) => (dispatch: any) => {
   dispatch({
     type: 'LOGOUT',
-    payload: false,
+    payload: isLoggedIn,
   });
 }
