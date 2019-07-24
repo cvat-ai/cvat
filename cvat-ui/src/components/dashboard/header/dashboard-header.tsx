@@ -91,7 +91,7 @@ class DashboardHeader extends Component<any, any> {
   }
 
   private onSearch = (query: string) => {
-    if (query) {
+    if (query && query !== this.props.searchQuery) {
       this.props.history.push(`?search=${query}`);
     }
   }
