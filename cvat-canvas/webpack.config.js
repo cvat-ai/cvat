@@ -7,7 +7,7 @@ const path = require('path');
 
 module.exports = {
     devtool: 'source-map',
-    entry: './src/main.ts',
+    entry: './src/canvas.js',
     devServer: {
         contentBase: path.join(__dirname, 'dist'),
         compress: true,
@@ -16,7 +16,6 @@ module.exports = {
     },
     module: {
         rules: [{
-            test: /.ts?$/,
             exclude: /node_modules/,
             use: {
                 loader: 'babel-loader',
@@ -24,8 +23,6 @@ module.exports = {
                     presets: [
                         [
                             '@babel/preset-env',
-                        ], [
-                            '@babel/typescript',
                         ],
                     ],
                     sourceType: 'unambiguous',
