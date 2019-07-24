@@ -17,10 +17,10 @@ import './dashboard.scss';
 
 class Dashboard extends PureComponent<any, any> {
   componentDidMount() {
-    this.flterTasks(this.props.location.search);
+    this.loadTasks(this.props.location.search);
 
     this.props.history.listen((location: Location, action: Action) => {
-      this.flterTasks(location.search);
+      this.loadTasks(location.search);
     })
   }
 
@@ -34,7 +34,7 @@ class Dashboard extends PureComponent<any, any> {
     );
   }
 
-  private flterTasks = (params: any) => {
+  private loadTasks = (params: any) => {
     const query = queryString.parse(params);
     const queryObject = this.setQueryObject(query);
 
@@ -43,7 +43,7 @@ class Dashboard extends PureComponent<any, any> {
   }
 
   private setQueryObject = (params: { search?: string, page?: string }): { search?: string, page?: number } => {
-    let queryObject: { search?: string, page?: number } = {};
+    const queryObject: { search?: string, page?: number } = {};
 
     if (params['search']) {
       queryObject.search = params.search.toString();

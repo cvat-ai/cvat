@@ -106,8 +106,10 @@ class DashboardContent extends Component<any, any> {
           </span>
         }
       >
-        <Button type="primary">
-          Create a new task
+        <Button
+          type="primary"
+          onClick={ this.createTask }>
+          Create task
         </Button>
       </Empty>
     )
@@ -164,6 +166,10 @@ class DashboardContent extends Component<any, any> {
         }
       </Content>
     );
+  }
+
+  private createTask = () => {
+    console.log('Create task');
   }
 }
 

@@ -13,7 +13,7 @@ export const getTasksAsync = (queryObject = {}) => {
       },
       (error: any) => {
         console.log(error);
-      }
+      },
     );
   };
 }
