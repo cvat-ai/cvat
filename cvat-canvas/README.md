@@ -7,16 +7,10 @@
 Canvas is created by using constructor:
 
 ```js
-    const canvas = new Canvas({
-        size: {
-            width: 1024,
-            height: 768,
-        },
-        shapeSelector: callback,
-        captureMode: 'move' | 'click',
-        backgroundColor: '#0320fd',
-    });
+    const canvas = new Canvas();
 ```
+
+- Canvas has transparent background
 
 Canvas itself handles:
 - Shape context menu (PKM)
@@ -33,7 +27,7 @@ All methods are sync.
 
 ```js
     html() => canvas HTML element
-    initialize(const FrameData: frameData, [{
+    setup(const FrameData: frameData, [{
         state: ObjectState,
         appearance: {   // all these fields are optional
             borderColor: 'color',
@@ -65,16 +59,35 @@ All methods are sync.
 ### Events
 Standard JS events are used.
 ```js
-    - canvas.initialized
+    - canvas.setup
     - canvas.activated => ObjectState
     - canvas.deactivated
-    - canvas.selected => ObjectState
-    - canvas.unselected
-    - canvas.clicked => ObjectState
+    - canvas.moved => [ObjectState], x, y
     - canvas.drawn => ObjectState
     - canvas.edited => ObjectState
     - canvas.splitted => ObjectState
     - canvas.groupped => [ObjectState]
-    - canvas.edited => ObjectState
     - canvas.merged => [ObjectState]
 ```
+
+## States
+
+ ![](images/states.png)
+
+## API Reaction
+
+|            | FREE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING |
+|------------|------|----------|-----------|---------|---------|---------|
+| html()     | +    | +        | +         | +       | +       | +       |
+| setup()    | +    | +        | +         | +       | +       | -       |
+| activate() | +    | -        | -         | -       | -       | -       |
+| rotate()   | +    | +        | +         | +       | +       | +       |
+| focus()    | +    | +        | +         | +       | +       | +       |
+| fit()      | +    | +        | +         | +       | +       | +       |
+| grid()     | +    | +        | +         | +       | +       | +       |
+| adjust()   | +    | +        | +         | +       | +       | +       |
+| draw()     | +    | -        | -         | -       | -       | -       |
+| split()    | +    | -        | +         | -       | -       | -       |
+| group      | +    | +        | -         | -       | -       | -       |
+| merge()    | +    | -        | -         | -       | +       | -       |
+| cancel()   | -    | +        | +         | +       | +       | +       |
