@@ -6,15 +6,17 @@
 ## Creation
 Canvas is created by using constructor:
 
-const canvas = new Canvas({
-    size: {
-        width: 1024,
-        height: 768,
-    },
-    shapeSelector: callback,
-    captureMode: 'move' | 'click',
-    backgroundColor: '#0320fd',
-});
+```js
+    const canvas = new Canvas({
+        size: {
+            width: 1024,
+            height: 768,
+        },
+        shapeSelector: callback,
+        captureMode: 'move' | 'click',
+        backgroundColor: '#0320fd',
+    });
+```
 
 Canvas itself handles:
 - Shape context menu (PKM)
