@@ -43,7 +43,7 @@ All methods are sync.
         }
     }]) => undefined
 
-    activate(const number: clientID) => undefined // select if can't activate
+    activate(const number: clientID, const number: attributeID = null) => undefined // select if can't activate
     rotate(const number: degrees = 90) => undefined
     focus(const number: id, const number: padding) => undefined
     fit() => undefined
