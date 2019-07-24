@@ -3,7 +3,7 @@ import os
 from zipfile import ZipFile
 from tempfile import TemporaryDirectory
 
-def dumps_as_pascal_voc(file_object, image_dir, annotations):
+def dumps_as_pascal_voc(file_object, annotations):
     with TemporaryDirectory() as out_dir:
         with ZipFile(file_object, 'w') as output_zip:
             for frame_annotation in annotations:
@@ -11,9 +11,8 @@ def dumps_as_pascal_voc(file_object, image_dir, annotations):
                 width = frame_annotation.width
                 height = frame_annotation.height
 
-                image_path = os.path.join(image_dir, image_name)
-                writer = Writer(image_path, width, height)
-                writer.template_parameters['path'] = image_dir
+                writer = Writer(image_name, width, height)
+                writer.template_parameters['path'] = ''
 
                 for shape in frame_annotation.shapes:
                     if shape.type != "rectangle":
@@ -30,4 +29,4 @@ def dumps_as_pascal_voc(file_object, image_dir, annotations):
                 writer.save(anno_file)
                 output_zip.write(filename=anno_file, arcname=anno_name)
 
-dumps_as_pascal_voc(file_object, 'images', annotations.shapes)
+dumps_as_pascal_voc(file_object, annotations.shapes)

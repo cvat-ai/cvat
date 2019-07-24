@@ -387,12 +387,12 @@ function setupMenu(job, task, shapeCollectionModel,
     $('#settingsButton').attr('title', `
         ${shortkeys.open_settings.view_value} - ${shortkeys.open_settings.description}`);
 
-    for (const downloadFormat of annotationFormats.download) {
-        $(`<li>${downloadFormat}</li>`).on('click', async () => {
+    for (const downloadFormat of annotationFormats.dumpers) {
+        $(`<li>${downloadFormat.display_name}</li>`).on('click', async () => {
             $('#downloadAnnotationButton')[0].disabled = true;
             $('#downloadDropdownMenu').addClass('hidden');
             try {
-                await dumpAnnotationRequest(task.id, task.name, downloadFormat);
+                await dumpAnnotationRequest(task.id, task.name, downloadFormat.name);
             } catch (error) {
                 showMessage(error.message);
             } finally {

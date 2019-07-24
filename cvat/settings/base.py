@@ -122,7 +122,10 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'rest_framework.filters.SearchFilter',
         'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.OrderingFilter')
+        'rest_framework.filters.OrderingFilter'),
+
+    # Disable default handling of the 'format' query parameter by REST framework
+    'URL_FORMAT_OVERRIDE': None,
 }
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):

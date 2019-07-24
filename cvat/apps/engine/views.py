@@ -37,12 +37,13 @@ from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
    RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
    PluginSerializer, FileInfoSerializer, LogEventSerializer)
-from cvat.apps.annotation.serializers import AnnotationFormatSerializer, AnnotationFileSerializer
+from cvat.apps.annotation.serializers import FormatsSerializer, AnnotationFileSerializer
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
-from cvat.apps.annotation.models import AnnoDumper, AnnoParser
+from cvat.apps.annotation.models import AnnotationDumper, AnnotationParser
+from cvat.apps.annotation.annotation import get_annotation_formats
 
 # Server REST API
 @login_required
@@ -152,16 +153,10 @@ class ServerViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
-    @action(detail=False, methods=['GET'], serializer_class=AnnotationFormatSerializer)
+    @action(detail=False, methods=['GET'])
     def formats(request):
-        response = {
-            'upload': [p.name for p in AnnoParser.objects.all()],
-            'download': [d.name for d in AnnoDumper.objects.all()],
-        }
-
-        serializer = AnnotationFormatSerializer(data=response)
-        if serializer.is_valid(raise_exception=True):
-            return Response(serializer.data)
+        data = get_annotation_formats()
+        return Response(FormatsSerializer(data).data)
 
 class TaskFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
@@ -239,7 +234,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         elif request.method == 'PUT':
-            upload_format = request.query_params.get("upload_format", "")
+            upload_format = request.query_params.get("format", "")
             if upload_format:
                 return upload_anno_proxy(
                     upload_format=upload_format,
@@ -281,15 +276,15 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Please specify a correct 'action' for the request")
 
-        dump_format = request.query_params.get("dump_format", "")
+        dump_format = request.query_params.get("format", "")
         try:
-            db_dumper = AnnoDumper.objects.get(name=dump_format)
+            db_dumper = AnnotationDumper.objects.get(name=dump_format)
         except ObjectDoesNotExist:
             raise serializers.ValidationError(
-                "Please specify a correct 'dump_format' parameter for the request")
+                "Please specify a correct 'format' parameter for the request")
 
         file_path = os.path.join(db_task.get_task_dirname(),
-            "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.file_extension))
+            "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.format))
 
         queue = django_rq.get_queue("default")
         rq_id = "{}@/api/v1/tasks/{}/annotations/{}".format(username, pk, filename)
@@ -302,7 +297,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                         rq_job.meta[action] = True
                         rq_job.save_meta()
                         return sendfile(request, rq_job.meta["file_path"], attachment=True,
-                            attachment_filename="{}.{}".format(filename, db_dumper.file_extension))
+                            attachment_filename="{}.{}".format(filename, db_dumper.format))
                     else:
                         return Response(status=status.HTTP_201_CREATED)
                 else: # Remove the old dump file
@@ -412,7 +407,7 @@ class JobViewSet(viewsets.GenericViewSet,
             data = annotation.get_job_data(pk, request.user)
             return Response(data)
         elif request.method == 'PUT':
-            upload_format = request.query_params.get("upload_format", "")
+            upload_format = request.query_params.get("format", "")
             if upload_format:
                 return upload_anno_proxy(
                     upload_format=upload_format,
@@ -513,7 +508,7 @@ def upload_anno_proxy(upload_format, request, rq_id, rq_func, pk):
         serializer = AnnotationFileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             try:
-                db_parser = AnnoParser.objects.get(name=upload_format)
+                db_parser = AnnotationParser.objects.get(name=upload_format)
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(
                     "Please specify a correct 'upload_format' parameter for the request")

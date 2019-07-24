@@ -12,6 +12,8 @@ from cvat.apps.engine.data_manager import DataManager
 from cvat.apps.engine.serializers import (LabeledShapeSerializer, LabeledTrackSerializer,
    LabeledImageSerializer, LabeledDataSerializer)
 
+from cvat.apps.annotation.models import AnnotationDumper, AnnotationParser
+
 class AnnotationIR:
     def __init__(self, data=None):
         self.reset()
@@ -356,3 +358,9 @@ class Annotation:
             track_len += len(track['shapes'])
 
         return len(self._annotation_ir.tags) + len(self._annotation_ir.shapes) + track_len
+
+def get_annotation_formats():
+    return {
+        'parsers': AnnotationParser.objects.all(),
+        'dumpers': AnnotationDumper.objects.all(),
+    }

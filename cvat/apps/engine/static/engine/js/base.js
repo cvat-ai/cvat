@@ -136,7 +136,7 @@ async function dumpAnnotationRequest(tid, taskName, format) {
     const name = encodeURIComponent(`${tid}_${taskName}`);
     return new Promise((resolve, reject) => {
         const url = `/api/v1/tasks/${tid}/annotations/${name}`;
-        let queryString = `dump_format=${format}`;
+        let queryString = `format=${format}`;
         async function request() {
             $.get(`${url}?${queryString}`)
                 .done((...args) => {
@@ -164,7 +164,7 @@ async function dumpAnnotationRequest(tid, taskName, format) {
 
 async function uploadAnnoRequest(url, formData, format) {
     return new Promise((resolve, reject) => {
-        const queryString = `upload_format=${format}`;
+        const queryString = `format=${format}`;
         async function request(data) {
             try {
                 await $.ajax({

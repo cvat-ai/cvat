@@ -132,10 +132,10 @@ class TaskView {
 
         const downloadButton = $('<button class="regular dashboardButtonUI"> Dump Annotation </button>');
         const dropdownMenu = $('<ul class="dropdown-content hidden"></ul>');
-        for (const downloadFormat of this._anno_formats.download) {
-            dropdownMenu.append($(`<li>${downloadFormat}</li>`).on('click', () => {
+        for (const downloadFormat of this._anno_formats.dumpers) {
+            dropdownMenu.append($(`<li>${downloadFormat.display_name}</li>`).on('click', () => {
                 dropdownMenu.addClass('hidden');
-                this._dump(downloadButton[0], downloadFormat);
+                this._dump(downloadButton[0], downloadFormat.name);
             }));
         }
 

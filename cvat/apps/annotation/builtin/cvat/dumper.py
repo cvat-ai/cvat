@@ -302,7 +302,7 @@ dumper = XmlAnnotationWriter(file_object)
 dumper.open_root()
 dumper.add_meta(annotations.meta)
 
-if dump_format == "cvat_annotation":
+if dump_format == "cvat_for_images":
     dump_as_cvat_annotation(dumper, annotations.shapes, annotations.meta)
 else:
     dump_as_cvat_interpolation(dumper, annotations.shapes, annotations.meta)

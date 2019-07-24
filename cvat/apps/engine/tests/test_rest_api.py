@@ -2023,13 +2023,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
         for dump_format in ("cvat_annotation", "cvat_interpolation"):
-            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "dump_format={}".format(dump_format))
+            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "format={}".format(dump_format))
             self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
-            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "dump_format={}".format(dump_format))
+            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "format={}".format(dump_format))
             self.assertEqual(response.status_code, HTTP_201_CREATED)
 
-            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "action=download&dump_format={}".format(dump_format))
+            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "action=download&format={}".format(dump_format))
             self.assertEqual(response.status_code, HTTP_200_OK)
             self._check_dump_response(response, task, jobs, data)
 
