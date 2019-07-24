@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 
+import { connect } from 'react-redux';
+
 import { Layout, Empty, Button, Modal, Col, Row } from 'antd';
 import Title from 'antd/lib/typography/Title';
 
@@ -79,15 +81,13 @@ class DashboardContent extends Component<any, any> {
   }
 
   private onDeleteTask(task: any) {
-    const props = this.props;
-
     confirm({
       title: 'Do you want to delete this task?',
       okText: 'Yes',
       okType: 'danger',
       centered: true,
       onOk() {
-        return props.deleteTask(task);
+        return task.delete();
       },
       cancelText: 'No',
       onCancel() {
@@ -167,4 +167,8 @@ class DashboardContent extends Component<any, any> {
   }
 }
 
-export default DashboardContent;
+const mapStateToProps = (state: any) => {
+  return state.tasks;
+};
+
+export default connect(mapStateToProps)(DashboardContent);

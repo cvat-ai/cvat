@@ -1,5 +1,9 @@
 import React, { Component } from 'react';
 
+import { withRouter } from 'react-router-dom';
+
+import { connect } from 'react-redux';
+
 import { Layout, Row, Col, Button, Input } from 'antd';
 import Title from 'antd/lib/typography/Title';
 
@@ -21,7 +25,7 @@ class DashboardHeader extends Component<any, any> {
   constructor(props: any) {
     super(props);
 
-    this.state = {};
+    this.state = { searchQuery: this.props.searchQuery };
 
     this.hostUrl = process.env.REACT_APP_API_HOST_URL;
 
@@ -39,6 +43,12 @@ class DashboardHeader extends Component<any, any> {
     ];
   }
 
+  componentDidUpdate(prevProps: any) {
+    if (this.props.searchQuery !== prevProps.searchQuery) {
+      this.setState({ searchQuery: this.props.searchQuery });
+    }
+  }
+
   render() {
     return(
       <Header className="dashboard-header">
@@ -50,7 +60,9 @@ class DashboardHeader extends Component<any, any> {
             <Search
               className="search"
               placeholder="Search for tasks"
-              onSearch={ query => this.props.onSearch(query) }
+              value={ this.state.searchQuery }
+              onChange={ this.onValueChange }
+              onSearch={ query => this.onSearch(query) }
               enterButton>
             </Search>
           </Col>
@@ -74,9 +86,23 @@ class DashboardHeader extends Component<any, any> {
     );
   }
 
+  private onValueChange = (event: any) => {
+    this.setState({ searchQuery: event.target.value });
+  }
+
+  private onSearch = (query: string) => {
+    if (query) {
+      this.props.history.push(`?search=${query}`);
+    }
+  }
+
   private openUserGuide = () => {
     window.open(`${this.hostUrl}/documentation/user_guide.html`, '_blank')
   }
 }
 
-export default DashboardHeader;
+const mapStateToProps = (state: any) => {
+  return { ...state.tasks, ...state.tasksFilter };
+};
+
+export default withRouter(connect(mapStateToProps)(DashboardHeader) as any);
