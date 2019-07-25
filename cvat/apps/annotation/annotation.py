@@ -105,13 +105,13 @@ class AnnotationIR:
 
 class Annotation:
     Attribute = namedtuple('Attribute', 'name, value')
-    LabeledShape = namedtuple('LabeledShape', 'type, points, occluded, attributes, label, outside, keyframe, z_order, group, track_id, frame')
-    LabeledShape.__new__.__defaults__ = (None, False, False, 0, 0, None, None)
-    TrackedShape = namedtuple('LabeledShape', 'type, points, occluded, attributes, outside, keyframe, z_order, frame')
-    TrackedShape.__new__.__defaults__ = (None, False, False, 0, 0, None, None)
+    LabeledShape = namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order')
+    LabeledShape.__new__.__defaults__ = (0, 0)
+    TrackedShape = namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside, keyframe, z_order')
+    TrackedShape.__new__.__defaults__ = (0, )
     Track = namedtuple('Track', 'label, group, shapes')
     Tag = namedtuple('Tag', 'frame, label, attributes, group')
-    Tag.__new__.__defaults__ = (0,)
+    Tag.__new__.__defaults__ = (0, )
     Frame = namedtuple('Frame', 'frame, name, width, height, labeled_shapes, tags')
 
     def __init__(self, annotation_ir, db_task, scheme='', host='', create_callback=None):
@@ -280,8 +280,6 @@ class Annotation:
             frame=self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step(),
             points=shape["points"],
             occluded=shape["occluded"],
-            outside=shape.get("outside", False),
-            keyframe=shape.get("keyframe", True),
             z_order=shape.get("z_order", 0),
             group=shape.get("group", 0),
             attributes=self._export_attributes(shape["attributes"]),
@@ -335,8 +333,7 @@ class Annotation:
         for tag in self._annotation_ir.tags:
             _get_frame(annotations, tag).tags.append(self._export_tag(tag))
 
-        for frame in annotations.values():
-            yield frame
+        return iter(annotations.values())
 
     @property
     def shapes(self):

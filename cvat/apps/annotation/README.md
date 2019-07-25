@@ -2,47 +2,35 @@
 The purpose of this application is to add support for multiple annotation formats for CVAT.
 It allows to download and upload annotations in different formats and easily add support for new.
 
-## How to add a new annotation dumper/parser
-1. Write specific py script that will be executed via python exec. Inside script environment available 2 globals variable with wich you can interact with CVAT.
+## How to add a new annotation dumper/parser 1. Write a python script that will be executed via exec() function. Inside of the script environment 3 variables are available:
     - file_object - python's standard file object returned by open() function and exposing a file-oriented API (with methods such as read() or write()) to an underlying resource.
-    - annotations - instance of [Annotation](annotation.py#L104) class.
+    - annotations - instance of [Annotation](annotation.py#L106) class.
+    - dump_format - string with name of requested dump format. It may be useful if one dumper script implements more then one format support.
 
-    Annotation class expose API and some additonal pre defined types that allow to get/add shapes inside a parser/dumper code.
+    Annotation class expose API and some additional pre-defined types that allow to get/add shapes inside a parser/dumper code.
 
     Short description of the public methods:
-    - Annotation.shapes - property, returns a list of Annotation.Frame objects
-    - Annotation.meta - property, returns dictionary with meta information for the task, for example - video source name, number of frames, number of jobs, etc
-    - Annotation.add_tag(tag): not implemented
-    - Annotation.add_shape(shape): shape should be a instanse of the Annotation.Shape class
-    - Annotation.add_track(track): track should be a instanse of the Annotation.Track class
+    - Annotation.shapes - property, returns a generator of Annotation.LabeledShape objects
+    - Annotation.tracks - property, returns a generator of Annotation.Track objects
+    - Annotation.tags - property, returns a generator of Annotation.Tag objects
+    - Annotation.by_frame - property, returns an iterator on Annotation.Frame object, which groups annotation objects by frame. Note that TrackedShapes will be represented as Annotation.LabeledShape.
+    - Annotation.meta - property, returns dictionary which represent a task meta information, for example - video source name, number of frames, number of jobs, etc
+    - Annotation.add_tag(tag): tag should be a instance of the Annotation.Tag class
+    - Annotation.add_shape(shape): shape should be a instance of the Annotation.Shape class
+    - Annotation.add_track(track): track should be a instance of the Annotation.Track class
     - Annotation.Attribute = namedtuple('Attribute', 'name, value')
       - name - String, name of the attribute
       - value - String, value of the attribute
+    - Annotation.LabeledShape = namedtuple('LabeledShape', 'type, frame, label, points, occluded, attributes, group, z_order')
 
-    - Annotation.Shape = namedtuple('Shape', 'type, points, occluded, attributes, label, outside, keyframe, z_order, group, track_id, frame')
+      LabeledShape.__new__.__defaults__ = (0, 0)
+    - TrackedShape = namedtuple('TrackedShape', 'type, points, occluded, frame, attributes, outside, keyframe, z_order')
+    - TrackedShape.__new__.__defaults__ = (0, )
+    - Track = namedtuple('Track', 'label, group, shapes')
+    - Tag = namedtuple('Tag', 'frame, label, attributes, group')
+    - Tag.__new__.__defaults__ = (0, )
+    - Frame = namedtuple('Frame', 'frame, name, width, height, labeled_shapes, tags')
 
-      Annotation.Shape.\_\_new\_\_.\_\_defaults\_\_ = (None, False, False, 0, 0, None, None)
-      - type - str, one of "rectangle", "polygon", "polyline", "points"
-      - points - list of float
-      - occluded - bool
-      - attributes - list of Annotation.Attribute
-      - label - str
-      - outside - bool
-      - keyframe - bool
-      - z_order - int
-      - group - int
-      - track_id - int
-      - frame - int
-    - Annotation.Track = namedtuple('Track', 'label, group, shapes')
-      - label - str
-      - group - int
-      - shapes - list of Annotation.Shape
-    - Annotation.Frame = namedtuple('Frame', 'frame, name, width, height, shapes')
-      - frame - int
-      - name - str
-      - width - int
-      - height - int
-      - shapes - list of Annotation.Shape
 
       Pseudocode for a dumper code
       ```python
@@ -51,14 +39,14 @@ It allows to download and upload annotations in different formats and easily add
       ...
 
       # iterate over all frames
-      for frame_annotation in annotations:
+      for frame_annotation in annotations.by_frame:
           # get frame info
           image_name = frame_annotation.name
           image_width = frame_annotation.width
           image_height = frame_annotation.height
 
           # iterate over all shapes on the frame
-          for shape in frame_annotation.shapes:
+          for shape in frame_annotation.labeled_shapes:
               label = shape.label
               xtl = shape.points[0]
               ytl = shape.points[1]
@@ -82,7 +70,7 @@ It allows to download and upload annotations in different formats and easily add
       ...
 
       for parsed_shape in parsed_shapes:
-          shape = annotations.Shape(
+          shape = annotations.LabeledShape(
               type="rectangle",
               points=[0, 0, 100, 100],
               occluded=False,
@@ -100,31 +88,21 @@ It allows to download and upload annotations in different formats and easily add
 
     Example:
     ```python
-    import cvat.apps.engine.models
-    from django.conf import settings
-    import django.core.files.storage
-    from django.db import migrations, models
-    import django.db.models.deletion
+    from django.db import migrations
+    from django.apps import apps
     import os
 
     def udpate_builtins(apps, schema_editor):
-        AnnoDumperModel = apps.get_model('annotation', 'AnnoDumper')
-        AnnoParserModel = apps.get_model('annotation', 'AnnoParser')
+        AnnotationDumperModel = apps.get_model('annotation', 'AnnotationDumper')
+        AnnotationParserModel = apps.get_model('annotation', 'AnnotationParser')
 
-        path_prefix = ""
-        if "development" == os.environ.get("DJANGO_CONFIGURATION", "development"):
-            path_prefix = os.path.join("..", "cvat", "apps", "annotation")
+        path_prefix = os.path.join("cvat", "apps", "annotation", "builtin")
 
-        AnnoDumperModel(
-            name="new_format_name",
-            file_extension="json",
-            handler_file=os.path.join(path_prefix, "builtin", "cvat", "dumper.py"),
-            owner=None,
-        ).save()
-
-        AnnoParserModel(
-            name="new_format_name",
-            handler_file=os.path.join(path_prefix, "builtin", "cvat", "parser.py"),
+        AnnotationDumperModel(
+            name="new_format_json",
+            display_name="NEW FORMAT JSON",
+            extension="json",
+            handler_file=os.path.join(path_prefix, "new_format", "dumper.py"),
             owner=None,
         ).save()
 
