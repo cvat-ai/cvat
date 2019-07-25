@@ -2022,7 +2022,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "create", data)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
-        for dump_format in ("cvat_annotation", "cvat_interpolation"):
+        for dump_format in ("cvat_xml_for_images", "cvat_xml_for_videos"):
             response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "format={}".format(dump_format))
             self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
