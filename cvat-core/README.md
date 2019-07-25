@@ -1,32 +1,33 @@
-# Computer Vision Annotation Tool (JS)
+# Module CVAT-CORE
 
 ## Description
-This CVAT module has been created in order to easy integration process with CVAT.
+This CVAT module is a clien-side JavaScipt library to management of objects, frames, logs, etc.
+It contains the core logic of the Computer Vision Annotation Tool.
 
-### Short development manual
+### Commands
 
-- Install dependencies
+- Dependencies installation
 ```bash
 npm install
 ```
 
-- Build library from sources in ```dist``` directory:
+- Building the module from sources in the ```dist``` directory:
 ```bash
 npm run-script build
 npm run build -- --mode=development     # without a minification
 ```
 
-- Build documentation in ```docs``` directory:
+- Building the documentation in the ```docs``` directory:
 ```bash
 npm run-script docs
 ```
 
-- Run tests:
+- Running of tests:
 ```bash
 npm run-script test
 ```
 
-- Update version of library:
+- Updating of a module version:
 ```bash
 npm version patch   # updated after minor fixes
 npm version minor   # updated after major changes which don't affect API compatibility with previous versions
