@@ -17,6 +17,7 @@
     "@babel/preset-env": "^7.4.4",
     "babel-eslint": "^10.0.1",
     "babel-loader": "^8.0.6",
+    "canvas": "^2.5.0",
     "core-js": "^3.0.1",
     "coveralls": "^3.0.5",
     "jest": "^24.8.0",
