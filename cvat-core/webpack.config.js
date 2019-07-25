@@ -15,6 +15,8 @@ const nodeConfig = {
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'cvat.node.js',
+        library: 'cvat',
+        libraryTarget: 'commonjs',
     },
     module: {
         rules: [{
@@ -38,6 +40,8 @@ const webConfig = {
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'cvat.js',
+        library: 'cvat',
+        libraryTarget: 'window',
     },
     module: {
         rules: [{

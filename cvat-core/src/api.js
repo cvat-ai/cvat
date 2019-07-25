@@ -12,7 +12,7 @@
     * @module API
 */
 
-(() => {
+function build() {
     const PluginRegistry = require('./plugins');
     const User = require('./user');
     const ObjectState = require('./object-state');
@@ -274,7 +274,7 @@
                 *             put: {
                 *               // The first argument "self" is a plugin, like in a case above
                 *               // The second argument is an argument of the
-                *               // cvat.Job.annotations.put()
+                *               // Job.annotations.put()
                 *               // It contains an array of objects to put
                 *               // In this sample we round objects coordinates and save them
                 *               enter(self, objects) {
@@ -439,18 +439,20 @@
     cvat.plugins = Object.freeze(cvat.plugins);
     cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
-    cvat.Job = Object.freeze(cvat.Job);
-    cvat.Task = Object.freeze(cvat.Task);
 
     const implementAPI = require('./api-implementation');
-    if (typeof (window) === 'undefined') {
-        // Dummy browser environment
-        require('browser-env')();
-    }
 
     Math.clamp = function (value, min, max) {
         return Math.min(Math.max(value, min), max);
     };
 
-    window.cvat = Object.freeze(implementAPI(cvat));
-})();
+    const implemented = Object.freeze(implementAPI(cvat));
+
+    if (typeof (window) === 'undefined') {
+        require('browser-env')();
+    }
+
+    return implemented;
+}
+
+module.exports = build();
