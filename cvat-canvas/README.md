@@ -1,12 +1,13 @@
-## Module
+# Module
 
 - Written on typescript
-- Contains the class ```Canvas```
+- Contains the class ```Canvas``` and the Enum ```Rotation```
 
 ## Creation
 Canvas is created by using constructor:
 
 ```js
+    const { Canvas } = require('./canvas');
     const canvas = new Canvas();
 ```
 
@@ -27,26 +28,13 @@ All methods are sync.
 
 ```js
     html() => canvas HTML element
-    setup(const FrameData: frameData, [{
-        state: ObjectState,
-        appearance: {   // all these fields are optional
-            borderColor: 'color',
-            fillColor: 'color',
-            fillOpacity: 50,
-            selectedFillOpacity: 50,
-        }
-    }]) => undefined
+    setup(const FrameData: frameData, [ObjectState]) => undefined
 
     activate(const number: clientID, const number: attributeID = null) => undefined // select if can't activate
     rotate(const number: degrees = 90) => undefined
-    focus(const number: id, const number: padding) => undefined
+    focus(const number: clientID, const number: padding) => undefined
     fit() => undefined
     grid(stepX, stepY, color, opacity) => undefined
-    adjust({
-        brightness: 50,
-        contrast: 50,
-        saturation: 50,
-    }) => undefined
 
     draw(shapeType, numberOfPoints = null, initializeState = null) => ObjectState
     split(const boolean: enabled = false) => ObjectState || undefined
@@ -56,7 +44,19 @@ All methods are sync.
     cancel() => undefined
 ```
 
+### CSS Classes/IDs
+
+- Each drawn object (tag, shape, track) has id ```canvas_object_{objectState.id}```
+- Drawn shapes and tracks have classes ```canvas_shape```,
+ ```canvas_shape_activated```,
+ ```canvas_shape_grouping```,
+ ```canvas_shape_merging```,
+ ```canvas_shape_drawing```
+- Tags has a class ```canvas_tag```
+- Canvas image has ID ```canvas_image```
+
 ### Events
+
 Standard JS events are used.
 ```js
     - canvas.setup
