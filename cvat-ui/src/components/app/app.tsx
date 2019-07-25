@@ -1,10 +1,11 @@
 import React, { PureComponent } from 'react';
-import { BrowserRouter as Router, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
 
 import { connect } from 'react-redux';
 import { login, logout } from '../../actions/auth.actions';
 
 import Dashboard from '../dashboard/dashboard';
+import NotFound from '../not-found/not-found';
 
 import './app.scss';
 
@@ -25,9 +26,11 @@ class App extends PureComponent<any, any> {
   render() {
     return(
       <Router>
-        <div>
+        <Switch>
+          <Redirect path="/" exact to="/dashboard" />
           <Route path="/dashboard" component={ Dashboard } />
-        </div>
+          <Route component={ NotFound } />
+        </Switch>
       </Router>
     );
   }

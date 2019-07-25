@@ -33,17 +33,8 @@ class DashboardContent extends Component<any, any> {
 
   private renderPlaceholder() {
     return (
-      <Empty
-        className="empty"
-        description={
-          <span>
-            No tasks found...
-          </span>
-        }
-      >
-        <Button
-          type="primary"
-          onClick={ this.createTask }>
+      <Empty className="empty" description="No tasks found...">
+        <Button type="primary" onClick={ this.createTask }>
           Create task
         </Button>
       </Empty>
