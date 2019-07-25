@@ -2,7 +2,9 @@
 The purpose of this application is to add support for multiple annotation formats for CVAT.
 It allows to download and upload annotations in different formats and easily add support for new.
 
-## How to add a new annotation dumper/parser 1. Write a python script that will be executed via exec() function. Inside of the script environment 3 variables are available:
+## How to add a new annotation dumper/parser
+1. Write a python script that will be executed via exec() function.
+Inside of the script environment 3 variables are available:
     - file_object - python's standard file object returned by open() function and exposing a file-oriented API (with methods such as read() or write()) to an underlying resource.
     - annotations - instance of [Annotation](annotation.py#L106) class.
     - dump_format - string with name of requested dump format. It may be useful if one dumper script implements more then one format support.

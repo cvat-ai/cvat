@@ -1,6 +1,5 @@
 from xml.sax.saxutils import XMLGenerator
 from collections import OrderedDict
-from copy import deepcopy
 
 def pairwise(iterable):
     a = iter(iterable)

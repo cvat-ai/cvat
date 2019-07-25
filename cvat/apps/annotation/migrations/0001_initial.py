@@ -6,7 +6,6 @@ from django.conf import settings
 import django.core.files.storage
 from django.db import migrations, models
 import django.db.models.deletion
-from django.apps import apps
 import os
 
 def create_builtins(apps, schema_editor):

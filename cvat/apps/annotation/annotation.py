@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from cvat.apps.engine.data_manager import DataManager, TrackManager
 from cvat.apps.engine.serializers import (LabeledShapeSerializer, LabeledTrackSerializer,
-   LabeledImageSerializer, LabeledDataSerializer)
+   LabeledDataSerializer)
 
 from cvat.apps.annotation.models import AnnotationDumper, AnnotationParser
 
@@ -291,17 +291,6 @@ class Annotation:
             label=self._get_label_name(tag["label_id"]),
             group=tag.get("group", 0),
             attributes=self._export_attributes(tag["attributes"]),
-        )
-
-    def _create_frame(self, frame, name, height, width):
-        return Annotation.Frame(
-            frame=frame,
-            name=name,
-            height=height,
-            width=width,
-            tabeled_shapes=[],
-            tracked_shapes=[],
-            tags=[],
         )
 
     @property
