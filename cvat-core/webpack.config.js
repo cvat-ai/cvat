@@ -6,22 +6,33 @@
 const path = require('path');
 const webpack = require('webpack');
 
-const configuration = 'production';
-const target = 'web';
-const plugins = [];
 
-if (configuration === 'production' && target === 'web') {
-    plugins.push(
-        /**
-         * IgnorePlugin will skip any require
-         * that matches the following regex.
-         */
-        new webpack.IgnorePlugin(/browser-env/),
-    );
-}
+const nodeConfig = {
+    target: 'node',
+    mode: 'production',
+    devtool: 'source-map',
+    entry: './src/api.js',
+    output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: 'cvat.node.js',
+    },
+    module: {
+        rules: [{
+            test: /.js?$/,
+            exclude: /node_modules/,
+        }],
+    },
+    externals: {
+        canvas: 'commonjs canvas',
+    },
+    stats: {
+        warnings: false,
+    },
+};
 
-module.exports = {
-    mode: configuration,
+const webConfig = {
+    target: 'web',
+    mode: 'production',
     devtool: 'source-map',
     entry: './src/api.js',
     output: {
@@ -54,6 +65,9 @@ module.exports = {
             },
         }],
     },
-    plugins,
-    target,
+    plugins: [
+        new webpack.IgnorePlugin(/browser-env/),
+    ],
 };
+
+module.exports = [nodeConfig, webConfig];
