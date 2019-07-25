@@ -75,7 +75,7 @@ function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationS
         const annotationData = new FormData();
         annotationData.append('annotation_file', file);
         try {
-            await uploadJobAnnotationRequest(jobId, annotationData, 'cvat');
+            await uploadJobAnnotationRequest(jobId, annotationData, 'cvat_xml');
             historyModel.empty();
             shapeCollectionModel.empty();
             const data = await $.get(`/api/v1/jobs/${jobId}/annotations`);

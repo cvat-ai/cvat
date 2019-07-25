@@ -54,9 +54,9 @@ for ev, el in context:
                     shape['points'].extend(map(float, pair.split(',')))
 
             if track is not None:
-                track.shapes.append(annotations.Shape(**shape))
+                track.shapes.append(annotations.TrackedShape(**shape))
             else:
-                annotations.add_shape(annotations.Shape(**shape))
+                annotations.add_shape(annotations.LabeledShape(**shape))
             shape = None
 
         elif el.tag == 'track':

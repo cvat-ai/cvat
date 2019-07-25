@@ -128,16 +128,14 @@ def dump_task_data(pk, user, file_path, scheme, host, dumper):
 
 def _parse_task_annotation(annotation_file, annotation_importer, parser):
     with open(annotation_file, 'rb') as file_object:
-        local_vars = {
-            "file_object": file_object,
-            "annotations": annotation_importer,
-            }
         source_code = open(os.path.join(settings.BASE_DIR, parser.handler_file.name)).read()
         global_vars = globals()
         imports = import_modules(source_code)
         global_vars.update(imports)
+        global_vars["file_object"] = file_object
+        global_vars["annotations"] = annotation_importer
 
-        exec(source_code, global_vars, local_vars)
+        exec(source_code, global_vars)
 
 def bulk_create(db_model, objects, flt_param):
     if objects:
@@ -677,17 +675,15 @@ class TaskAnnotation:
             )
 
         with open(file_path, 'wb') as dump_file:
-            local_vars = {
-                "annotations": anno_exporter,
-                "file_object": dump_file,
-                "dump_format": dumper.name,
-                }
             source_code = open(os.path.join(settings.BASE_DIR, dumper.handler_file.name)).read()
             global_vars = globals()
             imports = import_modules(source_code)
             global_vars.update(imports)
+            global_vars["annotations"] = anno_exporter
+            global_vars["dump_format"] = dumper.name
+            global_vars["file_object"] = dump_file
 
-            exec(source_code, global_vars, local_vars)
+            exec(source_code, global_vars)
 
     def upload(self, file_object, parser):
         anno_importer = Annotation(

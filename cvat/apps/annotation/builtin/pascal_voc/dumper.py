@@ -6,15 +6,16 @@ from tempfile import TemporaryDirectory
 def dumps_as_pascal_voc(file_object, annotations):
     with TemporaryDirectory() as out_dir:
         with ZipFile(file_object, 'w') as output_zip:
-            for frame_annotation in annotations:
+            for frame_annotation in annotations.by_frame:
                 image_name = frame_annotation.name
                 width = frame_annotation.width
                 height = frame_annotation.height
 
                 writer = Writer(image_name, width, height)
                 writer.template_parameters['path'] = ''
+                writer.template_parameters['folder'] = ''
 
-                for shape in frame_annotation.shapes:
+                for shape in frame_annotation.labeled_shapes:
                     if shape.type != "rectangle":
                         continue
                     label = shape.label
@@ -29,4 +30,4 @@ def dumps_as_pascal_voc(file_object, annotations):
                 writer.save(anno_file)
                 output_zip.write(filename=anno_file, arcname=anno_name)
 
-dumps_as_pascal_voc(file_object, annotations.shapes)
+dumps_as_pascal_voc(file_object, annotations)

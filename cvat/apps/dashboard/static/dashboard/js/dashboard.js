@@ -87,7 +87,7 @@ class TaskView {
                 const annotationData = new FormData();
                 annotationData.append('annotation_file', file);
                 try {
-                    await uploadTaskAnnotationRequest(this._task.id, annotationData, 'cvat');
+                    await uploadTaskAnnotationRequest(this._task.id, annotationData, 'cvat_xml');
                 } catch (error) {
                     showMessage(error.message);
                 } finally {

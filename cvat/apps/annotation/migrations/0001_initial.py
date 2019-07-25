@@ -15,33 +15,33 @@ def create_builtins(apps, schema_editor):
     path_prefix = os.path.join("cvat", "apps", "annotation", "builtin")
 
     AnnotationDumperModel(
-        name="cvat_for_images",
-        format="xml",
+        name="cvat_xml_for_images",
         display_name="CVAT XML for images",
+        extension="xml",
         handler_file=os.path.join(path_prefix, "cvat", "dumper.py"),
         owner=None,
     ).save()
 
     AnnotationDumperModel(
-        name="cvat_for_videos",
-        format="xml",
+        name="cvat_xml_for_videos",
         display_name="CVAT XML for videos",
+        extension="xml",
         handler_file=os.path.join(path_prefix, "cvat", "dumper.py"),
         owner=None,
     ).save()
 
     AnnotationParserModel(
-        name="cvat",
-        format="xml",
+        name="cvat_xml",
         display_name="CVAT XML",
+        extension="xml",
         handler_file=os.path.join(path_prefix, "cvat", "parser.py"),
         owner=None,
     ).save()
 
     AnnotationDumperModel(
-        name="pascal_voc",
+        name="pascal_voc_xml",
         display_name="Pascal VOC XML",
-        format="xml",
+        extension="zip",
         handler_file=os.path.join(path_prefix, "pascal_voc", "dumper.py"),
         owner=None,
     ).save()
@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
                 ('name', cvat.apps.engine.models.SafeCharField(max_length=256)),
                 ('created_date', models.DateTimeField(auto_now_add=True)),
                 ('updated_date', models.DateTimeField(auto_now_add=True)),
-                ('format', models.CharField(max_length=32)),
+                ('extension', models.CharField(max_length=32)),
                 ('display_name', cvat.apps.engine.models.SafeCharField(max_length=256)),
                 ('handler_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(location=settings.BASE_DIR), upload_to=cvat.apps.annotation.models.upload_dumper_handler)),
                 ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
@@ -80,7 +80,7 @@ class Migration(migrations.Migration):
                 ('name', cvat.apps.engine.models.SafeCharField(max_length=256)),
                 ('created_date', models.DateTimeField(auto_now_add=True)),
                 ('updated_date', models.DateTimeField(auto_now_add=True)),
-                ('format', models.CharField(max_length=32)),
+                ('extension', models.CharField(max_length=32)),
                 ('display_name', cvat.apps.engine.models.SafeCharField(max_length=256)),
                 ('handler_file', models.FileField(storage=django.core.files.storage.FileSystemStorage(location=settings.BASE_DIR), upload_to=cvat.apps.annotation.models.upload_parser_handler)),
                 ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),

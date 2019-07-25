@@ -8,7 +8,7 @@ from collections import OrderedDict, namedtuple
 
 from django.utils import timezone
 
-from cvat.apps.engine.data_manager import DataManager
+from cvat.apps.engine.data_manager import DataManager, TrackManager
 from cvat.apps.engine.serializers import (LabeledShapeSerializer, LabeledTrackSerializer,
    LabeledImageSerializer, LabeledDataSerializer)
 
@@ -105,12 +105,14 @@ class AnnotationIR:
 
 class Annotation:
     Attribute = namedtuple('Attribute', 'name, value')
-    Shape = namedtuple('Shape', 'type, points, occluded, attributes, label, outside, keyframe, z_order, group, track_id, frame')
-    Shape.__new__.__defaults__ = (None, False, False, 0, 0, None, None)
+    LabeledShape = namedtuple('LabeledShape', 'type, points, occluded, attributes, label, outside, keyframe, z_order, group, track_id, frame')
+    LabeledShape.__new__.__defaults__ = (None, False, False, 0, 0, None, None)
+    TrackedShape = namedtuple('LabeledShape', 'type, points, occluded, attributes, outside, keyframe, z_order, frame')
+    TrackedShape.__new__.__defaults__ = (None, False, False, 0, 0, None, None)
     Track = namedtuple('Track', 'label, group, shapes')
     Tag = namedtuple('Tag', 'frame, label, attributes, group')
     Tag.__new__.__defaults__ = (0,)
-    Frame = namedtuple('Frame', 'frame, name, width, height, shapes')
+    Frame = namedtuple('Frame', 'frame, name, width, height, labeled_shapes, tags')
 
     def __init__(self, annotation_ir, db_task, scheme='', host='', create_callback=None):
         self._annotation_ir = annotation_ir
@@ -249,38 +251,66 @@ class Annotation:
             # Add source to dumped file
             self._meta["source"] = str(os.path.basename(self._db_task.video.path))
 
-    def _export_shape(self, shape):
-        exported_shape = Annotation.Shape(
+    def _export_attributes(self, attributes):
+        exported_attributes = []
+        for attr in attributes:
+            db_attribute = self._attribute_mapping_merged[attr["spec_id"]]
+            exported_attributes.append(Annotation.Attribute(
+                name=db_attribute,
+                value=attr["value"],
+            ))
+        return exported_attributes
+
+    def _export_tracked_shape(self, shape):
+        return Annotation.TrackedShape(
             type=shape["type"],
-            label=self._get_label_name(shape["label_id"]),
+            frame=self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step(),
             points=shape["points"],
             occluded=shape["occluded"],
             outside=shape.get("outside", False),
             keyframe=shape.get("keyframe", True),
             z_order=shape["z_order"],
-            group=shape["group"] if "group" in shape else 0,
-            track_id=shape["track_id"] if "track_id" in shape else -1,
-            attributes=[],
+            attributes=self._export_attributes(shape["attributes"]),
         )
-        for attr in shape["attributes"]:
-            db_attribute = self._attribute_mapping_merged[attr["spec_id"]]
-            exported_shape.attributes.append(Annotation.Attribute(
-                name=db_attribute,
-                value=attr["value"],
-            ))
 
-        return exported_shape
+    def _export_labeled_shape(self, shape):
+        return Annotation.LabeledShape(
+            type=shape["type"],
+            label=self._get_label_name(shape["label_id"]),
+            frame=self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step(),
+            points=shape["points"],
+            occluded=shape["occluded"],
+            outside=shape.get("outside", False),
+            keyframe=shape.get("keyframe", True),
+            z_order=shape.get("z_order", 0),
+            group=shape.get("group", 0),
+            attributes=self._export_attributes(shape["attributes"]),
+        )
+
+    def _export_tag(self, tag):
+        return Annotation.Tag(
+            frame=self._db_task.start_frame + tag["frame"] * self._db_task.get_frame_step(),
+            label=self._get_label_name(tag["label_id"]),
+            group=tag.get("group", 0),
+            attributes=self._export_attributes(tag["attributes"]),
+        )
+
+    def _create_frame(self, frame, name, height, width):
+        return Annotation.Frame(
+            frame=frame,
+            name=name,
+            height=height,
+            width=width,
+            tabeled_shapes=[],
+            tracked_shapes=[],
+            tags=[],
+        )
 
     @property
-    def shapes(self):
-        if self._frame_info == None or self._meta == None or self._label_mapping == None or self._attribute_mapping == None:
-            raise Exception("Annotation exporter is not initialized properly")
-
-        annotations = {}
-        data_manager = DataManager(self._annotation_ir)
-        for shape in data_manager.to_shapes(int(self._db_task.size)):
+    def by_frame(self):
+        def _get_frame(annotations, shape):
+            db_image = self._frame_info[shape["frame"]]
             frame = self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step()
-            db_image = self._frame_info[frame]
             rpath = db_image['path'].split(os.path.sep)
             if len(rpath) != 1:
                 rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
@@ -292,10 +322,41 @@ class Annotation:
                     name=rpath,
                     height=db_image["height"],
                     width=db_image["width"],
-                    shapes=[]
+                    labeled_shapes=[],
+                    tags=[],
                 )
-            annotations[frame].shapes.append(self._export_shape(shape))
-        return list(annotations.values())
+            return annotations[frame]
+
+        annotations = {}
+        data_manager = DataManager(self._annotation_ir)
+        for shape in data_manager.to_shapes(self._db_task.size):
+            _get_frame(annotations, shape).labeled_shapes.append(self._export_labeled_shape(shape))
+
+        for tag in self._annotation_ir.tags:
+            _get_frame(annotations, tag).tags.append(self._export_tag(tag))
+
+        for frame in annotations.values():
+            yield frame
+
+    @property
+    def shapes(self):
+        for shape in self._annotation_ir.shapes:
+            yield self._export_labeled_shape(shape)
+
+    @property
+    def tracks(self):
+        for track in self._annotation_ir.tracks:
+            tracked_shapes = TrackManager.get_interpolated_shapes(track, 0, self._db_task.size)
+            yield Annotation.Track(
+                label=self._get_label_name(track["label_id"]),
+                group=track['group'],
+                shapes=[self._export_tracked_shape(shape) for shape in tracked_shapes],
+            )
+
+    @property
+    def tags(self):
+        for tag in self._annotation_ir.tags:
+            yield self._export_tag(tag)
 
     @property
     def meta(self):

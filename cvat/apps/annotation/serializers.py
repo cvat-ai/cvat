@@ -8,12 +8,12 @@ from cvat.apps.annotation import models
 class AnnotationDumperSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AnnotationDumper
-        fields = ('name', 'format', 'display_name')
+        exclude = ('handler_file',)
 
 class AnnotationParserSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AnnotationDumper
-        fields = ('name', 'format', 'display_name')
+        exclude = ('handler_file',)
 
 class FormatsSerializer(serializers.Serializer):
     parsers = AnnotationParserSerializer(many=True)

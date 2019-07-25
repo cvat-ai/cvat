@@ -132,8 +132,8 @@ class XmlAnnotationWriter:
         self.xmlgen.endElement("annotations")
         self.xmlgen.endDocument()
 
-def dump_as_cvat_annotation(dumper, annotations, meta):
-    for frame_annotation in annotations:
+def dump_as_cvat_annotation(dumper, annotations):
+    for frame_annotation in annotations.by_frame:
         frame_id = frame_annotation.frame
         dumper.open_image(OrderedDict([
             ("id", str(frame_id)),
@@ -142,7 +142,7 @@ def dump_as_cvat_annotation(dumper, annotations, meta):
             ("height", str(frame_annotation.height))
         ]))
 
-        for shape in frame_annotation.shapes:
+        for shape in frame_annotation.labeled_shapes:
             dump_data = OrderedDict([
                 ("label", shape.label),
                 ("occluded", str(int(shape.occluded))),
@@ -165,7 +165,7 @@ def dump_as_cvat_annotation(dumper, annotations, meta):
                     )),
                 ]))
 
-            if meta["task"]["z_order"] != "False":
+            if annotations.meta["task"]["z_order"] != "False":
                 dump_data['z_order'] = str(shape.z_order)
             if "group" in shape and shape.group:
                 dump_data['group_id'] = str(shape.group)
@@ -200,111 +200,111 @@ def dump_as_cvat_annotation(dumper, annotations, meta):
 
         dumper.close_image()
 
-def dump_as_cvat_interpolation(dumper, annotations, meta):
-    #group shapes by track
-    tracks = {}
-    single_shapes = []
-    for frame_annotation in annotations:
-        for shape in frame_annotation.shapes:
-            track_shape = {
-                "frame": frame_annotation.frame,
-                "width": frame_annotation.width,
-                "height": frame_annotation.height,
-                "shape": shape,
-            }
-            if shape.track_id != -1:
-                if shape.track_id not in tracks:
-                    tracks[shape.track_id] = []
-
-                tracks[shape.track_id].append(track_shape)
-            else:
-                single_shapes.append(track_shape)
-
-    max_track_id = max(tracks.keys()) + 1 if tracks else 0
-    for single_shape in single_shapes:
-        single_shape["shape"] = single_shape["shape"]._replace(track_id=max_track_id)
-        tracks[max_track_id] = [single_shape]
-        max_track_id += 1
-
-    for idx, track in enumerate(tracks.values()):
-        first_shape = track[0]["shape"]
-        closing_item = deepcopy(track[-1])
-        if closing_item['frame'] < int(meta["task"]["stop_frame"]):
-            closing_item['shape'] = closing_item['shape']._replace(outside=1)
-            closing_item['frame'] += 1
-            track.append(closing_item)
-
+def dump_as_cvat_interpolation(dumper, annotations):
+    def dump_track(idx, track):
         track_id = idx
         dump_data = OrderedDict([
             ("id", str(track_id)),
-            ("label", first_shape.label),
+            ("label", track.label),
         ])
 
-        if "group" in first_shape and first_shape.group:
-            dump_data['group_id'] = str(first_shape.group)
+        if track.group:
+            dump_data['group_id'] = str(track.group)
         dumper.open_track(dump_data)
 
-        for shape in track:
+        for shape in track.shapes:
             dump_data = OrderedDict([
-                ("frame", str(shape["frame"])),
-                ("outside", str(int(shape["shape"].outside))),
-                ("occluded", str(int(shape["shape"].occluded))),
-                ("keyframe", str(int(shape["shape"].keyframe))),
+                ("frame", str(shape.frame)),
+                ("outside", str(int(shape.outside))),
+                ("occluded", str(int(shape.occluded))),
+                ("keyframe", str(int(shape.keyframe))),
             ])
 
-            if shape["shape"].type == "rectangle":
+            if shape.type == "rectangle":
                 dump_data.update(OrderedDict([
-                    ("xtl", "{:.2f}".format(shape["shape"].points[0])),
-                    ("ytl", "{:.2f}".format(shape["shape"].points[1])),
-                    ("xbr", "{:.2f}".format(shape["shape"].points[2])),
-                    ("ybr", "{:.2f}".format(shape["shape"].points[3])),
+                    ("xtl", "{:.2f}".format(shape.points[0])),
+                    ("ytl", "{:.2f}".format(shape.points[1])),
+                    ("xbr", "{:.2f}".format(shape.points[2])),
+                    ("ybr", "{:.2f}".format(shape.points[3])),
                 ]))
             else:
                 dump_data.update(OrderedDict([
                     ("points", ';'.join(['{:.2f},{:.2f}'.format(x, y)
-                        for x,y in pairwise(shape["shape"].points)]))
+                        for x,y in pairwise(shape.points)]))
                 ]))
 
-            if meta["task"]["z_order"] != "False":
-                dump_data["z_order"] = str(shape["shape"].z_order)
+            if annotations.meta["task"]["z_order"] != "False":
+                dump_data["z_order"] = str(shape.z_order)
 
-            if shape["shape"].type == "rectangle":
+            if shape.type == "rectangle":
                 dumper.open_box(dump_data)
-            elif shape["shape"].type == "polygon":
+            elif shape.type == "polygon":
                 dumper.open_polygon(dump_data)
-            elif shape["shape"].type == "polyline":
+            elif shape.type == "polyline":
                 dumper.open_polyline(dump_data)
-            elif shape["shape"].type == "points":
+            elif shape.type == "points":
                 dumper.open_points(dump_data)
             else:
                 raise NotImplementedError("unknown shape type")
 
-            for attr in shape["shape"].attributes:
+            for attr in shape.attributes:
                 dumper.add_attribute(OrderedDict([
                     ("name", attr.name),
                     ("value", attr.value)
                 ]))
 
-            if shape["shape"].type == "rectangle":
+            if shape.type == "rectangle":
                 dumper.close_box()
-            elif shape["shape"].type == "polygon":
+            elif shape.type == "polygon":
                 dumper.close_polygon()
-            elif shape["shape"].type == "polyline":
+            elif shape.type == "polyline":
                 dumper.close_polyline()
-            elif shape["shape"].type == "points":
+            elif shape.type == "points":
                 dumper.close_points()
             else:
                 raise NotImplementedError("unknown shape type")
         dumper.close_track()
 
+    counter = 0
+    for track in annotations.tracks:
+        dump_track(counter, track)
+        counter += 1
+
+    for shape in annotations.shapes:
+        dump_track(counter, annotations.Track(
+            label=shape.label,
+            group=shape.group,
+            shapes=[annotations.TrackedShape(
+                type=shape.type,
+                points=shape.points,
+                occluded=shape.occluded,
+                outside=False,
+                keyframe=True,
+                z_order=shape.z_order,
+                frame=shape.frame,
+                attributes=shape.attributes,
+            ),
+            annotations.TrackedShape(
+                type=shape.type,
+                points=shape.points,
+                occluded=shape.occluded,
+                outside=True,
+                keyframe=True,
+                z_order=shape.z_order,
+                frame=shape.frame + 1,
+                attributes=shape.attributes,
+            ),
+            ],
+        ))
+        counter += 1
 
 dumper = XmlAnnotationWriter(file_object)
 dumper.open_root()
 dumper.add_meta(annotations.meta)
 
-if dump_format == "cvat_for_images":
-    dump_as_cvat_annotation(dumper, annotations.shapes, annotations.meta)
+if dump_format == "cvat_xml_for_images":
+    dump_as_cvat_annotation(dumper, annotations)
 else:
-    dump_as_cvat_interpolation(dumper, annotations.shapes, annotations.meta)
+    dump_as_cvat_interpolation(dumper, annotations)
 
 dumper.close_root()

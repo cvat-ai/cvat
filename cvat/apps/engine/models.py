@@ -311,7 +311,6 @@ class TrackedShape(Shape):
 class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(TrackedShape, on_delete=models.CASCADE)
 
-
 class Plugin(models.Model):
     name = models.SlugField(max_length=32, primary_key=True)
     description = SafeCharField(max_length=8192)

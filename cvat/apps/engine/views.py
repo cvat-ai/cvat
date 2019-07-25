@@ -284,7 +284,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 "Please specify a correct 'format' parameter for the request")
 
         file_path = os.path.join(db_task.get_task_dirname(),
-            "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.format))
+            "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.extension))
 
         queue = django_rq.get_queue("default")
         rq_id = "{}@/api/v1/tasks/{}/annotations/{}".format(username, pk, filename)
@@ -297,7 +297,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                         rq_job.meta[action] = True
                         rq_job.save_meta()
                         return sendfile(request, rq_job.meta["file_path"], attachment=True,
-                            attachment_filename="{}.{}".format(filename, db_dumper.format))
+                            attachment_filename="{}.{}".format(filename, db_dumper.extension))
                     else:
                         return Response(status=status.HTTP_201_CREATED)
                 else: # Remove the old dump file
@@ -511,7 +511,7 @@ def upload_anno_proxy(upload_format, request, rq_id, rq_func, pk):
                 db_parser = AnnotationParser.objects.get(name=upload_format)
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(
-                    "Please specify a correct 'upload_format' parameter for the request")
+                    "Please specify a correct 'format' parameter for the upload request")
 
             anno_file = serializer.validated_data['annotation_file']
             fd, filename = mkstemp(prefix='cvat_{}'.format(pk))
