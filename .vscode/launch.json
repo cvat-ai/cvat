@@ -122,7 +122,7 @@
             "name": "cvat.js debug",
             "type": "node",
             "request": "launch",
-            "cwd": "${workspaceFolder}/cvatjs",
+            "cwd": "${workspaceFolder}/cvat-core",
             "runtimeExecutable": "node",
             "runtimeArgs": [
                 "--nolazy",
@@ -135,10 +135,10 @@
             "type": "node",
             "request": "launch",
             "name": "jest debug",
-            "program": "${workspaceFolder}/cvatjs/node_modules/.bin/jest",
+            "program": "${workspaceFolder}/cvat-core/node_modules/.bin/jest",
             "args": [
               "--config",
-              "${workspaceFolder}/cvatjs/jest.config.js"
+              "${workspaceFolder}/cvat-core/jest.config.js"
             ],
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",

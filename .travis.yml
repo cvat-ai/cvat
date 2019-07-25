@@ -13,4 +13,4 @@ before_script:
 
 script:
   - docker exec -it cvat /bin/bash -c 'python3 manage.py test cvat/apps/engine'
-  - docker exec -it cvat /bin/bash -c 'cd cvatjs && npm install && npm run test && npm run coveralls'
+  - docker exec -it cvat /bin/bash -c 'cd cvat-core && npm install && npm run test && npm run coveralls'
