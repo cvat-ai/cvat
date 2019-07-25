@@ -292,8 +292,7 @@ class Annotation:
             attributes=self._export_attributes(tag["attributes"]),
         )
 
-    @property
-    def by_frame(self):
+    def group_by_frame(self):
         def _get_frame(annotations, shape):
             db_image = self._frame_info[shape["frame"]]
             frame = self._db_task.start_frame + shape["frame"] * self._db_task.get_frame_step()

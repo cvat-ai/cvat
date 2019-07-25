@@ -132,7 +132,7 @@ class XmlAnnotationWriter:
         self.xmlgen.endDocument()
 
 def dump_as_cvat_annotation(dumper, annotations):
-    for frame_annotation in annotations.by_frame:
+    for frame_annotation in annotations.group_by_frame():
         frame_id = frame_annotation.frame
         dumper.open_image(OrderedDict([
             ("id", str(frame_id)),

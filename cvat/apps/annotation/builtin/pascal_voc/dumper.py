@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 def dumps_as_pascal_voc(file_object, annotations):
     with TemporaryDirectory() as out_dir:
         with ZipFile(file_object, 'w') as output_zip:
-            for frame_annotation in annotations.by_frame:
+            for frame_annotation in annotations.group_by_frame():
                 image_name = frame_annotation.name
                 width = frame_annotation.width
                 height = frame_annotation.height
