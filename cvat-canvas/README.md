@@ -31,7 +31,7 @@ All methods are sync.
     setup(const FrameData: frameData, [ObjectState]) => undefined
 
     activate(const number: clientID, const number: attributeID = null) => undefined // select if can't activate
-    rotate(const number: degrees = 90) => undefined
+    rotate(const Rotation: Rotation.DEG90) => undefined
     focus(const number: clientID, const number: padding) => undefined
     fit() => undefined
     grid(stepX, stepY, color, opacity) => undefined
