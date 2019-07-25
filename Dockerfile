@@ -125,7 +125,7 @@ RUN apt-get update && \
 ARG CUDA_SUPPORT
 ENV CUDA_SUPPORT=${CUDA_SUPPORT}
 RUN if [ "$CUDA_SUPPORT" = "yes" ]; then \
-        /tmp/components/cuda/install.sh; \
+        /tmp/components/cuda/install-cuda-10-0.sh; \
     fi
 
 # TODO: CHANGE URL

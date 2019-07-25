@@ -15,4 +15,4 @@ services:
     environment:
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
-      NVIDIA_REQUIRE_CUDA: "cuda>=9.0"
+      NVIDIA_REQUIRE_CUDA: "cuda>=10.0 brand=tesla,driver>=384,driver<385 brand=tesla,driver>=410,driver<411"
