@@ -1,9 +1,11 @@
 {
     "compilerOptions": {
+        "emitDeclarationOnly": true,
         "module": "commonjs",
         "noImplicitAny": true,
         "preserveConstEnums": true,
-        "allowJs": true
+        "declaration": true,
+        "declarationDir": "dist/declaration"
     },
     "include": [
         "src/**/*"

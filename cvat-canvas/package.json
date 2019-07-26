@@ -4,8 +4,7 @@
   "description": "Part of Computer Vision Annotation Tool which presents its canvas library",
   "main": "babel.config.js",
   "scripts": {
-    "compile": "tsc",
-    "build": "npm run compile && webpack --config ./webpack.config.js",
+    "build": "tsc && webpack --config ./webpack.config.js",
     "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --open'"
   },
   "author": "Intel",
