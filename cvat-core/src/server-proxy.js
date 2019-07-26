@@ -9,6 +9,7 @@
 */
 
 (() => {
+    const FormData = require('form-data');
     const {
         ServerError,
         ScriptingError,
@@ -300,7 +301,7 @@
                     });
                 }
 
-                const batchOfFiles = new window.FormData();
+                const batchOfFiles = new FormData();
                 for (const key in files) {
                     if (Object.prototype.hasOwnProperty.call(files, key)) {
                         for (let i = 0; i < files[key].length; i++) {

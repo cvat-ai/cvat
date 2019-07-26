@@ -467,11 +467,6 @@ function build() {
     };
 
     const implemented = Object.freeze(implementAPI(cvat));
-
-    if (typeof (window) === 'undefined') {
-        require('browser-env')();
-    }
-
     return implemented;
 }
 

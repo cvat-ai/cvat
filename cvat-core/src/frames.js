@@ -79,11 +79,11 @@
         if (!(this.number in frameCache[this.tid])) {
             const frame = await serverProxy.frames.getData(this.tid, this.number);
 
-            if (window.URL.createObjectURL) { // browser env
-                const url = window.URL.createObjectURL(new Blob([frame]));
-                frameCache[this.tid][this.number] = url;
-            } else {
+            if (typeof (module) !== 'undefined' && module.exports) {
                 frameCache[this.tid][this.number] = global.Buffer.from(frame, 'binary').toString('base64');
+            } else {
+                const url = URL.createObjectURL(new Blob([frame]));
+                frameCache[this.tid][this.number] = url;
             }
         }
 

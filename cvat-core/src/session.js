@@ -1000,7 +1000,7 @@
                         }
 
                         for (const value of clientFiles) {
-                            if (!(value instanceof window.File)) {
+                            if (!(value instanceof File)) {
                                 throw new ArgumentError(
                                     `Array values must be a File. But ${value.constructor.name} has been got.`,
                                 );
