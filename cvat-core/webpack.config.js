@@ -4,8 +4,6 @@
 */
 
 const path = require('path');
-const webpack = require('webpack');
-
 
 const nodeConfig = {
     target: 'node',
@@ -69,9 +67,6 @@ const webConfig = {
             },
         }],
     },
-    plugins: [
-        new webpack.IgnorePlugin(/browser-env/),
-    ],
 };
 
 module.exports = [nodeConfig, webConfig];
