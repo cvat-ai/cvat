@@ -11,21 +11,6 @@
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const { getFrame } = require('./frames');
-    const {
-        getAnnotations,
-        putAnnotations,
-        saveAnnotations,
-        hasUnsavedChanges,
-        mergeAnnotations,
-        splitAnnotations,
-        groupAnnotations,
-        clearAnnotations,
-        selectObject,
-        annotationsStatistics,
-        uploadAnnotations,
-        dumpAnnotations,
-    } = require('./annotations');
-
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
@@ -651,128 +636,24 @@
         }
     }
 
-    // Fill up the prototype by properties. Class syntax doesn't allow do it
-    // So, we do it seperately
-    buildDublicatedAPI(Job.prototype);
-
-    Job.prototype.save.implementation = async function () {
-        // TODO: Add ability to change an assignee
-        if (this.id) {
-            const jobData = {
-                status: this.status,
-            };
-
-            await serverProxy.jobs.saveJob(this.id, jobData);
-            return this;
-        }
-
-        throw new ArgumentError(
-            'Can not save job without and id',
-        );
-    };
-
-    Job.prototype.frames.get.implementation = async function (frame) {
-        if (!Number.isInteger(frame) || frame < 0) {
-            throw new ArgumentError(
-                `Frame must be a positive integer. Got: "${frame}"`,
-            );
-        }
-
-        if (frame < this.startFrame || frame > this.stopFrame) {
-            throw new ArgumentError(
-                `The frame with number ${frame} is out of the job`,
-            );
-        }
-
-        const frameData = await getFrame(this.task.id, this.task.mode, frame);
-        return frameData;
-    };
-
-    // TODO: Check filter for annotations
-    Job.prototype.annotations.get.implementation = async function (frame, filter) {
-        if (frame < this.startFrame || frame > this.stopFrame) {
-            throw new ArgumentError(
-                `Frame ${frame} does not exist in the job`,
-            );
-        }
-
-        const annotationsData = await getAnnotations(this, frame, filter);
-        return annotationsData;
-    };
-
-    Job.prototype.annotations.save.implementation = async function (onUpdate) {
-        const result = await saveAnnotations(this, onUpdate);
-        return result;
-    };
-
-    Job.prototype.annotations.merge.implementation = async function (objectStates) {
-        const result = await mergeAnnotations(this, objectStates);
-        return result;
-    };
-
-    Job.prototype.annotations.split.implementation = async function (objectState, frame) {
-        const result = await splitAnnotations(this, objectState, frame);
-        return result;
-    };
-
-    Job.prototype.annotations.group.implementation = async function (objectStates, reset) {
-        const result = await groupAnnotations(this, objectStates, reset);
-        return result;
-    };
-
-    Job.prototype.annotations.hasUnsavedChanges.implementation = function () {
-        const result = hasUnsavedChanges(this);
-        return result;
-    };
-
-    Job.prototype.annotations.clear.implementation = async function (reload) {
-        const result = await clearAnnotations(this, reload);
-        return result;
-    };
-
-    Job.prototype.annotations.select.implementation = function (frame, x, y) {
-        const result = selectObject(this, frame, x, y);
-        return result;
-    };
-
-    Job.prototype.annotations.statistics.implementation = function () {
-        const result = annotationsStatistics(this);
-        return result;
-    };
-
-    Job.prototype.annotations.put.implementation = function (objectStates) {
-        const result = putAnnotations(this, objectStates);
-        return result;
-    };
-
-    Job.prototype.annotations.upload.implementation = async function (file, format) {
-        const result = await uploadAnnotations(this, file, format);
-        return result;
-    };
-
-    Job.prototype.annotations.dump.implementation = async function (name, format) {
-        const result = await dumpAnnotations(this, name, format);
-        return result;
-    };
-
     /**
         * Class representing a task
         * @memberof module:API.cvat.classes
         * @extends Session
     */
     class Task extends Session {
-        /**
-            * In a fact you need use the constructor only if you want to create a task
-            * @param {object} initialData - Object which is used for initalization
-            * <br> It can contain keys:
-            * <br> <li style="margin-left: 10px;"> name
-            * <br> <li style="margin-left: 10px;"> assignee
-            * <br> <li style="margin-left: 10px;"> bug_tracker
-            * <br> <li style="margin-left: 10px;"> z_order
-            * <br> <li style="margin-left: 10px;"> labels
-            * <br> <li style="margin-left: 10px;"> segment_size
-            * <br> <li style="margin-left: 10px;"> overlap
-        */
+    /**
+        * In a fact you need use the constructor only if you want to create a task
+        * @param {object} initialData - Object which is used for initalization
+        * <br> It can contain keys:
+        * <br> <li style="margin-left: 10px;"> name
+        * <br> <li style="margin-left: 10px;"> assignee
+        * <br> <li style="margin-left: 10px;"> bug_tracker
+        * <br> <li style="margin-left: 10px;"> z_order
+        * <br> <li style="margin-left: 10px;"> labels
+        * <br> <li style="margin-left: 10px;"> segment_size
+        * <br> <li style="margin-left: 10px;"> overlap
+    */
         constructor(initialData) {
             super();
             const data = {
@@ -1217,9 +1098,128 @@
         }
     }
 
-    // Fill up the prototype by properties. Class syntax doesn't allow do it
-    // So, we do it seperately
+    module.exports = {
+        Job,
+        Task,
+    };
+
+    const {
+        getAnnotations,
+        putAnnotations,
+        saveAnnotations,
+        hasUnsavedChanges,
+        mergeAnnotations,
+        splitAnnotations,
+        groupAnnotations,
+        clearAnnotations,
+        selectObject,
+        annotationsStatistics,
+        uploadAnnotations,
+        dumpAnnotations,
+    } = require('./annotations');
+
+    buildDublicatedAPI(Job.prototype);
     buildDublicatedAPI(Task.prototype);
+
+    Job.prototype.save.implementation = async function () {
+        // TODO: Add ability to change an assignee
+        if (this.id) {
+            const jobData = {
+                status: this.status,
+            };
+
+            await serverProxy.jobs.saveJob(this.id, jobData);
+            return this;
+        }
+
+        throw new ArgumentError(
+            'Can not save job without and id',
+        );
+    };
+
+    Job.prototype.frames.get.implementation = async function (frame) {
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new ArgumentError(
+                `Frame must be a positive integer. Got: "${frame}"`,
+            );
+        }
+
+        if (frame < this.startFrame || frame > this.stopFrame) {
+            throw new ArgumentError(
+                `The frame with number ${frame} is out of the job`,
+            );
+        }
+
+        const frameData = await getFrame(this.task.id, this.task.mode, frame);
+        return frameData;
+    };
+
+    // TODO: Check filter for annotations
+    Job.prototype.annotations.get.implementation = async function (frame, filter) {
+        if (frame < this.startFrame || frame > this.stopFrame) {
+            throw new ArgumentError(
+                `Frame ${frame} does not exist in the job`,
+            );
+        }
+
+        const annotationsData = await getAnnotations(this, frame, filter);
+        return annotationsData;
+    };
+
+    Job.prototype.annotations.save.implementation = async function (onUpdate) {
+        const result = await saveAnnotations(this, onUpdate);
+        return result;
+    };
+
+    Job.prototype.annotations.merge.implementation = async function (objectStates) {
+        const result = await mergeAnnotations(this, objectStates);
+        return result;
+    };
+
+    Job.prototype.annotations.split.implementation = async function (objectState, frame) {
+        const result = await splitAnnotations(this, objectState, frame);
+        return result;
+    };
+
+    Job.prototype.annotations.group.implementation = async function (objectStates, reset) {
+        const result = await groupAnnotations(this, objectStates, reset);
+        return result;
+    };
+
+    Job.prototype.annotations.hasUnsavedChanges.implementation = function () {
+        const result = hasUnsavedChanges(this);
+        return result;
+    };
+
+    Job.prototype.annotations.clear.implementation = async function (reload) {
+        const result = await clearAnnotations(this, reload);
+        return result;
+    };
+
+    Job.prototype.annotations.select.implementation = function (frame, x, y) {
+        const result = selectObject(this, frame, x, y);
+        return result;
+    };
+
+    Job.prototype.annotations.statistics.implementation = function () {
+        const result = annotationsStatistics(this);
+        return result;
+    };
+
+    Job.prototype.annotations.put.implementation = function (objectStates) {
+        const result = putAnnotations(this, objectStates);
+        return result;
+    };
+
+    Job.prototype.annotations.upload.implementation = async function (file, format) {
+        const result = await uploadAnnotations(this, file, format);
+        return result;
+    };
+
+    Job.prototype.annotations.dump.implementation = async function (name, format) {
+        const result = await dumpAnnotations(this, name, format);
+        return result;
+    };
 
     Task.prototype.save.implementation = async function saveTaskImplementation(onUpdate) {
         // TODO: Add ability to change an owner and an assignee
@@ -1356,10 +1356,5 @@
     Task.prototype.annotations.dump.implementation = async function (name, format) {
         const result = await dumpAnnotations(this, name, format);
         return result;
-    };
-
-    module.exports = {
-        Job,
-        Task,
     };
 })();

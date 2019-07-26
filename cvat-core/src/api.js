@@ -41,7 +41,7 @@ function build() {
     } = require('./exceptions');
 
     const pjson = require('../package.json');
-    const clientID = +Date.now().toString().substr(-6);
+    const config = require('./config');
 
     /**
         * API entrypoint
@@ -362,12 +362,32 @@ function build() {
                 * value which is displayed in a logs
                 * @memberof module:API.cvat.config
             */
-            backendAPI: 'http://localhost:7000/api/v1',
-            proxy: false,
-            taskID: undefined,
-            jobID: undefined,
-            clientID: {
-                get: () => clientID,
+            get backendAPI() {
+                return config.backendAPI;
+            },
+            set backendAPI(value) {
+                config.backendAPI = value;
+            },
+            get proxy() {
+                return config.proxy;
+            },
+            set proxy(value) {
+                config.proxy = value;
+            },
+            get taskID() {
+                return config.taskID;
+            },
+            set taskID(value) {
+                config.taskID = value;
+            },
+            get jobID() {
+                return config.jobID;
+            },
+            set jobID(value) {
+                config.jobID = value;
+            },
+            get clientID() {
+                return config.clientID;
             },
         },
         /**

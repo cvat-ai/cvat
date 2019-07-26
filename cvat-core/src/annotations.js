@@ -16,7 +16,7 @@
     const {
         ScriptingError,
         DataError,
-    } = ('./exceptions');
+    } = require('./exceptions');
 
     const jobCache = new WeakMap();
     const taskCache = new WeakMap();

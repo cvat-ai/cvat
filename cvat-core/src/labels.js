@@ -151,7 +151,7 @@
             if (Object.prototype.hasOwnProperty.call(initialData, 'attributes')
                 && Array.isArray(initialData.attributes)) {
                 for (const attrData of initialData.attributes) {
-                    data.attributes.push(Attribute(attrData));
+                    data.attributes.push(new Attribute(attrData));
                 }
             }
 

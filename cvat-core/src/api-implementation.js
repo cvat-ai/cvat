@@ -32,7 +32,7 @@
 
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
-        cvat.plugins.register.implementation = PluginRegistry.register;
+        cvat.plugins.register.implementation = PluginRegistry.register.bind(cvat);
 
         cvat.server.about.implementation = async () => {
             const result = await serverProxy.server.about();
