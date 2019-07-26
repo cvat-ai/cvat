@@ -1313,6 +1313,15 @@
         if (this.overlap) {
             taskData.overlap = this.overlap;
         }
+        if (this.startFrame) {
+            taskData.start_frame = this.startFrame;
+        }
+        if (this.stopFrame) {
+            taskData.stop_frame = this.stopFrame;
+        }
+        if (this.frameFilter) {
+            taskData.frame_filter = this.frameFilter;
+        }
 
         const taskFiles = {
             client_files: this.clientFiles,
