@@ -1,4 +1,11 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
+import { Location, Action } from 'history';
+
+import * as queryString from 'query-string';
+
+import { connect } from 'react-redux';
+import { getTasksAsync } from '../../actions/tasks.actions';
+import { filterTasks } from '../../actions/tasks-filter.actions';
 
 import { Layout } from 'antd';
 
@@ -8,77 +15,50 @@ import DashboardFooter from './footer/dashboard-footer';
 
 import './dashboard.scss';
 
-interface DashboardState {
-  tasks: [];
-}
-
-class Dashboard extends Component<any, DashboardState> {
-  constructor(props: any) {
-    super(props);
-
-    this.state = { tasks: [] };
-  }
-
+class Dashboard extends PureComponent<any, any> {
   componentDidMount() {
-    this.getTasks();
+    this.loadTasks(this.props.location.search);
+
+    this.props.history.listen((location: Location, action: Action) => {
+      this.loadTasks(location.search);
+    })
   }
 
   render() {
     return (
       <Layout className="layout">
-        <DashboardHeader
-          onSearch={ this.getTasks }>
-        </DashboardHeader>
-
-        <DashboardContent
-          tasks={ this.state.tasks }
-          deleteTask={ this.deleteTask }>
-        </DashboardContent>
-
-        <DashboardFooter
-          tasksCount={ (this.state.tasks as any)['count'] }
-          onPageChange={ this.onPageChange }>
-        </DashboardFooter>
+        <DashboardHeader />
+        <DashboardContent />
+        <DashboardFooter />
       </Layout>
     );
   }
 
-  private getTasks = (query?: string) => {
-    const queryObject = {
-      search: query
-    };
+  private loadTasks = (params: any) => {
+    const query = queryString.parse(params);
+    const queryObject = this.setQueryObject(query);
 
-    (window as any).cvat.tasks.get(query ? queryObject : {}).then(
-      (tasks: any) => {
-        this.setState({ tasks });
-      },
-      (error: any) => {
-        console.log(error);
-      }
-    );
+    this.props.dispatch(filterTasks(queryObject));
+    this.props.dispatch(getTasksAsync(queryObject));
   }
 
-  private onPageChange = (page: number) => {
-    (window as any).cvat.tasks.get({ page }).then(
-      (tasks: any) => {
-        this.setState({ tasks });
-      },
-      (error: any) => {
-        console.log(error);
-      }
-    );
-  }
+  private setQueryObject = (params: { search?: string, page?: string }): { search?: string, page?: number } => {
+    const queryObject: { search?: string, page?: number } = {};
 
-  private deleteTask = (task: any) => {
-    task.delete().then(
-      (_deleted: any) => {
-        this.getTasks();
-      },
-      (error: any) => {
-        console.log(error);
-      }
-    );
+    if (params['search']) {
+      queryObject.search = params.search.toString();
+    }
+
+    if (params['page']) {
+      queryObject.page = parseInt(params.page);
+    }
+
+    return queryObject;
   }
 }
 
-export default Dashboard;
+const mapStateToProps = (state: any) => {
+  return { ...state.tasks, ...state.tasksFilter };
+};
+
+export default connect(mapStateToProps)(Dashboard);

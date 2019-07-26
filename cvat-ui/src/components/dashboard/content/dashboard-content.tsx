@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
 
+import { connect } from 'react-redux';
+import { getTasksAsync } from '../../../actions/tasks.actions';
+
 import { Layout, Empty, Button, Modal, Col, Row } from 'antd';
 import Title from 'antd/lib/typography/Title';
 
@@ -8,16 +11,9 @@ import './dashboard-content.scss';
 const { Content } = Layout;
 const { confirm } = Modal;
 
-interface DashboardContentAction {
-  id: number,
-  name: string,
-  trigger: Function,
-}
-
 class DashboardContent extends Component<any, any> {
   hostUrl: string | undefined;
   apiUrl: string | undefined;
-  actions: DashboardContentAction[];
 
   constructor(props: any) {
     super(props);
@@ -25,37 +21,6 @@ class DashboardContent extends Component<any, any> {
     this.state = {};
     this.hostUrl = process.env.REACT_APP_API_HOST_URL;
     this.apiUrl = process.env.REACT_APP_API_FULL_URL;
-
-    this.actions = [
-      {
-        id: 1,
-        name: 'Dump annotation',
-        trigger: () => {
-          this.onDumpAnnotation();
-        },
-      },
-      {
-        id: 2,
-        name: 'Upload annotation',
-        trigger: () => {
-          this.onUploadAnnotation();
-        },
-      },
-      {
-        id: 3,
-        name: 'Update task',
-        trigger: (task: any) => {
-          this.onUpdateTask(task);
-        },
-      },
-      {
-        id: 4,
-        name: 'Delete task',
-        trigger: (task: any) => {
-          this.onDeleteTask(task);
-        },
-      },
-    ];
   }
 
   render() {
@@ -66,48 +31,11 @@ class DashboardContent extends Component<any, any> {
     );
   }
 
-  private onDumpAnnotation() {
-    console.log('Dump');
-  }
-
-  private onUploadAnnotation() {
-    console.log('Upload');
-  }
-
-  private onUpdateTask(task: any) {
-    console.log('Update');
-  }
-
-  private onDeleteTask(task: any) {
-    const props = this.props;
-
-    confirm({
-      title: 'Do you want to delete this task?',
-      okText: 'Yes',
-      okType: 'danger',
-      centered: true,
-      onOk() {
-        return props.deleteTask(task);
-      },
-      cancelText: 'No',
-      onCancel() {
-        return;
-      },
-    });
-  }
-
   private renderPlaceholder() {
     return (
-      <Empty
-        className="empty"
-        description={
-          <span>
-            No tasks found...
-          </span>
-        }
-      >
-        <Button type="primary">
-          Create a new task
+      <Empty className="empty" description="No tasks found...">
+        <Button type="primary" onClick={ this.createTask }>
+          Create task
         </Button>
       </Empty>
     )
@@ -132,17 +60,26 @@ class DashboardContent extends Component<any, any> {
                   </Col>
 
                   <Col className="card-actions" span={8}>
-                    {
-                      this.actions.map(
-                        (action: DashboardContentAction) => (
-                          <Row type="flex" key={ action.id }>
-                            <Button type="primary" onClick={ () => action.trigger(task) }>
-                              { action.name }
-                            </Button>
-                          </Row>
-                        )
-                      )
-                    }
+                    <Row type="flex">
+                      <Button type="primary" onClick={ this.onDumpAnnotation }>
+                        Dump annotation
+                      </Button>
+                    </Row>
+                    <Row type="flex">
+                      <Button type="primary" onClick={ this.onUploadAnnotation }>
+                        Upload annotation
+                      </Button>
+                    </Row>
+                    <Row type="flex">
+                      <Button type="primary" onClick={ this.onUpdateTask }>
+                        Update task
+                      </Button>
+                    </Row>
+                    <Row type="flex">
+                      <Button type="primary" onClick={ () => this.onDeleteTask(task) }>
+                        Delete task
+                      </Button>
+                    </Row>
                   </Col>
 
                   <Col className="сard-jobs" span={8}>
@@ -165,6 +102,49 @@ class DashboardContent extends Component<any, any> {
       </Content>
     );
   }
+
+  private createTask = () => {
+    console.log('Create task');
+  }
+
+  private onUpdateTask = (task: any) => {
+    console.log('Update task');
+  }
+
+  private onDeleteTask = (task: any) => {
+    const self = this;
+
+    confirm({
+      title: 'Do you want to delete this task?',
+      okText: 'Yes',
+      okType: 'danger',
+      centered: true,
+      onOk(closeFunction: Function) {
+        return task.delete().then(
+          () => {
+            self.props.dispatch(getTasksAsync());
+            closeFunction();
+          },
+        );
+      },
+      cancelText: 'No',
+      onCancel() {
+        return;
+      },
+    });
+  }
+
+  private onDumpAnnotation = () => {
+    console.log('Dump annotatio');
+  }
+
+  private onUploadAnnotation = () => {
+    console.log('Upload annotation');
+  }
 }
 
-export default DashboardContent;
+const mapStateToProps = (state: any) => {
+  return state.tasks;
+};
+
+export default connect(mapStateToProps)(DashboardContent);
