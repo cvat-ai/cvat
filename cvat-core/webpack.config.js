@@ -12,7 +12,7 @@ const nodeConfig = {
     entry: './src/api.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'cvat.node.js',
+        filename: 'cvat-core.node.js',
         library: 'cvat',
         libraryTarget: 'commonjs',
     },
@@ -37,7 +37,7 @@ const webConfig = {
     entry: './src/api.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'cvat.js',
+        filename: 'cvat-core.js',
         library: 'cvat',
         libraryTarget: 'window',
     },
