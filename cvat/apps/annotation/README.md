@@ -3,16 +3,36 @@
 The purpose of this application is to add support for multiple annotation formats for CVAT.
 It allows to download and upload annotations in different formats and easily add support for new.
 
-## How to add a new annotation dumper/parser
+## How to add a new annotation format support
 
-1.  Write a python script that will be executed via exec() function.
+1.  Write a python script that will be executed via exec() function. Script must defines following items:
+    - **format_spec** - a dictionary with the following keys:
+    ```python
+    format_spec = {
+        "name": "CVAT",
+        "format": "XML",
+        "version": "1.1",
+        "dump_specification": ["for videos", "for images"],
+        "parse_specification": [],
+        "file_extension": "xml",
+      }
+      ```
+    - **dump** - a function with the following signature:
+    ```python
+    def dump(file_object, annotations, dump_spec):
+    ```
+    - **parse** - a function with the signature:
+    ```python
+    def parse(file_object, annotations, parse_spec):
+    ```
 
     Inside of the script environment 3 variables are available:
     - file_object - python's standard file object returned by open() function and exposing a file-oriented API
     (with methods such as read() or write()) to an underlying resource.
-    - annotations - instance of [Annotation](annotation.py#L106) class.
-    - dump_format - string with name of requested dump format.
-    It may be useful if one dumper script implements more than one format support.
+    - **annotations** - instance of [Annotation](annotation.py#L106) class.
+    - **parse_spec / dump_spec** - string with name of the requested specification
+    (if the annotation format defines them).
+    It may be useful if one script implements more than one format support.
 
     Annotation class expose API and some additional pre-defined types that allow to get/add shapes inside
     a parser/dumper code.
@@ -92,38 +112,15 @@ It allows to download and upload annotations in different formats and easily add
         annotations.add_shape(shape)
     ```
     Full examples can be found in [builtin](builtin) folder.
-1.  Write a data migration to create record in database during CVAT startup.
+1.  Add path to a new python script to the annotation app settings:
 
-    Example:
     ```python
-    from django.db import migrations
-    from django.apps import apps
-    import os
-
-    def udpate_builtins(apps, schema_editor):
-        AnnotationDumperModel = apps.get_model('annotation', 'AnnotationDumper')
-        AnnotationParserModel = apps.get_model('annotation', 'AnnotationParser')
-
-        path_prefix = os.path.join("cvat", "apps", "annotation", "builtin")
-
-        AnnotationDumperModel(
-            name="new_format_json",
-            display_name="NEW FORMAT JSON",
-            extension="json",
-            handler_file=os.path.join(path_prefix, "new_format", "dumper.py"),
-            owner=None,
-        ).save()
-
-    class Migration(migrations.Migration):
-    dependencies = [
-            ('engine', '0001_initial'),
-        ]
-
-        operations = [
-            migrations.RunPython(update_builtins),
-        ]
-
+    BUILTIN_FORMATS = (
+      os.path.join(path_prefix, 'cvat.py'),
+      os.path.join(path_prefix,'pascal_voc.py'),
+    )
     ```
+
 ## Ideas for improvements
 
 - Annotation format manager like DL Model manager with which the user can add custom format support by

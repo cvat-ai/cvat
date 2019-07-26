@@ -129,7 +129,7 @@ function showOverlay(message) {
     return overlayWindow[0];
 }
 
-async function dumpAnnotationRequest(tid, taskName, format) {
+async function dumpAnnotationRequest(tid, taskName, format, spec) {
     // URL Router on the server doesn't work correctly with slashes.
     // So, we have to replace them on the client side
     taskName = taskName.replace(/\//g, '_');
@@ -137,6 +137,9 @@ async function dumpAnnotationRequest(tid, taskName, format) {
     return new Promise((resolve, reject) => {
         const url = `/api/v1/tasks/${tid}/annotations/${name}`;
         let queryString = `format=${format}`;
+        if (spec) {
+            queryString += `&spec=${spec}`;
+        }
         async function request() {
             $.get(`${url}?${queryString}`)
                 .done((...args) => {
@@ -162,9 +165,12 @@ async function dumpAnnotationRequest(tid, taskName, format) {
     });
 }
 
-async function uploadAnnoRequest(url, formData, format) {
+async function uploadAnnoRequest(url, formData, formatId, spec) {
     return new Promise((resolve, reject) => {
-        const queryString = `format=${format}`;
+        let queryString = `format=${formatId}`;
+        if (spec) {
+            queryString += `&spec=${spec}`;
+        }
         async function request(data) {
             try {
                 await $.ajax({
@@ -191,12 +197,12 @@ async function uploadAnnoRequest(url, formData, format) {
     });
 }
 
-async function uploadJobAnnotationRequest(jid, formData, format) {
-    return uploadAnnoRequest(`/api/v1/jobs/${jid}/annotations`, formData, format);
+async function uploadJobAnnotationRequest(jid, formData, formatId, spec) {
+    return uploadAnnoRequest(`/api/v1/jobs/${jid}/annotations`, formData, formatId, spec);
 }
 
-async function uploadTaskAnnotationRequest(tid, formData, format) {
-    return uploadAnnoRequest(`/api/v1/tasks/${tid}/annotations`, formData, format);
+async function uploadTaskAnnotationRequest(tid, formData, formatId, spec) {
+    return uploadAnnoRequest(`/api/v1/tasks/${tid}/annotations`, formData, formatId, spec);
 }
 
 /* These HTTP methods do not require CSRF protection */

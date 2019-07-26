@@ -5,19 +5,23 @@
 from rest_framework import serializers
 from cvat.apps.annotation import models
 
-class AnnotationDumperSerializer(serializers.ModelSerializer):
+class AnnotationFormatSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.AnnotationDumper
-        exclude = ('handler_file',)
+        model = models.AnnotationFormat
+        exclude = ('handler_file', )
 
-class AnnotationParserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.AnnotationDumper
-        exclude = ('handler_file',)
+    # pylint: disable=no-self-use
+    def to_internal_value(self, data):
+        annotation_format = data.copy()
+        annotation_format['dump_specification'] = '\n'.join(data.get('dump_specification', []))
+        annotation_format['parse_specification'] = '\n'.join(data.get('parse_specification', []))
+        return annotation_format
 
-class FormatsSerializer(serializers.Serializer):
-    parsers = AnnotationParserSerializer(many=True)
-    dumpers = AnnotationDumperSerializer(many=True)
+    def to_representation(self, instance):
+        annotation_format = super().to_representation(instance)
+        annotation_format['dump_specification'] = annotation_format['dump_specification'].split('\n')
+        annotation_format['parse_specification'] = annotation_format['parse_specification'].split('\n')
+        return annotation_format
 
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()

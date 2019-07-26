@@ -37,13 +37,13 @@ from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
    RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
    PluginSerializer, FileInfoSerializer, LogEventSerializer)
-from cvat.apps.annotation.serializers import FormatsSerializer, AnnotationFileSerializer
+from cvat.apps.annotation.serializers import AnnotationFormatSerializer, AnnotationFileSerializer
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
-from cvat.apps.annotation.models import AnnotationDumper, AnnotationParser
-from cvat.apps.annotation.annotation import get_annotation_formats
+from cvat.apps.annotation.models import AnnotationFormat
+from cvat.apps.annotation.format import get_annotation_formats
 
 # Server REST API
 @login_required
@@ -156,7 +156,7 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['GET'])
     def formats(request):
         data = get_annotation_formats()
-        return Response(FormatsSerializer(data).data)
+        return Response(data)
 
 class TaskFilter(filters.FilterSet):
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
@@ -234,10 +234,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             if serializer.is_valid(raise_exception=True):
                 return Response(serializer.data)
         elif request.method == 'PUT':
-            upload_format = request.query_params.get("format", "")
-            if upload_format:
+            if request.query_params.get("format", ""):
                 return upload_anno_proxy(
-                    upload_format=upload_format,
                     request=request,
                     rq_id="{}@/api/v1/tasks/{}/annotations/upload".format(request.user, pk),
                     rq_func=annotation.upload_task_anno,
@@ -276,15 +274,16 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Please specify a correct 'action' for the request")
 
-        dump_format = request.query_params.get("format", "")
+        dump_format_id = request.query_params.get("format", "")
+        dump_spec = request.query_params.get("spec", "")
         try:
-            db_dumper = AnnotationDumper.objects.get(name=dump_format)
+            db_dumper = AnnotationFormat.objects.get(pk=dump_format_id)
         except ObjectDoesNotExist:
             raise serializers.ValidationError(
                 "Please specify a correct 'format' parameter for the request")
 
         file_path = os.path.join(db_task.get_task_dirname(),
-            "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.extension))
+            "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.file_extension))
 
         queue = django_rq.get_queue("default")
         rq_id = "{}@/api/v1/tasks/{}/annotations/{}".format(username, pk, filename)
@@ -297,7 +296,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                         rq_job.meta[action] = True
                         rq_job.save_meta()
                         return sendfile(request, rq_job.meta["file_path"], attachment=True,
-                            attachment_filename="{}.{}".format(filename, db_dumper.extension))
+                            attachment_filename="{}.{}".format(filename, db_dumper.file_extension))
                     else:
                         return Response(status=status.HTTP_201_CREATED)
                 else: # Remove the old dump file
@@ -315,7 +314,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         rq_job = queue.enqueue_call(func=annotation.dump_task_data,
             args=(pk, request.user, file_path, request.scheme,
-                request.get_host(), db_dumper),
+                request.get_host(), db_dumper, dump_spec),
             job_id=rq_id)
         rq_job.meta["file_path"] = file_path
         rq_job.save_meta()
@@ -407,10 +406,8 @@ class JobViewSet(viewsets.GenericViewSet,
             data = annotation.get_job_data(pk, request.user)
             return Response(data)
         elif request.method == 'PUT':
-            upload_format = request.query_params.get("format", "")
-            if upload_format:
+            if request.query_params.get("format", ""):
                 return upload_anno_proxy(
-                    upload_format=upload_format,
                     request=request,
                     rq_id="{}@/api/v1/jobs/{}/annotations/upload".format(request.user, pk),
                     rq_func=annotation.upload_job_anno,
@@ -500,15 +497,17 @@ def rq_handler(job, exc_type, exc_value, tb):
 
     return True
 
-def upload_anno_proxy(upload_format, request, rq_id, rq_func, pk):
+def upload_anno_proxy(request, rq_id, rq_func, pk):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
+    upload_format_id = request.query_params.get("format", "")
+    upload_format_spec = request.query_params.get("spec", "")
 
     if not rq_job:
         serializer = AnnotationFileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             try:
-                db_parser = AnnotationParser.objects.get(name=upload_format)
+                db_parser = AnnotationFormat.objects.get(pk=upload_format_id)
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(
                     "Please specify a correct 'format' parameter for the upload request")
@@ -520,7 +519,7 @@ def upload_anno_proxy(upload_format, request, rq_id, rq_func, pk):
                     f.write(chunk)
             rq_job = queue.enqueue_call(
                 func=rq_func,
-                args=(pk, request.user, filename, db_parser),
+                args=(pk, request.user, filename, db_parser, upload_format_spec),
                 job_id=rq_id
             )
             rq_job.meta['tmp_file'] = filename

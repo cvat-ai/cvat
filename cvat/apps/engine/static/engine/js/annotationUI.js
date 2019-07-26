@@ -65,7 +65,7 @@ function blurAllElements() {
 }
 
 function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationSaverModel,
-    uploadAnnotationButton) {
+    uploadAnnotationButton, formatId, parseSpec) {
     $('#annotationFileSelector').one('change', async (changedFileEvent) => {
         const file = changedFileEvent.target.files['0'];
         changedFileEvent.target.value = '';
@@ -75,7 +75,7 @@ function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationS
         const annotationData = new FormData();
         annotationData.append('annotation_file', file);
         try {
-            await uploadJobAnnotationRequest(jobId, annotationData, 'cvat_xml');
+            await uploadJobAnnotationRequest(jobId, annotationData, formatId, parseSpec);
             historyModel.empty();
             shapeCollectionModel.empty();
             const data = await $.get(`/api/v1/jobs/${jobId}/annotations`);
@@ -387,18 +387,21 @@ function setupMenu(job, task, shapeCollectionModel,
     $('#settingsButton').attr('title', `
         ${shortkeys.open_settings.view_value} - ${shortkeys.open_settings.description}`);
 
-    for (const downloadFormat of annotationFormats.dumpers) {
-        $(`<li>${downloadFormat.display_name}</li>`).on('click', async () => {
-            $('#downloadAnnotationButton')[0].disabled = true;
-            $('#downloadDropdownMenu').addClass('hidden');
-            try {
-                await dumpAnnotationRequest(task.id, task.name, downloadFormat.name);
-            } catch (error) {
-                showMessage(error.message);
-            } finally {
-                $('#downloadAnnotationButton')[0].disabled = false;
-            }
-        }).appendTo('#downloadDropdownMenu');
+    for (const format of annotationFormats) {
+        for (const dumpSpec of format.dump_specification) {
+            const displayName = `${format.name} ${format.format} ${dumpSpec}`;
+            $(`<li>${displayName}</li>`).on('click', async () => {
+                $('#downloadAnnotationButton')[0].disabled = true;
+                $('#downloadDropdownMenu').addClass('hidden');
+                try {
+                    await dumpAnnotationRequest(task.id, task.name, format.id, dumpSpec);
+                } catch (error) {
+                    showMessage(error.message);
+                } finally {
+                    $('#downloadAnnotationButton')[0].disabled = false;
+                }
+            }).appendTo('#downloadDropdownMenu');
+        }
     }
 
     $('#downloadAnnotationButton').on('click', () => {
@@ -407,9 +410,17 @@ function setupMenu(job, task, shapeCollectionModel,
 
     $('#uploadAnnotationButton').on('click', () => {
         hide();
+        const CVATformat = annotationFormats.find( (el) => el.name === 'CVAT');
         userConfirm('Current annotation will be removed from the client. Continue?',
             () => {
-                uploadAnnotation(job.id, shapeCollectionModel, historyModel, annotationSaverModel, $('#uploadAnnotationButton'));
+                uploadAnnotation(
+                    job.id,
+                    shapeCollectionModel,
+                    historyModel,
+                    annotationSaverModel,
+                    $('#uploadAnnotationButton'),
+                    CVATformat.id,
+                );
             });
     });
 

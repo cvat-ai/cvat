@@ -11,7 +11,8 @@ from django.utils import timezone
 from cvat.apps.engine.data_manager import DataManager, TrackManager
 from cvat.apps.engine.serializers import LabeledDataSerializer
 
-from cvat.apps.annotation.models import AnnotationDumper, AnnotationParser
+from cvat.apps.annotation.models import AnnotationFormat
+
 
 class AnnotationIR:
     def __init__(self, data=None):
@@ -403,9 +404,3 @@ class Annotation:
             track_len += len(track['shapes'])
 
         return len(self._annotation_ir.tags) + len(self._annotation_ir.shapes) + track_len
-
-def get_annotation_formats():
-    return {
-        'parsers': AnnotationParser.objects.all(),
-        'dumpers': AnnotationDumper.objects.all(),
-    }

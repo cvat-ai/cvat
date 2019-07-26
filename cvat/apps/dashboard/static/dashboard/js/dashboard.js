@@ -16,7 +16,7 @@
 class TaskView {
     constructor(task, annotationFormats) {
         this.init(task);
-        this._anno_formats = annotationFormats;
+        this._annotationFormats = annotationFormats;
 
         this._UI = null;
     }
@@ -78,6 +78,7 @@ class TaskView {
 
     _upload(uploadAnnotationButton) {
         const button = $(uploadAnnotationButton);
+        const CVATformat = this._annotationFormats.find( (el) => el.name === 'CVAT');
         $('<input type="file" accept="text/xml">').on('change', async (onChangeEvent) => {
             const file = onChangeEvent.target.files[0];
             $(onChangeEvent.target).remove();
@@ -87,7 +88,7 @@ class TaskView {
                 const annotationData = new FormData();
                 annotationData.append('annotation_file', file);
                 try {
-                    await uploadTaskAnnotationRequest(this._task.id, annotationData, 'cvat_xml');
+                    await uploadTaskAnnotationRequest(this._task.id, annotationData, CVATformat.id);
                 } catch (error) {
                     showMessage(error.message);
                 } finally {
@@ -98,10 +99,10 @@ class TaskView {
         }).click();
     }
 
-    async _dump(button, downloadFormat) {
+    async _dump(button, formatId, dumpSpec) {
         button.disabled = true;
         try {
-            await dumpAnnotationRequest(this._task.id, this._task.name, downloadFormat);
+            await dumpAnnotationRequest(this._task.id, this._task.name, formatId, dumpSpec);
         } catch (error) {
             showMessage(error.message);
         } finally {
@@ -132,11 +133,14 @@ class TaskView {
 
         const downloadButton = $('<button class="regular dashboardButtonUI"> Dump Annotation </button>');
         const dropdownMenu = $('<ul class="dropdown-content hidden"></ul>');
-        for (const downloadFormat of this._anno_formats.dumpers) {
-            dropdownMenu.append($(`<li>${downloadFormat.display_name}</li>`).on('click', () => {
-                dropdownMenu.addClass('hidden');
-                this._dump(downloadButton[0], downloadFormat.name);
-            }));
+        for (const format of this._annotationFormats) {
+            for (const dumpSpec of format.dump_specification) {
+                const displayName = `${format.name} ${format.format} ${dumpSpec}`;
+                dropdownMenu.append($(`<li>${displayName}</li>`).on('click', () => {
+                    dropdownMenu.addClass('hidden');
+                    this._dump(downloadButton[0], format.id, dumpSpec);
+                }));
+            }
         }
 
         $('<div class="dropdown"></div>').append(
@@ -194,7 +198,7 @@ class DashboardView {
         this._baseURL = metaData.base_url;
         this._sharePath = metaData.share_path;
         this._params = {};
-        this._anno_formats = annotationFormats;
+        this._annotationFormats = annotationFormats;
 
         this._setupList();
         this._setupTaskSearch();
@@ -246,7 +250,7 @@ class DashboardView {
                 }));
 
                 for (const task of tasks) {
-                    const taskView = new TaskView(task, this._anno_formats);
+                    const taskView = new TaskView(task, this._annotationFormats);
                     dashboardList.append(taskView.render(baseURL));
                 }
 
