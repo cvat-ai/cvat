@@ -26,6 +26,10 @@
         dumpAnnotations,
     } = require('./annotations');
 
+    const { ArgumentError } = require('./exceptions');
+    const { TaskStatus } = require('./enums');
+    const { Label } = require('./labels');
+
     function buildDublicatedAPI(prototype) {
         Object.defineProperties(prototype, {
             annotations: Object.freeze({
@@ -509,7 +513,7 @@
                     }
 
                     if (data[property] === undefined) {
-                        throw new window.cvat.exceptions.ArgumentError(
+                        throw new ArgumentError(
                             `Job field "${property}" was not initialized`,
                         );
                     }
@@ -539,7 +543,7 @@
                     get: () => data.assignee,
                     set: () => (assignee) => {
                         if (!Number.isInteger(assignee) || assignee < 0) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a non negative integer',
                             );
                         }
@@ -556,7 +560,7 @@
                 status: {
                     get: () => data.status,
                     set: (status) => {
-                        const type = window.cvat.enums.TaskStatus;
+                        const type = TaskStatus;
                         let valueInEnum = false;
                         for (const value in type) {
                             if (type[value] === status) {
@@ -566,7 +570,7 @@
                         }
 
                         if (!valueInEnum) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a value from the enumeration cvat.enums.TaskStatus',
                             );
                         }
@@ -662,20 +666,20 @@
             return this;
         }
 
-        throw new window.cvat.exceptions.ArgumentError(
+        throw new ArgumentError(
             'Can not save job without and id',
         );
     };
 
     Job.prototype.frames.get.implementation = async function (frame) {
         if (!Number.isInteger(frame) || frame < 0) {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
             );
         }
 
         if (frame < this.startFrame || frame > this.stopFrame) {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `The frame with number ${frame} is out of the job`,
             );
         }
@@ -687,7 +691,7 @@
     // TODO: Check filter for annotations
     Job.prototype.annotations.get.implementation = async function (frame, filter) {
         if (frame < this.startFrame || frame > this.stopFrame) {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `Frame ${frame} does not exist in the job`,
             );
         }
@@ -807,7 +811,7 @@
                 for (const segment of initialData.segments) {
                     if (Array.isArray(segment.jobs)) {
                         for (const job of segment.jobs) {
-                            const jobInstance = new window.cvat.classes.Job({
+                            const jobInstance = new Job({
                                 url: job.url,
                                 id: job.id,
                                 assignee: job.assignee,
@@ -824,7 +828,7 @@
 
             if (Array.isArray(initialData.labels)) {
                 for (const label of initialData.labels) {
-                    const classInstance = new window.cvat.classes.Label(label);
+                    const classInstance = new Label(label);
                     data.labels.push(classInstance);
                 }
             }
@@ -851,7 +855,7 @@
                     get: () => data.name,
                     set: (value) => {
                         if (!value.trim().length) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must not be empty',
                             );
                         }
@@ -911,7 +915,7 @@
                     get: () => data.assignee,
                     set: () => (assignee) => {
                         if (!Number.isInteger(assignee) || assignee < 0) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a non negative integer',
                             );
                         }
@@ -962,7 +966,7 @@
                     get: () => data.overlap,
                     set: (overlap) => {
                         if (!Number.isInteger(overlap) || overlap < 0) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a non negative integer',
                             );
                         }
@@ -980,7 +984,7 @@
                     get: () => data.segment_size,
                     set: (segment) => {
                         if (!Number.isInteger(segment) || segment < 0) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a positive integer',
                             );
                         }
@@ -998,7 +1002,7 @@
                     get: () => data.z_order,
                     set: (zOrder) => {
                         if (typeof (zOrder) !== 'boolean') {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a boolean',
                             );
                         }
@@ -1016,7 +1020,7 @@
                     get: () => data.image_quality,
                     set: (quality) => {
                         if (!Number.isInteger(quality) || quality < 0) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a positive integer',
                             );
                         }
@@ -1035,14 +1039,14 @@
                     get: () => [...data.labels],
                     set: (labels) => {
                         if (!Array.isArray(labels)) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be an array of Labels',
                             );
                         }
 
                         for (const label of labels) {
-                            if (!(label instanceof window.cvat.classes.Label)) {
-                                throw new window.cvat.exceptions.ArgumentError(
+                            if (!(label instanceof Label)) {
+                                throw new ArgumentError(
                                     'Each array value must be an instance of Label. '
                                         + `${typeof (label)} was found`,
                                 );
@@ -1078,14 +1082,14 @@
                     get: () => [...data.files.server_files],
                     set: (serverFiles) => {
                         if (!Array.isArray(serverFiles)) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 `Value must be an array. But ${typeof (serverFiles)} has been got.`,
                             );
                         }
 
                         for (const value of serverFiles) {
                             if (typeof (value) !== 'string') {
-                                throw new window.cvat.exceptions.ArgumentError(
+                                throw new ArgumentError(
                                     `Array values must be a string. But ${typeof (value)} has been got.`,
                                 );
                             }
@@ -1106,14 +1110,14 @@
                     get: () => [...data.files.client_files],
                     set: (clientFiles) => {
                         if (!Array.isArray(clientFiles)) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 `Value must be an array. But ${typeof (clientFiles)} has been got.`,
                             );
                         }
 
                         for (const value of clientFiles) {
                             if (!(value instanceof window.File)) {
-                                throw new window.cvat.exceptions.ArgumentError(
+                                throw new ArgumentError(
                                     `Array values must be a File. But ${value.constructor.name} has been got.`,
                                 );
                             }
@@ -1134,14 +1138,14 @@
                     get: () => [...data.files.remote_files],
                     set: (remoteFiles) => {
                         if (!Array.isArray(remoteFiles)) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 `Value must be an array. But ${typeof (remoteFiles)} has been got.`,
                             );
                         }
 
                         for (const value of remoteFiles) {
                             if (typeof (value) !== 'string') {
-                                throw new window.cvat.exceptions.ArgumentError(
+                                throw new ArgumentError(
                                     `Array values must be a string. But ${typeof (value)} has been got.`,
                                 );
                             }
@@ -1266,13 +1270,13 @@
 
     Task.prototype.frames.get.implementation = async function (frame) {
         if (!Number.isInteger(frame) || frame < 0) {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
             );
         }
 
         if (frame >= this.size) {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `The frame with number ${frame} is out of the task`,
             );
         }
@@ -1284,13 +1288,13 @@
     // TODO: Check filter for annotations
     Task.prototype.annotations.get.implementation = async function (frame, filter) {
         if (!Number.isInteger(frame) || frame < 0) {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
             );
         }
 
         if (frame >= this.size) {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `Frame ${frame} does not exist in the task`,
             );
         }

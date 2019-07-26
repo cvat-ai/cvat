@@ -24,6 +24,18 @@
     } = require('./annotations-objects');
     const { checkObjectType } = require('./common');
     const Statistics = require('./statistics');
+    const { Label } = require('./labels');
+    const {
+        DataError,
+        ArgumentError,
+        ScriptingError,
+    } = require('./exceptions');
+
+    const {
+        ObjectShape,
+        ObjectType,
+    } = require('./enums');
+    const ObjectState = require('./object-state');
 
     const colors = [
         '#0066FF', '#AF593E', '#01A368', '#FF861F', '#ED0A3F', '#FF3F34', '#76D7EA',
@@ -62,7 +74,7 @@
             shapeModel = new PointsShape(shapeData, clientID, color, injection);
             break;
         default:
-            throw new window.cvat.exceptions.DataError(
+            throw new DataError(
                 `An unexpected type of shape "${type}"`,
             );
         }
@@ -91,7 +103,7 @@
                 trackModel = new PointsTrack(trackData, clientID, color, injection);
                 break;
             default:
-                throw new window.cvat.exceptions.DataError(
+                throw new DataError(
                     `An unexpected type of track "${type}"`,
                 );
             }
@@ -209,10 +221,10 @@
             checkObjectType('shapes for merge', objectStates, null, Array);
             if (!objectStates.length) return;
             const objectsForMerge = objectStates.map((state) => {
-                checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
+                checkObjectType('object state', state, null, ObjectState);
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         'The object has not been saved yet. Call ObjectState.put([state]) before you can merge it',
                     );
                 }
@@ -222,13 +234,13 @@
             const keyframes = {}; // frame: position
             const { label, shapeType } = objectStates[0];
             if (!(label.id in this.labels)) {
-                throw new window.cvat.exceptions.ArgumentError(
+                throw new ArgumentError(
                     `Unknown label for the task: ${label.id}`,
                 );
             }
 
-            if (!Object.values(window.cvat.enums.ObjectShape).includes(shapeType)) {
-                throw new window.cvat.exceptions.ArgumentError(
+            if (!Object.values(ObjectShape).includes(shapeType)) {
+                throw new ArgumentError(
                     `Got unknown shapeType "${shapeType}"`,
                 );
             }
@@ -243,13 +255,13 @@
                 const object = objectsForMerge[i];
                 const state = objectStates[i];
                 if (state.label.id !== label.id) {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         `All shape labels are expected to be ${label.name}, but got ${state.label.name}`,
                     );
                 }
 
                 if (state.shapeType !== shapeType) {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         `All shapes are expected to be ${shapeType}, but got ${state.shapeType}`,
                     );
                 }
@@ -258,7 +270,7 @@
                 if (object instanceof Shape) {
                     // Frame already saved and it is not outside
                     if (object.frame in keyframes && !keyframes[object.frame].outside) {
-                        throw new window.cvat.exceptions.ArgumentError(
+                        throw new ArgumentError(
                             'Expected only one visible shape per frame',
                         );
                     }
@@ -303,7 +315,7 @@
                                 continue;
                             }
 
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Expected only one visible shape per frame',
                             );
                         }
@@ -338,7 +350,7 @@
                         };
                     }
                 } else {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         `Trying to merge unknown object type: ${object.constructor.name}. `
                             + 'Only shapes and tracks are expected.',
                     );
@@ -389,17 +401,17 @@
         }
 
         split(objectState, frame) {
-            checkObjectType('object state', objectState, null, window.cvat.classes.ObjectState);
+            checkObjectType('object state', objectState, null, ObjectState);
             checkObjectType('frame', frame, 'integer', null);
 
             const object = this.objects[objectState.clientID];
             if (typeof (object) === 'undefined') {
-                throw new window.cvat.exceptions.ArgumentError(
+                throw new ArgumentError(
                     'The object has not been saved yet. Call annotations.put([state]) before',
                 );
             }
 
-            if (objectState.objectType !== window.cvat.enums.ObjectType.TRACK) {
+            if (objectState.objectType !== ObjectType.TRACK) {
                 return;
             }
 
@@ -478,10 +490,10 @@
             checkObjectType('shapes for group', objectStates, null, Array);
 
             const objectsForGroup = objectStates.map((state) => {
-                checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
+                checkObjectType('object state', state, null, ObjectState);
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         'The object has not been saved yet. Call annotations.put([state]) before',
                     );
                 }
@@ -549,7 +561,7 @@
                 } else if (object instanceof Tag) {
                     objectType = 'tag';
                 } else {
-                    throw new window.cvat.exceptions.ScriptingError(
+                    throw new ScriptingError(
                         `Unexpected object type: "${objectType}"`,
                     );
                 }
@@ -637,11 +649,11 @@
             }
 
             for (const state of objectStates) {
-                checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
+                checkObjectType('object state', state, null, ObjectState);
                 checkObjectType('state client ID', state.clientID, 'undefined', null);
                 checkObjectType('state frame', state.frame, 'integer', null);
                 checkObjectType('state attributes', state.attributes, null, Object);
-                checkObjectType('state label', state.label, null, window.cvat.classes.Label);
+                checkObjectType('state label', state.label, null, Label);
 
                 const attributes = Object.keys(state.attributes)
                     .reduce(convertAttributes.bind(state), []);
@@ -666,10 +678,10 @@
                         checkObjectType('point coordinate', coord, 'number', null);
                     }
 
-                    if (!Object.values(window.cvat.enums.ObjectShape).includes(state.shapeType)) {
-                        throw new window.cvat.exceptions.ArgumentError(
+                    if (!Object.values(ObjectShape).includes(state.shapeType)) {
+                        throw new ArgumentError(
                             'Object shape must be one of: '
-                                + `${JSON.stringify(Object.values(window.cvat.enums.ObjectShape))}`,
+                                + `${JSON.stringify(Object.values(ObjectShape))}`,
                         );
                     }
 
@@ -703,9 +715,9 @@
                             }],
                         });
                     } else {
-                        throw new window.cvat.exceptions.ArgumentError(
+                        throw new ArgumentError(
                             'Object type must be one of: '
-                                + `${JSON.stringify(Object.values(window.cvat.enums.ObjectType))}`,
+                                + `${JSON.stringify(Object.values(ObjectType))}`,
                         );
                     }
                 }
@@ -723,12 +735,12 @@
             let minimumDistance = null;
             let minimumState = null;
             for (const state of objectStates) {
-                checkObjectType('object state', state, null, window.cvat.classes.ObjectState);
+                checkObjectType('object state', state, null, ObjectState);
                 if (state.outside) continue;
 
                 const object = this.objects[state.clientID];
                 if (typeof (object) === 'undefined') {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         'The object has not been saved yet. Call annotations.put([state]) before',
                     );
                 }

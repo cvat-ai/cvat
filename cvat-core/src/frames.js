@@ -11,6 +11,7 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
+    const { ArgumentError } = require('./exceptions');
 
     // This is the frames storage
     const frameDataCache = {};
@@ -103,14 +104,14 @@
                 [size] = frameDataCache[taskID].meta;
             } else if (mode === 'annotation') {
                 if (frame >= frameDataCache[taskID].meta.length) {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         `Meta information about frame ${frame} can't be received from the server`,
                     );
                 } else {
                     size = frameDataCache[taskID].meta[frame];
                 }
             } else {
-                throw new window.cvat.exceptions.ArgumentError(
+                throw new ArgumentError(
                     `Invalid mode is specified ${mode}`,
                 );
             }

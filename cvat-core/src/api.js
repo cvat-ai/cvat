@@ -301,7 +301,7 @@ function build() {
                 *   internal: {
                 *     async getPlugins() {
                 *       // Collect information about installed plugins
-                *       const plugins = await window.cvat.plugins.list();
+                *       const plugins = await cvat.plugins.list();
                 *       return plugins.map((el) => {
                 *         return {
                 *           name: el.name,
