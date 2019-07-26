@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 
 import { connect } from 'react-redux';
-import { getTasksAsync } from '../../../actions/tasks.actions';
+import { deleteTaskAsync } from '../../../actions/tasks.actions';
 
 import { Layout, Empty, Button, Modal, Col, Row } from 'antd';
 import Title from 'antd/lib/typography/Title';
@@ -119,13 +119,8 @@ class DashboardContent extends Component<any, any> {
       okText: 'Yes',
       okType: 'danger',
       centered: true,
-      onOk(closeFunction: Function) {
-        return task.delete().then(
-          () => {
-            self.props.dispatch(getTasksAsync());
-            closeFunction();
-          },
-        );
+      onOk() {
+        return self.props.dispatch(deleteTaskAsync(task));
       },
       cancelText: 'No',
       onCancel() {

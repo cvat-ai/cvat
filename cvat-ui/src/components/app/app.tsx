@@ -2,24 +2,23 @@ import React, { PureComponent } from 'react';
 import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
 
 import { connect } from 'react-redux';
-import { login, logout } from '../../actions/auth.actions';
+import { loginAsync } from '../../actions/auth.actions';
 
 import Dashboard from '../dashboard/dashboard';
+import Login from '../login/login';
 import NotFound from '../not-found/not-found';
 
 import './app.scss';
 
-declare const window: any;
 
 class App extends PureComponent<any, any> {
   componentDidMount() {
-    window.cvat.server.login(process.env.REACT_APP_LOGIN, process.env.REACT_APP_PASSWORD).then(
-      (_response: any) => {
-        this.props.dispatch(login(true));
-      },
-      (_error: any) => {
-        this.props.dispatch(logout(false));
-      }
+    // TODO: remove when proper login flow (with router) will be implemented
+    this.props.dispatch(
+      loginAsync(
+        process.env.REACT_APP_LOGIN as string,
+        process.env.REACT_APP_PASSWORD as string,
+      ),
     );
   }
 
@@ -29,6 +28,7 @@ class App extends PureComponent<any, any> {
         <Switch>
           <Redirect path="/" exact to="/dashboard" />
           <Route path="/dashboard" component={ Dashboard } />
+          <Route path="/login" component={ Login } />
           <Route component={ NotFound } />
         </Switch>
       </Router>
