@@ -3,6 +3,9 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* eslint-disable */
+// Temporary disable eslint
+
 interface CanvasInterface {
     html(): HTMLElement;
     setup(frameData: any, objectStates: any[]): void;
@@ -26,64 +29,64 @@ export enum GridColor {
     GREEN,
     BLUE,
     WHITE,
-};
+}
 
 export enum Rotation {
     CLOCKWISE,
     ANTICLOCKWISE,
-};
+}
 
 
 export class Canvas implements CanvasInterface {
-    constructor() {
-
+    public constructor() {
+        return this;
     }
 
-    html(): HTMLElement {
-        throw new Error("Method not implemented.");
+    public html(): HTMLElement {
+        throw new Error('Method not implemented.');
     }
 
-    setup(frameData: any, objectStates: any[]): void {
-        throw new Error("Method not implemented.");
+    public setup(frameData: any, objectStates: any[]): void {
+        throw new Error('Method not implemented.');
     }
 
-    activate(clientID: number, attributeID: number = null): void {
-        throw new Error("Method not implemented.");
+    public activate(clientID: number, attributeID: number = null): void {
+        throw new Error('Method not implemented.');
     }
 
-    rotate(direction: Rotation): void {
-        throw new Error("Method not implemented.");
+    public rotate(direction: Rotation): void {
+        throw new Error('Method not implemented.');
     }
 
-    focus(clientID: number, padding: number = 0): void {
-        throw new Error("Method not implemented.");
+    public focus(clientID: number, padding: number = 0): void {
+        throw new Error('Method not implemented.');
     }
 
-    fit(): void {
-        throw new Error("Method not implemented.");
+    public fit(): void {
+        throw new Error('Method not implemented.');
     }
 
-    grid(stepX: number, stepY: number, color: GridColor = GridColor.WHITE, opacity: number = 1): void {
-        throw new Error("Method not implemented.");
+    public grid(stepX: number, stepY: number, color: GridColor = GridColor.WHITE, opacity: number = 1): void {
+        throw new Error('Method not implemented.');
     }
 
-    draw(shapeType: string, numberOfPoints: number, initialState: any) {
-        throw new Error("Method not implemented.");
+    public draw(shapeType: string, numberOfPoints: number, initialState: any): any {
+        throw new Error('Method not implemented.');
     }
 
-    split(enabled: boolean = false) {
-        throw new Error("Method not implemented.");
+    public split(enabled: boolean = false): any {
+        throw new Error('Method not implemented.');
     }
 
-    group(enabled: boolean = false) {
-        throw new Error("Method not implemented.");
+    public group(enabled: boolean = false): any {
+        throw new Error('Method not implemented.');
     }
 
-    merge(enabled: boolean = false) {
-        throw new Error("Method not implemented.");
+    public merge(enabled: boolean = false): any {
+        throw new Error('Method not implemented.');
     }
 
-    cancel(): void {
-        throw new Error("Method not implemented.");
+    public cancel(): void {
+        throw new Error('Method not implemented.');
     }
 }

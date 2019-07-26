@@ -10,13 +10,16 @@
   "author": "Intel",
   "license": "MIT",
   "dependencies": {
-    "@svgdotjs/svg.js": "^3.0.13"
+    "@svgdotjs/svg.js": "^3.0.13",
+    "eslint": "^6.1.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.5.5",
     "@babel/core": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-typescript": "^7.3.3",
+    "@typescript-eslint/eslint-plugin": "^1.13.0",
+    "@typescript-eslint/parser": "^1.13.0",
     "babel-loader": "^8.0.6",
     "nodemon": "^1.19.1",
     "typescript": "^3.5.3",
