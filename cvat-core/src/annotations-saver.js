@@ -9,10 +9,12 @@
 
 (() => {
     const serverProxy = require('./server-proxy');
+    const { Task } = require('./session');
+    const { ScriptingError } = ('./exceptions');
 
     class AnnotationsSaver {
         constructor(version, collection, session) {
-            this.sessionType = session instanceof window.cvat.classes.Task ? 'task' : 'job';
+            this.sessionType = session instanceof Task ? 'task' : 'job';
             this.id = session.id;
             this.version = version;
             this.collection = collection;
@@ -102,7 +104,7 @@
                     } else if (typeof (object.id) === 'undefined') {
                         splitted.created[type].push(object);
                     } else {
-                        throw new window.cvat.exceptions.ScriptingError(
+                        throw new ScriptingError(
                             `Id of object is defined "${object.id}"`
                             + 'but it absents in initial state',
                         );
@@ -140,7 +142,7 @@
                 + indexes.shapes.length + indexes.tags.length;
 
             if (indexesLength !== savedLength) {
-                throw new window.cvat.exception.ScriptingError(
+                throw new ScriptingError(
                     'Number of indexes is differed by number of saved objects'
                         + `${indexesLength} vs ${savedLength}`,
                 );

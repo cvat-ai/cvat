@@ -9,6 +9,14 @@
 */
 
 (() => {
+    const FormData = require('form-data');
+    const {
+        ServerError,
+        ScriptingError,
+    } = require('./exceptions');
+
+    const config = require('./config');
+
     class ServerProxy {
         constructor() {
             const Cookie = require('js-cookie');
@@ -25,16 +33,16 @@
             }
 
             async function about() {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/server/about`, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not get "about" information from the server',
                         code,
                     );
@@ -44,17 +52,17 @@
             }
 
             async function share(directory) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
                 directory = encodeURIComponent(directory);
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/server/share?directory=${directory}`, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not get "share" information from the server',
                         code,
                     );
@@ -64,18 +72,18 @@
             }
 
             async function exception(exceptionObject) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 try {
                     await Axios.post(`${backendAPI}/server/exception`, JSON.stringify(exceptionObject), {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
                         },
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not send an exception to the server',
                         code,
                     );
@@ -111,7 +119,7 @@
                             if (csrftoken) {
                                 setCSRFHeader(csrftoken);
                             } else {
-                                throw new window.cvat.exceptions.ScriptingError(
+                                throw new ScriptingError(
                                     'An environment has been detected as a browser'
                                     + ', but CSRF token has not been found in cookies',
                                 );
@@ -120,15 +128,15 @@
                     }
                 }
 
-                const host = window.cvat.config.backendAPI.slice(0, -7);
+                const host = config.backendAPI.slice(0, -7);
                 let csrf = null;
                 try {
                     csrf = await Axios.get(`${host}/auth/csrf`, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not get CSRF token from a server',
                         code,
                     );
@@ -148,7 +156,7 @@
                         authentificationData,
                         {
                             'Content-Type': 'application/x-www-form-urlencoded',
-                            proxy: window.cvat.config.proxy,
+                            proxy: config.proxy,
                             // do not redirect to a dashboard,
                             // otherwise we don't get a session id in a response
                             maxRedirects: 0,
@@ -161,7 +169,7 @@
                     } else {
                         const code = errorData.response
                             ? errorData.response.status : errorData.code;
-                        throw new window.cvat.exceptions.ServerError(
+                        throw new ServerError(
                             'Could not login on a server',
                             code,
                         );
@@ -170,7 +178,7 @@
 
                 // TODO: Perhaps we should redesign the authorization method on the server.
                 if (authentificationResponse.data.includes('didn\'t match')) {
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'The pair login/password is invalid',
                         403,
                     );
@@ -180,15 +188,15 @@
             }
 
             async function logout() {
-                const host = window.cvat.config.backendAPI.slice(0, -7);
+                const host = config.backendAPI.slice(0, -7);
 
                 try {
                     await Axios.get(`${host}/auth/logout`, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not logout from the server',
                         code,
                     );
@@ -196,16 +204,16 @@
             }
 
             async function getTasks(filter = '') {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/tasks?${filter}`, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not get tasks from a server',
                         code,
                     );
@@ -216,18 +224,18 @@
             }
 
             async function saveTask(id, taskData) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 try {
                     await Axios.patch(`${backendAPI}/tasks/${id}`, JSON.stringify(taskData), {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
                         },
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not save the task on the server',
                         code,
                     );
@@ -235,13 +243,13 @@
             }
 
             async function deleteTask(id) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 try {
                     await Axios.delete(`${backendAPI}/tasks/${id}`);
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not delete the task from the server',
                         code,
                     );
@@ -249,7 +257,7 @@
             }
 
             async function createTask(taskData, files, onUpdate) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 async function wait(id) {
                     return new Promise((resolve, reject) => {
@@ -266,14 +274,14 @@
                                 } else if (response.data.state === 'Failed') {
                                     // If request has been successful, but task hasn't been created
                                     // Then passed data is wrong and we can pass code 400
-                                    reject(new window.cvat.exceptions.ServerError(
+                                    reject(new ServerError(
                                         'Could not create the task on the server',
                                         400,
                                     ));
                                 } else {
                                     // If server has another status, it is unexpected
                                     // Therefore it is server error and we can pass code 500
-                                    reject(new window.cvat.exceptions.ServerError(
+                                    reject(new ServerError(
                                         `Unknown task state has been recieved: ${response.data.state}`,
                                         500,
                                     ));
@@ -282,7 +290,7 @@
                                 const code = errorData.response
                                     ? errorData.response.status : errorData.code;
 
-                                reject(new window.cvat.exceptions.ServerError(
+                                reject(new ServerError(
                                     'Data uploading error occured',
                                     code,
                                 ));
@@ -293,7 +301,7 @@
                     });
                 }
 
-                const batchOfFiles = new window.FormData();
+                const batchOfFiles = new FormData();
                 for (const key in files) {
                     if (Object.prototype.hasOwnProperty.call(files, key)) {
                         for (let i = 0; i < files[key].length; i++) {
@@ -307,14 +315,14 @@
                 onUpdate('The task is being created on the server..');
                 try {
                     response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskData), {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
                         },
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not put task to the server',
                         code,
                     );
@@ -323,12 +331,12 @@
                 onUpdate('The data is being uploaded to the server..');
                 try {
                     await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, batchOfFiles, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                     });
                 } catch (errorData) {
                     await deleteTask(response.data.id);
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not put data to the server',
                         code,
                     );
@@ -347,16 +355,16 @@
             }
 
             async function getJob(jobID) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/jobs/${jobID}`, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not get jobs from a server',
                         code,
                     );
@@ -366,18 +374,18 @@
             }
 
             async function saveJob(id, jobData) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 try {
                     await Axios.patch(`${backendAPI}/jobs/${id}`, JSON.stringify(jobData), {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
                         },
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not save the job on the server',
                         code,
                     );
@@ -385,16 +393,16 @@
             }
 
             async function getUsers() {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/users`, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not get users from the server',
                         code,
                     );
@@ -404,16 +412,16 @@
             }
 
             async function getSelf() {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/users/self`, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         'Could not get users from the server',
                         code,
                     );
@@ -423,17 +431,17 @@
             }
 
             async function getData(tid, frame) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/${frame}`, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                         responseType: 'blob',
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         `Could not get frame ${frame} for the task ${tid} from the server`,
                         code,
                     );
@@ -443,16 +451,16 @@
             }
 
             async function getMeta(tid) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/meta`, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         `Could not get frame meta info for the task ${tid} from the server`,
                         code,
                     );
@@ -463,16 +471,16 @@
 
             // Session is 'task' or 'job'
             async function getAnnotations(session, id) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 let response = null;
                 try {
                     response = await Axios.get(`${backendAPI}/${session}s/${id}/annotations`, {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         `Could not get annotations for the ${session} ${id} from the server`,
                         code,
                     );
@@ -483,7 +491,7 @@
 
             // Session is 'task' or 'job'
             async function updateAnnotations(session, id, data, action) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
                 let requestFunc = null;
                 let url = null;
                 if (action.toUpperCase() === 'PUT') {
@@ -497,14 +505,14 @@
                 let response = null;
                 try {
                     response = await requestFunc(url, JSON.stringify(data), {
-                        proxy: window.cvat.config.proxy,
+                        proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
                         },
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new window.cvat.exceptions.ServerError(
+                    throw new ServerError(
                         `Could not updated annotations for the ${session} ${id} on the server`,
                         code,
                     );
@@ -515,7 +523,7 @@
 
             // Session is 'task' or 'job'
             async function uploadAnnotations(session, id, file, format) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
 
                 let annotationData = new FormData();
                 annotationData.append('annotation_file', file);
@@ -525,7 +533,7 @@
                         try {
                             const response = await Axios
                                 .post(`${backendAPI}/${session}s/${id}/annotations?upload_format=${format}`, annotationData, {
-                                    proxy: window.cvat.config.proxy,
+                                    proxy: config.proxy,
                                 });
                             if (response.status === 202) {
                                 annotationData = new FormData();
@@ -536,7 +544,7 @@
                         } catch (errorData) {
                             const code = errorData.response
                                 ? errorData.response.status : errorData.code;
-                            const error = new window.cvat.exceptions.ServerError(
+                            const error = new ServerError(
                                 `Could not upload annotations for the ${session} ${id}`,
                                 code,
                             );
@@ -550,7 +558,7 @@
 
             // Session is 'task' or 'job'
             async function dumpAnnotations(id, name, format) {
-                const { backendAPI } = window.cvat.config;
+                const { backendAPI } = config;
                 const filename = name.replace(/\//g, '_');
                 let url = `${backendAPI}/tasks/${id}/annotations/${filename}?dump_format=${format}`;
 
@@ -559,7 +567,7 @@
                         try {
                             const response = await Axios
                                 .get(`${url}`, {
-                                    proxy: window.cvat.config.proxy,
+                                    proxy: config.proxy,
                                 });
                             if (response.status === 202) {
                                 setTimeout(request, 3000);
@@ -570,7 +578,7 @@
                         } catch (errorData) {
                             const code = errorData.response
                                 ? errorData.response.status : errorData.code;
-                            const error = new window.cvat.exceptions.ServerError(
+                            const error = new ServerError(
                                 `Could not dump annotations for the task ${id} from the server`,
                                 code,
                             );

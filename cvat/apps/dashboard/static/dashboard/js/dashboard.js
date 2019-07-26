@@ -408,81 +408,6 @@ class DashboardView {
     }
 
     _setupCreateDialog() {
-        function updateSelectedFiles() {
-            switch (files.length) {
-            case 0:
-                filesLabel.text('No Files');
-                break;
-            case 1:
-                filesLabel.text(typeof(files[0]) === 'string' ? files[0] : files[0].name);
-                break;
-            default:
-                filesLabel.text(files.length + ' files');
-            }
-        }
-
-
-        function validateName(name) {
-            const math = name.match('[a-zA-Z0-9_]+');
-            return math !== null;
-        }
-
-        function validateLabels(labels) {
-            try {
-                LabelsInfo.deserialize(labels)
-                return true;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        function validateBugTracker(bugTracker) {
-            return !bugTracker || !!bugTracker.match(/^http[s]?/);
-        }
-
-        function validateSegmentSize(segmentSize) {
-            return (segmentSize >= 100 && segmentSize <= 50000);
-        }
-
-        function validateOverlapSize(overlapSize, segmentSize) {
-            return (overlapSize >= 0 && overlapSize <= segmentSize - 1);
-        }
-
-        function validateStopFrame(stopFrame, startFrame) {
-            return !customStopFrame.prop('checked') || stopFrame >= startFrame;
-        }
-
-        function requestCreatingStatus(tid, onUpdateStatus, onSuccess, onError) {
-            function checkCallback() {
-                $.get(`/api/v1/tasks/${tid}/status`).done((data) => {
-                    if (['Queued', 'Started'].includes(data.state)) {
-                        if (data.message !== '') {
-                            onUpdateStatus(data.message);
-                        }
-                        setTimeout(checkCallback, 1000);
-                    } else {
-                        if (data.state === 'Finished') {
-                            onSuccess();
-                        }
-                        else if (data.state === 'Failed') {
-                            const message = `Can not create task. ${data.message}`;
-                            onError(message);
-                        } else {
-                            const message = `Unknown state has been received: ${data.state}`;
-                            onError(message);
-                        }
-
-                    }
-                }).fail((errorData) => {
-                    const message = `Can not check task status. Code: ${errorData.status}. ` +
-                        `Message: ${errorData.responseText || errorData.statusText}`;
-                    onError(message);
-                });
-            }
-
-            setTimeout(checkCallback, 1000);
-        }
-
         const dashboardCreateTaskButton = $('#dashboardCreateTaskButton');
         const createModal = $('#dashboardCreateModal');
         const nameInput = $('#dashboardNameInput');
@@ -570,6 +495,10 @@ class DashboardView {
             return (overlapSize >= 0 && overlapSize <= segmentSize - 1);
         }
 
+        function validateStopFrame(stop, start) {
+            return !customStopFrame.prop('checked') || stop >= start;
+        }
+
         dashboardCreateTaskButton.on('click', () => {
             $('#dashboardCreateModal').removeClass('hidden');
         });
@@ -589,7 +518,8 @@ class DashboardView {
         localSourceRadio.on('click', () => {
             if (source === 'local') {
                 return;
-            } else if (source === 'remote') {
+            }
+            if (source === 'remote') {
                 selectFiles.parent().removeClass('hidden');
                 remoteFileInput.parent().addClass('hidden');
             }
@@ -612,7 +542,8 @@ class DashboardView {
         shareSourceRadio.on('click', () => {
             if (source === 'share') {
                 return;
-            } else if (source === 'remote') {
+            }
+            if (source === 'remote') {
                 selectFiles.parent().removeClass('hidden');
                 remoteFileInput.parent().addClass('hidden');
             }
@@ -658,8 +589,8 @@ class DashboardView {
             updateSelectedFiles();
         });
 
-        remoteFileInput.on('change', function(e) {
-            let text = remoteFileInput.prop('value');
+        remoteFileInput.on('change', () => {
+            const text = remoteFileInput.prop('value');
             files = text.split('\n').map(f => f.trim()).filter(f => f.length > 0);
         });
 
@@ -676,12 +607,12 @@ class DashboardView {
             zOrder = e.target.checked;
         });
 
-        customSegmentSize.on('change', (e) => segmentSizeInput.prop('disabled', !e.target.checked));
-        customOverlapSize.on('change', (e) => overlapSizeInput.prop('disabled', !e.target.checked));
-        customCompressQuality.on('change', (e) => imageQualityInput.prop('disabled', !e.target.checked));
-        customStartFrame.on('change', (e) => startFrameInput.prop('disabled', !e.target.checked));
-        customStopFrame.on('change', (e) => stopFrameInput.prop('disabled', !e.target.checked));
-        customFrameFilter.on('change', (e) => frameFilterInput.prop('disabled', !e.target.checked));
+        customSegmentSize.on('change', e => segmentSizeInput.prop('disabled', !e.target.checked));
+        customOverlapSize.on('change', e => overlapSizeInput.prop('disabled', !e.target.checked));
+        customCompressQuality.on('change', e => imageQualityInput.prop('disabled', !e.target.checked));
+        customStartFrame.on('change', e => startFrameInput.prop('disabled', !e.target.checked));
+        customStopFrame.on('change', e => stopFrameInput.prop('disabled', !e.target.checked));
+        customFrameFilter.on('change', e => frameFilterInput.prop('disabled', !e.target.checked));
 
         segmentSizeInput.on('change', () => {
             const value = Math.clamp(
@@ -716,8 +647,8 @@ class DashboardView {
             compressQuality = value;
         });
 
-        startFrameInput.on('change', function() {
-            let value = Math.max(
+        startFrameInput.on('change', () => {
+            const value = Math.max(
                 +startFrameInput.prop('value'),
                 +startFrameInput.prop('min')
             );
@@ -725,8 +656,9 @@ class DashboardView {
             startFrameInput.prop('value', value);
             startFrame = value;
         });
-        stopFrameInput.on('change', function() {
-            let value = Math.max(
+
+        stopFrameInput.on('change', () => {
+            const value = Math.max(
                 +stopFrameInput.prop('value'),
                 +stopFrameInput.prop('min')
             );
@@ -734,7 +666,8 @@ class DashboardView {
             stopFrameInput.prop('value', value);
             stopFrame = value;
         });
-        frameFilterInput.on('change', function() {
+
+        frameFilterInput.on('change', () => {
             frameFilter = frameFilterInput.prop('value');
         });
 
@@ -815,6 +748,15 @@ class DashboardView {
 
             if (customOverlapSize.prop('checked')) {
                 description.overlap = overlapSize;
+            }
+            if (customStartFrame.prop('checked')) {
+                description.start_frame = startFrame;
+            }
+            if (customStopFrame.prop('checked')) {
+                description.stop_frame = stopFrame;
+            }
+            if (customFrameFilter.prop('checked')) {
+                description.frame_filter = frameFilter;
             }
             if (customStartFrame.prop('checked')) {
                 description.start_frame = startFrame;

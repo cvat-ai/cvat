@@ -21,9 +21,18 @@
         checkFilter,
     } = require('./common');
 
+    const {
+        TaskStatus,
+        TaskMode,
+    } = require('./enums');
+
+    const User = require('./user');
+    const { ArgumentError } = require('./exceptions');
+    const { Task } = require('./session');
+
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
-        cvat.plugins.register.implementation = PluginRegistry.register;
+        cvat.plugins.register.implementation = PluginRegistry.register.bind(cvat);
 
         cvat.server.about.implementation = async () => {
             const result = await serverProxy.server.about();
@@ -56,7 +65,7 @@
                 users = await serverProxy.users.getUsers();
             }
 
-            users = users.map(user => new window.cvat.classes.User(user));
+            users = users.map(user => new User(user));
             return users;
         };
 
@@ -67,13 +76,13 @@
             });
 
             if (('taskID' in filter) && ('jobID' in filter)) {
-                throw new window.cvat.exceptions.ArgumentError(
+                throw new ArgumentError(
                     'Only one of fields "taskID" and "jobID" allowed simultaneously',
                 );
             }
 
             if (!Object.keys(filter).length) {
-                throw new window.cvat.exceptions.ArgumentError(
+                throw new ArgumentError(
                     'Job filter must not be empty',
                 );
             }
@@ -90,7 +99,7 @@
 
             // If task was found by its id, then create task instance and get Job instance from it
             if (tasks !== null && tasks.length) {
-                const task = new window.cvat.classes.Task(tasks[0]);
+                const task = new Task(tasks[0]);
                 return filter.jobID ? task.jobs.filter(job => job.id === filter.jobID) : task.jobs;
             }
 
@@ -105,13 +114,13 @@
                 owner: isString,
                 assignee: isString,
                 search: isString,
-                status: isEnum.bind(window.cvat.enums.TaskStatus),
-                mode: isEnum.bind(window.cvat.enums.TaskMode),
+                status: isEnum.bind(TaskStatus),
+                mode: isEnum.bind(TaskMode),
             });
 
             if ('search' in filter && Object.keys(filter).length > 1) {
                 if (!('page' in filter && Object.keys(filter).length === 2)) {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         'Do not use the filter field "search" with others',
                     );
                 }
@@ -119,7 +128,7 @@
 
             if ('id' in filter && Object.keys(filter).length > 1) {
                 if (!('page' in filter && Object.keys(filter).length === 2)) {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         'Do not use the filter field "id" with others',
                     );
                 }
@@ -133,7 +142,7 @@
             }
 
             const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
-            const tasks = tasksData.map(task => new window.cvat.classes.Task(task));
+            const tasks = tasksData.map(task => new Task(task));
             tasks.count = tasksData.count;
 
             return tasks;

@@ -16,7 +16,7 @@ jest.mock('../../src/server-proxy', () => {
 });
 
 // Initialize api
-require('../../src/api');
+window.cvat = require('../../src/api');
 
 describe('Feature: set attributes for an object state', () => {
     test('set a valid value', () => {

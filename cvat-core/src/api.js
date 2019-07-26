@@ -12,7 +12,7 @@
     * @module API
 */
 
-(() => {
+function build() {
     const PluginRegistry = require('./plugins');
     const User = require('./user');
     const ObjectState = require('./object-state');
@@ -41,7 +41,7 @@
     } = require('./exceptions');
 
     const pjson = require('../package.json');
-    const clientID = +Date.now().toString().substr(-6);
+    const config = require('./config');
 
     /**
         * API entrypoint
@@ -274,7 +274,7 @@
                 *             put: {
                 *               // The first argument "self" is a plugin, like in a case above
                 *               // The second argument is an argument of the
-                *               // cvat.Job.annotations.put()
+                *               // Job.annotations.put()
                 *               // It contains an array of objects to put
                 *               // In this sample we round objects coordinates and save them
                 *               enter(self, objects) {
@@ -301,7 +301,7 @@
                 *   internal: {
                 *     async getPlugins() {
                 *       // Collect information about installed plugins
-                *       const plugins = await window.cvat.plugins.list();
+                *       const plugins = await cvat.plugins.list();
                 *       return plugins.map((el) => {
                 *         return {
                 *           name: el.name,
@@ -362,12 +362,32 @@
                 * value which is displayed in a logs
                 * @memberof module:API.cvat.config
             */
-            backendAPI: 'http://localhost:7000/api/v1',
-            proxy: false,
-            taskID: undefined,
-            jobID: undefined,
-            clientID: {
-                get: () => clientID,
+            get backendAPI() {
+                return config.backendAPI;
+            },
+            set backendAPI(value) {
+                config.backendAPI = value;
+            },
+            get proxy() {
+                return config.proxy;
+            },
+            set proxy(value) {
+                config.proxy = value;
+            },
+            get taskID() {
+                return config.taskID;
+            },
+            set taskID(value) {
+                config.taskID = value;
+            },
+            get jobID() {
+                return config.jobID;
+            },
+            set jobID(value) {
+                config.jobID = value;
+            },
+            get clientID() {
+                return config.clientID;
             },
         },
         /**
@@ -439,18 +459,15 @@
     cvat.plugins = Object.freeze(cvat.plugins);
     cvat.client = Object.freeze(cvat.client);
     cvat.enums = Object.freeze(cvat.enums);
-    cvat.Job = Object.freeze(cvat.Job);
-    cvat.Task = Object.freeze(cvat.Task);
 
     const implementAPI = require('./api-implementation');
-    if (typeof (window) === 'undefined') {
-        // Dummy browser environment
-        require('browser-env')();
-    }
 
     Math.clamp = function (value, min, max) {
         return Math.min(Math.max(value, min), max);
     };
 
-    window.cvat = Object.freeze(implementAPI(cvat));
-})();
+    const implemented = Object.freeze(implementAPI(cvat));
+    return implemented;
+}
+
+module.exports = build();

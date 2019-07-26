@@ -13,7 +13,7 @@ npm install
 
 - Building the module from sources in the ```dist``` directory:
 ```bash
-npm run-script build
+npm run build
 npm run build -- --mode=development     # without a minification
 ```
 

@@ -3,7 +3,13 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* global
+    require:false
+*/
+
 (() => {
+    const { ArgumentError } = require('./exceptions');
+
     function isBoolean(value) {
         return typeof (value) === 'boolean';
     }
@@ -33,11 +39,11 @@
         for (const prop in filter) {
             if (Object.prototype.hasOwnProperty.call(filter, prop)) {
                 if (!(prop in fields)) {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         `Unsupported filter property has been recieved: "${prop}"`,
                     );
                 } else if (!fields[prop](filter[prop])) {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         `Received filter property "${prop}" is not satisfied for checker`,
                     );
                 }
@@ -53,20 +59,20 @@
                     return;
                 }
 
-                throw new window.cvat.exceptions.ArgumentError(
+                throw new ArgumentError(
                     `"${name}" is expected to be "${type}", but "${typeof (value)}" has been got.`,
                 );
             }
         } else if (instance) {
             if (!(value instanceof instance)) {
                 if (value !== undefined) {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         `"${name}" is expected to be ${instance.name}, but `
                             + `"${value.constructor.name}" has been got`,
                     );
                 }
 
-                throw new window.cvat.exceptions.ArgumentError(
+                throw new ArgumentError(
                     `"${name}" is expected to be ${instance.name}, but "undefined" has been got.`,
                 );
             }

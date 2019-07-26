@@ -11,6 +11,7 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
+    const { ArgumentError } = require('./exceptions');
 
     // This is the frames storage
     const frameDataCache = {};
@@ -78,11 +79,11 @@
         if (!(this.number in frameCache[this.tid])) {
             const frame = await serverProxy.frames.getData(this.tid, this.number);
 
-            if (window.URL.createObjectURL) { // browser env
-                const url = window.URL.createObjectURL(new Blob([frame]));
-                frameCache[this.tid][this.number] = url;
-            } else {
+            if (typeof (module) !== 'undefined' && module.exports) {
                 frameCache[this.tid][this.number] = global.Buffer.from(frame, 'binary').toString('base64');
+            } else {
+                const url = URL.createObjectURL(new Blob([frame]));
+                frameCache[this.tid][this.number] = url;
             }
         }
 
@@ -103,14 +104,14 @@
                 [size] = frameDataCache[taskID].meta;
             } else if (mode === 'annotation') {
                 if (frame >= frameDataCache[taskID].meta.length) {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         `Meta information about frame ${frame} can't be received from the server`,
                     );
                 } else {
                     size = frameDataCache[taskID].meta[frame];
                 }
             } else {
-                throw new window.cvat.exceptions.ArgumentError(
+                throw new ArgumentError(
                     `Invalid mode is specified ${mode}`,
                 );
             }
