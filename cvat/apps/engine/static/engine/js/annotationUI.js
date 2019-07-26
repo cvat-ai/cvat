@@ -410,7 +410,7 @@ function setupMenu(job, task, shapeCollectionModel,
 
     $('#uploadAnnotationButton').on('click', () => {
         hide();
-        const CVATformat = annotationFormats.find( (el) => el.name === 'CVAT');
+        const CVATformat = annotationFormats.find(el => el.name === 'CVAT');
         userConfirm('Current annotation will be removed from the client. Continue?',
             () => {
                 uploadAnnotation(

@@ -78,7 +78,7 @@ class TaskView {
 
     _upload(uploadAnnotationButton) {
         const button = $(uploadAnnotationButton);
-        const CVATformat = this._annotationFormats.find( (el) => el.name === 'CVAT');
+        const CVATformat = this._annotationFormats.find(el => el.name === 'CVAT');
         $('<input type="file" accept="text/xml">').on('change', async (onChangeEvent) => {
             const file = onChangeEvent.target.files[0];
             $(onChangeEvent.target).remove();

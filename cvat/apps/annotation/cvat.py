@@ -322,7 +322,7 @@ def parse(file_object, annotations, parse_spec):
     import xml.etree.ElementTree as et
     context = et.iterparse(file_object, events=("start", "end"))
     context = iter(context)
-    ev, root = next(context)
+    ev, _ = next(context)
 
     supported_shapes = ('box', 'polygon', 'polyline', 'points')
 

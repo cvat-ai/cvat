@@ -25,7 +25,7 @@ def register_format(format_file):
 
         serializer = AnnotationFormatSerializer(data=format_spec)
         if serializer.is_valid(raise_exception=True):
-            db_format = models.AnnotationFormat.objects.create(**serializer.validated_data)
+            models.AnnotationFormat.objects.create(**serializer.validated_data)
 
 
 def get_annotation_formats():

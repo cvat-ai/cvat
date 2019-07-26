@@ -37,7 +37,7 @@ from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
    RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
    PluginSerializer, FileInfoSerializer, LogEventSerializer)
-from cvat.apps.annotation.serializers import AnnotationFormatSerializer, AnnotationFileSerializer
+from cvat.apps.annotation.serializers import AnnotationFileSerializer
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.authentication import auth
