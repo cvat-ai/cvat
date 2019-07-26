@@ -1,32 +1,24 @@
 import React, { PureComponent } from 'react';
-import { BrowserRouter as Router, Route, Redirect } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
+
 import { connect } from 'react-redux';
+import { login, logout } from '../../actions/auth.actions';
 
 import Dashboard from '../dashboard/dashboard';
-
-import { loginAction, logoutAction } from '../../actions/authentication-action';
+import NotFound from '../not-found/not-found';
 
 import './app.scss';
 
 declare const window: any;
 
-const mapDispatchToProps = (dispatch: any) => ({
-  login: () => { dispatch(loginAction()) },
-  logout: () => { dispatch(logoutAction()) },
-})
-
-const mapStateToProps = (state: any) => ({
-  ...state.authenticateReducer,
-})
-
 class App extends PureComponent<any, any> {
   componentDidMount() {
     window.cvat.server.login(process.env.REACT_APP_LOGIN, process.env.REACT_APP_PASSWORD).then(
       (_response: any) => {
-        this.props.login();
+        this.props.dispatch(login(true));
       },
       (_error: any) => {
-        this.props.logout();
+        this.props.dispatch(logout(false));
       }
     );
   }
@@ -34,13 +26,18 @@ class App extends PureComponent<any, any> {
   render() {
     return(
       <Router>
-        <div>
-          <Redirect from="/" to="dashboard" />
+        <Switch>
+          <Redirect path="/" exact to="/dashboard" />
           <Route path="/dashboard" component={ Dashboard } />
-        </div>
+          <Route component={ NotFound } />
+        </Switch>
       </Router>
     );
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(App);
+const mapStateToProps = (state: any) => {
+  return state.authContext;
+};
+
+export default connect(mapStateToProps)(App);
