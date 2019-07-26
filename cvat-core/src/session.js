@@ -671,6 +671,9 @@
                 segment_size: undefined,
                 z_order: undefined,
                 image_quality: undefined,
+                start_frame: undefined,
+                stop_frame: undefined,
+                frame_filter: undefined,
             };
 
             for (const property in data) {
@@ -1033,6 +1036,64 @@
                         }
 
                         Array.prototype.push.apply(data.files.remote_files, remoteFiles);
+                    },
+                },
+                /**
+                    * The first frame of a video to annotation
+                    * @name startFrame
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                startFrame: {
+                    get: () => data.start_frame,
+                    set: (frame) => {
+                        if (!Number.isInteger(frame) || frame < 0) {
+                            throw new ArgumentError(
+                                'Value must be a not negative integer',
+                            );
+                        }
+                        data.start_frame = frame;
+                    },
+                },
+                /**
+                    * The last frame of a video to annotation
+                    * @name stopFrame
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                stopFrame: {
+                    get: () => data.stop_frame,
+                    set: (frame) => {
+                        if (!Number.isInteger(frame) || frame < 0) {
+                            throw new ArgumentError(
+                                'Value must be a not negative integer',
+                            );
+                        }
+                        data.stop_frame = frame;
+                    },
+                },
+                /**
+                    * Filter to ignore some frames during task creation
+                    * @name frameFilter
+                    * @type {string}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                frameFilter: {
+                    get: () => data.frame_filter,
+                    set: (filter) => {
+                        if (typeof (filter) !== 'string') {
+                            throw new ArgumentError(
+                                `Filter value must be a string. But ${typeof (filter)} has been got.`,
+                            );
+                        }
+
+                        data.frame_filter = filter;
                     },
                 },
             }));
