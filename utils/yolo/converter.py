@@ -207,8 +207,8 @@ def process_cvat_xml(xml_file, image_dir, output_dir,username,password,ilabels):
     else:
         for img_tag in cvat_xml.findall('image'):
             image_name = img_tag.get('name')
-            width = img_tag.get('width')
-            height = img_tag.get('height')
+            width = int(img_tag.get('width'))
+            height = int(img_tag.get('height'))
             image_path = os.path.join(image_dir, image_name)
             if not os.path.exists(image_path):
                 log.warn('{} image cannot be found. Is `{}` image directory correct?'.
