@@ -402,6 +402,32 @@ function setupMenu(job, task, shapeCollectionModel,
                 }
             }).appendTo('#downloadDropdownMenu');
         }
+
+        for (const parseSpec of format.parse_specification) {
+            const displayName = `${format.name} ${format.format} ${parseSpec}`;
+            $(`<li>${displayName}</li>`).on('click', async () => {
+                $('#uploadAnnotationButton')[0].disabled = true;
+                $('#uploadDropdownMenu').addClass('hidden');
+                try {
+                    userConfirm('Current annotation will be removed from the client. Continue?',
+                    async () => {
+                        await uploadAnnotation(
+                            job.id,
+                            shapeCollectionModel,
+                            historyModel,
+                            annotationSaverModel,
+                            $('#uploadAnnotationButton'),
+                            format.id,
+                            parseSpec,
+                        );
+                    });
+                } catch (error) {
+                    showMessage(error.message);
+                } finally {
+                    $('#uploadAnnotationButton')[0].disabled = false;
+                }
+            }).appendTo('#uploadDropdownMenu');
+        }
     }
 
     $('#downloadAnnotationButton').on('click', () => {
@@ -409,19 +435,7 @@ function setupMenu(job, task, shapeCollectionModel,
     });
 
     $('#uploadAnnotationButton').on('click', () => {
-        hide();
-        const CVATformat = annotationFormats.find(el => el.name === 'CVAT');
-        userConfirm('Current annotation will be removed from the client. Continue?',
-            () => {
-                uploadAnnotation(
-                    job.id,
-                    shapeCollectionModel,
-                    historyModel,
-                    annotationSaverModel,
-                    $('#uploadAnnotationButton'),
-                    CVATformat.id,
-                );
-            });
+        $('#uploadDropdownMenu').toggleClass('hidden');
     });
 
     $('#removeAnnotationButton').on('click', () => {
