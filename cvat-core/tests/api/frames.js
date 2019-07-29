@@ -16,7 +16,7 @@ jest.mock('../../src/server-proxy', () => {
 });
 
 // Initialize api
-require('../../src/api');
+window.cvat = require('../../src/api');
 
 const { FrameData } = require('../../src/frames');
 

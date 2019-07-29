@@ -19,7 +19,6 @@ const {
     frameMetaDummyData,
 } = require('./dummy-data.mock');
 
-
 class ServerProxy {
     constructor() {
         async function about() {

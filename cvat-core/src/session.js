@@ -11,20 +11,9 @@
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const { getFrame } = require('./frames');
-    const {
-        getAnnotations,
-        putAnnotations,
-        saveAnnotations,
-        hasUnsavedChanges,
-        mergeAnnotations,
-        splitAnnotations,
-        groupAnnotations,
-        clearAnnotations,
-        selectObject,
-        annotationsStatistics,
-        uploadAnnotations,
-        dumpAnnotations,
-    } = require('./annotations');
+    const { ArgumentError } = require('./exceptions');
+    const { TaskStatus } = require('./enums');
+    const { Label } = require('./labels');
 
     function buildDublicatedAPI(prototype) {
         Object.defineProperties(prototype, {
@@ -509,7 +498,7 @@
                     }
 
                     if (data[property] === undefined) {
-                        throw new window.cvat.exceptions.ArgumentError(
+                        throw new ArgumentError(
                             `Job field "${property}" was not initialized`,
                         );
                     }
@@ -539,7 +528,7 @@
                     get: () => data.assignee,
                     set: () => (assignee) => {
                         if (!Number.isInteger(assignee) || assignee < 0) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a non negative integer',
                             );
                         }
@@ -556,7 +545,7 @@
                 status: {
                     get: () => data.status,
                     set: (status) => {
-                        const type = window.cvat.enums.TaskStatus;
+                        const type = TaskStatus;
                         let valueInEnum = false;
                         for (const value in type) {
                             if (type[value] === status) {
@@ -566,7 +555,7 @@
                         }
 
                         if (!valueInEnum) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a value from the enumeration cvat.enums.TaskStatus',
                             );
                         }
@@ -647,128 +636,24 @@
         }
     }
 
-    // Fill up the prototype by properties. Class syntax doesn't allow do it
-    // So, we do it seperately
-    buildDublicatedAPI(Job.prototype);
-
-    Job.prototype.save.implementation = async function () {
-        // TODO: Add ability to change an assignee
-        if (this.id) {
-            const jobData = {
-                status: this.status,
-            };
-
-            await serverProxy.jobs.saveJob(this.id, jobData);
-            return this;
-        }
-
-        throw new window.cvat.exceptions.ArgumentError(
-            'Can not save job without and id',
-        );
-    };
-
-    Job.prototype.frames.get.implementation = async function (frame) {
-        if (!Number.isInteger(frame) || frame < 0) {
-            throw new window.cvat.exceptions.ArgumentError(
-                `Frame must be a positive integer. Got: "${frame}"`,
-            );
-        }
-
-        if (frame < this.startFrame || frame > this.stopFrame) {
-            throw new window.cvat.exceptions.ArgumentError(
-                `The frame with number ${frame} is out of the job`,
-            );
-        }
-
-        const frameData = await getFrame(this.task.id, this.task.mode, frame);
-        return frameData;
-    };
-
-    // TODO: Check filter for annotations
-    Job.prototype.annotations.get.implementation = async function (frame, filter) {
-        if (frame < this.startFrame || frame > this.stopFrame) {
-            throw new window.cvat.exceptions.ArgumentError(
-                `Frame ${frame} does not exist in the job`,
-            );
-        }
-
-        const annotationsData = await getAnnotations(this, frame, filter);
-        return annotationsData;
-    };
-
-    Job.prototype.annotations.save.implementation = async function (onUpdate) {
-        const result = await saveAnnotations(this, onUpdate);
-        return result;
-    };
-
-    Job.prototype.annotations.merge.implementation = async function (objectStates) {
-        const result = await mergeAnnotations(this, objectStates);
-        return result;
-    };
-
-    Job.prototype.annotations.split.implementation = async function (objectState, frame) {
-        const result = await splitAnnotations(this, objectState, frame);
-        return result;
-    };
-
-    Job.prototype.annotations.group.implementation = async function (objectStates, reset) {
-        const result = await groupAnnotations(this, objectStates, reset);
-        return result;
-    };
-
-    Job.prototype.annotations.hasUnsavedChanges.implementation = function () {
-        const result = hasUnsavedChanges(this);
-        return result;
-    };
-
-    Job.prototype.annotations.clear.implementation = async function (reload) {
-        const result = await clearAnnotations(this, reload);
-        return result;
-    };
-
-    Job.prototype.annotations.select.implementation = function (frame, x, y) {
-        const result = selectObject(this, frame, x, y);
-        return result;
-    };
-
-    Job.prototype.annotations.statistics.implementation = function () {
-        const result = annotationsStatistics(this);
-        return result;
-    };
-
-    Job.prototype.annotations.put.implementation = function (objectStates) {
-        const result = putAnnotations(this, objectStates);
-        return result;
-    };
-
-    Job.prototype.annotations.upload.implementation = async function (file, format) {
-        const result = await uploadAnnotations(this, file, format);
-        return result;
-    };
-
-    Job.prototype.annotations.dump.implementation = async function (name, format) {
-        const result = await dumpAnnotations(this, name, format);
-        return result;
-    };
-
     /**
         * Class representing a task
         * @memberof module:API.cvat.classes
         * @extends Session
     */
     class Task extends Session {
-        /**
-            * In a fact you need use the constructor only if you want to create a task
-            * @param {object} initialData - Object which is used for initalization
-            * <br> It can contain keys:
-            * <br> <li style="margin-left: 10px;"> name
-            * <br> <li style="margin-left: 10px;"> assignee
-            * <br> <li style="margin-left: 10px;"> bug_tracker
-            * <br> <li style="margin-left: 10px;"> z_order
-            * <br> <li style="margin-left: 10px;"> labels
-            * <br> <li style="margin-left: 10px;"> segment_size
-            * <br> <li style="margin-left: 10px;"> overlap
-        */
+    /**
+        * In a fact you need use the constructor only if you want to create a task
+        * @param {object} initialData - Object which is used for initalization
+        * <br> It can contain keys:
+        * <br> <li style="margin-left: 10px;"> name
+        * <br> <li style="margin-left: 10px;"> assignee
+        * <br> <li style="margin-left: 10px;"> bug_tracker
+        * <br> <li style="margin-left: 10px;"> z_order
+        * <br> <li style="margin-left: 10px;"> labels
+        * <br> <li style="margin-left: 10px;"> segment_size
+        * <br> <li style="margin-left: 10px;"> overlap
+    */
         constructor(initialData) {
             super();
             const data = {
@@ -786,6 +671,9 @@
                 segment_size: undefined,
                 z_order: undefined,
                 image_quality: undefined,
+                start_frame: undefined,
+                stop_frame: undefined,
+                frame_filter: undefined,
             };
 
             for (const property in data) {
@@ -807,7 +695,7 @@
                 for (const segment of initialData.segments) {
                     if (Array.isArray(segment.jobs)) {
                         for (const job of segment.jobs) {
-                            const jobInstance = new window.cvat.classes.Job({
+                            const jobInstance = new Job({
                                 url: job.url,
                                 id: job.id,
                                 assignee: job.assignee,
@@ -824,7 +712,7 @@
 
             if (Array.isArray(initialData.labels)) {
                 for (const label of initialData.labels) {
-                    const classInstance = new window.cvat.classes.Label(label);
+                    const classInstance = new Label(label);
                     data.labels.push(classInstance);
                 }
             }
@@ -851,7 +739,7 @@
                     get: () => data.name,
                     set: (value) => {
                         if (!value.trim().length) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must not be empty',
                             );
                         }
@@ -911,7 +799,7 @@
                     get: () => data.assignee,
                     set: () => (assignee) => {
                         if (!Number.isInteger(assignee) || assignee < 0) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a non negative integer',
                             );
                         }
@@ -962,7 +850,7 @@
                     get: () => data.overlap,
                     set: (overlap) => {
                         if (!Number.isInteger(overlap) || overlap < 0) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a non negative integer',
                             );
                         }
@@ -980,7 +868,7 @@
                     get: () => data.segment_size,
                     set: (segment) => {
                         if (!Number.isInteger(segment) || segment < 0) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a positive integer',
                             );
                         }
@@ -998,7 +886,7 @@
                     get: () => data.z_order,
                     set: (zOrder) => {
                         if (typeof (zOrder) !== 'boolean') {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a boolean',
                             );
                         }
@@ -1016,7 +904,7 @@
                     get: () => data.image_quality,
                     set: (quality) => {
                         if (!Number.isInteger(quality) || quality < 0) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be a positive integer',
                             );
                         }
@@ -1035,14 +923,14 @@
                     get: () => [...data.labels],
                     set: (labels) => {
                         if (!Array.isArray(labels)) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Value must be an array of Labels',
                             );
                         }
 
                         for (const label of labels) {
-                            if (!(label instanceof window.cvat.classes.Label)) {
-                                throw new window.cvat.exceptions.ArgumentError(
+                            if (!(label instanceof Label)) {
+                                throw new ArgumentError(
                                     'Each array value must be an instance of Label. '
                                         + `${typeof (label)} was found`,
                                 );
@@ -1078,14 +966,14 @@
                     get: () => [...data.files.server_files],
                     set: (serverFiles) => {
                         if (!Array.isArray(serverFiles)) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 `Value must be an array. But ${typeof (serverFiles)} has been got.`,
                             );
                         }
 
                         for (const value of serverFiles) {
                             if (typeof (value) !== 'string') {
-                                throw new window.cvat.exceptions.ArgumentError(
+                                throw new ArgumentError(
                                     `Array values must be a string. But ${typeof (value)} has been got.`,
                                 );
                             }
@@ -1106,14 +994,14 @@
                     get: () => [...data.files.client_files],
                     set: (clientFiles) => {
                         if (!Array.isArray(clientFiles)) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 `Value must be an array. But ${typeof (clientFiles)} has been got.`,
                             );
                         }
 
                         for (const value of clientFiles) {
-                            if (!(value instanceof window.File)) {
-                                throw new window.cvat.exceptions.ArgumentError(
+                            if (!(value instanceof File)) {
+                                throw new ArgumentError(
                                     `Array values must be a File. But ${value.constructor.name} has been got.`,
                                 );
                             }
@@ -1134,20 +1022,78 @@
                     get: () => [...data.files.remote_files],
                     set: (remoteFiles) => {
                         if (!Array.isArray(remoteFiles)) {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 `Value must be an array. But ${typeof (remoteFiles)} has been got.`,
                             );
                         }
 
                         for (const value of remoteFiles) {
                             if (typeof (value) !== 'string') {
-                                throw new window.cvat.exceptions.ArgumentError(
+                                throw new ArgumentError(
                                     `Array values must be a string. But ${typeof (value)} has been got.`,
                                 );
                             }
                         }
 
                         Array.prototype.push.apply(data.files.remote_files, remoteFiles);
+                    },
+                },
+                /**
+                    * The first frame of a video to annotation
+                    * @name startFrame
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                startFrame: {
+                    get: () => data.start_frame,
+                    set: (frame) => {
+                        if (!Number.isInteger(frame) || frame < 0) {
+                            throw new ArgumentError(
+                                'Value must be a not negative integer',
+                            );
+                        }
+                        data.start_frame = frame;
+                    },
+                },
+                /**
+                    * The last frame of a video to annotation
+                    * @name stopFrame
+                    * @type {integer}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                stopFrame: {
+                    get: () => data.stop_frame,
+                    set: (frame) => {
+                        if (!Number.isInteger(frame) || frame < 0) {
+                            throw new ArgumentError(
+                                'Value must be a not negative integer',
+                            );
+                        }
+                        data.stop_frame = frame;
+                    },
+                },
+                /**
+                    * Filter to ignore some frames during task creation
+                    * @name frameFilter
+                    * @type {string}
+                    * @memberof module:API.cvat.classes.Task
+                    * @instance
+                    * @throws {module:API.cvat.exceptions.ArgumentError}
+                */
+                frameFilter: {
+                    get: () => data.frame_filter,
+                    set: (filter) => {
+                        if (typeof (filter) !== 'string') {
+                            throw new ArgumentError(
+                                `Filter value must be a string. But ${typeof (filter)} has been got.`,
+                            );
+                        }
+
+                        data.frame_filter = filter;
                     },
                 },
             }));
@@ -1213,9 +1159,128 @@
         }
     }
 
-    // Fill up the prototype by properties. Class syntax doesn't allow do it
-    // So, we do it seperately
+    module.exports = {
+        Job,
+        Task,
+    };
+
+    const {
+        getAnnotations,
+        putAnnotations,
+        saveAnnotations,
+        hasUnsavedChanges,
+        mergeAnnotations,
+        splitAnnotations,
+        groupAnnotations,
+        clearAnnotations,
+        selectObject,
+        annotationsStatistics,
+        uploadAnnotations,
+        dumpAnnotations,
+    } = require('./annotations');
+
+    buildDublicatedAPI(Job.prototype);
     buildDublicatedAPI(Task.prototype);
+
+    Job.prototype.save.implementation = async function () {
+        // TODO: Add ability to change an assignee
+        if (this.id) {
+            const jobData = {
+                status: this.status,
+            };
+
+            await serverProxy.jobs.saveJob(this.id, jobData);
+            return this;
+        }
+
+        throw new ArgumentError(
+            'Can not save job without and id',
+        );
+    };
+
+    Job.prototype.frames.get.implementation = async function (frame) {
+        if (!Number.isInteger(frame) || frame < 0) {
+            throw new ArgumentError(
+                `Frame must be a positive integer. Got: "${frame}"`,
+            );
+        }
+
+        if (frame < this.startFrame || frame > this.stopFrame) {
+            throw new ArgumentError(
+                `The frame with number ${frame} is out of the job`,
+            );
+        }
+
+        const frameData = await getFrame(this.task.id, this.task.mode, frame);
+        return frameData;
+    };
+
+    // TODO: Check filter for annotations
+    Job.prototype.annotations.get.implementation = async function (frame, filter) {
+        if (frame < this.startFrame || frame > this.stopFrame) {
+            throw new ArgumentError(
+                `Frame ${frame} does not exist in the job`,
+            );
+        }
+
+        const annotationsData = await getAnnotations(this, frame, filter);
+        return annotationsData;
+    };
+
+    Job.prototype.annotations.save.implementation = async function (onUpdate) {
+        const result = await saveAnnotations(this, onUpdate);
+        return result;
+    };
+
+    Job.prototype.annotations.merge.implementation = async function (objectStates) {
+        const result = await mergeAnnotations(this, objectStates);
+        return result;
+    };
+
+    Job.prototype.annotations.split.implementation = async function (objectState, frame) {
+        const result = await splitAnnotations(this, objectState, frame);
+        return result;
+    };
+
+    Job.prototype.annotations.group.implementation = async function (objectStates, reset) {
+        const result = await groupAnnotations(this, objectStates, reset);
+        return result;
+    };
+
+    Job.prototype.annotations.hasUnsavedChanges.implementation = function () {
+        const result = hasUnsavedChanges(this);
+        return result;
+    };
+
+    Job.prototype.annotations.clear.implementation = async function (reload) {
+        const result = await clearAnnotations(this, reload);
+        return result;
+    };
+
+    Job.prototype.annotations.select.implementation = function (frame, x, y) {
+        const result = selectObject(this, frame, x, y);
+        return result;
+    };
+
+    Job.prototype.annotations.statistics.implementation = function () {
+        const result = annotationsStatistics(this);
+        return result;
+    };
+
+    Job.prototype.annotations.put.implementation = function (objectStates) {
+        const result = putAnnotations(this, objectStates);
+        return result;
+    };
+
+    Job.prototype.annotations.upload.implementation = async function (file, format) {
+        const result = await uploadAnnotations(this, file, format);
+        return result;
+    };
+
+    Job.prototype.annotations.dump.implementation = async function (name, format) {
+        const result = await dumpAnnotations(this, name, format);
+        return result;
+    };
 
     Task.prototype.save.implementation = async function saveTaskImplementation(onUpdate) {
         // TODO: Add ability to change an owner and an assignee
@@ -1248,6 +1313,15 @@
         if (this.overlap) {
             taskData.overlap = this.overlap;
         }
+        if (this.startFrame) {
+            taskData.start_frame = this.startFrame;
+        }
+        if (this.stopFrame) {
+            taskData.stop_frame = this.stopFrame;
+        }
+        if (this.frameFilter) {
+            taskData.frame_filter = this.frameFilter;
+        }
 
         const taskFiles = {
             client_files: this.clientFiles,
@@ -1266,13 +1340,13 @@
 
     Task.prototype.frames.get.implementation = async function (frame) {
         if (!Number.isInteger(frame) || frame < 0) {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
             );
         }
 
         if (frame >= this.size) {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `The frame with number ${frame} is out of the task`,
             );
         }
@@ -1284,13 +1358,13 @@
     // TODO: Check filter for annotations
     Task.prototype.annotations.get.implementation = async function (frame, filter) {
         if (!Number.isInteger(frame) || frame < 0) {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `Frame must be a positive integer. Got: "${frame}"`,
             );
         }
 
         if (frame >= this.size) {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `Frame ${frame} does not exist in the task`,
             );
         }
@@ -1352,10 +1426,5 @@
     Task.prototype.annotations.dump.implementation = async function (name, format) {
         const result = await dumpAnnotations(this, name, format);
         return result;
-    };
-
-    module.exports = {
-        Job,
-        Task,
     };
 })();

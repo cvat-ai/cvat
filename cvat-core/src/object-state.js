@@ -9,6 +9,7 @@
 
 (() => {
     const PluginRegistry = require('./plugins');
+    const { ArgumentError } = require('./exceptions');
 
     /**
         * Class representing a state of an object on a specific frame
@@ -162,7 +163,7 @@
                             data.updateFlags.points = true;
                             data.points = [...points];
                         } else {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Points are expected to be an array '
                                     + `but got ${typeof (points) === 'object'
                                         ? points.constructor.name : typeof (points)}`,
@@ -261,7 +262,7 @@
                     get: () => data.attributes,
                     set: (attributes) => {
                         if (typeof (attributes) !== 'object') {
-                            throw new window.cvat.exceptions.ArgumentError(
+                            throw new ArgumentError(
                                 'Attributes are expected to be an object '
                                     + `but got ${typeof (attributes) === 'object'
                                         ? attributes.constructor.name : typeof (attributes)}`,

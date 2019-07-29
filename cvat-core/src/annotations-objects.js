@@ -10,6 +10,19 @@
 (() => {
     const ObjectState = require('./object-state');
     const { checkObjectType } = require('./common');
+    const {
+        ObjectShape,
+        ObjectType,
+        AttributeType,
+    } = require('./enums');
+
+    const {
+        DataError,
+        ArgumentError,
+        ScriptingError,
+    } = require('./exceptions');
+
+    const { Label } = require('./labels');
 
     // Called with the Annotation context
     function objectStateFactory(frame, data) {
@@ -26,32 +39,32 @@
     }
 
     function checkNumberOfPoints(shapeType, points) {
-        if (shapeType === window.cvat.enums.ObjectShape.RECTANGLE) {
+        if (shapeType === ObjectShape.RECTANGLE) {
             if (points.length / 2 !== 2) {
-                throw new window.cvat.exceptions.DataError(
+                throw new DataError(
                     `Rectangle must have 2 points, but got ${points.length / 2}`,
                 );
             }
-        } else if (shapeType === window.cvat.enums.ObjectShape.POLYGON) {
+        } else if (shapeType === ObjectShape.POLYGON) {
             if (points.length / 2 < 3) {
-                throw new window.cvat.exceptions.DataError(
+                throw new DataError(
                     `Polygon must have at least 3 points, but got ${points.length / 2}`,
                 );
             }
-        } else if (shapeType === window.cvat.enums.ObjectShape.POLYLINE) {
+        } else if (shapeType === ObjectShape.POLYLINE) {
             if (points.length / 2 < 2) {
-                throw new window.cvat.exceptions.DataError(
+                throw new DataError(
                     `Polyline must have at least 2 points, but got ${points.length / 2}`,
                 );
             }
-        } else if (shapeType === window.cvat.enums.ObjectShape.POINTS) {
+        } else if (shapeType === ObjectShape.POINTS) {
             if (points.length / 2 < 1) {
-                throw new window.cvat.exceptions.DataError(
+                throw new DataError(
                     `Points must have at least 1 points, but got ${points.length / 2}`,
                 );
             }
         } else {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `Unknown value of shapeType has been recieved ${shapeType}`,
             );
         }
@@ -61,7 +74,7 @@
         const MIN_SHAPE_LENGTH = 3;
         const MIN_SHAPE_AREA = 9;
 
-        if (shapeType === window.cvat.enums.ObjectShape.POINTS) {
+        if (shapeType === ObjectShape.POINTS) {
             return true;
         }
 
@@ -77,7 +90,7 @@
             ymax = Math.max(ymax, points[i + 1]);
         }
 
-        if (shapeType === window.cvat.enums.ObjectShape.POLYLINE) {
+        if (shapeType === ObjectShape.POLYLINE) {
             const length = Math.max(
                 xmax - xmin,
                 ymax - ymin,
@@ -95,18 +108,18 @@
         const type = attr.inputType;
 
         if (typeof (value) !== 'string') {
-            throw new window.cvat.exceptions.ArgumentError(
+            throw new ArgumentError(
                 `Attribute value is expected to be string, but got ${typeof (value)}`,
             );
         }
 
-        if (type === window.cvat.enums.AttributeType.NUMBER) {
+        if (type === AttributeType.NUMBER) {
             return +value >= +values[0]
                 && +value <= +values[1]
                 && !((+value - +values[0]) % +values[2]);
         }
 
-        if (type === window.cvat.enums.AttributeType.CHECKBOX) {
+        if (type === AttributeType.CHECKBOX) {
             return ['true', 'false'].includes(value.toLowerCase());
         }
 
@@ -171,19 +184,19 @@
         }
 
         save() {
-            throw new window.cvat.exceptions.ScriptingError(
+            throw new ScriptingError(
                 'Is not implemented',
             );
         }
 
         get() {
-            throw new window.cvat.exceptions.ScriptingError(
+            throw new ScriptingError(
                 'Is not implemented',
             );
         }
 
         toJSON() {
-            throw new window.cvat.exceptions.ScriptingError(
+            throw new ScriptingError(
                 'Is not implemented',
             );
         }
@@ -241,13 +254,13 @@
         // Method is used to construct ObjectState objects
         get(frame) {
             if (frame !== this.frame) {
-                throw new window.cvat.exceptions.ScriptingError(
+                throw new ScriptingError(
                     'Got frame is not equal to the frame of the shape',
                 );
             }
 
             return {
-                objectType: window.cvat.enums.ObjectType.SHAPE,
+                objectType: ObjectType.SHAPE,
                 shapeType: this.shapeType,
                 clientID: this.clientID,
                 serverID: this.serverID,
@@ -264,7 +277,7 @@
 
         save(frame, data) {
             if (frame !== this.frame) {
-                throw new window.cvat.exceptions.ScriptingError(
+                throw new ScriptingError(
                     'Got frame is not equal to the frame of the shape',
                 );
             }
@@ -278,7 +291,7 @@
             const updated = data.updateFlags;
 
             if (updated.label) {
-                checkObjectType('label', data.label, null, window.cvat.classes.Label);
+                checkObjectType('label', data.label, null, Label);
                 copy.label = data.label;
                 copy.attributes = {};
                 this.appendDefaultAttributes.call(copy, copy.label);
@@ -297,7 +310,7 @@
                         && validateAttributeValue(value, labelAttributes[attrID])) {
                         copy.attributes[attrID] = value;
                     } else {
-                        throw new window.cvat.exceptions.ArgumentError(
+                        throw new ArgumentError(
                             `Trying to save unknown attribute with id ${attrID} and value ${value}`,
                         );
                     }
@@ -352,7 +365,7 @@
             if (updated.color) {
                 checkObjectType('color', data.color, 'string', null);
                 if (/^#[0-9A-F]{6}$/i.test(data.color)) {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         `Got invalid color value: "${data.color}"`,
                     );
                 }
@@ -456,7 +469,7 @@
                     {
                         attributes: this.getAttributes(frame),
                         group: this.group,
-                        objectType: window.cvat.enums.ObjectType.TRACK,
+                        objectType: ObjectType.TRACK,
                         shapeType: this.shapeType,
                         clientID: this.clientID,
                         serverID: this.serverID,
@@ -537,7 +550,7 @@
             let positionUpdated = false;
 
             if (updated.label) {
-                checkObjectType('label', data.label, null, window.cvat.classes.Label);
+                checkObjectType('label', data.label, null, Label);
                 copy.label = data.label;
                 copy.attributes = {};
 
@@ -558,7 +571,7 @@
                         && validateAttributeValue(value, labelAttributes[attrID])) {
                         copy.attributes[attrID] = value;
                     } else {
-                        throw new window.cvat.exceptions.ArgumentError(
+                        throw new ArgumentError(
                             `Trying to save unknown attribute with id ${attrID} and value ${value}`,
                         );
                     }
@@ -622,7 +635,7 @@
             if (updated.color) {
                 checkObjectType('color', data.color, 'string', null);
                 if (/^#[0-9A-F]{6}$/i.test(data.color)) {
-                    throw new window.cvat.exceptions.ArgumentError(
+                    throw new ArgumentError(
                         `Got invalid color value: "${data.color}"`,
                     );
                 }
@@ -762,7 +775,7 @@
                 };
             }
 
-            throw new window.cvat.exceptions.ScriptingError(
+            throw new ScriptingError(
                 `No one neightbour frame found for the track with client ID: "${this.id}"`,
             );
         }
@@ -808,13 +821,13 @@
         // Method is used to construct ObjectState objects
         get(frame) {
             if (frame !== this.frame) {
-                throw new window.cvat.exceptions.ScriptingError(
+                throw new ScriptingError(
                     'Got frame is not equal to the frame of the shape',
                 );
             }
 
             return {
-                objectType: window.cvat.enums.ObjectType.TAG,
+                objectType: ObjectType.TAG,
                 clientID: this.clientID,
                 serverID: this.serverID,
                 lock: this.lock,
@@ -826,7 +839,7 @@
 
         save(frame, data) {
             if (frame !== this.frame) {
-                throw new window.cvat.exceptions.ScriptingError(
+                throw new ScriptingError(
                     'Got frame is not equal to the frame of the shape',
                 );
             }
@@ -840,7 +853,7 @@
             const updated = data.updateFlags;
 
             if (updated.label) {
-                checkObjectType('label', data.label, null, window.cvat.classes.Label);
+                checkObjectType('label', data.label, null, Label);
                 copy.label = data.label;
                 copy.attributes = {};
                 this.appendDefaultAttributes.call(copy, copy.label);
@@ -882,7 +895,7 @@
     class RectangleShape extends Shape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
+            this.shapeType = ObjectShape.RECTANGLE;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -908,7 +921,7 @@
     class PolygonShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
+            this.shapeType = ObjectShape.POLYGON;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -983,7 +996,7 @@
     class PolylineShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
+            this.shapeType = ObjectShape.POLYLINE;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -1027,7 +1040,7 @@
     class PointsShape extends PolyShape {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = window.cvat.enums.ObjectShape.POINTS;
+            this.shapeType = ObjectShape.POINTS;
             checkNumberOfPoints(this.shapeType, this.points);
         }
 
@@ -1049,7 +1062,7 @@
     class RectangleTrack extends Track {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = window.cvat.enums.ObjectShape.RECTANGLE;
+            this.shapeType = ObjectShape.RECTANGLE;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
@@ -1374,7 +1387,7 @@
 
                 if (!targetMatched.length) {
                     // Prevent infinity loop
-                    throw new window.cvat.exceptions.ScriptingError('Interpolation mapping is empty');
+                    throw new ScriptingError('Interpolation mapping is empty');
                 }
 
                 while (!targetMatched.includes(prev)) {
@@ -1463,7 +1476,7 @@
     class PolygonTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = window.cvat.enums.ObjectShape.POLYGON;
+            this.shapeType = ObjectShape.POLYGON;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
@@ -1473,7 +1486,7 @@
     class PolylineTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = window.cvat.enums.ObjectShape.POLYLINE;
+            this.shapeType = ObjectShape.POLYLINE;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }
@@ -1483,7 +1496,7 @@
     class PointsTrack extends PolyTrack {
         constructor(data, clientID, color, injection) {
             super(data, clientID, color, injection);
-            this.shapeType = window.cvat.enums.ObjectShape.POINTS;
+            this.shapeType = ObjectShape.POINTS;
             for (const shape of Object.values(this.shapes)) {
                 checkNumberOfPoints(this.shapeType, shape.points);
             }

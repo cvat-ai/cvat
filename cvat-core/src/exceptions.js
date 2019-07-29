@@ -10,6 +10,7 @@
 (() => {
     const Platform = require('platform');
     const ErrorStackParser = require('error-stack-parser');
+    const config = require('./config');
 
     /**
         * Base exception class
@@ -35,7 +36,7 @@
                 jobID,
                 taskID,
                 clientID,
-            } = window.cvat.config;
+            } = config;
 
             const projID = undefined; // wasn't implemented
 

@@ -14,7 +14,7 @@
     class PluginRegistry {
         static async apiWrapper(wrappedFunc, ...args) {
             // I have to optimize the wrapper
-            const pluginList = await window.cvat.plugins.list.implementation();
+            const pluginList = await PluginRegistry.list();
             for (const plugin of pluginList) {
                 const pluginDecorators = plugin.functions
                     .filter(obj => obj.callback === wrappedFunc)[0];
@@ -52,6 +52,7 @@
             return result;
         }
 
+        // Called with cvat context
         static async register(plug) {
             const functions = [];
 
@@ -92,7 +93,7 @@
                     functions.push(decorator);
                 }
             }(plug, {
-                cvat: window.cvat,
+                cvat: this,
             }));
 
             Object.defineProperty(plug, 'functions', {

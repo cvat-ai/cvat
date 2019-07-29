@@ -3,7 +3,14 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* global
+    require:false
+*/
+
 (() => {
+    const { AttributeType } = require('./enums');
+    const { ArgumentError } = require('./exceptions');
+
     /**
         * Class representing an attribute
         * @memberof module:API.cvat.classes
@@ -32,8 +39,8 @@
                 }
             }
 
-            if (!Object.values(window.cvat.enums.AttributeType).includes(data.input_type)) {
-                throw new window.cvat.exceptions.ArgumentError(
+            if (!Object.values(AttributeType).includes(data.input_type)) {
+                throw new ArgumentError(
                     `Got invalid attribute type ${data.input_type}`,
                 );
             }
@@ -144,7 +151,7 @@
             if (Object.prototype.hasOwnProperty.call(initialData, 'attributes')
                 && Array.isArray(initialData.attributes)) {
                 for (const attrData of initialData.attributes) {
-                    data.attributes.push(new window.cvat.classes.Attribute(attrData));
+                    data.attributes.push(new Attribute(attrData));
                 }
             }
 
