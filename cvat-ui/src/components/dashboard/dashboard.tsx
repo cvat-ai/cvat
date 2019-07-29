@@ -15,13 +15,14 @@ import DashboardFooter from './footer/dashboard-footer';
 
 import './dashboard.scss';
 
+
 class Dashboard extends PureComponent<any, any> {
   componentDidMount() {
     this.loadTasks(this.props.location.search);
 
     this.props.history.listen((location: Location, action: Action) => {
       this.loadTasks(location.search);
-    })
+    });
   }
 
   render() {

@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 
+import { withRouter } from 'react-router-dom';
+
 import { connect } from 'react-redux';
 import { deleteTaskAsync } from '../../../actions/tasks.actions';
 
@@ -120,7 +122,7 @@ class DashboardContent extends Component<any, any> {
       okType: 'danger',
       centered: true,
       onOk() {
-        return self.props.dispatch(deleteTaskAsync(task));
+        return self.props.dispatch(deleteTaskAsync(task, self.props.history));
       },
       cancelText: 'No',
       onCancel() {
@@ -142,4 +144,4 @@ const mapStateToProps = (state: any) => {
   return state.tasks;
 };
 
-export default connect(mapStateToProps)(DashboardContent);
+export default withRouter(connect(mapStateToProps)(DashboardContent) as any);

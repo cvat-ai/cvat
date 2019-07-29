@@ -1,3 +1,6 @@
+import queryString from 'query-string';
+
+
 export const getTasks = () => (dispatch: any, getState: any) => {
   dispatch({
     type: 'GET_TASKS',
@@ -52,14 +55,28 @@ export const getTasksAsync = (queryObject = {}) => {
   };
 }
 
-export const deleteTaskAsync = (task: any) => {
-  return (dispatch: any) => {
+export const deleteTaskAsync = (task: any, history: any) => {
+  return (dispatch: any, getState: any) => {
     dispatch(deleteTask());
 
     return task.delete().then(
       (deleted: any) => {
         dispatch(deleteTaskSuccess());
-        dispatch(getTasksAsync());
+
+        const state = getState();
+
+        const queryObject = {
+          page: state.tasksFilter.currentPage,
+          search: state.tasksFilter.searchQuery,
+        }
+
+        if (state.tasks.tasks.length === 1) {
+          queryObject.page = queryObject.page - 1;
+
+          history.push({ search: queryString.stringify(queryObject) });
+        } else {
+          dispatch(getTasksAsync(queryObject));
+        }
       },
       (error: any) => {
         dispatch(deleteTaskError(error));

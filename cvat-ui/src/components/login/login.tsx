@@ -4,9 +4,9 @@ import { connect } from 'react-redux';
 import { loginAsync } from '../../actions/auth.actions';
 
 import { Button, Icon, Input, Form, Col, Row } from 'antd';
+import Title from 'antd/lib/typography/Title';
 
 import './login.scss';
-import Title from 'antd/lib/typography/Title';
 
 
 class LoginForm extends PureComponent<any, any> {
@@ -15,7 +15,7 @@ class LoginForm extends PureComponent<any, any> {
 
     return (
       <Row type="flex" justify="center" align="middle">
-        <Col span={4}>
+        <Col xs={12} lg={8}>
           <Form className="login-form" onSubmit={ this.onSubmit }>
             <Title className="login-form__title">Login</Title>
 
