@@ -136,8 +136,7 @@ def _parse_task_annotation(annotation_file, annotation_importer, parser, spec):
 
         global_vars["file_object"] = file_object
         global_vars["annotations"] = annotation_importer
-        global_vars["parse_spec"] = annotation_importer
-
+        global_vars["parse_spec"] = spec
 
         exec("parse(file_object, annotations, parse_spec)", global_vars)
 
