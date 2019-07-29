@@ -14,7 +14,7 @@ from django.core.files.storage import FileSystemStorage
 fs = FileSystemStorage()
 
 def upload_path_handler(instance, filename):
-    return os.path.join(settings.MODELS_ROOT, instance.id, filename)
+    return os.path.join(settings.MODELS_ROOT, str(instance.id), filename)
 
 class FrameworkChoice(Enum):
     OPENVINO = 'openvino'
