@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 
 
 def upload_file_handler(instance, filename):
-    return os.path.join('formats', instance.id, filename)
+    return os.path.join('formats', str(instance.id), filename)
 
 class AnnotationFormat(models.Model):
     name = SafeCharField(max_length=256)
