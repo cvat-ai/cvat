@@ -20,7 +20,7 @@ class AnnotationIR:
             self._tracks = getattr(data, 'tracks', []) or data['tracks']
 
     def add_tag(self, tag):
-        raise NotImplementedError
+        self._tags.append(tag)
 
     def add_shape(self, shape):
         self._shapes.append(shape)
