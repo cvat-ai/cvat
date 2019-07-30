@@ -1,5 +1,7 @@
 import queryString from 'query-string';
 
+import setQueryObject from '../utils/tasks-filter-dto'
+
 
 export const getTasks = () => (dispatch: any, getState: any) => {
   dispatch({
@@ -70,12 +72,15 @@ export const deleteTaskAsync = (task: any, history: any) => {
           search: state.tasksFilter.searchQuery,
         }
 
-        if (state.tasks.tasks.length === 1) {
+        if (state.tasks.tasks.length === 1 && state.tasks.tasksCount !== 1) {
           queryObject.page = queryObject.page - 1;
 
           history.push({ search: queryString.stringify(queryObject) });
+        } else if (state.tasks.tasksCount === 1) {
+          dispatch(getTasksAsync());
         } else {
-          dispatch(getTasksAsync(queryObject));
+          const query = setQueryObject(queryObject);
+          dispatch(getTasksAsync(query));
         }
       },
       (error: any) => {

@@ -10,6 +10,12 @@ import './login.scss';
 
 
 class LoginForm extends PureComponent<any, any> {
+  componentWillMount() {
+    if (localStorage.getItem('session')) {
+      this.props.history.push('/dashboard');
+    }
+  }
+
   render() {
     const { getFieldDecorator } = this.props.form;
 
@@ -63,7 +69,7 @@ class LoginForm extends PureComponent<any, any> {
 
     this.props.form.validateFields((error: any, values: any) => {
       if (!error) {
-        this.props.dispatch(loginAsync(values.username, values.password))
+        this.props.dispatch(loginAsync(values.username, values.password, this.props.history));
       }
     });
   }
