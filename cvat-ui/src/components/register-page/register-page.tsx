@@ -10,6 +10,12 @@ import './register-page.scss';
 
 
 class RegisterForm extends PureComponent<any, any> {
+  constructor(props: any) {
+    super(props);
+
+    this.state = { confirmDirty: false };
+  }
+
   componentWillMount() {
     if (localStorage.getItem('session')) {
       this.props.history.push('/dashboard');
@@ -40,7 +46,7 @@ class RegisterForm extends PureComponent<any, any> {
 
             <Form.Item>
               {getFieldDecorator('firstName', {
-                rules: [{ required: true, message: 'Please enter your first name!' }],
+                rules: [],
               })(
                 <Input
                   prefix={ <Icon type="idcard" /> }
@@ -53,7 +59,7 @@ class RegisterForm extends PureComponent<any, any> {
 
             <Form.Item>
               {getFieldDecorator('lastName', {
-                rules: [{ required: true, message: 'Please enter your last name!' }],
+                rules: [],
               })(
                 <Input
                   prefix={ <Icon type="idcard" /> }
@@ -64,9 +70,18 @@ class RegisterForm extends PureComponent<any, any> {
               )}
             </Form.Item>
 
-            <Form.Item>
+            <Form.Item hasFeedback>
               {getFieldDecorator('email', {
-                rules: [{ required: true, message: 'Please enter your email!' }],
+                rules: [
+                  {
+                    type: 'email',
+                    message: 'The input is not valid email!',
+                  },
+                  {
+                    required: true,
+                    message: 'Please input your email!',
+                  },
+                ],
               })(
                 <Input
                   prefix={ <Icon type="mail" /> }
@@ -77,26 +92,41 @@ class RegisterForm extends PureComponent<any, any> {
               )}
             </Form.Item>
 
-            <Form.Item>
+            <Form.Item hasFeedback>
               {getFieldDecorator('password', {
-                rules: [{ required: true, message: 'Please enter your password!' }],
+                rules: [
+                  {
+                    required: true,
+                    message: 'Please input your password!',
+                  },
+                  {
+                    validator: this.validateToNextPassword,
+                  },
+                ],
               })(
-                <Input
+                <Input.Password
                   prefix={ <Icon type="lock" /> }
-                  type="password"
                   name="password"
                   placeholder="Password"
                 />,
               )}
             </Form.Item>
 
-            <Form.Item>
+            <Form.Item hasFeedback>
               {getFieldDecorator('passwordConfirmation', {
-                rules: [{ required: true, message: 'Please re-enter your password!' }],
+                rules: [
+                  {
+                    required: true,
+                    message: 'Please confirm your password!',
+                  },
+                  {
+                    validator: this.compareToFirstPassword,
+                  },
+                ],
               })(
-                <Input
+                <Input.Password
+                  onBlur={ this.handleConfirmBlur }
                   prefix={ <Icon type="lock" /> }
-                  type="password-confirmation"
                   name="password-confirmation"
                   placeholder="Password confirmation"
                 />,
@@ -113,6 +143,32 @@ class RegisterForm extends PureComponent<any, any> {
       </Row>
     );
   }
+
+  private handleConfirmBlur = (event: any) => {
+    const { value } = event.target;
+
+    this.setState({ confirmDirty: this.state.confirmDirty || !!value });
+  };
+
+  private compareToFirstPassword = (rule: any, value: string, callback: Function) => {
+    const { form } = this.props;
+
+    if (value && value !== form.getFieldValue('password')) {
+      callback('Two passwords that you enter are inconsistent!');
+    } else {
+      callback();
+    }
+  };
+
+  private validateToNextPassword = (rule: any, value: string, callback: Function) => {
+    const { form } = this.props;
+
+    if (value && this.state.confirmDirty) {
+      form.validateFields(['passwordConfirmation'], { force: true });
+    }
+
+    callback();
+  };
 
   private onSubmit = (event: any) => {
     event.preventDefault();
