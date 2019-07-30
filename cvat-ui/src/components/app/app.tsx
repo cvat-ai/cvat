@@ -3,9 +3,10 @@ import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-d
 
 import { connect } from 'react-redux';
 
-import Dashboard from '../dashboard/dashboard';
-import Login from '../login/login';
-import NotFound from '../not-found/not-found';
+import DashboardPage from '../dashboard-page/dashboard-page';
+import LoginPage from '../login-page/login-page';
+import RegisterPage from '../register-page/register-page';
+import PageNotFound from '../page-not-found/page-not-found';
 
 import './app.scss';
 
@@ -38,9 +39,10 @@ class App extends PureComponent<any, any> {
       <Router>
         <Switch>
           <Redirect path="/" exact to="/dashboard" />
-          <ProtectedRoute path="/dashboard" component={ Dashboard } />
-          <Route path="/login" component={ Login } />
-          <Route component={ NotFound } />
+          <ProtectedRoute path="/dashboard" component={ DashboardPage } />
+          <Route path="/login" component={ LoginPage } />
+          <Route path="/register" component={ RegisterPage } />
+          <Route component={ PageNotFound } />
         </Switch>
       </Router>
     );

@@ -6,7 +6,7 @@ import { loginAsync } from '../../actions/auth.actions';
 import { Button, Icon, Input, Form, Col, Row } from 'antd';
 import Title from 'antd/lib/typography/Title';
 
-import './login.scss';
+import './login-page.scss';
 
 
 class LoginForm extends PureComponent<any, any> {
@@ -21,7 +21,7 @@ class LoginForm extends PureComponent<any, any> {
 
     return (
       <Row type="flex" justify="center" align="middle">
-        <Col xs={12} lg={8}>
+        <Col xs={12} md={10} lg={8} xl={6}>
           <Form className="login-form" onSubmit={ this.onSubmit }>
             <Title className="login-form__title">Login</Title>
 

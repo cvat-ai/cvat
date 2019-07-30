@@ -15,7 +15,7 @@ import DashboardHeader from './header/dashboard-header';
 import DashboardContent from './content/dashboard-content';
 import DashboardFooter from './footer/dashboard-footer';
 
-import './dashboard.scss';
+import './dashboard-page.scss';
 
 
 class Dashboard extends PureComponent<any, any> {
