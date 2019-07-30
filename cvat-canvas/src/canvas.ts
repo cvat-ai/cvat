@@ -13,7 +13,7 @@ interface CanvasInterface {
     rotate(direction: Rotation): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
-    grid(stepX: number, stepY: number, color?: GridColor, opacity?: number): void;
+    grid(stepX: number, stepY: number): void;
 
     draw(shapeType: string, numberOfPoints: number, initialState: any): any;
     split(enabled?: boolean): any;
@@ -23,19 +23,10 @@ interface CanvasInterface {
     cancel(): void;
 }
 
-export enum GridColor {
-    BLACK,
-    RED,
-    GREEN,
-    BLUE,
-    WHITE,
-}
-
 export enum Rotation {
-    CLOCKWISE,
-    ANTICLOCKWISE,
+    CLOCKWISE90,
+    ANTICLOCKWISE90,
 }
-
 
 export class Canvas implements CanvasInterface {
     public constructor() {
@@ -66,7 +57,7 @@ export class Canvas implements CanvasInterface {
         throw new Error('Method not implemented.');
     }
 
-    public grid(stepX: number, stepY: number, color: GridColor = GridColor.WHITE, opacity: number = 1): void {
+    public grid(stepX: number, stepY: number): void {
         throw new Error('Method not implemented.');
     }
 

@@ -4,7 +4,7 @@
 The CVAT module presents a canvas to viewing, drawing and editing of annotations.
 
 - It has been written on typescript
-- It contains the class ```Canvas``` and the enums ```Rotation``` and ```GridColor```
+- It contains the class ```Canvas``` and the enum ```Rotation```
 
 ## Commands
 - Building of the module from sources in the ```dist``` directory:
@@ -56,7 +56,7 @@ All methods are sync.
     rotate(direction: Rotation): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
-    grid(stepX: number, stepY: number, color?: GridColor, opacity?: number): void;
+    grid(stepX: number, stepY: number): void;
 
     draw(enabled?: boolean, shapeType?: string, numberOfPoints?: number, initialState?: any): void | ObjectState;
     split(enabled?: boolean): void | ObjectState;
