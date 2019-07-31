@@ -3,10 +3,11 @@
 * SPDX-License-Identifier: MIT
 */
 
-import CanvasModelImpl from './canvasModel';
-import CanvasControllerImpl from './canvasController';
+import { CanvasModel, UpdateReasons } from './canvasModel';
+import { Listener, Master } from './master';
+import { CanvasController } from './canvasController';
 
-interface CanvasView {
+export interface CanvasView {
     html(): HTMLDivElement;
 }
 
@@ -20,7 +21,7 @@ function setAttributes(element: HTMLElement | SVGElement, attributes: HTMLAttrib
     }
 }
 
-export default class CanvasViewImpl implements CanvasView {
+export class CanvasViewImpl implements CanvasView, Listener {
     private loadingAnimation: SVGSVGElement;
     private text: SVGSVGElement;
     private background: SVGSVGElement;
@@ -28,10 +29,10 @@ export default class CanvasViewImpl implements CanvasView {
     private content: SVGSVGElement;
     private rotationWrapper: HTMLDivElement;
     private gridPath: SVGPathElement;
-    private model: CanvasModelImpl;
-    private controller: CanvasControllerImpl;
+    private model: CanvasModel & Master;
+    private controller: CanvasController;
 
-    public constructor(model: CanvasModelImpl, controller: CanvasControllerImpl) {
+    public constructor(model: CanvasModel & Master, controller: CanvasController) {
         this.model = model;
         this.controller = controller;
 
@@ -126,6 +127,21 @@ export default class CanvasViewImpl implements CanvasView {
         this.rotationWrapper.appendChild(this.background);
         this.rotationWrapper.appendChild(this.grid);
         this.rotationWrapper.appendChild(this.content);
+
+        model.subscribe(this);
+    }
+
+    public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
+        if (reason === UpdateReasons.IMAGE) {
+            if (!model.image.length) {
+                this.loadingAnimation.classList.remove('canvas_hidden');
+            } else {
+                this.loadingAnimation.classList.add('canvas_hidden');
+                this.background.style.backgroundImage = `url("${model.image}")`;
+                const event: Event = new Event('canvas.setup');
+                this.rotationWrapper.dispatchEvent(event);
+            }
+        }
     }
 
     public html(): HTMLDivElement {

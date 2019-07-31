@@ -3,9 +3,9 @@
 * SPDX-License-Identifier: MIT
 */
 
-import CanvasModelImpl from './canvasModel';
-import CanvasControllerImpl from './canvasController';
-import CanvasViewImpl from './canvasView';
+import { CanvasModel, CanvasModelImpl, Rotation } from './canvasModel';
+import { CanvasController, CanvasControllerImpl } from './canvasController';
+import { CanvasView, CanvasViewImpl } from './canvasView';
 
 interface Canvas {
     html(): HTMLDivElement;
@@ -24,15 +24,10 @@ interface Canvas {
     cancel(): void;
 }
 
-export enum Rotation {
-    CLOCKWISE90,
-    ANTICLOCKWISE90,
-}
-
 class CanvasImpl implements Canvas {
-    private model: CanvasModelImpl;
-    private controller: CanvasControllerImpl;
-    private view: CanvasViewImpl;
+    private model: CanvasModel;
+    private controller: CanvasController;
+    private view: CanvasView;
 
     public constructor() {
         this.model = new CanvasModelImpl();
@@ -45,27 +40,27 @@ class CanvasImpl implements Canvas {
     }
 
     public setup(frameData: any, objectStates: any[]): void {
-        return this.model.setup(frameData, objectStates);
+        this.model.setup(frameData, objectStates);
     }
 
     public activate(clientID: number, attributeID: number = null): void {
-        return this.model.activate(clientID, attributeID);
+        this.model.activate(clientID, attributeID);
     }
 
     public rotate(direction: Rotation): void {
-        return this.model.rotate(direction);
+        this.model.rotate(direction);
     }
 
     public focus(clientID: number, padding: number = 0): void {
-        return this.model.focus(clientID, padding);
+        this.model.focus(clientID, padding);
     }
 
     public fit(): void {
-        return this.model.fit();
+        this.model.fit();
     }
 
     public grid(stepX: number, stepY: number): void {
-        return this.model.grid(stepX, stepY);
+        this.model.grid(stepX, stepY);
     }
 
     public draw(enabled: boolean = false, shapeType: string = '', numberOfPoints: number = 0, initialState: any = null): any {
@@ -85,8 +80,11 @@ class CanvasImpl implements Canvas {
     }
 
     public cancel(): void {
-        return this.model.cancel();
+        this.model.cancel();
     }
 }
 
-export { CanvasImpl as Canvas };
+export {
+    CanvasImpl as Canvas,
+    Rotation,
+};

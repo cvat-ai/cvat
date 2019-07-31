@@ -3,17 +3,20 @@
 * SPDX-License-Identifier: MIT
 */
 
-import CanvasModelImpl from './canvasModel';
+import { CanvasModel } from './canvasModel';
 
-interface CanvasController {
+export interface CanvasController {
     a: string;
 }
 
-export default class CanvasControllerImpl implements CanvasController {
-    private model: CanvasModelImpl;
-    public a: string = 'string';
+export class CanvasControllerImpl implements CanvasController {
+    private model: CanvasModel;
 
-    public constructor(model: CanvasModelImpl) {
+    public constructor(model: CanvasModel) {
         this.model = model;
+    }
+
+    public get a(): string {
+        return 'string';
     }
 }

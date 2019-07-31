@@ -66,22 +66,25 @@
             * @memberof module:API.cvat.classes.FrameData
             * @instance
             * @async
+            * @param {function} [onServerRequest = () => {}]
+            * callback which will be called if data absences local
             * @throws {module:API.cvat.exception.ServerError}
             * @throws {module:API.cvat.exception.PluginError}
         */
-        async data() {
+        async data(onServerRequest = () => {}) {
             const result = await PluginRegistry
-                .apiWrapper.call(this, FrameData.prototype.data);
+                .apiWrapper.call(this, FrameData.prototype.data, onServerRequest);
             return result;
         }
     }
 
-    FrameData.prototype.data.implementation = async function () {
+    FrameData.prototype.data.implementation = async function (onServerRequest) {
         return new Promise(async (resolve, reject) => {
             try {
                 if (this.number in frameCache[this.tid]) {
                     resolve(frameCache[this.tid][this.number]);
                 } else {
+                    onServerRequest();
                     const frame = await serverProxy.frames.getData(this.tid, this.number);
 
                     if (isNode) {
@@ -92,7 +95,7 @@
                         reader.onload = () => {
                             frameCache[this.tid][this.number] = reader.result;
                             resolve(frameCache[this.tid][this.number]);
-                        }
+                        };
                         reader.readAsDataURL(frame);
                     }
                 }

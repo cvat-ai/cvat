@@ -3,10 +3,20 @@
 * SPDX-License-Identifier: MIT
 */
 
-import MasterImpl from './master';
-import { Rotation } from './canvas';
+import { MasterImpl } from './master';
 
-interface CanvasModel {
+export enum Rotation {
+    CLOCKWISE90,
+    ANTICLOCKWISE90,
+}
+
+export enum UpdateReasons {
+    IMAGE = 'image',
+}
+
+export interface CanvasModel extends MasterImpl {
+    image: string;
+
     setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number, attributeID: number): void;
     rotate(direction: Rotation): void;
@@ -22,13 +32,27 @@ interface CanvasModel {
     cancel(): void;
 }
 
-export default class CanvasModelImpl extends MasterImpl implements CanvasModel {
+export class CanvasModelImpl extends MasterImpl implements CanvasModel {
+    public image: string;
+
     public constructor() {
         super();
     }
 
     public setup(frameData: any, objectStates: any[]): void {
-        console.log(frameData, objectStates);
+        frameData.data(
+            (): void => {
+                this.image = '';
+                this.notify(UpdateReasons.IMAGE);
+            },
+        ).then((data: string): void => {
+            this.image = data;
+            this.notify(UpdateReasons.IMAGE);
+        }).catch((exception: any): void => {
+            console.log(exception.toString());
+        });
+
+        console.log(objectStates);
     }
 
     public activate(clientID: number, attributeID: number): void {
@@ -77,3 +101,9 @@ export default class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     }
 }
+
+// TODO List:
+// 2) Resize image
+// 3) Move image
+// 4) Fit image
+// 5) Add grid

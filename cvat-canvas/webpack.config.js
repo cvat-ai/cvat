@@ -20,7 +20,7 @@ module.exports = {
         contentBase: path.join(__dirname, 'dist'),
         compress: true,
         inline: true,
-        port: 9000,
+        port: 3000,
     },
     resolve: {
         extensions: ['.ts', '.js', '.json'],
