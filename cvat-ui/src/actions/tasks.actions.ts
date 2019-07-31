@@ -1,3 +1,8 @@
+import queryString from 'query-string';
+
+import setQueryObject from '../utils/tasks-filter-dto'
+
+
 export const getTasks = () => (dispatch: any, getState: any) => {
   dispatch({
     type: 'GET_TASKS',
@@ -52,14 +57,31 @@ export const getTasksAsync = (queryObject = {}) => {
   };
 }
 
-export const deleteTaskAsync = (task: any) => {
-  return (dispatch: any) => {
+export const deleteTaskAsync = (task: any, history: any) => {
+  return (dispatch: any, getState: any) => {
     dispatch(deleteTask());
 
     return task.delete().then(
       (deleted: any) => {
         dispatch(deleteTaskSuccess());
-        dispatch(getTasksAsync());
+
+        const state = getState();
+
+        const queryObject = {
+          page: state.tasksFilter.currentPage,
+          search: state.tasksFilter.searchQuery,
+        }
+
+        if (state.tasks.tasks.length === 1 && state.tasks.tasksCount !== 1) {
+          queryObject.page = queryObject.page - 1;
+
+          history.push({ search: queryString.stringify(queryObject) });
+        } else if (state.tasks.tasksCount === 1) {
+          dispatch(getTasksAsync());
+        } else {
+          const query = setQueryObject(queryObject);
+          dispatch(getTasksAsync(query));
+        }
       },
       (error: any) => {
         dispatch(deleteTaskError(error));

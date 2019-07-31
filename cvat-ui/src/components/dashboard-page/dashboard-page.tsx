@@ -3,6 +3,8 @@ import { Location, Action } from 'history';
 
 import * as queryString from 'query-string';
 
+import setQueryObject from '../../utils/tasks-filter-dto'
+
 import { connect } from 'react-redux';
 import { getTasksAsync } from '../../actions/tasks.actions';
 import { filterTasks } from '../../actions/tasks-filter.actions';
@@ -13,7 +15,8 @@ import DashboardHeader from './header/dashboard-header';
 import DashboardContent from './content/dashboard-content';
 import DashboardFooter from './footer/dashboard-footer';
 
-import './dashboard.scss';
+import './dashboard-page.scss';
+
 
 class Dashboard extends PureComponent<any, any> {
   componentDidMount() {
@@ -21,7 +24,7 @@ class Dashboard extends PureComponent<any, any> {
 
     this.props.history.listen((location: Location, action: Action) => {
       this.loadTasks(location.search);
-    })
+    });
   }
 
   render() {
@@ -36,24 +39,10 @@ class Dashboard extends PureComponent<any, any> {
 
   private loadTasks = (params: any) => {
     const query = queryString.parse(params);
-    const queryObject = this.setQueryObject(query);
+    const queryObject = setQueryObject(query);
 
     this.props.dispatch(filterTasks(queryObject));
     this.props.dispatch(getTasksAsync(queryObject));
-  }
-
-  private setQueryObject = (params: { search?: string, page?: string }): { search?: string, page?: number } => {
-    const queryObject: { search?: string, page?: number } = {};
-
-    if (params['search']) {
-      queryObject.search = params.search.toString();
-    }
-
-    if (params['page']) {
-      queryObject.page = parseInt(params.page);
-    }
-
-    return queryObject;
   }
 }
 

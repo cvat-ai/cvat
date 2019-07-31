@@ -17,13 +17,15 @@ export const loginError = (error = {}) => (dispatch: any) => {
   });
 }
 
-export const loginAsync = (username: string, password: string) => {
+export const loginAsync = (username: string, password: string, history: any) => {
   return (dispatch: any) => {
     dispatch(login());
 
     return (window as any).cvat.server.login(username, password).then(
       (authenticated: any) => {
+        localStorage.setItem('session', 'true');
         dispatch(loginSuccess());
+        history.push(history.location.state ? history.location.state.from : '/dashboard');
       },
       (error: any) => {
         dispatch(loginError(error));

@@ -2,9 +2,9 @@ import React, { PureComponent } from 'react';
 
 import { Empty, Button } from 'antd';
 
-import './not-found.scss';
+import './page-not-found.scss';
 
-class NotFound extends PureComponent<any, any> {
+class PageNotFound extends PureComponent<any, any> {
   render() {
     return(
       <Empty className="not-found" description="Page not found...">
@@ -16,4 +16,4 @@ class NotFound extends PureComponent<any, any> {
   }
 }
 
-export default NotFound;
+export default PageNotFound;
