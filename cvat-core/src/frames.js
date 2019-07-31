@@ -12,6 +12,7 @@
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const { ArgumentError } = require('./exceptions');
+    const { isBrowser, isNode } = require('browser-or-node');
 
     // This is the frames storage
     const frameDataCache = {};
@@ -76,18 +77,29 @@
     }
 
     FrameData.prototype.data.implementation = async function () {
-        if (!(this.number in frameCache[this.tid])) {
-            const frame = await serverProxy.frames.getData(this.tid, this.number);
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (this.number in frameCache[this.tid]) {
+                    resolve(frameCache[this.tid][this.number]);
+                } else {
+                    const frame = await serverProxy.frames.getData(this.tid, this.number);
 
-            if (typeof (module) !== 'undefined' && module.exports) {
-                frameCache[this.tid][this.number] = global.Buffer.from(frame, 'binary').toString('base64');
-            } else {
-                const url = URL.createObjectURL(new Blob([frame]));
-                frameCache[this.tid][this.number] = url;
+                    if (isNode) {
+                        frameCache[this.tid][this.number] = global.Buffer.from(frame, 'binary').toString('base64');
+                        resolve(frameCache[this.tid][this.number]);
+                    } else if (isBrowser) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            frameCache[this.tid][this.number] = reader.result;
+                            resolve(frameCache[this.tid][this.number]);
+                        }
+                        reader.readAsDataURL(frame);
+                    }
+                }
+            } catch (exception) {
+                reject(exception);
             }
-        }
-
-        return frameCache[this.tid][this.number];
+        });
     };
 
     async function getFrame(taskID, mode, frame) {
