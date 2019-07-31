@@ -40,6 +40,6 @@
         "func-names": [0],
         "no-console": [0], // this rule deprecates console.log, console.warn etc. because "it is not good in production code"
         "@typescript-eslint/no-explicit-any": [0],
-//        "@typescript-eslint/no-inferrable-types": [0], // this rule causes error if we explicitly set and initialize a value by a literal
+        "lines-between-class-members": [0],
     },
 };

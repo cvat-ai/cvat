@@ -50,7 +50,7 @@ Canvas itself handles:
 All methods are sync.
 
 ```ts
-    html(): HTMLElement;
+    html(): HTMLDivElement;
     setup(frameData: FrameData, objectStates: ObjectState): void;
     activate(clientID: number, attributeID?: number): void;
     rotate(direction: Rotation): void;

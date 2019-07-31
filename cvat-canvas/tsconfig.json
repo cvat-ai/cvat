@@ -8,6 +8,6 @@
         "declarationDir": "dist/declaration"
     },
     "include": [
-        "src/**/*"
+        "src/*.ts"
     ],
 }

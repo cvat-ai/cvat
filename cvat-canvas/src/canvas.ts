@@ -6,8 +6,10 @@
 /* eslint-disable */
 // Temporary disable eslint
 
+import CanvasViewImpl from './canvasView';
+
 interface Canvas {
-    html(): HTMLElement;
+    html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number, attributeID?: number): void;
     rotate(direction: Rotation): void;
@@ -28,13 +30,15 @@ export enum Rotation {
     ANTICLOCKWISE90,
 }
 
-export class CanvasImpl implements Canvas {
+class CanvasImpl implements Canvas {
+    readonly view: CanvasViewImpl;
+
     public constructor() {
-        return this;
+        this.view = new CanvasViewImpl();
     }
 
-    public html(): HTMLElement {
-        throw new Error('Method not implemented.');
+    public html(): HTMLDivElement {
+        return this.view.html();
     }
 
     public setup(frameData: any, objectStates: any[]): void {
@@ -82,5 +86,4 @@ export class CanvasImpl implements Canvas {
     }
 }
 
-
-// Create view (With animation)
+export {CanvasImpl as Canvas};
