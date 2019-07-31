@@ -1,22 +1,16158 @@
-window.cvat=function(t){var e={};function n(r){if(e[r])return e[r].exports;var o=e[r]={i:r,l:!1,exports:{}};return t[r].call(o.exports,o,o.exports,n),o.l=!0,o.exports}return n.m=t,n.c=e,n.d=function(t,e,r){n.o(t,e)||Object.defineProperty(t,e,{enumerable:!0,get:r})},n.r=function(t){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(t,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(t,"__esModule",{value:!0})},n.t=function(t,e){if(1&e&&(t=n(t)),8&e)return t;if(4&e&&"object"==typeof t&&t&&t.__esModule)return t;var r=Object.create(null);if(n.r(r),Object.defineProperty(r,"default",{enumerable:!0,value:t}),2&e&&"string"!=typeof t)for(var o in t)n.d(r,o,function(e){return t[e]}.bind(null,o));return r},n.n=function(t){var e=t&&t.__esModule?function(){return t.default}:function(){return t};return n.d(e,"a",e),e},n.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},n.p="",n(n.s=88)}([function(t,e,n){(function(e){var n="object",r=function(t){return t&&t.Math==Math&&t};t.exports=r(typeof globalThis==n&&globalThis)||r(typeof window==n&&window)||r(typeof self==n&&self)||r(typeof e==n&&e)||Function("return this")()}).call(this,n(38))},function(t,e,n){var r=n(0),o=n(29),s=n(56),i=n(94),a=r.Symbol,c=o("wks");t.exports=function(t){return c[t]||(c[t]=i&&a[t]||(i?a:s)("Symbol."+t))}},function(t,e){t.exports=function(t){try{return!!t()}catch(t){return!0}}},function(t,e,n){var r=n(11);t.exports=function(t){if(!r(t))throw TypeError(String(t)+" is not an object");return t}},function(t,e,n){"use strict";var r=n(28),o=n(105),s=n(24),i=n(17),a=n(72),c=i.set,u=i.getterFor("Array Iterator");t.exports=a(Array,"Array",function(t,e){c(this,{type:"Array Iterator",target:r(t),index:0,kind:e})},function(){var t=u(this),e=t.target,n=t.kind,r=t.index++;return!e||r>=e.length?(t.target=void 0,{value:void 0,done:!0}):"keys"==n?{value:r,done:!1}:"values"==n?{value:e[r],done:!1}:{value:[r,e[r]],done:!1}},"values"),s.Arguments=s.Array,o("keys"),o("values"),o("entries")},function(t,e,n){n(9),(()=>{const e=n(110),r=n(112),o=n(47);class s extends Error{constructor(t){super(t);const n=(new Date).toISOString(),s=e.os.toString(),i=`${e.name} ${e.version}`,a=r.parse(this)[0],c=`${a.fileName}`,u=a.lineNumber,l=a.columnNumber,{jobID:p,taskID:f,clientID:h}=o;Object.defineProperties(this,Object.freeze({system:{get:()=>s},client:{get:()=>i},time:{get:()=>n},jobID:{get:()=>p},taskID:{get:()=>f},projID:{get:()=>void 0},clientID:{get:()=>h},filename:{get:()=>c},line:{get:()=>u},column:{get:()=>l}}))}async save(){const t={system:this.system,client:this.client,time:this.time,job_id:this.jobID,task_id:this.taskID,proj_id:this.projID,client_id:this.clientID,message:this.message,filename:this.filename,line:this.line,column:this.column,stack:this.stack};try{const e=n(18);await e.server.exception(t)}catch(t){}}}t.exports={Exception:s,ArgumentError:class extends s{constructor(t){super(t)}},DataError:class extends s{constructor(t){super(t)}},ScriptingError:class extends s{constructor(t){super(t)}},PluginError:class extends s{constructor(t){super(t)}},ServerError:class extends s{constructor(t,e){super(t),Object.defineProperties(this,Object.freeze({code:{get:()=>e}}))}}}})()},function(t,e,n){"use strict";var r=n(77),o=n(123),s=Object.prototype.toString;function i(t){return"[object Array]"===s.call(t)}function a(t){return null!==t&&"object"==typeof t}function c(t){return"[object Function]"===s.call(t)}function u(t,e){if(null!=t)if("object"!=typeof t&&(t=[t]),i(t))for(var n=0,r=t.length;n<r;n++)e.call(null,t[n],n,t);else for(var o in t)Object.prototype.hasOwnProperty.call(t,o)&&e.call(null,t[o],o,t)}t.exports={isArray:i,isArrayBuffer:function(t){return"[object ArrayBuffer]"===s.call(t)},isBuffer:o,isFormData:function(t){return"undefined"!=typeof FormData&&t instanceof FormData},isArrayBufferView:function(t){return"undefined"!=typeof ArrayBuffer&&ArrayBuffer.isView?ArrayBuffer.isView(t):t&&t.buffer&&t.buffer instanceof ArrayBuffer},isString:function(t){return"string"==typeof t},isNumber:function(t){return"number"==typeof t},isObject:a,isUndefined:function(t){return void 0===t},isDate:function(t){return"[object Date]"===s.call(t)},isFile:function(t){return"[object File]"===s.call(t)},isBlob:function(t){return"[object Blob]"===s.call(t)},isFunction:c,isStream:function(t){return a(t)&&c(t.pipe)},isURLSearchParams:function(t){return"undefined"!=typeof URLSearchParams&&t instanceof URLSearchParams},isStandardBrowserEnv:function(){return("undefined"==typeof navigator||"ReactNative"!==navigator.product)&&"undefined"!=typeof window&&"undefined"!=typeof document},forEach:u,merge:function t(){var e={};function n(n,r){"object"==typeof e[r]&&"object"==typeof n?e[r]=t(e[r],n):e[r]=n}for(var r=0,o=arguments.length;r<o;r++)u(arguments[r],n);return e},extend:function(t,e,n){return u(e,function(e,o){t[o]=n&&"function"==typeof e?r(e,n):e}),t},trim:function(t){return t.replace(/^\s*/,"").replace(/\s*$/,"")}}},function(t,e){var n={}.hasOwnProperty;t.exports=function(t,e){return n.call(t,e)}},function(t,e,n){var r=n(0),o=n(109),s=n(4),i=n(12),a=n(1),c=a("iterator"),u=a("toStringTag"),l=s.values;for(var p in o){var f=r[p],h=f&&f.prototype;if(h){if(h[c]!==l)try{i(h,c,l)}catch(t){h[c]=l}if(h[u]||i(h,u,p),o[p])for(var d in s)if(h[d]!==s[d])try{i(h,d,s[d])}catch(t){h[d]=s[d]}}}},function(t,e,n){"use strict";var r,o,s,i=n(13),a=n(21),c=n(0),u=n(58),l=n(62),p=n(22),f=n(95),h=n(11),d=n(23),b=n(46),g=n(15),m=n(96),y=n(98),v=n(99),w=n(65).set,O=n(100),x=n(101),j=n(102),k=n(68),S=n(103),A=n(67),T=n(17),E=n(61),I=n(1)("species"),P="Promise",C=T.get,F=T.set,_=T.getterFor(P),N=c.Promise,M=c.TypeError,$=c.document,R=c.process,D=c.fetch,L=R&&R.versions,B=L&&L.v8||"",z=k.f,U=z,W="process"==g(R),G=!!($&&$.createEvent&&c.dispatchEvent),q=E(P,function(){var t=N.resolve(1),e=function(){},n=(t.constructor={})[I]=function(t){t(e,e)};return!((W||"function"==typeof PromiseRejectionEvent)&&(!a||t.finally)&&t.then(e)instanceof n&&0!==B.indexOf("6.6")&&-1===A.indexOf("Chrome/66"))}),J=q||!y(function(t){N.all(t).catch(function(){})}),V=function(t){var e;return!(!h(t)||"function"!=typeof(e=t.then))&&e},X=function(t,e,n){if(!e.notified){e.notified=!0;var r=e.reactions;O(function(){for(var o=e.value,s=1==e.state,i=0;r.length>i;){var a,c,u,l=r[i++],p=s?l.ok:l.fail,f=l.resolve,h=l.reject,d=l.domain;try{p?(s||(2===e.rejection&&Y(t,e),e.rejection=1),!0===p?a=o:(d&&d.enter(),a=p(o),d&&(d.exit(),u=!0)),a===l.promise?h(M("Promise-chain cycle")):(c=V(a))?c.call(a,f,h):f(a)):h(o)}catch(t){d&&!u&&d.exit(),h(t)}}e.reactions=[],e.notified=!1,n&&!e.rejection&&K(t,e)})}},H=function(t,e,n){var r,o;G?((r=$.createEvent("Event")).promise=e,r.reason=n,r.initEvent(t,!1,!0),c.dispatchEvent(r)):r={promise:e,reason:n},(o=c["on"+t])?o(r):"unhandledrejection"===t&&j("Unhandled promise rejection",n)},K=function(t,e){w.call(c,function(){var n,r=e.value;if(Z(e)&&(n=S(function(){W?R.emit("unhandledRejection",r,t):H("unhandledrejection",t,r)}),e.rejection=W||Z(e)?2:1,n.error))throw n.value})},Z=function(t){return 1!==t.rejection&&!t.parent},Y=function(t,e){w.call(c,function(){W?R.emit("rejectionHandled",t):H("rejectionhandled",t,e.value)})},Q=function(t,e,n,r){return function(o){t(e,n,o,r)}},tt=function(t,e,n,r){e.done||(e.done=!0,r&&(e=r),e.value=n,e.state=2,X(t,e,!0))},et=function(t,e,n,r){if(!e.done){e.done=!0,r&&(e=r);try{if(t===n)throw M("Promise can't be resolved itself");var o=V(n);o?O(function(){var r={done:!1};try{o.call(n,Q(et,t,r,e),Q(tt,t,r,e))}catch(n){tt(t,r,n,e)}}):(e.value=n,e.state=1,X(t,e,!1))}catch(n){tt(t,{done:!1},n,e)}}};q&&(N=function(t){b(this,N,P),d(t),r.call(this);var e=C(this);try{t(Q(et,this,e),Q(tt,this,e))}catch(t){tt(this,e,t)}},(r=function(t){F(this,{type:P,done:!1,notified:!1,parent:!1,reactions:[],rejection:!1,state:0,value:void 0})}).prototype=l(N.prototype,{then:function(t,e){var n=_(this),r=z(v(this,N));return r.ok="function"!=typeof t||t,r.fail="function"==typeof e&&e,r.domain=W?R.domain:void 0,n.parent=!0,n.reactions.push(r),0!=n.state&&X(this,n,!1),r.promise},catch:function(t){return this.then(void 0,t)}}),o=function(){var t=new r,e=C(t);this.promise=t,this.resolve=Q(et,t,e),this.reject=Q(tt,t,e)},k.f=z=function(t){return t===N||t===s?new o(t):U(t)},a||"function"!=typeof D||i({global:!0,enumerable:!0,forced:!0},{fetch:function(t){return x(N,D.apply(c,arguments))}})),i({global:!0,wrap:!0,forced:q},{Promise:N}),p(N,P,!1,!0),f(P),s=u.Promise,i({target:P,stat:!0,forced:q},{reject:function(t){var e=z(this);return e.reject.call(void 0,t),e.promise}}),i({target:P,stat:!0,forced:a||q},{resolve:function(t){return x(a&&this===s?N:this,t)}}),i({target:P,stat:!0,forced:J},{all:function(t){var e=this,n=z(e),r=n.resolve,o=n.reject,s=S(function(){var n=d(e.resolve),s=[],i=0,a=1;m(t,function(t){var c=i++,u=!1;s.push(void 0),a++,n.call(e,t).then(function(t){u||(u=!0,s[c]=t,--a||r(s))},o)}),--a||r(s)});return s.error&&o(s.value),n.promise},race:function(t){var e=this,n=z(e),r=n.reject,o=S(function(){var o=d(e.resolve);m(t,function(t){o.call(e,t).then(n.resolve,r)})});return o.error&&r(o.value),n.promise}})},function(t,e,n){var r=n(2);t.exports=!r(function(){return 7!=Object.defineProperty({},"a",{get:function(){return 7}}).a})},function(t,e){t.exports=function(t){return"object"==typeof t?null!==t:"function"==typeof t}},function(t,e,n){var r=n(10),o=n(14),s=n(27);t.exports=r?function(t,e,n){return o.f(t,e,s(1,n))}:function(t,e,n){return t[e]=n,t}},function(t,e,n){var r=n(0),o=n(39).f,s=n(12),i=n(16),a=n(42),c=n(57),u=n(61);t.exports=function(t,e){var n,l,p,f,h,d=t.target,b=t.global,g=t.stat;if(n=b?r:g?r[d]||a(d,{}):(r[d]||{}).prototype)for(l in e){if(f=e[l],p=t.noTargetGet?(h=o(n,l))&&h.value:n[l],!u(b?l:d+(g?".":"#")+l,t.forced)&&void 0!==p){if(typeof f==typeof p)continue;c(f,p)}(t.sham||p&&p.sham)&&s(f,"sham",!0),i(n,l,f,t)}}},function(t,e,n){var r=n(10),o=n(54),s=n(3),i=n(40),a=Object.defineProperty;e.f=r?a:function(t,e,n){if(s(t),e=i(e,!0),s(n),o)try{return a(t,e,n)}catch(t){}if("get"in n||"set"in n)throw TypeError("Accessors not supported");return"value"in n&&(t[e]=n.value),t}},function(t,e){var n={}.toString;t.exports=function(t){return n.call(t).slice(8,-1)}},function(t,e,n){var r=n(0),o=n(29),s=n(12),i=n(7),a=n(42),c=n(55),u=n(17),l=u.get,p=u.enforce,f=String(c).split("toString");o("inspectSource",function(t){return c.call(t)}),(t.exports=function(t,e,n,o){var c=!!o&&!!o.unsafe,u=!!o&&!!o.enumerable,l=!!o&&!!o.noTargetGet;"function"==typeof n&&("string"!=typeof e||i(n,"name")||s(n,"name",e),p(n).source=f.join("string"==typeof e?e:"")),t!==r?(c?!l&&t[e]&&(u=!0):delete t[e],u?t[e]=n:s(t,e,n)):u?t[e]=n:a(e,n)})(Function.prototype,"toString",function(){return"function"==typeof this&&l(this).source||c.call(this)})},function(t,e,n){var r,o,s,i=n(89),a=n(0),c=n(11),u=n(12),l=n(7),p=n(43),f=n(44),h=a.WeakMap;if(i){var d=new h,b=d.get,g=d.has,m=d.set;r=function(t,e){return m.call(d,t,e),e},o=function(t){return b.call(d,t)||{}},s=function(t){return g.call(d,t)}}else{var y=p("state");f[y]=!0,r=function(t,e){return u(t,y,e),e},o=function(t){return l(t,y)?t[y]:{}},s=function(t){return l(t,y)}}t.exports={set:r,get:o,has:s,enforce:function(t){return s(t)?o(t):r(t,{})},getterFor:function(t){return function(e){var n;if(!c(e)||(n=o(e)).type!==t)throw TypeError("Incompatible receiver, "+t+" required");return n}}}},function(t,e,n){n(4),n(9),n(114),n(8),(()=>{const e=n(119),{ServerError:r,ScriptingError:o}=n(5),s=n(47);const i=new class{constructor(){const t=n(120),i=n(121);function a(t){i.defaults.headers.delete["X-CSRFToken"]=t,i.defaults.headers.patch["X-CSRFToken"]=t,i.defaults.headers.post["X-CSRFToken"]=t,i.defaults.headers.put["X-CSRFToken"]=t,i.defaults.withCredentials=!0}async function c(t=""){const{backendAPI:e}=s;let n=null;try{n=await i.get(`${e}/tasks?${t}`,{proxy:s.proxy})}catch(t){const e=t.response?t.response.status:t.code;throw new r("Could not get tasks from a server",e)}return n.data.results.count=n.data.count,n.data.results}async function u(t){const{backendAPI:e}=s;try{await i.delete(`${e}/tasks/${t}`)}catch(t){const e=t.response?t.response.status:t.code;throw new r("Could not delete the task from the server",e)}}const l=t.get("csrftoken");l&&a(l),Object.defineProperties(this,Object.freeze({server:{value:Object.freeze({about:async function(){const{backendAPI:t}=s;let e=null;try{e=await i.get(`${t}/server/about`,{proxy:s.proxy})}catch(t){const e=t.response?t.response.status:t.code;throw new r('Could not get "about" information from the server',e)}return e.data},share:async function(t){const{backendAPI:e}=s;t=encodeURIComponent(t);let n=null;try{n=await i.get(`${e}/server/share?directory=${t}`,{proxy:s.proxy})}catch(t){const e=t.response?t.response.status:t.code;throw new r('Could not get "share" information from the server',e)}return n.data},exception:async function(t){const{backendAPI:e}=s;try{await i.post(`${e}/server/exception`,JSON.stringify(t),{proxy:s.proxy,headers:{"Content-Type":"application/json"}})}catch(t){const e=t.response?t.response.status:t.code;throw new r("Could not send an exception to the server",e)}},login:async function(e,n){function c(e){if(e.headers["set-cookie"]){let n="";for(let r of e.headers["set-cookie"]){[r]=r.split(";");const e=r.split("=")[0],o=r.split("=")[1];"csrftoken"===e&&a(o),t.set(e,o),n+=`${r};`}i.defaults.headers.common.Cookie=n}else{let n=e.data.csrf;if(n)a(n),t.set("csrftoken",n);else{if(!(n=t.get("csrftoken")))throw new o("An environment has been detected as a browser, but CSRF token has not been found in cookies");a(n)}}}const u=s.backendAPI.slice(0,-7);let l=null;try{l=await i.get(`${u}/auth/csrf`,{proxy:s.proxy})}catch(t){const e=t.response?t.response.status:t.code;throw new r("Could not get CSRF token from a server",e)}c(l);const p=[`${encodeURIComponent("username")}=${encodeURIComponent(e)}`,`${encodeURIComponent("password")}=${encodeURIComponent(n)}`].join("&").replace(/%20/g,"+");let f=null;try{f=await i.post(`${u}/auth/login`,p,{"Content-Type":"application/x-www-form-urlencoded",proxy:s.proxy,maxRedirects:0})}catch(t){if(302!==t.response.status){const e=t.response?t.response.status:t.code;throw new r("Could not login on a server",e)}f=t.response}if(f.data.includes("didn't match"))throw new r("The pair login/password is invalid",403);c(f)},logout:async function(){const t=s.backendAPI.slice(0,-7);try{await i.get(`${t}/auth/logout`,{proxy:s.proxy})}catch(t){const e=t.response?t.response.status:t.code;throw new r("Could not logout from the server",e)}}}),writable:!1},tasks:{value:Object.freeze({getTasks:c,saveTask:async function(t,e){const{backendAPI:n}=s;try{await i.patch(`${n}/tasks/${t}`,JSON.stringify(e),{proxy:s.proxy,headers:{"Content-Type":"application/json"}})}catch(t){const e=t.response?t.response.status:t.code;throw new r("Could not save the task on the server",e)}},createTask:async function(t,n,o){const{backendAPI:a}=s,l=new e;for(const t in n)if(Object.prototype.hasOwnProperty.call(n,t))for(let e=0;e<n[t].length;e++)l.append(`${t}[${e}]`,n[t][e]);let p=null;o("The task is being created on the server..");try{p=await i.post(`${a}/tasks`,JSON.stringify(t),{proxy:s.proxy,headers:{"Content-Type":"application/json"}})}catch(t){const e=t.response?t.response.status:t.code;throw new r("Could not put task to the server",e)}o("The data is being uploaded to the server..");try{await i.post(`${a}/tasks/${p.data.id}/data`,l,{proxy:s.proxy})}catch(t){await u(p.data.id);const e=t.response?t.response.status:t.code;throw new r("Could not put data to the server",e)}try{await async function(t){return new Promise((e,n)=>{setTimeout(async function s(){try{const c=await i.get(`${a}/tasks/${t}/status`);["Queued","Started"].includes(c.data.state)?(""!==c.data.message&&o(c.data.message),setTimeout(s,1e3)):"Finished"===c.data.state?e():"Failed"===c.data.state?n(new r("Could not create the task on the server",400)):n(new r(`Unknown task state has been recieved: ${c.data.state}`,500))}catch(t){const e=t.response?t.response.status:t.code;n(new r("Data uploading error occured",e))}},1e3)})}(p.data.id)}catch(t){throw await u(p.data.id),t}return(await c(`?id=${p.id}`))[0]},deleteTask:u}),writable:!1},jobs:{value:Object.freeze({getJob:async function(t){const{backendAPI:e}=s;let n=null;try{n=await i.get(`${e}/jobs/${t}`,{proxy:s.proxy})}catch(t){const e=t.response?t.response.status:t.code;throw new r("Could not get jobs from a server",e)}return n.data},saveJob:async function(t,e){const{backendAPI:n}=s;try{await i.patch(`${n}/jobs/${t}`,JSON.stringify(e),{proxy:s.proxy,headers:{"Content-Type":"application/json"}})}catch(t){const e=t.response?t.response.status:t.code;throw new r("Could not save the job on the server",e)}}}),writable:!1},users:{value:Object.freeze({getUsers:async function(){const{backendAPI:t}=s;let e=null;try{e=await i.get(`${t}/users`,{proxy:s.proxy})}catch(t){const e=t.response?t.response.status:t.code;throw new r("Could not get users from the server",e)}return e.data.results},getSelf:async function(){const{backendAPI:t}=s;let e=null;try{e=await i.get(`${t}/users/self`,{proxy:s.proxy})}catch(t){const e=t.response?t.response.status:t.code;throw new r("Could not get users from the server",e)}return e.data}}),writable:!1},frames:{value:Object.freeze({getData:async function(t,e){const{backendAPI:n}=s;let o=null;try{o=await i.get(`${n}/tasks/${t}/frames/${e}`,{proxy:s.proxy,responseType:"blob"})}catch(n){const o=n.response?n.response.status:n.code;throw new r(`Could not get frame ${e} for the task ${t} from the server`,o)}return o.data},getMeta:async function(t){const{backendAPI:e}=s;let n=null;try{n=await i.get(`${e}/tasks/${t}/frames/meta`,{proxy:s.proxy})}catch(e){const n=e.response?e.response.status:e.code;throw new r(`Could not get frame meta info for the task ${t} from the server`,n)}return n.data}}),writable:!1},annotations:{value:Object.freeze({updateAnnotations:async function(t,e,n,o){const{backendAPI:a}=s;let c=null,u=null;"PUT"===o.toUpperCase()?(c=i.put.bind(i),u=`${a}/${t}s/${e}/annotations`):(c=i.patch.bind(i),u=`${a}/${t}s/${e}/annotations?action=${o}`);let l=null;try{l=await c(u,JSON.stringify(n),{proxy:s.proxy,headers:{"Content-Type":"application/json"}})}catch(n){const o=n.response?n.response.status:n.code;throw new r(`Could not updated annotations for the ${t} ${e} on the server`,o)}return l.data},getAnnotations:async function(t,e){const{backendAPI:n}=s;let o=null;try{o=await i.get(`${n}/${t}s/${e}/annotations`,{proxy:s.proxy})}catch(n){const o=n.response?n.response.status:n.code;throw new r(`Could not get annotations for the ${t} ${e} from the server`,o)}return o.data},dumpAnnotations:async function(t,e,n){const{backendAPI:o}=s,a=e.replace(/\//g,"_");let c=`${o}/tasks/${t}/annotations/${a}?dump_format=${n}`;return new Promise((e,n)=>{setTimeout(async function o(){try{202===(await i.get(`${c}`,{proxy:s.proxy})).status?setTimeout(o,3e3):e(c=`${c}&action=download`)}catch(e){const o=e.response?e.response.status:e.code,s=new r(`Could not dump annotations for the task ${t} from the server`,o);n(s)}})})},uploadAnnotations:async function(t,n,o,a){const{backendAPI:c}=s;let u=new e;return u.append("annotation_file",o),new Promise((o,l)=>{setTimeout(async function p(){try{202===(await i.post(`${c}/${t}s/${n}/annotations?upload_format=${a}`,u,{proxy:s.proxy})).status?(u=new e,setTimeout(p,3e3)):o()}catch(e){const o=e.response?e.response.status:e.code,s=new r(`Could not upload annotations for the ${t} ${n}`,o);l(s)}})})}}),writable:!1}}))}};t.exports=i})()},function(t,e){(()=>{const e=Object.freeze({DIR:"DIR",REG:"REG"}),n=Object.freeze({ANNOTATION:"annotation",VALIDATION:"validation",COMPLETED:"completed"}),r=Object.freeze({ANNOTATION:"annotation",INTERPOLATION:"interpolation"}),o=Object.freeze({CHECKBOX:"checkbox",RADIO:"radio",SELECT:"select",NUMBER:"number",TEXT:"text"}),s=Object.freeze({TAG:"tag",SHAPE:"shape",TRACK:"track"}),i=Object.freeze({RECTANGLE:"rectangle",POLYGON:"polygon",POLYLINE:"polyline",POINTS:"points"}),a=Object.freeze({frameDownloaded:0});t.exports={ShareFileType:e,TaskStatus:n,TaskMode:r,AttributeType:o,ObjectType:s,ObjectShape:i,LogType:{pasteObject:0,changeAttribute:1,dragObject:2,deleteObject:3,pressShortcut:4,resizeObject:5,sendLogs:6,saveJob:7,jumpFrame:8,drawObject:9,changeLabel:10,sendTaskInfo:11,loadJob:12,moveImage:13,zoomImage:14,lockObject:15,mergeObjects:16,copyObject:17,propagateObject:18,undoAction:19,redoAction:20,sendUserActivity:21,sendException:22,changeFrame:23,debugInfo:24,fitImage:25,rotateImage:26},EventType:a}})()},function(t,e){t.exports=function(t){if(null==t)throw TypeError("Can't call method on "+t);return t}},function(t,e){t.exports=!1},function(t,e,n){var r=n(14).f,o=n(7),s=n(1)("toStringTag");t.exports=function(t,e,n){t&&!o(t=n?t:t.prototype,s)&&r(t,s,{configurable:!0,value:e})}},function(t,e){t.exports=function(t){if("function"!=typeof t)throw TypeError(String(t)+" is not a function");return t}},function(t,e){t.exports={}},function(t,e,n){n(104),n(4),n(9),n(8),(()=>{const{PluginError:e}=n(5),r=[];class o{static async apiWrapper(t,...n){const r=await o.list();for(const o of r){const r=o.functions.filter(e=>e.callback===t)[0];if(r&&r.enter)try{await r.enter.call(this,o,...n)}catch(t){throw t instanceof e?t:new e(`Exception in plugin ${o.name}: ${t.toString()}`)}}let s=await t.implementation.call(this,...n);for(const o of r){const r=o.functions.filter(e=>e.callback===t)[0];if(r&&r.leave)try{s=await r.leave.call(this,o,s,...n)}catch(t){throw t instanceof e?t:new e(`Exception in plugin ${o.name}: ${t.toString()}`)}}return s}static async register(t){const n=[];if("object"!=typeof t)throw new e(`Plugin should be an object, but got "${typeof t}"`);if(!("name"in t)||"string"!=typeof t.name)throw new e('Plugin must contain a "name" field and it must be a string');if(!("description"in t)||"string"!=typeof t.description)throw new e('Plugin must contain a "description" field and it must be a string');if("functions"in t)throw new e('Plugin must not contain a "functions" field');!function t(e,r){const o={};for(const n in e)Object.prototype.hasOwnProperty.call(e,n)&&("object"==typeof e[n]?Object.prototype.hasOwnProperty.call(r,n)&&t(e[n],r[n]):["enter","leave"].includes(n)&&"function"==typeof r&&(e[n],1)&&(o.callback=r,o[n]=e[n]));Object.keys(o).length&&n.push(o)}(t,{cvat:this}),Object.defineProperty(t,"functions",{value:n,writable:!1}),r.push(t)}static async list(){return r}}t.exports=o})()},function(t,e,n){var r=n(20);t.exports=function(t){return Object(r(t))}},function(t,e){t.exports=function(t,e){return{enumerable:!(1&t),configurable:!(2&t),writable:!(4&t),value:e}}},function(t,e,n){var r=n(53),o=n(20);t.exports=function(t){return r(o(t))}},function(t,e,n){var r=n(0),o=n(42),s=n(21),i=r["__core-js_shared__"]||o("__core-js_shared__",{});(t.exports=function(t,e){return i[t]||(i[t]=void 0!==e?e:{})})("versions",[]).push({version:"3.1.3",mode:s?"pure":"global",copyright:"© 2019 Denis Pushkarev (zloirock.ru)"})},function(t,e,n){var r=n(58),o=n(0),s=function(t){return"function"==typeof t?t:void 0};t.exports=function(t,e){return arguments.length<2?s(r[t])||s(o[t]):r[t]&&r[t][e]||o[t]&&o[t][e]}},function(t,e,n){var r=n(32),o=Math.min;t.exports=function(t){return t>0?o(r(t),9007199254740991):0}},function(t,e){var n=Math.ceil,r=Math.floor;t.exports=function(t){return isNaN(t=+t)?0:(t>0?r:n)(t)}},function(t,e,n){var r=n(23);t.exports=function(t,e,n){if(r(t),void 0===e)return t;switch(n){case 0:return function(){return t.call(e)};case 1:return function(n){return t.call(e,n)};case 2:return function(n,r){return t.call(e,n,r)};case 3:return function(n,r,o){return t.call(e,n,r,o)}}return function(){return t.apply(e,arguments)}}},function(t,e,n){var r=n(97),o=n(24),s=n(1)("iterator");t.exports=function(t){if(null!=t)return t[s]||t["@@iterator"]||o[r(t)]}},function(t,e,n){n(4),n(9),n(140),n(8),n(51),(()=>{const e=n(25),r=n(18),{getFrame:o}=n(143),{ArgumentError:s}=n(5),{TaskStatus:i}=n(19),{Label:a}=n(36);function c(t){Object.defineProperties(t,{annotations:Object.freeze({value:{async upload(n,r){return await e.apiWrapper.call(this,t.annotations.upload,n,r)},async save(){return await e.apiWrapper.call(this,t.annotations.save)},async clear(n=!1){return await e.apiWrapper.call(this,t.annotations.clear,n)},async dump(n,r){return await e.apiWrapper.call(this,t.annotations.dump,n,r)},async statistics(){return await e.apiWrapper.call(this,t.annotations.statistics)},async put(n=[]){return await e.apiWrapper.call(this,t.annotations.put,n)},async get(n,r={}){return await e.apiWrapper.call(this,t.annotations.get,n,r)},async search(n,r,o){return await e.apiWrapper.call(this,t.annotations.search,n,r,o)},async select(n,r,o){return await e.apiWrapper.call(this,t.annotations.select,n,r,o)},async hasUnsavedChanges(){return await e.apiWrapper.call(this,t.annotations.hasUnsavedChanges)},async merge(n){return await e.apiWrapper.call(this,t.annotations.merge,n)},async split(n,r){return await e.apiWrapper.call(this,t.annotations.split,n,r)},async group(n,r=!1){return await e.apiWrapper.call(this,t.annotations.group,n,r)}},writable:!0}),frames:Object.freeze({value:{async get(n){return await e.apiWrapper.call(this,t.frames.get,n)}},writable:!0}),logs:Object.freeze({value:{async put(n,r){return await e.apiWrapper.call(this,t.logs.put,n,r)},async save(n){return await e.apiWrapper.call(this,t.logs.save,n)}},writable:!0}),actions:Object.freeze({value:{async undo(n){return await e.apiWrapper.call(this,t.actions.undo,n)},async redo(n){return await e.apiWrapper.call(this,t.actions.redo,n)},async clear(){return await e.apiWrapper.call(this,t.actions.clear)}},writable:!0}),events:Object.freeze({value:{async subscribe(n,r){return await e.apiWrapper.call(this,t.events.subscribe,n,r)},async unsubscribe(n,r=null){return await e.apiWrapper.call(this,t.events.unsubscribe,n,r)}},writable:!0})})}class u{constructor(){}}class l extends u{constructor(t){super();const e={id:void 0,assignee:void 0,status:void 0,start_frame:void 0,stop_frame:void 0,task:void 0};for(const n in e)if(Object.prototype.hasOwnProperty.call(e,n)&&(n in t&&(e[n]=t[n]),void 0===e[n]))throw new s(`Job field "${n}" was not initialized`);Object.defineProperties(this,Object.freeze({id:{get:()=>e.id},assignee:{get:()=>e.assignee,set:()=>t=>{if(!Number.isInteger(t)||t<0)throw new s("Value must be a non negative integer");e.assignee=t}},status:{get:()=>e.status,set:t=>{const n=i;let r=!1;for(const e in n)if(n[e]===t){r=!0;break}if(!r)throw new s("Value must be a value from the enumeration cvat.enums.TaskStatus");e.status=t}},startFrame:{get:()=>e.start_frame},stopFrame:{get:()=>e.stop_frame},task:{get:()=>e.task}})),this.annotations={get:Object.getPrototypeOf(this).annotations.get.bind(this),put:Object.getPrototypeOf(this).annotations.put.bind(this),save:Object.getPrototypeOf(this).annotations.save.bind(this),dump:Object.getPrototypeOf(this).annotations.dump.bind(this),merge:Object.getPrototypeOf(this).annotations.merge.bind(this),split:Object.getPrototypeOf(this).annotations.split.bind(this),group:Object.getPrototypeOf(this).annotations.group.bind(this),clear:Object.getPrototypeOf(this).annotations.clear.bind(this),upload:Object.getPrototypeOf(this).annotations.upload.bind(this),select:Object.getPrototypeOf(this).annotations.select.bind(this),statistics:Object.getPrototypeOf(this).annotations.statistics.bind(this),hasUnsavedChanges:Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this)},this.frames={get:Object.getPrototypeOf(this).frames.get.bind(this)}}async save(){return await e.apiWrapper.call(this,l.prototype.save)}}class p extends u{constructor(t){super();const e={id:void 0,name:void 0,status:void 0,size:void 0,mode:void 0,owner:void 0,assignee:void 0,created_date:void 0,updated_date:void 0,bug_tracker:void 0,overlap:void 0,segment_size:void 0,z_order:void 0,image_quality:void 0,start_frame:void 0,stop_frame:void 0,frame_filter:void 0};for(const n in e)Object.prototype.hasOwnProperty.call(e,n)&&n in t&&(e[n]=t[n]);if(e.labels=[],e.jobs=[],e.files=Object.freeze({server_files:[],client_files:[],remote_files:[]}),Array.isArray(t.segments))for(const n of t.segments)if(Array.isArray(n.jobs))for(const t of n.jobs){const r=new l({url:t.url,id:t.id,assignee:t.assignee,status:t.status,start_frame:n.start_frame,stop_frame:n.stop_frame,task:this});e.jobs.push(r)}if(Array.isArray(t.labels))for(const n of t.labels){const t=new a(n);e.labels.push(t)}Object.defineProperties(this,Object.freeze({id:{get:()=>e.id},name:{get:()=>e.name,set:t=>{if(!t.trim().length)throw new s("Value must not be empty");e.name=t}},status:{get:()=>e.status},size:{get:()=>e.size},mode:{get:()=>e.mode},owner:{get:()=>e.owner},assignee:{get:()=>e.assignee,set:()=>t=>{if(!Number.isInteger(t)||t<0)throw new s("Value must be a non negative integer");e.assignee=t}},createdDate:{get:()=>e.created_date},updatedDate:{get:()=>e.updated_date},bugTracker:{get:()=>e.bug_tracker,set:t=>{e.bug_tracker=t}},overlap:{get:()=>e.overlap,set:t=>{if(!Number.isInteger(t)||t<0)throw new s("Value must be a non negative integer");e.overlap=t}},segmentSize:{get:()=>e.segment_size,set:t=>{if(!Number.isInteger(t)||t<0)throw new s("Value must be a positive integer");e.segment_size=t}},zOrder:{get:()=>e.z_order,set:t=>{if("boolean"!=typeof t)throw new s("Value must be a boolean");e.z_order=t}},imageQuality:{get:()=>e.image_quality,set:t=>{if(!Number.isInteger(t)||t<0)throw new s("Value must be a positive integer");e.image_quality=t}},labels:{get:()=>[...e.labels],set:t=>{if(!Array.isArray(t))throw new s("Value must be an array of Labels");for(const e of t)if(!(e instanceof a))throw new s("Each array value must be an instance of Label. "+`${typeof e} was found`);void 0===e.id?e.labels=[...t]:e.labels=e.labels.concat([...t])}},jobs:{get:()=>[...e.jobs]},serverFiles:{get:()=>[...e.files.server_files],set:t=>{if(!Array.isArray(t))throw new s(`Value must be an array. But ${typeof t} has been got.`);for(const e of t)if("string"!=typeof e)throw new s(`Array values must be a string. But ${typeof e} has been got.`);Array.prototype.push.apply(e.files.server_files,t)}},clientFiles:{get:()=>[...e.files.client_files],set:t=>{if(!Array.isArray(t))throw new s(`Value must be an array. But ${typeof t} has been got.`);for(const e of t)if(!(e instanceof File))throw new s(`Array values must be a File. But ${e.constructor.name} has been got.`);Array.prototype.push.apply(e.files.client_files,t)}},remoteFiles:{get:()=>[...e.files.remote_files],set:t=>{if(!Array.isArray(t))throw new s(`Value must be an array. But ${typeof t} has been got.`);for(const e of t)if("string"!=typeof e)throw new s(`Array values must be a string. But ${typeof e} has been got.`);Array.prototype.push.apply(e.files.remote_files,t)}},startFrame:{get:()=>e.start_frame,set:t=>{if(!Number.isInteger(t)||t<0)throw new s("Value must be a not negative integer");e.start_frame=t}},stopFrame:{get:()=>e.stop_frame,set:t=>{if(!Number.isInteger(t)||t<0)throw new s("Value must be a not negative integer");e.stop_frame=t}},frameFilter:{get:()=>e.frame_filter,set:t=>{if("string"!=typeof t)throw new s(`Filter value must be a string. But ${typeof t} has been got.`);e.frame_filter=t}}})),this.annotations={get:Object.getPrototypeOf(this).annotations.get.bind(this),put:Object.getPrototypeOf(this).annotations.put.bind(this),save:Object.getPrototypeOf(this).annotations.save.bind(this),dump:Object.getPrototypeOf(this).annotations.dump.bind(this),merge:Object.getPrototypeOf(this).annotations.merge.bind(this),split:Object.getPrototypeOf(this).annotations.split.bind(this),group:Object.getPrototypeOf(this).annotations.group.bind(this),clear:Object.getPrototypeOf(this).annotations.clear.bind(this),upload:Object.getPrototypeOf(this).annotations.upload.bind(this),select:Object.getPrototypeOf(this).annotations.select.bind(this),statistics:Object.getPrototypeOf(this).annotations.statistics.bind(this),hasUnsavedChanges:Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this)},this.frames={get:Object.getPrototypeOf(this).frames.get.bind(this)}}async save(t=(()=>{})){return await e.apiWrapper.call(this,p.prototype.save,t)}async delete(){return await e.apiWrapper.call(this,p.prototype.delete)}}t.exports={Job:l,Task:p};const{getAnnotations:f,putAnnotations:h,saveAnnotations:d,hasUnsavedChanges:b,mergeAnnotations:g,splitAnnotations:m,groupAnnotations:y,clearAnnotations:v,selectObject:w,annotationsStatistics:O,uploadAnnotations:x,dumpAnnotations:j}=n(151);c(l.prototype),c(p.prototype),l.prototype.save.implementation=async function(){if(this.id){const t={status:this.status};return await r.jobs.saveJob(this.id,t),this}throw new s("Can not save job without and id")},l.prototype.frames.get.implementation=async function(t){if(!Number.isInteger(t)||t<0)throw new s(`Frame must be a positive integer. Got: "${t}"`);if(t<this.startFrame||t>this.stopFrame)throw new s(`The frame with number ${t} is out of the job`);return await o(this.task.id,this.task.mode,t)},l.prototype.annotations.get.implementation=async function(t,e){if(t<this.startFrame||t>this.stopFrame)throw new s(`Frame ${t} does not exist in the job`);return await f(this,t,e)},l.prototype.annotations.save.implementation=async function(t){return await d(this,t)},l.prototype.annotations.merge.implementation=async function(t){return await g(this,t)},l.prototype.annotations.split.implementation=async function(t,e){return await m(this,t,e)},l.prototype.annotations.group.implementation=async function(t,e){return await y(this,t,e)},l.prototype.annotations.hasUnsavedChanges.implementation=function(){return b(this)},l.prototype.annotations.clear.implementation=async function(t){return await v(this,t)},l.prototype.annotations.select.implementation=function(t,e,n){return w(this,t,e,n)},l.prototype.annotations.statistics.implementation=function(){return O(this)},l.prototype.annotations.put.implementation=function(t){return h(this,t)},l.prototype.annotations.upload.implementation=async function(t,e){return await x(this,t,e)},l.prototype.annotations.dump.implementation=async function(t,e){return await j(this,t,e)},p.prototype.save.implementation=async function(t){if(void 0!==this.id){const t={name:this.name,bug_tracker:this.bugTracker,z_order:this.zOrder,labels:[...this.labels.map(t=>t.toJSON())]};return await r.tasks.saveTask(this.id,t),this}const e={name:this.name,labels:this.labels.map(t=>t.toJSON()),image_quality:this.imageQuality,z_order:Boolean(this.zOrder)};this.bugTracker&&(e.bug_tracker=this.bugTracker),this.segmentSize&&(e.segment_size=this.segmentSize),this.overlap&&(e.overlap=this.overlap),this.startFrame&&(e.start_frame=this.startFrame),this.stopFrame&&(e.stop_frame=this.stopFrame),this.frameFilter&&(e.frame_filter=this.frameFilter);const n={client_files:this.clientFiles,server_files:this.serverFiles,remote_files:this.remoteFiles},o=await r.tasks.createTask(e,n,t);return new p(o)},p.prototype.delete.implementation=async function(){return await r.tasks.deleteTask(this.id)},p.prototype.frames.get.implementation=async function(t){if(!Number.isInteger(t)||t<0)throw new s(`Frame must be a positive integer. Got: "${t}"`);if(t>=this.size)throw new s(`The frame with number ${t} is out of the task`);return await o(this.id,this.mode,t)},p.prototype.annotations.get.implementation=async function(t,e){if(!Number.isInteger(t)||t<0)throw new s(`Frame must be a positive integer. Got: "${t}"`);if(t>=this.size)throw new s(`Frame ${t} does not exist in the task`);return await f(this,t,e)},p.prototype.annotations.save.implementation=async function(t){return await d(this,t)},p.prototype.annotations.merge.implementation=async function(t){return await g(this,t)},p.prototype.annotations.split.implementation=async function(t,e){return await m(this,t,e)},p.prototype.annotations.group.implementation=async function(t,e){return await y(this,t,e)},p.prototype.annotations.hasUnsavedChanges.implementation=function(){return b(this)},p.prototype.annotations.clear.implementation=async function(t){return await v(this,t)},p.prototype.annotations.select.implementation=function(t,e,n){return w(this,t,e,n)},p.prototype.annotations.statistics.implementation=function(){return O(this)},p.prototype.annotations.put.implementation=function(t){return h(this,t)},p.prototype.annotations.upload.implementation=async function(t,e){return await x(this,t,e)},p.prototype.annotations.dump.implementation=async function(t,e){return await j(this,t,e)}})()},function(t,e,n){n(4),n(8),n(51),(()=>{const{AttributeType:e}=n(19),{ArgumentError:r}=n(5);class o{constructor(t){const n={id:void 0,default_value:void 0,input_type:void 0,mutable:void 0,name:void 0,values:void 0};for(const e in n)Object.prototype.hasOwnProperty.call(n,e)&&Object.prototype.hasOwnProperty.call(t,e)&&(Array.isArray(t[e])?n[e]=[...t[e]]:n[e]=t[e]);if(!Object.values(e).includes(n.input_type))throw new r(`Got invalid attribute type ${n.input_type}`);Object.defineProperties(this,Object.freeze({id:{get:()=>n.id},defaultValue:{get:()=>n.default_value},inputType:{get:()=>n.input_type},mutable:{get:()=>n.mutable},name:{get:()=>n.name},values:{get:()=>[...n.values]}}))}toJSON(){const t={name:this.name,mutable:this.mutable,input_type:this.inputType,default_value:this.defaultValue,values:this.values};return void 0!==this.id&&(t.id=this.id),t}}t.exports={Attribute:o,Label:class{constructor(t){const e={id:void 0,name:void 0};for(const n in e)Object.prototype.hasOwnProperty.call(e,n)&&Object.prototype.hasOwnProperty.call(t,n)&&(e[n]=t[n]);if(e.attributes=[],Object.prototype.hasOwnProperty.call(t,"attributes")&&Array.isArray(t.attributes))for(const n of t.attributes)e.attributes.push(new o(n));Object.defineProperties(this,Object.freeze({id:{get:()=>e.id},name:{get:()=>e.name},attributes:{get:()=>[...e.attributes]}}))}toJSON(){const t={name:this.name,attributes:[...this.attributes.map(t=>t.toJSON())]};return void 0!==this.id&&(t.id=this.id),t}}}})()},function(t,e,n){(()=>{const{ArgumentError:e}=n(5);t.exports={isBoolean:function(t){return"boolean"==typeof t},isInteger:function(t){return"number"==typeof t&&Number.isInteger(t)},isEnum:function(t){for(const e in this)if(Object.prototype.hasOwnProperty.call(this,e)&&this[e]===t)return!0;return!1},isString:function(t){return"string"==typeof t},checkFilter:function(t,n){for(const r in t)if(Object.prototype.hasOwnProperty.call(t,r)){if(!(r in n))throw new e(`Unsupported filter property has been recieved: "${r}"`);if(!n[r](t[r]))throw new e(`Received filter property "${r}" is not satisfied for checker`)}},checkObjectType:function(t,n,r,o){if(r){if(typeof n!==r){if("integer"===r&&Number.isInteger(n))return;throw new e(`"${t}" is expected to be "${r}", but "${typeof n}" has been got.`)}}else if(o&&!(n instanceof o)){if(void 0!==n)throw new e(`"${t}" is expected to be ${o.name}, but `+`"${n.constructor.name}" has been got`);throw new e(`"${t}" is expected to be ${o.name}, but "undefined" has been got.`)}}}})()},function(t,e){var n;n=function(){return this}();try{n=n||new Function("return this")()}catch(t){"object"==typeof window&&(n=window)}t.exports=n},function(t,e,n){var r=n(10),o=n(52),s=n(27),i=n(28),a=n(40),c=n(7),u=n(54),l=Object.getOwnPropertyDescriptor;e.f=r?l:function(t,e){if(t=i(t),e=a(e,!0),u)try{return l(t,e)}catch(t){}if(c(t,e))return s(!o.f.call(t,e),t[e])}},function(t,e,n){var r=n(11);t.exports=function(t,e){if(!r(t))return t;var n,o;if(e&&"function"==typeof(n=t.toString)&&!r(o=n.call(t)))return o;if("function"==typeof(n=t.valueOf)&&!r(o=n.call(t)))return o;if(!e&&"function"==typeof(n=t.toString)&&!r(o=n.call(t)))return o;throw TypeError("Can't convert object to primitive value")}},function(t,e,n){var r=n(0),o=n(11),s=r.document,i=o(s)&&o(s.createElement);t.exports=function(t){return i?s.createElement(t):{}}},function(t,e,n){var r=n(0),o=n(12);t.exports=function(t,e){try{o(r,t,e)}catch(n){r[t]=e}return e}},function(t,e,n){var r=n(29),o=n(56),s=r("keys");t.exports=function(t){return s[t]||(s[t]=o(t))}},function(t,e){t.exports={}},function(t,e){t.exports=["constructor","hasOwnProperty","isPrototypeOf","propertyIsEnumerable","toLocaleString","toString","valueOf"]},function(t,e){t.exports=function(t,e,n){if(!(t instanceof e))throw TypeError("Incorrect "+(n?n+" ":"")+"invocation");return t}},function(t,e){t.exports={backendAPI:"http://localhost:7000/api/v1",proxy:!1,taskID:void 0,jobID:void 0,clientID:+Date.now().toString().substr(-6)}},function(t,e,n){var r=n(32),o=n(20),s=function(t){return function(e,n){var s,i,a=String(o(e)),c=r(n),u=a.length;return c<0||c>=u?t?"":void 0:(s=a.charCodeAt(c))<55296||s>56319||c+1===u||(i=a.charCodeAt(c+1))<56320||i>57343?t?a.charAt(c):s:t?a.slice(c,c+2):i-56320+(s-55296<<10)+65536}};t.exports={codeAt:s(!1),charAt:s(!0)}},function(t,e,n){"use strict";(function(e){var r=n(6),o=n(126),s={"Content-Type":"application/x-www-form-urlencoded"};function i(t,e){!r.isUndefined(t)&&r.isUndefined(t["Content-Type"])&&(t["Content-Type"]=e)}var a,c={adapter:("undefined"!=typeof XMLHttpRequest?a=n(78):void 0!==e&&(a=n(78)),a),transformRequest:[function(t,e){return o(e,"Content-Type"),r.isFormData(t)||r.isArrayBuffer(t)||r.isBuffer(t)||r.isStream(t)||r.isFile(t)||r.isBlob(t)?t:r.isArrayBufferView(t)?t.buffer:r.isURLSearchParams(t)?(i(e,"application/x-www-form-urlencoded;charset=utf-8"),t.toString()):r.isObject(t)?(i(e,"application/json;charset=utf-8"),JSON.stringify(t)):t}],transformResponse:[function(t){if("string"==typeof t)try{t=JSON.parse(t)}catch(t){}return t}],timeout:0,xsrfCookieName:"XSRF-TOKEN",xsrfHeaderName:"X-XSRF-TOKEN",maxContentLength:-1,validateStatus:function(t){return t>=200&&t<300}};c.headers={common:{Accept:"application/json, text/plain, */*"}},r.forEach(["delete","get","head"],function(t){c.headers[t]={}}),r.forEach(["post","put","patch"],function(t){c.headers[t]=r.merge(s)}),t.exports=c}).call(this,n(125))},function(t,e,n){n(4),n(9),n(8),(()=>{const e=n(25),{ArgumentError:r}=n(5);class o{constructor(t){const e={label:null,attributes:{},points:null,outside:null,occluded:null,keyframe:null,group:null,zOrder:null,lock:null,color:null,clientID:t.clientID,serverID:t.serverID,frame:t.frame,objectType:t.objectType,shapeType:t.shapeType,updateFlags:{}};Object.defineProperty(e.updateFlags,"reset",{value:function(){this.label=!1,this.attributes=!1,this.points=!1,this.outside=!1,this.occluded=!1,this.keyframe=!1,this.group=!1,this.zOrder=!1,this.lock=!1,this.color=!1},writable:!1}),Object.defineProperties(this,Object.freeze({updateFlags:{get:()=>e.updateFlags},frame:{get:()=>e.frame},objectType:{get:()=>e.objectType},shapeType:{get:()=>e.shapeType},clientID:{get:()=>e.clientID},serverID:{get:()=>e.serverID},label:{get:()=>e.label,set:t=>{e.updateFlags.label=!0,e.label=t}},color:{get:()=>e.color,set:t=>{e.updateFlags.color=!0,e.color=t}},points:{get:()=>e.points,set:t=>{if(!Array.isArray(t))throw new r("Points are expected to be an array "+`but got ${"object"==typeof t?t.constructor.name:typeof t}`);e.updateFlags.points=!0,e.points=[...t]}},group:{get:()=>e.group,set:t=>{e.updateFlags.group=!0,e.group=t}},zOrder:{get:()=>e.zOrder,set:t=>{e.updateFlags.zOrder=!0,e.zOrder=t}},outside:{get:()=>e.outside,set:t=>{e.updateFlags.outside=!0,e.outside=t}},keyframe:{get:()=>e.keyframe,set:t=>{e.updateFlags.keyframe=!0,e.keyframe=t}},occluded:{get:()=>e.occluded,set:t=>{e.updateFlags.occluded=!0,e.occluded=t}},lock:{get:()=>e.lock,set:t=>{e.updateFlags.lock=!0,e.lock=t}},attributes:{get:()=>e.attributes,set:t=>{if("object"!=typeof t)throw new r("Attributes are expected to be an object "+`but got ${"object"==typeof t?t.constructor.name:typeof t}`);for(const n of Object.keys(t))e.updateFlags.attributes=!0,e.attributes[n]=t[n]}}})),this.label=t.label,this.group=t.group,this.zOrder=t.zOrder,this.outside=t.outside,this.keyframe=t.keyframe,this.occluded=t.occluded,this.color=t.color,this.lock=t.lock,void 0!==t.points&&(this.points=t.points),void 0!==t.attributes&&(this.attributes=t.attributes),e.updateFlags.reset()}async save(){return await e.apiWrapper.call(this,o.prototype.save)}async delete(t=!1){return await e.apiWrapper.call(this,o.prototype.delete,t)}async up(){return await e.apiWrapper.call(this,o.prototype.up)}async down(){return await e.apiWrapper.call(this,o.prototype.down)}}o.prototype.save.implementation=async function(){return this.hidden&&this.hidden.save?this.hidden.save():this},o.prototype.delete.implementation=async function(t){return!(!this.hidden||!this.hidden.delete)&&this.hidden.delete(t)},o.prototype.up.implementation=async function(){return!(!this.hidden||!this.hidden.up)&&this.hidden.up()},o.prototype.down.implementation=async function(){return!(!this.hidden||!this.hidden.down)&&this.hidden.down()},t.exports=o})()},function(t,e,n){"use strict";n(13)({target:"URL",proto:!0,enumerable:!0},{toJSON:function(){return URL.prototype.toString.call(this)}})},function(t,e,n){"use strict";var r={}.propertyIsEnumerable,o=Object.getOwnPropertyDescriptor,s=o&&!r.call({1:2},1);e.f=s?function(t){var e=o(this,t);return!!e&&e.enumerable}:r},function(t,e,n){var r=n(2),o=n(15),s="".split;t.exports=r(function(){return!Object("z").propertyIsEnumerable(0)})?function(t){return"String"==o(t)?s.call(t,""):Object(t)}:Object},function(t,e,n){var r=n(10),o=n(2),s=n(41);t.exports=!r&&!o(function(){return 7!=Object.defineProperty(s("div"),"a",{get:function(){return 7}}).a})},function(t,e,n){var r=n(29);t.exports=r("native-function-to-string",Function.toString)},function(t,e){var n=0,r=Math.random();t.exports=function(t){return"Symbol("+String(void 0===t?"":t)+")_"+(++n+r).toString(36)}},function(t,e,n){var r=n(7),o=n(90),s=n(39),i=n(14);t.exports=function(t,e){for(var n=o(e),a=i.f,c=s.f,u=0;u<n.length;u++){var l=n[u];r(t,l)||a(t,l,c(e,l))}}},function(t,e,n){t.exports=n(0)},function(t,e,n){var r=n(7),o=n(28),s=n(92).indexOf,i=n(44);t.exports=function(t,e){var n,a=o(t),c=0,u=[];for(n in a)!r(i,n)&&r(a,n)&&u.push(n);for(;e.length>c;)r(a,n=e[c++])&&(~s(u,n)||u.push(n));return u}},function(t,e){e.f=Object.getOwnPropertySymbols},function(t,e,n){var r=n(2),o=/#|\.prototype\./,s=function(t,e){var n=a[i(t)];return n==u||n!=c&&("function"==typeof e?r(e):!!e)},i=s.normalize=function(t){return String(t).replace(o,".").toLowerCase()},a=s.data={},c=s.NATIVE="N",u=s.POLYFILL="P";t.exports=s},function(t,e,n){var r=n(16);t.exports=function(t,e,n){for(var o in e)r(t,o,e[o],n);return t}},function(t,e,n){var r=n(1),o=n(24),s=r("iterator"),i=Array.prototype;t.exports=function(t){return void 0!==t&&(o.Array===t||i[s]===t)}},function(t,e,n){var r=n(3);t.exports=function(t,e,n,o){try{return o?e(r(n)[0],n[1]):e(n)}catch(e){var s=t.return;throw void 0!==s&&r(s.call(t)),e}}},function(t,e,n){var r,o,s,i=n(0),a=n(2),c=n(15),u=n(33),l=n(66),p=n(41),f=i.location,h=i.setImmediate,d=i.clearImmediate,b=i.process,g=i.MessageChannel,m=i.Dispatch,y=0,v={},w=function(t){if(v.hasOwnProperty(t)){var e=v[t];delete v[t],e()}},O=function(t){return function(){w(t)}},x=function(t){w(t.data)},j=function(t){i.postMessage(t+"",f.protocol+"//"+f.host)};h&&d||(h=function(t){for(var e=[],n=1;arguments.length>n;)e.push(arguments[n++]);return v[++y]=function(){("function"==typeof t?t:Function(t)).apply(void 0,e)},r(y),y},d=function(t){delete v[t]},"process"==c(b)?r=function(t){b.nextTick(O(t))}:m&&m.now?r=function(t){m.now(O(t))}:g?(s=(o=new g).port2,o.port1.onmessage=x,r=u(s.postMessage,s,1)):!i.addEventListener||"function"!=typeof postMessage||i.importScripts||a(j)?r="onreadystatechange"in p("script")?function(t){l.appendChild(p("script")).onreadystatechange=function(){l.removeChild(this),w(t)}}:function(t){setTimeout(O(t),0)}:(r=j,i.addEventListener("message",x,!1))),t.exports={set:h,clear:d}},function(t,e,n){var r=n(30);t.exports=r("document","documentElement")},function(t,e,n){var r=n(30);t.exports=r("navigator","userAgent")||""},function(t,e,n){"use strict";var r=n(23),o=function(t){var e,n;this.promise=new t(function(t,r){if(void 0!==e||void 0!==n)throw TypeError("Bad Promise constructor");e=t,n=r}),this.resolve=r(e),this.reject=r(n)};t.exports.f=function(t){return new o(t)}},function(t,e,n){var r=n(3),o=n(70),s=n(45),i=n(44),a=n(66),c=n(41),u=n(43)("IE_PROTO"),l=function(){},p=function(){var t,e=c("iframe"),n=s.length;for(e.style.display="none",a.appendChild(e),e.src=String("javascript:"),(t=e.contentWindow.document).open(),t.write("<script>document.F=Object<\/script>"),t.close(),p=t.F;n--;)delete p.prototype[s[n]];return p()};t.exports=Object.create||function(t,e){var n;return null!==t?(l.prototype=r(t),n=new l,l.prototype=null,n[u]=t):n=p(),void 0===e?n:o(n,e)},i[u]=!0},function(t,e,n){var r=n(10),o=n(14),s=n(3),i=n(71);t.exports=r?Object.defineProperties:function(t,e){s(t);for(var n,r=i(e),a=r.length,c=0;a>c;)o.f(t,n=r[c++],e[n]);return t}},function(t,e,n){var r=n(59),o=n(45);t.exports=Object.keys||function(t){return r(t,o)}},function(t,e,n){"use strict";var r=n(13),o=n(73),s=n(75),i=n(107),a=n(22),c=n(12),u=n(16),l=n(1),p=n(21),f=n(24),h=n(74),d=h.IteratorPrototype,b=h.BUGGY_SAFARI_ITERATORS,g=l("iterator"),m=function(){return this};t.exports=function(t,e,n,l,h,y,v){o(n,e,l);var w,O,x,j=function(t){if(t===h&&E)return E;if(!b&&t in A)return A[t];switch(t){case"keys":case"values":case"entries":return function(){return new n(this,t)}}return function(){return new n(this)}},k=e+" Iterator",S=!1,A=t.prototype,T=A[g]||A["@@iterator"]||h&&A[h],E=!b&&T||j(h),I="Array"==e&&A.entries||T;if(I&&(w=s(I.call(new t)),d!==Object.prototype&&w.next&&(p||s(w)===d||(i?i(w,d):"function"!=typeof w[g]&&c(w,g,m)),a(w,k,!0,!0),p&&(f[k]=m))),"values"==h&&T&&"values"!==T.name&&(S=!0,E=function(){return T.call(this)}),p&&!v||A[g]===E||c(A,g,E),f[e]=E,h)if(O={values:j("values"),keys:y?E:j("keys"),entries:j("entries")},v)for(x in O)!b&&!S&&x in A||u(A,x,O[x]);else r({target:e,proto:!0,forced:b||S},O);return O}},function(t,e,n){"use strict";var r=n(74).IteratorPrototype,o=n(69),s=n(27),i=n(22),a=n(24),c=function(){return this};t.exports=function(t,e,n){var u=e+" Iterator";return t.prototype=o(r,{next:s(1,n)}),i(t,u,!1,!0),a[u]=c,t}},function(t,e,n){"use strict";var r,o,s,i=n(75),a=n(12),c=n(7),u=n(1),l=n(21),p=u("iterator"),f=!1;[].keys&&("next"in(s=[].keys())?(o=i(i(s)))!==Object.prototype&&(r=o):f=!0),null==r&&(r={}),l||c(r,p)||a(r,p,function(){return this}),t.exports={IteratorPrototype:r,BUGGY_SAFARI_ITERATORS:f}},function(t,e,n){var r=n(7),o=n(26),s=n(43),i=n(106),a=s("IE_PROTO"),c=Object.prototype;t.exports=i?Object.getPrototypeOf:function(t){return t=o(t),r(t,a)?t[a]:"function"==typeof t.constructor&&t instanceof t.constructor?t.constructor.prototype:t instanceof Object?c:null}},function(t,e,n){"use strict";var r,o,s=n(116),i=RegExp.prototype.exec,a=String.prototype.replace,c=i,u=(r=/a/,o=/b*/g,i.call(r,"a"),i.call(o,"a"),0!==r.lastIndex||0!==o.lastIndex),l=void 0!==/()??/.exec("")[1];(u||l)&&(c=function(t){var e,n,r,o,c=this;return l&&(n=new RegExp("^"+c.source+"$(?!\\s)",s.call(c))),u&&(e=c.lastIndex),r=i.call(c,t),u&&r&&(c.lastIndex=c.global?r.index+r[0].length:e),l&&r&&r.length>1&&a.call(r[0],n,function(){for(o=1;o<arguments.length-2;o++)void 0===arguments[o]&&(r[o]=void 0)}),r}),t.exports=c},function(t,e,n){"use strict";t.exports=function(t,e){return function(){for(var n=new Array(arguments.length),r=0;r<n.length;r++)n[r]=arguments[r];return t.apply(e,n)}}},function(t,e,n){"use strict";var r=n(6),o=n(127),s=n(129),i=n(130),a=n(131),c=n(79);t.exports=function(t){return new Promise(function(e,u){var l=t.data,p=t.headers;r.isFormData(l)&&delete p["Content-Type"];var f=new XMLHttpRequest;if(t.auth){var h=t.auth.username||"",d=t.auth.password||"";p.Authorization="Basic "+btoa(h+":"+d)}if(f.open(t.method.toUpperCase(),s(t.url,t.params,t.paramsSerializer),!0),f.timeout=t.timeout,f.onreadystatechange=function(){if(f&&4===f.readyState&&(0!==f.status||f.responseURL&&0===f.responseURL.indexOf("file:"))){var n="getAllResponseHeaders"in f?i(f.getAllResponseHeaders()):null,r={data:t.responseType&&"text"!==t.responseType?f.response:f.responseText,status:f.status,statusText:f.statusText,headers:n,config:t,request:f};o(e,u,r),f=null}},f.onerror=function(){u(c("Network Error",t,null,f)),f=null},f.ontimeout=function(){u(c("timeout of "+t.timeout+"ms exceeded",t,"ECONNABORTED",f)),f=null},r.isStandardBrowserEnv()){var b=n(132),g=(t.withCredentials||a(t.url))&&t.xsrfCookieName?b.read(t.xsrfCookieName):void 0;g&&(p[t.xsrfHeaderName]=g)}if("setRequestHeader"in f&&r.forEach(p,function(t,e){void 0===l&&"content-type"===e.toLowerCase()?delete p[e]:f.setRequestHeader(e,t)}),t.withCredentials&&(f.withCredentials=!0),t.responseType)try{f.responseType=t.responseType}catch(e){if("json"!==t.responseType)throw e}"function"==typeof t.onDownloadProgress&&f.addEventListener("progress",t.onDownloadProgress),"function"==typeof t.onUploadProgress&&f.upload&&f.upload.addEventListener("progress",t.onUploadProgress),t.cancelToken&&t.cancelToken.promise.then(function(t){f&&(f.abort(),u(t),f=null)}),void 0===l&&(l=null),f.send(l)})}},function(t,e,n){"use strict";var r=n(128);t.exports=function(t,e,n,o,s){var i=new Error(t);return r(i,e,n,o,s)}},function(t,e,n){"use strict";t.exports=function(t){return!(!t||!t.__CANCEL__)}},function(t,e,n){"use strict";function r(t){this.message=t}r.prototype.toString=function(){return"Cancel"+(this.message?": "+this.message:"")},r.prototype.__CANCEL__=!0,t.exports=r},function(t,e){t.exports=class{constructor(t){const e={id:null,username:null,email:null,first_name:null,last_name:null,groups:null,last_login:null,date_joined:null,is_staff:null,is_superuser:null,is_active:null};for(const n in e)Object.prototype.hasOwnProperty.call(e,n)&&n in t&&(e[n]=t[n]);Object.defineProperties(this,Object.freeze({id:{get:()=>e.id},username:{get:()=>e.username},email:{get:()=>e.email},firstName:{get:()=>e.first_name},lastName:{get:()=>e.last_name},groups:{get:()=>JSON.parse(JSON.stringify(e.groups))},lastLogin:{get:()=>e.last_login},dateJoined:{get:()=>e.date_joined},isStaff:{get:()=>e.is_staff},isSuperuser:{get:()=>e.is_superuser},isActive:{get:()=>e.is_active}}))}}},function(t,e){t.exports=class{constructor(t,e){Object.defineProperties(this,Object.freeze({label:{get:()=>JSON.parse(JSON.stringify(t))},total:{get:()=>JSON.parse(JSON.stringify(e))}}))}}},function(t,e){t.exports="\t\n\v\f\r                　\u2028\u2029\ufeff"},function(t,e,n){"use strict";n(144);var r,o=n(13),s=n(10),i=n(86),a=n(0),c=n(70),u=n(16),l=n(46),p=n(7),f=n(145),h=n(146),d=n(48).codeAt,b=n(148),g=n(22),m=n(149),y=n(17),v=a.URL,w=m.URLSearchParams,O=m.getState,x=y.set,j=y.getterFor("URL"),k=Math.floor,S=Math.pow,A=/[A-Za-z]/,T=/[\d+\-.A-Za-z]/,E=/\d/,I=/^(0x|0X)/,P=/^[0-7]+$/,C=/^\d+$/,F=/^[\dA-Fa-f]+$/,_=/[\u0000\u0009\u000A\u000D #%\/:?@[\\]]/,N=/[\u0000\u0009\u000A\u000D #\/:?@[\\]]/,M=/^[\u0000-\u001F ]+|[\u0000-\u001F ]+$/g,$=/[\u0009\u000A\u000D]/g,R=function(t,e){var n,r,o;if("["==e.charAt(0)){if("]"!=e.charAt(e.length-1))return"Invalid host";if(!(n=L(e.slice(1,-1))))return"Invalid host";t.host=n}else if(V(t)){if(e=b(e),_.test(e))return"Invalid host";if(null===(n=D(e)))return"Invalid host";t.host=n}else{if(N.test(e))return"Invalid host";for(n="",r=h(e),o=0;o<r.length;o++)n+=q(r[o],z);t.host=n}},D=function(t){var e,n,r,o,s,i,a,c=t.split(".");if(c.length&&""==c[c.length-1]&&c.pop(),(e=c.length)>4)return t;for(n=[],r=0;r<e;r++){if(""==(o=c[r]))return t;if(s=10,o.length>1&&"0"==o.charAt(0)&&(s=I.test(o)?16:8,o=o.slice(8==s?1:2)),""===o)i=0;else{if(!(10==s?C:8==s?P:F).test(o))return t;i=parseInt(o,s)}n.push(i)}for(r=0;r<e;r++)if(i=n[r],r==e-1){if(i>=S(256,5-e))return null}else if(i>255)return null;for(a=n.pop(),r=0;r<n.length;r++)a+=n[r]*S(256,3-r);return a},L=function(t){var e,n,r,o,s,i,a,c=[0,0,0,0,0,0,0,0],u=0,l=null,p=0,f=function(){return t.charAt(p)};if(":"==f()){if(":"!=t.charAt(1))return;p+=2,l=++u}for(;f();){if(8==u)return;if(":"!=f()){for(e=n=0;n<4&&F.test(f());)e=16*e+parseInt(f(),16),p++,n++;if("."==f()){if(0==n)return;if(p-=n,u>6)return;for(r=0;f();){if(o=null,r>0){if(!("."==f()&&r<4))return;p++}if(!E.test(f()))return;for(;E.test(f());){if(s=parseInt(f(),10),null===o)o=s;else{if(0==o)return;o=10*o+s}if(o>255)return;p++}c[u]=256*c[u]+o,2!=++r&&4!=r||u++}if(4!=r)return;break}if(":"==f()){if(p++,!f())return}else if(f())return;c[u++]=e}else{if(null!==l)return;p++,l=++u}}if(null!==l)for(i=u-l,u=7;0!=u&&i>0;)a=c[u],c[u--]=c[l+i-1],c[l+--i]=a;else if(8!=u)return;return c},B=function(t){var e,n,r,o;if("number"==typeof t){for(e=[],n=0;n<4;n++)e.unshift(t%256),t=k(t/256);return e.join(".")}if("object"==typeof t){for(e="",r=function(t){for(var e=null,n=1,r=null,o=0,s=0;s<8;s++)0!==t[s]?(o>n&&(e=r,n=o),r=null,o=0):(null===r&&(r=s),++o);return o>n&&(e=r,n=o),e}(t),n=0;n<8;n++)o&&0===t[n]||(o&&(o=!1),r===n?(e+=n?":":"::",o=!0):(e+=t[n].toString(16),n<7&&(e+=":")));return"["+e+"]"}return t},z={},U=f({},z,{" ":1,'"':1,"<":1,">":1,"`":1}),W=f({},U,{"#":1,"?":1,"{":1,"}":1}),G=f({},W,{"/":1,":":1,";":1,"=":1,"@":1,"[":1,"\\":1,"]":1,"^":1,"|":1}),q=function(t,e){var n=d(t,0);return n>32&&n<127&&!p(e,t)?t:encodeURIComponent(t)},J={ftp:21,file:null,gopher:70,http:80,https:443,ws:80,wss:443},V=function(t){return p(J,t.scheme)},X=function(t){return""!=t.username||""!=t.password},H=function(t){return!t.host||t.cannotBeABaseURL||"file"==t.scheme},K=function(t,e){var n;return 2==t.length&&A.test(t.charAt(0))&&(":"==(n=t.charAt(1))||!e&&"|"==n)},Z=function(t){var e;return t.length>1&&K(t.slice(0,2))&&(2==t.length||"/"===(e=t.charAt(2))||"\\"===e||"?"===e||"#"===e)},Y=function(t){var e=t.path,n=e.length;!n||"file"==t.scheme&&1==n&&K(e[0],!0)||e.pop()},Q=function(t){return"."===t||"%2e"===t.toLowerCase()},tt={},et={},nt={},rt={},ot={},st={},it={},at={},ct={},ut={},lt={},pt={},ft={},ht={},dt={},bt={},gt={},mt={},yt={},vt={},wt={},Ot=function(t,e,n,o){var s,i,a,c,u,l=n||tt,f=0,d="",b=!1,g=!1,m=!1;for(n||(t.scheme="",t.username="",t.password="",t.host=null,t.port=null,t.path=[],t.query=null,t.fragment=null,t.cannotBeABaseURL=!1,e=e.replace(M,"")),e=e.replace($,""),s=h(e);f<=s.length;){switch(i=s[f],l){case tt:if(!i||!A.test(i)){if(n)return"Invalid scheme";l=nt;continue}d+=i.toLowerCase(),l=et;break;case et:if(i&&(T.test(i)||"+"==i||"-"==i||"."==i))d+=i.toLowerCase();else{if(":"!=i){if(n)return"Invalid scheme";d="",l=nt,f=0;continue}if(n&&(V(t)!=p(J,d)||"file"==d&&(X(t)||null!==t.port)||"file"==t.scheme&&!t.host))return;if(t.scheme=d,n)return void(V(t)&&J[t.scheme]==t.port&&(t.port=null));d="","file"==t.scheme?l=ht:V(t)&&o&&o.scheme==t.scheme?l=rt:V(t)?l=at:"/"==s[f+1]?(l=ot,f++):(t.cannotBeABaseURL=!0,t.path.push(""),l=yt)}break;case nt:if(!o||o.cannotBeABaseURL&&"#"!=i)return"Invalid scheme";if(o.cannotBeABaseURL&&"#"==i){t.scheme=o.scheme,t.path=o.path.slice(),t.query=o.query,t.fragment="",t.cannotBeABaseURL=!0,l=wt;break}l="file"==o.scheme?ht:st;continue;case rt:if("/"!=i||"/"!=s[f+1]){l=st;continue}l=ct,f++;break;case ot:if("/"==i){l=ut;break}l=mt;continue;case st:if(t.scheme=o.scheme,i==r)t.username=o.username,t.password=o.password,t.host=o.host,t.port=o.port,t.path=o.path.slice(),t.query=o.query;else if("/"==i||"\\"==i&&V(t))l=it;else if("?"==i)t.username=o.username,t.password=o.password,t.host=o.host,t.port=o.port,t.path=o.path.slice(),t.query="",l=vt;else{if("#"!=i){t.username=o.username,t.password=o.password,t.host=o.host,t.port=o.port,t.path=o.path.slice(),t.path.pop(),l=mt;continue}t.username=o.username,t.password=o.password,t.host=o.host,t.port=o.port,t.path=o.path.slice(),t.query=o.query,t.fragment="",l=wt}break;case it:if(!V(t)||"/"!=i&&"\\"!=i){if("/"!=i){t.username=o.username,t.password=o.password,t.host=o.host,t.port=o.port,l=mt;continue}l=ut}else l=ct;break;case at:if(l=ct,"/"!=i||"/"!=d.charAt(f+1))continue;f++;break;case ct:if("/"!=i&&"\\"!=i){l=ut;continue}break;case ut:if("@"==i){b&&(d="%40"+d),b=!0,a=h(d);for(var y=0;y<a.length;y++){var v=a[y];if(":"!=v||m){var w=q(v,G);m?t.password+=w:t.username+=w}else m=!0}d=""}else if(i==r||"/"==i||"?"==i||"#"==i||"\\"==i&&V(t)){if(b&&""==d)return"Invalid authority";f-=h(d).length+1,d="",l=lt}else d+=i;break;case lt:case pt:if(n&&"file"==t.scheme){l=bt;continue}if(":"!=i||g){if(i==r||"/"==i||"?"==i||"#"==i||"\\"==i&&V(t)){if(V(t)&&""==d)return"Invalid host";if(n&&""==d&&(X(t)||null!==t.port))return;if(c=R(t,d))return c;if(d="",l=gt,n)return;continue}"["==i?g=!0:"]"==i&&(g=!1),d+=i}else{if(""==d)return"Invalid host";if(c=R(t,d))return c;if(d="",l=ft,n==pt)return}break;case ft:if(!E.test(i)){if(i==r||"/"==i||"?"==i||"#"==i||"\\"==i&&V(t)||n){if(""!=d){var O=parseInt(d,10);if(O>65535)return"Invalid port";t.port=V(t)&&O===J[t.scheme]?null:O,d=""}if(n)return;l=gt;continue}return"Invalid port"}d+=i;break;case ht:if(t.scheme="file","/"==i||"\\"==i)l=dt;else{if(!o||"file"!=o.scheme){l=mt;continue}if(i==r)t.host=o.host,t.path=o.path.slice(),t.query=o.query;else if("?"==i)t.host=o.host,t.path=o.path.slice(),t.query="",l=vt;else{if("#"!=i){Z(s.slice(f).join(""))||(t.host=o.host,t.path=o.path.slice(),Y(t)),l=mt;continue}t.host=o.host,t.path=o.path.slice(),t.query=o.query,t.fragment="",l=wt}}break;case dt:if("/"==i||"\\"==i){l=bt;break}o&&"file"==o.scheme&&!Z(s.slice(f).join(""))&&(K(o.path[0],!0)?t.path.push(o.path[0]):t.host=o.host),l=mt;continue;case bt:if(i==r||"/"==i||"\\"==i||"?"==i||"#"==i){if(!n&&K(d))l=mt;else if(""==d){if(t.host="",n)return;l=gt}else{if(c=R(t,d))return c;if("localhost"==t.host&&(t.host=""),n)return;d="",l=gt}continue}d+=i;break;case gt:if(V(t)){if(l=mt,"/"!=i&&"\\"!=i)continue}else if(n||"?"!=i)if(n||"#"!=i){if(i!=r&&(l=mt,"/"!=i))continue}else t.fragment="",l=wt;else t.query="",l=vt;break;case mt:if(i==r||"/"==i||"\\"==i&&V(t)||!n&&("?"==i||"#"==i)){if(".."===(u=(u=d).toLowerCase())||"%2e."===u||".%2e"===u||"%2e%2e"===u?(Y(t),"/"==i||"\\"==i&&V(t)||t.path.push("")):Q(d)?"/"==i||"\\"==i&&V(t)||t.path.push(""):("file"==t.scheme&&!t.path.length&&K(d)&&(t.host&&(t.host=""),d=d.charAt(0)+":"),t.path.push(d)),d="","file"==t.scheme&&(i==r||"?"==i||"#"==i))for(;t.path.length>1&&""===t.path[0];)t.path.shift();"?"==i?(t.query="",l=vt):"#"==i&&(t.fragment="",l=wt)}else d+=q(i,W);break;case yt:"?"==i?(t.query="",l=vt):"#"==i?(t.fragment="",l=wt):i!=r&&(t.path[0]+=q(i,z));break;case vt:n||"#"!=i?i!=r&&("'"==i&&V(t)?t.query+="%27":t.query+="#"==i?"%23":q(i,z)):(t.fragment="",l=wt);break;case wt:i!=r&&(t.fragment+=q(i,U))}f++}},xt=function(t){var e,n,r=l(this,xt,"URL"),o=arguments.length>1?arguments[1]:void 0,i=String(t),a=x(r,{type:"URL"});if(void 0!==o)if(o instanceof xt)e=j(o);else if(n=Ot(e={},String(o)))throw TypeError(n);if(n=Ot(a,i,null,e))throw TypeError(n);var c=a.searchParams=new w,u=O(c);u.updateSearchParams(a.query),u.updateURL=function(){a.query=String(c)||null},s||(r.href=kt.call(r),r.origin=St.call(r),r.protocol=At.call(r),r.username=Tt.call(r),r.password=Et.call(r),r.host=It.call(r),r.hostname=Pt.call(r),r.port=Ct.call(r),r.pathname=Ft.call(r),r.search=_t.call(r),r.searchParams=Nt.call(r),r.hash=Mt.call(r))},jt=xt.prototype,kt=function(){var t=j(this),e=t.scheme,n=t.username,r=t.password,o=t.host,s=t.port,i=t.path,a=t.query,c=t.fragment,u=e+":";return null!==o?(u+="//",X(t)&&(u+=n+(r?":"+r:"")+"@"),u+=B(o),null!==s&&(u+=":"+s)):"file"==e&&(u+="//"),u+=t.cannotBeABaseURL?i[0]:i.length?"/"+i.join("/"):"",null!==a&&(u+="?"+a),null!==c&&(u+="#"+c),u},St=function(){var t=j(this),e=t.scheme,n=t.port;if("blob"==e)try{return new URL(e.path[0]).origin}catch(t){return"null"}return"file"!=e&&V(t)?e+"://"+B(t.host)+(null!==n?":"+n:""):"null"},At=function(){return j(this).scheme+":"},Tt=function(){return j(this).username},Et=function(){return j(this).password},It=function(){var t=j(this),e=t.host,n=t.port;return null===e?"":null===n?B(e):B(e)+":"+n},Pt=function(){var t=j(this).host;return null===t?"":B(t)},Ct=function(){var t=j(this).port;return null===t?"":String(t)},Ft=function(){var t=j(this),e=t.path;return t.cannotBeABaseURL?e[0]:e.length?"/"+e.join("/"):""},_t=function(){var t=j(this).query;return t?"?"+t:""},Nt=function(){return j(this).searchParams},Mt=function(){var t=j(this).fragment;return t?"#"+t:""},$t=function(t,e){return{get:t,set:e,configurable:!0,enumerable:!0}};if(s&&c(jt,{href:$t(kt,function(t){var e=j(this),n=String(t),r=Ot(e,n);if(r)throw TypeError(r);O(e.searchParams).updateSearchParams(e.query)}),origin:$t(St),protocol:$t(At,function(t){var e=j(this);Ot(e,String(t)+":",tt)}),username:$t(Tt,function(t){var e=j(this),n=h(String(t));if(!H(e)){e.username="";for(var r=0;r<n.length;r++)e.username+=q(n[r],G)}}),password:$t(Et,function(t){var e=j(this),n=h(String(t));if(!H(e)){e.password="";for(var r=0;r<n.length;r++)e.password+=q(n[r],G)}}),host:$t(It,function(t){var e=j(this);e.cannotBeABaseURL||Ot(e,String(t),lt)}),hostname:$t(Pt,function(t){var e=j(this);e.cannotBeABaseURL||Ot(e,String(t),pt)}),port:$t(Ct,function(t){var e=j(this);H(e)||(""==(t=String(t))?e.port=null:Ot(e,t,ft))}),pathname:$t(Ft,function(t){var e=j(this);e.cannotBeABaseURL||(e.path=[],Ot(e,t+"",gt))}),search:$t(_t,function(t){var e=j(this);""==(t=String(t))?e.query=null:("?"==t.charAt(0)&&(t=t.slice(1)),e.query="",Ot(e,t,vt)),O(e.searchParams).updateSearchParams(e.query)}),searchParams:$t(Nt),hash:$t(Mt,function(t){var e=j(this);""!=(t=String(t))?("#"==t.charAt(0)&&(t=t.slice(1)),e.fragment="",Ot(e,t,wt)):e.fragment=null})}),u(jt,"toJSON",function(){return kt.call(this)},{enumerable:!0}),u(jt,"toString",function(){return kt.call(this)},{enumerable:!0}),v){var Rt=v.createObjectURL,Dt=v.revokeObjectURL;Rt&&u(xt,"createObjectURL",function(t){return Rt.apply(v,arguments)}),Dt&&u(xt,"revokeObjectURL",function(t){return Dt.apply(v,arguments)})}g(xt,"URL"),o({global:!0,forced:!i,sham:!s},{URL:xt})},function(t,e,n){var r=n(2),o=n(1),s=n(21),i=o("iterator");t.exports=!r(function(){var t=new URL("b?e=1","http://a"),e=t.searchParams;return t.pathname="c%20d",s&&!t.toJSON||!e.sort||"http://a/c%20d?e=1"!==t.href||"1"!==e.get("e")||"a=1"!==String(new URLSearchParams("?a=1"))||!e[i]||"a"!==new URL("https://a@b").username||"b"!==new URLSearchParams(new URLSearchParams("a=b")).get("a")||"xn--e1aybc"!==new URL("http://тест").host||"#%D0%B1"!==new URL("http://a#б").hash})},function(t,e,n){"use strict";var r=n(13),o=n(23),s=n(26),i=n(2),a=n(153),c=[].sort,u=[1,2,3],l=i(function(){u.sort(void 0)}),p=i(function(){u.sort(null)}),f=a("sort");r({target:"Array",proto:!0,forced:l||!p||f},{sort:function(t){return void 0===t?c.call(s(this)):c.call(s(this),o(t))}})},function(t,e,n){n(9),t.exports=function(){const t=n(25),e=n(82),r=n(50),o=n(83),{Job:s,Task:i}=n(35),{Attribute:a,Label:c}=n(36),{ShareFileType:u,TaskStatus:l,TaskMode:p,AttributeType:f,ObjectType:h,ObjectShape:d,LogType:b,EventType:g}=n(19),{Exception:m,ArgumentError:y,DataError:v,ScriptingError:w,PluginError:O,ServerError:x}=n(5),j=n(156),k=n(47),S={server:{about:async()=>await t.apiWrapper(S.server.about),share:async(e="/")=>await t.apiWrapper(S.server.share,e),login:async(e,n)=>await t.apiWrapper(S.server.login,e,n),logout:async()=>await t.apiWrapper(S.server.logout)},tasks:{get:async(e={})=>await t.apiWrapper(S.tasks.get,e)},jobs:{get:async(e={})=>await t.apiWrapper(S.jobs.get,e)},users:{get:async(e={})=>await t.apiWrapper(S.users.get,e)},plugins:{list:async()=>await t.apiWrapper(S.plugins.list),register:async e=>await t.apiWrapper(S.plugins.register,e)},config:{get backendAPI(){return k.backendAPI},set backendAPI(t){k.backendAPI=t},get proxy(){return k.proxy},set proxy(t){k.proxy=t},get taskID(){return k.taskID},set taskID(t){k.taskID=t},get jobID(){return k.jobID},set jobID(t){k.jobID=t},get clientID(){return k.clientID}},client:{version:`${j.version}`},enums:{ShareFileType:u,TaskStatus:l,TaskMode:p,AttributeType:f,ObjectType:h,ObjectShape:d,LogType:b,EventType:g},exceptions:{Exception:m,ArgumentError:y,DataError:v,ScriptingError:w,PluginError:O,ServerError:x},classes:{Task:i,User:e,Job:s,Attribute:a,Label:c,Statistics:o,ObjectState:r}};S.server=Object.freeze(S.server),S.tasks=Object.freeze(S.tasks),S.jobs=Object.freeze(S.jobs),S.users=Object.freeze(S.users),S.plugins=Object.freeze(S.plugins),S.client=Object.freeze(S.client),S.enums=Object.freeze(S.enums);const A=n(157);return Math.clamp=function(t,e,n){return Math.min(Math.max(t,e),n)},Object.freeze(A(S))}()},function(t,e,n){var r=n(0),o=n(55),s=r.WeakMap;t.exports="function"==typeof s&&/native code/.test(o.call(s))},function(t,e,n){var r=n(30),o=n(91),s=n(60),i=n(3);t.exports=r("Reflect","ownKeys")||function(t){var e=o.f(i(t)),n=s.f;return n?e.concat(n(t)):e}},function(t,e,n){var r=n(59),o=n(45).concat("length","prototype");e.f=Object.getOwnPropertyNames||function(t){return r(t,o)}},function(t,e,n){var r=n(28),o=n(31),s=n(93),i=function(t){return function(e,n,i){var a,c=r(e),u=o(c.length),l=s(i,u);if(t&&n!=n){for(;u>l;)if((a=c[l++])!=a)return!0}else for(;u>l;l++)if((t||l in c)&&c[l]===n)return t||l||0;return!t&&-1}};t.exports={includes:i(!0),indexOf:i(!1)}},function(t,e,n){var r=n(32),o=Math.max,s=Math.min;t.exports=function(t,e){var n=r(t);return n<0?o(n+e,0):s(n,e)}},function(t,e,n){var r=n(2);t.exports=!!Object.getOwnPropertySymbols&&!r(function(){return!String(Symbol())})},function(t,e,n){"use strict";var r=n(30),o=n(14),s=n(1),i=n(10),a=s("species");t.exports=function(t){var e=r(t),n=o.f;i&&e&&!e[a]&&n(e,a,{configurable:!0,get:function(){return this}})}},function(t,e,n){var r=n(3),o=n(63),s=n(31),i=n(33),a=n(34),c=n(64),u=function(t,e){this.stopped=t,this.result=e};(t.exports=function(t,e,n,l,p){var f,h,d,b,g,m,y=i(e,n,l?2:1);if(p)f=t;else{if("function"!=typeof(h=a(t)))throw TypeError("Target is not iterable");if(o(h)){for(d=0,b=s(t.length);b>d;d++)if((g=l?y(r(m=t[d])[0],m[1]):y(t[d]))&&g instanceof u)return g;return new u(!1)}f=h.call(t)}for(;!(m=f.next()).done;)if((g=c(f,y,m.value,l))&&g instanceof u)return g;return new u(!1)}).stop=function(t){return new u(!0,t)}},function(t,e,n){var r=n(15),o=n(1)("toStringTag"),s="Arguments"==r(function(){return arguments}());t.exports=function(t){var e,n,i;return void 0===t?"Undefined":null===t?"Null":"string"==typeof(n=function(t,e){try{return t[e]}catch(t){}}(e=Object(t),o))?n:s?r(e):"Object"==(i=r(e))&&"function"==typeof e.callee?"Arguments":i}},function(t,e,n){var r=n(1)("iterator"),o=!1;try{var s=0,i={next:function(){return{done:!!s++}},return:function(){o=!0}};i[r]=function(){return this},Array.from(i,function(){throw 2})}catch(t){}t.exports=function(t,e){if(!e&&!o)return!1;var n=!1;try{var s={};s[r]=function(){return{next:function(){return{done:n=!0}}}},t(s)}catch(t){}return n}},function(t,e,n){var r=n(3),o=n(23),s=n(1)("species");t.exports=function(t,e){var n,i=r(t).constructor;return void 0===i||null==(n=r(i)[s])?e:o(n)}},function(t,e,n){var r,o,s,i,a,c,u,l=n(0),p=n(39).f,f=n(15),h=n(65).set,d=n(67),b=l.MutationObserver||l.WebKitMutationObserver,g=l.process,m=l.Promise,y="process"==f(g),v=p(l,"queueMicrotask"),w=v&&v.value;w||(r=function(){var t,e;for(y&&(t=g.domain)&&t.exit();o;){e=o.fn,o=o.next;try{e()}catch(t){throw o?i():s=void 0,t}}s=void 0,t&&t.enter()},y?i=function(){g.nextTick(r)}:b&&!/(iphone|ipod|ipad).*applewebkit/i.test(d)?(a=!0,c=document.createTextNode(""),new b(r).observe(c,{characterData:!0}),i=function(){c.data=a=!a}):m&&m.resolve?(u=m.resolve(void 0),i=function(){u.then(r)}):i=function(){h.call(l,r)}),t.exports=w||function(t){var e={fn:t,next:void 0};s&&(s.next=e),o||(o=e,i()),s=e}},function(t,e,n){var r=n(3),o=n(11),s=n(68);t.exports=function(t,e){if(r(t),o(e)&&e.constructor===t)return e;var n=s.f(t);return(0,n.resolve)(e),n.promise}},function(t,e,n){var r=n(0);t.exports=function(t,e){var n=r.console;n&&n.error&&(1===arguments.length?n.error(t):n.error(t,e))}},function(t,e){t.exports=function(t){try{return{error:!1,value:t()}}catch(t){return{error:!0,value:t}}}},function(t,e,n){"use strict";var r=n(13),o=n(10),s=n(0),i=n(7),a=n(11),c=n(14).f,u=n(57),l=s.Symbol;if(o&&"function"==typeof l&&(!("description"in l.prototype)||void 0!==l().description)){var p={},f=function(){var t=arguments.length<1||void 0===arguments[0]?void 0:String(arguments[0]),e=this instanceof f?new l(t):void 0===t?l():l(t);return""===t&&(p[e]=!0),e};u(f,l);var h=f.prototype=l.prototype;h.constructor=f;var d=h.toString,b="Symbol(test)"==String(l("test")),g=/^Symbol\((.*)\)[^)]+$/;c(h,"description",{configurable:!0,get:function(){var t=a(this)?this.valueOf():this,e=d.call(t);if(i(p,t))return"";var n=b?e.slice(7,-1):e.replace(g,"$1");return""===n?void 0:n}}),r({global:!0,forced:!0},{Symbol:f})}},function(t,e,n){var r=n(1),o=n(69),s=n(12),i=r("unscopables"),a=Array.prototype;null==a[i]&&s(a,i,o(null)),t.exports=function(t){a[i][t]=!0}},function(t,e,n){var r=n(2);t.exports=!r(function(){function t(){}return t.prototype.constructor=null,Object.getPrototypeOf(new t)!==t.prototype})},function(t,e,n){var r=n(3),o=n(108);t.exports=Object.setPrototypeOf||("__proto__"in{}?function(){var t,e=!1,n={};try{(t=Object.getOwnPropertyDescriptor(Object.prototype,"__proto__").set).call(n,[]),e=n instanceof Array}catch(t){}return function(n,s){return r(n),o(s),e?t.call(n,s):n.__proto__=s,n}}():void 0)},function(t,e,n){var r=n(11);t.exports=function(t){if(!r(t)&&null!==t)throw TypeError("Can't set "+String(t)+" as a prototype");return t}},function(t,e){t.exports={CSSRuleList:0,CSSStyleDeclaration:0,CSSValueList:0,ClientRectList:0,DOMRectList:0,DOMStringList:0,DOMTokenList:1,DataTransferItemList:0,FileList:0,HTMLAllCollection:0,HTMLCollection:0,HTMLFormElement:0,HTMLSelectElement:0,MediaList:0,MimeTypeArray:0,NamedNodeMap:0,NodeList:1,PaintRequestList:0,Plugin:0,PluginArray:0,SVGLengthList:0,SVGNumberList:0,SVGPathSegList:0,SVGPointList:0,SVGStringList:0,SVGTransformList:0,SourceBufferList:0,StyleSheetList:0,TextTrackCueList:0,TextTrackList:0,TouchList:0}},function(t,e,n){(function(t,r){var o;
-/*!
- * Platform.js <https://mths.be/platform>
- * Copyright 2014-2018 Benjamin Tan <https://bnjmnt4n.now.sh/>
- * Copyright 2011-2013 John-David Dalton <http://allyoucanleet.com/>
- * Available under MIT license <https://mths.be/mit>
- */(function(){"use strict";var s={function:!0,object:!0},i=s[typeof window]&&window||this,a=s[typeof e]&&e,c=s[typeof t]&&t&&!t.nodeType&&t,u=a&&c&&"object"==typeof r&&r;!u||u.global!==u&&u.window!==u&&u.self!==u||(i=u);var l=Math.pow(2,53)-1,p=/\bOpera/,f=Object.prototype,h=f.hasOwnProperty,d=f.toString;function b(t){return(t=String(t)).charAt(0).toUpperCase()+t.slice(1)}function g(t){return t=O(t),/^(?:webOS|i(?:OS|P))/.test(t)?t:b(t)}function m(t,e){for(var n in t)h.call(t,n)&&e(t[n],n,t)}function y(t){return null==t?b(t):d.call(t).slice(8,-1)}function v(t){return String(t).replace(/([ -])(?!$)/g,"$1?")}function w(t,e){var n=null;return function(t,e){var n=-1,r=t?t.length:0;if("number"==typeof r&&r>-1&&r<=l)for(;++n<r;)e(t[n],n,t);else m(t,e)}(t,function(r,o){n=e(n,r,o,t)}),n}function O(t){return String(t).replace(/^ +| +$/g,"")}var x=function t(e){var n=i,r=e&&"object"==typeof e&&"String"!=y(e);r&&(n=e,e=null);var o=n.navigator||{},s=o.userAgent||"";e||(e=s);var a,c,u,l,f,h=r?!!o.likeChrome:/\bChrome\b/.test(e)&&!/internal|\n/i.test(d.toString()),b=r?"Object":"ScriptBridgingProxyObject",x=r?"Object":"Environment",j=r&&n.java?"JavaPackage":y(n.java),k=r?"Object":"RuntimeObject",S=/\bJava/.test(j)&&n.java,A=S&&y(n.environment)==x,T=S?"a":"α",E=S?"b":"β",I=n.document||{},P=n.operamini||n.opera,C=p.test(C=r&&P?P["[[Class]]"]:y(P))?C:P=null,F=e,_=[],N=null,M=e==s,$=M&&P&&"function"==typeof P.version&&P.version(),R=w([{label:"EdgeHTML",pattern:"Edge"},"Trident",{label:"WebKit",pattern:"AppleWebKit"},"iCab","Presto","NetFront","Tasman","KHTML","Gecko"],function(t,n){return t||RegExp("\\b"+(n.pattern||v(n))+"\\b","i").exec(e)&&(n.label||n)}),D=function(t){return w(t,function(t,n){return t||RegExp("\\b"+(n.pattern||v(n))+"\\b","i").exec(e)&&(n.label||n)})}(["Adobe AIR","Arora","Avant Browser","Breach","Camino","Electron","Epiphany","Fennec","Flock","Galeon","GreenBrowser","iCab","Iceweasel","K-Meleon","Konqueror","Lunascape","Maxthon",{label:"Microsoft Edge",pattern:"Edge"},"Midori","Nook Browser","PaleMoon","PhantomJS","Raven","Rekonq","RockMelt",{label:"Samsung Internet",pattern:"SamsungBrowser"},"SeaMonkey",{label:"Silk",pattern:"(?:Cloud9|Silk-Accelerated)"},"Sleipnir","SlimBrowser",{label:"SRWare Iron",pattern:"Iron"},"Sunrise","Swiftfox","Waterfox","WebPositive","Opera Mini",{label:"Opera Mini",pattern:"OPiOS"},"Opera",{label:"Opera",pattern:"OPR"},"Chrome",{label:"Chrome Mobile",pattern:"(?:CriOS|CrMo)"},{label:"Firefox",pattern:"(?:Firefox|Minefield)"},{label:"Firefox for iOS",pattern:"FxiOS"},{label:"IE",pattern:"IEMobile"},{label:"IE",pattern:"MSIE"},"Safari"]),L=U([{label:"BlackBerry",pattern:"BB10"},"BlackBerry",{label:"Galaxy S",pattern:"GT-I9000"},{label:"Galaxy S2",pattern:"GT-I9100"},{label:"Galaxy S3",pattern:"GT-I9300"},{label:"Galaxy S4",pattern:"GT-I9500"},{label:"Galaxy S5",pattern:"SM-G900"},{label:"Galaxy S6",pattern:"SM-G920"},{label:"Galaxy S6 Edge",pattern:"SM-G925"},{label:"Galaxy S7",pattern:"SM-G930"},{label:"Galaxy S7 Edge",pattern:"SM-G935"},"Google TV","Lumia","iPad","iPod","iPhone","Kindle",{label:"Kindle Fire",pattern:"(?:Cloud9|Silk-Accelerated)"},"Nexus","Nook","PlayBook","PlayStation Vita","PlayStation","TouchPad","Transformer",{label:"Wii U",pattern:"WiiU"},"Wii","Xbox One",{label:"Xbox 360",pattern:"Xbox"},"Xoom"]),B=function(t){return w(t,function(t,n,r){return t||(n[L]||n[/^[a-z]+(?: +[a-z]+\b)*/i.exec(L)]||RegExp("\\b"+v(r)+"(?:\\b|\\w*\\d)","i").exec(e))&&r})}({Apple:{iPad:1,iPhone:1,iPod:1},Archos:{},Amazon:{Kindle:1,"Kindle Fire":1},Asus:{Transformer:1},"Barnes & Noble":{Nook:1},BlackBerry:{PlayBook:1},Google:{"Google TV":1,Nexus:1},HP:{TouchPad:1},HTC:{},LG:{},Microsoft:{Xbox:1,"Xbox One":1},Motorola:{Xoom:1},Nintendo:{"Wii U":1,Wii:1},Nokia:{Lumia:1},Samsung:{"Galaxy S":1,"Galaxy S2":1,"Galaxy S3":1,"Galaxy S4":1},Sony:{PlayStation:1,"PlayStation Vita":1}}),z=function(t){return w(t,function(t,n){var r=n.pattern||v(n);return!t&&(t=RegExp("\\b"+r+"(?:/[\\d.]+|[ \\w.]*)","i").exec(e))&&(t=function(t,e,n){var r={"10.0":"10",6.4:"10 Technical Preview",6.3:"8.1",6.2:"8",6.1:"Server 2008 R2 / 7","6.0":"Server 2008 / Vista",5.2:"Server 2003 / XP 64-bit",5.1:"XP",5.01:"2000 SP1","5.0":"2000","4.0":"NT","4.90":"ME"};return e&&n&&/^Win/i.test(t)&&!/^Windows Phone /i.test(t)&&(r=r[/[\d.]+$/.exec(t)])&&(t="Windows "+r),t=String(t),e&&n&&(t=t.replace(RegExp(e,"i"),n)),t=g(t.replace(/ ce$/i," CE").replace(/\bhpw/i,"web").replace(/\bMacintosh\b/,"Mac OS").replace(/_PowerPC\b/i," OS").replace(/\b(OS X) [^ \d]+/i,"$1").replace(/\bMac (OS X)\b/,"$1").replace(/\/(\d)/," $1").replace(/_/g,".").replace(/(?: BePC|[ .]*fc[ \d.]+)$/i,"").replace(/\bx86\.64\b/gi,"x86_64").replace(/\b(Windows Phone) OS\b/,"$1").replace(/\b(Chrome OS \w+) [\d.]+\b/,"$1").split(" on ")[0])}(t,r,n.label||n)),t})}(["Windows Phone","Android","CentOS",{label:"Chrome OS",pattern:"CrOS"},"Debian","Fedora","FreeBSD","Gentoo","Haiku","Kubuntu","Linux Mint","OpenBSD","Red Hat","SuSE","Ubuntu","Xubuntu","Cygwin","Symbian OS","hpwOS","webOS ","webOS","Tablet OS","Tizen","Linux","Mac OS X","Macintosh","Mac","Windows 98;","Windows "]);function U(t){return w(t,function(t,n){var r=n.pattern||v(n);return!t&&(t=RegExp("\\b"+r+" *\\d+[.\\w_]*","i").exec(e)||RegExp("\\b"+r+" *\\w+-[\\w]*","i").exec(e)||RegExp("\\b"+r+"(?:; *(?:[a-z]+[_-])?[a-z]+\\d+|[^ ();-]*)","i").exec(e))&&((t=String(n.label&&!RegExp(r,"i").test(n.label)?n.label:t).split("/"))[1]&&!/[\d.]+/.test(t[0])&&(t[0]+=" "+t[1]),n=n.label||n,t=g(t[0].replace(RegExp(r,"i"),n).replace(RegExp("; *(?:"+n+"[_-])?","i")," ").replace(RegExp("("+n+")[-_.]?(\\w)","i"),"$1 $2"))),t})}if(R&&(R=[R]),B&&!L&&(L=U([B])),(a=/\bGoogle TV\b/.exec(L))&&(L=a[0]),/\bSimulator\b/i.test(e)&&(L=(L?L+" ":"")+"Simulator"),"Opera Mini"==D&&/\bOPiOS\b/.test(e)&&_.push("running in Turbo/Uncompressed mode"),"IE"==D&&/\blike iPhone OS\b/.test(e)?(B=(a=t(e.replace(/like iPhone OS/,""))).manufacturer,L=a.product):/^iP/.test(L)?(D||(D="Safari"),z="iOS"+((a=/ OS ([\d_]+)/i.exec(e))?" "+a[1].replace(/_/g,"."):"")):"Konqueror"!=D||/buntu/i.test(z)?B&&"Google"!=B&&(/Chrome/.test(D)&&!/\bMobile Safari\b/i.test(e)||/\bVita\b/.test(L))||/\bAndroid\b/.test(z)&&/^Chrome/.test(D)&&/\bVersion\//i.test(e)?(D="Android Browser",z=/\bAndroid\b/.test(z)?z:"Android"):"Silk"==D?(/\bMobi/i.test(e)||(z="Android",_.unshift("desktop mode")),/Accelerated *= *true/i.test(e)&&_.unshift("accelerated")):"PaleMoon"==D&&(a=/\bFirefox\/([\d.]+)\b/.exec(e))?_.push("identifying as Firefox "+a[1]):"Firefox"==D&&(a=/\b(Mobile|Tablet|TV)\b/i.exec(e))?(z||(z="Firefox OS"),L||(L=a[1])):!D||(a=!/\bMinefield\b/i.test(e)&&/\b(?:Firefox|Safari)\b/.exec(D))?(D&&!L&&/[\/,]|^[^(]+?\)/.test(e.slice(e.indexOf(a+"/")+8))&&(D=null),(a=L||B||z)&&(L||B||/\b(?:Android|Symbian OS|Tablet OS|webOS)\b/.test(z))&&(D=/[a-z]+(?: Hat)?/i.exec(/\bAndroid\b/.test(z)?z:a)+" Browser")):"Electron"==D&&(a=(/\bChrome\/([\d.]+)\b/.exec(e)||0)[1])&&_.push("Chromium "+a):z="Kubuntu",$||($=w(["(?:Cloud9|CriOS|CrMo|Edge|FxiOS|IEMobile|Iron|Opera ?Mini|OPiOS|OPR|Raven|SamsungBrowser|Silk(?!/[\\d.]+$))","Version",v(D),"(?:Firefox|Minefield|NetFront)"],function(t,n){return t||(RegExp(n+"(?:-[\\d.]+/|(?: for [\\w-]+)?[ /-])([\\d.]+[^ ();/_-]*)","i").exec(e)||0)[1]||null})),(a=("iCab"==R&&parseFloat($)>3?"WebKit":/\bOpera\b/.test(D)&&(/\bOPR\b/.test(e)?"Blink":"Presto"))||/\b(?:Midori|Nook|Safari)\b/i.test(e)&&!/^(?:Trident|EdgeHTML)$/.test(R)&&"WebKit"||!R&&/\bMSIE\b/i.test(e)&&("Mac OS"==z?"Tasman":"Trident")||"WebKit"==R&&/\bPlayStation\b(?! Vita\b)/i.test(D)&&"NetFront")&&(R=[a]),"IE"==D&&(a=(/; *(?:XBLWP|ZuneWP)(\d+)/i.exec(e)||0)[1])?(D+=" Mobile",z="Windows Phone "+(/\+$/.test(a)?a:a+".x"),_.unshift("desktop mode")):/\bWPDesktop\b/i.test(e)?(D="IE Mobile",z="Windows Phone 8.x",_.unshift("desktop mode"),$||($=(/\brv:([\d.]+)/.exec(e)||0)[1])):"IE"!=D&&"Trident"==R&&(a=/\brv:([\d.]+)/.exec(e))&&(D&&_.push("identifying as "+D+($?" "+$:"")),D="IE",$=a[1]),M){if(l="global",f=null!=(u=n)?typeof u[l]:"number",/^(?:boolean|number|string|undefined)$/.test(f)||"object"==f&&!u[l])y(a=n.runtime)==b?(D="Adobe AIR",z=a.flash.system.Capabilities.os):y(a=n.phantom)==k?(D="PhantomJS",$=(a=a.version||null)&&a.major+"."+a.minor+"."+a.patch):"number"==typeof I.documentMode&&(a=/\bTrident\/(\d+)/i.exec(e))?($=[$,I.documentMode],(a=+a[1]+4)!=$[1]&&(_.push("IE "+$[1]+" mode"),R&&(R[1]=""),$[1]=a),$="IE"==D?String($[1].toFixed(1)):$[0]):"number"==typeof I.documentMode&&/^(?:Chrome|Firefox)\b/.test(D)&&(_.push("masking as "+D+" "+$),D="IE",$="11.0",R=["Trident"],z="Windows");else if(S&&(F=(a=S.lang.System).getProperty("os.arch"),z=z||a.getProperty("os.name")+" "+a.getProperty("os.version")),A){try{$=n.require("ringo/engine").version.join("."),D="RingoJS"}catch(t){(a=n.system)&&a.global.system==n.system&&(D="Narwhal",z||(z=a[0].os||null))}D||(D="Rhino")}else"object"==typeof n.process&&!n.process.browser&&(a=n.process)&&("object"==typeof a.versions&&("string"==typeof a.versions.electron?(_.push("Node "+a.versions.node),D="Electron",$=a.versions.electron):"string"==typeof a.versions.nw&&(_.push("Chromium "+$,"Node "+a.versions.node),D="NW.js",$=a.versions.nw)),D||(D="Node.js",F=a.arch,z=a.platform,$=($=/[\d.]+/.exec(a.version))?$[0]:null));z=z&&g(z)}if($&&(a=/(?:[ab]|dp|pre|[ab]\d+pre)(?:\d+\+?)?$/i.exec($)||/(?:alpha|beta)(?: ?\d)?/i.exec(e+";"+(M&&o.appMinorVersion))||/\bMinefield\b/i.test(e)&&"a")&&(N=/b/i.test(a)?"beta":"alpha",$=$.replace(RegExp(a+"\\+?$"),"")+("beta"==N?E:T)+(/\d+\+?/.exec(a)||"")),"Fennec"==D||"Firefox"==D&&/\b(?:Android|Firefox OS)\b/.test(z))D="Firefox Mobile";else if("Maxthon"==D&&$)$=$.replace(/\.[\d.]+/,".x");else if(/\bXbox\b/i.test(L))"Xbox 360"==L&&(z=null),"Xbox 360"==L&&/\bIEMobile\b/.test(e)&&_.unshift("mobile mode");else if(!/^(?:Chrome|IE|Opera)$/.test(D)&&(!D||L||/Browser|Mobi/.test(D))||"Windows CE"!=z&&!/Mobi/i.test(e))if("IE"==D&&M)try{null===n.external&&_.unshift("platform preview")}catch(t){_.unshift("embedded")}else(/\bBlackBerry\b/.test(L)||/\bBB10\b/.test(e))&&(a=(RegExp(L.replace(/ +/g," *")+"/([.\\d]+)","i").exec(e)||0)[1]||$)?(z=((a=[a,/BB10/.test(e)])[1]?(L=null,B="BlackBerry"):"Device Software")+" "+a[0],$=null):this!=m&&"Wii"!=L&&(M&&P||/Opera/.test(D)&&/\b(?:MSIE|Firefox)\b/i.test(e)||"Firefox"==D&&/\bOS X (?:\d+\.){2,}/.test(z)||"IE"==D&&(z&&!/^Win/.test(z)&&$>5.5||/\bWindows XP\b/.test(z)&&$>8||8==$&&!/\bTrident\b/.test(e)))&&!p.test(a=t.call(m,e.replace(p,"")+";"))&&a.name&&(a="ing as "+a.name+((a=a.version)?" "+a:""),p.test(D)?(/\bIE\b/.test(a)&&"Mac OS"==z&&(z=null),a="identify"+a):(a="mask"+a,D=C?g(C.replace(/([a-z])([A-Z])/g,"$1 $2")):"Opera",/\bIE\b/.test(a)&&(z=null),M||($=null)),R=["Presto"],_.push(a));else D+=" Mobile";(a=(/\bAppleWebKit\/([\d.]+\+?)/i.exec(e)||0)[1])&&(a=[parseFloat(a.replace(/\.(\d)$/,".0$1")),a],"Safari"==D&&"+"==a[1].slice(-1)?(D="WebKit Nightly",N="alpha",$=a[1].slice(0,-1)):$!=a[1]&&$!=(a[2]=(/\bSafari\/([\d.]+\+?)/i.exec(e)||0)[1])||($=null),a[1]=(/\bChrome\/([\d.]+)/i.exec(e)||0)[1],537.36==a[0]&&537.36==a[2]&&parseFloat(a[1])>=28&&"WebKit"==R&&(R=["Blink"]),M&&(h||a[1])?(R&&(R[1]="like Chrome"),a=a[1]||((a=a[0])<530?1:a<532?2:a<532.05?3:a<533?4:a<534.03?5:a<534.07?6:a<534.1?7:a<534.13?8:a<534.16?9:a<534.24?10:a<534.3?11:a<535.01?12:a<535.02?"13+":a<535.07?15:a<535.11?16:a<535.19?17:a<536.05?18:a<536.1?19:a<537.01?20:a<537.11?"21+":a<537.13?23:a<537.18?24:a<537.24?25:a<537.36?26:"Blink"!=R?"27":"28")):(R&&(R[1]="like Safari"),a=(a=a[0])<400?1:a<500?2:a<526?3:a<533?4:a<534?"4+":a<535?5:a<537?6:a<538?7:a<601?8:"8"),R&&(R[1]+=" "+(a+="number"==typeof a?".x":/[.+]/.test(a)?"":"+")),"Safari"==D&&(!$||parseInt($)>45)&&($=a)),"Opera"==D&&(a=/\bzbov|zvav$/.exec(z))?(D+=" ",_.unshift("desktop mode"),"zvav"==a?(D+="Mini",$=null):D+="Mobile",z=z.replace(RegExp(" *"+a+"$"),"")):"Safari"==D&&/\bChrome\b/.exec(R&&R[1])&&(_.unshift("desktop mode"),D="Chrome Mobile",$=null,/\bOS X\b/.test(z)?(B="Apple",z="iOS 4.3+"):z=null),$&&0==$.indexOf(a=/[\d.]+$/.exec(z))&&e.indexOf("/"+a+"-")>-1&&(z=O(z.replace(a,""))),R&&!/\b(?:Avant|Nook)\b/.test(D)&&(/Browser|Lunascape|Maxthon/.test(D)||"Safari"!=D&&/^iOS/.test(z)&&/\bSafari\b/.test(R[1])||/^(?:Adobe|Arora|Breach|Midori|Opera|Phantom|Rekonq|Rock|Samsung Internet|Sleipnir|Web)/.test(D)&&R[1])&&(a=R[R.length-1])&&_.push(a),_.length&&(_=["("+_.join("; ")+")"]),B&&L&&L.indexOf(B)<0&&_.push("on "+B),L&&_.push((/^on /.test(_[_.length-1])?"":"on ")+L),z&&(a=/ ([\d.+]+)$/.exec(z),c=a&&"/"==z.charAt(z.length-a[0].length-1),z={architecture:32,family:a&&!c?z.replace(a[0],""):z,version:a?a[1]:null,toString:function(){var t=this.version;return this.family+(t&&!c?" "+t:"")+(64==this.architecture?" 64-bit":"")}}),(a=/\b(?:AMD|IA|Win|WOW|x86_|x)64\b/i.exec(F))&&!/\bi686\b/i.test(F)?(z&&(z.architecture=64,z.family=z.family.replace(RegExp(" *"+a),"")),D&&(/\bWOW64\b/i.test(e)||M&&/\w(?:86|32)$/.test(o.cpuClass||o.platform)&&!/\bWin64; x64\b/i.test(e))&&_.unshift("32-bit")):z&&/^OS X/.test(z.family)&&"Chrome"==D&&parseFloat($)>=39&&(z.architecture=64),e||(e=null);var W={};return W.description=e,W.layout=R&&R[0],W.manufacturer=B,W.name=D,W.prerelease=N,W.product=L,W.ua=e,W.version=D&&$,W.os=z||{architecture:null,family:null,version:null,toString:function(){return"null"}},W.parse=t,W.toString=function(){return this.description||""},W.version&&_.unshift($),W.name&&_.unshift(D),z&&D&&(z!=String(z).split(" ")[0]||z!=D.split(" ")[0]&&!L)&&_.push(L?"("+z+")":"on "+z),_.length&&(W.description=_.join(" ")),W}();i.platform=x,void 0===(o=function(){return x}.call(e,n,e,t))||(t.exports=o)}).call(this)}).call(this,n(111)(t),n(38))},function(t,e){t.exports=function(t){return t.webpackPolyfill||(t.deprecate=function(){},t.paths=[],t.children||(t.children=[]),Object.defineProperty(t,"loaded",{enumerable:!0,get:function(){return t.l}}),Object.defineProperty(t,"id",{enumerable:!0,get:function(){return t.i}}),t.webpackPolyfill=1),t}},function(t,e,n){var r,o,s;!function(i,a){"use strict";o=[n(113)],void 0===(s="function"==typeof(r=function(t){var e=/(^|@)\S+\:\d+/,n=/^\s*at .*(\S+\:\d+|\(native\))/m,r=/^(eval@)?(\[native code\])?$/;return{parse:function(t){if(void 0!==t.stacktrace||void 0!==t["opera#sourceloc"])return this.parseOpera(t);if(t.stack&&t.stack.match(n))return this.parseV8OrIE(t);if(t.stack)return this.parseFFOrSafari(t);throw new Error("Cannot parse given Error object")},extractLocation:function(t){if(-1===t.indexOf(":"))return[t];var e=/(.+?)(?:\:(\d+))?(?:\:(\d+))?$/.exec(t.replace(/[\(\)]/g,""));return[e[1],e[2]||void 0,e[3]||void 0]},parseV8OrIE:function(e){var r=e.stack.split("\n").filter(function(t){return!!t.match(n)},this);return r.map(function(e){e.indexOf("(eval ")>-1&&(e=e.replace(/eval code/g,"eval").replace(/(\(eval at [^\()]*)|(\)\,.*$)/g,""));var n=e.replace(/^\s+/,"").replace(/\(eval code/g,"(").split(/\s+/).slice(1),r=this.extractLocation(n.pop()),o=n.join(" ")||void 0,s=["eval","<anonymous>"].indexOf(r[0])>-1?void 0:r[0];return new t({functionName:o,fileName:s,lineNumber:r[1],columnNumber:r[2],source:e})},this)},parseFFOrSafari:function(e){var n=e.stack.split("\n").filter(function(t){return!t.match(r)},this);return n.map(function(e){if(e.indexOf(" > eval")>-1&&(e=e.replace(/ line (\d+)(?: > eval line \d+)* > eval\:\d+\:\d+/g,":$1")),-1===e.indexOf("@")&&-1===e.indexOf(":"))return new t({functionName:e});var n=/((.*".+"[^@]*)?[^@]*)(?:@)/,r=e.match(n),o=r&&r[1]?r[1]:void 0,s=this.extractLocation(e.replace(n,""));return new t({functionName:o,fileName:s[0],lineNumber:s[1],columnNumber:s[2],source:e})},this)},parseOpera:function(t){return!t.stacktrace||t.message.indexOf("\n")>-1&&t.message.split("\n").length>t.stacktrace.split("\n").length?this.parseOpera9(t):t.stack?this.parseOpera11(t):this.parseOpera10(t)},parseOpera9:function(e){for(var n=/Line (\d+).*script (?:in )?(\S+)/i,r=e.message.split("\n"),o=[],s=2,i=r.length;s<i;s+=2){var a=n.exec(r[s]);a&&o.push(new t({fileName:a[2],lineNumber:a[1],source:r[s]}))}return o},parseOpera10:function(e){for(var n=/Line (\d+).*script (?:in )?(\S+)(?:: In function (\S+))?$/i,r=e.stacktrace.split("\n"),o=[],s=0,i=r.length;s<i;s+=2){var a=n.exec(r[s]);a&&o.push(new t({functionName:a[3]||void 0,fileName:a[2],lineNumber:a[1],source:r[s]}))}return o},parseOpera11:function(n){var r=n.stack.split("\n").filter(function(t){return!!t.match(e)&&!t.match(/^Error created at/)},this);return r.map(function(e){var n,r=e.split("@"),o=this.extractLocation(r.pop()),s=r.shift()||"",i=s.replace(/<anonymous function(: (\w+))?>/,"$2").replace(/\([^\)]*\)/g,"")||void 0;s.match(/\(([^\)]*)\)/)&&(n=s.replace(/^[^\(]+\(([^\)]*)\)$/,"$1"));var a=void 0===n||"[arguments not available]"===n?void 0:n.split(",");return new t({functionName:i,args:a,fileName:o[0],lineNumber:o[1],columnNumber:o[2],source:e})},this)}}})?r.apply(e,o):r)||(t.exports=s)}()},function(t,e,n){var r,o,s;!function(n,i){"use strict";o=[],void 0===(s="function"==typeof(r=function(){function t(t){return!isNaN(parseFloat(t))&&isFinite(t)}function e(t){return t.charAt(0).toUpperCase()+t.substring(1)}function n(t){return function(){return this[t]}}var r=["isConstructor","isEval","isNative","isToplevel"],o=["columnNumber","lineNumber"],s=["fileName","functionName","source"],i=r.concat(o,s,["args"]);function a(t){if(t instanceof Object)for(var n=0;n<i.length;n++)t.hasOwnProperty(i[n])&&void 0!==t[i[n]]&&this["set"+e(i[n])](t[i[n]])}a.prototype={getArgs:function(){return this.args},setArgs:function(t){if("[object Array]"!==Object.prototype.toString.call(t))throw new TypeError("Args must be an Array");this.args=t},getEvalOrigin:function(){return this.evalOrigin},setEvalOrigin:function(t){if(t instanceof a)this.evalOrigin=t;else{if(!(t instanceof Object))throw new TypeError("Eval Origin must be an Object or StackFrame");this.evalOrigin=new a(t)}},toString:function(){var e=this.getFunctionName()||"{anonymous}",n="("+(this.getArgs()||[]).join(",")+")",r=this.getFileName()?"@"+this.getFileName():"",o=t(this.getLineNumber())?":"+this.getLineNumber():"",s=t(this.getColumnNumber())?":"+this.getColumnNumber():"";return e+n+r+o+s}};for(var c=0;c<r.length;c++)a.prototype["get"+e(r[c])]=n(r[c]),a.prototype["set"+e(r[c])]=function(t){return function(e){this[t]=Boolean(e)}}(r[c]);for(var u=0;u<o.length;u++)a.prototype["get"+e(o[u])]=n(o[u]),a.prototype["set"+e(o[u])]=function(e){return function(n){if(!t(n))throw new TypeError(e+" must be a Number");this[e]=Number(n)}}(o[u]);for(var l=0;l<s.length;l++)a.prototype["get"+e(s[l])]=n(s[l]),a.prototype["set"+e(s[l])]=function(t){return function(e){this[t]=String(e)}}(s[l]);return a})?r.apply(e,o):r)||(t.exports=s)}()},function(t,e,n){"use strict";var r=n(115),o=n(3),s=n(26),i=n(31),a=n(32),c=n(20),u=n(117),l=n(118),p=Math.max,f=Math.min,h=Math.floor,d=/\$([$&'`]|\d\d?|<[^>]*>)/g,b=/\$([$&'`]|\d\d?)/g;r("replace",2,function(t,e,n){return[function(n,r){var o=c(this),s=null==n?void 0:n[t];return void 0!==s?s.call(n,o,r):e.call(String(o),n,r)},function(t,s){var c=n(e,t,this,s);if(c.done)return c.value;var h=o(t),d=String(this),b="function"==typeof s;b||(s=String(s));var g=h.global;if(g){var m=h.unicode;h.lastIndex=0}for(var y=[];;){var v=l(h,d);if(null===v)break;if(y.push(v),!g)break;""===String(v[0])&&(h.lastIndex=u(d,i(h.lastIndex),m))}for(var w,O="",x=0,j=0;j<y.length;j++){v=y[j];for(var k=String(v[0]),S=p(f(a(v.index),d.length),0),A=[],T=1;T<v.length;T++)A.push(void 0===(w=v[T])?w:String(w));var E=v.groups;if(b){var I=[k].concat(A,S,d);void 0!==E&&I.push(E);var P=String(s.apply(void 0,I))}else P=r(k,d,S,A,E,s);S>=x&&(O+=d.slice(x,S)+P,x=S+k.length)}return O+d.slice(x)}];function r(t,n,r,o,i,a){var c=r+t.length,u=o.length,l=b;return void 0!==i&&(i=s(i),l=d),e.call(a,l,function(e,s){var a;switch(s.charAt(0)){case"$":return"$";case"&":return t;case"`":return n.slice(0,r);case"'":return n.slice(c);case"<":a=i[s.slice(1,-1)];break;default:var l=+s;if(0===l)return e;if(l>u){var p=h(l/10);return 0===p?e:p<=u?void 0===o[p-1]?s.charAt(1):o[p-1]+s.charAt(1):e}a=o[l-1]}return void 0===a?"":a})}})},function(t,e,n){"use strict";var r=n(12),o=n(16),s=n(2),i=n(1),a=n(76),c=i("species"),u=!s(function(){var t=/./;return t.exec=function(){var t=[];return t.groups={a:"7"},t},"7"!=="".replace(t,"$<a>")}),l=!s(function(){var t=/(?:)/,e=t.exec;t.exec=function(){return e.apply(this,arguments)};var n="ab".split(t);return 2!==n.length||"a"!==n[0]||"b"!==n[1]});t.exports=function(t,e,n,p){var f=i(t),h=!s(function(){var e={};return e[f]=function(){return 7},7!=""[t](e)}),d=h&&!s(function(){var e=!1,n=/a/;return n.exec=function(){return e=!0,null},"split"===t&&(n.constructor={},n.constructor[c]=function(){return n}),n[f](""),!e});if(!h||!d||"replace"===t&&!u||"split"===t&&!l){var b=/./[f],g=n(f,""[t],function(t,e,n,r,o){return e.exec===a?h&&!o?{done:!0,value:b.call(e,n,r)}:{done:!0,value:t.call(n,e,r)}:{done:!1}}),m=g[0],y=g[1];o(String.prototype,t,m),o(RegExp.prototype,f,2==e?function(t,e){return y.call(t,this,e)}:function(t){return y.call(t,this)}),p&&r(RegExp.prototype[f],"sham",!0)}}},function(t,e,n){"use strict";var r=n(3);t.exports=function(){var t=r(this),e="";return t.global&&(e+="g"),t.ignoreCase&&(e+="i"),t.multiline&&(e+="m"),t.dotAll&&(e+="s"),t.unicode&&(e+="u"),t.sticky&&(e+="y"),e}},function(t,e,n){"use strict";var r=n(48).charAt;t.exports=function(t,e,n){return e+(n?r(t,e).length:1)}},function(t,e,n){var r=n(15),o=n(76);t.exports=function(t,e){var n=t.exec;if("function"==typeof n){var s=n.call(t,e);if("object"!=typeof s)throw TypeError("RegExp exec method returned something other than an Object or null");return s}if("RegExp"!==r(t))throw TypeError("RegExp#exec called on incompatible receiver");return o.call(t,e)}},function(t,e){t.exports="object"==typeof self?self.FormData:window.FormData},function(t,e,n){var r,o;
-/*!
- * JavaScript Cookie v2.2.0
- * https://github.com/js-cookie/js-cookie
+window["cvat"] =
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// define __esModule on exports
+/******/ 	__webpack_require__.r = function(exports) {
+/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 		}
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
+/******/
+/******/ 	// create a fake namespace object
+/******/ 	// mode & 1: value is a module id, require it
+/******/ 	// mode & 2: merge all properties of value into the ns
+/******/ 	// mode & 4: return value when already ns object
+/******/ 	// mode & 8|1: behave like require
+/******/ 	__webpack_require__.t = function(value, mode) {
+/******/ 		if(mode & 1) value = __webpack_require__(value);
+/******/ 		if(mode & 8) return value;
+/******/ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
+/******/ 		var ns = Object.create(null);
+/******/ 		__webpack_require__.r(ns);
+/******/ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
+/******/ 		if(mode & 2 && typeof value != 'string') for(var key in value) __webpack_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
+/******/ 		return ns;
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+/******/
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/api.js");
+/******/ })
+/************************************************************************/
+/******/ ({
+
+/***/ "./node_modules/axios/index.js":
+/*!*************************************!*\
+  !*** ./node_modules/axios/index.js ***!
+  \*************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(/*! ./lib/axios */ "./node_modules/axios/lib/axios.js");
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/adapters/xhr.js":
+/*!************************************************!*\
+  !*** ./node_modules/axios/lib/adapters/xhr.js ***!
+  \************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+var settle = __webpack_require__(/*! ./../core/settle */ "./node_modules/axios/lib/core/settle.js");
+var buildURL = __webpack_require__(/*! ./../helpers/buildURL */ "./node_modules/axios/lib/helpers/buildURL.js");
+var parseHeaders = __webpack_require__(/*! ./../helpers/parseHeaders */ "./node_modules/axios/lib/helpers/parseHeaders.js");
+var isURLSameOrigin = __webpack_require__(/*! ./../helpers/isURLSameOrigin */ "./node_modules/axios/lib/helpers/isURLSameOrigin.js");
+var createError = __webpack_require__(/*! ../core/createError */ "./node_modules/axios/lib/core/createError.js");
+
+module.exports = function xhrAdapter(config) {
+  return new Promise(function dispatchXhrRequest(resolve, reject) {
+    var requestData = config.data;
+    var requestHeaders = config.headers;
+
+    if (utils.isFormData(requestData)) {
+      delete requestHeaders['Content-Type']; // Let the browser set it
+    }
+
+    var request = new XMLHttpRequest();
+
+    // HTTP basic authentication
+    if (config.auth) {
+      var username = config.auth.username || '';
+      var password = config.auth.password || '';
+      requestHeaders.Authorization = 'Basic ' + btoa(username + ':' + password);
+    }
+
+    request.open(config.method.toUpperCase(), buildURL(config.url, config.params, config.paramsSerializer), true);
+
+    // Set the request timeout in MS
+    request.timeout = config.timeout;
+
+    // Listen for ready state
+    request.onreadystatechange = function handleLoad() {
+      if (!request || request.readyState !== 4) {
+        return;
+      }
+
+      // The request errored out and we didn't get a response, this will be
+      // handled by onerror instead
+      // With one exception: request that using file: protocol, most browsers
+      // will return status as 0 even though it's a successful request
+      if (request.status === 0 && !(request.responseURL && request.responseURL.indexOf('file:') === 0)) {
+        return;
+      }
+
+      // Prepare the response
+      var responseHeaders = 'getAllResponseHeaders' in request ? parseHeaders(request.getAllResponseHeaders()) : null;
+      var responseData = !config.responseType || config.responseType === 'text' ? request.responseText : request.response;
+      var response = {
+        data: responseData,
+        status: request.status,
+        statusText: request.statusText,
+        headers: responseHeaders,
+        config: config,
+        request: request
+      };
+
+      settle(resolve, reject, response);
+
+      // Clean up request
+      request = null;
+    };
+
+    // Handle low level network errors
+    request.onerror = function handleError() {
+      // Real errors are hidden from us by the browser
+      // onerror should only fire if it's a network error
+      reject(createError('Network Error', config, null, request));
+
+      // Clean up request
+      request = null;
+    };
+
+    // Handle timeout
+    request.ontimeout = function handleTimeout() {
+      reject(createError('timeout of ' + config.timeout + 'ms exceeded', config, 'ECONNABORTED',
+        request));
+
+      // Clean up request
+      request = null;
+    };
+
+    // Add xsrf header
+    // This is only done if running in a standard browser environment.
+    // Specifically not if we're in a web worker, or react-native.
+    if (utils.isStandardBrowserEnv()) {
+      var cookies = __webpack_require__(/*! ./../helpers/cookies */ "./node_modules/axios/lib/helpers/cookies.js");
+
+      // Add xsrf header
+      var xsrfValue = (config.withCredentials || isURLSameOrigin(config.url)) && config.xsrfCookieName ?
+          cookies.read(config.xsrfCookieName) :
+          undefined;
+
+      if (xsrfValue) {
+        requestHeaders[config.xsrfHeaderName] = xsrfValue;
+      }
+    }
+
+    // Add headers to the request
+    if ('setRequestHeader' in request) {
+      utils.forEach(requestHeaders, function setRequestHeader(val, key) {
+        if (typeof requestData === 'undefined' && key.toLowerCase() === 'content-type') {
+          // Remove Content-Type if data is undefined
+          delete requestHeaders[key];
+        } else {
+          // Otherwise add header to the request
+          request.setRequestHeader(key, val);
+        }
+      });
+    }
+
+    // Add withCredentials to request if needed
+    if (config.withCredentials) {
+      request.withCredentials = true;
+    }
+
+    // Add responseType to request if needed
+    if (config.responseType) {
+      try {
+        request.responseType = config.responseType;
+      } catch (e) {
+        // Expected DOMException thrown by browsers not compatible XMLHttpRequest Level 2.
+        // But, this can be suppressed for 'json' type as it can be parsed by default 'transformResponse' function.
+        if (config.responseType !== 'json') {
+          throw e;
+        }
+      }
+    }
+
+    // Handle progress if needed
+    if (typeof config.onDownloadProgress === 'function') {
+      request.addEventListener('progress', config.onDownloadProgress);
+    }
+
+    // Not all browsers support upload events
+    if (typeof config.onUploadProgress === 'function' && request.upload) {
+      request.upload.addEventListener('progress', config.onUploadProgress);
+    }
+
+    if (config.cancelToken) {
+      // Handle cancellation
+      config.cancelToken.promise.then(function onCanceled(cancel) {
+        if (!request) {
+          return;
+        }
+
+        request.abort();
+        reject(cancel);
+        // Clean up request
+        request = null;
+      });
+    }
+
+    if (requestData === undefined) {
+      requestData = null;
+    }
+
+    // Send the request
+    request.send(requestData);
+  });
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/axios.js":
+/*!*****************************************!*\
+  !*** ./node_modules/axios/lib/axios.js ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./utils */ "./node_modules/axios/lib/utils.js");
+var bind = __webpack_require__(/*! ./helpers/bind */ "./node_modules/axios/lib/helpers/bind.js");
+var Axios = __webpack_require__(/*! ./core/Axios */ "./node_modules/axios/lib/core/Axios.js");
+var defaults = __webpack_require__(/*! ./defaults */ "./node_modules/axios/lib/defaults.js");
+
+/**
+ * Create an instance of Axios
  *
- * Copyright 2006, 2015 Klaus Hartl & Fagner Brack
- * Released under the MIT license
- */!function(s){if(void 0===(o="function"==typeof(r=s)?r.call(e,n,e,t):r)||(t.exports=o),!0,t.exports=s(),!!0){var i=window.Cookies,a=window.Cookies=s();a.noConflict=function(){return window.Cookies=i,a}}}(function(){function t(){for(var t=0,e={};t<arguments.length;t++){var n=arguments[t];for(var r in n)e[r]=n[r]}return e}return function e(n){function r(e,o,s){var i;if("undefined"!=typeof document){if(arguments.length>1){if("number"==typeof(s=t({path:"/"},r.defaults,s)).expires){var a=new Date;a.setMilliseconds(a.getMilliseconds()+864e5*s.expires),s.expires=a}s.expires=s.expires?s.expires.toUTCString():"";try{i=JSON.stringify(o),/^[\{\[]/.test(i)&&(o=i)}catch(t){}o=n.write?n.write(o,e):encodeURIComponent(String(o)).replace(/%(23|24|26|2B|3A|3C|3E|3D|2F|3F|40|5B|5D|5E|60|7B|7D|7C)/g,decodeURIComponent),e=(e=(e=encodeURIComponent(String(e))).replace(/%(23|24|26|2B|5E|60|7C)/g,decodeURIComponent)).replace(/[\(\)]/g,escape);var c="";for(var u in s)s[u]&&(c+="; "+u,!0!==s[u]&&(c+="="+s[u]));return document.cookie=e+"="+o+c}e||(i={});for(var l=document.cookie?document.cookie.split("; "):[],p=/(%[0-9A-Z]{2})+/g,f=0;f<l.length;f++){var h=l[f].split("="),d=h.slice(1).join("=");this.json||'"'!==d.charAt(0)||(d=d.slice(1,-1));try{var b=h[0].replace(p,decodeURIComponent);if(d=n.read?n.read(d,b):n(d,b)||d.replace(p,decodeURIComponent),this.json)try{d=JSON.parse(d)}catch(t){}if(e===b){i=d;break}e||(i[b]=d)}catch(t){}}return i}}return r.set=r,r.get=function(t){return r.call(r,t)},r.getJSON=function(){return r.apply({json:!0},[].slice.call(arguments))},r.defaults={},r.remove=function(e,n){r(e,"",t(n,{expires:-1}))},r.withConverter=e,r}(function(){})})},function(t,e,n){t.exports=n(122)},function(t,e,n){"use strict";var r=n(6),o=n(77),s=n(124),i=n(49);function a(t){var e=new s(t),n=o(s.prototype.request,e);return r.extend(n,s.prototype,e),r.extend(n,e),n}var c=a(i);c.Axios=s,c.create=function(t){return a(r.merge(i,t))},c.Cancel=n(81),c.CancelToken=n(138),c.isCancel=n(80),c.all=function(t){return Promise.all(t)},c.spread=n(139),t.exports=c,t.exports.default=c},function(t,e){
+ * @param {Object} defaultConfig The default config for the instance
+ * @return {Axios} A new instance of Axios
+ */
+function createInstance(defaultConfig) {
+  var context = new Axios(defaultConfig);
+  var instance = bind(Axios.prototype.request, context);
+
+  // Copy axios.prototype to instance
+  utils.extend(instance, Axios.prototype, context);
+
+  // Copy context to instance
+  utils.extend(instance, context);
+
+  return instance;
+}
+
+// Create the default instance to be exported
+var axios = createInstance(defaults);
+
+// Expose Axios class to allow class inheritance
+axios.Axios = Axios;
+
+// Factory for creating new instances
+axios.create = function create(instanceConfig) {
+  return createInstance(utils.merge(defaults, instanceConfig));
+};
+
+// Expose Cancel & CancelToken
+axios.Cancel = __webpack_require__(/*! ./cancel/Cancel */ "./node_modules/axios/lib/cancel/Cancel.js");
+axios.CancelToken = __webpack_require__(/*! ./cancel/CancelToken */ "./node_modules/axios/lib/cancel/CancelToken.js");
+axios.isCancel = __webpack_require__(/*! ./cancel/isCancel */ "./node_modules/axios/lib/cancel/isCancel.js");
+
+// Expose all/spread
+axios.all = function all(promises) {
+  return Promise.all(promises);
+};
+axios.spread = __webpack_require__(/*! ./helpers/spread */ "./node_modules/axios/lib/helpers/spread.js");
+
+module.exports = axios;
+
+// Allow use of default import syntax in TypeScript
+module.exports.default = axios;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/cancel/Cancel.js":
+/*!*************************************************!*\
+  !*** ./node_modules/axios/lib/cancel/Cancel.js ***!
+  \*************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/**
+ * A `Cancel` is an object that is thrown when an operation is canceled.
+ *
+ * @class
+ * @param {string=} message The message.
+ */
+function Cancel(message) {
+  this.message = message;
+}
+
+Cancel.prototype.toString = function toString() {
+  return 'Cancel' + (this.message ? ': ' + this.message : '');
+};
+
+Cancel.prototype.__CANCEL__ = true;
+
+module.exports = Cancel;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/cancel/CancelToken.js":
+/*!******************************************************!*\
+  !*** ./node_modules/axios/lib/cancel/CancelToken.js ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var Cancel = __webpack_require__(/*! ./Cancel */ "./node_modules/axios/lib/cancel/Cancel.js");
+
+/**
+ * A `CancelToken` is an object that can be used to request cancellation of an operation.
+ *
+ * @class
+ * @param {Function} executor The executor function.
+ */
+function CancelToken(executor) {
+  if (typeof executor !== 'function') {
+    throw new TypeError('executor must be a function.');
+  }
+
+  var resolvePromise;
+  this.promise = new Promise(function promiseExecutor(resolve) {
+    resolvePromise = resolve;
+  });
+
+  var token = this;
+  executor(function cancel(message) {
+    if (token.reason) {
+      // Cancellation has already been requested
+      return;
+    }
+
+    token.reason = new Cancel(message);
+    resolvePromise(token.reason);
+  });
+}
+
+/**
+ * Throws a `Cancel` if cancellation has been requested.
+ */
+CancelToken.prototype.throwIfRequested = function throwIfRequested() {
+  if (this.reason) {
+    throw this.reason;
+  }
+};
+
+/**
+ * Returns an object that contains a new `CancelToken` and a function that, when called,
+ * cancels the `CancelToken`.
+ */
+CancelToken.source = function source() {
+  var cancel;
+  var token = new CancelToken(function executor(c) {
+    cancel = c;
+  });
+  return {
+    token: token,
+    cancel: cancel
+  };
+};
+
+module.exports = CancelToken;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/cancel/isCancel.js":
+/*!***************************************************!*\
+  !*** ./node_modules/axios/lib/cancel/isCancel.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = function isCancel(value) {
+  return !!(value && value.__CANCEL__);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/Axios.js":
+/*!**********************************************!*\
+  !*** ./node_modules/axios/lib/core/Axios.js ***!
+  \**********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var defaults = __webpack_require__(/*! ./../defaults */ "./node_modules/axios/lib/defaults.js");
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+var InterceptorManager = __webpack_require__(/*! ./InterceptorManager */ "./node_modules/axios/lib/core/InterceptorManager.js");
+var dispatchRequest = __webpack_require__(/*! ./dispatchRequest */ "./node_modules/axios/lib/core/dispatchRequest.js");
+
+/**
+ * Create a new instance of Axios
+ *
+ * @param {Object} instanceConfig The default config for the instance
+ */
+function Axios(instanceConfig) {
+  this.defaults = instanceConfig;
+  this.interceptors = {
+    request: new InterceptorManager(),
+    response: new InterceptorManager()
+  };
+}
+
+/**
+ * Dispatch a request
+ *
+ * @param {Object} config The config specific for this request (merged with this.defaults)
+ */
+Axios.prototype.request = function request(config) {
+  /*eslint no-param-reassign:0*/
+  // Allow for axios('example/url'[, config]) a la fetch API
+  if (typeof config === 'string') {
+    config = utils.merge({
+      url: arguments[0]
+    }, arguments[1]);
+  }
+
+  config = utils.merge(defaults, {method: 'get'}, this.defaults, config);
+  config.method = config.method.toLowerCase();
+
+  // Hook up interceptors middleware
+  var chain = [dispatchRequest, undefined];
+  var promise = Promise.resolve(config);
+
+  this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
+    chain.unshift(interceptor.fulfilled, interceptor.rejected);
+  });
+
+  this.interceptors.response.forEach(function pushResponseInterceptors(interceptor) {
+    chain.push(interceptor.fulfilled, interceptor.rejected);
+  });
+
+  while (chain.length) {
+    promise = promise.then(chain.shift(), chain.shift());
+  }
+
+  return promise;
+};
+
+// Provide aliases for supported request methods
+utils.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData(method) {
+  /*eslint func-names:0*/
+  Axios.prototype[method] = function(url, config) {
+    return this.request(utils.merge(config || {}, {
+      method: method,
+      url: url
+    }));
+  };
+});
+
+utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
+  /*eslint func-names:0*/
+  Axios.prototype[method] = function(url, data, config) {
+    return this.request(utils.merge(config || {}, {
+      method: method,
+      url: url,
+      data: data
+    }));
+  };
+});
+
+module.exports = Axios;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/InterceptorManager.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/axios/lib/core/InterceptorManager.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+function InterceptorManager() {
+  this.handlers = [];
+}
+
+/**
+ * Add a new interceptor to the stack
+ *
+ * @param {Function} fulfilled The function to handle `then` for a `Promise`
+ * @param {Function} rejected The function to handle `reject` for a `Promise`
+ *
+ * @return {Number} An ID used to remove interceptor later
+ */
+InterceptorManager.prototype.use = function use(fulfilled, rejected) {
+  this.handlers.push({
+    fulfilled: fulfilled,
+    rejected: rejected
+  });
+  return this.handlers.length - 1;
+};
+
+/**
+ * Remove an interceptor from the stack
+ *
+ * @param {Number} id The ID that was returned by `use`
+ */
+InterceptorManager.prototype.eject = function eject(id) {
+  if (this.handlers[id]) {
+    this.handlers[id] = null;
+  }
+};
+
+/**
+ * Iterate over all the registered interceptors
+ *
+ * This method is particularly useful for skipping over any
+ * interceptors that may have become `null` calling `eject`.
+ *
+ * @param {Function} fn The function to call for each interceptor
+ */
+InterceptorManager.prototype.forEach = function forEach(fn) {
+  utils.forEach(this.handlers, function forEachHandler(h) {
+    if (h !== null) {
+      fn(h);
+    }
+  });
+};
+
+module.exports = InterceptorManager;
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/createError.js":
+/*!****************************************************!*\
+  !*** ./node_modules/axios/lib/core/createError.js ***!
+  \****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var enhanceError = __webpack_require__(/*! ./enhanceError */ "./node_modules/axios/lib/core/enhanceError.js");
+
+/**
+ * Create an Error with the specified message, config, error code, request and response.
+ *
+ * @param {string} message The error message.
+ * @param {Object} config The config.
+ * @param {string} [code] The error code (for example, 'ECONNABORTED').
+ * @param {Object} [request] The request.
+ * @param {Object} [response] The response.
+ * @returns {Error} The created error.
+ */
+module.exports = function createError(message, config, code, request, response) {
+  var error = new Error(message);
+  return enhanceError(error, config, code, request, response);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/dispatchRequest.js":
+/*!********************************************************!*\
+  !*** ./node_modules/axios/lib/core/dispatchRequest.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+var transformData = __webpack_require__(/*! ./transformData */ "./node_modules/axios/lib/core/transformData.js");
+var isCancel = __webpack_require__(/*! ../cancel/isCancel */ "./node_modules/axios/lib/cancel/isCancel.js");
+var defaults = __webpack_require__(/*! ../defaults */ "./node_modules/axios/lib/defaults.js");
+var isAbsoluteURL = __webpack_require__(/*! ./../helpers/isAbsoluteURL */ "./node_modules/axios/lib/helpers/isAbsoluteURL.js");
+var combineURLs = __webpack_require__(/*! ./../helpers/combineURLs */ "./node_modules/axios/lib/helpers/combineURLs.js");
+
+/**
+ * Throws a `Cancel` if cancellation has been requested.
+ */
+function throwIfCancellationRequested(config) {
+  if (config.cancelToken) {
+    config.cancelToken.throwIfRequested();
+  }
+}
+
+/**
+ * Dispatch a request to the server using the configured adapter.
+ *
+ * @param {object} config The config that is to be used for the request
+ * @returns {Promise} The Promise to be fulfilled
+ */
+module.exports = function dispatchRequest(config) {
+  throwIfCancellationRequested(config);
+
+  // Support baseURL config
+  if (config.baseURL && !isAbsoluteURL(config.url)) {
+    config.url = combineURLs(config.baseURL, config.url);
+  }
+
+  // Ensure headers exist
+  config.headers = config.headers || {};
+
+  // Transform request data
+  config.data = transformData(
+    config.data,
+    config.headers,
+    config.transformRequest
+  );
+
+  // Flatten headers
+  config.headers = utils.merge(
+    config.headers.common || {},
+    config.headers[config.method] || {},
+    config.headers || {}
+  );
+
+  utils.forEach(
+    ['delete', 'get', 'head', 'post', 'put', 'patch', 'common'],
+    function cleanHeaderConfig(method) {
+      delete config.headers[method];
+    }
+  );
+
+  var adapter = config.adapter || defaults.adapter;
+
+  return adapter(config).then(function onAdapterResolution(response) {
+    throwIfCancellationRequested(config);
+
+    // Transform response data
+    response.data = transformData(
+      response.data,
+      response.headers,
+      config.transformResponse
+    );
+
+    return response;
+  }, function onAdapterRejection(reason) {
+    if (!isCancel(reason)) {
+      throwIfCancellationRequested(config);
+
+      // Transform response data
+      if (reason && reason.response) {
+        reason.response.data = transformData(
+          reason.response.data,
+          reason.response.headers,
+          config.transformResponse
+        );
+      }
+    }
+
+    return Promise.reject(reason);
+  });
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/enhanceError.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/axios/lib/core/enhanceError.js ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/**
+ * Update an Error with the specified config, error code, and response.
+ *
+ * @param {Error} error The error to update.
+ * @param {Object} config The config.
+ * @param {string} [code] The error code (for example, 'ECONNABORTED').
+ * @param {Object} [request] The request.
+ * @param {Object} [response] The response.
+ * @returns {Error} The error.
+ */
+module.exports = function enhanceError(error, config, code, request, response) {
+  error.config = config;
+  if (code) {
+    error.code = code;
+  }
+  error.request = request;
+  error.response = response;
+  return error;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/settle.js":
+/*!***********************************************!*\
+  !*** ./node_modules/axios/lib/core/settle.js ***!
+  \***********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var createError = __webpack_require__(/*! ./createError */ "./node_modules/axios/lib/core/createError.js");
+
+/**
+ * Resolve or reject a Promise based on response status.
+ *
+ * @param {Function} resolve A function that resolves the promise.
+ * @param {Function} reject A function that rejects the promise.
+ * @param {object} response The response.
+ */
+module.exports = function settle(resolve, reject, response) {
+  var validateStatus = response.config.validateStatus;
+  // Note: status is not exposed by XDomainRequest
+  if (!response.status || !validateStatus || validateStatus(response.status)) {
+    resolve(response);
+  } else {
+    reject(createError(
+      'Request failed with status code ' + response.status,
+      response.config,
+      null,
+      response.request,
+      response
+    ));
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/core/transformData.js":
+/*!******************************************************!*\
+  !*** ./node_modules/axios/lib/core/transformData.js ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+/**
+ * Transform the data for a request or a response
+ *
+ * @param {Object|String} data The data to be transformed
+ * @param {Array} headers The headers for the request or response
+ * @param {Array|Function} fns A single function or Array of functions
+ * @returns {*} The resulting transformed data
+ */
+module.exports = function transformData(data, headers, fns) {
+  /*eslint no-param-reassign:0*/
+  utils.forEach(fns, function transform(fn) {
+    data = fn(data, headers);
+  });
+
+  return data;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/defaults.js":
+/*!********************************************!*\
+  !*** ./node_modules/axios/lib/defaults.js ***!
+  \********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(process) {
+
+var utils = __webpack_require__(/*! ./utils */ "./node_modules/axios/lib/utils.js");
+var normalizeHeaderName = __webpack_require__(/*! ./helpers/normalizeHeaderName */ "./node_modules/axios/lib/helpers/normalizeHeaderName.js");
+
+var DEFAULT_CONTENT_TYPE = {
+  'Content-Type': 'application/x-www-form-urlencoded'
+};
+
+function setContentTypeIfUnset(headers, value) {
+  if (!utils.isUndefined(headers) && utils.isUndefined(headers['Content-Type'])) {
+    headers['Content-Type'] = value;
+  }
+}
+
+function getDefaultAdapter() {
+  var adapter;
+  if (typeof XMLHttpRequest !== 'undefined') {
+    // For browsers use XHR adapter
+    adapter = __webpack_require__(/*! ./adapters/xhr */ "./node_modules/axios/lib/adapters/xhr.js");
+  } else if (typeof process !== 'undefined') {
+    // For node use HTTP adapter
+    adapter = __webpack_require__(/*! ./adapters/http */ "./node_modules/axios/lib/adapters/xhr.js");
+  }
+  return adapter;
+}
+
+var defaults = {
+  adapter: getDefaultAdapter(),
+
+  transformRequest: [function transformRequest(data, headers) {
+    normalizeHeaderName(headers, 'Content-Type');
+    if (utils.isFormData(data) ||
+      utils.isArrayBuffer(data) ||
+      utils.isBuffer(data) ||
+      utils.isStream(data) ||
+      utils.isFile(data) ||
+      utils.isBlob(data)
+    ) {
+      return data;
+    }
+    if (utils.isArrayBufferView(data)) {
+      return data.buffer;
+    }
+    if (utils.isURLSearchParams(data)) {
+      setContentTypeIfUnset(headers, 'application/x-www-form-urlencoded;charset=utf-8');
+      return data.toString();
+    }
+    if (utils.isObject(data)) {
+      setContentTypeIfUnset(headers, 'application/json;charset=utf-8');
+      return JSON.stringify(data);
+    }
+    return data;
+  }],
+
+  transformResponse: [function transformResponse(data) {
+    /*eslint no-param-reassign:0*/
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch (e) { /* Ignore */ }
+    }
+    return data;
+  }],
+
+  /**
+   * A timeout in milliseconds to abort a request. If set to 0 (default) a
+   * timeout is not created.
+   */
+  timeout: 0,
+
+  xsrfCookieName: 'XSRF-TOKEN',
+  xsrfHeaderName: 'X-XSRF-TOKEN',
+
+  maxContentLength: -1,
+
+  validateStatus: function validateStatus(status) {
+    return status >= 200 && status < 300;
+  }
+};
+
+defaults.headers = {
+  common: {
+    'Accept': 'application/json, text/plain, */*'
+  }
+};
+
+utils.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
+  defaults.headers[method] = {};
+});
+
+utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
+  defaults.headers[method] = utils.merge(DEFAULT_CONTENT_TYPE);
+});
+
+module.exports = defaults;
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../process/browser.js */ "./node_modules/process/browser.js")))
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/bind.js":
+/*!************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/bind.js ***!
+  \************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+module.exports = function bind(fn, thisArg) {
+  return function wrap() {
+    var args = new Array(arguments.length);
+    for (var i = 0; i < args.length; i++) {
+      args[i] = arguments[i];
+    }
+    return fn.apply(thisArg, args);
+  };
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/buildURL.js":
+/*!****************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/buildURL.js ***!
+  \****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+function encode(val) {
+  return encodeURIComponent(val).
+    replace(/%40/gi, '@').
+    replace(/%3A/gi, ':').
+    replace(/%24/g, '$').
+    replace(/%2C/gi, ',').
+    replace(/%20/g, '+').
+    replace(/%5B/gi, '[').
+    replace(/%5D/gi, ']');
+}
+
+/**
+ * Build a URL by appending params to the end
+ *
+ * @param {string} url The base of the url (e.g., http://www.google.com)
+ * @param {object} [params] The params to be appended
+ * @returns {string} The formatted url
+ */
+module.exports = function buildURL(url, params, paramsSerializer) {
+  /*eslint no-param-reassign:0*/
+  if (!params) {
+    return url;
+  }
+
+  var serializedParams;
+  if (paramsSerializer) {
+    serializedParams = paramsSerializer(params);
+  } else if (utils.isURLSearchParams(params)) {
+    serializedParams = params.toString();
+  } else {
+    var parts = [];
+
+    utils.forEach(params, function serialize(val, key) {
+      if (val === null || typeof val === 'undefined') {
+        return;
+      }
+
+      if (utils.isArray(val)) {
+        key = key + '[]';
+      } else {
+        val = [val];
+      }
+
+      utils.forEach(val, function parseValue(v) {
+        if (utils.isDate(v)) {
+          v = v.toISOString();
+        } else if (utils.isObject(v)) {
+          v = JSON.stringify(v);
+        }
+        parts.push(encode(key) + '=' + encode(v));
+      });
+    });
+
+    serializedParams = parts.join('&');
+  }
+
+  if (serializedParams) {
+    url += (url.indexOf('?') === -1 ? '?' : '&') + serializedParams;
+  }
+
+  return url;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/combineURLs.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/combineURLs.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/**
+ * Creates a new URL by combining the specified URLs
+ *
+ * @param {string} baseURL The base URL
+ * @param {string} relativeURL The relative URL
+ * @returns {string} The combined URL
+ */
+module.exports = function combineURLs(baseURL, relativeURL) {
+  return relativeURL
+    ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '')
+    : baseURL;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/cookies.js":
+/*!***************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/cookies.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+module.exports = (
+  utils.isStandardBrowserEnv() ?
+
+  // Standard browser envs support document.cookie
+  (function standardBrowserEnv() {
+    return {
+      write: function write(name, value, expires, path, domain, secure) {
+        var cookie = [];
+        cookie.push(name + '=' + encodeURIComponent(value));
+
+        if (utils.isNumber(expires)) {
+          cookie.push('expires=' + new Date(expires).toGMTString());
+        }
+
+        if (utils.isString(path)) {
+          cookie.push('path=' + path);
+        }
+
+        if (utils.isString(domain)) {
+          cookie.push('domain=' + domain);
+        }
+
+        if (secure === true) {
+          cookie.push('secure');
+        }
+
+        document.cookie = cookie.join('; ');
+      },
+
+      read: function read(name) {
+        var match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
+        return (match ? decodeURIComponent(match[3]) : null);
+      },
+
+      remove: function remove(name) {
+        this.write(name, '', Date.now() - 86400000);
+      }
+    };
+  })() :
+
+  // Non standard browser env (web workers, react-native) lack needed support.
+  (function nonStandardBrowserEnv() {
+    return {
+      write: function write() {},
+      read: function read() { return null; },
+      remove: function remove() {}
+    };
+  })()
+);
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/isAbsoluteURL.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/isAbsoluteURL.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/**
+ * Determines whether the specified URL is absolute
+ *
+ * @param {string} url The URL to test
+ * @returns {boolean} True if the specified URL is absolute, otherwise false
+ */
+module.exports = function isAbsoluteURL(url) {
+  // A URL is considered absolute if it begins with "<scheme>://" or "//" (protocol-relative URL).
+  // RFC 3986 defines scheme name as a sequence of characters beginning with a letter and followed
+  // by any combination of letters, digits, plus, period, or hyphen.
+  return /^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(url);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/isURLSameOrigin.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/isURLSameOrigin.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+module.exports = (
+  utils.isStandardBrowserEnv() ?
+
+  // Standard browser envs have full support of the APIs needed to test
+  // whether the request URL is of the same origin as current location.
+  (function standardBrowserEnv() {
+    var msie = /(msie|trident)/i.test(navigator.userAgent);
+    var urlParsingNode = document.createElement('a');
+    var originURL;
+
+    /**
+    * Parse a URL to discover it's components
+    *
+    * @param {String} url The URL to be parsed
+    * @returns {Object}
+    */
+    function resolveURL(url) {
+      var href = url;
+
+      if (msie) {
+        // IE needs attribute set twice to normalize properties
+        urlParsingNode.setAttribute('href', href);
+        href = urlParsingNode.href;
+      }
+
+      urlParsingNode.setAttribute('href', href);
+
+      // urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
+      return {
+        href: urlParsingNode.href,
+        protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, '') : '',
+        host: urlParsingNode.host,
+        search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, '') : '',
+        hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, '') : '',
+        hostname: urlParsingNode.hostname,
+        port: urlParsingNode.port,
+        pathname: (urlParsingNode.pathname.charAt(0) === '/') ?
+                  urlParsingNode.pathname :
+                  '/' + urlParsingNode.pathname
+      };
+    }
+
+    originURL = resolveURL(window.location.href);
+
+    /**
+    * Determine if a URL shares the same origin as the current location
+    *
+    * @param {String} requestURL The URL to test
+    * @returns {boolean} True if URL shares the same origin, otherwise false
+    */
+    return function isURLSameOrigin(requestURL) {
+      var parsed = (utils.isString(requestURL)) ? resolveURL(requestURL) : requestURL;
+      return (parsed.protocol === originURL.protocol &&
+            parsed.host === originURL.host);
+    };
+  })() :
+
+  // Non standard browser envs (web workers, react-native) lack needed support.
+  (function nonStandardBrowserEnv() {
+    return function isURLSameOrigin() {
+      return true;
+    };
+  })()
+);
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/normalizeHeaderName.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/normalizeHeaderName.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ../utils */ "./node_modules/axios/lib/utils.js");
+
+module.exports = function normalizeHeaderName(headers, normalizedName) {
+  utils.forEach(headers, function processHeader(value, name) {
+    if (name !== normalizedName && name.toUpperCase() === normalizedName.toUpperCase()) {
+      headers[normalizedName] = value;
+      delete headers[name];
+    }
+  });
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/parseHeaders.js":
+/*!********************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/parseHeaders.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var utils = __webpack_require__(/*! ./../utils */ "./node_modules/axios/lib/utils.js");
+
+// Headers whose duplicates are ignored by node
+// c.f. https://nodejs.org/api/http.html#http_message_headers
+var ignoreDuplicateOf = [
+  'age', 'authorization', 'content-length', 'content-type', 'etag',
+  'expires', 'from', 'host', 'if-modified-since', 'if-unmodified-since',
+  'last-modified', 'location', 'max-forwards', 'proxy-authorization',
+  'referer', 'retry-after', 'user-agent'
+];
+
+/**
+ * Parse headers into an object
+ *
+ * ```
+ * Date: Wed, 27 Aug 2014 08:58:49 GMT
+ * Content-Type: application/json
+ * Connection: keep-alive
+ * Transfer-Encoding: chunked
+ * ```
+ *
+ * @param {String} headers Headers needing to be parsed
+ * @returns {Object} Headers parsed into an object
+ */
+module.exports = function parseHeaders(headers) {
+  var parsed = {};
+  var key;
+  var val;
+  var i;
+
+  if (!headers) { return parsed; }
+
+  utils.forEach(headers.split('\n'), function parser(line) {
+    i = line.indexOf(':');
+    key = utils.trim(line.substr(0, i)).toLowerCase();
+    val = utils.trim(line.substr(i + 1));
+
+    if (key) {
+      if (parsed[key] && ignoreDuplicateOf.indexOf(key) >= 0) {
+        return;
+      }
+      if (key === 'set-cookie') {
+        parsed[key] = (parsed[key] ? parsed[key] : []).concat([val]);
+      } else {
+        parsed[key] = parsed[key] ? parsed[key] + ', ' + val : val;
+      }
+    }
+  });
+
+  return parsed;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/helpers/spread.js":
+/*!**************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/spread.js ***!
+  \**************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+/**
+ * Syntactic sugar for invoking a function and expanding an array for arguments.
+ *
+ * Common use case would be to use `Function.prototype.apply`.
+ *
+ *  ```js
+ *  function f(x, y, z) {}
+ *  var args = [1, 2, 3];
+ *  f.apply(null, args);
+ *  ```
+ *
+ * With `spread` this example can be re-written.
+ *
+ *  ```js
+ *  spread(function(x, y, z) {})([1, 2, 3]);
+ *  ```
+ *
+ * @param {Function} callback
+ * @returns {Function}
+ */
+module.exports = function spread(callback) {
+  return function wrap(arr) {
+    return callback.apply(null, arr);
+  };
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/axios/lib/utils.js":
+/*!*****************************************!*\
+  !*** ./node_modules/axios/lib/utils.js ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var bind = __webpack_require__(/*! ./helpers/bind */ "./node_modules/axios/lib/helpers/bind.js");
+var isBuffer = __webpack_require__(/*! is-buffer */ "./node_modules/is-buffer/index.js");
+
+/*global toString:true*/
+
+// utils is a library of generic helper functions non-specific to axios
+
+var toString = Object.prototype.toString;
+
+/**
+ * Determine if a value is an Array
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is an Array, otherwise false
+ */
+function isArray(val) {
+  return toString.call(val) === '[object Array]';
+}
+
+/**
+ * Determine if a value is an ArrayBuffer
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is an ArrayBuffer, otherwise false
+ */
+function isArrayBuffer(val) {
+  return toString.call(val) === '[object ArrayBuffer]';
+}
+
+/**
+ * Determine if a value is a FormData
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is an FormData, otherwise false
+ */
+function isFormData(val) {
+  return (typeof FormData !== 'undefined') && (val instanceof FormData);
+}
+
+/**
+ * Determine if a value is a view on an ArrayBuffer
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a view on an ArrayBuffer, otherwise false
+ */
+function isArrayBufferView(val) {
+  var result;
+  if ((typeof ArrayBuffer !== 'undefined') && (ArrayBuffer.isView)) {
+    result = ArrayBuffer.isView(val);
+  } else {
+    result = (val) && (val.buffer) && (val.buffer instanceof ArrayBuffer);
+  }
+  return result;
+}
+
+/**
+ * Determine if a value is a String
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a String, otherwise false
+ */
+function isString(val) {
+  return typeof val === 'string';
+}
+
+/**
+ * Determine if a value is a Number
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Number, otherwise false
+ */
+function isNumber(val) {
+  return typeof val === 'number';
+}
+
+/**
+ * Determine if a value is undefined
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if the value is undefined, otherwise false
+ */
+function isUndefined(val) {
+  return typeof val === 'undefined';
+}
+
+/**
+ * Determine if a value is an Object
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is an Object, otherwise false
+ */
+function isObject(val) {
+  return val !== null && typeof val === 'object';
+}
+
+/**
+ * Determine if a value is a Date
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Date, otherwise false
+ */
+function isDate(val) {
+  return toString.call(val) === '[object Date]';
+}
+
+/**
+ * Determine if a value is a File
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a File, otherwise false
+ */
+function isFile(val) {
+  return toString.call(val) === '[object File]';
+}
+
+/**
+ * Determine if a value is a Blob
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Blob, otherwise false
+ */
+function isBlob(val) {
+  return toString.call(val) === '[object Blob]';
+}
+
+/**
+ * Determine if a value is a Function
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Function, otherwise false
+ */
+function isFunction(val) {
+  return toString.call(val) === '[object Function]';
+}
+
+/**
+ * Determine if a value is a Stream
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a Stream, otherwise false
+ */
+function isStream(val) {
+  return isObject(val) && isFunction(val.pipe);
+}
+
+/**
+ * Determine if a value is a URLSearchParams object
+ *
+ * @param {Object} val The value to test
+ * @returns {boolean} True if value is a URLSearchParams object, otherwise false
+ */
+function isURLSearchParams(val) {
+  return typeof URLSearchParams !== 'undefined' && val instanceof URLSearchParams;
+}
+
+/**
+ * Trim excess whitespace off the beginning and end of a string
+ *
+ * @param {String} str The String to trim
+ * @returns {String} The String freed of excess whitespace
+ */
+function trim(str) {
+  return str.replace(/^\s*/, '').replace(/\s*$/, '');
+}
+
+/**
+ * Determine if we're running in a standard browser environment
+ *
+ * This allows axios to run in a web worker, and react-native.
+ * Both environments support XMLHttpRequest, but not fully standard globals.
+ *
+ * web workers:
+ *  typeof window -> undefined
+ *  typeof document -> undefined
+ *
+ * react-native:
+ *  navigator.product -> 'ReactNative'
+ */
+function isStandardBrowserEnv() {
+  if (typeof navigator !== 'undefined' && navigator.product === 'ReactNative') {
+    return false;
+  }
+  return (
+    typeof window !== 'undefined' &&
+    typeof document !== 'undefined'
+  );
+}
+
+/**
+ * Iterate over an Array or an Object invoking a function for each item.
+ *
+ * If `obj` is an Array callback will be called passing
+ * the value, index, and complete array for each item.
+ *
+ * If 'obj' is an Object callback will be called passing
+ * the value, key, and complete object for each property.
+ *
+ * @param {Object|Array} obj The object to iterate
+ * @param {Function} fn The callback to invoke for each item
+ */
+function forEach(obj, fn) {
+  // Don't bother if no value provided
+  if (obj === null || typeof obj === 'undefined') {
+    return;
+  }
+
+  // Force an array if not already something iterable
+  if (typeof obj !== 'object') {
+    /*eslint no-param-reassign:0*/
+    obj = [obj];
+  }
+
+  if (isArray(obj)) {
+    // Iterate over array values
+    for (var i = 0, l = obj.length; i < l; i++) {
+      fn.call(null, obj[i], i, obj);
+    }
+  } else {
+    // Iterate over object keys
+    for (var key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        fn.call(null, obj[key], key, obj);
+      }
+    }
+  }
+}
+
+/**
+ * Accepts varargs expecting each argument to be an object, then
+ * immutably merges the properties of each object and returns result.
+ *
+ * When multiple objects contain the same key the later object in
+ * the arguments list will take precedence.
+ *
+ * Example:
+ *
+ * ```js
+ * var result = merge({foo: 123}, {foo: 456});
+ * console.log(result.foo); // outputs 456
+ * ```
+ *
+ * @param {Object} obj1 Object to merge
+ * @returns {Object} Result of all merge properties
+ */
+function merge(/* obj1, obj2, obj3, ... */) {
+  var result = {};
+  function assignValue(val, key) {
+    if (typeof result[key] === 'object' && typeof val === 'object') {
+      result[key] = merge(result[key], val);
+    } else {
+      result[key] = val;
+    }
+  }
+
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    forEach(arguments[i], assignValue);
+  }
+  return result;
+}
+
+/**
+ * Extends object a by mutably adding to it the properties of object b.
+ *
+ * @param {Object} a The object to be extended
+ * @param {Object} b The object to copy properties from
+ * @param {Object} thisArg The object to bind function to
+ * @return {Object} The resulting value of object a
+ */
+function extend(a, b, thisArg) {
+  forEach(b, function assignValue(val, key) {
+    if (thisArg && typeof val === 'function') {
+      a[key] = bind(val, thisArg);
+    } else {
+      a[key] = val;
+    }
+  });
+  return a;
+}
+
+module.exports = {
+  isArray: isArray,
+  isArrayBuffer: isArrayBuffer,
+  isBuffer: isBuffer,
+  isFormData: isFormData,
+  isArrayBufferView: isArrayBufferView,
+  isString: isString,
+  isNumber: isNumber,
+  isObject: isObject,
+  isUndefined: isUndefined,
+  isDate: isDate,
+  isFile: isFile,
+  isBlob: isBlob,
+  isFunction: isFunction,
+  isStream: isStream,
+  isURLSearchParams: isURLSearchParams,
+  isStandardBrowserEnv: isStandardBrowserEnv,
+  forEach: forEach,
+  merge: merge,
+  extend: extend,
+  trim: trim
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/a-function.js":
+/*!******************************************************!*\
+  !*** ./node_modules/core-js/internals/a-function.js ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = function (it) {
+  if (typeof it != 'function') {
+    throw TypeError(String(it) + ' is not a function');
+  } return it;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/a-possible-prototype.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/core-js/internals/a-possible-prototype.js ***!
+  \****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var isObject = __webpack_require__(/*! ../internals/is-object */ "./node_modules/core-js/internals/is-object.js");
+
+module.exports = function (it) {
+  if (!isObject(it) && it !== null) {
+    throw TypeError("Can't set " + String(it) + ' as a prototype');
+  } return it;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/add-to-unscopables.js":
+/*!**************************************************************!*\
+  !*** ./node_modules/core-js/internals/add-to-unscopables.js ***!
+  \**************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+var create = __webpack_require__(/*! ../internals/object-create */ "./node_modules/core-js/internals/object-create.js");
+var hide = __webpack_require__(/*! ../internals/hide */ "./node_modules/core-js/internals/hide.js");
+
+var UNSCOPABLES = wellKnownSymbol('unscopables');
+var ArrayPrototype = Array.prototype;
+
+// Array.prototype[@@unscopables]
+// https://tc39.github.io/ecma262/#sec-array.prototype-@@unscopables
+if (ArrayPrototype[UNSCOPABLES] == undefined) {
+  hide(ArrayPrototype, UNSCOPABLES, create(null));
+}
+
+// add a key to Array.prototype[@@unscopables]
+module.exports = function (key) {
+  ArrayPrototype[UNSCOPABLES][key] = true;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/advance-string-index.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/core-js/internals/advance-string-index.js ***!
+  \****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var charAt = __webpack_require__(/*! ../internals/string-multibyte */ "./node_modules/core-js/internals/string-multibyte.js").charAt;
+
+// `AdvanceStringIndex` abstract operation
+// https://tc39.github.io/ecma262/#sec-advancestringindex
+module.exports = function (S, index, unicode) {
+  return index + (unicode ? charAt(S, index).length : 1);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/an-instance.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/core-js/internals/an-instance.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = function (it, Constructor, name) {
+  if (!(it instanceof Constructor)) {
+    throw TypeError('Incorrect ' + (name ? name + ' ' : '') + 'invocation');
+  } return it;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/an-object.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/core-js/internals/an-object.js ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var isObject = __webpack_require__(/*! ../internals/is-object */ "./node_modules/core-js/internals/is-object.js");
+
+module.exports = function (it) {
+  if (!isObject(it)) {
+    throw TypeError(String(it) + ' is not an object');
+  } return it;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/array-from.js":
+/*!******************************************************!*\
+  !*** ./node_modules/core-js/internals/array-from.js ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var bind = __webpack_require__(/*! ../internals/bind-context */ "./node_modules/core-js/internals/bind-context.js");
+var toObject = __webpack_require__(/*! ../internals/to-object */ "./node_modules/core-js/internals/to-object.js");
+var callWithSafeIterationClosing = __webpack_require__(/*! ../internals/call-with-safe-iteration-closing */ "./node_modules/core-js/internals/call-with-safe-iteration-closing.js");
+var isArrayIteratorMethod = __webpack_require__(/*! ../internals/is-array-iterator-method */ "./node_modules/core-js/internals/is-array-iterator-method.js");
+var toLength = __webpack_require__(/*! ../internals/to-length */ "./node_modules/core-js/internals/to-length.js");
+var createProperty = __webpack_require__(/*! ../internals/create-property */ "./node_modules/core-js/internals/create-property.js");
+var getIteratorMethod = __webpack_require__(/*! ../internals/get-iterator-method */ "./node_modules/core-js/internals/get-iterator-method.js");
+
+// `Array.from` method implementation
+// https://tc39.github.io/ecma262/#sec-array.from
+module.exports = function from(arrayLike /* , mapfn = undefined, thisArg = undefined */) {
+  var O = toObject(arrayLike);
+  var C = typeof this == 'function' ? this : Array;
+  var argumentsLength = arguments.length;
+  var mapfn = argumentsLength > 1 ? arguments[1] : undefined;
+  var mapping = mapfn !== undefined;
+  var index = 0;
+  var iteratorMethod = getIteratorMethod(O);
+  var length, result, step, iterator;
+  if (mapping) mapfn = bind(mapfn, argumentsLength > 2 ? arguments[2] : undefined, 2);
+  // if the target is not iterable or it's an array with the default iterator - use a simple case
+  if (iteratorMethod != undefined && !(C == Array && isArrayIteratorMethod(iteratorMethod))) {
+    iterator = iteratorMethod.call(O);
+    result = new C();
+    for (;!(step = iterator.next()).done; index++) {
+      createProperty(result, index, mapping
+        ? callWithSafeIterationClosing(iterator, mapfn, [step.value, index], true)
+        : step.value
+      );
+    }
+  } else {
+    length = toLength(O.length);
+    result = new C(length);
+    for (;length > index; index++) {
+      createProperty(result, index, mapping ? mapfn(O[index], index) : O[index]);
+    }
+  }
+  result.length = index;
+  return result;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/array-includes.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/core-js/internals/array-includes.js ***!
+  \**********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var toIndexedObject = __webpack_require__(/*! ../internals/to-indexed-object */ "./node_modules/core-js/internals/to-indexed-object.js");
+var toLength = __webpack_require__(/*! ../internals/to-length */ "./node_modules/core-js/internals/to-length.js");
+var toAbsoluteIndex = __webpack_require__(/*! ../internals/to-absolute-index */ "./node_modules/core-js/internals/to-absolute-index.js");
+
+// `Array.prototype.{ indexOf, includes }` methods implementation
+var createMethod = function (IS_INCLUDES) {
+  return function ($this, el, fromIndex) {
+    var O = toIndexedObject($this);
+    var length = toLength(O.length);
+    var index = toAbsoluteIndex(fromIndex, length);
+    var value;
+    // Array#includes uses SameValueZero equality algorithm
+    // eslint-disable-next-line no-self-compare
+    if (IS_INCLUDES && el != el) while (length > index) {
+      value = O[index++];
+      // eslint-disable-next-line no-self-compare
+      if (value != value) return true;
+    // Array#indexOf ignores holes, Array#includes - not
+    } else for (;length > index; index++) {
+      if ((IS_INCLUDES || index in O) && O[index] === el) return IS_INCLUDES || index || 0;
+    } return !IS_INCLUDES && -1;
+  };
+};
+
+module.exports = {
+  // `Array.prototype.includes` method
+  // https://tc39.github.io/ecma262/#sec-array.prototype.includes
+  includes: createMethod(true),
+  // `Array.prototype.indexOf` method
+  // https://tc39.github.io/ecma262/#sec-array.prototype.indexof
+  indexOf: createMethod(false)
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/bind-context.js":
+/*!********************************************************!*\
+  !*** ./node_modules/core-js/internals/bind-context.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var aFunction = __webpack_require__(/*! ../internals/a-function */ "./node_modules/core-js/internals/a-function.js");
+
+// optional / simple context binding
+module.exports = function (fn, that, length) {
+  aFunction(fn);
+  if (that === undefined) return fn;
+  switch (length) {
+    case 0: return function () {
+      return fn.call(that);
+    };
+    case 1: return function (a) {
+      return fn.call(that, a);
+    };
+    case 2: return function (a, b) {
+      return fn.call(that, a, b);
+    };
+    case 3: return function (a, b, c) {
+      return fn.call(that, a, b, c);
+    };
+  }
+  return function (/* ...args */) {
+    return fn.apply(that, arguments);
+  };
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/call-with-safe-iteration-closing.js":
+/*!****************************************************************************!*\
+  !*** ./node_modules/core-js/internals/call-with-safe-iteration-closing.js ***!
+  \****************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+
+// call something on iterator step with safe closing on error
+module.exports = function (iterator, fn, value, ENTRIES) {
+  try {
+    return ENTRIES ? fn(anObject(value)[0], value[1]) : fn(value);
+  // 7.4.6 IteratorClose(iterator, completion)
+  } catch (error) {
+    var returnMethod = iterator['return'];
+    if (returnMethod !== undefined) anObject(returnMethod.call(iterator));
+    throw error;
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/check-correctness-of-iteration.js":
+/*!**************************************************************************!*\
+  !*** ./node_modules/core-js/internals/check-correctness-of-iteration.js ***!
+  \**************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+
+var ITERATOR = wellKnownSymbol('iterator');
+var SAFE_CLOSING = false;
+
+try {
+  var called = 0;
+  var iteratorWithReturn = {
+    next: function () {
+      return { done: !!called++ };
+    },
+    'return': function () {
+      SAFE_CLOSING = true;
+    }
+  };
+  iteratorWithReturn[ITERATOR] = function () {
+    return this;
+  };
+  // eslint-disable-next-line no-throw-literal
+  Array.from(iteratorWithReturn, function () { throw 2; });
+} catch (error) { /* empty */ }
+
+module.exports = function (exec, SKIP_CLOSING) {
+  if (!SKIP_CLOSING && !SAFE_CLOSING) return false;
+  var ITERATION_SUPPORT = false;
+  try {
+    var object = {};
+    object[ITERATOR] = function () {
+      return {
+        next: function () {
+          return { done: ITERATION_SUPPORT = true };
+        }
+      };
+    };
+    exec(object);
+  } catch (error) { /* empty */ }
+  return ITERATION_SUPPORT;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/classof-raw.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/core-js/internals/classof-raw.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+var toString = {}.toString;
+
+module.exports = function (it) {
+  return toString.call(it).slice(8, -1);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/classof.js":
+/*!***************************************************!*\
+  !*** ./node_modules/core-js/internals/classof.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var classofRaw = __webpack_require__(/*! ../internals/classof-raw */ "./node_modules/core-js/internals/classof-raw.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+
+var TO_STRING_TAG = wellKnownSymbol('toStringTag');
+// ES3 wrong here
+var CORRECT_ARGUMENTS = classofRaw(function () { return arguments; }()) == 'Arguments';
+
+// fallback for IE11 Script Access Denied error
+var tryGet = function (it, key) {
+  try {
+    return it[key];
+  } catch (error) { /* empty */ }
+};
+
+// getting tag from ES6+ `Object.prototype.toString`
+module.exports = function (it) {
+  var O, tag, result;
+  return it === undefined ? 'Undefined' : it === null ? 'Null'
+    // @@toStringTag case
+    : typeof (tag = tryGet(O = Object(it), TO_STRING_TAG)) == 'string' ? tag
+    // builtinTag case
+    : CORRECT_ARGUMENTS ? classofRaw(O)
+    // ES3 arguments fallback
+    : (result = classofRaw(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : result;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/copy-constructor-properties.js":
+/*!***********************************************************************!*\
+  !*** ./node_modules/core-js/internals/copy-constructor-properties.js ***!
+  \***********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var has = __webpack_require__(/*! ../internals/has */ "./node_modules/core-js/internals/has.js");
+var ownKeys = __webpack_require__(/*! ../internals/own-keys */ "./node_modules/core-js/internals/own-keys.js");
+var getOwnPropertyDescriptorModule = __webpack_require__(/*! ../internals/object-get-own-property-descriptor */ "./node_modules/core-js/internals/object-get-own-property-descriptor.js");
+var definePropertyModule = __webpack_require__(/*! ../internals/object-define-property */ "./node_modules/core-js/internals/object-define-property.js");
+
+module.exports = function (target, source) {
+  var keys = ownKeys(source);
+  var defineProperty = definePropertyModule.f;
+  var getOwnPropertyDescriptor = getOwnPropertyDescriptorModule.f;
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    if (!has(target, key)) defineProperty(target, key, getOwnPropertyDescriptor(source, key));
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/correct-prototype-getter.js":
+/*!********************************************************************!*\
+  !*** ./node_modules/core-js/internals/correct-prototype-getter.js ***!
+  \********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+
+module.exports = !fails(function () {
+  function F() { /* empty */ }
+  F.prototype.constructor = null;
+  return Object.getPrototypeOf(new F()) !== F.prototype;
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/create-iterator-constructor.js":
+/*!***********************************************************************!*\
+  !*** ./node_modules/core-js/internals/create-iterator-constructor.js ***!
+  \***********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var IteratorPrototype = __webpack_require__(/*! ../internals/iterators-core */ "./node_modules/core-js/internals/iterators-core.js").IteratorPrototype;
+var create = __webpack_require__(/*! ../internals/object-create */ "./node_modules/core-js/internals/object-create.js");
+var createPropertyDescriptor = __webpack_require__(/*! ../internals/create-property-descriptor */ "./node_modules/core-js/internals/create-property-descriptor.js");
+var setToStringTag = __webpack_require__(/*! ../internals/set-to-string-tag */ "./node_modules/core-js/internals/set-to-string-tag.js");
+var Iterators = __webpack_require__(/*! ../internals/iterators */ "./node_modules/core-js/internals/iterators.js");
+
+var returnThis = function () { return this; };
+
+module.exports = function (IteratorConstructor, NAME, next) {
+  var TO_STRING_TAG = NAME + ' Iterator';
+  IteratorConstructor.prototype = create(IteratorPrototype, { next: createPropertyDescriptor(1, next) });
+  setToStringTag(IteratorConstructor, TO_STRING_TAG, false, true);
+  Iterators[TO_STRING_TAG] = returnThis;
+  return IteratorConstructor;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/create-property-descriptor.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/core-js/internals/create-property-descriptor.js ***!
+  \**********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = function (bitmap, value) {
+  return {
+    enumerable: !(bitmap & 1),
+    configurable: !(bitmap & 2),
+    writable: !(bitmap & 4),
+    value: value
+  };
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/create-property.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/core-js/internals/create-property.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var toPrimitive = __webpack_require__(/*! ../internals/to-primitive */ "./node_modules/core-js/internals/to-primitive.js");
+var definePropertyModule = __webpack_require__(/*! ../internals/object-define-property */ "./node_modules/core-js/internals/object-define-property.js");
+var createPropertyDescriptor = __webpack_require__(/*! ../internals/create-property-descriptor */ "./node_modules/core-js/internals/create-property-descriptor.js");
+
+module.exports = function (object, key, value) {
+  var propertyKey = toPrimitive(key);
+  if (propertyKey in object) definePropertyModule.f(object, propertyKey, createPropertyDescriptor(0, value));
+  else object[propertyKey] = value;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/define-iterator.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/core-js/internals/define-iterator.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var createIteratorConstructor = __webpack_require__(/*! ../internals/create-iterator-constructor */ "./node_modules/core-js/internals/create-iterator-constructor.js");
+var getPrototypeOf = __webpack_require__(/*! ../internals/object-get-prototype-of */ "./node_modules/core-js/internals/object-get-prototype-of.js");
+var setPrototypeOf = __webpack_require__(/*! ../internals/object-set-prototype-of */ "./node_modules/core-js/internals/object-set-prototype-of.js");
+var setToStringTag = __webpack_require__(/*! ../internals/set-to-string-tag */ "./node_modules/core-js/internals/set-to-string-tag.js");
+var hide = __webpack_require__(/*! ../internals/hide */ "./node_modules/core-js/internals/hide.js");
+var redefine = __webpack_require__(/*! ../internals/redefine */ "./node_modules/core-js/internals/redefine.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+var IS_PURE = __webpack_require__(/*! ../internals/is-pure */ "./node_modules/core-js/internals/is-pure.js");
+var Iterators = __webpack_require__(/*! ../internals/iterators */ "./node_modules/core-js/internals/iterators.js");
+var IteratorsCore = __webpack_require__(/*! ../internals/iterators-core */ "./node_modules/core-js/internals/iterators-core.js");
+
+var IteratorPrototype = IteratorsCore.IteratorPrototype;
+var BUGGY_SAFARI_ITERATORS = IteratorsCore.BUGGY_SAFARI_ITERATORS;
+var ITERATOR = wellKnownSymbol('iterator');
+var KEYS = 'keys';
+var VALUES = 'values';
+var ENTRIES = 'entries';
+
+var returnThis = function () { return this; };
+
+module.exports = function (Iterable, NAME, IteratorConstructor, next, DEFAULT, IS_SET, FORCED) {
+  createIteratorConstructor(IteratorConstructor, NAME, next);
+
+  var getIterationMethod = function (KIND) {
+    if (KIND === DEFAULT && defaultIterator) return defaultIterator;
+    if (!BUGGY_SAFARI_ITERATORS && KIND in IterablePrototype) return IterablePrototype[KIND];
+    switch (KIND) {
+      case KEYS: return function keys() { return new IteratorConstructor(this, KIND); };
+      case VALUES: return function values() { return new IteratorConstructor(this, KIND); };
+      case ENTRIES: return function entries() { return new IteratorConstructor(this, KIND); };
+    } return function () { return new IteratorConstructor(this); };
+  };
+
+  var TO_STRING_TAG = NAME + ' Iterator';
+  var INCORRECT_VALUES_NAME = false;
+  var IterablePrototype = Iterable.prototype;
+  var nativeIterator = IterablePrototype[ITERATOR]
+    || IterablePrototype['@@iterator']
+    || DEFAULT && IterablePrototype[DEFAULT];
+  var defaultIterator = !BUGGY_SAFARI_ITERATORS && nativeIterator || getIterationMethod(DEFAULT);
+  var anyNativeIterator = NAME == 'Array' ? IterablePrototype.entries || nativeIterator : nativeIterator;
+  var CurrentIteratorPrototype, methods, KEY;
+
+  // fix native
+  if (anyNativeIterator) {
+    CurrentIteratorPrototype = getPrototypeOf(anyNativeIterator.call(new Iterable()));
+    if (IteratorPrototype !== Object.prototype && CurrentIteratorPrototype.next) {
+      if (!IS_PURE && getPrototypeOf(CurrentIteratorPrototype) !== IteratorPrototype) {
+        if (setPrototypeOf) {
+          setPrototypeOf(CurrentIteratorPrototype, IteratorPrototype);
+        } else if (typeof CurrentIteratorPrototype[ITERATOR] != 'function') {
+          hide(CurrentIteratorPrototype, ITERATOR, returnThis);
+        }
+      }
+      // Set @@toStringTag to native iterators
+      setToStringTag(CurrentIteratorPrototype, TO_STRING_TAG, true, true);
+      if (IS_PURE) Iterators[TO_STRING_TAG] = returnThis;
+    }
+  }
+
+  // fix Array#{values, @@iterator}.name in V8 / FF
+  if (DEFAULT == VALUES && nativeIterator && nativeIterator.name !== VALUES) {
+    INCORRECT_VALUES_NAME = true;
+    defaultIterator = function values() { return nativeIterator.call(this); };
+  }
+
+  // define iterator
+  if ((!IS_PURE || FORCED) && IterablePrototype[ITERATOR] !== defaultIterator) {
+    hide(IterablePrototype, ITERATOR, defaultIterator);
+  }
+  Iterators[NAME] = defaultIterator;
+
+  // export additional methods
+  if (DEFAULT) {
+    methods = {
+      values: getIterationMethod(VALUES),
+      keys: IS_SET ? defaultIterator : getIterationMethod(KEYS),
+      entries: getIterationMethod(ENTRIES)
+    };
+    if (FORCED) for (KEY in methods) {
+      if (BUGGY_SAFARI_ITERATORS || INCORRECT_VALUES_NAME || !(KEY in IterablePrototype)) {
+        redefine(IterablePrototype, KEY, methods[KEY]);
+      }
+    } else $({ target: NAME, proto: true, forced: BUGGY_SAFARI_ITERATORS || INCORRECT_VALUES_NAME }, methods);
+  }
+
+  return methods;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/descriptors.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/core-js/internals/descriptors.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+
+// Thank's IE8 for his funny defineProperty
+module.exports = !fails(function () {
+  return Object.defineProperty({}, 'a', { get: function () { return 7; } }).a != 7;
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/document-create-element.js":
+/*!*******************************************************************!*\
+  !*** ./node_modules/core-js/internals/document-create-element.js ***!
+  \*******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var isObject = __webpack_require__(/*! ../internals/is-object */ "./node_modules/core-js/internals/is-object.js");
+
+var document = global.document;
+// typeof document.createElement is 'object' in old IE
+var EXISTS = isObject(document) && isObject(document.createElement);
+
+module.exports = function (it) {
+  return EXISTS ? document.createElement(it) : {};
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/dom-iterables.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/core-js/internals/dom-iterables.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+// iterable DOM collections
+// flag - `iterable` interface - 'entries', 'keys', 'values', 'forEach' methods
+module.exports = {
+  CSSRuleList: 0,
+  CSSStyleDeclaration: 0,
+  CSSValueList: 0,
+  ClientRectList: 0,
+  DOMRectList: 0,
+  DOMStringList: 0,
+  DOMTokenList: 1,
+  DataTransferItemList: 0,
+  FileList: 0,
+  HTMLAllCollection: 0,
+  HTMLCollection: 0,
+  HTMLFormElement: 0,
+  HTMLSelectElement: 0,
+  MediaList: 0,
+  MimeTypeArray: 0,
+  NamedNodeMap: 0,
+  NodeList: 1,
+  PaintRequestList: 0,
+  Plugin: 0,
+  PluginArray: 0,
+  SVGLengthList: 0,
+  SVGNumberList: 0,
+  SVGPathSegList: 0,
+  SVGPointList: 0,
+  SVGStringList: 0,
+  SVGTransformList: 0,
+  SourceBufferList: 0,
+  StyleSheetList: 0,
+  TextTrackCueList: 0,
+  TextTrackList: 0,
+  TouchList: 0
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/enum-bug-keys.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/core-js/internals/enum-bug-keys.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+// IE8- don't enum bug keys
+module.exports = [
+  'constructor',
+  'hasOwnProperty',
+  'isPrototypeOf',
+  'propertyIsEnumerable',
+  'toLocaleString',
+  'toString',
+  'valueOf'
+];
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/export.js":
+/*!**************************************************!*\
+  !*** ./node_modules/core-js/internals/export.js ***!
+  \**************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var getOwnPropertyDescriptor = __webpack_require__(/*! ../internals/object-get-own-property-descriptor */ "./node_modules/core-js/internals/object-get-own-property-descriptor.js").f;
+var hide = __webpack_require__(/*! ../internals/hide */ "./node_modules/core-js/internals/hide.js");
+var redefine = __webpack_require__(/*! ../internals/redefine */ "./node_modules/core-js/internals/redefine.js");
+var setGlobal = __webpack_require__(/*! ../internals/set-global */ "./node_modules/core-js/internals/set-global.js");
+var copyConstructorProperties = __webpack_require__(/*! ../internals/copy-constructor-properties */ "./node_modules/core-js/internals/copy-constructor-properties.js");
+var isForced = __webpack_require__(/*! ../internals/is-forced */ "./node_modules/core-js/internals/is-forced.js");
+
+/*
+  options.target      - name of the target object
+  options.global      - target is the global object
+  options.stat        - export as static methods of target
+  options.proto       - export as prototype methods of target
+  options.real        - real prototype method for the `pure` version
+  options.forced      - export even if the native feature is available
+  options.bind        - bind methods to the target, required for the `pure` version
+  options.wrap        - wrap constructors to preventing global pollution, required for the `pure` version
+  options.unsafe      - use the simple assignment of property instead of delete + defineProperty
+  options.sham        - add a flag to not completely full polyfills
+  options.enumerable  - export as enumerable property
+  options.noTargetGet - prevent calling a getter on target
+*/
+module.exports = function (options, source) {
+  var TARGET = options.target;
+  var GLOBAL = options.global;
+  var STATIC = options.stat;
+  var FORCED, target, key, targetProperty, sourceProperty, descriptor;
+  if (GLOBAL) {
+    target = global;
+  } else if (STATIC) {
+    target = global[TARGET] || setGlobal(TARGET, {});
+  } else {
+    target = (global[TARGET] || {}).prototype;
+  }
+  if (target) for (key in source) {
+    sourceProperty = source[key];
+    if (options.noTargetGet) {
+      descriptor = getOwnPropertyDescriptor(target, key);
+      targetProperty = descriptor && descriptor.value;
+    } else targetProperty = target[key];
+    FORCED = isForced(GLOBAL ? key : TARGET + (STATIC ? '.' : '#') + key, options.forced);
+    // contained in target
+    if (!FORCED && targetProperty !== undefined) {
+      if (typeof sourceProperty === typeof targetProperty) continue;
+      copyConstructorProperties(sourceProperty, targetProperty);
+    }
+    // add a flag to not completely full polyfills
+    if (options.sham || (targetProperty && targetProperty.sham)) {
+      hide(sourceProperty, 'sham', true);
+    }
+    // extend global
+    redefine(target, key, sourceProperty, options);
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/fails.js":
+/*!*************************************************!*\
+  !*** ./node_modules/core-js/internals/fails.js ***!
+  \*************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = function (exec) {
+  try {
+    return !!exec();
+  } catch (error) {
+    return true;
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/fix-regexp-well-known-symbol-logic.js":
+/*!******************************************************************************!*\
+  !*** ./node_modules/core-js/internals/fix-regexp-well-known-symbol-logic.js ***!
+  \******************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var hide = __webpack_require__(/*! ../internals/hide */ "./node_modules/core-js/internals/hide.js");
+var redefine = __webpack_require__(/*! ../internals/redefine */ "./node_modules/core-js/internals/redefine.js");
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+var regexpExec = __webpack_require__(/*! ../internals/regexp-exec */ "./node_modules/core-js/internals/regexp-exec.js");
+
+var SPECIES = wellKnownSymbol('species');
+
+var REPLACE_SUPPORTS_NAMED_GROUPS = !fails(function () {
+  // #replace needs built-in support for named groups.
+  // #match works fine because it just return the exec results, even if it has
+  // a "grops" property.
+  var re = /./;
+  re.exec = function () {
+    var result = [];
+    result.groups = { a: '7' };
+    return result;
+  };
+  return ''.replace(re, '$<a>') !== '7';
+});
+
+// Chrome 51 has a buggy "split" implementation when RegExp#exec !== nativeExec
+// Weex JS has frozen built-in prototypes, so use try / catch wrapper
+var SPLIT_WORKS_WITH_OVERWRITTEN_EXEC = !fails(function () {
+  var re = /(?:)/;
+  var originalExec = re.exec;
+  re.exec = function () { return originalExec.apply(this, arguments); };
+  var result = 'ab'.split(re);
+  return result.length !== 2 || result[0] !== 'a' || result[1] !== 'b';
+});
+
+module.exports = function (KEY, length, exec, sham) {
+  var SYMBOL = wellKnownSymbol(KEY);
+
+  var DELEGATES_TO_SYMBOL = !fails(function () {
+    // String methods call symbol-named RegEp methods
+    var O = {};
+    O[SYMBOL] = function () { return 7; };
+    return ''[KEY](O) != 7;
+  });
+
+  var DELEGATES_TO_EXEC = DELEGATES_TO_SYMBOL && !fails(function () {
+    // Symbol-named RegExp methods call .exec
+    var execCalled = false;
+    var re = /a/;
+    re.exec = function () { execCalled = true; return null; };
+
+    if (KEY === 'split') {
+      // RegExp[@@split] doesn't call the regex's exec method, but first creates
+      // a new one. We need to return the patched regex when creating the new one.
+      re.constructor = {};
+      re.constructor[SPECIES] = function () { return re; };
+    }
+
+    re[SYMBOL]('');
+    return !execCalled;
+  });
+
+  if (
+    !DELEGATES_TO_SYMBOL ||
+    !DELEGATES_TO_EXEC ||
+    (KEY === 'replace' && !REPLACE_SUPPORTS_NAMED_GROUPS) ||
+    (KEY === 'split' && !SPLIT_WORKS_WITH_OVERWRITTEN_EXEC)
+  ) {
+    var nativeRegExpMethod = /./[SYMBOL];
+    var methods = exec(SYMBOL, ''[KEY], function (nativeMethod, regexp, str, arg2, forceStringMethod) {
+      if (regexp.exec === regexpExec) {
+        if (DELEGATES_TO_SYMBOL && !forceStringMethod) {
+          // The native String method already delegates to @@method (this
+          // polyfilled function), leasing to infinite recursion.
+          // We avoid it by directly calling the native @@method method.
+          return { done: true, value: nativeRegExpMethod.call(regexp, str, arg2) };
+        }
+        return { done: true, value: nativeMethod.call(str, regexp, arg2) };
+      }
+      return { done: false };
+    });
+    var stringMethod = methods[0];
+    var regexMethod = methods[1];
+
+    redefine(String.prototype, KEY, stringMethod);
+    redefine(RegExp.prototype, SYMBOL, length == 2
+      // 21.2.5.8 RegExp.prototype[@@replace](string, replaceValue)
+      // 21.2.5.11 RegExp.prototype[@@split](string, limit)
+      ? function (string, arg) { return regexMethod.call(string, this, arg); }
+      // 21.2.5.6 RegExp.prototype[@@match](string)
+      // 21.2.5.9 RegExp.prototype[@@search](string)
+      : function (string) { return regexMethod.call(string, this); }
+    );
+    if (sham) hide(RegExp.prototype[SYMBOL], 'sham', true);
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/forced-string-trim-method.js":
+/*!*********************************************************************!*\
+  !*** ./node_modules/core-js/internals/forced-string-trim-method.js ***!
+  \*********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+var whitespaces = __webpack_require__(/*! ../internals/whitespaces */ "./node_modules/core-js/internals/whitespaces.js");
+
+var non = '\u200B\u0085\u180E';
+
+// check that a method works with the correct list
+// of whitespaces and has a correct name
+module.exports = function (METHOD_NAME) {
+  return fails(function () {
+    return !!whitespaces[METHOD_NAME]() || non[METHOD_NAME]() != non || whitespaces[METHOD_NAME].name !== METHOD_NAME;
+  });
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/function-to-string.js":
+/*!**************************************************************!*\
+  !*** ./node_modules/core-js/internals/function-to-string.js ***!
+  \**************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var shared = __webpack_require__(/*! ../internals/shared */ "./node_modules/core-js/internals/shared.js");
+
+module.exports = shared('native-function-to-string', Function.toString);
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/get-built-in.js":
+/*!********************************************************!*\
+  !*** ./node_modules/core-js/internals/get-built-in.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var path = __webpack_require__(/*! ../internals/path */ "./node_modules/core-js/internals/path.js");
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+
+var aFunction = function (variable) {
+  return typeof variable == 'function' ? variable : undefined;
+};
+
+module.exports = function (namespace, method) {
+  return arguments.length < 2 ? aFunction(path[namespace]) || aFunction(global[namespace])
+    : path[namespace] && path[namespace][method] || global[namespace] && global[namespace][method];
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/get-iterator-method.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/core-js/internals/get-iterator-method.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var classof = __webpack_require__(/*! ../internals/classof */ "./node_modules/core-js/internals/classof.js");
+var Iterators = __webpack_require__(/*! ../internals/iterators */ "./node_modules/core-js/internals/iterators.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+
+var ITERATOR = wellKnownSymbol('iterator');
+
+module.exports = function (it) {
+  if (it != undefined) return it[ITERATOR]
+    || it['@@iterator']
+    || Iterators[classof(it)];
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/get-iterator.js":
+/*!********************************************************!*\
+  !*** ./node_modules/core-js/internals/get-iterator.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+var getIteratorMethod = __webpack_require__(/*! ../internals/get-iterator-method */ "./node_modules/core-js/internals/get-iterator-method.js");
+
+module.exports = function (it) {
+  var iteratorMethod = getIteratorMethod(it);
+  if (typeof iteratorMethod != 'function') {
+    throw TypeError(String(it) + ' is not iterable');
+  } return anObject(iteratorMethod.call(it));
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/global.js":
+/*!**************************************************!*\
+  !*** ./node_modules/core-js/internals/global.js ***!
+  \**************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(global) {var O = 'object';
+var check = function (it) {
+  return it && it.Math == Math && it;
+};
+
+// https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
+module.exports =
+  // eslint-disable-next-line no-undef
+  check(typeof globalThis == O && globalThis) ||
+  check(typeof window == O && window) ||
+  check(typeof self == O && self) ||
+  check(typeof global == O && global) ||
+  // eslint-disable-next-line no-new-func
+  Function('return this')();
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../../webpack/buildin/global.js */ "./node_modules/webpack/buildin/global.js")))
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/has.js":
+/*!***********************************************!*\
+  !*** ./node_modules/core-js/internals/has.js ***!
+  \***********************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+var hasOwnProperty = {}.hasOwnProperty;
+
+module.exports = function (it, key) {
+  return hasOwnProperty.call(it, key);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/hidden-keys.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/core-js/internals/hidden-keys.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = {};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/hide.js":
+/*!************************************************!*\
+  !*** ./node_modules/core-js/internals/hide.js ***!
+  \************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var DESCRIPTORS = __webpack_require__(/*! ../internals/descriptors */ "./node_modules/core-js/internals/descriptors.js");
+var definePropertyModule = __webpack_require__(/*! ../internals/object-define-property */ "./node_modules/core-js/internals/object-define-property.js");
+var createPropertyDescriptor = __webpack_require__(/*! ../internals/create-property-descriptor */ "./node_modules/core-js/internals/create-property-descriptor.js");
+
+module.exports = DESCRIPTORS ? function (object, key, value) {
+  return definePropertyModule.f(object, key, createPropertyDescriptor(1, value));
+} : function (object, key, value) {
+  object[key] = value;
+  return object;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/host-report-errors.js":
+/*!**************************************************************!*\
+  !*** ./node_modules/core-js/internals/host-report-errors.js ***!
+  \**************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+
+module.exports = function (a, b) {
+  var console = global.console;
+  if (console && console.error) {
+    arguments.length === 1 ? console.error(a) : console.error(a, b);
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/html.js":
+/*!************************************************!*\
+  !*** ./node_modules/core-js/internals/html.js ***!
+  \************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var getBuiltIn = __webpack_require__(/*! ../internals/get-built-in */ "./node_modules/core-js/internals/get-built-in.js");
+
+module.exports = getBuiltIn('document', 'documentElement');
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/ie8-dom-define.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/core-js/internals/ie8-dom-define.js ***!
+  \**********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var DESCRIPTORS = __webpack_require__(/*! ../internals/descriptors */ "./node_modules/core-js/internals/descriptors.js");
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+var createElement = __webpack_require__(/*! ../internals/document-create-element */ "./node_modules/core-js/internals/document-create-element.js");
+
+// Thank's IE8 for his funny defineProperty
+module.exports = !DESCRIPTORS && !fails(function () {
+  return Object.defineProperty(createElement('div'), 'a', {
+    get: function () { return 7; }
+  }).a != 7;
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/indexed-object.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/core-js/internals/indexed-object.js ***!
+  \**********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+var classof = __webpack_require__(/*! ../internals/classof-raw */ "./node_modules/core-js/internals/classof-raw.js");
+
+var split = ''.split;
+
+// fallback for non-array-like ES3 and non-enumerable old V8 strings
+module.exports = fails(function () {
+  // throws an error in rhino, see https://github.com/mozilla/rhino/issues/346
+  // eslint-disable-next-line no-prototype-builtins
+  return !Object('z').propertyIsEnumerable(0);
+}) ? function (it) {
+  return classof(it) == 'String' ? split.call(it, '') : Object(it);
+} : Object;
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/internal-state.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/core-js/internals/internal-state.js ***!
+  \**********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var NATIVE_WEAK_MAP = __webpack_require__(/*! ../internals/native-weak-map */ "./node_modules/core-js/internals/native-weak-map.js");
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var isObject = __webpack_require__(/*! ../internals/is-object */ "./node_modules/core-js/internals/is-object.js");
+var hide = __webpack_require__(/*! ../internals/hide */ "./node_modules/core-js/internals/hide.js");
+var objectHas = __webpack_require__(/*! ../internals/has */ "./node_modules/core-js/internals/has.js");
+var sharedKey = __webpack_require__(/*! ../internals/shared-key */ "./node_modules/core-js/internals/shared-key.js");
+var hiddenKeys = __webpack_require__(/*! ../internals/hidden-keys */ "./node_modules/core-js/internals/hidden-keys.js");
+
+var WeakMap = global.WeakMap;
+var set, get, has;
+
+var enforce = function (it) {
+  return has(it) ? get(it) : set(it, {});
+};
+
+var getterFor = function (TYPE) {
+  return function (it) {
+    var state;
+    if (!isObject(it) || (state = get(it)).type !== TYPE) {
+      throw TypeError('Incompatible receiver, ' + TYPE + ' required');
+    } return state;
+  };
+};
+
+if (NATIVE_WEAK_MAP) {
+  var store = new WeakMap();
+  var wmget = store.get;
+  var wmhas = store.has;
+  var wmset = store.set;
+  set = function (it, metadata) {
+    wmset.call(store, it, metadata);
+    return metadata;
+  };
+  get = function (it) {
+    return wmget.call(store, it) || {};
+  };
+  has = function (it) {
+    return wmhas.call(store, it);
+  };
+} else {
+  var STATE = sharedKey('state');
+  hiddenKeys[STATE] = true;
+  set = function (it, metadata) {
+    hide(it, STATE, metadata);
+    return metadata;
+  };
+  get = function (it) {
+    return objectHas(it, STATE) ? it[STATE] : {};
+  };
+  has = function (it) {
+    return objectHas(it, STATE);
+  };
+}
+
+module.exports = {
+  set: set,
+  get: get,
+  has: has,
+  enforce: enforce,
+  getterFor: getterFor
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/is-array-iterator-method.js":
+/*!********************************************************************!*\
+  !*** ./node_modules/core-js/internals/is-array-iterator-method.js ***!
+  \********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+var Iterators = __webpack_require__(/*! ../internals/iterators */ "./node_modules/core-js/internals/iterators.js");
+
+var ITERATOR = wellKnownSymbol('iterator');
+var ArrayPrototype = Array.prototype;
+
+// check on default Array iterator
+module.exports = function (it) {
+  return it !== undefined && (Iterators.Array === it || ArrayPrototype[ITERATOR] === it);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/is-forced.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/core-js/internals/is-forced.js ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+
+var replacement = /#|\.prototype\./;
+
+var isForced = function (feature, detection) {
+  var value = data[normalize(feature)];
+  return value == POLYFILL ? true
+    : value == NATIVE ? false
+    : typeof detection == 'function' ? fails(detection)
+    : !!detection;
+};
+
+var normalize = isForced.normalize = function (string) {
+  return String(string).replace(replacement, '.').toLowerCase();
+};
+
+var data = isForced.data = {};
+var NATIVE = isForced.NATIVE = 'N';
+var POLYFILL = isForced.POLYFILL = 'P';
+
+module.exports = isForced;
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/is-object.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/core-js/internals/is-object.js ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = function (it) {
+  return typeof it === 'object' ? it !== null : typeof it === 'function';
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/is-pure.js":
+/*!***************************************************!*\
+  !*** ./node_modules/core-js/internals/is-pure.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = false;
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/iterate.js":
+/*!***************************************************!*\
+  !*** ./node_modules/core-js/internals/iterate.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+var isArrayIteratorMethod = __webpack_require__(/*! ../internals/is-array-iterator-method */ "./node_modules/core-js/internals/is-array-iterator-method.js");
+var toLength = __webpack_require__(/*! ../internals/to-length */ "./node_modules/core-js/internals/to-length.js");
+var bind = __webpack_require__(/*! ../internals/bind-context */ "./node_modules/core-js/internals/bind-context.js");
+var getIteratorMethod = __webpack_require__(/*! ../internals/get-iterator-method */ "./node_modules/core-js/internals/get-iterator-method.js");
+var callWithSafeIterationClosing = __webpack_require__(/*! ../internals/call-with-safe-iteration-closing */ "./node_modules/core-js/internals/call-with-safe-iteration-closing.js");
+
+var Result = function (stopped, result) {
+  this.stopped = stopped;
+  this.result = result;
+};
+
+var iterate = module.exports = function (iterable, fn, that, AS_ENTRIES, IS_ITERATOR) {
+  var boundFunction = bind(fn, that, AS_ENTRIES ? 2 : 1);
+  var iterator, iterFn, index, length, result, step;
+
+  if (IS_ITERATOR) {
+    iterator = iterable;
+  } else {
+    iterFn = getIteratorMethod(iterable);
+    if (typeof iterFn != 'function') throw TypeError('Target is not iterable');
+    // optimisation for array iterators
+    if (isArrayIteratorMethod(iterFn)) {
+      for (index = 0, length = toLength(iterable.length); length > index; index++) {
+        result = AS_ENTRIES
+          ? boundFunction(anObject(step = iterable[index])[0], step[1])
+          : boundFunction(iterable[index]);
+        if (result && result instanceof Result) return result;
+      } return new Result(false);
+    }
+    iterator = iterFn.call(iterable);
+  }
+
+  while (!(step = iterator.next()).done) {
+    result = callWithSafeIterationClosing(iterator, boundFunction, step.value, AS_ENTRIES);
+    if (result && result instanceof Result) return result;
+  } return new Result(false);
+};
+
+iterate.stop = function (result) {
+  return new Result(true, result);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/iterators-core.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/core-js/internals/iterators-core.js ***!
+  \**********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var getPrototypeOf = __webpack_require__(/*! ../internals/object-get-prototype-of */ "./node_modules/core-js/internals/object-get-prototype-of.js");
+var hide = __webpack_require__(/*! ../internals/hide */ "./node_modules/core-js/internals/hide.js");
+var has = __webpack_require__(/*! ../internals/has */ "./node_modules/core-js/internals/has.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+var IS_PURE = __webpack_require__(/*! ../internals/is-pure */ "./node_modules/core-js/internals/is-pure.js");
+
+var ITERATOR = wellKnownSymbol('iterator');
+var BUGGY_SAFARI_ITERATORS = false;
+
+var returnThis = function () { return this; };
+
+// `%IteratorPrototype%` object
+// https://tc39.github.io/ecma262/#sec-%iteratorprototype%-object
+var IteratorPrototype, PrototypeOfArrayIteratorPrototype, arrayIterator;
+
+if ([].keys) {
+  arrayIterator = [].keys();
+  // Safari 8 has buggy iterators w/o `next`
+  if (!('next' in arrayIterator)) BUGGY_SAFARI_ITERATORS = true;
+  else {
+    PrototypeOfArrayIteratorPrototype = getPrototypeOf(getPrototypeOf(arrayIterator));
+    if (PrototypeOfArrayIteratorPrototype !== Object.prototype) IteratorPrototype = PrototypeOfArrayIteratorPrototype;
+  }
+}
+
+if (IteratorPrototype == undefined) IteratorPrototype = {};
+
+// 25.1.2.1.1 %IteratorPrototype%[@@iterator]()
+if (!IS_PURE && !has(IteratorPrototype, ITERATOR)) hide(IteratorPrototype, ITERATOR, returnThis);
+
+module.exports = {
+  IteratorPrototype: IteratorPrototype,
+  BUGGY_SAFARI_ITERATORS: BUGGY_SAFARI_ITERATORS
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/iterators.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/core-js/internals/iterators.js ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = {};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/microtask.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/core-js/internals/microtask.js ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var getOwnPropertyDescriptor = __webpack_require__(/*! ../internals/object-get-own-property-descriptor */ "./node_modules/core-js/internals/object-get-own-property-descriptor.js").f;
+var classof = __webpack_require__(/*! ../internals/classof-raw */ "./node_modules/core-js/internals/classof-raw.js");
+var macrotask = __webpack_require__(/*! ../internals/task */ "./node_modules/core-js/internals/task.js").set;
+var userAgent = __webpack_require__(/*! ../internals/user-agent */ "./node_modules/core-js/internals/user-agent.js");
+
+var MutationObserver = global.MutationObserver || global.WebKitMutationObserver;
+var process = global.process;
+var Promise = global.Promise;
+var IS_NODE = classof(process) == 'process';
+// Node.js 11 shows ExperimentalWarning on getting `queueMicrotask`
+var queueMicrotaskDescriptor = getOwnPropertyDescriptor(global, 'queueMicrotask');
+var queueMicrotask = queueMicrotaskDescriptor && queueMicrotaskDescriptor.value;
+
+var flush, head, last, notify, toggle, node, promise;
+
+// modern engines have queueMicrotask method
+if (!queueMicrotask) {
+  flush = function () {
+    var parent, fn;
+    if (IS_NODE && (parent = process.domain)) parent.exit();
+    while (head) {
+      fn = head.fn;
+      head = head.next;
+      try {
+        fn();
+      } catch (error) {
+        if (head) notify();
+        else last = undefined;
+        throw error;
+      }
+    } last = undefined;
+    if (parent) parent.enter();
+  };
+
+  // Node.js
+  if (IS_NODE) {
+    notify = function () {
+      process.nextTick(flush);
+    };
+  // browsers with MutationObserver, except iOS - https://github.com/zloirock/core-js/issues/339
+  } else if (MutationObserver && !/(iphone|ipod|ipad).*applewebkit/i.test(userAgent)) {
+    toggle = true;
+    node = document.createTextNode('');
+    new MutationObserver(flush).observe(node, { characterData: true }); // eslint-disable-line no-new
+    notify = function () {
+      node.data = toggle = !toggle;
+    };
+  // environments with maybe non-completely correct, but existent Promise
+  } else if (Promise && Promise.resolve) {
+    // Promise.resolve without an argument throws an error in LG WebOS 2
+    promise = Promise.resolve(undefined);
+    notify = function () {
+      promise.then(flush);
+    };
+  // for other environments - macrotask based on:
+  // - setImmediate
+  // - MessageChannel
+  // - window.postMessag
+  // - onreadystatechange
+  // - setTimeout
+  } else {
+    notify = function () {
+      // strange IE + webpack dev server bug - use .call(global)
+      macrotask.call(global, flush);
+    };
+  }
+}
+
+module.exports = queueMicrotask || function (fn) {
+  var task = { fn: fn, next: undefined };
+  if (last) last.next = task;
+  if (!head) {
+    head = task;
+    notify();
+  } last = task;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/native-symbol.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/core-js/internals/native-symbol.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+
+module.exports = !!Object.getOwnPropertySymbols && !fails(function () {
+  // Chrome 38 Symbol has incorrect toString conversion
+  // eslint-disable-next-line no-undef
+  return !String(Symbol());
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/native-url.js":
+/*!******************************************************!*\
+  !*** ./node_modules/core-js/internals/native-url.js ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+var IS_PURE = __webpack_require__(/*! ../internals/is-pure */ "./node_modules/core-js/internals/is-pure.js");
+
+var ITERATOR = wellKnownSymbol('iterator');
+
+module.exports = !fails(function () {
+  var url = new URL('b?e=1', 'http://a');
+  var searchParams = url.searchParams;
+  url.pathname = 'c%20d';
+  return (IS_PURE && !url.toJSON)
+    || !searchParams.sort
+    || url.href !== 'http://a/c%20d?e=1'
+    || searchParams.get('e') !== '1'
+    || String(new URLSearchParams('?a=1')) !== 'a=1'
+    || !searchParams[ITERATOR]
+    // throws in Edge
+    || new URL('https://a@b').username !== 'a'
+    || new URLSearchParams(new URLSearchParams('a=b')).get('a') !== 'b'
+    // not punycoded in Edge
+    || new URL('http://тест').host !== 'xn--e1aybc'
+    // not escaped in Chrome 62-
+    || new URL('http://a#б').hash !== '#%D0%B1';
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/native-weak-map.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/core-js/internals/native-weak-map.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var nativeFunctionToString = __webpack_require__(/*! ../internals/function-to-string */ "./node_modules/core-js/internals/function-to-string.js");
+
+var WeakMap = global.WeakMap;
+
+module.exports = typeof WeakMap === 'function' && /native code/.test(nativeFunctionToString.call(WeakMap));
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/new-promise-capability.js":
+/*!******************************************************************!*\
+  !*** ./node_modules/core-js/internals/new-promise-capability.js ***!
+  \******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var aFunction = __webpack_require__(/*! ../internals/a-function */ "./node_modules/core-js/internals/a-function.js");
+
+var PromiseCapability = function (C) {
+  var resolve, reject;
+  this.promise = new C(function ($$resolve, $$reject) {
+    if (resolve !== undefined || reject !== undefined) throw TypeError('Bad Promise constructor');
+    resolve = $$resolve;
+    reject = $$reject;
+  });
+  this.resolve = aFunction(resolve);
+  this.reject = aFunction(reject);
+};
+
+// 25.4.1.5 NewPromiseCapability(C)
+module.exports.f = function (C) {
+  return new PromiseCapability(C);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-assign.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/core-js/internals/object-assign.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var DESCRIPTORS = __webpack_require__(/*! ../internals/descriptors */ "./node_modules/core-js/internals/descriptors.js");
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+var objectKeys = __webpack_require__(/*! ../internals/object-keys */ "./node_modules/core-js/internals/object-keys.js");
+var getOwnPropertySymbolsModule = __webpack_require__(/*! ../internals/object-get-own-property-symbols */ "./node_modules/core-js/internals/object-get-own-property-symbols.js");
+var propertyIsEnumerableModule = __webpack_require__(/*! ../internals/object-property-is-enumerable */ "./node_modules/core-js/internals/object-property-is-enumerable.js");
+var toObject = __webpack_require__(/*! ../internals/to-object */ "./node_modules/core-js/internals/to-object.js");
+var IndexedObject = __webpack_require__(/*! ../internals/indexed-object */ "./node_modules/core-js/internals/indexed-object.js");
+
+var nativeAssign = Object.assign;
+
+// `Object.assign` method
+// https://tc39.github.io/ecma262/#sec-object.assign
+// should work with symbols and should have deterministic property order (V8 bug)
+module.exports = !nativeAssign || fails(function () {
+  var A = {};
+  var B = {};
+  // eslint-disable-next-line no-undef
+  var symbol = Symbol();
+  var alphabet = 'abcdefghijklmnopqrst';
+  A[symbol] = 7;
+  alphabet.split('').forEach(function (chr) { B[chr] = chr; });
+  return nativeAssign({}, A)[symbol] != 7 || objectKeys(nativeAssign({}, B)).join('') != alphabet;
+}) ? function assign(target, source) { // eslint-disable-line no-unused-vars
+  var T = toObject(target);
+  var argumentsLength = arguments.length;
+  var index = 1;
+  var getOwnPropertySymbols = getOwnPropertySymbolsModule.f;
+  var propertyIsEnumerable = propertyIsEnumerableModule.f;
+  while (argumentsLength > index) {
+    var S = IndexedObject(arguments[index++]);
+    var keys = getOwnPropertySymbols ? objectKeys(S).concat(getOwnPropertySymbols(S)) : objectKeys(S);
+    var length = keys.length;
+    var j = 0;
+    var key;
+    while (length > j) {
+      key = keys[j++];
+      if (!DESCRIPTORS || propertyIsEnumerable.call(S, key)) T[key] = S[key];
+    }
+  } return T;
+} : nativeAssign;
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-create.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/core-js/internals/object-create.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+var defineProperties = __webpack_require__(/*! ../internals/object-define-properties */ "./node_modules/core-js/internals/object-define-properties.js");
+var enumBugKeys = __webpack_require__(/*! ../internals/enum-bug-keys */ "./node_modules/core-js/internals/enum-bug-keys.js");
+var hiddenKeys = __webpack_require__(/*! ../internals/hidden-keys */ "./node_modules/core-js/internals/hidden-keys.js");
+var html = __webpack_require__(/*! ../internals/html */ "./node_modules/core-js/internals/html.js");
+var documentCreateElement = __webpack_require__(/*! ../internals/document-create-element */ "./node_modules/core-js/internals/document-create-element.js");
+var sharedKey = __webpack_require__(/*! ../internals/shared-key */ "./node_modules/core-js/internals/shared-key.js");
+var IE_PROTO = sharedKey('IE_PROTO');
+
+var PROTOTYPE = 'prototype';
+var Empty = function () { /* empty */ };
+
+// Create object with fake `null` prototype: use iframe Object with cleared prototype
+var createDict = function () {
+  // Thrash, waste and sodomy: IE GC bug
+  var iframe = documentCreateElement('iframe');
+  var length = enumBugKeys.length;
+  var lt = '<';
+  var script = 'script';
+  var gt = '>';
+  var js = 'java' + script + ':';
+  var iframeDocument;
+  iframe.style.display = 'none';
+  html.appendChild(iframe);
+  iframe.src = String(js);
+  iframeDocument = iframe.contentWindow.document;
+  iframeDocument.open();
+  iframeDocument.write(lt + script + gt + 'document.F=Object' + lt + '/' + script + gt);
+  iframeDocument.close();
+  createDict = iframeDocument.F;
+  while (length--) delete createDict[PROTOTYPE][enumBugKeys[length]];
+  return createDict();
+};
+
+// `Object.create` method
+// https://tc39.github.io/ecma262/#sec-object.create
+module.exports = Object.create || function create(O, Properties) {
+  var result;
+  if (O !== null) {
+    Empty[PROTOTYPE] = anObject(O);
+    result = new Empty();
+    Empty[PROTOTYPE] = null;
+    // add "__proto__" for Object.getPrototypeOf polyfill
+    result[IE_PROTO] = O;
+  } else result = createDict();
+  return Properties === undefined ? result : defineProperties(result, Properties);
+};
+
+hiddenKeys[IE_PROTO] = true;
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-define-properties.js":
+/*!********************************************************************!*\
+  !*** ./node_modules/core-js/internals/object-define-properties.js ***!
+  \********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var DESCRIPTORS = __webpack_require__(/*! ../internals/descriptors */ "./node_modules/core-js/internals/descriptors.js");
+var definePropertyModule = __webpack_require__(/*! ../internals/object-define-property */ "./node_modules/core-js/internals/object-define-property.js");
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+var objectKeys = __webpack_require__(/*! ../internals/object-keys */ "./node_modules/core-js/internals/object-keys.js");
+
+// `Object.defineProperties` method
+// https://tc39.github.io/ecma262/#sec-object.defineproperties
+module.exports = DESCRIPTORS ? Object.defineProperties : function defineProperties(O, Properties) {
+  anObject(O);
+  var keys = objectKeys(Properties);
+  var length = keys.length;
+  var index = 0;
+  var key;
+  while (length > index) definePropertyModule.f(O, key = keys[index++], Properties[key]);
+  return O;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-define-property.js":
+/*!******************************************************************!*\
+  !*** ./node_modules/core-js/internals/object-define-property.js ***!
+  \******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var DESCRIPTORS = __webpack_require__(/*! ../internals/descriptors */ "./node_modules/core-js/internals/descriptors.js");
+var IE8_DOM_DEFINE = __webpack_require__(/*! ../internals/ie8-dom-define */ "./node_modules/core-js/internals/ie8-dom-define.js");
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+var toPrimitive = __webpack_require__(/*! ../internals/to-primitive */ "./node_modules/core-js/internals/to-primitive.js");
+
+var nativeDefineProperty = Object.defineProperty;
+
+// `Object.defineProperty` method
+// https://tc39.github.io/ecma262/#sec-object.defineproperty
+exports.f = DESCRIPTORS ? nativeDefineProperty : function defineProperty(O, P, Attributes) {
+  anObject(O);
+  P = toPrimitive(P, true);
+  anObject(Attributes);
+  if (IE8_DOM_DEFINE) try {
+    return nativeDefineProperty(O, P, Attributes);
+  } catch (error) { /* empty */ }
+  if ('get' in Attributes || 'set' in Attributes) throw TypeError('Accessors not supported');
+  if ('value' in Attributes) O[P] = Attributes.value;
+  return O;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-get-own-property-descriptor.js":
+/*!******************************************************************************!*\
+  !*** ./node_modules/core-js/internals/object-get-own-property-descriptor.js ***!
+  \******************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var DESCRIPTORS = __webpack_require__(/*! ../internals/descriptors */ "./node_modules/core-js/internals/descriptors.js");
+var propertyIsEnumerableModule = __webpack_require__(/*! ../internals/object-property-is-enumerable */ "./node_modules/core-js/internals/object-property-is-enumerable.js");
+var createPropertyDescriptor = __webpack_require__(/*! ../internals/create-property-descriptor */ "./node_modules/core-js/internals/create-property-descriptor.js");
+var toIndexedObject = __webpack_require__(/*! ../internals/to-indexed-object */ "./node_modules/core-js/internals/to-indexed-object.js");
+var toPrimitive = __webpack_require__(/*! ../internals/to-primitive */ "./node_modules/core-js/internals/to-primitive.js");
+var has = __webpack_require__(/*! ../internals/has */ "./node_modules/core-js/internals/has.js");
+var IE8_DOM_DEFINE = __webpack_require__(/*! ../internals/ie8-dom-define */ "./node_modules/core-js/internals/ie8-dom-define.js");
+
+var nativeGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+
+// `Object.getOwnPropertyDescriptor` method
+// https://tc39.github.io/ecma262/#sec-object.getownpropertydescriptor
+exports.f = DESCRIPTORS ? nativeGetOwnPropertyDescriptor : function getOwnPropertyDescriptor(O, P) {
+  O = toIndexedObject(O);
+  P = toPrimitive(P, true);
+  if (IE8_DOM_DEFINE) try {
+    return nativeGetOwnPropertyDescriptor(O, P);
+  } catch (error) { /* empty */ }
+  if (has(O, P)) return createPropertyDescriptor(!propertyIsEnumerableModule.f.call(O, P), O[P]);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-get-own-property-names.js":
+/*!*************************************************************************!*\
+  !*** ./node_modules/core-js/internals/object-get-own-property-names.js ***!
+  \*************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var internalObjectKeys = __webpack_require__(/*! ../internals/object-keys-internal */ "./node_modules/core-js/internals/object-keys-internal.js");
+var enumBugKeys = __webpack_require__(/*! ../internals/enum-bug-keys */ "./node_modules/core-js/internals/enum-bug-keys.js");
+
+var hiddenKeys = enumBugKeys.concat('length', 'prototype');
+
+// `Object.getOwnPropertyNames` method
+// https://tc39.github.io/ecma262/#sec-object.getownpropertynames
+exports.f = Object.getOwnPropertyNames || function getOwnPropertyNames(O) {
+  return internalObjectKeys(O, hiddenKeys);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-get-own-property-symbols.js":
+/*!***************************************************************************!*\
+  !*** ./node_modules/core-js/internals/object-get-own-property-symbols.js ***!
+  \***************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+exports.f = Object.getOwnPropertySymbols;
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-get-prototype-of.js":
+/*!*******************************************************************!*\
+  !*** ./node_modules/core-js/internals/object-get-prototype-of.js ***!
+  \*******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var has = __webpack_require__(/*! ../internals/has */ "./node_modules/core-js/internals/has.js");
+var toObject = __webpack_require__(/*! ../internals/to-object */ "./node_modules/core-js/internals/to-object.js");
+var sharedKey = __webpack_require__(/*! ../internals/shared-key */ "./node_modules/core-js/internals/shared-key.js");
+var CORRECT_PROTOTYPE_GETTER = __webpack_require__(/*! ../internals/correct-prototype-getter */ "./node_modules/core-js/internals/correct-prototype-getter.js");
+
+var IE_PROTO = sharedKey('IE_PROTO');
+var ObjectPrototype = Object.prototype;
+
+// `Object.getPrototypeOf` method
+// https://tc39.github.io/ecma262/#sec-object.getprototypeof
+module.exports = CORRECT_PROTOTYPE_GETTER ? Object.getPrototypeOf : function (O) {
+  O = toObject(O);
+  if (has(O, IE_PROTO)) return O[IE_PROTO];
+  if (typeof O.constructor == 'function' && O instanceof O.constructor) {
+    return O.constructor.prototype;
+  } return O instanceof Object ? ObjectPrototype : null;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-keys-internal.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/core-js/internals/object-keys-internal.js ***!
+  \****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var has = __webpack_require__(/*! ../internals/has */ "./node_modules/core-js/internals/has.js");
+var toIndexedObject = __webpack_require__(/*! ../internals/to-indexed-object */ "./node_modules/core-js/internals/to-indexed-object.js");
+var indexOf = __webpack_require__(/*! ../internals/array-includes */ "./node_modules/core-js/internals/array-includes.js").indexOf;
+var hiddenKeys = __webpack_require__(/*! ../internals/hidden-keys */ "./node_modules/core-js/internals/hidden-keys.js");
+
+module.exports = function (object, names) {
+  var O = toIndexedObject(object);
+  var i = 0;
+  var result = [];
+  var key;
+  for (key in O) !has(hiddenKeys, key) && has(O, key) && result.push(key);
+  // Don't enum bug & hidden keys
+  while (names.length > i) if (has(O, key = names[i++])) {
+    ~indexOf(result, key) || result.push(key);
+  }
+  return result;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-keys.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/core-js/internals/object-keys.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var internalObjectKeys = __webpack_require__(/*! ../internals/object-keys-internal */ "./node_modules/core-js/internals/object-keys-internal.js");
+var enumBugKeys = __webpack_require__(/*! ../internals/enum-bug-keys */ "./node_modules/core-js/internals/enum-bug-keys.js");
+
+// `Object.keys` method
+// https://tc39.github.io/ecma262/#sec-object.keys
+module.exports = Object.keys || function keys(O) {
+  return internalObjectKeys(O, enumBugKeys);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-property-is-enumerable.js":
+/*!*************************************************************************!*\
+  !*** ./node_modules/core-js/internals/object-property-is-enumerable.js ***!
+  \*************************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var nativePropertyIsEnumerable = {}.propertyIsEnumerable;
+var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+
+// Nashorn ~ JDK8 bug
+var NASHORN_BUG = getOwnPropertyDescriptor && !nativePropertyIsEnumerable.call({ 1: 2 }, 1);
+
+// `Object.prototype.propertyIsEnumerable` method implementation
+// https://tc39.github.io/ecma262/#sec-object.prototype.propertyisenumerable
+exports.f = NASHORN_BUG ? function propertyIsEnumerable(V) {
+  var descriptor = getOwnPropertyDescriptor(this, V);
+  return !!descriptor && descriptor.enumerable;
+} : nativePropertyIsEnumerable;
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/object-set-prototype-of.js":
+/*!*******************************************************************!*\
+  !*** ./node_modules/core-js/internals/object-set-prototype-of.js ***!
+  \*******************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+var aPossiblePrototype = __webpack_require__(/*! ../internals/a-possible-prototype */ "./node_modules/core-js/internals/a-possible-prototype.js");
+
+// `Object.setPrototypeOf` method
+// https://tc39.github.io/ecma262/#sec-object.setprototypeof
+// Works with __proto__ only. Old v8 can't work with null proto objects.
+/* eslint-disable no-proto */
+module.exports = Object.setPrototypeOf || ('__proto__' in {} ? function () {
+  var CORRECT_SETTER = false;
+  var test = {};
+  var setter;
+  try {
+    setter = Object.getOwnPropertyDescriptor(Object.prototype, '__proto__').set;
+    setter.call(test, []);
+    CORRECT_SETTER = test instanceof Array;
+  } catch (error) { /* empty */ }
+  return function setPrototypeOf(O, proto) {
+    anObject(O);
+    aPossiblePrototype(proto);
+    if (CORRECT_SETTER) setter.call(O, proto);
+    else O.__proto__ = proto;
+    return O;
+  };
+}() : undefined);
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/own-keys.js":
+/*!****************************************************!*\
+  !*** ./node_modules/core-js/internals/own-keys.js ***!
+  \****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var getBuiltIn = __webpack_require__(/*! ../internals/get-built-in */ "./node_modules/core-js/internals/get-built-in.js");
+var getOwnPropertyNamesModule = __webpack_require__(/*! ../internals/object-get-own-property-names */ "./node_modules/core-js/internals/object-get-own-property-names.js");
+var getOwnPropertySymbolsModule = __webpack_require__(/*! ../internals/object-get-own-property-symbols */ "./node_modules/core-js/internals/object-get-own-property-symbols.js");
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+
+// all object keys, includes non-enumerable and symbols
+module.exports = getBuiltIn('Reflect', 'ownKeys') || function ownKeys(it) {
+  var keys = getOwnPropertyNamesModule.f(anObject(it));
+  var getOwnPropertySymbols = getOwnPropertySymbolsModule.f;
+  return getOwnPropertySymbols ? keys.concat(getOwnPropertySymbols(it)) : keys;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/path.js":
+/*!************************************************!*\
+  !*** ./node_modules/core-js/internals/path.js ***!
+  \************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/perform.js":
+/*!***************************************************!*\
+  !*** ./node_modules/core-js/internals/perform.js ***!
+  \***************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = function (exec) {
+  try {
+    return { error: false, value: exec() };
+  } catch (error) {
+    return { error: true, value: error };
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/promise-resolve.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/core-js/internals/promise-resolve.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+var isObject = __webpack_require__(/*! ../internals/is-object */ "./node_modules/core-js/internals/is-object.js");
+var newPromiseCapability = __webpack_require__(/*! ../internals/new-promise-capability */ "./node_modules/core-js/internals/new-promise-capability.js");
+
+module.exports = function (C, x) {
+  anObject(C);
+  if (isObject(x) && x.constructor === C) return x;
+  var promiseCapability = newPromiseCapability.f(C);
+  var resolve = promiseCapability.resolve;
+  resolve(x);
+  return promiseCapability.promise;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/punycode-to-ascii.js":
+/*!*************************************************************!*\
+  !*** ./node_modules/core-js/internals/punycode-to-ascii.js ***!
+  \*************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+// based on https://github.com/bestiejs/punycode.js/blob/master/punycode.js
+var maxInt = 2147483647; // aka. 0x7FFFFFFF or 2^31-1
+var base = 36;
+var tMin = 1;
+var tMax = 26;
+var skew = 38;
+var damp = 700;
+var initialBias = 72;
+var initialN = 128; // 0x80
+var delimiter = '-'; // '\x2D'
+var regexNonASCII = /[^\0-\u007E]/; // non-ASCII chars
+var regexSeparators = /[.\u3002\uFF0E\uFF61]/g; // RFC 3490 separators
+var OVERFLOW_ERROR = 'Overflow: input needs wider integers to process';
+var baseMinusTMin = base - tMin;
+var floor = Math.floor;
+var stringFromCharCode = String.fromCharCode;
+
+/**
+ * Creates an array containing the numeric code points of each Unicode
+ * character in the string. While JavaScript uses UCS-2 internally,
+ * this function will convert a pair of surrogate halves (each of which
+ * UCS-2 exposes as separate characters) into a single code point,
+ * matching UTF-16.
+ */
+var ucs2decode = function (string) {
+  var output = [];
+  var counter = 0;
+  var length = string.length;
+  while (counter < length) {
+    var value = string.charCodeAt(counter++);
+    if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
+      // It's a high surrogate, and there is a next character.
+      var extra = string.charCodeAt(counter++);
+      if ((extra & 0xFC00) == 0xDC00) { // Low surrogate.
+        output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
+      } else {
+        // It's an unmatched surrogate; only append this code unit, in case the
+        // next code unit is the high surrogate of a surrogate pair.
+        output.push(value);
+        counter--;
+      }
+    } else {
+      output.push(value);
+    }
+  }
+  return output;
+};
+
+/**
+ * Converts a digit/integer into a basic code point.
+ */
+var digitToBasic = function (digit) {
+  //  0..25 map to ASCII a..z or A..Z
+  // 26..35 map to ASCII 0..9
+  return digit + 22 + 75 * (digit < 26);
+};
+
+/**
+ * Bias adaptation function as per section 3.4 of RFC 3492.
+ * https://tools.ietf.org/html/rfc3492#section-3.4
+ */
+var adapt = function (delta, numPoints, firstTime) {
+  var k = 0;
+  delta = firstTime ? floor(delta / damp) : delta >> 1;
+  delta += floor(delta / numPoints);
+  for (; delta > baseMinusTMin * tMax >> 1; k += base) {
+    delta = floor(delta / baseMinusTMin);
+  }
+  return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
+};
+
+/**
+ * Converts a string of Unicode symbols (e.g. a domain name label) to a
+ * Punycode string of ASCII-only symbols.
+ */
+// eslint-disable-next-line  max-statements
+var encode = function (input) {
+  var output = [];
+
+  // Convert the input in UCS-2 to an array of Unicode code points.
+  input = ucs2decode(input);
+
+  // Cache the length.
+  var inputLength = input.length;
+
+  // Initialize the state.
+  var n = initialN;
+  var delta = 0;
+  var bias = initialBias;
+  var i, currentValue;
+
+  // Handle the basic code points.
+  for (i = 0; i < input.length; i++) {
+    currentValue = input[i];
+    if (currentValue < 0x80) {
+      output.push(stringFromCharCode(currentValue));
+    }
+  }
+
+  var basicLength = output.length; // number of basic code points.
+  var handledCPCount = basicLength; // number of code points that have been handled;
+
+  // Finish the basic string with a delimiter unless it's empty.
+  if (basicLength) {
+    output.push(delimiter);
+  }
+
+  // Main encoding loop:
+  while (handledCPCount < inputLength) {
+    // All non-basic code points < n have been handled already. Find the next larger one:
+    var m = maxInt;
+    for (i = 0; i < input.length; i++) {
+      currentValue = input[i];
+      if (currentValue >= n && currentValue < m) {
+        m = currentValue;
+      }
+    }
+
+    // Increase `delta` enough to advance the decoder's <n,i> state to <m,0>, but guard against overflow.
+    var handledCPCountPlusOne = handledCPCount + 1;
+    if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
+      throw RangeError(OVERFLOW_ERROR);
+    }
+
+    delta += (m - n) * handledCPCountPlusOne;
+    n = m;
+
+    for (i = 0; i < input.length; i++) {
+      currentValue = input[i];
+      if (currentValue < n && ++delta > maxInt) {
+        throw RangeError(OVERFLOW_ERROR);
+      }
+      if (currentValue == n) {
+        // Represent delta as a generalized variable-length integer.
+        var q = delta;
+        for (var k = base; /* no condition */; k += base) {
+          var t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+          if (q < t) break;
+          var qMinusT = q - t;
+          var baseMinusT = base - t;
+          output.push(stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT)));
+          q = floor(qMinusT / baseMinusT);
+        }
+
+        output.push(stringFromCharCode(digitToBasic(q)));
+        bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
+        delta = 0;
+        ++handledCPCount;
+      }
+    }
+
+    ++delta;
+    ++n;
+  }
+  return output.join('');
+};
+
+module.exports = function (input) {
+  var encoded = [];
+  var labels = input.toLowerCase().replace(regexSeparators, '\u002E').split('.');
+  var i, label;
+  for (i = 0; i < labels.length; i++) {
+    label = labels[i];
+    encoded.push(regexNonASCII.test(label) ? 'xn--' + encode(label) : label);
+  }
+  return encoded.join('.');
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/redefine-all.js":
+/*!********************************************************!*\
+  !*** ./node_modules/core-js/internals/redefine-all.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var redefine = __webpack_require__(/*! ../internals/redefine */ "./node_modules/core-js/internals/redefine.js");
+
+module.exports = function (target, src, options) {
+  for (var key in src) redefine(target, key, src[key], options);
+  return target;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/redefine.js":
+/*!****************************************************!*\
+  !*** ./node_modules/core-js/internals/redefine.js ***!
+  \****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var shared = __webpack_require__(/*! ../internals/shared */ "./node_modules/core-js/internals/shared.js");
+var hide = __webpack_require__(/*! ../internals/hide */ "./node_modules/core-js/internals/hide.js");
+var has = __webpack_require__(/*! ../internals/has */ "./node_modules/core-js/internals/has.js");
+var setGlobal = __webpack_require__(/*! ../internals/set-global */ "./node_modules/core-js/internals/set-global.js");
+var nativeFunctionToString = __webpack_require__(/*! ../internals/function-to-string */ "./node_modules/core-js/internals/function-to-string.js");
+var InternalStateModule = __webpack_require__(/*! ../internals/internal-state */ "./node_modules/core-js/internals/internal-state.js");
+
+var getInternalState = InternalStateModule.get;
+var enforceInternalState = InternalStateModule.enforce;
+var TEMPLATE = String(nativeFunctionToString).split('toString');
+
+shared('inspectSource', function (it) {
+  return nativeFunctionToString.call(it);
+});
+
+(module.exports = function (O, key, value, options) {
+  var unsafe = options ? !!options.unsafe : false;
+  var simple = options ? !!options.enumerable : false;
+  var noTargetGet = options ? !!options.noTargetGet : false;
+  if (typeof value == 'function') {
+    if (typeof key == 'string' && !has(value, 'name')) hide(value, 'name', key);
+    enforceInternalState(value).source = TEMPLATE.join(typeof key == 'string' ? key : '');
+  }
+  if (O === global) {
+    if (simple) O[key] = value;
+    else setGlobal(key, value);
+    return;
+  } else if (!unsafe) {
+    delete O[key];
+  } else if (!noTargetGet && O[key]) {
+    simple = true;
+  }
+  if (simple) O[key] = value;
+  else hide(O, key, value);
+// add fake Function#toString for correct work wrapped methods / constructors with methods like LoDash isNative
+})(Function.prototype, 'toString', function toString() {
+  return typeof this == 'function' && getInternalState(this).source || nativeFunctionToString.call(this);
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/regexp-exec-abstract.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/core-js/internals/regexp-exec-abstract.js ***!
+  \****************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var classof = __webpack_require__(/*! ./classof-raw */ "./node_modules/core-js/internals/classof-raw.js");
+var regexpExec = __webpack_require__(/*! ./regexp-exec */ "./node_modules/core-js/internals/regexp-exec.js");
+
+// `RegExpExec` abstract operation
+// https://tc39.github.io/ecma262/#sec-regexpexec
+module.exports = function (R, S) {
+  var exec = R.exec;
+  if (typeof exec === 'function') {
+    var result = exec.call(R, S);
+    if (typeof result !== 'object') {
+      throw TypeError('RegExp exec method returned something other than an Object or null');
+    }
+    return result;
+  }
+
+  if (classof(R) !== 'RegExp') {
+    throw TypeError('RegExp#exec called on incompatible receiver');
+  }
+
+  return regexpExec.call(R, S);
+};
+
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/regexp-exec.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/core-js/internals/regexp-exec.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var regexpFlags = __webpack_require__(/*! ./regexp-flags */ "./node_modules/core-js/internals/regexp-flags.js");
+
+var nativeExec = RegExp.prototype.exec;
+// This always refers to the native implementation, because the
+// String#replace polyfill uses ./fix-regexp-well-known-symbol-logic.js,
+// which loads this file before patching the method.
+var nativeReplace = String.prototype.replace;
+
+var patchedExec = nativeExec;
+
+var UPDATES_LAST_INDEX_WRONG = (function () {
+  var re1 = /a/;
+  var re2 = /b*/g;
+  nativeExec.call(re1, 'a');
+  nativeExec.call(re2, 'a');
+  return re1.lastIndex !== 0 || re2.lastIndex !== 0;
+})();
+
+// nonparticipating capturing group, copied from es5-shim's String#split patch.
+var NPCG_INCLUDED = /()??/.exec('')[1] !== undefined;
+
+var PATCH = UPDATES_LAST_INDEX_WRONG || NPCG_INCLUDED;
+
+if (PATCH) {
+  patchedExec = function exec(str) {
+    var re = this;
+    var lastIndex, reCopy, match, i;
+
+    if (NPCG_INCLUDED) {
+      reCopy = new RegExp('^' + re.source + '$(?!\\s)', regexpFlags.call(re));
+    }
+    if (UPDATES_LAST_INDEX_WRONG) lastIndex = re.lastIndex;
+
+    match = nativeExec.call(re, str);
+
+    if (UPDATES_LAST_INDEX_WRONG && match) {
+      re.lastIndex = re.global ? match.index + match[0].length : lastIndex;
+    }
+    if (NPCG_INCLUDED && match && match.length > 1) {
+      // Fix browsers whose `exec` methods don't consistently return `undefined`
+      // for NPCG, like IE8. NOTE: This doesn' work for /(.?)?/
+      nativeReplace.call(match[0], reCopy, function () {
+        for (i = 1; i < arguments.length - 2; i++) {
+          if (arguments[i] === undefined) match[i] = undefined;
+        }
+      });
+    }
+
+    return match;
+  };
+}
+
+module.exports = patchedExec;
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/regexp-flags.js":
+/*!********************************************************!*\
+  !*** ./node_modules/core-js/internals/regexp-flags.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+
+// `RegExp.prototype.flags` getter implementation
+// https://tc39.github.io/ecma262/#sec-get-regexp.prototype.flags
+module.exports = function () {
+  var that = anObject(this);
+  var result = '';
+  if (that.global) result += 'g';
+  if (that.ignoreCase) result += 'i';
+  if (that.multiline) result += 'm';
+  if (that.dotAll) result += 's';
+  if (that.unicode) result += 'u';
+  if (that.sticky) result += 'y';
+  return result;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/require-object-coercible.js":
+/*!********************************************************************!*\
+  !*** ./node_modules/core-js/internals/require-object-coercible.js ***!
+  \********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+// `RequireObjectCoercible` abstract operation
+// https://tc39.github.io/ecma262/#sec-requireobjectcoercible
+module.exports = function (it) {
+  if (it == undefined) throw TypeError("Can't call method on " + it);
+  return it;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/set-global.js":
+/*!******************************************************!*\
+  !*** ./node_modules/core-js/internals/set-global.js ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var hide = __webpack_require__(/*! ../internals/hide */ "./node_modules/core-js/internals/hide.js");
+
+module.exports = function (key, value) {
+  try {
+    hide(global, key, value);
+  } catch (error) {
+    global[key] = value;
+  } return value;
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/set-species.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/core-js/internals/set-species.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var getBuiltIn = __webpack_require__(/*! ../internals/get-built-in */ "./node_modules/core-js/internals/get-built-in.js");
+var definePropertyModule = __webpack_require__(/*! ../internals/object-define-property */ "./node_modules/core-js/internals/object-define-property.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+var DESCRIPTORS = __webpack_require__(/*! ../internals/descriptors */ "./node_modules/core-js/internals/descriptors.js");
+
+var SPECIES = wellKnownSymbol('species');
+
+module.exports = function (CONSTRUCTOR_NAME) {
+  var Constructor = getBuiltIn(CONSTRUCTOR_NAME);
+  var defineProperty = definePropertyModule.f;
+
+  if (DESCRIPTORS && Constructor && !Constructor[SPECIES]) {
+    defineProperty(Constructor, SPECIES, {
+      configurable: true,
+      get: function () { return this; }
+    });
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/set-to-string-tag.js":
+/*!*************************************************************!*\
+  !*** ./node_modules/core-js/internals/set-to-string-tag.js ***!
+  \*************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var defineProperty = __webpack_require__(/*! ../internals/object-define-property */ "./node_modules/core-js/internals/object-define-property.js").f;
+var has = __webpack_require__(/*! ../internals/has */ "./node_modules/core-js/internals/has.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+
+var TO_STRING_TAG = wellKnownSymbol('toStringTag');
+
+module.exports = function (it, TAG, STATIC) {
+  if (it && !has(it = STATIC ? it : it.prototype, TO_STRING_TAG)) {
+    defineProperty(it, TO_STRING_TAG, { configurable: true, value: TAG });
+  }
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/shared-key.js":
+/*!******************************************************!*\
+  !*** ./node_modules/core-js/internals/shared-key.js ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var shared = __webpack_require__(/*! ../internals/shared */ "./node_modules/core-js/internals/shared.js");
+var uid = __webpack_require__(/*! ../internals/uid */ "./node_modules/core-js/internals/uid.js");
+
+var keys = shared('keys');
+
+module.exports = function (key) {
+  return keys[key] || (keys[key] = uid(key));
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/shared.js":
+/*!**************************************************!*\
+  !*** ./node_modules/core-js/internals/shared.js ***!
+  \**************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var setGlobal = __webpack_require__(/*! ../internals/set-global */ "./node_modules/core-js/internals/set-global.js");
+var IS_PURE = __webpack_require__(/*! ../internals/is-pure */ "./node_modules/core-js/internals/is-pure.js");
+
+var SHARED = '__core-js_shared__';
+var store = global[SHARED] || setGlobal(SHARED, {});
+
+(module.exports = function (key, value) {
+  return store[key] || (store[key] = value !== undefined ? value : {});
+})('versions', []).push({
+  version: '3.1.3',
+  mode: IS_PURE ? 'pure' : 'global',
+  copyright: '© 2019 Denis Pushkarev (zloirock.ru)'
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/sloppy-array-method.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/core-js/internals/sloppy-array-method.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+
+module.exports = function (METHOD_NAME, argument) {
+  var method = [][METHOD_NAME];
+  return !method || !fails(function () {
+    // eslint-disable-next-line no-useless-call,no-throw-literal
+    method.call(null, argument || function () { throw 1; }, 1);
+  });
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/species-constructor.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/core-js/internals/species-constructor.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+var aFunction = __webpack_require__(/*! ../internals/a-function */ "./node_modules/core-js/internals/a-function.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+
+var SPECIES = wellKnownSymbol('species');
+
+// `SpeciesConstructor` abstract operation
+// https://tc39.github.io/ecma262/#sec-speciesconstructor
+module.exports = function (O, defaultConstructor) {
+  var C = anObject(O).constructor;
+  var S;
+  return C === undefined || (S = anObject(C)[SPECIES]) == undefined ? defaultConstructor : aFunction(S);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/string-multibyte.js":
+/*!************************************************************!*\
+  !*** ./node_modules/core-js/internals/string-multibyte.js ***!
+  \************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var toInteger = __webpack_require__(/*! ../internals/to-integer */ "./node_modules/core-js/internals/to-integer.js");
+var requireObjectCoercible = __webpack_require__(/*! ../internals/require-object-coercible */ "./node_modules/core-js/internals/require-object-coercible.js");
+
+// `String.prototype.{ codePointAt, at }` methods implementation
+var createMethod = function (CONVERT_TO_STRING) {
+  return function ($this, pos) {
+    var S = String(requireObjectCoercible($this));
+    var position = toInteger(pos);
+    var size = S.length;
+    var first, second;
+    if (position < 0 || position >= size) return CONVERT_TO_STRING ? '' : undefined;
+    first = S.charCodeAt(position);
+    return first < 0xD800 || first > 0xDBFF || position + 1 === size
+      || (second = S.charCodeAt(position + 1)) < 0xDC00 || second > 0xDFFF
+        ? CONVERT_TO_STRING ? S.charAt(position) : first
+        : CONVERT_TO_STRING ? S.slice(position, position + 2) : (first - 0xD800 << 10) + (second - 0xDC00) + 0x10000;
+  };
+};
+
+module.exports = {
+  // `String.prototype.codePointAt` method
+  // https://tc39.github.io/ecma262/#sec-string.prototype.codepointat
+  codeAt: createMethod(false),
+  // `String.prototype.at` method
+  // https://github.com/mathiasbynens/String.prototype.at
+  charAt: createMethod(true)
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/string-trim.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/core-js/internals/string-trim.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var requireObjectCoercible = __webpack_require__(/*! ../internals/require-object-coercible */ "./node_modules/core-js/internals/require-object-coercible.js");
+var whitespaces = __webpack_require__(/*! ../internals/whitespaces */ "./node_modules/core-js/internals/whitespaces.js");
+
+var whitespace = '[' + whitespaces + ']';
+var ltrim = RegExp('^' + whitespace + whitespace + '*');
+var rtrim = RegExp(whitespace + whitespace + '*$');
+
+// `String.prototype.{ trim, trimStart, trimEnd, trimLeft, trimRight }` methods implementation
+var createMethod = function (TYPE) {
+  return function ($this) {
+    var string = String(requireObjectCoercible($this));
+    if (TYPE & 1) string = string.replace(ltrim, '');
+    if (TYPE & 2) string = string.replace(rtrim, '');
+    return string;
+  };
+};
+
+module.exports = {
+  // `String.prototype.{ trimLeft, trimStart }` methods
+  // https://tc39.github.io/ecma262/#sec-string.prototype.trimstart
+  start: createMethod(1),
+  // `String.prototype.{ trimRight, trimEnd }` methods
+  // https://tc39.github.io/ecma262/#sec-string.prototype.trimend
+  end: createMethod(2),
+  // `String.prototype.trim` method
+  // https://tc39.github.io/ecma262/#sec-string.prototype.trim
+  trim: createMethod(3)
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/task.js":
+/*!************************************************!*\
+  !*** ./node_modules/core-js/internals/task.js ***!
+  \************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+var classof = __webpack_require__(/*! ../internals/classof-raw */ "./node_modules/core-js/internals/classof-raw.js");
+var bind = __webpack_require__(/*! ../internals/bind-context */ "./node_modules/core-js/internals/bind-context.js");
+var html = __webpack_require__(/*! ../internals/html */ "./node_modules/core-js/internals/html.js");
+var createElement = __webpack_require__(/*! ../internals/document-create-element */ "./node_modules/core-js/internals/document-create-element.js");
+
+var location = global.location;
+var set = global.setImmediate;
+var clear = global.clearImmediate;
+var process = global.process;
+var MessageChannel = global.MessageChannel;
+var Dispatch = global.Dispatch;
+var counter = 0;
+var queue = {};
+var ONREADYSTATECHANGE = 'onreadystatechange';
+var defer, channel, port;
+
+var run = function (id) {
+  // eslint-disable-next-line no-prototype-builtins
+  if (queue.hasOwnProperty(id)) {
+    var fn = queue[id];
+    delete queue[id];
+    fn();
+  }
+};
+
+var runner = function (id) {
+  return function () {
+    run(id);
+  };
+};
+
+var listener = function (event) {
+  run(event.data);
+};
+
+var post = function (id) {
+  // old engines have not location.origin
+  global.postMessage(id + '', location.protocol + '//' + location.host);
+};
+
+// Node.js 0.9+ & IE10+ has setImmediate, otherwise:
+if (!set || !clear) {
+  set = function setImmediate(fn) {
+    var args = [];
+    var i = 1;
+    while (arguments.length > i) args.push(arguments[i++]);
+    queue[++counter] = function () {
+      // eslint-disable-next-line no-new-func
+      (typeof fn == 'function' ? fn : Function(fn)).apply(undefined, args);
+    };
+    defer(counter);
+    return counter;
+  };
+  clear = function clearImmediate(id) {
+    delete queue[id];
+  };
+  // Node.js 0.8-
+  if (classof(process) == 'process') {
+    defer = function (id) {
+      process.nextTick(runner(id));
+    };
+  // Sphere (JS game engine) Dispatch API
+  } else if (Dispatch && Dispatch.now) {
+    defer = function (id) {
+      Dispatch.now(runner(id));
+    };
+  // Browsers with MessageChannel, includes WebWorkers
+  } else if (MessageChannel) {
+    channel = new MessageChannel();
+    port = channel.port2;
+    channel.port1.onmessage = listener;
+    defer = bind(port.postMessage, port, 1);
+  // Browsers with postMessage, skip WebWorkers
+  // IE8 has postMessage, but it's sync & typeof its postMessage is 'object'
+  } else if (global.addEventListener && typeof postMessage == 'function' && !global.importScripts && !fails(post)) {
+    defer = post;
+    global.addEventListener('message', listener, false);
+  // IE8-
+  } else if (ONREADYSTATECHANGE in createElement('script')) {
+    defer = function (id) {
+      html.appendChild(createElement('script'))[ONREADYSTATECHANGE] = function () {
+        html.removeChild(this);
+        run(id);
+      };
+    };
+  // Rest old browsers
+  } else {
+    defer = function (id) {
+      setTimeout(runner(id), 0);
+    };
+  }
+}
+
+module.exports = {
+  set: set,
+  clear: clear
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/to-absolute-index.js":
+/*!*************************************************************!*\
+  !*** ./node_modules/core-js/internals/to-absolute-index.js ***!
+  \*************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var toInteger = __webpack_require__(/*! ../internals/to-integer */ "./node_modules/core-js/internals/to-integer.js");
+
+var max = Math.max;
+var min = Math.min;
+
+// Helper for a popular repeating case of the spec:
+// Let integer be ? ToInteger(index).
+// If integer < 0, let result be max((length + integer), 0); else let result be min(length, length).
+module.exports = function (index, length) {
+  var integer = toInteger(index);
+  return integer < 0 ? max(integer + length, 0) : min(integer, length);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/to-indexed-object.js":
+/*!*************************************************************!*\
+  !*** ./node_modules/core-js/internals/to-indexed-object.js ***!
+  \*************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+// toObject with fallback for non-array-like ES3 strings
+var IndexedObject = __webpack_require__(/*! ../internals/indexed-object */ "./node_modules/core-js/internals/indexed-object.js");
+var requireObjectCoercible = __webpack_require__(/*! ../internals/require-object-coercible */ "./node_modules/core-js/internals/require-object-coercible.js");
+
+module.exports = function (it) {
+  return IndexedObject(requireObjectCoercible(it));
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/to-integer.js":
+/*!******************************************************!*\
+  !*** ./node_modules/core-js/internals/to-integer.js ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+var ceil = Math.ceil;
+var floor = Math.floor;
+
+// `ToInteger` abstract operation
+// https://tc39.github.io/ecma262/#sec-tointeger
+module.exports = function (argument) {
+  return isNaN(argument = +argument) ? 0 : (argument > 0 ? floor : ceil)(argument);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/to-length.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/core-js/internals/to-length.js ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var toInteger = __webpack_require__(/*! ../internals/to-integer */ "./node_modules/core-js/internals/to-integer.js");
+
+var min = Math.min;
+
+// `ToLength` abstract operation
+// https://tc39.github.io/ecma262/#sec-tolength
+module.exports = function (argument) {
+  return argument > 0 ? min(toInteger(argument), 0x1FFFFFFFFFFFFF) : 0; // 2 ** 53 - 1 == 9007199254740991
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/to-object.js":
+/*!*****************************************************!*\
+  !*** ./node_modules/core-js/internals/to-object.js ***!
+  \*****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var requireObjectCoercible = __webpack_require__(/*! ../internals/require-object-coercible */ "./node_modules/core-js/internals/require-object-coercible.js");
+
+// `ToObject` abstract operation
+// https://tc39.github.io/ecma262/#sec-toobject
+module.exports = function (argument) {
+  return Object(requireObjectCoercible(argument));
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/to-primitive.js":
+/*!********************************************************!*\
+  !*** ./node_modules/core-js/internals/to-primitive.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var isObject = __webpack_require__(/*! ../internals/is-object */ "./node_modules/core-js/internals/is-object.js");
+
+// `ToPrimitive` abstract operation
+// https://tc39.github.io/ecma262/#sec-toprimitive
+// instead of the ES6 spec version, we didn't implement @@toPrimitive case
+// and the second argument - flag - preferred type is a string
+module.exports = function (input, PREFERRED_STRING) {
+  if (!isObject(input)) return input;
+  var fn, val;
+  if (PREFERRED_STRING && typeof (fn = input.toString) == 'function' && !isObject(val = fn.call(input))) return val;
+  if (typeof (fn = input.valueOf) == 'function' && !isObject(val = fn.call(input))) return val;
+  if (!PREFERRED_STRING && typeof (fn = input.toString) == 'function' && !isObject(val = fn.call(input))) return val;
+  throw TypeError("Can't convert object to primitive value");
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/uid.js":
+/*!***********************************************!*\
+  !*** ./node_modules/core-js/internals/uid.js ***!
+  \***********************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+var id = 0;
+var postfix = Math.random();
+
+module.exports = function (key) {
+  return 'Symbol(' + String(key === undefined ? '' : key) + ')_' + (++id + postfix).toString(36);
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/user-agent.js":
+/*!******************************************************!*\
+  !*** ./node_modules/core-js/internals/user-agent.js ***!
+  \******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var getBuiltIn = __webpack_require__(/*! ../internals/get-built-in */ "./node_modules/core-js/internals/get-built-in.js");
+
+module.exports = getBuiltIn('navigator', 'userAgent') || '';
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/well-known-symbol.js":
+/*!*************************************************************!*\
+  !*** ./node_modules/core-js/internals/well-known-symbol.js ***!
+  \*************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var shared = __webpack_require__(/*! ../internals/shared */ "./node_modules/core-js/internals/shared.js");
+var uid = __webpack_require__(/*! ../internals/uid */ "./node_modules/core-js/internals/uid.js");
+var NATIVE_SYMBOL = __webpack_require__(/*! ../internals/native-symbol */ "./node_modules/core-js/internals/native-symbol.js");
+
+var Symbol = global.Symbol;
+var store = shared('wks');
+
+module.exports = function (name) {
+  return store[name] || (store[name] = NATIVE_SYMBOL && Symbol[name]
+    || (NATIVE_SYMBOL ? Symbol : uid)('Symbol.' + name));
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/internals/whitespaces.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/core-js/internals/whitespaces.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+// a string of all valid unicode whitespaces
+// eslint-disable-next-line max-len
+module.exports = '\u0009\u000A\u000B\u000C\u000D\u0020\u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028\u2029\uFEFF';
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/es.array.iterator.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/core-js/modules/es.array.iterator.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var toIndexedObject = __webpack_require__(/*! ../internals/to-indexed-object */ "./node_modules/core-js/internals/to-indexed-object.js");
+var addToUnscopables = __webpack_require__(/*! ../internals/add-to-unscopables */ "./node_modules/core-js/internals/add-to-unscopables.js");
+var Iterators = __webpack_require__(/*! ../internals/iterators */ "./node_modules/core-js/internals/iterators.js");
+var InternalStateModule = __webpack_require__(/*! ../internals/internal-state */ "./node_modules/core-js/internals/internal-state.js");
+var defineIterator = __webpack_require__(/*! ../internals/define-iterator */ "./node_modules/core-js/internals/define-iterator.js");
+
+var ARRAY_ITERATOR = 'Array Iterator';
+var setInternalState = InternalStateModule.set;
+var getInternalState = InternalStateModule.getterFor(ARRAY_ITERATOR);
+
+// `Array.prototype.entries` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.entries
+// `Array.prototype.keys` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.keys
+// `Array.prototype.values` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.values
+// `Array.prototype[@@iterator]` method
+// https://tc39.github.io/ecma262/#sec-array.prototype-@@iterator
+// `CreateArrayIterator` internal method
+// https://tc39.github.io/ecma262/#sec-createarrayiterator
+module.exports = defineIterator(Array, 'Array', function (iterated, kind) {
+  setInternalState(this, {
+    type: ARRAY_ITERATOR,
+    target: toIndexedObject(iterated), // target
+    index: 0,                          // next index
+    kind: kind                         // kind
+  });
+// `%ArrayIteratorPrototype%.next` method
+// https://tc39.github.io/ecma262/#sec-%arrayiteratorprototype%.next
+}, function () {
+  var state = getInternalState(this);
+  var target = state.target;
+  var kind = state.kind;
+  var index = state.index++;
+  if (!target || index >= target.length) {
+    state.target = undefined;
+    return { value: undefined, done: true };
+  }
+  if (kind == 'keys') return { value: index, done: false };
+  if (kind == 'values') return { value: target[index], done: false };
+  return { value: [index, target[index]], done: false };
+}, 'values');
+
+// argumentsList[@@iterator] is %ArrayProto_values%
+// https://tc39.github.io/ecma262/#sec-createunmappedargumentsobject
+// https://tc39.github.io/ecma262/#sec-createmappedargumentsobject
+Iterators.Arguments = Iterators.Array;
+
+// https://tc39.github.io/ecma262/#sec-array.prototype-@@unscopables
+addToUnscopables('keys');
+addToUnscopables('values');
+addToUnscopables('entries');
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/es.array.sort.js":
+/*!*******************************************************!*\
+  !*** ./node_modules/core-js/modules/es.array.sort.js ***!
+  \*******************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var aFunction = __webpack_require__(/*! ../internals/a-function */ "./node_modules/core-js/internals/a-function.js");
+var toObject = __webpack_require__(/*! ../internals/to-object */ "./node_modules/core-js/internals/to-object.js");
+var fails = __webpack_require__(/*! ../internals/fails */ "./node_modules/core-js/internals/fails.js");
+var sloppyArrayMethod = __webpack_require__(/*! ../internals/sloppy-array-method */ "./node_modules/core-js/internals/sloppy-array-method.js");
+
+var nativeSort = [].sort;
+var test = [1, 2, 3];
+
+// IE8-
+var FAILS_ON_UNDEFINED = fails(function () {
+  test.sort(undefined);
+});
+// V8 bug
+var FAILS_ON_NULL = fails(function () {
+  test.sort(null);
+});
+// Old WebKit
+var SLOPPY_METHOD = sloppyArrayMethod('sort');
+
+var FORCED = FAILS_ON_UNDEFINED || !FAILS_ON_NULL || SLOPPY_METHOD;
+
+// `Array.prototype.sort` method
+// https://tc39.github.io/ecma262/#sec-array.prototype.sort
+$({ target: 'Array', proto: true, forced: FORCED }, {
+  sort: function sort(comparefn) {
+    return comparefn === undefined
+      ? nativeSort.call(toObject(this))
+      : nativeSort.call(toObject(this), aFunction(comparefn));
+  }
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/es.promise.js":
+/*!****************************************************!*\
+  !*** ./node_modules/core-js/modules/es.promise.js ***!
+  \****************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var IS_PURE = __webpack_require__(/*! ../internals/is-pure */ "./node_modules/core-js/internals/is-pure.js");
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var path = __webpack_require__(/*! ../internals/path */ "./node_modules/core-js/internals/path.js");
+var redefineAll = __webpack_require__(/*! ../internals/redefine-all */ "./node_modules/core-js/internals/redefine-all.js");
+var setToStringTag = __webpack_require__(/*! ../internals/set-to-string-tag */ "./node_modules/core-js/internals/set-to-string-tag.js");
+var setSpecies = __webpack_require__(/*! ../internals/set-species */ "./node_modules/core-js/internals/set-species.js");
+var isObject = __webpack_require__(/*! ../internals/is-object */ "./node_modules/core-js/internals/is-object.js");
+var aFunction = __webpack_require__(/*! ../internals/a-function */ "./node_modules/core-js/internals/a-function.js");
+var anInstance = __webpack_require__(/*! ../internals/an-instance */ "./node_modules/core-js/internals/an-instance.js");
+var classof = __webpack_require__(/*! ../internals/classof-raw */ "./node_modules/core-js/internals/classof-raw.js");
+var iterate = __webpack_require__(/*! ../internals/iterate */ "./node_modules/core-js/internals/iterate.js");
+var checkCorrectnessOfIteration = __webpack_require__(/*! ../internals/check-correctness-of-iteration */ "./node_modules/core-js/internals/check-correctness-of-iteration.js");
+var speciesConstructor = __webpack_require__(/*! ../internals/species-constructor */ "./node_modules/core-js/internals/species-constructor.js");
+var task = __webpack_require__(/*! ../internals/task */ "./node_modules/core-js/internals/task.js").set;
+var microtask = __webpack_require__(/*! ../internals/microtask */ "./node_modules/core-js/internals/microtask.js");
+var promiseResolve = __webpack_require__(/*! ../internals/promise-resolve */ "./node_modules/core-js/internals/promise-resolve.js");
+var hostReportErrors = __webpack_require__(/*! ../internals/host-report-errors */ "./node_modules/core-js/internals/host-report-errors.js");
+var newPromiseCapabilityModule = __webpack_require__(/*! ../internals/new-promise-capability */ "./node_modules/core-js/internals/new-promise-capability.js");
+var perform = __webpack_require__(/*! ../internals/perform */ "./node_modules/core-js/internals/perform.js");
+var userAgent = __webpack_require__(/*! ../internals/user-agent */ "./node_modules/core-js/internals/user-agent.js");
+var InternalStateModule = __webpack_require__(/*! ../internals/internal-state */ "./node_modules/core-js/internals/internal-state.js");
+var isForced = __webpack_require__(/*! ../internals/is-forced */ "./node_modules/core-js/internals/is-forced.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+
+var SPECIES = wellKnownSymbol('species');
+var PROMISE = 'Promise';
+var getInternalState = InternalStateModule.get;
+var setInternalState = InternalStateModule.set;
+var getInternalPromiseState = InternalStateModule.getterFor(PROMISE);
+var PromiseConstructor = global[PROMISE];
+var TypeError = global.TypeError;
+var document = global.document;
+var process = global.process;
+var $fetch = global.fetch;
+var versions = process && process.versions;
+var v8 = versions && versions.v8 || '';
+var newPromiseCapability = newPromiseCapabilityModule.f;
+var newGenericPromiseCapability = newPromiseCapability;
+var IS_NODE = classof(process) == 'process';
+var DISPATCH_EVENT = !!(document && document.createEvent && global.dispatchEvent);
+var UNHANDLED_REJECTION = 'unhandledrejection';
+var REJECTION_HANDLED = 'rejectionhandled';
+var PENDING = 0;
+var FULFILLED = 1;
+var REJECTED = 2;
+var HANDLED = 1;
+var UNHANDLED = 2;
+var Internal, OwnPromiseCapability, PromiseWrapper;
+
+var FORCED = isForced(PROMISE, function () {
+  // correct subclassing with @@species support
+  var promise = PromiseConstructor.resolve(1);
+  var empty = function () { /* empty */ };
+  var FakePromise = (promise.constructor = {})[SPECIES] = function (exec) {
+    exec(empty, empty);
+  };
+  // unhandled rejections tracking support, NodeJS Promise without it fails @@species test
+  return !((IS_NODE || typeof PromiseRejectionEvent == 'function')
+    && (!IS_PURE || promise['finally'])
+    && promise.then(empty) instanceof FakePromise
+    // v8 6.6 (Node 10 and Chrome 66) have a bug with resolving custom thenables
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=830565
+    // we can't detect it synchronously, so just check versions
+    && v8.indexOf('6.6') !== 0
+    && userAgent.indexOf('Chrome/66') === -1);
+});
+
+var INCORRECT_ITERATION = FORCED || !checkCorrectnessOfIteration(function (iterable) {
+  PromiseConstructor.all(iterable)['catch'](function () { /* empty */ });
+});
+
+// helpers
+var isThenable = function (it) {
+  var then;
+  return isObject(it) && typeof (then = it.then) == 'function' ? then : false;
+};
+
+var notify = function (promise, state, isReject) {
+  if (state.notified) return;
+  state.notified = true;
+  var chain = state.reactions;
+  microtask(function () {
+    var value = state.value;
+    var ok = state.state == FULFILLED;
+    var index = 0;
+    // variable length - can't use forEach
+    while (chain.length > index) {
+      var reaction = chain[index++];
+      var handler = ok ? reaction.ok : reaction.fail;
+      var resolve = reaction.resolve;
+      var reject = reaction.reject;
+      var domain = reaction.domain;
+      var result, then, exited;
+      try {
+        if (handler) {
+          if (!ok) {
+            if (state.rejection === UNHANDLED) onHandleUnhandled(promise, state);
+            state.rejection = HANDLED;
+          }
+          if (handler === true) result = value;
+          else {
+            if (domain) domain.enter();
+            result = handler(value); // can throw
+            if (domain) {
+              domain.exit();
+              exited = true;
+            }
+          }
+          if (result === reaction.promise) {
+            reject(TypeError('Promise-chain cycle'));
+          } else if (then = isThenable(result)) {
+            then.call(result, resolve, reject);
+          } else resolve(result);
+        } else reject(value);
+      } catch (error) {
+        if (domain && !exited) domain.exit();
+        reject(error);
+      }
+    }
+    state.reactions = [];
+    state.notified = false;
+    if (isReject && !state.rejection) onUnhandled(promise, state);
+  });
+};
+
+var dispatchEvent = function (name, promise, reason) {
+  var event, handler;
+  if (DISPATCH_EVENT) {
+    event = document.createEvent('Event');
+    event.promise = promise;
+    event.reason = reason;
+    event.initEvent(name, false, true);
+    global.dispatchEvent(event);
+  } else event = { promise: promise, reason: reason };
+  if (handler = global['on' + name]) handler(event);
+  else if (name === UNHANDLED_REJECTION) hostReportErrors('Unhandled promise rejection', reason);
+};
+
+var onUnhandled = function (promise, state) {
+  task.call(global, function () {
+    var value = state.value;
+    var IS_UNHANDLED = isUnhandled(state);
+    var result;
+    if (IS_UNHANDLED) {
+      result = perform(function () {
+        if (IS_NODE) {
+          process.emit('unhandledRejection', value, promise);
+        } else dispatchEvent(UNHANDLED_REJECTION, promise, value);
+      });
+      // Browsers should not trigger `rejectionHandled` event if it was handled here, NodeJS - should
+      state.rejection = IS_NODE || isUnhandled(state) ? UNHANDLED : HANDLED;
+      if (result.error) throw result.value;
+    }
+  });
+};
+
+var isUnhandled = function (state) {
+  return state.rejection !== HANDLED && !state.parent;
+};
+
+var onHandleUnhandled = function (promise, state) {
+  task.call(global, function () {
+    if (IS_NODE) {
+      process.emit('rejectionHandled', promise);
+    } else dispatchEvent(REJECTION_HANDLED, promise, state.value);
+  });
+};
+
+var bind = function (fn, promise, state, unwrap) {
+  return function (value) {
+    fn(promise, state, value, unwrap);
+  };
+};
+
+var internalReject = function (promise, state, value, unwrap) {
+  if (state.done) return;
+  state.done = true;
+  if (unwrap) state = unwrap;
+  state.value = value;
+  state.state = REJECTED;
+  notify(promise, state, true);
+};
+
+var internalResolve = function (promise, state, value, unwrap) {
+  if (state.done) return;
+  state.done = true;
+  if (unwrap) state = unwrap;
+  try {
+    if (promise === value) throw TypeError("Promise can't be resolved itself");
+    var then = isThenable(value);
+    if (then) {
+      microtask(function () {
+        var wrapper = { done: false };
+        try {
+          then.call(value,
+            bind(internalResolve, promise, wrapper, state),
+            bind(internalReject, promise, wrapper, state)
+          );
+        } catch (error) {
+          internalReject(promise, wrapper, error, state);
+        }
+      });
+    } else {
+      state.value = value;
+      state.state = FULFILLED;
+      notify(promise, state, false);
+    }
+  } catch (error) {
+    internalReject(promise, { done: false }, error, state);
+  }
+};
+
+// constructor polyfill
+if (FORCED) {
+  // 25.4.3.1 Promise(executor)
+  PromiseConstructor = function Promise(executor) {
+    anInstance(this, PromiseConstructor, PROMISE);
+    aFunction(executor);
+    Internal.call(this);
+    var state = getInternalState(this);
+    try {
+      executor(bind(internalResolve, this, state), bind(internalReject, this, state));
+    } catch (error) {
+      internalReject(this, state, error);
+    }
+  };
+  // eslint-disable-next-line no-unused-vars
+  Internal = function Promise(executor) {
+    setInternalState(this, {
+      type: PROMISE,
+      done: false,
+      notified: false,
+      parent: false,
+      reactions: [],
+      rejection: false,
+      state: PENDING,
+      value: undefined
+    });
+  };
+  Internal.prototype = redefineAll(PromiseConstructor.prototype, {
+    // `Promise.prototype.then` method
+    // https://tc39.github.io/ecma262/#sec-promise.prototype.then
+    then: function then(onFulfilled, onRejected) {
+      var state = getInternalPromiseState(this);
+      var reaction = newPromiseCapability(speciesConstructor(this, PromiseConstructor));
+      reaction.ok = typeof onFulfilled == 'function' ? onFulfilled : true;
+      reaction.fail = typeof onRejected == 'function' && onRejected;
+      reaction.domain = IS_NODE ? process.domain : undefined;
+      state.parent = true;
+      state.reactions.push(reaction);
+      if (state.state != PENDING) notify(this, state, false);
+      return reaction.promise;
+    },
+    // `Promise.prototype.catch` method
+    // https://tc39.github.io/ecma262/#sec-promise.prototype.catch
+    'catch': function (onRejected) {
+      return this.then(undefined, onRejected);
+    }
+  });
+  OwnPromiseCapability = function () {
+    var promise = new Internal();
+    var state = getInternalState(promise);
+    this.promise = promise;
+    this.resolve = bind(internalResolve, promise, state);
+    this.reject = bind(internalReject, promise, state);
+  };
+  newPromiseCapabilityModule.f = newPromiseCapability = function (C) {
+    return C === PromiseConstructor || C === PromiseWrapper
+      ? new OwnPromiseCapability(C)
+      : newGenericPromiseCapability(C);
+  };
+
+  // wrap fetch result
+  if (!IS_PURE && typeof $fetch == 'function') $({ global: true, enumerable: true, forced: true }, {
+    // eslint-disable-next-line no-unused-vars
+    fetch: function fetch(input) {
+      return promiseResolve(PromiseConstructor, $fetch.apply(global, arguments));
+    }
+  });
+}
+
+$({ global: true, wrap: true, forced: FORCED }, {
+  Promise: PromiseConstructor
+});
+
+setToStringTag(PromiseConstructor, PROMISE, false, true);
+setSpecies(PROMISE);
+
+PromiseWrapper = path[PROMISE];
+
+// statics
+$({ target: PROMISE, stat: true, forced: FORCED }, {
+  // `Promise.reject` method
+  // https://tc39.github.io/ecma262/#sec-promise.reject
+  reject: function reject(r) {
+    var capability = newPromiseCapability(this);
+    capability.reject.call(undefined, r);
+    return capability.promise;
+  }
+});
+
+$({ target: PROMISE, stat: true, forced: IS_PURE || FORCED }, {
+  // `Promise.resolve` method
+  // https://tc39.github.io/ecma262/#sec-promise.resolve
+  resolve: function resolve(x) {
+    return promiseResolve(IS_PURE && this === PromiseWrapper ? PromiseConstructor : this, x);
+  }
+});
+
+$({ target: PROMISE, stat: true, forced: INCORRECT_ITERATION }, {
+  // `Promise.all` method
+  // https://tc39.github.io/ecma262/#sec-promise.all
+  all: function all(iterable) {
+    var C = this;
+    var capability = newPromiseCapability(C);
+    var resolve = capability.resolve;
+    var reject = capability.reject;
+    var result = perform(function () {
+      var $promiseResolve = aFunction(C.resolve);
+      var values = [];
+      var counter = 0;
+      var remaining = 1;
+      iterate(iterable, function (promise) {
+        var index = counter++;
+        var alreadyCalled = false;
+        values.push(undefined);
+        remaining++;
+        $promiseResolve.call(C, promise).then(function (value) {
+          if (alreadyCalled) return;
+          alreadyCalled = true;
+          values[index] = value;
+          --remaining || resolve(values);
+        }, reject);
+      });
+      --remaining || resolve(values);
+    });
+    if (result.error) reject(result.value);
+    return capability.promise;
+  },
+  // `Promise.race` method
+  // https://tc39.github.io/ecma262/#sec-promise.race
+  race: function race(iterable) {
+    var C = this;
+    var capability = newPromiseCapability(C);
+    var reject = capability.reject;
+    var result = perform(function () {
+      var $promiseResolve = aFunction(C.resolve);
+      iterate(iterable, function (promise) {
+        $promiseResolve.call(C, promise).then(capability.resolve, reject);
+      });
+    });
+    if (result.error) reject(result.value);
+    return capability.promise;
+  }
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/es.string.iterator.js":
+/*!************************************************************!*\
+  !*** ./node_modules/core-js/modules/es.string.iterator.js ***!
+  \************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var charAt = __webpack_require__(/*! ../internals/string-multibyte */ "./node_modules/core-js/internals/string-multibyte.js").charAt;
+var InternalStateModule = __webpack_require__(/*! ../internals/internal-state */ "./node_modules/core-js/internals/internal-state.js");
+var defineIterator = __webpack_require__(/*! ../internals/define-iterator */ "./node_modules/core-js/internals/define-iterator.js");
+
+var STRING_ITERATOR = 'String Iterator';
+var setInternalState = InternalStateModule.set;
+var getInternalState = InternalStateModule.getterFor(STRING_ITERATOR);
+
+// `String.prototype[@@iterator]` method
+// https://tc39.github.io/ecma262/#sec-string.prototype-@@iterator
+defineIterator(String, 'String', function (iterated) {
+  setInternalState(this, {
+    type: STRING_ITERATOR,
+    string: String(iterated),
+    index: 0
+  });
+// `%StringIteratorPrototype%.next` method
+// https://tc39.github.io/ecma262/#sec-%stringiteratorprototype%.next
+}, function next() {
+  var state = getInternalState(this);
+  var string = state.string;
+  var index = state.index;
+  var point;
+  if (index >= string.length) return { value: undefined, done: true };
+  point = charAt(string, index);
+  state.index += point.length;
+  return { value: point, done: false };
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/es.string.replace.js":
+/*!***********************************************************!*\
+  !*** ./node_modules/core-js/modules/es.string.replace.js ***!
+  \***********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var fixRegExpWellKnownSymbolLogic = __webpack_require__(/*! ../internals/fix-regexp-well-known-symbol-logic */ "./node_modules/core-js/internals/fix-regexp-well-known-symbol-logic.js");
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+var toObject = __webpack_require__(/*! ../internals/to-object */ "./node_modules/core-js/internals/to-object.js");
+var toLength = __webpack_require__(/*! ../internals/to-length */ "./node_modules/core-js/internals/to-length.js");
+var toInteger = __webpack_require__(/*! ../internals/to-integer */ "./node_modules/core-js/internals/to-integer.js");
+var requireObjectCoercible = __webpack_require__(/*! ../internals/require-object-coercible */ "./node_modules/core-js/internals/require-object-coercible.js");
+var advanceStringIndex = __webpack_require__(/*! ../internals/advance-string-index */ "./node_modules/core-js/internals/advance-string-index.js");
+var regExpExec = __webpack_require__(/*! ../internals/regexp-exec-abstract */ "./node_modules/core-js/internals/regexp-exec-abstract.js");
+
+var max = Math.max;
+var min = Math.min;
+var floor = Math.floor;
+var SUBSTITUTION_SYMBOLS = /\$([$&'`]|\d\d?|<[^>]*>)/g;
+var SUBSTITUTION_SYMBOLS_NO_NAMED = /\$([$&'`]|\d\d?)/g;
+
+var maybeToString = function (it) {
+  return it === undefined ? it : String(it);
+};
+
+// @@replace logic
+fixRegExpWellKnownSymbolLogic('replace', 2, function (REPLACE, nativeReplace, maybeCallNative) {
+  return [
+    // `String.prototype.replace` method
+    // https://tc39.github.io/ecma262/#sec-string.prototype.replace
+    function replace(searchValue, replaceValue) {
+      var O = requireObjectCoercible(this);
+      var replacer = searchValue == undefined ? undefined : searchValue[REPLACE];
+      return replacer !== undefined
+        ? replacer.call(searchValue, O, replaceValue)
+        : nativeReplace.call(String(O), searchValue, replaceValue);
+    },
+    // `RegExp.prototype[@@replace]` method
+    // https://tc39.github.io/ecma262/#sec-regexp.prototype-@@replace
+    function (regexp, replaceValue) {
+      var res = maybeCallNative(nativeReplace, regexp, this, replaceValue);
+      if (res.done) return res.value;
+
+      var rx = anObject(regexp);
+      var S = String(this);
+
+      var functionalReplace = typeof replaceValue === 'function';
+      if (!functionalReplace) replaceValue = String(replaceValue);
+
+      var global = rx.global;
+      if (global) {
+        var fullUnicode = rx.unicode;
+        rx.lastIndex = 0;
+      }
+      var results = [];
+      while (true) {
+        var result = regExpExec(rx, S);
+        if (result === null) break;
+
+        results.push(result);
+        if (!global) break;
+
+        var matchStr = String(result[0]);
+        if (matchStr === '') rx.lastIndex = advanceStringIndex(S, toLength(rx.lastIndex), fullUnicode);
+      }
+
+      var accumulatedResult = '';
+      var nextSourcePosition = 0;
+      for (var i = 0; i < results.length; i++) {
+        result = results[i];
+
+        var matched = String(result[0]);
+        var position = max(min(toInteger(result.index), S.length), 0);
+        var captures = [];
+        // NOTE: This is equivalent to
+        //   captures = result.slice(1).map(maybeToString)
+        // but for some reason `nativeSlice.call(result, 1, result.length)` (called in
+        // the slice polyfill when slicing native arrays) "doesn't work" in safari 9 and
+        // causes a crash (https://pastebin.com/N21QzeQA) when trying to debug it.
+        for (var j = 1; j < result.length; j++) captures.push(maybeToString(result[j]));
+        var namedCaptures = result.groups;
+        if (functionalReplace) {
+          var replacerArgs = [matched].concat(captures, position, S);
+          if (namedCaptures !== undefined) replacerArgs.push(namedCaptures);
+          var replacement = String(replaceValue.apply(undefined, replacerArgs));
+        } else {
+          replacement = getSubstitution(matched, S, position, captures, namedCaptures, replaceValue);
+        }
+        if (position >= nextSourcePosition) {
+          accumulatedResult += S.slice(nextSourcePosition, position) + replacement;
+          nextSourcePosition = position + matched.length;
+        }
+      }
+      return accumulatedResult + S.slice(nextSourcePosition);
+    }
+  ];
+
+  // https://tc39.github.io/ecma262/#sec-getsubstitution
+  function getSubstitution(matched, str, position, captures, namedCaptures, replacement) {
+    var tailPos = position + matched.length;
+    var m = captures.length;
+    var symbols = SUBSTITUTION_SYMBOLS_NO_NAMED;
+    if (namedCaptures !== undefined) {
+      namedCaptures = toObject(namedCaptures);
+      symbols = SUBSTITUTION_SYMBOLS;
+    }
+    return nativeReplace.call(replacement, symbols, function (match, ch) {
+      var capture;
+      switch (ch.charAt(0)) {
+        case '$': return '$';
+        case '&': return matched;
+        case '`': return str.slice(0, position);
+        case "'": return str.slice(tailPos);
+        case '<':
+          capture = namedCaptures[ch.slice(1, -1)];
+          break;
+        default: // \d\d?
+          var n = +ch;
+          if (n === 0) return match;
+          if (n > m) {
+            var f = floor(n / 10);
+            if (f === 0) return match;
+            if (f <= m) return captures[f - 1] === undefined ? ch.charAt(1) : captures[f - 1] + ch.charAt(1);
+            return match;
+          }
+          capture = captures[n - 1];
+      }
+      return capture === undefined ? '' : capture;
+    });
+  }
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/es.string.trim.js":
+/*!********************************************************!*\
+  !*** ./node_modules/core-js/modules/es.string.trim.js ***!
+  \********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var $trim = __webpack_require__(/*! ../internals/string-trim */ "./node_modules/core-js/internals/string-trim.js").trim;
+var forcedStringTrimMethod = __webpack_require__(/*! ../internals/forced-string-trim-method */ "./node_modules/core-js/internals/forced-string-trim-method.js");
+
+// `String.prototype.trim` method
+// https://tc39.github.io/ecma262/#sec-string.prototype.trim
+$({ target: 'String', proto: true, forced: forcedStringTrimMethod('trim') }, {
+  trim: function trim() {
+    return $trim(this);
+  }
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/es.symbol.description.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/core-js/modules/es.symbol.description.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+// `Symbol.prototype.description` getter
+// https://tc39.github.io/ecma262/#sec-symbol.prototype.description
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var DESCRIPTORS = __webpack_require__(/*! ../internals/descriptors */ "./node_modules/core-js/internals/descriptors.js");
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var has = __webpack_require__(/*! ../internals/has */ "./node_modules/core-js/internals/has.js");
+var isObject = __webpack_require__(/*! ../internals/is-object */ "./node_modules/core-js/internals/is-object.js");
+var defineProperty = __webpack_require__(/*! ../internals/object-define-property */ "./node_modules/core-js/internals/object-define-property.js").f;
+var copyConstructorProperties = __webpack_require__(/*! ../internals/copy-constructor-properties */ "./node_modules/core-js/internals/copy-constructor-properties.js");
+
+var NativeSymbol = global.Symbol;
+
+if (DESCRIPTORS && typeof NativeSymbol == 'function' && (!('description' in NativeSymbol.prototype) ||
+  // Safari 12 bug
+  NativeSymbol().description !== undefined
+)) {
+  var EmptyStringDescriptionStore = {};
+  // wrap Symbol constructor for correct work with undefined description
+  var SymbolWrapper = function Symbol() {
+    var description = arguments.length < 1 || arguments[0] === undefined ? undefined : String(arguments[0]);
+    var result = this instanceof SymbolWrapper
+      ? new NativeSymbol(description)
+      // in Edge 13, String(Symbol(undefined)) === 'Symbol(undefined)'
+      : description === undefined ? NativeSymbol() : NativeSymbol(description);
+    if (description === '') EmptyStringDescriptionStore[result] = true;
+    return result;
+  };
+  copyConstructorProperties(SymbolWrapper, NativeSymbol);
+  var symbolPrototype = SymbolWrapper.prototype = NativeSymbol.prototype;
+  symbolPrototype.constructor = SymbolWrapper;
+
+  var symbolToString = symbolPrototype.toString;
+  var native = String(NativeSymbol('test')) == 'Symbol(test)';
+  var regexp = /^Symbol\((.*)\)[^)]+$/;
+  defineProperty(symbolPrototype, 'description', {
+    configurable: true,
+    get: function description() {
+      var symbol = isObject(this) ? this.valueOf() : this;
+      var string = symbolToString.call(symbol);
+      if (has(EmptyStringDescriptionStore, symbol)) return '';
+      var desc = native ? string.slice(7, -1) : string.replace(regexp, '$1');
+      return desc === '' ? undefined : desc;
+    }
+  });
+
+  $({ global: true, forced: true }, {
+    Symbol: SymbolWrapper
+  });
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/web.dom-collections.iterator.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/core-js/modules/web.dom-collections.iterator.js ***!
+  \**********************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var DOMIterables = __webpack_require__(/*! ../internals/dom-iterables */ "./node_modules/core-js/internals/dom-iterables.js");
+var ArrayIteratorMethods = __webpack_require__(/*! ../modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+var hide = __webpack_require__(/*! ../internals/hide */ "./node_modules/core-js/internals/hide.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+
+var ITERATOR = wellKnownSymbol('iterator');
+var TO_STRING_TAG = wellKnownSymbol('toStringTag');
+var ArrayValues = ArrayIteratorMethods.values;
+
+for (var COLLECTION_NAME in DOMIterables) {
+  var Collection = global[COLLECTION_NAME];
+  var CollectionPrototype = Collection && Collection.prototype;
+  if (CollectionPrototype) {
+    // some Chrome versions have non-configurable methods on DOMTokenList
+    if (CollectionPrototype[ITERATOR] !== ArrayValues) try {
+      hide(CollectionPrototype, ITERATOR, ArrayValues);
+    } catch (error) {
+      CollectionPrototype[ITERATOR] = ArrayValues;
+    }
+    if (!CollectionPrototype[TO_STRING_TAG]) hide(CollectionPrototype, TO_STRING_TAG, COLLECTION_NAME);
+    if (DOMIterables[COLLECTION_NAME]) for (var METHOD_NAME in ArrayIteratorMethods) {
+      // some Chrome versions have non-configurable methods on DOMTokenList
+      if (CollectionPrototype[METHOD_NAME] !== ArrayIteratorMethods[METHOD_NAME]) try {
+        hide(CollectionPrototype, METHOD_NAME, ArrayIteratorMethods[METHOD_NAME]);
+      } catch (error) {
+        CollectionPrototype[METHOD_NAME] = ArrayIteratorMethods[METHOD_NAME];
+      }
+    }
+  }
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/web.url-search-params.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/core-js/modules/web.url-search-params.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+// TODO: in core-js@4, move /modules/ dependencies to public entries for better optimization by tools like `preset-env`
+__webpack_require__(/*! ../modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var USE_NATIVE_URL = __webpack_require__(/*! ../internals/native-url */ "./node_modules/core-js/internals/native-url.js");
+var redefine = __webpack_require__(/*! ../internals/redefine */ "./node_modules/core-js/internals/redefine.js");
+var redefineAll = __webpack_require__(/*! ../internals/redefine-all */ "./node_modules/core-js/internals/redefine-all.js");
+var setToStringTag = __webpack_require__(/*! ../internals/set-to-string-tag */ "./node_modules/core-js/internals/set-to-string-tag.js");
+var createIteratorConstructor = __webpack_require__(/*! ../internals/create-iterator-constructor */ "./node_modules/core-js/internals/create-iterator-constructor.js");
+var InternalStateModule = __webpack_require__(/*! ../internals/internal-state */ "./node_modules/core-js/internals/internal-state.js");
+var anInstance = __webpack_require__(/*! ../internals/an-instance */ "./node_modules/core-js/internals/an-instance.js");
+var hasOwn = __webpack_require__(/*! ../internals/has */ "./node_modules/core-js/internals/has.js");
+var bind = __webpack_require__(/*! ../internals/bind-context */ "./node_modules/core-js/internals/bind-context.js");
+var anObject = __webpack_require__(/*! ../internals/an-object */ "./node_modules/core-js/internals/an-object.js");
+var isObject = __webpack_require__(/*! ../internals/is-object */ "./node_modules/core-js/internals/is-object.js");
+var getIterator = __webpack_require__(/*! ../internals/get-iterator */ "./node_modules/core-js/internals/get-iterator.js");
+var getIteratorMethod = __webpack_require__(/*! ../internals/get-iterator-method */ "./node_modules/core-js/internals/get-iterator-method.js");
+var wellKnownSymbol = __webpack_require__(/*! ../internals/well-known-symbol */ "./node_modules/core-js/internals/well-known-symbol.js");
+
+var ITERATOR = wellKnownSymbol('iterator');
+var URL_SEARCH_PARAMS = 'URLSearchParams';
+var URL_SEARCH_PARAMS_ITERATOR = URL_SEARCH_PARAMS + 'Iterator';
+var setInternalState = InternalStateModule.set;
+var getInternalParamsState = InternalStateModule.getterFor(URL_SEARCH_PARAMS);
+var getInternalIteratorState = InternalStateModule.getterFor(URL_SEARCH_PARAMS_ITERATOR);
+
+var plus = /\+/g;
+var sequences = Array(4);
+
+var percentSequence = function (bytes) {
+  return sequences[bytes - 1] || (sequences[bytes - 1] = RegExp('((?:%[\\da-f]{2}){' + bytes + '})', 'gi'));
+};
+
+var percentDecode = function (sequence) {
+  try {
+    return decodeURIComponent(sequence);
+  } catch (error) {
+    return sequence;
+  }
+};
+
+var deserialize = function (it) {
+  var result = it.replace(plus, ' ');
+  var bytes = 4;
+  try {
+    return decodeURIComponent(result);
+  } catch (error) {
+    while (bytes) {
+      result = result.replace(percentSequence(bytes--), percentDecode);
+    }
+    return result;
+  }
+};
+
+var find = /[!'()~]|%20/g;
+
+var replace = {
+  '!': '%21',
+  "'": '%27',
+  '(': '%28',
+  ')': '%29',
+  '~': '%7E',
+  '%20': '+'
+};
+
+var replacer = function (match) {
+  return replace[match];
+};
+
+var serialize = function (it) {
+  return encodeURIComponent(it).replace(find, replacer);
+};
+
+var parseSearchParams = function (result, query) {
+  if (query) {
+    var attributes = query.split('&');
+    var index = 0;
+    var attribute, entry;
+    while (index < attributes.length) {
+      attribute = attributes[index++];
+      if (attribute.length) {
+        entry = attribute.split('=');
+        result.push({
+          key: deserialize(entry.shift()),
+          value: deserialize(entry.join('='))
+        });
+      }
+    }
+  }
+};
+
+var updateSearchParams = function (query) {
+  this.entries.length = 0;
+  parseSearchParams(this.entries, query);
+};
+
+var validateArgumentsLength = function (passed, required) {
+  if (passed < required) throw TypeError('Not enough arguments');
+};
+
+var URLSearchParamsIterator = createIteratorConstructor(function Iterator(params, kind) {
+  setInternalState(this, {
+    type: URL_SEARCH_PARAMS_ITERATOR,
+    iterator: getIterator(getInternalParamsState(params).entries),
+    kind: kind
+  });
+}, 'Iterator', function next() {
+  var state = getInternalIteratorState(this);
+  var kind = state.kind;
+  var step = state.iterator.next();
+  var entry = step.value;
+  if (!step.done) {
+    step.value = kind === 'keys' ? entry.key : kind === 'values' ? entry.value : [entry.key, entry.value];
+  } return step;
+});
+
+// `URLSearchParams` constructor
+// https://url.spec.whatwg.org/#interface-urlsearchparams
+var URLSearchParamsConstructor = function URLSearchParams(/* init */) {
+  anInstance(this, URLSearchParamsConstructor, URL_SEARCH_PARAMS);
+  var init = arguments.length > 0 ? arguments[0] : undefined;
+  var that = this;
+  var entries = [];
+  var iteratorMethod, iterator, step, entryIterator, first, second, key;
+
+  setInternalState(that, {
+    type: URL_SEARCH_PARAMS,
+    entries: entries,
+    updateURL: function () { /* empty */ },
+    updateSearchParams: updateSearchParams
+  });
+
+  if (init !== undefined) {
+    if (isObject(init)) {
+      iteratorMethod = getIteratorMethod(init);
+      if (typeof iteratorMethod === 'function') {
+        iterator = iteratorMethod.call(init);
+        while (!(step = iterator.next()).done) {
+          entryIterator = getIterator(anObject(step.value));
+          if (
+            (first = entryIterator.next()).done ||
+            (second = entryIterator.next()).done ||
+            !entryIterator.next().done
+          ) throw TypeError('Expected sequence with length 2');
+          entries.push({ key: first.value + '', value: second.value + '' });
+        }
+      } else for (key in init) if (hasOwn(init, key)) entries.push({ key: key, value: init[key] + '' });
+    } else {
+      parseSearchParams(entries, typeof init === 'string' ? init.charAt(0) === '?' ? init.slice(1) : init : init + '');
+    }
+  }
+};
+
+var URLSearchParamsPrototype = URLSearchParamsConstructor.prototype;
+
+redefineAll(URLSearchParamsPrototype, {
+  // `URLSearchParams.prototype.appent` method
+  // https://url.spec.whatwg.org/#dom-urlsearchparams-append
+  append: function append(name, value) {
+    validateArgumentsLength(arguments.length, 2);
+    var state = getInternalParamsState(this);
+    state.entries.push({ key: name + '', value: value + '' });
+    state.updateURL();
+  },
+  // `URLSearchParams.prototype.delete` method
+  // https://url.spec.whatwg.org/#dom-urlsearchparams-delete
+  'delete': function (name) {
+    validateArgumentsLength(arguments.length, 1);
+    var state = getInternalParamsState(this);
+    var entries = state.entries;
+    var key = name + '';
+    var index = 0;
+    while (index < entries.length) {
+      if (entries[index].key === key) entries.splice(index, 1);
+      else index++;
+    }
+    state.updateURL();
+  },
+  // `URLSearchParams.prototype.get` method
+  // https://url.spec.whatwg.org/#dom-urlsearchparams-get
+  get: function get(name) {
+    validateArgumentsLength(arguments.length, 1);
+    var entries = getInternalParamsState(this).entries;
+    var key = name + '';
+    var index = 0;
+    for (; index < entries.length; index++) {
+      if (entries[index].key === key) return entries[index].value;
+    }
+    return null;
+  },
+  // `URLSearchParams.prototype.getAll` method
+  // https://url.spec.whatwg.org/#dom-urlsearchparams-getall
+  getAll: function getAll(name) {
+    validateArgumentsLength(arguments.length, 1);
+    var entries = getInternalParamsState(this).entries;
+    var key = name + '';
+    var result = [];
+    var index = 0;
+    for (; index < entries.length; index++) {
+      if (entries[index].key === key) result.push(entries[index].value);
+    }
+    return result;
+  },
+  // `URLSearchParams.prototype.has` method
+  // https://url.spec.whatwg.org/#dom-urlsearchparams-has
+  has: function has(name) {
+    validateArgumentsLength(arguments.length, 1);
+    var entries = getInternalParamsState(this).entries;
+    var key = name + '';
+    var index = 0;
+    while (index < entries.length) {
+      if (entries[index++].key === key) return true;
+    }
+    return false;
+  },
+  // `URLSearchParams.prototype.set` method
+  // https://url.spec.whatwg.org/#dom-urlsearchparams-set
+  set: function set(name, value) {
+    validateArgumentsLength(arguments.length, 1);
+    var state = getInternalParamsState(this);
+    var entries = state.entries;
+    var found = false;
+    var key = name + '';
+    var val = value + '';
+    var index = 0;
+    var entry;
+    for (; index < entries.length; index++) {
+      entry = entries[index];
+      if (entry.key === key) {
+        if (found) entries.splice(index--, 1);
+        else {
+          found = true;
+          entry.value = val;
+        }
+      }
+    }
+    if (!found) entries.push({ key: key, value: val });
+    state.updateURL();
+  },
+  // `URLSearchParams.prototype.sort` method
+  // https://url.spec.whatwg.org/#dom-urlsearchparams-sort
+  sort: function sort() {
+    var state = getInternalParamsState(this);
+    var entries = state.entries;
+    // Array#sort is not stable in some engines
+    var slice = entries.slice();
+    var entry, entriesIndex, sliceIndex;
+    entries.length = 0;
+    for (sliceIndex = 0; sliceIndex < slice.length; sliceIndex++) {
+      entry = slice[sliceIndex];
+      for (entriesIndex = 0; entriesIndex < sliceIndex; entriesIndex++) {
+        if (entries[entriesIndex].key > entry.key) {
+          entries.splice(entriesIndex, 0, entry);
+          break;
+        }
+      }
+      if (entriesIndex === sliceIndex) entries.push(entry);
+    }
+    state.updateURL();
+  },
+  // `URLSearchParams.prototype.forEach` method
+  forEach: function forEach(callback /* , thisArg */) {
+    var entries = getInternalParamsState(this).entries;
+    var boundFunction = bind(callback, arguments.length > 1 ? arguments[1] : undefined, 3);
+    var index = 0;
+    var entry;
+    while (index < entries.length) {
+      entry = entries[index++];
+      boundFunction(entry.value, entry.key, this);
+    }
+  },
+  // `URLSearchParams.prototype.keys` method
+  keys: function keys() {
+    return new URLSearchParamsIterator(this, 'keys');
+  },
+  // `URLSearchParams.prototype.values` method
+  values: function values() {
+    return new URLSearchParamsIterator(this, 'values');
+  },
+  // `URLSearchParams.prototype.entries` method
+  entries: function entries() {
+    return new URLSearchParamsIterator(this, 'entries');
+  }
+}, { enumerable: true });
+
+// `URLSearchParams.prototype[@@iterator]` method
+redefine(URLSearchParamsPrototype, ITERATOR, URLSearchParamsPrototype.entries);
+
+// `URLSearchParams.prototype.toString` method
+// https://url.spec.whatwg.org/#urlsearchparams-stringification-behavior
+redefine(URLSearchParamsPrototype, 'toString', function toString() {
+  var entries = getInternalParamsState(this).entries;
+  var result = [];
+  var index = 0;
+  var entry;
+  while (index < entries.length) {
+    entry = entries[index++];
+    result.push(serialize(entry.key) + '=' + serialize(entry.value));
+  } return result.join('&');
+}, { enumerable: true });
+
+setToStringTag(URLSearchParamsConstructor, URL_SEARCH_PARAMS);
+
+$({ global: true, forced: !USE_NATIVE_URL }, {
+  URLSearchParams: URLSearchParamsConstructor
+});
+
+module.exports = {
+  URLSearchParams: URLSearchParamsConstructor,
+  getState: getInternalParamsState
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/web.url.js":
+/*!*************************************************!*\
+  !*** ./node_modules/core-js/modules/web.url.js ***!
+  \*************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+// TODO: in core-js@4, move /modules/ dependencies to public entries for better optimization by tools like `preset-env`
+__webpack_require__(/*! ../modules/es.string.iterator */ "./node_modules/core-js/modules/es.string.iterator.js");
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+var DESCRIPTORS = __webpack_require__(/*! ../internals/descriptors */ "./node_modules/core-js/internals/descriptors.js");
+var USE_NATIVE_URL = __webpack_require__(/*! ../internals/native-url */ "./node_modules/core-js/internals/native-url.js");
+var global = __webpack_require__(/*! ../internals/global */ "./node_modules/core-js/internals/global.js");
+var defineProperties = __webpack_require__(/*! ../internals/object-define-properties */ "./node_modules/core-js/internals/object-define-properties.js");
+var redefine = __webpack_require__(/*! ../internals/redefine */ "./node_modules/core-js/internals/redefine.js");
+var anInstance = __webpack_require__(/*! ../internals/an-instance */ "./node_modules/core-js/internals/an-instance.js");
+var has = __webpack_require__(/*! ../internals/has */ "./node_modules/core-js/internals/has.js");
+var assign = __webpack_require__(/*! ../internals/object-assign */ "./node_modules/core-js/internals/object-assign.js");
+var arrayFrom = __webpack_require__(/*! ../internals/array-from */ "./node_modules/core-js/internals/array-from.js");
+var codeAt = __webpack_require__(/*! ../internals/string-multibyte */ "./node_modules/core-js/internals/string-multibyte.js").codeAt;
+var toASCII = __webpack_require__(/*! ../internals/punycode-to-ascii */ "./node_modules/core-js/internals/punycode-to-ascii.js");
+var setToStringTag = __webpack_require__(/*! ../internals/set-to-string-tag */ "./node_modules/core-js/internals/set-to-string-tag.js");
+var URLSearchParamsModule = __webpack_require__(/*! ../modules/web.url-search-params */ "./node_modules/core-js/modules/web.url-search-params.js");
+var InternalStateModule = __webpack_require__(/*! ../internals/internal-state */ "./node_modules/core-js/internals/internal-state.js");
+
+var NativeURL = global.URL;
+var URLSearchParams = URLSearchParamsModule.URLSearchParams;
+var getInternalSearchParamsState = URLSearchParamsModule.getState;
+var setInternalState = InternalStateModule.set;
+var getInternalURLState = InternalStateModule.getterFor('URL');
+var floor = Math.floor;
+var pow = Math.pow;
+
+var INVALID_AUTHORITY = 'Invalid authority';
+var INVALID_SCHEME = 'Invalid scheme';
+var INVALID_HOST = 'Invalid host';
+var INVALID_PORT = 'Invalid port';
+
+var ALPHA = /[A-Za-z]/;
+var ALPHANUMERIC = /[\d+\-.A-Za-z]/;
+var DIGIT = /\d/;
+var HEX_START = /^(0x|0X)/;
+var OCT = /^[0-7]+$/;
+var DEC = /^\d+$/;
+var HEX = /^[\dA-Fa-f]+$/;
+// eslint-disable-next-line no-control-regex
+var FORBIDDEN_HOST_CODE_POINT = /[\u0000\u0009\u000A\u000D #%/:?@[\\]]/;
+// eslint-disable-next-line no-control-regex
+var FORBIDDEN_HOST_CODE_POINT_EXCLUDING_PERCENT = /[\u0000\u0009\u000A\u000D #/:?@[\\]]/;
+// eslint-disable-next-line no-control-regex
+var LEADING_AND_TRAILING_C0_CONTROL_OR_SPACE = /^[\u0000-\u001F ]+|[\u0000-\u001F ]+$/g;
+// eslint-disable-next-line no-control-regex
+var TAB_AND_NEW_LINE = /[\u0009\u000A\u000D]/g;
+var EOF;
+
+var parseHost = function (url, input) {
+  var result, codePoints, index;
+  if (input.charAt(0) == '[') {
+    if (input.charAt(input.length - 1) != ']') return INVALID_HOST;
+    result = parseIPv6(input.slice(1, -1));
+    if (!result) return INVALID_HOST;
+    url.host = result;
+  // opaque host
+  } else if (!isSpecial(url)) {
+    if (FORBIDDEN_HOST_CODE_POINT_EXCLUDING_PERCENT.test(input)) return INVALID_HOST;
+    result = '';
+    codePoints = arrayFrom(input);
+    for (index = 0; index < codePoints.length; index++) {
+      result += percentEncode(codePoints[index], C0ControlPercentEncodeSet);
+    }
+    url.host = result;
+  } else {
+    input = toASCII(input);
+    if (FORBIDDEN_HOST_CODE_POINT.test(input)) return INVALID_HOST;
+    result = parseIPv4(input);
+    if (result === null) return INVALID_HOST;
+    url.host = result;
+  }
+};
+
+var parseIPv4 = function (input) {
+  var parts = input.split('.');
+  var partsLength, numbers, index, part, radix, number, ipv4;
+  if (parts.length && parts[parts.length - 1] == '') {
+    parts.pop();
+  }
+  partsLength = parts.length;
+  if (partsLength > 4) return input;
+  numbers = [];
+  for (index = 0; index < partsLength; index++) {
+    part = parts[index];
+    if (part == '') return input;
+    radix = 10;
+    if (part.length > 1 && part.charAt(0) == '0') {
+      radix = HEX_START.test(part) ? 16 : 8;
+      part = part.slice(radix == 8 ? 1 : 2);
+    }
+    if (part === '') {
+      number = 0;
+    } else {
+      if (!(radix == 10 ? DEC : radix == 8 ? OCT : HEX).test(part)) return input;
+      number = parseInt(part, radix);
+    }
+    numbers.push(number);
+  }
+  for (index = 0; index < partsLength; index++) {
+    number = numbers[index];
+    if (index == partsLength - 1) {
+      if (number >= pow(256, 5 - partsLength)) return null;
+    } else if (number > 255) return null;
+  }
+  ipv4 = numbers.pop();
+  for (index = 0; index < numbers.length; index++) {
+    ipv4 += numbers[index] * pow(256, 3 - index);
+  }
+  return ipv4;
+};
+
+// eslint-disable-next-line max-statements
+var parseIPv6 = function (input) {
+  var address = [0, 0, 0, 0, 0, 0, 0, 0];
+  var pieceIndex = 0;
+  var compress = null;
+  var pointer = 0;
+  var value, length, numbersSeen, ipv4Piece, number, swaps, swap;
+
+  var char = function () {
+    return input.charAt(pointer);
+  };
+
+  if (char() == ':') {
+    if (input.charAt(1) != ':') return;
+    pointer += 2;
+    pieceIndex++;
+    compress = pieceIndex;
+  }
+  while (char()) {
+    if (pieceIndex == 8) return;
+    if (char() == ':') {
+      if (compress !== null) return;
+      pointer++;
+      pieceIndex++;
+      compress = pieceIndex;
+      continue;
+    }
+    value = length = 0;
+    while (length < 4 && HEX.test(char())) {
+      value = value * 16 + parseInt(char(), 16);
+      pointer++;
+      length++;
+    }
+    if (char() == '.') {
+      if (length == 0) return;
+      pointer -= length;
+      if (pieceIndex > 6) return;
+      numbersSeen = 0;
+      while (char()) {
+        ipv4Piece = null;
+        if (numbersSeen > 0) {
+          if (char() == '.' && numbersSeen < 4) pointer++;
+          else return;
+        }
+        if (!DIGIT.test(char())) return;
+        while (DIGIT.test(char())) {
+          number = parseInt(char(), 10);
+          if (ipv4Piece === null) ipv4Piece = number;
+          else if (ipv4Piece == 0) return;
+          else ipv4Piece = ipv4Piece * 10 + number;
+          if (ipv4Piece > 255) return;
+          pointer++;
+        }
+        address[pieceIndex] = address[pieceIndex] * 256 + ipv4Piece;
+        numbersSeen++;
+        if (numbersSeen == 2 || numbersSeen == 4) pieceIndex++;
+      }
+      if (numbersSeen != 4) return;
+      break;
+    } else if (char() == ':') {
+      pointer++;
+      if (!char()) return;
+    } else if (char()) return;
+    address[pieceIndex++] = value;
+  }
+  if (compress !== null) {
+    swaps = pieceIndex - compress;
+    pieceIndex = 7;
+    while (pieceIndex != 0 && swaps > 0) {
+      swap = address[pieceIndex];
+      address[pieceIndex--] = address[compress + swaps - 1];
+      address[compress + --swaps] = swap;
+    }
+  } else if (pieceIndex != 8) return;
+  return address;
+};
+
+var findLongestZeroSequence = function (ipv6) {
+  var maxIndex = null;
+  var maxLength = 1;
+  var currStart = null;
+  var currLength = 0;
+  var index = 0;
+  for (; index < 8; index++) {
+    if (ipv6[index] !== 0) {
+      if (currLength > maxLength) {
+        maxIndex = currStart;
+        maxLength = currLength;
+      }
+      currStart = null;
+      currLength = 0;
+    } else {
+      if (currStart === null) currStart = index;
+      ++currLength;
+    }
+  }
+  if (currLength > maxLength) {
+    maxIndex = currStart;
+    maxLength = currLength;
+  }
+  return maxIndex;
+};
+
+var serializeHost = function (host) {
+  var result, index, compress, ignore0;
+  // ipv4
+  if (typeof host == 'number') {
+    result = [];
+    for (index = 0; index < 4; index++) {
+      result.unshift(host % 256);
+      host = floor(host / 256);
+    } return result.join('.');
+  // ipv6
+  } else if (typeof host == 'object') {
+    result = '';
+    compress = findLongestZeroSequence(host);
+    for (index = 0; index < 8; index++) {
+      if (ignore0 && host[index] === 0) continue;
+      if (ignore0) ignore0 = false;
+      if (compress === index) {
+        result += index ? ':' : '::';
+        ignore0 = true;
+      } else {
+        result += host[index].toString(16);
+        if (index < 7) result += ':';
+      }
+    }
+    return '[' + result + ']';
+  } return host;
+};
+
+var C0ControlPercentEncodeSet = {};
+var fragmentPercentEncodeSet = assign({}, C0ControlPercentEncodeSet, {
+  ' ': 1, '"': 1, '<': 1, '>': 1, '`': 1
+});
+var pathPercentEncodeSet = assign({}, fragmentPercentEncodeSet, {
+  '#': 1, '?': 1, '{': 1, '}': 1
+});
+var userinfoPercentEncodeSet = assign({}, pathPercentEncodeSet, {
+  '/': 1, ':': 1, ';': 1, '=': 1, '@': 1, '[': 1, '\\': 1, ']': 1, '^': 1, '|': 1
+});
+
+var percentEncode = function (char, set) {
+  var code = codeAt(char, 0);
+  return code > 0x20 && code < 0x7F && !has(set, char) ? char : encodeURIComponent(char);
+};
+
+var specialSchemes = {
+  ftp: 21,
+  file: null,
+  gopher: 70,
+  http: 80,
+  https: 443,
+  ws: 80,
+  wss: 443
+};
+
+var isSpecial = function (url) {
+  return has(specialSchemes, url.scheme);
+};
+
+var includesCredentials = function (url) {
+  return url.username != '' || url.password != '';
+};
+
+var cannotHaveUsernamePasswordPort = function (url) {
+  return !url.host || url.cannotBeABaseURL || url.scheme == 'file';
+};
+
+var isWindowsDriveLetter = function (string, normalized) {
+  var second;
+  return string.length == 2 && ALPHA.test(string.charAt(0))
+    && ((second = string.charAt(1)) == ':' || (!normalized && second == '|'));
+};
+
+var startsWithWindowsDriveLetter = function (string) {
+  var third;
+  return string.length > 1 && isWindowsDriveLetter(string.slice(0, 2)) && (
+    string.length == 2 ||
+    ((third = string.charAt(2)) === '/' || third === '\\' || third === '?' || third === '#')
+  );
+};
+
+var shortenURLsPath = function (url) {
+  var path = url.path;
+  var pathSize = path.length;
+  if (pathSize && (url.scheme != 'file' || pathSize != 1 || !isWindowsDriveLetter(path[0], true))) {
+    path.pop();
+  }
+};
+
+var isSingleDot = function (segment) {
+  return segment === '.' || segment.toLowerCase() === '%2e';
+};
+
+var isDoubleDot = function (segment) {
+  segment = segment.toLowerCase();
+  return segment === '..' || segment === '%2e.' || segment === '.%2e' || segment === '%2e%2e';
+};
+
+// States:
+var SCHEME_START = {};
+var SCHEME = {};
+var NO_SCHEME = {};
+var SPECIAL_RELATIVE_OR_AUTHORITY = {};
+var PATH_OR_AUTHORITY = {};
+var RELATIVE = {};
+var RELATIVE_SLASH = {};
+var SPECIAL_AUTHORITY_SLASHES = {};
+var SPECIAL_AUTHORITY_IGNORE_SLASHES = {};
+var AUTHORITY = {};
+var HOST = {};
+var HOSTNAME = {};
+var PORT = {};
+var FILE = {};
+var FILE_SLASH = {};
+var FILE_HOST = {};
+var PATH_START = {};
+var PATH = {};
+var CANNOT_BE_A_BASE_URL_PATH = {};
+var QUERY = {};
+var FRAGMENT = {};
+
+// eslint-disable-next-line max-statements
+var parseURL = function (url, input, stateOverride, base) {
+  var state = stateOverride || SCHEME_START;
+  var pointer = 0;
+  var buffer = '';
+  var seenAt = false;
+  var seenBracket = false;
+  var seenPasswordToken = false;
+  var codePoints, char, bufferCodePoints, failure;
+
+  if (!stateOverride) {
+    url.scheme = '';
+    url.username = '';
+    url.password = '';
+    url.host = null;
+    url.port = null;
+    url.path = [];
+    url.query = null;
+    url.fragment = null;
+    url.cannotBeABaseURL = false;
+    input = input.replace(LEADING_AND_TRAILING_C0_CONTROL_OR_SPACE, '');
+  }
+
+  input = input.replace(TAB_AND_NEW_LINE, '');
+
+  codePoints = arrayFrom(input);
+
+  while (pointer <= codePoints.length) {
+    char = codePoints[pointer];
+    switch (state) {
+      case SCHEME_START:
+        if (char && ALPHA.test(char)) {
+          buffer += char.toLowerCase();
+          state = SCHEME;
+        } else if (!stateOverride) {
+          state = NO_SCHEME;
+          continue;
+        } else return INVALID_SCHEME;
+        break;
+
+      case SCHEME:
+        if (char && (ALPHANUMERIC.test(char) || char == '+' || char == '-' || char == '.')) {
+          buffer += char.toLowerCase();
+        } else if (char == ':') {
+          if (stateOverride && (
+            (isSpecial(url) != has(specialSchemes, buffer)) ||
+            (buffer == 'file' && (includesCredentials(url) || url.port !== null)) ||
+            (url.scheme == 'file' && !url.host)
+          )) return;
+          url.scheme = buffer;
+          if (stateOverride) {
+            if (isSpecial(url) && specialSchemes[url.scheme] == url.port) url.port = null;
+            return;
+          }
+          buffer = '';
+          if (url.scheme == 'file') {
+            state = FILE;
+          } else if (isSpecial(url) && base && base.scheme == url.scheme) {
+            state = SPECIAL_RELATIVE_OR_AUTHORITY;
+          } else if (isSpecial(url)) {
+            state = SPECIAL_AUTHORITY_SLASHES;
+          } else if (codePoints[pointer + 1] == '/') {
+            state = PATH_OR_AUTHORITY;
+            pointer++;
+          } else {
+            url.cannotBeABaseURL = true;
+            url.path.push('');
+            state = CANNOT_BE_A_BASE_URL_PATH;
+          }
+        } else if (!stateOverride) {
+          buffer = '';
+          state = NO_SCHEME;
+          pointer = 0;
+          continue;
+        } else return INVALID_SCHEME;
+        break;
+
+      case NO_SCHEME:
+        if (!base || (base.cannotBeABaseURL && char != '#')) return INVALID_SCHEME;
+        if (base.cannotBeABaseURL && char == '#') {
+          url.scheme = base.scheme;
+          url.path = base.path.slice();
+          url.query = base.query;
+          url.fragment = '';
+          url.cannotBeABaseURL = true;
+          state = FRAGMENT;
+          break;
+        }
+        state = base.scheme == 'file' ? FILE : RELATIVE;
+        continue;
+
+      case SPECIAL_RELATIVE_OR_AUTHORITY:
+        if (char == '/' && codePoints[pointer + 1] == '/') {
+          state = SPECIAL_AUTHORITY_IGNORE_SLASHES;
+          pointer++;
+        } else {
+          state = RELATIVE;
+          continue;
+        } break;
+
+      case PATH_OR_AUTHORITY:
+        if (char == '/') {
+          state = AUTHORITY;
+          break;
+        } else {
+          state = PATH;
+          continue;
+        }
+
+      case RELATIVE:
+        url.scheme = base.scheme;
+        if (char == EOF) {
+          url.username = base.username;
+          url.password = base.password;
+          url.host = base.host;
+          url.port = base.port;
+          url.path = base.path.slice();
+          url.query = base.query;
+        } else if (char == '/' || (char == '\\' && isSpecial(url))) {
+          state = RELATIVE_SLASH;
+        } else if (char == '?') {
+          url.username = base.username;
+          url.password = base.password;
+          url.host = base.host;
+          url.port = base.port;
+          url.path = base.path.slice();
+          url.query = '';
+          state = QUERY;
+        } else if (char == '#') {
+          url.username = base.username;
+          url.password = base.password;
+          url.host = base.host;
+          url.port = base.port;
+          url.path = base.path.slice();
+          url.query = base.query;
+          url.fragment = '';
+          state = FRAGMENT;
+        } else {
+          url.username = base.username;
+          url.password = base.password;
+          url.host = base.host;
+          url.port = base.port;
+          url.path = base.path.slice();
+          url.path.pop();
+          state = PATH;
+          continue;
+        } break;
+
+      case RELATIVE_SLASH:
+        if (isSpecial(url) && (char == '/' || char == '\\')) {
+          state = SPECIAL_AUTHORITY_IGNORE_SLASHES;
+        } else if (char == '/') {
+          state = AUTHORITY;
+        } else {
+          url.username = base.username;
+          url.password = base.password;
+          url.host = base.host;
+          url.port = base.port;
+          state = PATH;
+          continue;
+        } break;
+
+      case SPECIAL_AUTHORITY_SLASHES:
+        state = SPECIAL_AUTHORITY_IGNORE_SLASHES;
+        if (char != '/' || buffer.charAt(pointer + 1) != '/') continue;
+        pointer++;
+        break;
+
+      case SPECIAL_AUTHORITY_IGNORE_SLASHES:
+        if (char != '/' && char != '\\') {
+          state = AUTHORITY;
+          continue;
+        } break;
+
+      case AUTHORITY:
+        if (char == '@') {
+          if (seenAt) buffer = '%40' + buffer;
+          seenAt = true;
+          bufferCodePoints = arrayFrom(buffer);
+          for (var i = 0; i < bufferCodePoints.length; i++) {
+            var codePoint = bufferCodePoints[i];
+            if (codePoint == ':' && !seenPasswordToken) {
+              seenPasswordToken = true;
+              continue;
+            }
+            var encodedCodePoints = percentEncode(codePoint, userinfoPercentEncodeSet);
+            if (seenPasswordToken) url.password += encodedCodePoints;
+            else url.username += encodedCodePoints;
+          }
+          buffer = '';
+        } else if (
+          char == EOF || char == '/' || char == '?' || char == '#' ||
+          (char == '\\' && isSpecial(url))
+        ) {
+          if (seenAt && buffer == '') return INVALID_AUTHORITY;
+          pointer -= arrayFrom(buffer).length + 1;
+          buffer = '';
+          state = HOST;
+        } else buffer += char;
+        break;
+
+      case HOST:
+      case HOSTNAME:
+        if (stateOverride && url.scheme == 'file') {
+          state = FILE_HOST;
+          continue;
+        } else if (char == ':' && !seenBracket) {
+          if (buffer == '') return INVALID_HOST;
+          failure = parseHost(url, buffer);
+          if (failure) return failure;
+          buffer = '';
+          state = PORT;
+          if (stateOverride == HOSTNAME) return;
+        } else if (
+          char == EOF || char == '/' || char == '?' || char == '#' ||
+          (char == '\\' && isSpecial(url))
+        ) {
+          if (isSpecial(url) && buffer == '') return INVALID_HOST;
+          if (stateOverride && buffer == '' && (includesCredentials(url) || url.port !== null)) return;
+          failure = parseHost(url, buffer);
+          if (failure) return failure;
+          buffer = '';
+          state = PATH_START;
+          if (stateOverride) return;
+          continue;
+        } else {
+          if (char == '[') seenBracket = true;
+          else if (char == ']') seenBracket = false;
+          buffer += char;
+        } break;
+
+      case PORT:
+        if (DIGIT.test(char)) {
+          buffer += char;
+        } else if (
+          char == EOF || char == '/' || char == '?' || char == '#' ||
+          (char == '\\' && isSpecial(url)) ||
+          stateOverride
+        ) {
+          if (buffer != '') {
+            var port = parseInt(buffer, 10);
+            if (port > 0xFFFF) return INVALID_PORT;
+            url.port = (isSpecial(url) && port === specialSchemes[url.scheme]) ? null : port;
+            buffer = '';
+          }
+          if (stateOverride) return;
+          state = PATH_START;
+          continue;
+        } else return INVALID_PORT;
+        break;
+
+      case FILE:
+        url.scheme = 'file';
+        if (char == '/' || char == '\\') state = FILE_SLASH;
+        else if (base && base.scheme == 'file') {
+          if (char == EOF) {
+            url.host = base.host;
+            url.path = base.path.slice();
+            url.query = base.query;
+          } else if (char == '?') {
+            url.host = base.host;
+            url.path = base.path.slice();
+            url.query = '';
+            state = QUERY;
+          } else if (char == '#') {
+            url.host = base.host;
+            url.path = base.path.slice();
+            url.query = base.query;
+            url.fragment = '';
+            state = FRAGMENT;
+          } else {
+            if (!startsWithWindowsDriveLetter(codePoints.slice(pointer).join(''))) {
+              url.host = base.host;
+              url.path = base.path.slice();
+              shortenURLsPath(url);
+            }
+            state = PATH;
+            continue;
+          }
+        } else {
+          state = PATH;
+          continue;
+        } break;
+
+      case FILE_SLASH:
+        if (char == '/' || char == '\\') {
+          state = FILE_HOST;
+          break;
+        }
+        if (base && base.scheme == 'file' && !startsWithWindowsDriveLetter(codePoints.slice(pointer).join(''))) {
+          if (isWindowsDriveLetter(base.path[0], true)) url.path.push(base.path[0]);
+          else url.host = base.host;
+        }
+        state = PATH;
+        continue;
+
+      case FILE_HOST:
+        if (char == EOF || char == '/' || char == '\\' || char == '?' || char == '#') {
+          if (!stateOverride && isWindowsDriveLetter(buffer)) {
+            state = PATH;
+          } else if (buffer == '') {
+            url.host = '';
+            if (stateOverride) return;
+            state = PATH_START;
+          } else {
+            failure = parseHost(url, buffer);
+            if (failure) return failure;
+            if (url.host == 'localhost') url.host = '';
+            if (stateOverride) return;
+            buffer = '';
+            state = PATH_START;
+          } continue;
+        } else buffer += char;
+        break;
+
+      case PATH_START:
+        if (isSpecial(url)) {
+          state = PATH;
+          if (char != '/' && char != '\\') continue;
+        } else if (!stateOverride && char == '?') {
+          url.query = '';
+          state = QUERY;
+        } else if (!stateOverride && char == '#') {
+          url.fragment = '';
+          state = FRAGMENT;
+        } else if (char != EOF) {
+          state = PATH;
+          if (char != '/') continue;
+        } break;
+
+      case PATH:
+        if (
+          char == EOF || char == '/' ||
+          (char == '\\' && isSpecial(url)) ||
+          (!stateOverride && (char == '?' || char == '#'))
+        ) {
+          if (isDoubleDot(buffer)) {
+            shortenURLsPath(url);
+            if (char != '/' && !(char == '\\' && isSpecial(url))) {
+              url.path.push('');
+            }
+          } else if (isSingleDot(buffer)) {
+            if (char != '/' && !(char == '\\' && isSpecial(url))) {
+              url.path.push('');
+            }
+          } else {
+            if (url.scheme == 'file' && !url.path.length && isWindowsDriveLetter(buffer)) {
+              if (url.host) url.host = '';
+              buffer = buffer.charAt(0) + ':'; // normalize windows drive letter
+            }
+            url.path.push(buffer);
+          }
+          buffer = '';
+          if (url.scheme == 'file' && (char == EOF || char == '?' || char == '#')) {
+            while (url.path.length > 1 && url.path[0] === '') {
+              url.path.shift();
+            }
+          }
+          if (char == '?') {
+            url.query = '';
+            state = QUERY;
+          } else if (char == '#') {
+            url.fragment = '';
+            state = FRAGMENT;
+          }
+        } else {
+          buffer += percentEncode(char, pathPercentEncodeSet);
+        } break;
+
+      case CANNOT_BE_A_BASE_URL_PATH:
+        if (char == '?') {
+          url.query = '';
+          state = QUERY;
+        } else if (char == '#') {
+          url.fragment = '';
+          state = FRAGMENT;
+        } else if (char != EOF) {
+          url.path[0] += percentEncode(char, C0ControlPercentEncodeSet);
+        } break;
+
+      case QUERY:
+        if (!stateOverride && char == '#') {
+          url.fragment = '';
+          state = FRAGMENT;
+        } else if (char != EOF) {
+          if (char == "'" && isSpecial(url)) url.query += '%27';
+          else if (char == '#') url.query += '%23';
+          else url.query += percentEncode(char, C0ControlPercentEncodeSet);
+        } break;
+
+      case FRAGMENT:
+        if (char != EOF) url.fragment += percentEncode(char, fragmentPercentEncodeSet);
+        break;
+    }
+
+    pointer++;
+  }
+};
+
+// `URL` constructor
+// https://url.spec.whatwg.org/#url-class
+var URLConstructor = function URL(url /* , base */) {
+  var that = anInstance(this, URLConstructor, 'URL');
+  var base = arguments.length > 1 ? arguments[1] : undefined;
+  var urlString = String(url);
+  var state = setInternalState(that, { type: 'URL' });
+  var baseState, failure;
+  if (base !== undefined) {
+    if (base instanceof URLConstructor) baseState = getInternalURLState(base);
+    else {
+      failure = parseURL(baseState = {}, String(base));
+      if (failure) throw TypeError(failure);
+    }
+  }
+  failure = parseURL(state, urlString, null, baseState);
+  if (failure) throw TypeError(failure);
+  var searchParams = state.searchParams = new URLSearchParams();
+  var searchParamsState = getInternalSearchParamsState(searchParams);
+  searchParamsState.updateSearchParams(state.query);
+  searchParamsState.updateURL = function () {
+    state.query = String(searchParams) || null;
+  };
+  if (!DESCRIPTORS) {
+    that.href = serializeURL.call(that);
+    that.origin = getOrigin.call(that);
+    that.protocol = getProtocol.call(that);
+    that.username = getUsername.call(that);
+    that.password = getPassword.call(that);
+    that.host = getHost.call(that);
+    that.hostname = getHostname.call(that);
+    that.port = getPort.call(that);
+    that.pathname = getPathname.call(that);
+    that.search = getSearch.call(that);
+    that.searchParams = getSearchParams.call(that);
+    that.hash = getHash.call(that);
+  }
+};
+
+var URLPrototype = URLConstructor.prototype;
+
+var serializeURL = function () {
+  var url = getInternalURLState(this);
+  var scheme = url.scheme;
+  var username = url.username;
+  var password = url.password;
+  var host = url.host;
+  var port = url.port;
+  var path = url.path;
+  var query = url.query;
+  var fragment = url.fragment;
+  var output = scheme + ':';
+  if (host !== null) {
+    output += '//';
+    if (includesCredentials(url)) {
+      output += username + (password ? ':' + password : '') + '@';
+    }
+    output += serializeHost(host);
+    if (port !== null) output += ':' + port;
+  } else if (scheme == 'file') output += '//';
+  output += url.cannotBeABaseURL ? path[0] : path.length ? '/' + path.join('/') : '';
+  if (query !== null) output += '?' + query;
+  if (fragment !== null) output += '#' + fragment;
+  return output;
+};
+
+var getOrigin = function () {
+  var url = getInternalURLState(this);
+  var scheme = url.scheme;
+  var port = url.port;
+  if (scheme == 'blob') try {
+    return new URL(scheme.path[0]).origin;
+  } catch (error) {
+    return 'null';
+  }
+  if (scheme == 'file' || !isSpecial(url)) return 'null';
+  return scheme + '://' + serializeHost(url.host) + (port !== null ? ':' + port : '');
+};
+
+var getProtocol = function () {
+  return getInternalURLState(this).scheme + ':';
+};
+
+var getUsername = function () {
+  return getInternalURLState(this).username;
+};
+
+var getPassword = function () {
+  return getInternalURLState(this).password;
+};
+
+var getHost = function () {
+  var url = getInternalURLState(this);
+  var host = url.host;
+  var port = url.port;
+  return host === null ? ''
+    : port === null ? serializeHost(host)
+    : serializeHost(host) + ':' + port;
+};
+
+var getHostname = function () {
+  var host = getInternalURLState(this).host;
+  return host === null ? '' : serializeHost(host);
+};
+
+var getPort = function () {
+  var port = getInternalURLState(this).port;
+  return port === null ? '' : String(port);
+};
+
+var getPathname = function () {
+  var url = getInternalURLState(this);
+  var path = url.path;
+  return url.cannotBeABaseURL ? path[0] : path.length ? '/' + path.join('/') : '';
+};
+
+var getSearch = function () {
+  var query = getInternalURLState(this).query;
+  return query ? '?' + query : '';
+};
+
+var getSearchParams = function () {
+  return getInternalURLState(this).searchParams;
+};
+
+var getHash = function () {
+  var fragment = getInternalURLState(this).fragment;
+  return fragment ? '#' + fragment : '';
+};
+
+var accessorDescriptor = function (getter, setter) {
+  return { get: getter, set: setter, configurable: true, enumerable: true };
+};
+
+if (DESCRIPTORS) {
+  defineProperties(URLPrototype, {
+    // `URL.prototype.href` accessors pair
+    // https://url.spec.whatwg.org/#dom-url-href
+    href: accessorDescriptor(serializeURL, function (href) {
+      var url = getInternalURLState(this);
+      var urlString = String(href);
+      var failure = parseURL(url, urlString);
+      if (failure) throw TypeError(failure);
+      getInternalSearchParamsState(url.searchParams).updateSearchParams(url.query);
+    }),
+    // `URL.prototype.origin` getter
+    // https://url.spec.whatwg.org/#dom-url-origin
+    origin: accessorDescriptor(getOrigin),
+    // `URL.prototype.protocol` accessors pair
+    // https://url.spec.whatwg.org/#dom-url-protocol
+    protocol: accessorDescriptor(getProtocol, function (protocol) {
+      var url = getInternalURLState(this);
+      parseURL(url, String(protocol) + ':', SCHEME_START);
+    }),
+    // `URL.prototype.username` accessors pair
+    // https://url.spec.whatwg.org/#dom-url-username
+    username: accessorDescriptor(getUsername, function (username) {
+      var url = getInternalURLState(this);
+      var codePoints = arrayFrom(String(username));
+      if (cannotHaveUsernamePasswordPort(url)) return;
+      url.username = '';
+      for (var i = 0; i < codePoints.length; i++) {
+        url.username += percentEncode(codePoints[i], userinfoPercentEncodeSet);
+      }
+    }),
+    // `URL.prototype.password` accessors pair
+    // https://url.spec.whatwg.org/#dom-url-password
+    password: accessorDescriptor(getPassword, function (password) {
+      var url = getInternalURLState(this);
+      var codePoints = arrayFrom(String(password));
+      if (cannotHaveUsernamePasswordPort(url)) return;
+      url.password = '';
+      for (var i = 0; i < codePoints.length; i++) {
+        url.password += percentEncode(codePoints[i], userinfoPercentEncodeSet);
+      }
+    }),
+    // `URL.prototype.host` accessors pair
+    // https://url.spec.whatwg.org/#dom-url-host
+    host: accessorDescriptor(getHost, function (host) {
+      var url = getInternalURLState(this);
+      if (url.cannotBeABaseURL) return;
+      parseURL(url, String(host), HOST);
+    }),
+    // `URL.prototype.hostname` accessors pair
+    // https://url.spec.whatwg.org/#dom-url-hostname
+    hostname: accessorDescriptor(getHostname, function (hostname) {
+      var url = getInternalURLState(this);
+      if (url.cannotBeABaseURL) return;
+      parseURL(url, String(hostname), HOSTNAME);
+    }),
+    // `URL.prototype.port` accessors pair
+    // https://url.spec.whatwg.org/#dom-url-port
+    port: accessorDescriptor(getPort, function (port) {
+      var url = getInternalURLState(this);
+      if (cannotHaveUsernamePasswordPort(url)) return;
+      port = String(port);
+      if (port == '') url.port = null;
+      else parseURL(url, port, PORT);
+    }),
+    // `URL.prototype.pathname` accessors pair
+    // https://url.spec.whatwg.org/#dom-url-pathname
+    pathname: accessorDescriptor(getPathname, function (pathname) {
+      var url = getInternalURLState(this);
+      if (url.cannotBeABaseURL) return;
+      url.path = [];
+      parseURL(url, pathname + '', PATH_START);
+    }),
+    // `URL.prototype.search` accessors pair
+    // https://url.spec.whatwg.org/#dom-url-search
+    search: accessorDescriptor(getSearch, function (search) {
+      var url = getInternalURLState(this);
+      search = String(search);
+      if (search == '') {
+        url.query = null;
+      } else {
+        if ('?' == search.charAt(0)) search = search.slice(1);
+        url.query = '';
+        parseURL(url, search, QUERY);
+      }
+      getInternalSearchParamsState(url.searchParams).updateSearchParams(url.query);
+    }),
+    // `URL.prototype.searchParams` getter
+    // https://url.spec.whatwg.org/#dom-url-searchparams
+    searchParams: accessorDescriptor(getSearchParams),
+    // `URL.prototype.hash` accessors pair
+    // https://url.spec.whatwg.org/#dom-url-hash
+    hash: accessorDescriptor(getHash, function (hash) {
+      var url = getInternalURLState(this);
+      hash = String(hash);
+      if (hash == '') {
+        url.fragment = null;
+        return;
+      }
+      if ('#' == hash.charAt(0)) hash = hash.slice(1);
+      url.fragment = '';
+      parseURL(url, hash, FRAGMENT);
+    })
+  });
+}
+
+// `URL.prototype.toJSON` method
+// https://url.spec.whatwg.org/#dom-url-tojson
+redefine(URLPrototype, 'toJSON', function toJSON() {
+  return serializeURL.call(this);
+}, { enumerable: true });
+
+// `URL.prototype.toString` method
+// https://url.spec.whatwg.org/#URL-stringification-behavior
+redefine(URLPrototype, 'toString', function toString() {
+  return serializeURL.call(this);
+}, { enumerable: true });
+
+if (NativeURL) {
+  var nativeCreateObjectURL = NativeURL.createObjectURL;
+  var nativeRevokeObjectURL = NativeURL.revokeObjectURL;
+  // `URL.createObjectURL` method
+  // https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL
+  // eslint-disable-next-line no-unused-vars
+  if (nativeCreateObjectURL) redefine(URLConstructor, 'createObjectURL', function createObjectURL(blob) {
+    return nativeCreateObjectURL.apply(NativeURL, arguments);
+  });
+  // `URL.revokeObjectURL` method
+  // https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL
+  // eslint-disable-next-line no-unused-vars
+  if (nativeRevokeObjectURL) redefine(URLConstructor, 'revokeObjectURL', function revokeObjectURL(url) {
+    return nativeRevokeObjectURL.apply(NativeURL, arguments);
+  });
+}
+
+setToStringTag(URLConstructor, 'URL');
+
+$({ global: true, forced: !USE_NATIVE_URL, sham: !DESCRIPTORS }, {
+  URL: URLConstructor
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/core-js/modules/web.url.to-json.js":
+/*!*********************************************************!*\
+  !*** ./node_modules/core-js/modules/web.url.to-json.js ***!
+  \*********************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var $ = __webpack_require__(/*! ../internals/export */ "./node_modules/core-js/internals/export.js");
+
+// `URL.prototype.toJSON` method
+// https://url.spec.whatwg.org/#dom-url-tojson
+$({ target: 'URL', proto: true, enumerable: true }, {
+  toJSON: function toJSON() {
+    return URL.prototype.toString.call(this);
+  }
+});
+
+
+/***/ }),
+
+/***/ "./node_modules/error-stack-parser/error-stack-parser.js":
+/*!***************************************************************!*\
+  !*** ./node_modules/error-stack-parser/error-stack-parser.js ***!
+  \***************************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;(function(root, factory) {
+    'use strict';
+    // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js, Rhino, and browsers.
+
+    /* istanbul ignore next */
+    if (true) {
+        !(__WEBPACK_AMD_DEFINE_ARRAY__ = [__webpack_require__(/*! stackframe */ "./node_modules/stackframe/stackframe.js")], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory),
+				__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+				(__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+    } else {}
+}(this, function ErrorStackParser(StackFrame) {
+    'use strict';
+
+    var FIREFOX_SAFARI_STACK_REGEXP = /(^|@)\S+\:\d+/;
+    var CHROME_IE_STACK_REGEXP = /^\s*at .*(\S+\:\d+|\(native\))/m;
+    var SAFARI_NATIVE_CODE_REGEXP = /^(eval@)?(\[native code\])?$/;
+
+    return {
+        /**
+         * Given an Error object, extract the most information from it.
+         *
+         * @param {Error} error object
+         * @return {Array} of StackFrames
+         */
+        parse: function ErrorStackParser$$parse(error) {
+            if (typeof error.stacktrace !== 'undefined' || typeof error['opera#sourceloc'] !== 'undefined') {
+                return this.parseOpera(error);
+            } else if (error.stack && error.stack.match(CHROME_IE_STACK_REGEXP)) {
+                return this.parseV8OrIE(error);
+            } else if (error.stack) {
+                return this.parseFFOrSafari(error);
+            } else {
+                throw new Error('Cannot parse given Error object');
+            }
+        },
+
+        // Separate line and column numbers from a string of the form: (URI:Line:Column)
+        extractLocation: function ErrorStackParser$$extractLocation(urlLike) {
+            // Fail-fast but return locations like "(native)"
+            if (urlLike.indexOf(':') === -1) {
+                return [urlLike];
+            }
+
+            var regExp = /(.+?)(?:\:(\d+))?(?:\:(\d+))?$/;
+            var parts = regExp.exec(urlLike.replace(/[\(\)]/g, ''));
+            return [parts[1], parts[2] || undefined, parts[3] || undefined];
+        },
+
+        parseV8OrIE: function ErrorStackParser$$parseV8OrIE(error) {
+            var filtered = error.stack.split('\n').filter(function(line) {
+                return !!line.match(CHROME_IE_STACK_REGEXP);
+            }, this);
+
+            return filtered.map(function(line) {
+                if (line.indexOf('(eval ') > -1) {
+                    // Throw away eval information until we implement stacktrace.js/stackframe#8
+                    line = line.replace(/eval code/g, 'eval').replace(/(\(eval at [^\()]*)|(\)\,.*$)/g, '');
+                }
+                var tokens = line.replace(/^\s+/, '').replace(/\(eval code/g, '(').split(/\s+/).slice(1);
+                var locationParts = this.extractLocation(tokens.pop());
+                var functionName = tokens.join(' ') || undefined;
+                var fileName = ['eval', '<anonymous>'].indexOf(locationParts[0]) > -1 ? undefined : locationParts[0];
+
+                return new StackFrame({
+                    functionName: functionName,
+                    fileName: fileName,
+                    lineNumber: locationParts[1],
+                    columnNumber: locationParts[2],
+                    source: line
+                });
+            }, this);
+        },
+
+        parseFFOrSafari: function ErrorStackParser$$parseFFOrSafari(error) {
+            var filtered = error.stack.split('\n').filter(function(line) {
+                return !line.match(SAFARI_NATIVE_CODE_REGEXP);
+            }, this);
+
+            return filtered.map(function(line) {
+                // Throw away eval information until we implement stacktrace.js/stackframe#8
+                if (line.indexOf(' > eval') > -1) {
+                    line = line.replace(/ line (\d+)(?: > eval line \d+)* > eval\:\d+\:\d+/g, ':$1');
+                }
+
+                if (line.indexOf('@') === -1 && line.indexOf(':') === -1) {
+                    // Safari eval frames only have function names and nothing else
+                    return new StackFrame({
+                        functionName: line
+                    });
+                } else {
+                    var functionNameRegex = /((.*".+"[^@]*)?[^@]*)(?:@)/;
+                    var matches = line.match(functionNameRegex);
+                    var functionName = matches && matches[1] ? matches[1] : undefined;
+                    var locationParts = this.extractLocation(line.replace(functionNameRegex, ''));
+
+                    return new StackFrame({
+                        functionName: functionName,
+                        fileName: locationParts[0],
+                        lineNumber: locationParts[1],
+                        columnNumber: locationParts[2],
+                        source: line
+                    });
+                }
+            }, this);
+        },
+
+        parseOpera: function ErrorStackParser$$parseOpera(e) {
+            if (!e.stacktrace || (e.message.indexOf('\n') > -1 &&
+                e.message.split('\n').length > e.stacktrace.split('\n').length)) {
+                return this.parseOpera9(e);
+            } else if (!e.stack) {
+                return this.parseOpera10(e);
+            } else {
+                return this.parseOpera11(e);
+            }
+        },
+
+        parseOpera9: function ErrorStackParser$$parseOpera9(e) {
+            var lineRE = /Line (\d+).*script (?:in )?(\S+)/i;
+            var lines = e.message.split('\n');
+            var result = [];
+
+            for (var i = 2, len = lines.length; i < len; i += 2) {
+                var match = lineRE.exec(lines[i]);
+                if (match) {
+                    result.push(new StackFrame({
+                        fileName: match[2],
+                        lineNumber: match[1],
+                        source: lines[i]
+                    }));
+                }
+            }
+
+            return result;
+        },
+
+        parseOpera10: function ErrorStackParser$$parseOpera10(e) {
+            var lineRE = /Line (\d+).*script (?:in )?(\S+)(?:: In function (\S+))?$/i;
+            var lines = e.stacktrace.split('\n');
+            var result = [];
+
+            for (var i = 0, len = lines.length; i < len; i += 2) {
+                var match = lineRE.exec(lines[i]);
+                if (match) {
+                    result.push(
+                        new StackFrame({
+                            functionName: match[3] || undefined,
+                            fileName: match[2],
+                            lineNumber: match[1],
+                            source: lines[i]
+                        })
+                    );
+                }
+            }
+
+            return result;
+        },
+
+        // Opera 10.65+ Error.stack very similar to FF/Safari
+        parseOpera11: function ErrorStackParser$$parseOpera11(error) {
+            var filtered = error.stack.split('\n').filter(function(line) {
+                return !!line.match(FIREFOX_SAFARI_STACK_REGEXP) && !line.match(/^Error created at/);
+            }, this);
+
+            return filtered.map(function(line) {
+                var tokens = line.split('@');
+                var locationParts = this.extractLocation(tokens.pop());
+                var functionCall = (tokens.shift() || '');
+                var functionName = functionCall
+                        .replace(/<anonymous function(: (\w+))?>/, '$2')
+                        .replace(/\([^\)]*\)/g, '') || undefined;
+                var argsRaw;
+                if (functionCall.match(/\(([^\)]*)\)/)) {
+                    argsRaw = functionCall.replace(/^[^\(]+\(([^\)]*)\)$/, '$1');
+                }
+                var args = (argsRaw === undefined || argsRaw === '[arguments not available]') ?
+                    undefined : argsRaw.split(',');
+
+                return new StackFrame({
+                    functionName: functionName,
+                    args: args,
+                    fileName: locationParts[0],
+                    lineNumber: locationParts[1],
+                    columnNumber: locationParts[2],
+                    source: line
+                });
+            }, this);
+        }
+    };
+}));
+
+
+/***/ }),
+
+/***/ "./node_modules/form-data/lib/browser.js":
+/*!***********************************************!*\
+  !*** ./node_modules/form-data/lib/browser.js ***!
+  \***********************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/* eslint-env browser */
+module.exports = typeof self == 'object' ? self.FormData : window.FormData;
+
+
+/***/ }),
+
+/***/ "./node_modules/is-buffer/index.js":
+/*!*****************************************!*\
+  !*** ./node_modules/is-buffer/index.js ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
 /*!
  * Determine if an object is a Buffer
  *
  * @author   Feross Aboukhadijeh <https://feross.org>
  * @license  MIT
  */
-t.exports=function(t){return null!=t&&null!=t.constructor&&"function"==typeof t.constructor.isBuffer&&t.constructor.isBuffer(t)}},function(t,e,n){"use strict";var r=n(49),o=n(6),s=n(133),i=n(134);function a(t){this.defaults=t,this.interceptors={request:new s,response:new s}}a.prototype.request=function(t){"string"==typeof t&&(t=o.merge({url:arguments[0]},arguments[1])),(t=o.merge(r,{method:"get"},this.defaults,t)).method=t.method.toLowerCase();var e=[i,void 0],n=Promise.resolve(t);for(this.interceptors.request.forEach(function(t){e.unshift(t.fulfilled,t.rejected)}),this.interceptors.response.forEach(function(t){e.push(t.fulfilled,t.rejected)});e.length;)n=n.then(e.shift(),e.shift());return n},o.forEach(["delete","get","head","options"],function(t){a.prototype[t]=function(e,n){return this.request(o.merge(n||{},{method:t,url:e}))}}),o.forEach(["post","put","patch"],function(t){a.prototype[t]=function(e,n,r){return this.request(o.merge(r||{},{method:t,url:e,data:n}))}}),t.exports=a},function(t,e){var n,r,o=t.exports={};function s(){throw new Error("setTimeout has not been defined")}function i(){throw new Error("clearTimeout has not been defined")}function a(t){if(n===setTimeout)return setTimeout(t,0);if((n===s||!n)&&setTimeout)return n=setTimeout,setTimeout(t,0);try{return n(t,0)}catch(e){try{return n.call(null,t,0)}catch(e){return n.call(this,t,0)}}}!function(){try{n="function"==typeof setTimeout?setTimeout:s}catch(t){n=s}try{r="function"==typeof clearTimeout?clearTimeout:i}catch(t){r=i}}();var c,u=[],l=!1,p=-1;function f(){l&&c&&(l=!1,c.length?u=c.concat(u):p=-1,u.length&&h())}function h(){if(!l){var t=a(f);l=!0;for(var e=u.length;e;){for(c=u,u=[];++p<e;)c&&c[p].run();p=-1,e=u.length}c=null,l=!1,function(t){if(r===clearTimeout)return clearTimeout(t);if((r===i||!r)&&clearTimeout)return r=clearTimeout,clearTimeout(t);try{r(t)}catch(e){try{return r.call(null,t)}catch(e){return r.call(this,t)}}}(t)}}function d(t,e){this.fun=t,this.array=e}function b(){}o.nextTick=function(t){var e=new Array(arguments.length-1);if(arguments.length>1)for(var n=1;n<arguments.length;n++)e[n-1]=arguments[n];u.push(new d(t,e)),1!==u.length||l||a(h)},d.prototype.run=function(){this.fun.apply(null,this.array)},o.title="browser",o.browser=!0,o.env={},o.argv=[],o.version="",o.versions={},o.on=b,o.addListener=b,o.once=b,o.off=b,o.removeListener=b,o.removeAllListeners=b,o.emit=b,o.prependListener=b,o.prependOnceListener=b,o.listeners=function(t){return[]},o.binding=function(t){throw new Error("process.binding is not supported")},o.cwd=function(){return"/"},o.chdir=function(t){throw new Error("process.chdir is not supported")},o.umask=function(){return 0}},function(t,e,n){"use strict";var r=n(6);t.exports=function(t,e){r.forEach(t,function(n,r){r!==e&&r.toUpperCase()===e.toUpperCase()&&(t[e]=n,delete t[r])})}},function(t,e,n){"use strict";var r=n(79);t.exports=function(t,e,n){var o=n.config.validateStatus;n.status&&o&&!o(n.status)?e(r("Request failed with status code "+n.status,n.config,null,n.request,n)):t(n)}},function(t,e,n){"use strict";t.exports=function(t,e,n,r,o){return t.config=e,n&&(t.code=n),t.request=r,t.response=o,t}},function(t,e,n){"use strict";var r=n(6);function o(t){return encodeURIComponent(t).replace(/%40/gi,"@").replace(/%3A/gi,":").replace(/%24/g,"$").replace(/%2C/gi,",").replace(/%20/g,"+").replace(/%5B/gi,"[").replace(/%5D/gi,"]")}t.exports=function(t,e,n){if(!e)return t;var s;if(n)s=n(e);else if(r.isURLSearchParams(e))s=e.toString();else{var i=[];r.forEach(e,function(t,e){null!=t&&(r.isArray(t)?e+="[]":t=[t],r.forEach(t,function(t){r.isDate(t)?t=t.toISOString():r.isObject(t)&&(t=JSON.stringify(t)),i.push(o(e)+"="+o(t))}))}),s=i.join("&")}return s&&(t+=(-1===t.indexOf("?")?"?":"&")+s),t}},function(t,e,n){"use strict";var r=n(6),o=["age","authorization","content-length","content-type","etag","expires","from","host","if-modified-since","if-unmodified-since","last-modified","location","max-forwards","proxy-authorization","referer","retry-after","user-agent"];t.exports=function(t){var e,n,s,i={};return t?(r.forEach(t.split("\n"),function(t){if(s=t.indexOf(":"),e=r.trim(t.substr(0,s)).toLowerCase(),n=r.trim(t.substr(s+1)),e){if(i[e]&&o.indexOf(e)>=0)return;i[e]="set-cookie"===e?(i[e]?i[e]:[]).concat([n]):i[e]?i[e]+", "+n:n}}),i):i}},function(t,e,n){"use strict";var r=n(6);t.exports=r.isStandardBrowserEnv()?function(){var t,e=/(msie|trident)/i.test(navigator.userAgent),n=document.createElement("a");function o(t){var r=t;return e&&(n.setAttribute("href",r),r=n.href),n.setAttribute("href",r),{href:n.href,protocol:n.protocol?n.protocol.replace(/:$/,""):"",host:n.host,search:n.search?n.search.replace(/^\?/,""):"",hash:n.hash?n.hash.replace(/^#/,""):"",hostname:n.hostname,port:n.port,pathname:"/"===n.pathname.charAt(0)?n.pathname:"/"+n.pathname}}return t=o(window.location.href),function(e){var n=r.isString(e)?o(e):e;return n.protocol===t.protocol&&n.host===t.host}}():function(){return!0}},function(t,e,n){"use strict";var r=n(6);t.exports=r.isStandardBrowserEnv()?{write:function(t,e,n,o,s,i){var a=[];a.push(t+"="+encodeURIComponent(e)),r.isNumber(n)&&a.push("expires="+new Date(n).toGMTString()),r.isString(o)&&a.push("path="+o),r.isString(s)&&a.push("domain="+s),!0===i&&a.push("secure"),document.cookie=a.join("; ")},read:function(t){var e=document.cookie.match(new RegExp("(^|;\\s*)("+t+")=([^;]*)"));return e?decodeURIComponent(e[3]):null},remove:function(t){this.write(t,"",Date.now()-864e5)}}:{write:function(){},read:function(){return null},remove:function(){}}},function(t,e,n){"use strict";var r=n(6);function o(){this.handlers=[]}o.prototype.use=function(t,e){return this.handlers.push({fulfilled:t,rejected:e}),this.handlers.length-1},o.prototype.eject=function(t){this.handlers[t]&&(this.handlers[t]=null)},o.prototype.forEach=function(t){r.forEach(this.handlers,function(e){null!==e&&t(e)})},t.exports=o},function(t,e,n){"use strict";var r=n(6),o=n(135),s=n(80),i=n(49),a=n(136),c=n(137);function u(t){t.cancelToken&&t.cancelToken.throwIfRequested()}t.exports=function(t){return u(t),t.baseURL&&!a(t.url)&&(t.url=c(t.baseURL,t.url)),t.headers=t.headers||{},t.data=o(t.data,t.headers,t.transformRequest),t.headers=r.merge(t.headers.common||{},t.headers[t.method]||{},t.headers||{}),r.forEach(["delete","get","head","post","put","patch","common"],function(e){delete t.headers[e]}),(t.adapter||i.adapter)(t).then(function(e){return u(t),e.data=o(e.data,e.headers,t.transformResponse),e},function(e){return s(e)||(u(t),e&&e.response&&(e.response.data=o(e.response.data,e.response.headers,t.transformResponse))),Promise.reject(e)})}},function(t,e,n){"use strict";var r=n(6);t.exports=function(t,e,n){return r.forEach(n,function(n){t=n(t,e)}),t}},function(t,e,n){"use strict";t.exports=function(t){return/^([a-z][a-z\d\+\-\.]*:)?\/\//i.test(t)}},function(t,e,n){"use strict";t.exports=function(t,e){return e?t.replace(/\/+$/,"")+"/"+e.replace(/^\/+/,""):t}},function(t,e,n){"use strict";var r=n(81);function o(t){if("function"!=typeof t)throw new TypeError("executor must be a function.");var e;this.promise=new Promise(function(t){e=t});var n=this;t(function(t){n.reason||(n.reason=new r(t),e(n.reason))})}o.prototype.throwIfRequested=function(){if(this.reason)throw this.reason},o.source=function(){var t;return{token:new o(function(e){t=e}),cancel:t}},t.exports=o},function(t,e,n){"use strict";t.exports=function(t){return function(e){return t.apply(null,e)}}},function(t,e,n){"use strict";var r=n(13),o=n(141).trim;r({target:"String",proto:!0,forced:n(142)("trim")},{trim:function(){return o(this)}})},function(t,e,n){var r=n(20),o="["+n(84)+"]",s=RegExp("^"+o+o+"*"),i=RegExp(o+o+"*$"),a=function(t){return function(e){var n=String(r(e));return 1&t&&(n=n.replace(s,"")),2&t&&(n=n.replace(i,"")),n}};t.exports={start:a(1),end:a(2),trim:a(3)}},function(t,e,n){var r=n(2),o=n(84);t.exports=function(t){return r(function(){return!!o[t]()||"​᠎"!="​᠎"[t]()||o[t].name!==t})}},function(t,e,n){(function(e){n(4),n(9),n(8),n(85),(()=>{const r=n(25),o=n(18),{ArgumentError:s}=n(5),i={},a={};class c{constructor(t,e,n,r){Object.defineProperties(this,Object.freeze({width:{value:t,writable:!1},height:{value:e,writable:!1},tid:{value:n,writable:!1},number:{value:r,writable:!1}}))}async data(){return await r.apiWrapper.call(this,c.prototype.data)}}c.prototype.data.implementation=async function(){if(!(this.number in a[this.tid])){const n=await o.frames.getData(this.tid,this.number);if(t.exports)a[this.tid][this.number]=e.Buffer.from(n,"binary").toString("base64");else{const t=URL.createObjectURL(new Blob([n]));a[this.tid][this.number]=t}}return a[this.tid][this.number]},t.exports={FrameData:c,getFrame:async function(t,e,n){if(t in i||(i[t]={},i[t].meta=await o.frames.getMeta(t),a[t]={}),!(n in i[t])){let r=null;if("interpolation"===e)[r]=i[t].meta;else{if("annotation"!==e)throw new s(`Invalid mode is specified ${e}`);if(n>=i[t].meta.length)throw new s(`Meta information about frame ${n} can't be received from the server`);r=i[t].meta[n]}i[t][n]=new c(r.width,r.height,t,n)}return i[t][n]}}})()}).call(this,n(38))},function(t,e,n){"use strict";var r=n(48).charAt,o=n(17),s=n(72),i=o.set,a=o.getterFor("String Iterator");s(String,"String",function(t){i(this,{type:"String Iterator",string:String(t),index:0})},function(){var t,e=a(this),n=e.string,o=e.index;return o>=n.length?{value:void 0,done:!0}:(t=r(n,o),e.index+=t.length,{value:t,done:!1})})},function(t,e,n){"use strict";var r=n(10),o=n(2),s=n(71),i=n(60),a=n(52),c=n(26),u=n(53),l=Object.assign;t.exports=!l||o(function(){var t={},e={},n=Symbol();return t[n]=7,"abcdefghijklmnopqrst".split("").forEach(function(t){e[t]=t}),7!=l({},t)[n]||"abcdefghijklmnopqrst"!=s(l({},e)).join("")})?function(t,e){for(var n=c(t),o=arguments.length,l=1,p=i.f,f=a.f;o>l;)for(var h,d=u(arguments[l++]),b=p?s(d).concat(p(d)):s(d),g=b.length,m=0;g>m;)h=b[m++],r&&!f.call(d,h)||(n[h]=d[h]);return n}:l},function(t,e,n){"use strict";var r=n(33),o=n(26),s=n(64),i=n(63),a=n(31),c=n(147),u=n(34);t.exports=function(t){var e,n,l,p,f=o(t),h="function"==typeof this?this:Array,d=arguments.length,b=d>1?arguments[1]:void 0,g=void 0!==b,m=0,y=u(f);if(g&&(b=r(b,d>2?arguments[2]:void 0,2)),null==y||h==Array&&i(y))for(n=new h(e=a(f.length));e>m;m++)c(n,m,g?b(f[m],m):f[m]);else for(p=y.call(f),n=new h;!(l=p.next()).done;m++)c(n,m,g?s(p,b,[l.value,m],!0):l.value);return n.length=m,n}},function(t,e,n){"use strict";var r=n(40),o=n(14),s=n(27);t.exports=function(t,e,n){var i=r(e);i in t?o.f(t,i,s(0,n)):t[i]=n}},function(t,e,n){"use strict";var r=/[^\0-\u007E]/,o=/[.\u3002\uFF0E\uFF61]/g,s="Overflow: input needs wider integers to process",i=Math.floor,a=String.fromCharCode,c=function(t){return t+22+75*(t<26)},u=function(t,e,n){var r=0;for(t=n?i(t/700):t>>1,t+=i(t/e);t>455;r+=36)t=i(t/35);return i(r+36*t/(t+38))},l=function(t){var e,n,r=[],o=(t=function(t){for(var e=[],n=0,r=t.length;n<r;){var o=t.charCodeAt(n++);if(o>=55296&&o<=56319&&n<r){var s=t.charCodeAt(n++);56320==(64512&s)?e.push(((1023&o)<<10)+(1023&s)+65536):(e.push(o),n--)}else e.push(o)}return e}(t)).length,l=128,p=0,f=72;for(e=0;e<t.length;e++)(n=t[e])<128&&r.push(a(n));var h=r.length,d=h;for(h&&r.push("-");d<o;){var b=2147483647;for(e=0;e<t.length;e++)(n=t[e])>=l&&n<b&&(b=n);var g=d+1;if(b-l>i((2147483647-p)/g))throw RangeError(s);for(p+=(b-l)*g,l=b,e=0;e<t.length;e++){if((n=t[e])<l&&++p>2147483647)throw RangeError(s);if(n==l){for(var m=p,y=36;;y+=36){var v=y<=f?1:y>=f+26?26:y-f;if(m<v)break;var w=m-v,O=36-v;r.push(a(c(v+w%O))),m=i(w/O)}r.push(a(c(m))),f=u(p,g,d==h),p=0,++d}}++p,++l}return r.join("")};t.exports=function(t){var e,n,s=[],i=t.toLowerCase().replace(o,".").split(".");for(e=0;e<i.length;e++)n=i[e],s.push(r.test(n)?"xn--"+l(n):n);return s.join(".")}},function(t,e,n){"use strict";n(4);var r=n(13),o=n(86),s=n(16),i=n(62),a=n(22),c=n(73),u=n(17),l=n(46),p=n(7),f=n(33),h=n(3),d=n(11),b=n(150),g=n(34),m=n(1)("iterator"),y=u.set,v=u.getterFor("URLSearchParams"),w=u.getterFor("URLSearchParamsIterator"),O=/\+/g,x=Array(4),j=function(t){return x[t-1]||(x[t-1]=RegExp("((?:%[\\da-f]{2}){"+t+"})","gi"))},k=function(t){try{return decodeURIComponent(t)}catch(e){return t}},S=function(t){var e=t.replace(O," "),n=4;try{return decodeURIComponent(e)}catch(t){for(;n;)e=e.replace(j(n--),k);return e}},A=/[!'()~]|%20/g,T={"!":"%21","'":"%27","(":"%28",")":"%29","~":"%7E","%20":"+"},E=function(t){return T[t]},I=function(t){return encodeURIComponent(t).replace(A,E)},P=function(t,e){if(e)for(var n,r,o=e.split("&"),s=0;s<o.length;)(n=o[s++]).length&&(r=n.split("="),t.push({key:S(r.shift()),value:S(r.join("="))}))},C=function(t){this.entries.length=0,P(this.entries,t)},F=function(t,e){if(t<e)throw TypeError("Not enough arguments")},_=c(function(t,e){y(this,{type:"URLSearchParamsIterator",iterator:b(v(t).entries),kind:e})},"Iterator",function(){var t=w(this),e=t.kind,n=t.iterator.next(),r=n.value;return n.done||(n.value="keys"===e?r.key:"values"===e?r.value:[r.key,r.value]),n}),N=function(){l(this,N,"URLSearchParams");var t,e,n,r,o,s,i,a=arguments.length>0?arguments[0]:void 0,c=this,u=[];if(y(c,{type:"URLSearchParams",entries:u,updateURL:function(){},updateSearchParams:C}),void 0!==a)if(d(a))if("function"==typeof(t=g(a)))for(e=t.call(a);!(n=e.next()).done;){if((o=(r=b(h(n.value))).next()).done||(s=r.next()).done||!r.next().done)throw TypeError("Expected sequence with length 2");u.push({key:o.value+"",value:s.value+""})}else for(i in a)p(a,i)&&u.push({key:i,value:a[i]+""});else P(u,"string"==typeof a?"?"===a.charAt(0)?a.slice(1):a:a+"")},M=N.prototype;i(M,{append:function(t,e){F(arguments.length,2);var n=v(this);n.entries.push({key:t+"",value:e+""}),n.updateURL()},delete:function(t){F(arguments.length,1);for(var e=v(this),n=e.entries,r=t+"",o=0;o<n.length;)n[o].key===r?n.splice(o,1):o++;e.updateURL()},get:function(t){F(arguments.length,1);for(var e=v(this).entries,n=t+"",r=0;r<e.length;r++)if(e[r].key===n)return e[r].value;return null},getAll:function(t){F(arguments.length,1);for(var e=v(this).entries,n=t+"",r=[],o=0;o<e.length;o++)e[o].key===n&&r.push(e[o].value);return r},has:function(t){F(arguments.length,1);for(var e=v(this).entries,n=t+"",r=0;r<e.length;)if(e[r++].key===n)return!0;return!1},set:function(t,e){F(arguments.length,1);for(var n,r=v(this),o=r.entries,s=!1,i=t+"",a=e+"",c=0;c<o.length;c++)(n=o[c]).key===i&&(s?o.splice(c--,1):(s=!0,n.value=a));s||o.push({key:i,value:a}),r.updateURL()},sort:function(){var t,e,n,r=v(this),o=r.entries,s=o.slice();for(o.length=0,n=0;n<s.length;n++){for(t=s[n],e=0;e<n;e++)if(o[e].key>t.key){o.splice(e,0,t);break}e===n&&o.push(t)}r.updateURL()},forEach:function(t){for(var e,n=v(this).entries,r=f(t,arguments.length>1?arguments[1]:void 0,3),o=0;o<n.length;)r((e=n[o++]).value,e.key,this)},keys:function(){return new _(this,"keys")},values:function(){return new _(this,"values")},entries:function(){return new _(this,"entries")}},{enumerable:!0}),s(M,m,M.entries),s(M,"toString",function(){for(var t,e=v(this).entries,n=[],r=0;r<e.length;)t=e[r++],n.push(I(t.key)+"="+I(t.value));return n.join("&")},{enumerable:!0}),a(N,"URLSearchParams"),r({global:!0,forced:!o},{URLSearchParams:N}),t.exports={URLSearchParams:N,getState:v}},function(t,e,n){var r=n(3),o=n(34);t.exports=function(t){var e=o(t);if("function"!=typeof e)throw TypeError(String(t)+" is not iterable");return r(e.call(t))}},function(t,e,n){n(4),n(9),n(8),(()=>{const e=n(18),r=n(152),o=n(155),{checkObjectType:s}=n(37),{Task:i}=n(35),{ScriptingError:a,DataError:c}=n(5),u=new WeakMap,l=new WeakMap;function p(t){if("task"===t)return l;if("job"===t)return u;throw new a(`Unknown session type was received ${t}`)}async function f(t){const n=t instanceof i?"task":"job",s=p(n);if(!s.has(t)){const i=await e.annotations.getAnnotations(n,t.id),a="job"===n?t.startFrame:0,c="job"===n?t.stopFrame:t.size-1,u={};for(let e=a;e<=c;e++)u[e]=await t.frames.get(e);const l=new r({labels:t.labels||t.task.labels,startFrame:a,stopFrame:c,frameMeta:u}).import(i),p=new o(i.version,l,t);s.set(t,{collection:l,saver:p})}}t.exports={getAnnotations:async function(t,e,n){return await f(t),p(t instanceof i?"task":"job").get(t).collection.get(e,n)},putAnnotations:function(t,e){const n=p(t instanceof i?"task":"job");if(n.has(t))return n.get(t).collection.put(e);throw new c("Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before")},saveAnnotations:async function(t,e){const n=p(t instanceof i?"task":"job");n.has(t)&&await n.get(t).saver.save(e)},hasUnsavedChanges:function(t){const e=p(t instanceof i?"task":"job");return!!e.has(t)&&e.get(t).saver.hasUnsavedChanges()},mergeAnnotations:function(t,e){const n=p(t instanceof i?"task":"job");if(n.has(t))return n.get(t).collection.merge(e);throw new c("Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before")},splitAnnotations:function(t,e,n){const r=p(t instanceof i?"task":"job");if(r.has(t))return r.get(t).collection.split(e,n);throw new c("Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before")},groupAnnotations:function(t,e,n){const r=p(t instanceof i?"task":"job");if(r.has(t))return r.get(t).collection.group(e,n);throw new c("Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before")},clearAnnotations:async function(t,e){s("reload",e,"boolean",null);const n=p(t instanceof i?"task":"job");n.has(t)&&n.get(t).collection.clear(),e&&(n.delete(t),await f(t))},annotationsStatistics:function(t){const e=p(t instanceof i?"task":"job");if(e.has(t))return e.get(t).collection.statistics();throw new c("Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before")},selectObject:function(t,e,n,r){const o=p(t instanceof i?"task":"job");if(o.has(t))return o.get(t).collection.select(e,n,r);throw new c("Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before")},uploadAnnotations:async function(t,n,r){const o=t instanceof i?"task":"job";await e.annotations.uploadAnnotations(o,t.id,n,r)},dumpAnnotations:async function(t,n,r){const o=t instanceof i?"task":"job";return await e.annotations.dumpAnnotations(o,t.id,n,r)}}})()},function(t,e,n){n(4),n(87),n(8),n(51),(()=>{const{RectangleShape:e,PolygonShape:r,PolylineShape:o,PointsShape:s,RectangleTrack:i,PolygonTrack:a,PolylineTrack:c,PointsTrack:u,Track:l,Shape:p,Tag:f,objectStateFactory:h}=n(154),{checkObjectType:d}=n(37),b=n(83),{Label:g}=n(36),{DataError:m,ArgumentError:y,ScriptingError:v}=n(5),{ObjectShape:w,ObjectType:O}=n(19),x=n(50),j=["#0066FF","#AF593E","#01A368","#FF861F","#ED0A3F","#FF3F34","#76D7EA","#8359A3","#FBE870","#C5E17A","#03BB85","#FFDF00","#8B8680","#0A6B0D","#8FD8D8","#A36F40","#F653A6","#CA3435","#FFCBA4","#FF99CC","#FA9D5A","#FFAE42","#A78B00","#788193","#514E49","#1164B4","#F4FA9F","#FED8B1","#C32148","#01796F","#E90067","#FF91A4","#404E5A","#6CDAE7","#FFC1CC","#006A93","#867200","#E2B631","#6EEB6E","#FFC800","#CC99BA","#FF007C","#BC6CAC","#DCCCD7","#EBE1C2","#A6AAAE","#B99685","#0086A7","#5E4330","#C8A2C8","#708EB3","#BC8777","#B2592D","#497E48","#6A2963","#E6335F","#00755E","#B5A895","#0048ba","#EED9C4","#C88A65","#FF6E4A","#87421F","#B2BEB5","#926F5B","#00B9FB","#6456B7","#DB5079","#C62D42","#FA9C44","#DA8A67","#FD7C6E","#93CCEA","#FCF686","#503E32","#FF5470","#9DE093","#FF7A00","#4F69C6","#A50B5E","#F0E68C","#FDFF00","#F091A9","#FFFF66","#6F9940","#FC74FD","#652DC1","#D6AEDD","#EE34D2","#BB3385","#6B3FA0","#33CC99","#FFDB00","#87FF2A","#6EEB6E","#FFC800","#CC99BA","#7A89B8","#006A93","#867200","#E2B631","#D9D6CF"];function k(t,n,i){const{type:a}=t,c=j[n%j.length];let u=null;switch(a){case"rectangle":u=new e(t,n,c,i);break;case"polygon":u=new r(t,n,c,i);break;case"polyline":u=new o(t,n,c,i);break;case"points":u=new s(t,n,c,i);break;default:throw new m(`An unexpected type of shape "${a}"`)}return u}function S(t,e,n){if(t.shapes.length){const{type:r}=t.shapes[0],o=j[e%j.length];let s=null;switch(r){case"rectangle":s=new i(t,e,o,n);break;case"polygon":s=new a(t,e,o,n);break;case"polyline":s=new c(t,e,o,n);break;case"points":s=new u(t,e,o,n);break;default:throw new m(`An unexpected type of track "${r}"`)}return s}return console.warn("The track without any shapes had been found. It was ignored."),null}t.exports=class{constructor(t){this.startFrame=t.startFrame,this.stopFrame=t.stopFrame,this.frameMeta=t.frameMeta,this.labels=t.labels.reduce((t,e)=>(t[e.id]=e,t),{}),this.shapes={},this.tags={},this.tracks=[],this.objects={},this.count=0,this.flush=!1,this.collectionZ={},this.groups={max:0},this.injection={labels:this.labels,collectionZ:this.collectionZ,groups:this.groups,frameMeta:this.frameMeta}}import(t){for(const e of t.tags){const t=++this.count,n=new f(e,t,this.injection);this.tags[n.frame]=this.tags[n.frame]||[],this.tags[n.frame].push(n),this.objects[t]=n}for(const e of t.shapes){const t=++this.count,n=k(e,t,this.injection);this.shapes[n.frame]=this.shapes[n.frame]||[],this.shapes[n.frame].push(n),this.objects[t]=n}for(const e of t.tracks){const t=++this.count,n=S(e,t,this.injection);n&&(this.tracks.push(n),this.objects[t]=n)}return this}export(){return{tracks:this.tracks.filter(t=>!t.removed).map(t=>t.toJSON()),shapes:Object.values(this.shapes).reduce((t,e)=>(t.push(...e),t),[]).filter(t=>!t.removed).map(t=>t.toJSON()),tags:Object.values(this.tags).reduce((t,e)=>(t.push(...e),t),[]).filter(t=>!t.removed).map(t=>t.toJSON())}}get(t){const{tracks:e}=this,n=this.shapes[t]||[],r=this.tags[t]||[],o=e.concat(n).concat(r).filter(t=>!t.removed),s=[];for(const e of o){const n=e.get(t);if(n.outside&&!n.keyframe)continue;const r=h.call(e,t,n);s.push(r)}return s}merge(t){if(d("shapes for merge",t,null,Array),!t.length)return;const e=t.map(t=>{d("object state",t,null,x);const e=this.objects[t.clientID];if(void 0===e)throw new y("The object has not been saved yet. Call ObjectState.put([state]) before you can merge it");return e}),n={},{label:r,shapeType:o}=t[0];if(!(r.id in this.labels))throw new y(`Unknown label for the task: ${r.id}`);if(!Object.values(w).includes(o))throw new y(`Got unknown shapeType "${o}"`);const s=r.attributes.reduce((t,e)=>(t[e.id]=e,t),{});for(let i=0;i<e.length;i++){const a=e[i],c=t[i];if(c.label.id!==r.id)throw new y(`All shape labels are expected to be ${r.name}, but got ${c.label.name}`);if(c.shapeType!==o)throw new y(`All shapes are expected to be ${o}, but got ${c.shapeType}`);if(a instanceof p){if(a.frame in n&&!n[a.frame].outside)throw new y("Expected only one visible shape per frame");n[a.frame]={type:o,frame:a.frame,points:[...a.points],occluded:a.occluded,zOrder:a.zOrder,outside:!1,attributes:Object.keys(a.attributes).reduce((t,e)=>(e in s&&s[e].mutable&&t.push({spec_id:+e,value:a.attributes[e]}),t),[])},a.frame+1 in n||(n[a.frame+1]=JSON.parse(JSON.stringify(n[a.frame])),n[a.frame+1].outside=!0,n[a.frame+1].frame++)}else{if(!(a instanceof l))throw new y(`Trying to merge unknown object type: ${a.constructor.name}. `+"Only shapes and tracks are expected.");{const t={};for(const e of Object.keys(a.shapes)){const r=a.shapes[e];if(e in n&&!n[e].outside){if(r.outside)continue;throw new y("Expected only one visible shape per frame")}let s=!1;for(const e in r.attributes)e in t&&t[e]===r.attributes[e]||(s=!0,t[e]=r.attributes[e]);n[e]={type:o,frame:+e,points:[...r.points],occluded:r.occluded,outside:r.outside,zOrder:r.zOrder,attributes:s?Object.keys(t).reduce((e,n)=>(e.push({spec_id:+n,value:t[n]}),e),[]):[]}}}}}let i=!1;for(const t of Object.keys(n).sort((t,e)=>+t-+e)){if((i=i||n[t].outside)||!n[t].outside)break;delete n[t]}const a=++this.count,c=S({frame:Math.min.apply(null,Object.keys(n).map(t=>+t)),shapes:Object.values(n),group:0,label_id:r.id,attributes:Object.keys(t[0].attributes).reduce((e,n)=>(s[n].mutable||e.push({spec_id:+n,value:t[0].attributes[n]}),e),[])},a,this.injection);this.tracks.push(c),this.objects[a]=c;for(const t of e)t.removed=!0,"function"==typeof t.resetCache&&t.resetCache()}split(t,e){d("object state",t,null,x),d("frame",e,"integer",null);const n=this.objects[t.clientID];if(void 0===n)throw new y("The object has not been saved yet. Call annotations.put([state]) before");if(t.objectType!==O.TRACK)return;const r=Object.keys(n.shapes).sort((t,e)=>+t-+e);if(e<=+r[0]||e>r[r.length-1])return;const o=n.label.attributes.reduce((t,e)=>(t[e.id]=e,t),{}),s=n.toJSON(),i={type:t.shapeType,points:[...t.points],occluded:t.occluded,outside:t.outside,zOrder:0,attributes:Object.keys(t.attributes).reduce((e,n)=>(o[n].mutable||e.push({spec_id:+n,value:t.attributes[n]}),e),[]),frame:e},a={frame:s.frame,group:0,label_id:s.label_id,attributes:s.attributes,shapes:[]},c=JSON.parse(JSON.stringify(a));c.frame=e,c.shapes.push(JSON.parse(JSON.stringify(i))),s.shapes.map(t=>(delete t.id,t.frame<e?a.shapes.push(JSON.parse(JSON.stringify(t))):t.frame>e&&c.shapes.push(JSON.parse(JSON.stringify(t))),t)),a.shapes.push(i),a.shapes[a.shapes.length-1].outside=!0;let u=++this.count;const l=S(a,u,this.injection);this.tracks.push(l),this.objects[u]=l,u=++this.count;const p=S(c,u,this.injection);this.tracks.push(p),this.objects[u]=p,n.removed=!0,n.resetCache()}group(t,e){d("shapes for group",t,null,Array);const n=t.map(t=>{d("object state",t,null,x);const e=this.objects[t.clientID];if(void 0===e)throw new y("The object has not been saved yet. Call annotations.put([state]) before");return e}),r=e?0:++this.groups.max;for(const t of n)t.group=r,"function"==typeof t.resetCache&&t.resetCache();return r}clear(){this.shapes={},this.tags={},this.tracks=[],this.objects={},this.count=0,this.flush=!0}statistics(){const t={},e={rectangle:{shape:0,track:0},polygon:{shape:0,track:0},polyline:{shape:0,track:0},points:{shape:0,track:0},tags:0,manually:0,interpolated:0,total:0},n=JSON.parse(JSON.stringify(e));for(const n of Object.values(this.labels)){const{name:r}=n;t[r]=JSON.parse(JSON.stringify(e))}for(const e of Object.values(this.objects)){let n=null;if(e instanceof p)n="shape";else if(e instanceof l)n="track";else{if(!(e instanceof f))throw new v(`Unexpected object type: "${n}"`);n="tag"}const r=e.label.name;if("tag"===n)t[r].tags++,t[r].manually++,t[r].total++;else{const{shapeType:o}=e;if(t[r][o][n]++,"track"===n){const n=Object.keys(e.shapes).sort((t,e)=>+t-+e).map(t=>+t);let o=n[0],s=!1;for(const i of n){if(s){const e=i-o-1;t[r].interpolated+=e,t[r].total+=e}s=!e.shapes[i].outside,o=i,s&&(t[r].manually++,t[r].total++)}const i=n[n.length-1];if(i!==this.stopFrame&&!e.shapes[i].outside){const e=this.stopFrame-i;t[r].interpolated+=e,t[r].total+=e}}else t[r].manually++,t[r].total++}}for(const e of Object.keys(t))for(const r of Object.keys(t[e]))if("object"==typeof t[e][r])for(const o of Object.keys(t[e][r]))n[r][o]+=t[e][r][o];else n[r]+=t[e][r];return new b(t,n)}put(t){d("shapes for put",t,null,Array);const e={shapes:[],tracks:[],tags:[]};function n(t,e){const n=+e,r=this.attributes[e];return d("attribute id",n,"integer",null),d("attribute value",r,"string",null),t.push({spec_id:n,value:r}),t}for(const r of t){d("object state",r,null,x),d("state client ID",r.clientID,"undefined",null),d("state frame",r.frame,"integer",null),d("state attributes",r.attributes,null,Object),d("state label",r.label,null,g);const t=Object.keys(r.attributes).reduce(n.bind(r),[]),o=r.label.attributes.reduce((t,e)=>(t[e.id]=e,t),{});if("tag"===r.objectType)e.tags.push({attributes:t,frame:r.frame,label_id:r.label.id,group:0});else{d("state occluded",r.occluded,"boolean",null),d("state points",r.points,null,Array);for(const t of r.points)d("point coordinate",t,"number",null);if(!Object.values(w).includes(r.shapeType))throw new y("Object shape must be one of: "+`${JSON.stringify(Object.values(w))}`);if("shape"===r.objectType)e.shapes.push({attributes:t,frame:r.frame,group:0,label_id:r.label.id,occluded:r.occluded||!1,points:[...r.points],type:r.shapeType,z_order:0});else{if("track"!==r.objectType)throw new y("Object type must be one of: "+`${JSON.stringify(Object.values(O))}`);e.tracks.push({attributes:t.filter(t=>!o[t.spec_id].mutable),frame:r.frame,group:0,label_id:r.label.id,shapes:[{attributes:t.filter(t=>o[t.spec_id].mutable),frame:r.frame,occluded:r.occluded||!1,outside:!1,points:[...r.points],type:r.shapeType,z_order:0}]})}}}this.import(e)}select(t,e,n){d("shapes for select",t,null,Array),d("x coordinate",e,"number",null),d("y coordinate",n,"number",null);let r=null,o=null;for(const s of t){if(d("object state",s,null,x),s.outside)continue;const t=this.objects[s.clientID];if(void 0===t)throw new y("The object has not been saved yet. Call annotations.put([state]) before");const i=t.constructor.distance(s.points,e,n);null!==i&&(null===r||i<r)&&(r=i,o=s)}return{state:o,distance:r}}}})()},function(t,e,n){"use strict";var r=n(2);t.exports=function(t,e){var n=[][t];return!n||!r(function(){n.call(null,e||function(){throw 1},1)})}},function(t,e,n){n(4),n(87),n(8),(()=>{const e=n(50),{checkObjectType:r}=n(37),{ObjectShape:o,ObjectType:s,AttributeType:i}=n(19),{DataError:a,ArgumentError:c,ScriptingError:u}=n(5),{Label:l}=n(36);function p(t,n){const r=new e(n);return r.hidden={save:this.save.bind(this,t,r),delete:this.delete.bind(this),up:this.up.bind(this,t,r),down:this.down.bind(this,t,r)},r}function f(t,e){if(t===o.RECTANGLE){if(e.length/2!=2)throw new a(`Rectangle must have 2 points, but got ${e.length/2}`)}else if(t===o.POLYGON){if(e.length/2<3)throw new a(`Polygon must have at least 3 points, but got ${e.length/2}`)}else if(t===o.POLYLINE){if(e.length/2<2)throw new a(`Polyline must have at least 2 points, but got ${e.length/2}`)}else{if(t!==o.POINTS)throw new c(`Unknown value of shapeType has been recieved ${t}`);if(e.length/2<1)throw new a(`Points must have at least 1 points, but got ${e.length/2}`)}}function h(t,e){if(t===o.POINTS)return!0;let n=Number.MAX_SAFE_INTEGER,r=Number.MIN_SAFE_INTEGER,s=Number.MAX_SAFE_INTEGER,i=Number.MIN_SAFE_INTEGER;for(let t=0;t<e.length-1;t+=2)n=Math.min(n,e[t]),r=Math.max(r,e[t]),s=Math.min(s,e[t+1]),i=Math.max(i,e[t+1]);if(t===o.POLYLINE){return Math.max(r-n,i-s)>=3}return(r-n)*(i-s)>=9}function d(t,e){const{values:n}=e,r=e.inputType;if("string"!=typeof t)throw new c(`Attribute value is expected to be string, but got ${typeof t}`);return r===i.NUMBER?+t>=+n[0]&&+t<=+n[1]&&!((+t-+n[0])%+n[2]):r===i.CHECKBOX?["true","false"].includes(t.toLowerCase()):n.includes(t)}class b{constructor(t,e,n){this.taskLabels=n.labels,this.clientID=e,this.serverID=t.id,this.group=t.group,this.label=this.taskLabels[t.label_id],this.frame=t.frame,this.removed=!1,this.lock=!1,this.attributes=t.attributes.reduce((t,e)=>(t[e.spec_id]=e.value,t),{}),this.appendDefaultAttributes(this.label),n.groups.max=Math.max(n.groups.max,this.group)}appendDefaultAttributes(t){const e=t.attributes;for(const t of e)t.id in this.attributes||(this.attributes[t.id]=t.defaultValue)}delete(t){return this.lock&&!t||(this.removed=!0),!0}}class g extends b{constructor(t,e,n,r){super(t,e,r),this.frameMeta=r.frameMeta,this.collectionZ=r.collectionZ,this.color=n,this.shapeType=null}_getZ(t){return this.collectionZ[t]=this.collectionZ[t]||{max:0,min:0},this.collectionZ[t]}save(){throw new u("Is not implemented")}get(){throw new u("Is not implemented")}toJSON(){throw new u("Is not implemented")}up(t,e){const n=this._getZ(t);n.max++,e.zOrder=n.max}down(t,e){const n=this._getZ(t);n.min--,e.zOrder=n.min}}class m extends g{constructor(t,e,n,r){super(t,e,n,r),this.points=t.points,this.occluded=t.occluded,this.zOrder=t.z_order;const o=this._getZ(this.frame);o.max=Math.max(o.max,this.zOrder||0),o.min=Math.min(o.min,this.zOrder||0)}toJSON(){return{type:this.shapeType,clientID:this.clientID,occluded:this.occluded,z_order:this.zOrder,points:[...this.points],attributes:Object.keys(this.attributes).reduce((t,e)=>(t.push({spec_id:e,value:this.attributes[e]}),t),[]),id:this.serverID,frame:this.frame,label_id:this.label.id,group:this.group}}get(t){if(t!==this.frame)throw new u("Got frame is not equal to the frame of the shape");return{objectType:s.SHAPE,shapeType:this.shapeType,clientID:this.clientID,serverID:this.serverID,occluded:this.occluded,lock:this.lock,zOrder:this.zOrder,points:[...this.points],attributes:Object.assign({},this.attributes),label:this.label,group:this.group,color:this.color}}save(t,e){if(t!==this.frame)throw new u("Got frame is not equal to the frame of the shape");if(this.lock&&e.lock)return p.call(this,t,this.get(t));const n=this.get(t),o=e.updateFlags;if(o.label&&(r("label",e.label,null,l),n.label=e.label,n.attributes={},this.appendDefaultAttributes.call(n,n.label)),o.attributes){const t=n.label.attributes.reduce((t,e)=>(t[e.id]=e,t),{});for(const r of Object.keys(e.attributes)){const o=e.attributes[r];if(!(r in t&&d(o,t[r])))throw new c(`Trying to save unknown attribute with id ${r} and value ${o}`);n.attributes[r]=o}}if(o.points){r("points",e.points,null,Array),f(this.shapeType,e.points);const{width:o,height:s}=this.frameMeta[t],i=[];for(let t=0;t<e.points.length-1;t+=2){const n=e.points[t],a=e.points[t+1];r("coordinate",n,"number",null),r("coordinate",a,"number",null),i.push(Math.clamp(n,0,o),Math.clamp(a,0,s))}h(this.shapeType,i)&&(n.points=i)}if(o.occluded&&(r("occluded",e.occluded,"boolean",null),n.occluded=e.occluded),o.group&&(r("group",e.group,"integer",null),n.group=e.group),o.zOrder&&(r("zOrder",e.zOrder,"integer",null),n.zOrder=e.zOrder),o.lock&&(r("lock",e.lock,"boolean",null),n.lock=e.lock),o.color){if(r("color",e.color,"string",null),/^#[0-9A-F]{6}$/i.test(e.color))throw new c(`Got invalid color value: "${e.color}"`);n.color=e.color}o.reset();for(const t of Object.keys(n))t in this&&(this[t]=n[t]);return p.call(this,t,this.get(t))}}class y extends g{constructor(t,e,n,r){super(t,e,n,r),this.shapes=t.shapes.reduce((t,e)=>{t[e.frame]={serverID:e.id,occluded:e.occluded,zOrder:e.z_order,points:e.points,outside:e.outside,attributes:e.attributes.reduce((t,e)=>(t[e.spec_id]=e.value,t),{})};const n=this._getZ(e.frame);return n.max=Math.max(n.max,e.z_order),n.min=Math.min(n.min,e.z_order),t},{}),this.cache={}}toJSON(){const t=this.label.attributes.reduce((t,e)=>(t[e.id]=e,t),{});return{clientID:this.clientID,id:this.serverID,frame:this.frame,label_id:this.label.id,group:this.group,attributes:Object.keys(this.attributes).reduce((e,n)=>(t[n].mutable||e.push({spec_id:n,value:this.attributes[n]}),e),[]),shapes:Object.keys(this.shapes).reduce((e,n)=>(e.push({type:this.shapeType,occluded:this.shapes[n].occluded,z_order:this.shapes[n].zOrder,points:[...this.shapes[n].points],outside:this.shapes[n].outside,attributes:Object.keys(this.shapes[n].attributes).reduce((e,r)=>(t[r].mutable&&e.push({spec_id:r,value:this.shapes[n].attributes[r]}),e),[]),id:this.shapes[n].serverID,frame:+n}),e),[])}}get(t){if(!(t in this.cache)){const e=Object.assign({},this.getPosition(t),{attributes:this.getAttributes(t),group:this.group,objectType:s.TRACK,shapeType:this.shapeType,clientID:this.clientID,serverID:this.serverID,lock:this.lock,color:this.color});this.cache[t]=e}const e=JSON.parse(JSON.stringify(this.cache[t]));return e.label=this.label,e}neighborsFrames(t){const e=Object.keys(this.shapes).map(t=>+t);let n=Number.MAX_SAFE_INTEGER,r=Number.MAX_SAFE_INTEGER;for(const o of e){const e=Math.abs(t-o);o<=t&&e<n?n=e:e<r&&(r=e)}return{leftFrame:n===Number.MAX_SAFE_INTEGER?null:t-n,rightFrame:r===Number.MAX_SAFE_INTEGER?null:t+r}}getAttributes(t){const e={};for(const t in this.attributes)Object.prototype.hasOwnProperty.call(this.attributes,t)&&(e[t]=this.attributes[t]);const n=Object.keys(this.shapes).sort((t,e)=>+t-+e);for(const r of n)if(r<=t){const{attributes:t}=this.shapes[r];for(const n in t)Object.prototype.hasOwnProperty.call(t,n)&&(e[n]=t[n])}return e}save(t,e){if(this.lock&&e.lock)return p.call(this,t,this.get(t));const n=Object.assign(this.get(t));n.attributes=Object.assign(n.attributes),n.points=[...n.points];const o=e.updateFlags;let s=!1;o.label&&(r("label",e.label,null,l),n.label=e.label,n.attributes={},this.appendDefaultAttributes.call(n,n.label));const i=n.label.attributes.reduce((t,e)=>(t[e.id]=e,t),{});if(o.attributes)for(const t of Object.keys(e.attributes)){const r=e.attributes[t];if(!(t in i&&d(r,i[t])))throw new c(`Trying to save unknown attribute with id ${t} and value ${r}`);n.attributes[t]=r}if(o.points){r("points",e.points,null,Array),f(this.shapeType,e.points);const{width:o,height:i}=this.frameMeta[t],a=[];for(let t=0;t<e.points.length-1;t+=2){const n=e.points[t],s=e.points[t+1];r("coordinate",n,"number",null),r("coordinate",s,"number",null),a.push(Math.clamp(n,0,o),Math.clamp(s,0,i))}h(this.shapeType,a)&&(n.points=a,s=!0)}if(o.occluded&&(r("occluded",e.occluded,"boolean",null),n.occluded=e.occluded,s=!0),o.outside&&(r("outside",e.outside,"boolean",null),n.outside=e.outside,s=!0),o.group&&(r("group",e.group,"integer",null),n.group=e.group),o.zOrder&&(r("zOrder",e.zOrder,"integer",null),n.zOrder=e.zOrder,s=!0),o.lock&&(r("lock",e.lock,"boolean",null),n.lock=e.lock),o.color){if(r("color",e.color,"string",null),/^#[0-9A-F]{6}$/i.test(e.color))throw new c(`Got invalid color value: "${e.color}"`);n.color=e.color}o.keyframe&&r("keyframe",e.keyframe,"boolean",null);for(const e of Object.keys(n))e in this&&(this[e]=n[e]),this.cache[t][e]=n[e];if(o.attributes)for(const r of Object.keys(n.attributes))i[r].mutable||(this.shapes[t].attributes[r]=e.attributes[r],this.shapes[t].attributes[r]=e.attributes[r]);if(o.label)for(const t of Object.values(this.shapes))t.attributes={};if(o.keyframe&&!e.keyframe){for(const e in this.cache)+e>t&&delete this.cache[e];return this.cache[t].keyframe=!1,delete this.shapes[t],o.reset(),p.call(this,t,this.get(t))}if(s||o.keyframe&&e.keyframe){for(const e in this.cache)+e>t&&delete this.cache[e];if(this.cache[t].keyframe=!0,e.keyframe=!0,this.shapes[t]={frame:t,zOrder:n.zOrder,points:n.points,outside:n.outside,occluded:n.occluded,attributes:{}},o.attributes)for(const r of Object.keys(n.attributes))i[r].mutable&&(this.shapes[t].attributes[r]=e.attributes[r],this.shapes[t].attributes[r]=e.attributes[r])}return o.reset(),p.call(this,t,this.get(t))}getPosition(t){const{leftFrame:e,rightFrame:n}=this.neighborsFrames(t),r=Number.isInteger(n)?this.shapes[n]:null,o=Number.isInteger(e)?this.shapes[e]:null;if(o&&e===t)return{points:[...o.points],occluded:o.occluded,outside:o.outside,zOrder:o.zOrder,keyframe:!0};if(r&&o)return Object.assign({},this.interpolatePosition(o,r,t),{keyframe:!1});if(r)return{points:[...r.points],occluded:r.occluded,outside:!0,zOrder:0,keyframe:!1};if(o)return{points:[...o.points],occluded:o.occluded,outside:o.outside,zOrder:0,keyframe:!1};throw new u(`No one neightbour frame found for the track with client ID: "${this.id}"`)}delete(t){return this.lock&&!t||(this.removed=!0,this.resetCache()),!0}resetCache(){this.cache={}}}class v extends m{constructor(t,e,n,r){super(t,e,n,r),this.shapeType=o.RECTANGLE,f(this.shapeType,this.points)}static distance(t,e,n){const[r,o,s,i]=t;return e>=r&&e<=s&&n>=o&&n<=i?Math.min.apply(null,[e-r,n-o,s-e,i-n]):null}}class w extends m{constructor(t,e,n,r){super(t,e,n,r)}}class O extends w{constructor(t,e,n,r){super(t,e,n,r),this.shapeType=o.POLYGON,f(this.shapeType,this.points)}static distance(t,e,n){function r(t,r,o,s){return(o-t)*(n-r)-(e-t)*(s-r)}let o=0;const s=[];for(let i=0,a=t.length-2;i<t.length-1;a=i,i+=2){const c=t[a],u=t[a+1],l=t[i],p=t[i+1];u<=n?p>n&&r(c,u,l,p)>0&&o++:p<=n&&r(c,u,l,p)<0&&o--;const f=e-(u-p),h=n-(l-c);(f-c)*(l-f)>=0&&(h-u)*(p-h)>=0?s.push(Math.sqrt(Math.pow(e-f,2)+Math.pow(n-h,2))):s.push(Math.min(Math.sqrt(Math.pow(c-e,2)+Math.pow(u-n,2)),Math.sqrt(Math.pow(l-e,2)+Math.pow(p-n,2))))}return 0!==o?Math.min.apply(null,s):null}}class x extends w{constructor(t,e,n,r){super(t,e,n,r),this.shapeType=o.POLYLINE,f(this.shapeType,this.points)}static distance(t,e,n){const r=[];for(let o=0;o<t.length-2;o+=2){const s=t[o],i=t[o+1],a=t[o+2],c=t[o+3];(e-s)*(a-e)>=0&&(n-i)*(c-n)>=0?r.push(Math.abs((c-i)*e-(a-s)*n+a*i-c*s)/Math.sqrt(Math.pow(c-i,2)+Math.pow(a-s,2))):r.push(Math.min(Math.sqrt(Math.pow(s-e,2)+Math.pow(i-n,2)),Math.sqrt(Math.pow(a-e,2)+Math.pow(c-n,2))))}return Math.min.apply(null,r)}}class j extends w{constructor(t,e,n,r){super(t,e,n,r),this.shapeType=o.POINTS,f(this.shapeType,this.points)}static distance(t,e,n){const r=[];for(let o=0;o<t.length;o+=2){const s=t[o],i=t[o+1];r.push(Math.sqrt(Math.pow(s-e,2)+Math.pow(i-n,2)))}return Math.min.apply(null,r)}}class k extends y{constructor(t,e,n,r){super(t,e,n,r),this.shapeType=o.RECTANGLE;for(const t of Object.values(this.shapes))f(this.shapeType,t.points)}interpolatePosition(t,e,n){const r=(n-t.frame)/(e.frame-t.frame),o=[e.points[0]-t.points[0],e.points[1]-t.points[1],e.points[2]-t.points[2],e.points[3]-t.points[3]];return{points:[t.points[0]+o[0]*r,t.points[1]+o[1]*r,t.points[2]+o[2]*r,t.points[3]+o[3]*r],occluded:t.occluded,outside:t.outside,zOrder:t.zOrder}}}class S extends y{constructor(t,e,n,r){super(t,e,n,r)}interpolatePosition(t,e,n){function r(t){let e=Number.MAX_SAFE_INTEGER,n=Number.MAX_SAFE_INTEGER,r=Number.MIN_SAFE_INTEGER,o=Number.MIN_SAFE_INTEGER;for(let s=0;s<t.length;s+=2)t[s]<e&&(e=t[s]),t[s+1]<n&&(n=t[s+1]),t[s]>r&&(r=t[s]),t[s+1]>o&&(o=t[s+1]);return{xmin:e,ymin:n,xmax:r,ymax:o}}function o(t,e){const n=[],r=e.xmax-e.xmin,o=e.ymax-e.ymin;for(let s=0;s<t.length;s+=2)n.push((t[s]-e.xmin)/r,(t[s+1]-e.ymin)/o);return n}function s(t,e){const n=[],r=e.xmax-e.xmin,o=e.ymax-e.ymin;for(let s=0;s<t.length;s+=2)n.push(t[s]*r+e.xmin,t[s+1]*o+e.ymin);return n}function i(t){const e=[];for(let n=0;n<t.length;n+=2)e.push({x:t[n],y:t[n+1]});return e}function a(t){const e=[];for(const n of t)e.push(n.x,n.y);return e}function c(t,e){function n(t){let e=0;for(let n=1;n<t.length;n+=2){e+=Math.sqrt(Math.pow(t[n].x-t[n-1].x,2)+Math.pow(t[n].y-t[n-1].y,2))}return e||Number.MAX_SAFE_INTEGER}function r(t,e){let n=0;for(let r=1;r<t.length;r+=2){const o=Math.sqrt(Math.pow(t[r].x-t[r-1].x,2)+Math.pow(t[r].y-t[r-1].y,2));n+=Math.pow(o-e,2)}return n}const o=[],s=[],i=function(t,e){const n={};for(let r=0;r<t.length;r++){n[r]=n[r]||{};for(let o=0;o<e.length;o++){const s=t[r].x-e[o].x,i=t[r].y-e[o].y;n[r][o]=Math.sqrt(Math.pow(s,2)+Math.pow(i,2))}}return n}(t,e),a=function(t,e,n){const r={};for(const o of t)r[o]=e.concat().sort((t,e)=>n[o][t]-n[o][e]);const o={},s={};let i=0;for(;Object.values(s).length!==t.length;){for(const e of t){if(s[e])continue;const t=r[e][i],a=n[e][t];if(t in o&&o[t].distance>a){const e=o[t].value;delete o[t],delete s[e]}t in o||(o[t]={value:e,distance:a},s[e]=!0)}i++}const a={};for(const t of Object.keys(o))a[o[t].value]={value:t,distance:o[t].distance};return a}(Array.from(t.keys()),Array.from(e.keys()),i),c=(n(e)+n(t))/(e.length+t.length);!function(t,e){for(const n of Object.keys(t))t[n].distance>e&&delete t[n]}(a,c+3*Math.sqrt((r(t,c)+r(e,c))/(t.length+e.length)));for(const t of Object.keys(a))a[t]=a[t].value;const u=this.appendMapping(a,t,e);for(const n of u)o.push(t[n]),s.push(e[a[n]]);return[o,s]}let u=r(t.points),l=r(e.points);(u.xmax-u.xmin<1||l.ymax-l.ymin<1)&&(l=u={xmin:0,xmax:1024,ymin:0,ymax:768});const p=i(o(t.points,u)),f=i(o(e.points,l));let h=[],d=[];if(p.length>f.length){const[t,e]=c.call(this,f,p);h=e,d=t}else{const[t,e]=c.call(this,p,f);h=t,d=e}const b=s(a(h),u),g=s(a(d),l),m=(n-t.frame)/(e.frame-t.frame),y=[];for(let t=0;t<b.length;t++)y.push(b[t]+(g[t]-b[t])*m);return{points:y,occluded:t.occluded,outside:t.outside,zOrder:t.zOrder}}appendMapping(t,e,n){const r=Object.values(t).map(t=>+t),o=Object.keys(t).map(t=>+t),s=[];function i(t){let e=t,o=t;if(!r.length)throw new u("Interpolation mapping is empty");for(;!r.includes(e);)--e<0&&(e=n.length-1);for(;!r.includes(o);)++o>=n.length&&(o=0);return[e,o]}function a(t,e,r){const o=[];for(;e!==r;)o.push(n[e]),++e>=n.length&&(e=0);o.push(n[r]);let s=0,i=0,a=!1;for(let e=1;e<o.length;e++){const r=o[e],c=o[e-1],u=Math.sqrt(Math.pow(r.x-c.x,2)+Math.pow(r.y-c.y,2));a||(i+=u),s+=u,n[t]===o[e]&&(a=!0)}return s?i/s:0}for(let c=0;c<n.length;c++){const u=r.indexOf(c);if(-1===u){const[r,o]=i(c),u=a(c,r,o),l=n[r],p=n[o],f={x:l.x+(p.x-l.x)*u,y:l.y+(p.y-l.y)*u};e.push(f),t[e.length-1]=c,s.push(e.length-1)}else s.push(o[u])}return s}}class A extends S{constructor(t,e,n,r){super(t,e,n,r),this.shapeType=o.POLYGON;for(const t of Object.values(this.shapes))f(this.shapeType,t.points)}}class T extends S{constructor(t,e,n,r){super(t,e,n,r),this.shapeType=o.POLYLINE;for(const t of Object.values(this.shapes))f(this.shapeType,t.points)}}class E extends S{constructor(t,e,n,r){super(t,e,n,r),this.shapeType=o.POINTS;for(const t of Object.values(this.shapes))f(this.shapeType,t.points)}}k.distance=v.distance,A.distance=O.distance,T.distance=x.distance,E.distance=j.distance,t.exports={RectangleShape:v,PolygonShape:O,PolylineShape:x,PointsShape:j,RectangleTrack:k,PolygonTrack:A,PolylineTrack:T,PointsTrack:E,Track:y,Shape:m,Tag:class extends b{constructor(t,e,n){super(t,e,n)}toJSON(){return{clientID:this.clientID,id:this.serverID,frame:this.frame,label_id:this.label.id,group:this.group,attributes:Object.keys(this.attributes).reduce((t,e)=>(t.push({spec_id:e,value:this.attributes[e]}),t),[])}}get(t){if(t!==this.frame)throw new u("Got frame is not equal to the frame of the shape");return{objectType:s.TAG,clientID:this.clientID,serverID:this.serverID,lock:this.lock,attributes:Object.assign({},this.attributes),label:this.label,group:this.group}}save(t,e){if(t!==this.frame)throw new u("Got frame is not equal to the frame of the shape");if(this.lock&&e.lock)return p.call(this,t,this.get(t));const n=this.get(t),o=e.updateFlags;if(o.label&&(r("label",e.label,null,l),n.label=e.label,n.attributes={},this.appendDefaultAttributes.call(n,n.label)),o.attributes){const t=n.label.attributes.map(t=>`${t.id}`);for(const r of Object.keys(e.attributes))t.includes(r)&&(n.attributes[r]=e.attributes[r])}o.group&&(r("group",e.group,"integer",null),n.group=e.group),o.lock&&(r("lock",e.lock,"boolean",null),n.lock=e.lock),o.reset();for(const t of Object.keys(n))t in this&&(this[t]=n[t]);return p.call(this,t,this.get(t))}},objectStateFactory:p}})()},function(t,e,n){n(4),n(9),n(8),(()=>{const e=n(18),{Task:r}=n(35),{ScriptingError:o}="./exceptions";t.exports=class{constructor(t,e,n){this.sessionType=n instanceof r?"task":"job",this.id=n.id,this.version=t,this.collection=e,this.initialObjects=[],this.hash=this._getHash();const o=this.collection.export();for(const t of o.shapes)this.initialObjects[t.id]=t;for(const t of o.tracks)this.initialObjects[t.id]=t;for(const t of o.tags)this.initialObjects[t.id]=t}_getHash(){const t=this.collection.export();return JSON.stringify(t)}async _request(t,n){return await e.annotations.updateAnnotations(this.sessionType,this.id,t,n)}async _put(t){return await this._request(t,"put")}async _create(t){return await this._request(t,"create")}async _update(t){return await this._request(t,"update")}async _delete(t){return await this._request(t,"delete")}_split(t){const e={created:{shapes:[],tracks:[],tags:[]},updated:{shapes:[],tracks:[],tags:[]},deleted:{shapes:[],tracks:[],tags:[]}};for(const n of Object.keys(t))for(const r of t[n])if(r.id in this.initialObjects)JSON.stringify(r)!==JSON.stringify(this.initialObjects[r.id])&&e.updated[n].push(r);else{if(void 0!==r.id)throw new o(`Id of object is defined "${r.id}"`+"but it absents in initial state");e.created[n].push(r)}const n=t.tracks.concat(t.shapes).concat(t.tags).map(t=>t.id);for(const t of Object.keys(this.initialObjects))if(!n.includes(+t)){const n=this.initialObjects[t];let r=null;r="shapes"in n?"tracks":"points"in n?"shapes":"tags",e.deleted[r].push(n)}return e}_updateCreatedObjects(t,e){const n=t.tracks.length+t.shapes.length+t.tags.length,r=e.tracks.length+e.shapes.length+e.tags.length;if(r!==n)throw new o("Number of indexes is differed by number of saved objects"+`${r} vs ${n}`);for(const n of Object.keys(e))for(let r=0;r<e[n].length;r++){const o=e[n][r];this.collection.objects[o].serverID=t[n][r].id,"tracks"===n&&this.collection.objects[o].resetCache()}}_receiveIndexes(t){const e={tracks:t.tracks.map(t=>t.clientID),shapes:t.shapes.map(t=>t.clientID),tags:t.tags.map(t=>t.clientID)};return t.tracks.concat(t.shapes).concat(t.tags).map(t=>(delete t.clientID,t)),e}async save(t){"function"!=typeof t&&(t=t=>{console.log(t)});try{const e=this.collection.export(),{flush:n}=this.collection;if(n){t("New objects are being saved..");const n=this._receiveIndexes(e),r=await this._put(Object.assign({},e,{version:this.version}));this.version=r.version,this.collection.flush=!1,t("Saved objects are being updated in the client"),this._updateCreatedObjects(r,n),t("Initial state is being updated");for(const t of r.shapes.concat(r.tracks).concat(r.tags))this.initialObjects[t.id]=t}else{const{created:n,updated:r,deleted:o}=this._split(e);t("New objects are being saved..");const s=this._receiveIndexes(n),i=await this._create(Object.assign({},n,{version:this.version}));this.version=i.version,t("Saved objects are being updated in the client"),this._updateCreatedObjects(i,s),t("Initial state is being updated");for(const t of i.shapes.concat(i.tracks).concat(i.tags))this.initialObjects[t.id]=t;t("Changed objects are being saved.."),this._receiveIndexes(r);const a=await this._update(Object.assign({},r,{version:this.version}));this.version=i.version,t("Initial state is being updated");for(const t of a.shapes.concat(a.tracks).concat(a.tags))this.initialObjects[t.id]=t;t("Changed objects are being saved.."),this._receiveIndexes(o);const c=await this._delete(Object.assign({},o,{version:this.version}));this._version=c.version,t("Initial state is being updated");for(const t of c.shapes.concat(c.tracks).concat(c.tags))delete this.initialObjects[t.id]}this.hash=this._getHash(),t("Saving is done")}catch(e){throw t(`Can not save annotations: ${e.message}`),e}}hasUnsavedChanges(){return this._getHash()!==this.hash}}})()},function(t){t.exports=JSON.parse('{"name":"cvat.js","version":"0.1.0","description":"Part of Computer Vision Tool which presents an interface for client-side integration","main":"babel.config.js","scripts":{"build":"webpack","test":"jest --config=jest.config.js --coverage","docs":"jsdoc --readme README.md src/*.js -p -c jsdoc.config.js -d docs","coveralls":"cat ./reports/coverage/lcov.info | coveralls"},"author":"Intel","license":"MIT","devDependencies":{"@babel/cli":"^7.4.4","@babel/core":"^7.4.4","@babel/preset-env":"^7.4.4","babel-eslint":"^10.0.1","babel-loader":"^8.0.6","core-js":"^3.0.1","coveralls":"^3.0.5","jest":"^24.8.0","jest-junit":"^6.4.0","jsdoc":"^3.6.2","webpack":"^4.31.0","webpack-cli":"^3.3.2"},"dependencies":{"axios":"^0.18.0","error-stack-parser":"^2.0.2","form-data":"^2.5.0","jest-config":"^24.8.0","js-cookie":"^2.2.0","platform":"^1.3.5"}}')},function(t,e,n){n(4),n(9),n(8),n(85),(()=>{const e=n(25),r=n(18),{isBoolean:o,isInteger:s,isEnum:i,isString:a,checkFilter:c}=n(37),{TaskStatus:u,TaskMode:l}=n(19),p=n(82),{ArgumentError:f}=n(5),{Task:h}=n(35);t.exports=function(t){return t.plugins.list.implementation=e.list,t.plugins.register.implementation=e.register.bind(t),t.server.about.implementation=async()=>await r.server.about(),t.server.share.implementation=async t=>await r.server.share(t),t.server.login.implementation=async(t,e)=>{await r.server.login(t,e)},t.server.logout.implementation=async()=>{await r.server.logout()},t.users.get.implementation=async t=>{c(t,{self:o});let e=null;return e=(e="self"in t&&t.self?[e=await r.users.getSelf()]:await r.users.getUsers()).map(t=>new p(t))},t.jobs.get.implementation=async t=>{if(c(t,{taskID:s,jobID:s}),"taskID"in t&&"jobID"in t)throw new f('Only one of fields "taskID" and "jobID" allowed simultaneously');if(!Object.keys(t).length)throw new f("Job filter must not be empty");let e=null;if("taskID"in t)e=await r.tasks.getTasks(`id=${t.taskID}`);else{const n=await r.jobs.getJob(t.jobID);void 0!==n.task_id&&(e=await r.tasks.getTasks(`id=${n.task_id}`))}if(null!==e&&e.length){const n=new h(e[0]);return t.jobID?n.jobs.filter(e=>e.id===t.jobID):n.jobs}return[]},t.tasks.get.implementation=async t=>{if(c(t,{page:s,name:a,id:s,owner:a,assignee:a,search:a,status:i.bind(u),mode:i.bind(l)}),"search"in t&&Object.keys(t).length>1&&!("page"in t&&2===Object.keys(t).length))throw new f('Do not use the filter field "search" with others');if("id"in t&&Object.keys(t).length>1&&!("page"in t&&2===Object.keys(t).length))throw new f('Do not use the filter field "id" with others');const e=new URLSearchParams;for(const n of["name","owner","assignee","search","status","mode","id","page"])Object.prototype.hasOwnProperty.call(t,n)&&e.set(n,t[n]);const n=await r.tasks.getTasks(e.toString()),o=n.map(t=>new h(t));return o.count=n.count,o},t}})()}]);
-//# sourceMappingURL=cvat.js.map
+
+module.exports = function isBuffer (obj) {
+  return obj != null && obj.constructor != null &&
+    typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/js-cookie/src/js.cookie.js":
+/*!*************************************************!*\
+  !*** ./node_modules/js-cookie/src/js.cookie.js ***!
+  \*************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
+ * JavaScript Cookie v2.2.0
+ * https://github.com/js-cookie/js-cookie
+ *
+ * Copyright 2006, 2015 Klaus Hartl & Fagner Brack
+ * Released under the MIT license
+ */
+;(function (factory) {
+	var registeredInModuleLoader = false;
+	if (true) {
+		!(__WEBPACK_AMD_DEFINE_FACTORY__ = (factory),
+				__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+				(__WEBPACK_AMD_DEFINE_FACTORY__.call(exports, __webpack_require__, exports, module)) :
+				__WEBPACK_AMD_DEFINE_FACTORY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+		registeredInModuleLoader = true;
+	}
+	if (true) {
+		module.exports = factory();
+		registeredInModuleLoader = true;
+	}
+	if (!registeredInModuleLoader) {
+		var OldCookies = window.Cookies;
+		var api = window.Cookies = factory();
+		api.noConflict = function () {
+			window.Cookies = OldCookies;
+			return api;
+		};
+	}
+}(function () {
+	function extend () {
+		var i = 0;
+		var result = {};
+		for (; i < arguments.length; i++) {
+			var attributes = arguments[ i ];
+			for (var key in attributes) {
+				result[key] = attributes[key];
+			}
+		}
+		return result;
+	}
+
+	function init (converter) {
+		function api (key, value, attributes) {
+			var result;
+			if (typeof document === 'undefined') {
+				return;
+			}
+
+			// Write
+
+			if (arguments.length > 1) {
+				attributes = extend({
+					path: '/'
+				}, api.defaults, attributes);
+
+				if (typeof attributes.expires === 'number') {
+					var expires = new Date();
+					expires.setMilliseconds(expires.getMilliseconds() + attributes.expires * 864e+5);
+					attributes.expires = expires;
+				}
+
+				// We're using "expires" because "max-age" is not supported by IE
+				attributes.expires = attributes.expires ? attributes.expires.toUTCString() : '';
+
+				try {
+					result = JSON.stringify(value);
+					if (/^[\{\[]/.test(result)) {
+						value = result;
+					}
+				} catch (e) {}
+
+				if (!converter.write) {
+					value = encodeURIComponent(String(value))
+						.replace(/%(23|24|26|2B|3A|3C|3E|3D|2F|3F|40|5B|5D|5E|60|7B|7D|7C)/g, decodeURIComponent);
+				} else {
+					value = converter.write(value, key);
+				}
+
+				key = encodeURIComponent(String(key));
+				key = key.replace(/%(23|24|26|2B|5E|60|7C)/g, decodeURIComponent);
+				key = key.replace(/[\(\)]/g, escape);
+
+				var stringifiedAttributes = '';
+
+				for (var attributeName in attributes) {
+					if (!attributes[attributeName]) {
+						continue;
+					}
+					stringifiedAttributes += '; ' + attributeName;
+					if (attributes[attributeName] === true) {
+						continue;
+					}
+					stringifiedAttributes += '=' + attributes[attributeName];
+				}
+				return (document.cookie = key + '=' + value + stringifiedAttributes);
+			}
+
+			// Read
+
+			if (!key) {
+				result = {};
+			}
+
+			// To prevent the for loop in the first place assign an empty array
+			// in case there are no cookies at all. Also prevents odd result when
+			// calling "get()"
+			var cookies = document.cookie ? document.cookie.split('; ') : [];
+			var rdecode = /(%[0-9A-Z]{2})+/g;
+			var i = 0;
+
+			for (; i < cookies.length; i++) {
+				var parts = cookies[i].split('=');
+				var cookie = parts.slice(1).join('=');
+
+				if (!this.json && cookie.charAt(0) === '"') {
+					cookie = cookie.slice(1, -1);
+				}
+
+				try {
+					var name = parts[0].replace(rdecode, decodeURIComponent);
+					cookie = converter.read ?
+						converter.read(cookie, name) : converter(cookie, name) ||
+						cookie.replace(rdecode, decodeURIComponent);
+
+					if (this.json) {
+						try {
+							cookie = JSON.parse(cookie);
+						} catch (e) {}
+					}
+
+					if (key === name) {
+						result = cookie;
+						break;
+					}
+
+					if (!key) {
+						result[name] = cookie;
+					}
+				} catch (e) {}
+			}
+
+			return result;
+		}
+
+		api.set = api;
+		api.get = function (key) {
+			return api.call(api, key);
+		};
+		api.getJSON = function () {
+			return api.apply({
+				json: true
+			}, [].slice.call(arguments));
+		};
+		api.defaults = {};
+
+		api.remove = function (key, attributes) {
+			api(key, '', extend(attributes, {
+				expires: -1
+			}));
+		};
+
+		api.withConverter = init;
+
+		return api;
+	}
+
+	return init(function () {});
+}));
+
+
+/***/ }),
+
+/***/ "./node_modules/platform/platform.js":
+/*!*******************************************!*\
+  !*** ./node_modules/platform/platform.js ***!
+  \*******************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(module, global) {var __WEBPACK_AMD_DEFINE_RESULT__;/*!
+ * Platform.js <https://mths.be/platform>
+ * Copyright 2014-2018 Benjamin Tan <https://bnjmnt4n.now.sh/>
+ * Copyright 2011-2013 John-David Dalton <http://allyoucanleet.com/>
+ * Available under MIT license <https://mths.be/mit>
+ */
+;(function() {
+  'use strict';
+
+  /** Used to determine if values are of the language type `Object`. */
+  var objectTypes = {
+    'function': true,
+    'object': true
+  };
+
+  /** Used as a reference to the global object. */
+  var root = (objectTypes[typeof window] && window) || this;
+
+  /** Backup possible global object. */
+  var oldRoot = root;
+
+  /** Detect free variable `exports`. */
+  var freeExports = objectTypes[typeof exports] && exports;
+
+  /** Detect free variable `module`. */
+  var freeModule = objectTypes[typeof module] && module && !module.nodeType && module;
+
+  /** Detect free variable `global` from Node.js or Browserified code and use it as `root`. */
+  var freeGlobal = freeExports && freeModule && typeof global == 'object' && global;
+  if (freeGlobal && (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal || freeGlobal.self === freeGlobal)) {
+    root = freeGlobal;
+  }
+
+  /**
+   * Used as the maximum length of an array-like object.
+   * See the [ES6 spec](http://people.mozilla.org/~jorendorff/es6-draft.html#sec-tolength)
+   * for more details.
+   */
+  var maxSafeInteger = Math.pow(2, 53) - 1;
+
+  /** Regular expression to detect Opera. */
+  var reOpera = /\bOpera/;
+
+  /** Possible global object. */
+  var thisBinding = this;
+
+  /** Used for native method references. */
+  var objectProto = Object.prototype;
+
+  /** Used to check for own properties of an object. */
+  var hasOwnProperty = objectProto.hasOwnProperty;
+
+  /** Used to resolve the internal `[[Class]]` of values. */
+  var toString = objectProto.toString;
+
+  /*--------------------------------------------------------------------------*/
+
+  /**
+   * Capitalizes a string value.
+   *
+   * @private
+   * @param {string} string The string to capitalize.
+   * @returns {string} The capitalized string.
+   */
+  function capitalize(string) {
+    string = String(string);
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
+
+  /**
+   * A utility function to clean up the OS name.
+   *
+   * @private
+   * @param {string} os The OS name to clean up.
+   * @param {string} [pattern] A `RegExp` pattern matching the OS name.
+   * @param {string} [label] A label for the OS.
+   */
+  function cleanupOS(os, pattern, label) {
+    // Platform tokens are defined at:
+    // http://msdn.microsoft.com/en-us/library/ms537503(VS.85).aspx
+    // http://web.archive.org/web/20081122053950/http://msdn.microsoft.com/en-us/library/ms537503(VS.85).aspx
+    var data = {
+      '10.0': '10',
+      '6.4':  '10 Technical Preview',
+      '6.3':  '8.1',
+      '6.2':  '8',
+      '6.1':  'Server 2008 R2 / 7',
+      '6.0':  'Server 2008 / Vista',
+      '5.2':  'Server 2003 / XP 64-bit',
+      '5.1':  'XP',
+      '5.01': '2000 SP1',
+      '5.0':  '2000',
+      '4.0':  'NT',
+      '4.90': 'ME'
+    };
+    // Detect Windows version from platform tokens.
+    if (pattern && label && /^Win/i.test(os) && !/^Windows Phone /i.test(os) &&
+        (data = data[/[\d.]+$/.exec(os)])) {
+      os = 'Windows ' + data;
+    }
+    // Correct character case and cleanup string.
+    os = String(os);
+
+    if (pattern && label) {
+      os = os.replace(RegExp(pattern, 'i'), label);
+    }
+
+    os = format(
+      os.replace(/ ce$/i, ' CE')
+        .replace(/\bhpw/i, 'web')
+        .replace(/\bMacintosh\b/, 'Mac OS')
+        .replace(/_PowerPC\b/i, ' OS')
+        .replace(/\b(OS X) [^ \d]+/i, '$1')
+        .replace(/\bMac (OS X)\b/, '$1')
+        .replace(/\/(\d)/, ' $1')
+        .replace(/_/g, '.')
+        .replace(/(?: BePC|[ .]*fc[ \d.]+)$/i, '')
+        .replace(/\bx86\.64\b/gi, 'x86_64')
+        .replace(/\b(Windows Phone) OS\b/, '$1')
+        .replace(/\b(Chrome OS \w+) [\d.]+\b/, '$1')
+        .split(' on ')[0]
+    );
+
+    return os;
+  }
+
+  /**
+   * An iteration utility for arrays and objects.
+   *
+   * @private
+   * @param {Array|Object} object The object to iterate over.
+   * @param {Function} callback The function called per iteration.
+   */
+  function each(object, callback) {
+    var index = -1,
+        length = object ? object.length : 0;
+
+    if (typeof length == 'number' && length > -1 && length <= maxSafeInteger) {
+      while (++index < length) {
+        callback(object[index], index, object);
+      }
+    } else {
+      forOwn(object, callback);
+    }
+  }
+
+  /**
+   * Trim and conditionally capitalize string values.
+   *
+   * @private
+   * @param {string} string The string to format.
+   * @returns {string} The formatted string.
+   */
+  function format(string) {
+    string = trim(string);
+    return /^(?:webOS|i(?:OS|P))/.test(string)
+      ? string
+      : capitalize(string);
+  }
+
+  /**
+   * Iterates over an object's own properties, executing the `callback` for each.
+   *
+   * @private
+   * @param {Object} object The object to iterate over.
+   * @param {Function} callback The function executed per own property.
+   */
+  function forOwn(object, callback) {
+    for (var key in object) {
+      if (hasOwnProperty.call(object, key)) {
+        callback(object[key], key, object);
+      }
+    }
+  }
+
+  /**
+   * Gets the internal `[[Class]]` of a value.
+   *
+   * @private
+   * @param {*} value The value.
+   * @returns {string} The `[[Class]]`.
+   */
+  function getClassOf(value) {
+    return value == null
+      ? capitalize(value)
+      : toString.call(value).slice(8, -1);
+  }
+
+  /**
+   * Host objects can return type values that are different from their actual
+   * data type. The objects we are concerned with usually return non-primitive
+   * types of "object", "function", or "unknown".
+   *
+   * @private
+   * @param {*} object The owner of the property.
+   * @param {string} property The property to check.
+   * @returns {boolean} Returns `true` if the property value is a non-primitive, else `false`.
+   */
+  function isHostType(object, property) {
+    var type = object != null ? typeof object[property] : 'number';
+    return !/^(?:boolean|number|string|undefined)$/.test(type) &&
+      (type == 'object' ? !!object[property] : true);
+  }
+
+  /**
+   * Prepares a string for use in a `RegExp` by making hyphens and spaces optional.
+   *
+   * @private
+   * @param {string} string The string to qualify.
+   * @returns {string} The qualified string.
+   */
+  function qualify(string) {
+    return String(string).replace(/([ -])(?!$)/g, '$1?');
+  }
+
+  /**
+   * A bare-bones `Array#reduce` like utility function.
+   *
+   * @private
+   * @param {Array} array The array to iterate over.
+   * @param {Function} callback The function called per iteration.
+   * @returns {*} The accumulated result.
+   */
+  function reduce(array, callback) {
+    var accumulator = null;
+    each(array, function(value, index) {
+      accumulator = callback(accumulator, value, index, array);
+    });
+    return accumulator;
+  }
+
+  /**
+   * Removes leading and trailing whitespace from a string.
+   *
+   * @private
+   * @param {string} string The string to trim.
+   * @returns {string} The trimmed string.
+   */
+  function trim(string) {
+    return String(string).replace(/^ +| +$/g, '');
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  /**
+   * Creates a new platform object.
+   *
+   * @memberOf platform
+   * @param {Object|string} [ua=navigator.userAgent] The user agent string or
+   *  context object.
+   * @returns {Object} A platform object.
+   */
+  function parse(ua) {
+
+    /** The environment context object. */
+    var context = root;
+
+    /** Used to flag when a custom context is provided. */
+    var isCustomContext = ua && typeof ua == 'object' && getClassOf(ua) != 'String';
+
+    // Juggle arguments.
+    if (isCustomContext) {
+      context = ua;
+      ua = null;
+    }
+
+    /** Browser navigator object. */
+    var nav = context.navigator || {};
+
+    /** Browser user agent string. */
+    var userAgent = nav.userAgent || '';
+
+    ua || (ua = userAgent);
+
+    /** Used to flag when `thisBinding` is the [ModuleScope]. */
+    var isModuleScope = isCustomContext || thisBinding == oldRoot;
+
+    /** Used to detect if browser is like Chrome. */
+    var likeChrome = isCustomContext
+      ? !!nav.likeChrome
+      : /\bChrome\b/.test(ua) && !/internal|\n/i.test(toString.toString());
+
+    /** Internal `[[Class]]` value shortcuts. */
+    var objectClass = 'Object',
+        airRuntimeClass = isCustomContext ? objectClass : 'ScriptBridgingProxyObject',
+        enviroClass = isCustomContext ? objectClass : 'Environment',
+        javaClass = (isCustomContext && context.java) ? 'JavaPackage' : getClassOf(context.java),
+        phantomClass = isCustomContext ? objectClass : 'RuntimeObject';
+
+    /** Detect Java environments. */
+    var java = /\bJava/.test(javaClass) && context.java;
+
+    /** Detect Rhino. */
+    var rhino = java && getClassOf(context.environment) == enviroClass;
+
+    /** A character to represent alpha. */
+    var alpha = java ? 'a' : '\u03b1';
+
+    /** A character to represent beta. */
+    var beta = java ? 'b' : '\u03b2';
+
+    /** Browser document object. */
+    var doc = context.document || {};
+
+    /**
+     * Detect Opera browser (Presto-based).
+     * http://www.howtocreate.co.uk/operaStuff/operaObject.html
+     * http://dev.opera.com/articles/view/opera-mini-web-content-authoring-guidelines/#operamini
+     */
+    var opera = context.operamini || context.opera;
+
+    /** Opera `[[Class]]`. */
+    var operaClass = reOpera.test(operaClass = (isCustomContext && opera) ? opera['[[Class]]'] : getClassOf(opera))
+      ? operaClass
+      : (opera = null);
+
+    /*------------------------------------------------------------------------*/
+
+    /** Temporary variable used over the script's lifetime. */
+    var data;
+
+    /** The CPU architecture. */
+    var arch = ua;
+
+    /** Platform description array. */
+    var description = [];
+
+    /** Platform alpha/beta indicator. */
+    var prerelease = null;
+
+    /** A flag to indicate that environment features should be used to resolve the platform. */
+    var useFeatures = ua == userAgent;
+
+    /** The browser/environment version. */
+    var version = useFeatures && opera && typeof opera.version == 'function' && opera.version();
+
+    /** A flag to indicate if the OS ends with "/ Version" */
+    var isSpecialCasedOS;
+
+    /* Detectable layout engines (order is important). */
+    var layout = getLayout([
+      { 'label': 'EdgeHTML', 'pattern': 'Edge' },
+      'Trident',
+      { 'label': 'WebKit', 'pattern': 'AppleWebKit' },
+      'iCab',
+      'Presto',
+      'NetFront',
+      'Tasman',
+      'KHTML',
+      'Gecko'
+    ]);
+
+    /* Detectable browser names (order is important). */
+    var name = getName([
+      'Adobe AIR',
+      'Arora',
+      'Avant Browser',
+      'Breach',
+      'Camino',
+      'Electron',
+      'Epiphany',
+      'Fennec',
+      'Flock',
+      'Galeon',
+      'GreenBrowser',
+      'iCab',
+      'Iceweasel',
+      'K-Meleon',
+      'Konqueror',
+      'Lunascape',
+      'Maxthon',
+      { 'label': 'Microsoft Edge', 'pattern': 'Edge' },
+      'Midori',
+      'Nook Browser',
+      'PaleMoon',
+      'PhantomJS',
+      'Raven',
+      'Rekonq',
+      'RockMelt',
+      { 'label': 'Samsung Internet', 'pattern': 'SamsungBrowser' },
+      'SeaMonkey',
+      { 'label': 'Silk', 'pattern': '(?:Cloud9|Silk-Accelerated)' },
+      'Sleipnir',
+      'SlimBrowser',
+      { 'label': 'SRWare Iron', 'pattern': 'Iron' },
+      'Sunrise',
+      'Swiftfox',
+      'Waterfox',
+      'WebPositive',
+      'Opera Mini',
+      { 'label': 'Opera Mini', 'pattern': 'OPiOS' },
+      'Opera',
+      { 'label': 'Opera', 'pattern': 'OPR' },
+      'Chrome',
+      { 'label': 'Chrome Mobile', 'pattern': '(?:CriOS|CrMo)' },
+      { 'label': 'Firefox', 'pattern': '(?:Firefox|Minefield)' },
+      { 'label': 'Firefox for iOS', 'pattern': 'FxiOS' },
+      { 'label': 'IE', 'pattern': 'IEMobile' },
+      { 'label': 'IE', 'pattern': 'MSIE' },
+      'Safari'
+    ]);
+
+    /* Detectable products (order is important). */
+    var product = getProduct([
+      { 'label': 'BlackBerry', 'pattern': 'BB10' },
+      'BlackBerry',
+      { 'label': 'Galaxy S', 'pattern': 'GT-I9000' },
+      { 'label': 'Galaxy S2', 'pattern': 'GT-I9100' },
+      { 'label': 'Galaxy S3', 'pattern': 'GT-I9300' },
+      { 'label': 'Galaxy S4', 'pattern': 'GT-I9500' },
+      { 'label': 'Galaxy S5', 'pattern': 'SM-G900' },
+      { 'label': 'Galaxy S6', 'pattern': 'SM-G920' },
+      { 'label': 'Galaxy S6 Edge', 'pattern': 'SM-G925' },
+      { 'label': 'Galaxy S7', 'pattern': 'SM-G930' },
+      { 'label': 'Galaxy S7 Edge', 'pattern': 'SM-G935' },
+      'Google TV',
+      'Lumia',
+      'iPad',
+      'iPod',
+      'iPhone',
+      'Kindle',
+      { 'label': 'Kindle Fire', 'pattern': '(?:Cloud9|Silk-Accelerated)' },
+      'Nexus',
+      'Nook',
+      'PlayBook',
+      'PlayStation Vita',
+      'PlayStation',
+      'TouchPad',
+      'Transformer',
+      { 'label': 'Wii U', 'pattern': 'WiiU' },
+      'Wii',
+      'Xbox One',
+      { 'label': 'Xbox 360', 'pattern': 'Xbox' },
+      'Xoom'
+    ]);
+
+    /* Detectable manufacturers. */
+    var manufacturer = getManufacturer({
+      'Apple': { 'iPad': 1, 'iPhone': 1, 'iPod': 1 },
+      'Archos': {},
+      'Amazon': { 'Kindle': 1, 'Kindle Fire': 1 },
+      'Asus': { 'Transformer': 1 },
+      'Barnes & Noble': { 'Nook': 1 },
+      'BlackBerry': { 'PlayBook': 1 },
+      'Google': { 'Google TV': 1, 'Nexus': 1 },
+      'HP': { 'TouchPad': 1 },
+      'HTC': {},
+      'LG': {},
+      'Microsoft': { 'Xbox': 1, 'Xbox One': 1 },
+      'Motorola': { 'Xoom': 1 },
+      'Nintendo': { 'Wii U': 1,  'Wii': 1 },
+      'Nokia': { 'Lumia': 1 },
+      'Samsung': { 'Galaxy S': 1, 'Galaxy S2': 1, 'Galaxy S3': 1, 'Galaxy S4': 1 },
+      'Sony': { 'PlayStation': 1, 'PlayStation Vita': 1 }
+    });
+
+    /* Detectable operating systems (order is important). */
+    var os = getOS([
+      'Windows Phone',
+      'Android',
+      'CentOS',
+      { 'label': 'Chrome OS', 'pattern': 'CrOS' },
+      'Debian',
+      'Fedora',
+      'FreeBSD',
+      'Gentoo',
+      'Haiku',
+      'Kubuntu',
+      'Linux Mint',
+      'OpenBSD',
+      'Red Hat',
+      'SuSE',
+      'Ubuntu',
+      'Xubuntu',
+      'Cygwin',
+      'Symbian OS',
+      'hpwOS',
+      'webOS ',
+      'webOS',
+      'Tablet OS',
+      'Tizen',
+      'Linux',
+      'Mac OS X',
+      'Macintosh',
+      'Mac',
+      'Windows 98;',
+      'Windows '
+    ]);
+
+    /*------------------------------------------------------------------------*/
+
+    /**
+     * Picks the layout engine from an array of guesses.
+     *
+     * @private
+     * @param {Array} guesses An array of guesses.
+     * @returns {null|string} The detected layout engine.
+     */
+    function getLayout(guesses) {
+      return reduce(guesses, function(result, guess) {
+        return result || RegExp('\\b' + (
+          guess.pattern || qualify(guess)
+        ) + '\\b', 'i').exec(ua) && (guess.label || guess);
+      });
+    }
+
+    /**
+     * Picks the manufacturer from an array of guesses.
+     *
+     * @private
+     * @param {Array} guesses An object of guesses.
+     * @returns {null|string} The detected manufacturer.
+     */
+    function getManufacturer(guesses) {
+      return reduce(guesses, function(result, value, key) {
+        // Lookup the manufacturer by product or scan the UA for the manufacturer.
+        return result || (
+          value[product] ||
+          value[/^[a-z]+(?: +[a-z]+\b)*/i.exec(product)] ||
+          RegExp('\\b' + qualify(key) + '(?:\\b|\\w*\\d)', 'i').exec(ua)
+        ) && key;
+      });
+    }
+
+    /**
+     * Picks the browser name from an array of guesses.
+     *
+     * @private
+     * @param {Array} guesses An array of guesses.
+     * @returns {null|string} The detected browser name.
+     */
+    function getName(guesses) {
+      return reduce(guesses, function(result, guess) {
+        return result || RegExp('\\b' + (
+          guess.pattern || qualify(guess)
+        ) + '\\b', 'i').exec(ua) && (guess.label || guess);
+      });
+    }
+
+    /**
+     * Picks the OS name from an array of guesses.
+     *
+     * @private
+     * @param {Array} guesses An array of guesses.
+     * @returns {null|string} The detected OS name.
+     */
+    function getOS(guesses) {
+      return reduce(guesses, function(result, guess) {
+        var pattern = guess.pattern || qualify(guess);
+        if (!result && (result =
+              RegExp('\\b' + pattern + '(?:/[\\d.]+|[ \\w.]*)', 'i').exec(ua)
+            )) {
+          result = cleanupOS(result, pattern, guess.label || guess);
+        }
+        return result;
+      });
+    }
+
+    /**
+     * Picks the product name from an array of guesses.
+     *
+     * @private
+     * @param {Array} guesses An array of guesses.
+     * @returns {null|string} The detected product name.
+     */
+    function getProduct(guesses) {
+      return reduce(guesses, function(result, guess) {
+        var pattern = guess.pattern || qualify(guess);
+        if (!result && (result =
+              RegExp('\\b' + pattern + ' *\\d+[.\\w_]*', 'i').exec(ua) ||
+              RegExp('\\b' + pattern + ' *\\w+-[\\w]*', 'i').exec(ua) ||
+              RegExp('\\b' + pattern + '(?:; *(?:[a-z]+[_-])?[a-z]+\\d+|[^ ();-]*)', 'i').exec(ua)
+            )) {
+          // Split by forward slash and append product version if needed.
+          if ((result = String((guess.label && !RegExp(pattern, 'i').test(guess.label)) ? guess.label : result).split('/'))[1] && !/[\d.]+/.test(result[0])) {
+            result[0] += ' ' + result[1];
+          }
+          // Correct character case and cleanup string.
+          guess = guess.label || guess;
+          result = format(result[0]
+            .replace(RegExp(pattern, 'i'), guess)
+            .replace(RegExp('; *(?:' + guess + '[_-])?', 'i'), ' ')
+            .replace(RegExp('(' + guess + ')[-_.]?(\\w)', 'i'), '$1 $2'));
+        }
+        return result;
+      });
+    }
+
+    /**
+     * Resolves the version using an array of UA patterns.
+     *
+     * @private
+     * @param {Array} patterns An array of UA patterns.
+     * @returns {null|string} The detected version.
+     */
+    function getVersion(patterns) {
+      return reduce(patterns, function(result, pattern) {
+        return result || (RegExp(pattern +
+          '(?:-[\\d.]+/|(?: for [\\w-]+)?[ /-])([\\d.]+[^ ();/_-]*)', 'i').exec(ua) || 0)[1] || null;
+      });
+    }
+
+    /**
+     * Returns `platform.description` when the platform object is coerced to a string.
+     *
+     * @name toString
+     * @memberOf platform
+     * @returns {string} Returns `platform.description` if available, else an empty string.
+     */
+    function toStringPlatform() {
+      return this.description || '';
+    }
+
+    /*------------------------------------------------------------------------*/
+
+    // Convert layout to an array so we can add extra details.
+    layout && (layout = [layout]);
+
+    // Detect product names that contain their manufacturer's name.
+    if (manufacturer && !product) {
+      product = getProduct([manufacturer]);
+    }
+    // Clean up Google TV.
+    if ((data = /\bGoogle TV\b/.exec(product))) {
+      product = data[0];
+    }
+    // Detect simulators.
+    if (/\bSimulator\b/i.test(ua)) {
+      product = (product ? product + ' ' : '') + 'Simulator';
+    }
+    // Detect Opera Mini 8+ running in Turbo/Uncompressed mode on iOS.
+    if (name == 'Opera Mini' && /\bOPiOS\b/.test(ua)) {
+      description.push('running in Turbo/Uncompressed mode');
+    }
+    // Detect IE Mobile 11.
+    if (name == 'IE' && /\blike iPhone OS\b/.test(ua)) {
+      data = parse(ua.replace(/like iPhone OS/, ''));
+      manufacturer = data.manufacturer;
+      product = data.product;
+    }
+    // Detect iOS.
+    else if (/^iP/.test(product)) {
+      name || (name = 'Safari');
+      os = 'iOS' + ((data = / OS ([\d_]+)/i.exec(ua))
+        ? ' ' + data[1].replace(/_/g, '.')
+        : '');
+    }
+    // Detect Kubuntu.
+    else if (name == 'Konqueror' && !/buntu/i.test(os)) {
+      os = 'Kubuntu';
+    }
+    // Detect Android browsers.
+    else if ((manufacturer && manufacturer != 'Google' &&
+        ((/Chrome/.test(name) && !/\bMobile Safari\b/i.test(ua)) || /\bVita\b/.test(product))) ||
+        (/\bAndroid\b/.test(os) && /^Chrome/.test(name) && /\bVersion\//i.test(ua))) {
+      name = 'Android Browser';
+      os = /\bAndroid\b/.test(os) ? os : 'Android';
+    }
+    // Detect Silk desktop/accelerated modes.
+    else if (name == 'Silk') {
+      if (!/\bMobi/i.test(ua)) {
+        os = 'Android';
+        description.unshift('desktop mode');
+      }
+      if (/Accelerated *= *true/i.test(ua)) {
+        description.unshift('accelerated');
+      }
+    }
+    // Detect PaleMoon identifying as Firefox.
+    else if (name == 'PaleMoon' && (data = /\bFirefox\/([\d.]+)\b/.exec(ua))) {
+      description.push('identifying as Firefox ' + data[1]);
+    }
+    // Detect Firefox OS and products running Firefox.
+    else if (name == 'Firefox' && (data = /\b(Mobile|Tablet|TV)\b/i.exec(ua))) {
+      os || (os = 'Firefox OS');
+      product || (product = data[1]);
+    }
+    // Detect false positives for Firefox/Safari.
+    else if (!name || (data = !/\bMinefield\b/i.test(ua) && /\b(?:Firefox|Safari)\b/.exec(name))) {
+      // Escape the `/` for Firefox 1.
+      if (name && !product && /[\/,]|^[^(]+?\)/.test(ua.slice(ua.indexOf(data + '/') + 8))) {
+        // Clear name of false positives.
+        name = null;
+      }
+      // Reassign a generic name.
+      if ((data = product || manufacturer || os) &&
+          (product || manufacturer || /\b(?:Android|Symbian OS|Tablet OS|webOS)\b/.test(os))) {
+        name = /[a-z]+(?: Hat)?/i.exec(/\bAndroid\b/.test(os) ? os : data) + ' Browser';
+      }
+    }
+    // Add Chrome version to description for Electron.
+    else if (name == 'Electron' && (data = (/\bChrome\/([\d.]+)\b/.exec(ua) || 0)[1])) {
+      description.push('Chromium ' + data);
+    }
+    // Detect non-Opera (Presto-based) versions (order is important).
+    if (!version) {
+      version = getVersion([
+        '(?:Cloud9|CriOS|CrMo|Edge|FxiOS|IEMobile|Iron|Opera ?Mini|OPiOS|OPR|Raven|SamsungBrowser|Silk(?!/[\\d.]+$))',
+        'Version',
+        qualify(name),
+        '(?:Firefox|Minefield|NetFront)'
+      ]);
+    }
+    // Detect stubborn layout engines.
+    if ((data =
+          layout == 'iCab' && parseFloat(version) > 3 && 'WebKit' ||
+          /\bOpera\b/.test(name) && (/\bOPR\b/.test(ua) ? 'Blink' : 'Presto') ||
+          /\b(?:Midori|Nook|Safari)\b/i.test(ua) && !/^(?:Trident|EdgeHTML)$/.test(layout) && 'WebKit' ||
+          !layout && /\bMSIE\b/i.test(ua) && (os == 'Mac OS' ? 'Tasman' : 'Trident') ||
+          layout == 'WebKit' && /\bPlayStation\b(?! Vita\b)/i.test(name) && 'NetFront'
+        )) {
+      layout = [data];
+    }
+    // Detect Windows Phone 7 desktop mode.
+    if (name == 'IE' && (data = (/; *(?:XBLWP|ZuneWP)(\d+)/i.exec(ua) || 0)[1])) {
+      name += ' Mobile';
+      os = 'Windows Phone ' + (/\+$/.test(data) ? data : data + '.x');
+      description.unshift('desktop mode');
+    }
+    // Detect Windows Phone 8.x desktop mode.
+    else if (/\bWPDesktop\b/i.test(ua)) {
+      name = 'IE Mobile';
+      os = 'Windows Phone 8.x';
+      description.unshift('desktop mode');
+      version || (version = (/\brv:([\d.]+)/.exec(ua) || 0)[1]);
+    }
+    // Detect IE 11 identifying as other browsers.
+    else if (name != 'IE' && layout == 'Trident' && (data = /\brv:([\d.]+)/.exec(ua))) {
+      if (name) {
+        description.push('identifying as ' + name + (version ? ' ' + version : ''));
+      }
+      name = 'IE';
+      version = data[1];
+    }
+    // Leverage environment features.
+    if (useFeatures) {
+      // Detect server-side environments.
+      // Rhino has a global function while others have a global object.
+      if (isHostType(context, 'global')) {
+        if (java) {
+          data = java.lang.System;
+          arch = data.getProperty('os.arch');
+          os = os || data.getProperty('os.name') + ' ' + data.getProperty('os.version');
+        }
+        if (rhino) {
+          try {
+            version = context.require('ringo/engine').version.join('.');
+            name = 'RingoJS';
+          } catch(e) {
+            if ((data = context.system) && data.global.system == context.system) {
+              name = 'Narwhal';
+              os || (os = data[0].os || null);
+            }
+          }
+          if (!name) {
+            name = 'Rhino';
+          }
+        }
+        else if (
+          typeof context.process == 'object' && !context.process.browser &&
+          (data = context.process)
+        ) {
+          if (typeof data.versions == 'object') {
+            if (typeof data.versions.electron == 'string') {
+              description.push('Node ' + data.versions.node);
+              name = 'Electron';
+              version = data.versions.electron;
+            } else if (typeof data.versions.nw == 'string') {
+              description.push('Chromium ' + version, 'Node ' + data.versions.node);
+              name = 'NW.js';
+              version = data.versions.nw;
+            }
+          }
+          if (!name) {
+            name = 'Node.js';
+            arch = data.arch;
+            os = data.platform;
+            version = /[\d.]+/.exec(data.version);
+            version = version ? version[0] : null;
+          }
+        }
+      }
+      // Detect Adobe AIR.
+      else if (getClassOf((data = context.runtime)) == airRuntimeClass) {
+        name = 'Adobe AIR';
+        os = data.flash.system.Capabilities.os;
+      }
+      // Detect PhantomJS.
+      else if (getClassOf((data = context.phantom)) == phantomClass) {
+        name = 'PhantomJS';
+        version = (data = data.version || null) && (data.major + '.' + data.minor + '.' + data.patch);
+      }
+      // Detect IE compatibility modes.
+      else if (typeof doc.documentMode == 'number' && (data = /\bTrident\/(\d+)/i.exec(ua))) {
+        // We're in compatibility mode when the Trident version + 4 doesn't
+        // equal the document mode.
+        version = [version, doc.documentMode];
+        if ((data = +data[1] + 4) != version[1]) {
+          description.push('IE ' + version[1] + ' mode');
+          layout && (layout[1] = '');
+          version[1] = data;
+        }
+        version = name == 'IE' ? String(version[1].toFixed(1)) : version[0];
+      }
+      // Detect IE 11 masking as other browsers.
+      else if (typeof doc.documentMode == 'number' && /^(?:Chrome|Firefox)\b/.test(name)) {
+        description.push('masking as ' + name + ' ' + version);
+        name = 'IE';
+        version = '11.0';
+        layout = ['Trident'];
+        os = 'Windows';
+      }
+      os = os && format(os);
+    }
+    // Detect prerelease phases.
+    if (version && (data =
+          /(?:[ab]|dp|pre|[ab]\d+pre)(?:\d+\+?)?$/i.exec(version) ||
+          /(?:alpha|beta)(?: ?\d)?/i.exec(ua + ';' + (useFeatures && nav.appMinorVersion)) ||
+          /\bMinefield\b/i.test(ua) && 'a'
+        )) {
+      prerelease = /b/i.test(data) ? 'beta' : 'alpha';
+      version = version.replace(RegExp(data + '\\+?$'), '') +
+        (prerelease == 'beta' ? beta : alpha) + (/\d+\+?/.exec(data) || '');
+    }
+    // Detect Firefox Mobile.
+    if (name == 'Fennec' || name == 'Firefox' && /\b(?:Android|Firefox OS)\b/.test(os)) {
+      name = 'Firefox Mobile';
+    }
+    // Obscure Maxthon's unreliable version.
+    else if (name == 'Maxthon' && version) {
+      version = version.replace(/\.[\d.]+/, '.x');
+    }
+    // Detect Xbox 360 and Xbox One.
+    else if (/\bXbox\b/i.test(product)) {
+      if (product == 'Xbox 360') {
+        os = null;
+      }
+      if (product == 'Xbox 360' && /\bIEMobile\b/.test(ua)) {
+        description.unshift('mobile mode');
+      }
+    }
+    // Add mobile postfix.
+    else if ((/^(?:Chrome|IE|Opera)$/.test(name) || name && !product && !/Browser|Mobi/.test(name)) &&
+        (os == 'Windows CE' || /Mobi/i.test(ua))) {
+      name += ' Mobile';
+    }
+    // Detect IE platform preview.
+    else if (name == 'IE' && useFeatures) {
+      try {
+        if (context.external === null) {
+          description.unshift('platform preview');
+        }
+      } catch(e) {
+        description.unshift('embedded');
+      }
+    }
+    // Detect BlackBerry OS version.
+    // http://docs.blackberry.com/en/developers/deliverables/18169/HTTP_headers_sent_by_BB_Browser_1234911_11.jsp
+    else if ((/\bBlackBerry\b/.test(product) || /\bBB10\b/.test(ua)) && (data =
+          (RegExp(product.replace(/ +/g, ' *') + '/([.\\d]+)', 'i').exec(ua) || 0)[1] ||
+          version
+        )) {
+      data = [data, /BB10/.test(ua)];
+      os = (data[1] ? (product = null, manufacturer = 'BlackBerry') : 'Device Software') + ' ' + data[0];
+      version = null;
+    }
+    // Detect Opera identifying/masking itself as another browser.
+    // http://www.opera.com/support/kb/view/843/
+    else if (this != forOwn && product != 'Wii' && (
+          (useFeatures && opera) ||
+          (/Opera/.test(name) && /\b(?:MSIE|Firefox)\b/i.test(ua)) ||
+          (name == 'Firefox' && /\bOS X (?:\d+\.){2,}/.test(os)) ||
+          (name == 'IE' && (
+            (os && !/^Win/.test(os) && version > 5.5) ||
+            /\bWindows XP\b/.test(os) && version > 8 ||
+            version == 8 && !/\bTrident\b/.test(ua)
+          ))
+        ) && !reOpera.test((data = parse.call(forOwn, ua.replace(reOpera, '') + ';'))) && data.name) {
+      // When "identifying", the UA contains both Opera and the other browser's name.
+      data = 'ing as ' + data.name + ((data = data.version) ? ' ' + data : '');
+      if (reOpera.test(name)) {
+        if (/\bIE\b/.test(data) && os == 'Mac OS') {
+          os = null;
+        }
+        data = 'identify' + data;
+      }
+      // When "masking", the UA contains only the other browser's name.
+      else {
+        data = 'mask' + data;
+        if (operaClass) {
+          name = format(operaClass.replace(/([a-z])([A-Z])/g, '$1 $2'));
+        } else {
+          name = 'Opera';
+        }
+        if (/\bIE\b/.test(data)) {
+          os = null;
+        }
+        if (!useFeatures) {
+          version = null;
+        }
+      }
+      layout = ['Presto'];
+      description.push(data);
+    }
+    // Detect WebKit Nightly and approximate Chrome/Safari versions.
+    if ((data = (/\bAppleWebKit\/([\d.]+\+?)/i.exec(ua) || 0)[1])) {
+      // Correct build number for numeric comparison.
+      // (e.g. "532.5" becomes "532.05")
+      data = [parseFloat(data.replace(/\.(\d)$/, '.0$1')), data];
+      // Nightly builds are postfixed with a "+".
+      if (name == 'Safari' && data[1].slice(-1) == '+') {
+        name = 'WebKit Nightly';
+        prerelease = 'alpha';
+        version = data[1].slice(0, -1);
+      }
+      // Clear incorrect browser versions.
+      else if (version == data[1] ||
+          version == (data[2] = (/\bSafari\/([\d.]+\+?)/i.exec(ua) || 0)[1])) {
+        version = null;
+      }
+      // Use the full Chrome version when available.
+      data[1] = (/\bChrome\/([\d.]+)/i.exec(ua) || 0)[1];
+      // Detect Blink layout engine.
+      if (data[0] == 537.36 && data[2] == 537.36 && parseFloat(data[1]) >= 28 && layout == 'WebKit') {
+        layout = ['Blink'];
+      }
+      // Detect JavaScriptCore.
+      // http://stackoverflow.com/questions/6768474/how-can-i-detect-which-javascript-engine-v8-or-jsc-is-used-at-runtime-in-androi
+      if (!useFeatures || (!likeChrome && !data[1])) {
+        layout && (layout[1] = 'like Safari');
+        data = (data = data[0], data < 400 ? 1 : data < 500 ? 2 : data < 526 ? 3 : data < 533 ? 4 : data < 534 ? '4+' : data < 535 ? 5 : data < 537 ? 6 : data < 538 ? 7 : data < 601 ? 8 : '8');
+      } else {
+        layout && (layout[1] = 'like Chrome');
+        data = data[1] || (data = data[0], data < 530 ? 1 : data < 532 ? 2 : data < 532.05 ? 3 : data < 533 ? 4 : data < 534.03 ? 5 : data < 534.07 ? 6 : data < 534.10 ? 7 : data < 534.13 ? 8 : data < 534.16 ? 9 : data < 534.24 ? 10 : data < 534.30 ? 11 : data < 535.01 ? 12 : data < 535.02 ? '13+' : data < 535.07 ? 15 : data < 535.11 ? 16 : data < 535.19 ? 17 : data < 536.05 ? 18 : data < 536.10 ? 19 : data < 537.01 ? 20 : data < 537.11 ? '21+' : data < 537.13 ? 23 : data < 537.18 ? 24 : data < 537.24 ? 25 : data < 537.36 ? 26 : layout != 'Blink' ? '27' : '28');
+      }
+      // Add the postfix of ".x" or "+" for approximate versions.
+      layout && (layout[1] += ' ' + (data += typeof data == 'number' ? '.x' : /[.+]/.test(data) ? '' : '+'));
+      // Obscure version for some Safari 1-2 releases.
+      if (name == 'Safari' && (!version || parseInt(version) > 45)) {
+        version = data;
+      }
+    }
+    // Detect Opera desktop modes.
+    if (name == 'Opera' &&  (data = /\bzbov|zvav$/.exec(os))) {
+      name += ' ';
+      description.unshift('desktop mode');
+      if (data == 'zvav') {
+        name += 'Mini';
+        version = null;
+      } else {
+        name += 'Mobile';
+      }
+      os = os.replace(RegExp(' *' + data + '$'), '');
+    }
+    // Detect Chrome desktop mode.
+    else if (name == 'Safari' && /\bChrome\b/.exec(layout && layout[1])) {
+      description.unshift('desktop mode');
+      name = 'Chrome Mobile';
+      version = null;
+
+      if (/\bOS X\b/.test(os)) {
+        manufacturer = 'Apple';
+        os = 'iOS 4.3+';
+      } else {
+        os = null;
+      }
+    }
+    // Strip incorrect OS versions.
+    if (version && version.indexOf((data = /[\d.]+$/.exec(os))) == 0 &&
+        ua.indexOf('/' + data + '-') > -1) {
+      os = trim(os.replace(data, ''));
+    }
+    // Add layout engine.
+    if (layout && !/\b(?:Avant|Nook)\b/.test(name) && (
+        /Browser|Lunascape|Maxthon/.test(name) ||
+        name != 'Safari' && /^iOS/.test(os) && /\bSafari\b/.test(layout[1]) ||
+        /^(?:Adobe|Arora|Breach|Midori|Opera|Phantom|Rekonq|Rock|Samsung Internet|Sleipnir|Web)/.test(name) && layout[1])) {
+      // Don't add layout details to description if they are falsey.
+      (data = layout[layout.length - 1]) && description.push(data);
+    }
+    // Combine contextual information.
+    if (description.length) {
+      description = ['(' + description.join('; ') + ')'];
+    }
+    // Append manufacturer to description.
+    if (manufacturer && product && product.indexOf(manufacturer) < 0) {
+      description.push('on ' + manufacturer);
+    }
+    // Append product to description.
+    if (product) {
+      description.push((/^on /.test(description[description.length - 1]) ? '' : 'on ') + product);
+    }
+    // Parse the OS into an object.
+    if (os) {
+      data = / ([\d.+]+)$/.exec(os);
+      isSpecialCasedOS = data && os.charAt(os.length - data[0].length - 1) == '/';
+      os = {
+        'architecture': 32,
+        'family': (data && !isSpecialCasedOS) ? os.replace(data[0], '') : os,
+        'version': data ? data[1] : null,
+        'toString': function() {
+          var version = this.version;
+          return this.family + ((version && !isSpecialCasedOS) ? ' ' + version : '') + (this.architecture == 64 ? ' 64-bit' : '');
+        }
+      };
+    }
+    // Add browser/OS architecture.
+    if ((data = /\b(?:AMD|IA|Win|WOW|x86_|x)64\b/i.exec(arch)) && !/\bi686\b/i.test(arch)) {
+      if (os) {
+        os.architecture = 64;
+        os.family = os.family.replace(RegExp(' *' + data), '');
+      }
+      if (
+          name && (/\bWOW64\b/i.test(ua) ||
+          (useFeatures && /\w(?:86|32)$/.test(nav.cpuClass || nav.platform) && !/\bWin64; x64\b/i.test(ua)))
+      ) {
+        description.unshift('32-bit');
+      }
+    }
+    // Chrome 39 and above on OS X is always 64-bit.
+    else if (
+        os && /^OS X/.test(os.family) &&
+        name == 'Chrome' && parseFloat(version) >= 39
+    ) {
+      os.architecture = 64;
+    }
+
+    ua || (ua = null);
+
+    /*------------------------------------------------------------------------*/
+
+    /**
+     * The platform object.
+     *
+     * @name platform
+     * @type Object
+     */
+    var platform = {};
+
+    /**
+     * The platform description.
+     *
+     * @memberOf platform
+     * @type string|null
+     */
+    platform.description = ua;
+
+    /**
+     * The name of the browser's layout engine.
+     *
+     * The list of common layout engines include:
+     * "Blink", "EdgeHTML", "Gecko", "Trident" and "WebKit"
+     *
+     * @memberOf platform
+     * @type string|null
+     */
+    platform.layout = layout && layout[0];
+
+    /**
+     * The name of the product's manufacturer.
+     *
+     * The list of manufacturers include:
+     * "Apple", "Archos", "Amazon", "Asus", "Barnes & Noble", "BlackBerry",
+     * "Google", "HP", "HTC", "LG", "Microsoft", "Motorola", "Nintendo",
+     * "Nokia", "Samsung" and "Sony"
+     *
+     * @memberOf platform
+     * @type string|null
+     */
+    platform.manufacturer = manufacturer;
+
+    /**
+     * The name of the browser/environment.
+     *
+     * The list of common browser names include:
+     * "Chrome", "Electron", "Firefox", "Firefox for iOS", "IE",
+     * "Microsoft Edge", "PhantomJS", "Safari", "SeaMonkey", "Silk",
+     * "Opera Mini" and "Opera"
+     *
+     * Mobile versions of some browsers have "Mobile" appended to their name:
+     * eg. "Chrome Mobile", "Firefox Mobile", "IE Mobile" and "Opera Mobile"
+     *
+     * @memberOf platform
+     * @type string|null
+     */
+    platform.name = name;
+
+    /**
+     * The alpha/beta release indicator.
+     *
+     * @memberOf platform
+     * @type string|null
+     */
+    platform.prerelease = prerelease;
+
+    /**
+     * The name of the product hosting the browser.
+     *
+     * The list of common products include:
+     *
+     * "BlackBerry", "Galaxy S4", "Lumia", "iPad", "iPod", "iPhone", "Kindle",
+     * "Kindle Fire", "Nexus", "Nook", "PlayBook", "TouchPad" and "Transformer"
+     *
+     * @memberOf platform
+     * @type string|null
+     */
+    platform.product = product;
+
+    /**
+     * The browser's user agent string.
+     *
+     * @memberOf platform
+     * @type string|null
+     */
+    platform.ua = ua;
+
+    /**
+     * The browser/environment version.
+     *
+     * @memberOf platform
+     * @type string|null
+     */
+    platform.version = name && version;
+
+    /**
+     * The name of the operating system.
+     *
+     * @memberOf platform
+     * @type Object
+     */
+    platform.os = os || {
+
+      /**
+       * The CPU architecture the OS is built for.
+       *
+       * @memberOf platform.os
+       * @type number|null
+       */
+      'architecture': null,
+
+      /**
+       * The family of the OS.
+       *
+       * Common values include:
+       * "Windows", "Windows Server 2008 R2 / 7", "Windows Server 2008 / Vista",
+       * "Windows XP", "OS X", "Ubuntu", "Debian", "Fedora", "Red Hat", "SuSE",
+       * "Android", "iOS" and "Windows Phone"
+       *
+       * @memberOf platform.os
+       * @type string|null
+       */
+      'family': null,
+
+      /**
+       * The version of the OS.
+       *
+       * @memberOf platform.os
+       * @type string|null
+       */
+      'version': null,
+
+      /**
+       * Returns the OS string.
+       *
+       * @memberOf platform.os
+       * @returns {string} The OS string.
+       */
+      'toString': function() { return 'null'; }
+    };
+
+    platform.parse = parse;
+    platform.toString = toStringPlatform;
+
+    if (platform.version) {
+      description.unshift(version);
+    }
+    if (platform.name) {
+      description.unshift(name);
+    }
+    if (os && name && !(os == String(os).split(' ')[0] && (os == name.split(' ')[0] || product))) {
+      description.push(product ? '(' + os + ')' : 'on ' + os);
+    }
+    if (description.length) {
+      platform.description = description.join(' ');
+    }
+    return platform;
+  }
+
+  /*--------------------------------------------------------------------------*/
+
+  // Export platform.
+  var platform = parse();
+
+  // Some AMD build optimizers, like r.js, check for condition patterns like the following:
+  if (true) {
+    // Expose platform on the global object to prevent errors when platform is
+    // loaded by a script tag in the presence of an AMD loader.
+    // See http://requirejs.org/docs/errors.html#mismatch for more details.
+    root.platform = platform;
+
+    // Define as an anonymous module so platform can be aliased through path mapping.
+    !(__WEBPACK_AMD_DEFINE_RESULT__ = (function() {
+      return platform;
+    }).call(exports, __webpack_require__, exports, module),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+  }
+  // Check for `exports` after `define` in case a build optimizer adds an `exports` object.
+  else {}
+}.call(this));
+
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../webpack/buildin/module.js */ "./node_modules/webpack/buildin/module.js")(module), __webpack_require__(/*! ./../webpack/buildin/global.js */ "./node_modules/webpack/buildin/global.js")))
+
+/***/ }),
+
+/***/ "./node_modules/process/browser.js":
+/*!*****************************************!*\
+  !*** ./node_modules/process/browser.js ***!
+  \*****************************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+
+/***/ }),
+
+/***/ "./node_modules/stackframe/stackframe.js":
+/*!***********************************************!*\
+  !*** ./node_modules/stackframe/stackframe.js ***!
+  \***********************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;(function(root, factory) {
+    'use strict';
+    // Universal Module Definition (UMD) to support AMD, CommonJS/Node.js, Rhino, and browsers.
+
+    /* istanbul ignore next */
+    if (true) {
+        !(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory),
+				__WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ?
+				(__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__),
+				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+    } else {}
+}(this, function() {
+    'use strict';
+    function _isNumber(n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    }
+
+    function _capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.substring(1);
+    }
+
+    function _getter(p) {
+        return function() {
+            return this[p];
+        };
+    }
+
+    var booleanProps = ['isConstructor', 'isEval', 'isNative', 'isToplevel'];
+    var numericProps = ['columnNumber', 'lineNumber'];
+    var stringProps = ['fileName', 'functionName', 'source'];
+    var arrayProps = ['args'];
+
+    var props = booleanProps.concat(numericProps, stringProps, arrayProps);
+
+    function StackFrame(obj) {
+        if (obj instanceof Object) {
+            for (var i = 0; i < props.length; i++) {
+                if (obj.hasOwnProperty(props[i]) && obj[props[i]] !== undefined) {
+                    this['set' + _capitalize(props[i])](obj[props[i]]);
+                }
+            }
+        }
+    }
+
+    StackFrame.prototype = {
+        getArgs: function() {
+            return this.args;
+        },
+        setArgs: function(v) {
+            if (Object.prototype.toString.call(v) !== '[object Array]') {
+                throw new TypeError('Args must be an Array');
+            }
+            this.args = v;
+        },
+
+        getEvalOrigin: function() {
+            return this.evalOrigin;
+        },
+        setEvalOrigin: function(v) {
+            if (v instanceof StackFrame) {
+                this.evalOrigin = v;
+            } else if (v instanceof Object) {
+                this.evalOrigin = new StackFrame(v);
+            } else {
+                throw new TypeError('Eval Origin must be an Object or StackFrame');
+            }
+        },
+
+        toString: function() {
+            var functionName = this.getFunctionName() || '{anonymous}';
+            var args = '(' + (this.getArgs() || []).join(',') + ')';
+            var fileName = this.getFileName() ? ('@' + this.getFileName()) : '';
+            var lineNumber = _isNumber(this.getLineNumber()) ? (':' + this.getLineNumber()) : '';
+            var columnNumber = _isNumber(this.getColumnNumber()) ? (':' + this.getColumnNumber()) : '';
+            return functionName + args + fileName + lineNumber + columnNumber;
+        }
+    };
+
+    for (var i = 0; i < booleanProps.length; i++) {
+        StackFrame.prototype['get' + _capitalize(booleanProps[i])] = _getter(booleanProps[i]);
+        StackFrame.prototype['set' + _capitalize(booleanProps[i])] = (function(p) {
+            return function(v) {
+                this[p] = Boolean(v);
+            };
+        })(booleanProps[i]);
+    }
+
+    for (var j = 0; j < numericProps.length; j++) {
+        StackFrame.prototype['get' + _capitalize(numericProps[j])] = _getter(numericProps[j]);
+        StackFrame.prototype['set' + _capitalize(numericProps[j])] = (function(p) {
+            return function(v) {
+                if (!_isNumber(v)) {
+                    throw new TypeError(p + ' must be a Number');
+                }
+                this[p] = Number(v);
+            };
+        })(numericProps[j]);
+    }
+
+    for (var k = 0; k < stringProps.length; k++) {
+        StackFrame.prototype['get' + _capitalize(stringProps[k])] = _getter(stringProps[k]);
+        StackFrame.prototype['set' + _capitalize(stringProps[k])] = (function(p) {
+            return function(v) {
+                this[p] = String(v);
+            };
+        })(stringProps[k]);
+    }
+
+    return StackFrame;
+}));
+
+
+/***/ }),
+
+/***/ "./node_modules/webpack/buildin/global.js":
+/*!***********************************!*\
+  !*** (webpack)/buildin/global.js ***!
+  \***********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+var g;
+
+// This works in non-strict mode
+g = (function() {
+	return this;
+})();
+
+try {
+	// This works if eval is allowed (see CSP)
+	g = g || new Function("return this")();
+} catch (e) {
+	// This works if the window reference is available
+	if (typeof window === "object") g = window;
+}
+
+// g can still be undefined, but nothing to do about it...
+// We return undefined, instead of nothing here, so it's
+// easier to handle this case. if(!global) { ...}
+
+module.exports = g;
+
+
+/***/ }),
+
+/***/ "./node_modules/webpack/buildin/module.js":
+/*!***********************************!*\
+  !*** (webpack)/buildin/module.js ***!
+  \***********************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+module.exports = function(module) {
+	if (!module.webpackPolyfill) {
+		module.deprecate = function() {};
+		module.paths = [];
+		// module.parent = undefined by default
+		if (!module.children) module.children = [];
+		Object.defineProperty(module, "loaded", {
+			enumerable: true,
+			get: function() {
+				return module.l;
+			}
+		});
+		Object.defineProperty(module, "id", {
+			enumerable: true,
+			get: function() {
+				return module.i;
+			}
+		});
+		module.webpackPolyfill = 1;
+	}
+	return module;
+};
+
+
+/***/ }),
+
+/***/ "./package.json":
+/*!**********************!*\
+  !*** ./package.json ***!
+  \**********************/
+/*! exports provided: name, version, description, main, scripts, author, license, devDependencies, dependencies, default */
+/***/ (function(module) {
+
+module.exports = JSON.parse("{\"name\":\"cvat.js\",\"version\":\"0.1.0\",\"description\":\"Part of Computer Vision Tool which presents an interface for client-side integration\",\"main\":\"babel.config.js\",\"scripts\":{\"build\":\"webpack\",\"test\":\"jest --config=jest.config.js --coverage\",\"docs\":\"jsdoc --readme README.md src/*.js -p -c jsdoc.config.js -d docs\",\"coveralls\":\"cat ./reports/coverage/lcov.info | coveralls\"},\"author\":\"Intel\",\"license\":\"MIT\",\"devDependencies\":{\"@babel/cli\":\"^7.4.4\",\"@babel/core\":\"^7.4.4\",\"@babel/preset-env\":\"^7.4.4\",\"babel-eslint\":\"^10.0.1\",\"babel-loader\":\"^8.0.6\",\"core-js\":\"^3.0.1\",\"coveralls\":\"^3.0.5\",\"eslint\":\"^6.1.0\",\"jest\":\"^24.8.0\",\"jest-junit\":\"^6.4.0\",\"jsdoc\":\"^3.6.2\",\"webpack\":\"^4.31.0\",\"webpack-cli\":\"^3.3.2\"},\"dependencies\":{\"axios\":\"^0.18.0\",\"error-stack-parser\":\"^2.0.2\",\"form-data\":\"^2.5.0\",\"jest-config\":\"^24.8.0\",\"js-cookie\":\"^2.2.0\",\"platform\":\"^1.3.5\"}}");
+
+/***/ }),
+
+/***/ "./src/annotations-collection.js":
+/*!***************************************!*\
+  !*** ./src/annotations-collection.js ***!
+  \***************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+
+__webpack_require__(/*! core-js/modules/es.array.sort */ "./node_modules/core-js/modules/es.array.sort.js");
+
+__webpack_require__(/*! core-js/modules/web.dom-collections.iterator */ "./node_modules/core-js/modules/web.dom-collections.iterator.js");
+
+__webpack_require__(/*! core-js/modules/web.url.to-json */ "./node_modules/core-js/modules/web.url.to-json.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+(() => {
+  const {
+    RectangleShape,
+    PolygonShape,
+    PolylineShape,
+    PointsShape,
+    RectangleTrack,
+    PolygonTrack,
+    PolylineTrack,
+    PointsTrack,
+    Track,
+    Shape,
+    Tag,
+    objectStateFactory
+  } = __webpack_require__(/*! ./annotations-objects */ "./src/annotations-objects.js");
+
+  const {
+    checkObjectType
+  } = __webpack_require__(/*! ./common */ "./src/common.js");
+
+  const Statistics = __webpack_require__(/*! ./statistics */ "./src/statistics.js");
+
+  const {
+    Label
+  } = __webpack_require__(/*! ./labels */ "./src/labels.js");
+
+  const {
+    DataError,
+    ArgumentError,
+    ScriptingError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js");
+
+  const {
+    ObjectShape,
+    ObjectType
+  } = __webpack_require__(/*! ./enums */ "./src/enums.js");
+
+  const ObjectState = __webpack_require__(/*! ./object-state */ "./src/object-state.js");
+
+  const colors = ['#0066FF', '#AF593E', '#01A368', '#FF861F', '#ED0A3F', '#FF3F34', '#76D7EA', '#8359A3', '#FBE870', '#C5E17A', '#03BB85', '#FFDF00', '#8B8680', '#0A6B0D', '#8FD8D8', '#A36F40', '#F653A6', '#CA3435', '#FFCBA4', '#FF99CC', '#FA9D5A', '#FFAE42', '#A78B00', '#788193', '#514E49', '#1164B4', '#F4FA9F', '#FED8B1', '#C32148', '#01796F', '#E90067', '#FF91A4', '#404E5A', '#6CDAE7', '#FFC1CC', '#006A93', '#867200', '#E2B631', '#6EEB6E', '#FFC800', '#CC99BA', '#FF007C', '#BC6CAC', '#DCCCD7', '#EBE1C2', '#A6AAAE', '#B99685', '#0086A7', '#5E4330', '#C8A2C8', '#708EB3', '#BC8777', '#B2592D', '#497E48', '#6A2963', '#E6335F', '#00755E', '#B5A895', '#0048ba', '#EED9C4', '#C88A65', '#FF6E4A', '#87421F', '#B2BEB5', '#926F5B', '#00B9FB', '#6456B7', '#DB5079', '#C62D42', '#FA9C44', '#DA8A67', '#FD7C6E', '#93CCEA', '#FCF686', '#503E32', '#FF5470', '#9DE093', '#FF7A00', '#4F69C6', '#A50B5E', '#F0E68C', '#FDFF00', '#F091A9', '#FFFF66', '#6F9940', '#FC74FD', '#652DC1', '#D6AEDD', '#EE34D2', '#BB3385', '#6B3FA0', '#33CC99', '#FFDB00', '#87FF2A', '#6EEB6E', '#FFC800', '#CC99BA', '#7A89B8', '#006A93', '#867200', '#E2B631', '#D9D6CF'];
+
+  function shapeFactory(shapeData, clientID, injection) {
+    const {
+      type
+    } = shapeData;
+    const color = colors[clientID % colors.length];
+    let shapeModel = null;
+
+    switch (type) {
+      case 'rectangle':
+        shapeModel = new RectangleShape(shapeData, clientID, color, injection);
+        break;
+
+      case 'polygon':
+        shapeModel = new PolygonShape(shapeData, clientID, color, injection);
+        break;
+
+      case 'polyline':
+        shapeModel = new PolylineShape(shapeData, clientID, color, injection);
+        break;
+
+      case 'points':
+        shapeModel = new PointsShape(shapeData, clientID, color, injection);
+        break;
+
+      default:
+        throw new DataError(`An unexpected type of shape "${type}"`);
+    }
+
+    return shapeModel;
+  }
+
+  function trackFactory(trackData, clientID, injection) {
+    if (trackData.shapes.length) {
+      const {
+        type
+      } = trackData.shapes[0];
+      const color = colors[clientID % colors.length];
+      let trackModel = null;
+
+      switch (type) {
+        case 'rectangle':
+          trackModel = new RectangleTrack(trackData, clientID, color, injection);
+          break;
+
+        case 'polygon':
+          trackModel = new PolygonTrack(trackData, clientID, color, injection);
+          break;
+
+        case 'polyline':
+          trackModel = new PolylineTrack(trackData, clientID, color, injection);
+          break;
+
+        case 'points':
+          trackModel = new PointsTrack(trackData, clientID, color, injection);
+          break;
+
+        default:
+          throw new DataError(`An unexpected type of track "${type}"`);
+      }
+
+      return trackModel;
+    }
+
+    console.warn('The track without any shapes had been found. It was ignored.');
+    return null;
+  }
+
+  class Collection {
+    constructor(data) {
+      this.startFrame = data.startFrame;
+      this.stopFrame = data.stopFrame;
+      this.frameMeta = data.frameMeta;
+      this.labels = data.labels.reduce((labelAccumulator, label) => {
+        labelAccumulator[label.id] = label;
+        return labelAccumulator;
+      }, {});
+      this.shapes = {}; // key is a frame
+
+      this.tags = {}; // key is a frame
+
+      this.tracks = [];
+      this.objects = {}; // key is a client id
+
+      this.count = 0;
+      this.flush = false;
+      this.collectionZ = {}; // key is a frame, {max, min} are values
+
+      this.groups = {
+        max: 0
+      }; // it is an object to we can pass it as an argument by a reference
+
+      this.injection = {
+        labels: this.labels,
+        collectionZ: this.collectionZ,
+        groups: this.groups,
+        frameMeta: this.frameMeta
+      };
+    }
+
+    import(data) {
+      for (const tag of data.tags) {
+        const clientID = ++this.count;
+        const tagModel = new Tag(tag, clientID, this.injection);
+        this.tags[tagModel.frame] = this.tags[tagModel.frame] || [];
+        this.tags[tagModel.frame].push(tagModel);
+        this.objects[clientID] = tagModel;
+      }
+
+      for (const shape of data.shapes) {
+        const clientID = ++this.count;
+        const shapeModel = shapeFactory(shape, clientID, this.injection);
+        this.shapes[shapeModel.frame] = this.shapes[shapeModel.frame] || [];
+        this.shapes[shapeModel.frame].push(shapeModel);
+        this.objects[clientID] = shapeModel;
+      }
+
+      for (const track of data.tracks) {
+        const clientID = ++this.count;
+        const trackModel = trackFactory(track, clientID, this.injection); // The function can return null if track doesn't have any shapes.
+        // In this case a corresponded message will be sent to the console
+
+        if (trackModel) {
+          this.tracks.push(trackModel);
+          this.objects[clientID] = trackModel;
+        }
+      }
+
+      return this;
+    }
+
+    export() {
+      const data = {
+        tracks: this.tracks.filter(track => !track.removed).map(track => track.toJSON()),
+        shapes: Object.values(this.shapes).reduce((accumulator, value) => {
+          accumulator.push(...value);
+          return accumulator;
+        }, []).filter(shape => !shape.removed).map(shape => shape.toJSON()),
+        tags: Object.values(this.tags).reduce((accumulator, value) => {
+          accumulator.push(...value);
+          return accumulator;
+        }, []).filter(tag => !tag.removed).map(tag => tag.toJSON())
+      };
+      return data;
+    }
+
+    get(frame) {
+      const {
+        tracks
+      } = this;
+      const shapes = this.shapes[frame] || [];
+      const tags = this.tags[frame] || [];
+      const objects = tracks.concat(shapes).concat(tags).filter(object => !object.removed); // filtering here
+
+      const objectStates = [];
+
+      for (const object of objects) {
+        const stateData = object.get(frame);
+
+        if (stateData.outside && !stateData.keyframe) {
+          continue;
+        }
+
+        const objectState = objectStateFactory.call(object, frame, stateData);
+        objectStates.push(objectState);
+      }
+
+      return objectStates;
+    }
+
+    merge(objectStates) {
+      checkObjectType('shapes for merge', objectStates, null, Array);
+      if (!objectStates.length) return;
+      const objectsForMerge = objectStates.map(state => {
+        checkObjectType('object state', state, null, ObjectState);
+        const object = this.objects[state.clientID];
+
+        if (typeof object === 'undefined') {
+          throw new ArgumentError('The object has not been saved yet. Call ObjectState.put([state]) before you can merge it');
+        }
+
+        return object;
+      });
+      const keyframes = {}; // frame: position
+
+      const {
+        label,
+        shapeType
+      } = objectStates[0];
+
+      if (!(label.id in this.labels)) {
+        throw new ArgumentError(`Unknown label for the task: ${label.id}`);
+      }
+
+      if (!Object.values(ObjectShape).includes(shapeType)) {
+        throw new ArgumentError(`Got unknown shapeType "${shapeType}"`);
+      }
+
+      const labelAttributes = label.attributes.reduce((accumulator, attribute) => {
+        accumulator[attribute.id] = attribute;
+        return accumulator;
+      }, {});
+
+      for (let i = 0; i < objectsForMerge.length; i++) {
+        // For each state get corresponding object
+        const object = objectsForMerge[i];
+        const state = objectStates[i];
+
+        if (state.label.id !== label.id) {
+          throw new ArgumentError(`All shape labels are expected to be ${label.name}, but got ${state.label.name}`);
+        }
+
+        if (state.shapeType !== shapeType) {
+          throw new ArgumentError(`All shapes are expected to be ${shapeType}, but got ${state.shapeType}`);
+        } // If this object is shape, get it position and save as a keyframe
+
+
+        if (object instanceof Shape) {
+          // Frame already saved and it is not outside
+          if (object.frame in keyframes && !keyframes[object.frame].outside) {
+            throw new ArgumentError('Expected only one visible shape per frame');
+          }
+
+          keyframes[object.frame] = {
+            type: shapeType,
+            frame: object.frame,
+            points: [...object.points],
+            occluded: object.occluded,
+            zOrder: object.zOrder,
+            outside: false,
+            attributes: Object.keys(object.attributes).reduce((accumulator, attrID) => {
+              // We save only mutable attributes inside a keyframe
+              if (attrID in labelAttributes && labelAttributes[attrID].mutable) {
+                accumulator.push({
+                  spec_id: +attrID,
+                  value: object.attributes[attrID]
+                });
+              }
+
+              return accumulator;
+            }, [])
+          }; // Push outside shape after each annotation shape
+          // Any not outside shape rewrites it
+
+          if (!(object.frame + 1 in keyframes)) {
+            keyframes[object.frame + 1] = JSON.parse(JSON.stringify(keyframes[object.frame]));
+            keyframes[object.frame + 1].outside = true;
+            keyframes[object.frame + 1].frame++;
+          }
+        } else if (object instanceof Track) {
+          // If this object is track, iterate through all its
+          // keyframes and push copies to new keyframes
+          const attributes = {}; // id:value
+
+          for (const keyframe of Object.keys(object.shapes)) {
+            const shape = object.shapes[keyframe]; // Frame already saved and it is not outside
+
+            if (keyframe in keyframes && !keyframes[keyframe].outside) {
+              // This shape is outside and non-outside shape already exists
+              if (shape.outside) {
+                continue;
+              }
+
+              throw new ArgumentError('Expected only one visible shape per frame');
+            } // We do not save an attribute if it has the same value
+            // We save only updates
+
+
+            let updatedAttributes = false;
+
+            for (const attrID in shape.attributes) {
+              if (!(attrID in attributes) || attributes[attrID] !== shape.attributes[attrID]) {
+                updatedAttributes = true;
+                attributes[attrID] = shape.attributes[attrID];
+              }
+            }
+
+            keyframes[keyframe] = {
+              type: shapeType,
+              frame: +keyframe,
+              points: [...shape.points],
+              occluded: shape.occluded,
+              outside: shape.outside,
+              zOrder: shape.zOrder,
+              attributes: updatedAttributes ? Object.keys(attributes).reduce((accumulator, attrID) => {
+                accumulator.push({
+                  spec_id: +attrID,
+                  value: attributes[attrID]
+                });
+                return accumulator;
+              }, []) : []
+            };
+          }
+        } else {
+          throw new ArgumentError(`Trying to merge unknown object type: ${object.constructor.name}. ` + 'Only shapes and tracks are expected.');
+        }
+      }
+
+      let firstNonOutside = false;
+
+      for (const frame of Object.keys(keyframes).sort((a, b) => +a - +b)) {
+        // Remove all outside frames at the begin
+        firstNonOutside = firstNonOutside || keyframes[frame].outside;
+
+        if (!firstNonOutside && keyframes[frame].outside) {
+          delete keyframes[frame];
+        } else {
+          break;
+        }
+      }
+
+      const clientID = ++this.count;
+      const track = {
+        frame: Math.min.apply(null, Object.keys(keyframes).map(frame => +frame)),
+        shapes: Object.values(keyframes),
+        group: 0,
+        label_id: label.id,
+        attributes: Object.keys(objectStates[0].attributes).reduce((accumulator, attrID) => {
+          if (!labelAttributes[attrID].mutable) {
+            accumulator.push({
+              spec_id: +attrID,
+              value: objectStates[0].attributes[attrID]
+            });
+          }
+
+          return accumulator;
+        }, [])
+      };
+      const trackModel = trackFactory(track, clientID, this.injection);
+      this.tracks.push(trackModel);
+      this.objects[clientID] = trackModel; // Remove other shapes
+
+      for (const object of objectsForMerge) {
+        object.removed = true;
+
+        if (typeof object.resetCache === 'function') {
+          object.resetCache();
+        }
+      }
+    }
+
+    split(objectState, frame) {
+      checkObjectType('object state', objectState, null, ObjectState);
+      checkObjectType('frame', frame, 'integer', null);
+      const object = this.objects[objectState.clientID];
+
+      if (typeof object === 'undefined') {
+        throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+      }
+
+      if (objectState.objectType !== ObjectType.TRACK) {
+        return;
+      }
+
+      const keyframes = Object.keys(object.shapes).sort((a, b) => +a - +b);
+
+      if (frame <= +keyframes[0] || frame > keyframes[keyframes.length - 1]) {
+        return;
+      }
+
+      const labelAttributes = object.label.attributes.reduce((accumulator, attribute) => {
+        accumulator[attribute.id] = attribute;
+        return accumulator;
+      }, {});
+      const exported = object.toJSON();
+      const position = {
+        type: objectState.shapeType,
+        points: [...objectState.points],
+        occluded: objectState.occluded,
+        outside: objectState.outside,
+        zOrder: 0,
+        attributes: Object.keys(objectState.attributes).reduce((accumulator, attrID) => {
+          if (!labelAttributes[attrID].mutable) {
+            accumulator.push({
+              spec_id: +attrID,
+              value: objectState.attributes[attrID]
+            });
+          }
+
+          return accumulator;
+        }, []),
+        frame
+      };
+      const prev = {
+        frame: exported.frame,
+        group: 0,
+        label_id: exported.label_id,
+        attributes: exported.attributes,
+        shapes: []
+      };
+      const next = JSON.parse(JSON.stringify(prev));
+      next.frame = frame;
+      next.shapes.push(JSON.parse(JSON.stringify(position)));
+      exported.shapes.map(shape => {
+        delete shape.id;
+
+        if (shape.frame < frame) {
+          prev.shapes.push(JSON.parse(JSON.stringify(shape)));
+        } else if (shape.frame > frame) {
+          next.shapes.push(JSON.parse(JSON.stringify(shape)));
+        }
+
+        return shape;
+      });
+      prev.shapes.push(position);
+      prev.shapes[prev.shapes.length - 1].outside = true;
+      let clientID = ++this.count;
+      const prevTrack = trackFactory(prev, clientID, this.injection);
+      this.tracks.push(prevTrack);
+      this.objects[clientID] = prevTrack;
+      clientID = ++this.count;
+      const nextTrack = trackFactory(next, clientID, this.injection);
+      this.tracks.push(nextTrack);
+      this.objects[clientID] = nextTrack; // Remove source object
+
+      object.removed = true;
+      object.resetCache();
+    }
+
+    group(objectStates, reset) {
+      checkObjectType('shapes for group', objectStates, null, Array);
+      const objectsForGroup = objectStates.map(state => {
+        checkObjectType('object state', state, null, ObjectState);
+        const object = this.objects[state.clientID];
+
+        if (typeof object === 'undefined') {
+          throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+        }
+
+        return object;
+      });
+      const groupIdx = reset ? 0 : ++this.groups.max;
+
+      for (const object of objectsForGroup) {
+        object.group = groupIdx;
+
+        if (typeof object.resetCache === 'function') {
+          object.resetCache();
+        }
+      }
+
+      return groupIdx;
+    }
+
+    clear() {
+      this.shapes = {};
+      this.tags = {};
+      this.tracks = [];
+      this.objects = {}; // by id
+
+      this.count = 0;
+      this.flush = true;
+    }
+
+    statistics() {
+      const labels = {};
+      const skeleton = {
+        rectangle: {
+          shape: 0,
+          track: 0
+        },
+        polygon: {
+          shape: 0,
+          track: 0
+        },
+        polyline: {
+          shape: 0,
+          track: 0
+        },
+        points: {
+          shape: 0,
+          track: 0
+        },
+        tags: 0,
+        manually: 0,
+        interpolated: 0,
+        total: 0
+      };
+      const total = JSON.parse(JSON.stringify(skeleton));
+
+      for (const label of Object.values(this.labels)) {
+        const {
+          name
+        } = label;
+        labels[name] = JSON.parse(JSON.stringify(skeleton));
+      }
+
+      for (const object of Object.values(this.objects)) {
+        let objectType = null;
+
+        if (object instanceof Shape) {
+          objectType = 'shape';
+        } else if (object instanceof Track) {
+          objectType = 'track';
+        } else if (object instanceof Tag) {
+          objectType = 'tag';
+        } else {
+          throw new ScriptingError(`Unexpected object type: "${objectType}"`);
+        }
+
+        const label = object.label.name;
+
+        if (objectType === 'tag') {
+          labels[label].tags++;
+          labels[label].manually++;
+          labels[label].total++;
+        } else {
+          const {
+            shapeType
+          } = object;
+          labels[label][shapeType][objectType]++;
+
+          if (objectType === 'track') {
+            const keyframes = Object.keys(object.shapes).sort((a, b) => +a - +b).map(el => +el);
+            let prevKeyframe = keyframes[0];
+            let visible = false;
+
+            for (const keyframe of keyframes) {
+              if (visible) {
+                const interpolated = keyframe - prevKeyframe - 1;
+                labels[label].interpolated += interpolated;
+                labels[label].total += interpolated;
+              }
+
+              visible = !object.shapes[keyframe].outside;
+              prevKeyframe = keyframe;
+
+              if (visible) {
+                labels[label].manually++;
+                labels[label].total++;
+              }
+            }
+
+            const lastKey = keyframes[keyframes.length - 1];
+
+            if (lastKey !== this.stopFrame && !object.shapes[lastKey].outside) {
+              const interpolated = this.stopFrame - lastKey;
+              labels[label].interpolated += interpolated;
+              labels[label].total += interpolated;
+            }
+          } else {
+            labels[label].manually++;
+            labels[label].total++;
+          }
+        }
+      }
+
+      for (const label of Object.keys(labels)) {
+        for (const key of Object.keys(labels[label])) {
+          if (typeof labels[label][key] === 'object') {
+            for (const objectType of Object.keys(labels[label][key])) {
+              total[key][objectType] += labels[label][key][objectType];
+            }
+          } else {
+            total[key] += labels[label][key];
+          }
+        }
+      }
+
+      return new Statistics(labels, total);
+    }
+
+    put(objectStates) {
+      checkObjectType('shapes for put', objectStates, null, Array);
+      const constructed = {
+        shapes: [],
+        tracks: [],
+        tags: []
+      };
+
+      function convertAttributes(accumulator, attrID) {
+        const specID = +attrID;
+        const value = this.attributes[attrID];
+        checkObjectType('attribute id', specID, 'integer', null);
+        checkObjectType('attribute value', value, 'string', null);
+        accumulator.push({
+          spec_id: specID,
+          value
+        });
+        return accumulator;
+      }
+
+      for (const state of objectStates) {
+        checkObjectType('object state', state, null, ObjectState);
+        checkObjectType('state client ID', state.clientID, 'undefined', null);
+        checkObjectType('state frame', state.frame, 'integer', null);
+        checkObjectType('state attributes', state.attributes, null, Object);
+        checkObjectType('state label', state.label, null, Label);
+        const attributes = Object.keys(state.attributes).reduce(convertAttributes.bind(state), []);
+        const labelAttributes = state.label.attributes.reduce((accumulator, attribute) => {
+          accumulator[attribute.id] = attribute;
+          return accumulator;
+        }, {}); // Construct whole objects from states
+
+        if (state.objectType === 'tag') {
+          constructed.tags.push({
+            attributes,
+            frame: state.frame,
+            label_id: state.label.id,
+            group: 0
+          });
+        } else {
+          checkObjectType('state occluded', state.occluded, 'boolean', null);
+          checkObjectType('state points', state.points, null, Array);
+
+          for (const coord of state.points) {
+            checkObjectType('point coordinate', coord, 'number', null);
+          }
+
+          if (!Object.values(ObjectShape).includes(state.shapeType)) {
+            throw new ArgumentError('Object shape must be one of: ' + `${JSON.stringify(Object.values(ObjectShape))}`);
+          }
+
+          if (state.objectType === 'shape') {
+            constructed.shapes.push({
+              attributes,
+              frame: state.frame,
+              group: 0,
+              label_id: state.label.id,
+              occluded: state.occluded || false,
+              points: [...state.points],
+              type: state.shapeType,
+              z_order: 0
+            });
+          } else if (state.objectType === 'track') {
+            constructed.tracks.push({
+              attributes: attributes.filter(attr => !labelAttributes[attr.spec_id].mutable),
+              frame: state.frame,
+              group: 0,
+              label_id: state.label.id,
+              shapes: [{
+                attributes: attributes.filter(attr => labelAttributes[attr.spec_id].mutable),
+                frame: state.frame,
+                occluded: state.occluded || false,
+                outside: false,
+                points: [...state.points],
+                type: state.shapeType,
+                z_order: 0
+              }]
+            });
+          } else {
+            throw new ArgumentError('Object type must be one of: ' + `${JSON.stringify(Object.values(ObjectType))}`);
+          }
+        }
+      } // Add constructed objects to a collection
+
+
+      this.import(constructed);
+    }
+
+    select(objectStates, x, y) {
+      checkObjectType('shapes for select', objectStates, null, Array);
+      checkObjectType('x coordinate', x, 'number', null);
+      checkObjectType('y coordinate', y, 'number', null);
+      let minimumDistance = null;
+      let minimumState = null;
+
+      for (const state of objectStates) {
+        checkObjectType('object state', state, null, ObjectState);
+        if (state.outside) continue;
+        const object = this.objects[state.clientID];
+
+        if (typeof object === 'undefined') {
+          throw new ArgumentError('The object has not been saved yet. Call annotations.put([state]) before');
+        }
+
+        const distance = object.constructor.distance(state.points, x, y);
+
+        if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
+          minimumDistance = distance;
+          minimumState = state;
+        }
+      }
+
+      return {
+        state: minimumState,
+        distance: minimumDistance
+      };
+    }
+
+  }
+
+  module.exports = Collection;
+})();
+
+/***/ }),
+
+/***/ "./src/annotations-objects.js":
+/*!************************************!*\
+  !*** ./src/annotations-objects.js ***!
+  \************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+
+__webpack_require__(/*! core-js/modules/es.array.sort */ "./node_modules/core-js/modules/es.array.sort.js");
+
+__webpack_require__(/*! core-js/modules/web.dom-collections.iterator */ "./node_modules/core-js/modules/web.dom-collections.iterator.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+(() => {
+  const ObjectState = __webpack_require__(/*! ./object-state */ "./src/object-state.js");
+
+  const {
+    checkObjectType
+  } = __webpack_require__(/*! ./common */ "./src/common.js");
+
+  const {
+    ObjectShape,
+    ObjectType,
+    AttributeType
+  } = __webpack_require__(/*! ./enums */ "./src/enums.js");
+
+  const {
+    DataError,
+    ArgumentError,
+    ScriptingError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js");
+
+  const {
+    Label
+  } = __webpack_require__(/*! ./labels */ "./src/labels.js"); // Called with the Annotation context
+
+
+  function objectStateFactory(frame, data) {
+    const objectState = new ObjectState(data);
+    objectState.hidden = {
+      save: this.save.bind(this, frame, objectState),
+      delete: this.delete.bind(this),
+      up: this.up.bind(this, frame, objectState),
+      down: this.down.bind(this, frame, objectState)
+    };
+    return objectState;
+  }
+
+  function checkNumberOfPoints(shapeType, points) {
+    if (shapeType === ObjectShape.RECTANGLE) {
+      if (points.length / 2 !== 2) {
+        throw new DataError(`Rectangle must have 2 points, but got ${points.length / 2}`);
+      }
+    } else if (shapeType === ObjectShape.POLYGON) {
+      if (points.length / 2 < 3) {
+        throw new DataError(`Polygon must have at least 3 points, but got ${points.length / 2}`);
+      }
+    } else if (shapeType === ObjectShape.POLYLINE) {
+      if (points.length / 2 < 2) {
+        throw new DataError(`Polyline must have at least 2 points, but got ${points.length / 2}`);
+      }
+    } else if (shapeType === ObjectShape.POINTS) {
+      if (points.length / 2 < 1) {
+        throw new DataError(`Points must have at least 1 points, but got ${points.length / 2}`);
+      }
+    } else {
+      throw new ArgumentError(`Unknown value of shapeType has been recieved ${shapeType}`);
+    }
+  }
+
+  function checkShapeArea(shapeType, points) {
+    const MIN_SHAPE_LENGTH = 3;
+    const MIN_SHAPE_AREA = 9;
+
+    if (shapeType === ObjectShape.POINTS) {
+      return true;
+    }
+
+    let xmin = Number.MAX_SAFE_INTEGER;
+    let xmax = Number.MIN_SAFE_INTEGER;
+    let ymin = Number.MAX_SAFE_INTEGER;
+    let ymax = Number.MIN_SAFE_INTEGER;
+
+    for (let i = 0; i < points.length - 1; i += 2) {
+      xmin = Math.min(xmin, points[i]);
+      xmax = Math.max(xmax, points[i]);
+      ymin = Math.min(ymin, points[i + 1]);
+      ymax = Math.max(ymax, points[i + 1]);
+    }
+
+    if (shapeType === ObjectShape.POLYLINE) {
+      const length = Math.max(xmax - xmin, ymax - ymin);
+      return length >= MIN_SHAPE_LENGTH;
+    }
+
+    const area = (xmax - xmin) * (ymax - ymin);
+    return area >= MIN_SHAPE_AREA;
+  }
+
+  function validateAttributeValue(value, attr) {
+    const {
+      values
+    } = attr;
+    const type = attr.inputType;
+
+    if (typeof value !== 'string') {
+      throw new ArgumentError(`Attribute value is expected to be string, but got ${typeof value}`);
+    }
+
+    if (type === AttributeType.NUMBER) {
+      return +value >= +values[0] && +value <= +values[1] && !((+value - +values[0]) % +values[2]);
+    }
+
+    if (type === AttributeType.CHECKBOX) {
+      return ['true', 'false'].includes(value.toLowerCase());
+    }
+
+    return values.includes(value);
+  }
+
+  class Annotation {
+    constructor(data, clientID, injection) {
+      this.taskLabels = injection.labels;
+      this.clientID = clientID;
+      this.serverID = data.id;
+      this.group = data.group;
+      this.label = this.taskLabels[data.label_id];
+      this.frame = data.frame;
+      this.removed = false;
+      this.lock = false;
+      this.attributes = data.attributes.reduce((attributeAccumulator, attr) => {
+        attributeAccumulator[attr.spec_id] = attr.value;
+        return attributeAccumulator;
+      }, {});
+      this.appendDefaultAttributes(this.label);
+      injection.groups.max = Math.max(injection.groups.max, this.group);
+    }
+
+    appendDefaultAttributes(label) {
+      const labelAttributes = label.attributes;
+
+      for (const attribute of labelAttributes) {
+        if (!(attribute.id in this.attributes)) {
+          this.attributes[attribute.id] = attribute.defaultValue;
+        }
+      }
+    }
+
+    delete(force) {
+      if (!this.lock || force) {
+        this.removed = true;
+      }
+
+      return true;
+    }
+
+  }
+
+  class Drawn extends Annotation {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, injection);
+      this.frameMeta = injection.frameMeta;
+      this.collectionZ = injection.collectionZ;
+      this.color = color;
+      this.shapeType = null;
+    }
+
+    _getZ(frame) {
+      this.collectionZ[frame] = this.collectionZ[frame] || {
+        max: 0,
+        min: 0
+      };
+      return this.collectionZ[frame];
+    }
+
+    save() {
+      throw new ScriptingError('Is not implemented');
+    }
+
+    get() {
+      throw new ScriptingError('Is not implemented');
+    }
+
+    toJSON() {
+      throw new ScriptingError('Is not implemented');
+    } // Increase ZOrder within frame
+
+
+    up(frame, objectState) {
+      const z = this._getZ(frame);
+
+      z.max++;
+      objectState.zOrder = z.max;
+    } // Decrease ZOrder within frame
+
+
+    down(frame, objectState) {
+      const z = this._getZ(frame);
+
+      z.min--;
+      objectState.zOrder = z.min;
+    }
+
+  }
+
+  class Shape extends Drawn {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+      this.points = data.points;
+      this.occluded = data.occluded;
+      this.zOrder = data.z_order;
+
+      const z = this._getZ(this.frame);
+
+      z.max = Math.max(z.max, this.zOrder || 0);
+      z.min = Math.min(z.min, this.zOrder || 0);
+    } // Method is used to export data to the server
+
+
+    toJSON() {
+      return {
+        type: this.shapeType,
+        clientID: this.clientID,
+        occluded: this.occluded,
+        z_order: this.zOrder,
+        points: [...this.points],
+        attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
+          attributeAccumulator.push({
+            spec_id: attrId,
+            value: this.attributes[attrId]
+          });
+          return attributeAccumulator;
+        }, []),
+        id: this.serverID,
+        frame: this.frame,
+        label_id: this.label.id,
+        group: this.group
+      };
+    } // Method is used to construct ObjectState objects
+
+
+    get(frame) {
+      if (frame !== this.frame) {
+        throw new ScriptingError('Got frame is not equal to the frame of the shape');
+      }
+
+      return {
+        objectType: ObjectType.SHAPE,
+        shapeType: this.shapeType,
+        clientID: this.clientID,
+        serverID: this.serverID,
+        occluded: this.occluded,
+        lock: this.lock,
+        zOrder: this.zOrder,
+        points: [...this.points],
+        attributes: Object.assign({}, this.attributes),
+        label: this.label,
+        group: this.group,
+        color: this.color
+      };
+    }
+
+    save(frame, data) {
+      if (frame !== this.frame) {
+        throw new ScriptingError('Got frame is not equal to the frame of the shape');
+      }
+
+      if (this.lock && data.lock) {
+        return objectStateFactory.call(this, frame, this.get(frame));
+      } // All changes are done in this temporary object
+
+
+      const copy = this.get(frame);
+      const updated = data.updateFlags;
+
+      if (updated.label) {
+        checkObjectType('label', data.label, null, Label);
+        copy.label = data.label;
+        copy.attributes = {};
+        this.appendDefaultAttributes.call(copy, copy.label);
+      }
+
+      if (updated.attributes) {
+        const labelAttributes = copy.label.attributes.reduce((accumulator, value) => {
+          accumulator[value.id] = value;
+          return accumulator;
+        }, {});
+
+        for (const attrID of Object.keys(data.attributes)) {
+          const value = data.attributes[attrID];
+
+          if (attrID in labelAttributes && validateAttributeValue(value, labelAttributes[attrID])) {
+            copy.attributes[attrID] = value;
+          } else {
+            throw new ArgumentError(`Trying to save unknown attribute with id ${attrID} and value ${value}`);
+          }
+        }
+      }
+
+      if (updated.points) {
+        checkObjectType('points', data.points, null, Array);
+        checkNumberOfPoints(this.shapeType, data.points); // cut points
+
+        const {
+          width,
+          height
+        } = this.frameMeta[frame];
+        const cutPoints = [];
+
+        for (let i = 0; i < data.points.length - 1; i += 2) {
+          const x = data.points[i];
+          const y = data.points[i + 1];
+          checkObjectType('coordinate', x, 'number', null);
+          checkObjectType('coordinate', y, 'number', null);
+          cutPoints.push(Math.clamp(x, 0, width), Math.clamp(y, 0, height));
+        }
+
+        if (checkShapeArea(this.shapeType, cutPoints)) {
+          copy.points = cutPoints;
+        }
+      }
+
+      if (updated.occluded) {
+        checkObjectType('occluded', data.occluded, 'boolean', null);
+        copy.occluded = data.occluded;
+      }
+
+      if (updated.group) {
+        checkObjectType('group', data.group, 'integer', null);
+        copy.group = data.group;
+      }
+
+      if (updated.zOrder) {
+        checkObjectType('zOrder', data.zOrder, 'integer', null);
+        copy.zOrder = data.zOrder;
+      }
+
+      if (updated.lock) {
+        checkObjectType('lock', data.lock, 'boolean', null);
+        copy.lock = data.lock;
+      }
+
+      if (updated.color) {
+        checkObjectType('color', data.color, 'string', null);
+
+        if (/^#[0-9A-F]{6}$/i.test(data.color)) {
+          throw new ArgumentError(`Got invalid color value: "${data.color}"`);
+        }
+
+        copy.color = data.color;
+      } // Reset flags and commit all changes
+
+
+      updated.reset();
+
+      for (const prop of Object.keys(copy)) {
+        if (prop in this) {
+          this[prop] = copy[prop];
+        }
+      }
+
+      return objectStateFactory.call(this, frame, this.get(frame));
+    }
+
+  }
+
+  class Track extends Drawn {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+      this.shapes = data.shapes.reduce((shapeAccumulator, value) => {
+        shapeAccumulator[value.frame] = {
+          serverID: value.id,
+          occluded: value.occluded,
+          zOrder: value.z_order,
+          points: value.points,
+          outside: value.outside,
+          attributes: value.attributes.reduce((attributeAccumulator, attr) => {
+            attributeAccumulator[attr.spec_id] = attr.value;
+            return attributeAccumulator;
+          }, {})
+        };
+
+        const z = this._getZ(value.frame);
+
+        z.max = Math.max(z.max, value.z_order);
+        z.min = Math.min(z.min, value.z_order);
+        return shapeAccumulator;
+      }, {});
+      this.cache = {};
+    } // Method is used to export data to the server
+
+
+    toJSON() {
+      const labelAttributes = this.label.attributes.reduce((accumulator, attribute) => {
+        accumulator[attribute.id] = attribute;
+        return accumulator;
+      }, {});
+      return {
+        clientID: this.clientID,
+        id: this.serverID,
+        frame: this.frame,
+        label_id: this.label.id,
+        group: this.group,
+        attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
+          if (!labelAttributes[attrId].mutable) {
+            attributeAccumulator.push({
+              spec_id: attrId,
+              value: this.attributes[attrId]
+            });
+          }
+
+          return attributeAccumulator;
+        }, []),
+        shapes: Object.keys(this.shapes).reduce((shapesAccumulator, frame) => {
+          shapesAccumulator.push({
+            type: this.shapeType,
+            occluded: this.shapes[frame].occluded,
+            z_order: this.shapes[frame].zOrder,
+            points: [...this.shapes[frame].points],
+            outside: this.shapes[frame].outside,
+            attributes: Object.keys(this.shapes[frame].attributes).reduce((attributeAccumulator, attrId) => {
+              if (labelAttributes[attrId].mutable) {
+                attributeAccumulator.push({
+                  spec_id: attrId,
+                  value: this.shapes[frame].attributes[attrId]
+                });
+              }
+
+              return attributeAccumulator;
+            }, []),
+            id: this.shapes[frame].serverID,
+            frame: +frame
+          });
+          return shapesAccumulator;
+        }, [])
+      };
+    } // Method is used to construct ObjectState objects
+
+
+    get(frame) {
+      if (!(frame in this.cache)) {
+        const interpolation = Object.assign({}, this.getPosition(frame), {
+          attributes: this.getAttributes(frame),
+          group: this.group,
+          objectType: ObjectType.TRACK,
+          shapeType: this.shapeType,
+          clientID: this.clientID,
+          serverID: this.serverID,
+          lock: this.lock,
+          color: this.color
+        });
+        this.cache[frame] = interpolation;
+      }
+
+      const result = JSON.parse(JSON.stringify(this.cache[frame]));
+      result.label = this.label;
+      return result;
+    }
+
+    neighborsFrames(targetFrame) {
+      const frames = Object.keys(this.shapes).map(frame => +frame);
+      let lDiff = Number.MAX_SAFE_INTEGER;
+      let rDiff = Number.MAX_SAFE_INTEGER;
+
+      for (const frame of frames) {
+        const diff = Math.abs(targetFrame - frame);
+
+        if (frame <= targetFrame && diff < lDiff) {
+          lDiff = diff;
+        } else if (diff < rDiff) {
+          rDiff = diff;
+        }
+      }
+
+      const leftFrame = lDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame - lDiff;
+      const rightFrame = rDiff === Number.MAX_SAFE_INTEGER ? null : targetFrame + rDiff;
+      return {
+        leftFrame,
+        rightFrame
+      };
+    }
+
+    getAttributes(targetFrame) {
+      const result = {}; // First of all copy all unmutable attributes
+
+      for (const attrID in this.attributes) {
+        if (Object.prototype.hasOwnProperty.call(this.attributes, attrID)) {
+          result[attrID] = this.attributes[attrID];
+        }
+      } // Secondly get latest mutable attributes up to target frame
+
+
+      const frames = Object.keys(this.shapes).sort((a, b) => +a - +b);
+
+      for (const frame of frames) {
+        if (frame <= targetFrame) {
+          const {
+            attributes
+          } = this.shapes[frame];
+
+          for (const attrID in attributes) {
+            if (Object.prototype.hasOwnProperty.call(attributes, attrID)) {
+              result[attrID] = attributes[attrID];
+            }
+          }
+        }
+      }
+
+      return result;
+    }
+
+    save(frame, data) {
+      if (this.lock && data.lock) {
+        return objectStateFactory.call(this, frame, this.get(frame));
+      } // All changes are done in this temporary object
+
+
+      const copy = Object.assign(this.get(frame));
+      copy.attributes = Object.assign(copy.attributes);
+      copy.points = [...copy.points];
+      const updated = data.updateFlags;
+      let positionUpdated = false;
+
+      if (updated.label) {
+        checkObjectType('label', data.label, null, Label);
+        copy.label = data.label;
+        copy.attributes = {}; // Shape attributes will be removed later after all checks
+
+        this.appendDefaultAttributes.call(copy, copy.label);
+      }
+
+      const labelAttributes = copy.label.attributes.reduce((accumulator, value) => {
+        accumulator[value.id] = value;
+        return accumulator;
+      }, {});
+
+      if (updated.attributes) {
+        for (const attrID of Object.keys(data.attributes)) {
+          const value = data.attributes[attrID];
+
+          if (attrID in labelAttributes && validateAttributeValue(value, labelAttributes[attrID])) {
+            copy.attributes[attrID] = value;
+          } else {
+            throw new ArgumentError(`Trying to save unknown attribute with id ${attrID} and value ${value}`);
+          }
+        }
+      }
+
+      if (updated.points) {
+        checkObjectType('points', data.points, null, Array);
+        checkNumberOfPoints(this.shapeType, data.points); // cut points
+
+        const {
+          width,
+          height
+        } = this.frameMeta[frame];
+        const cutPoints = [];
+
+        for (let i = 0; i < data.points.length - 1; i += 2) {
+          const x = data.points[i];
+          const y = data.points[i + 1];
+          checkObjectType('coordinate', x, 'number', null);
+          checkObjectType('coordinate', y, 'number', null);
+          cutPoints.push(Math.clamp(x, 0, width), Math.clamp(y, 0, height));
+        }
+
+        if (checkShapeArea(this.shapeType, cutPoints)) {
+          copy.points = cutPoints;
+          positionUpdated = true;
+        }
+      }
+
+      if (updated.occluded) {
+        checkObjectType('occluded', data.occluded, 'boolean', null);
+        copy.occluded = data.occluded;
+        positionUpdated = true;
+      }
+
+      if (updated.outside) {
+        checkObjectType('outside', data.outside, 'boolean', null);
+        copy.outside = data.outside;
+        positionUpdated = true;
+      }
+
+      if (updated.group) {
+        checkObjectType('group', data.group, 'integer', null);
+        copy.group = data.group;
+      }
+
+      if (updated.zOrder) {
+        checkObjectType('zOrder', data.zOrder, 'integer', null);
+        copy.zOrder = data.zOrder;
+        positionUpdated = true;
+      }
+
+      if (updated.lock) {
+        checkObjectType('lock', data.lock, 'boolean', null);
+        copy.lock = data.lock;
+      }
+
+      if (updated.color) {
+        checkObjectType('color', data.color, 'string', null);
+
+        if (/^#[0-9A-F]{6}$/i.test(data.color)) {
+          throw new ArgumentError(`Got invalid color value: "${data.color}"`);
+        }
+
+        copy.color = data.color;
+      }
+
+      if (updated.keyframe) {
+        // Just check here
+        checkObjectType('keyframe', data.keyframe, 'boolean', null);
+      } // Commit all changes
+
+
+      for (const prop of Object.keys(copy)) {
+        if (prop in this) {
+          this[prop] = copy[prop];
+        }
+
+        this.cache[frame][prop] = copy[prop];
+      }
+
+      if (updated.attributes) {
+        // Mutable attributes will be updated below
+        for (const attrID of Object.keys(copy.attributes)) {
+          if (!labelAttributes[attrID].mutable) {
+            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+            this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+          }
+        }
+      }
+
+      if (updated.label) {
+        for (const shape of Object.values(this.shapes)) {
+          shape.attributes = {};
+        }
+      } // Remove keyframe
+
+
+      if (updated.keyframe && !data.keyframe) {
+        // Remove all cache after this keyframe because it have just become outdated
+        for (const cacheFrame in this.cache) {
+          if (+cacheFrame > frame) {
+            delete this.cache[cacheFrame];
+          }
+        }
+
+        this.cache[frame].keyframe = false;
+        delete this.shapes[frame];
+        updated.reset();
+        return objectStateFactory.call(this, frame, this.get(frame));
+      } // Add/update keyframe
+
+
+      if (positionUpdated || updated.keyframe && data.keyframe) {
+        // Remove all cache after this keyframe because it have just become outdated
+        for (const cacheFrame in this.cache) {
+          if (+cacheFrame > frame) {
+            delete this.cache[cacheFrame];
+          }
+        }
+
+        this.cache[frame].keyframe = true;
+        data.keyframe = true;
+        this.shapes[frame] = {
+          frame,
+          zOrder: copy.zOrder,
+          points: copy.points,
+          outside: copy.outside,
+          occluded: copy.occluded,
+          attributes: {}
+        };
+
+        if (updated.attributes) {
+          // Unmutable attributes were updated above
+          for (const attrID of Object.keys(copy.attributes)) {
+            if (labelAttributes[attrID].mutable) {
+              this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+              this.shapes[frame].attributes[attrID] = data.attributes[attrID];
+            }
+          }
+        }
+      }
+
+      updated.reset();
+      return objectStateFactory.call(this, frame, this.get(frame));
+    }
+
+    getPosition(targetFrame) {
+      const {
+        leftFrame,
+        rightFrame
+      } = this.neighborsFrames(targetFrame);
+      const rightPosition = Number.isInteger(rightFrame) ? this.shapes[rightFrame] : null;
+      const leftPosition = Number.isInteger(leftFrame) ? this.shapes[leftFrame] : null;
+
+      if (leftPosition && leftFrame === targetFrame) {
+        return {
+          points: [...leftPosition.points],
+          occluded: leftPosition.occluded,
+          outside: leftPosition.outside,
+          zOrder: leftPosition.zOrder,
+          keyframe: true
+        };
+      }
+
+      if (rightPosition && leftPosition) {
+        return Object.assign({}, this.interpolatePosition(leftPosition, rightPosition, targetFrame), {
+          keyframe: false
+        });
+      }
+
+      if (rightPosition) {
+        return {
+          points: [...rightPosition.points],
+          occluded: rightPosition.occluded,
+          outside: true,
+          zOrder: 0,
+          keyframe: false
+        };
+      }
+
+      if (leftPosition) {
+        return {
+          points: [...leftPosition.points],
+          occluded: leftPosition.occluded,
+          outside: leftPosition.outside,
+          zOrder: 0,
+          keyframe: false
+        };
+      }
+
+      throw new ScriptingError(`No one neightbour frame found for the track with client ID: "${this.id}"`);
+    }
+
+    delete(force) {
+      if (!this.lock || force) {
+        this.removed = true;
+        this.resetCache();
+      }
+
+      return true;
+    }
+
+    resetCache() {
+      this.cache = {};
+    }
+
+  }
+
+  class Tag extends Annotation {
+    constructor(data, clientID, injection) {
+      super(data, clientID, injection);
+    } // Method is used to export data to the server
+
+
+    toJSON() {
+      return {
+        clientID: this.clientID,
+        id: this.serverID,
+        frame: this.frame,
+        label_id: this.label.id,
+        group: this.group,
+        attributes: Object.keys(this.attributes).reduce((attributeAccumulator, attrId) => {
+          attributeAccumulator.push({
+            spec_id: attrId,
+            value: this.attributes[attrId]
+          });
+          return attributeAccumulator;
+        }, [])
+      };
+    } // Method is used to construct ObjectState objects
+
+
+    get(frame) {
+      if (frame !== this.frame) {
+        throw new ScriptingError('Got frame is not equal to the frame of the shape');
+      }
+
+      return {
+        objectType: ObjectType.TAG,
+        clientID: this.clientID,
+        serverID: this.serverID,
+        lock: this.lock,
+        attributes: Object.assign({}, this.attributes),
+        label: this.label,
+        group: this.group
+      };
+    }
+
+    save(frame, data) {
+      if (frame !== this.frame) {
+        throw new ScriptingError('Got frame is not equal to the frame of the shape');
+      }
+
+      if (this.lock && data.lock) {
+        return objectStateFactory.call(this, frame, this.get(frame));
+      } // All changes are done in this temporary object
+
+
+      const copy = this.get(frame);
+      const updated = data.updateFlags;
+
+      if (updated.label) {
+        checkObjectType('label', data.label, null, Label);
+        copy.label = data.label;
+        copy.attributes = {};
+        this.appendDefaultAttributes.call(copy, copy.label);
+      }
+
+      if (updated.attributes) {
+        const labelAttributes = copy.label.attributes.map(attr => `${attr.id}`);
+
+        for (const attrID of Object.keys(data.attributes)) {
+          if (labelAttributes.includes(attrID)) {
+            copy.attributes[attrID] = data.attributes[attrID];
+          }
+        }
+      }
+
+      if (updated.group) {
+        checkObjectType('group', data.group, 'integer', null);
+        copy.group = data.group;
+      }
+
+      if (updated.lock) {
+        checkObjectType('lock', data.lock, 'boolean', null);
+        copy.lock = data.lock;
+      } // Reset flags and commit all changes
+
+
+      updated.reset();
+
+      for (const prop of Object.keys(copy)) {
+        if (prop in this) {
+          this[prop] = copy[prop];
+        }
+      }
+
+      return objectStateFactory.call(this, frame, this.get(frame));
+    }
+
+  }
+
+  class RectangleShape extends Shape {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+      this.shapeType = ObjectShape.RECTANGLE;
+      checkNumberOfPoints(this.shapeType, this.points);
+    }
+
+    static distance(points, x, y) {
+      const [xtl, ytl, xbr, ybr] = points;
+
+      if (!(x >= xtl && x <= xbr && y >= ytl && y <= ybr)) {
+        // Cursor is outside of a box
+        return null;
+      } // The shortest distance from point to an edge
+
+
+      return Math.min.apply(null, [x - xtl, y - ytl, xbr - x, ybr - y]);
+    }
+
+  }
+
+  class PolyShape extends Shape {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+    }
+
+  }
+
+  class PolygonShape extends PolyShape {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+      this.shapeType = ObjectShape.POLYGON;
+      checkNumberOfPoints(this.shapeType, this.points);
+    }
+
+    static distance(points, x, y) {
+      function position(x1, y1, x2, y2) {
+        return (x2 - x1) * (y - y1) - (x - x1) * (y2 - y1);
+      }
+
+      let wn = 0;
+      const distances = [];
+
+      for (let i = 0, j = points.length - 2; i < points.length - 1; j = i, i += 2) {
+        // Current point
+        const x1 = points[j];
+        const y1 = points[j + 1]; // Next point
+
+        const x2 = points[i];
+        const y2 = points[i + 1]; // Check if a point is inside a polygon
+        // with a winding numbers algorithm
+        // https://en.wikipedia.org/wiki/Point_in_polygon#Winding_number_algorithm
+
+        if (y1 <= y) {
+          if (y2 > y) {
+            if (position(x1, y1, x2, y2) > 0) {
+              wn++;
+            }
+          }
+        } else if (y2 <= y) {
+          if (position(x1, y1, x2, y2) < 0) {
+            wn--;
+          }
+        } // Find the shortest distance from point to an edge
+        // Get an equation of a line in general
+
+
+        const aCoef = y1 - y2;
+        const bCoef = x2 - x1; // Vector (aCoef, bCoef) is a perpendicular to line
+        // Now find the point where two lines
+        // (edge and its perpendicular through the point (x,y)) are cross
+
+        const xCross = x - aCoef;
+        const yCross = y - bCoef;
+
+        if ((xCross - x1) * (x2 - xCross) >= 0 && (yCross - y1) * (y2 - yCross) >= 0) {
+          // Cross point is on segment between p1(x1,y1) and p2(x2,y2)
+          distances.push(Math.sqrt(Math.pow(x - xCross, 2) + Math.pow(y - yCross, 2)));
+        } else {
+          distances.push(Math.min(Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)), Math.sqrt(Math.pow(x2 - x, 2) + Math.pow(y2 - y, 2))));
+        }
+      }
+
+      if (wn !== 0) {
+        return Math.min.apply(null, distances);
+      }
+
+      return null;
+    }
+
+  }
+
+  class PolylineShape extends PolyShape {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+      this.shapeType = ObjectShape.POLYLINE;
+      checkNumberOfPoints(this.shapeType, this.points);
+    }
+
+    static distance(points, x, y) {
+      const distances = [];
+
+      for (let i = 0; i < points.length - 2; i += 2) {
+        // Current point
+        const x1 = points[i];
+        const y1 = points[i + 1]; // Next point
+
+        const x2 = points[i + 2];
+        const y2 = points[i + 3]; // Find the shortest distance from point to an edge
+
+        if ((x - x1) * (x2 - x) >= 0 && (y - y1) * (y2 - y) >= 0) {
+          // Find the length of a perpendicular
+          // https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+          distances.push(Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / Math.sqrt(Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)));
+        } else {
+          // The link below works for lines (which have infinit length)
+          // There is a case when perpendicular doesn't cross the edge
+          // In this case we don't use the computed distance
+          // Instead we use just distance to the nearest point
+          distances.push(Math.min(Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)), Math.sqrt(Math.pow(x2 - x, 2) + Math.pow(y2 - y, 2))));
+        }
+      }
+
+      return Math.min.apply(null, distances);
+    }
+
+  }
+
+  class PointsShape extends PolyShape {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+      this.shapeType = ObjectShape.POINTS;
+      checkNumberOfPoints(this.shapeType, this.points);
+    }
+
+    static distance(points, x, y) {
+      const distances = [];
+
+      for (let i = 0; i < points.length; i += 2) {
+        const x1 = points[i];
+        const y1 = points[i + 1];
+        distances.push(Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)));
+      }
+
+      return Math.min.apply(null, distances);
+    }
+
+  }
+
+  class RectangleTrack extends Track {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+      this.shapeType = ObjectShape.RECTANGLE;
+
+      for (const shape of Object.values(this.shapes)) {
+        checkNumberOfPoints(this.shapeType, shape.points);
+      }
+    }
+
+    interpolatePosition(leftPosition, rightPosition, targetFrame) {
+      const offset = (targetFrame - leftPosition.frame) / (rightPosition.frame - leftPosition.frame);
+      const positionOffset = [rightPosition.points[0] - leftPosition.points[0], rightPosition.points[1] - leftPosition.points[1], rightPosition.points[2] - leftPosition.points[2], rightPosition.points[3] - leftPosition.points[3]];
+      return {
+        // xtl, ytl, xbr, ybr
+        points: [leftPosition.points[0] + positionOffset[0] * offset, leftPosition.points[1] + positionOffset[1] * offset, leftPosition.points[2] + positionOffset[2] * offset, leftPosition.points[3] + positionOffset[3] * offset],
+        occluded: leftPosition.occluded,
+        outside: leftPosition.outside,
+        zOrder: leftPosition.zOrder
+      };
+    }
+
+  }
+
+  class PolyTrack extends Track {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+    }
+
+    interpolatePosition(leftPosition, rightPosition, targetFrame) {
+      function findBox(points) {
+        let xmin = Number.MAX_SAFE_INTEGER;
+        let ymin = Number.MAX_SAFE_INTEGER;
+        let xmax = Number.MIN_SAFE_INTEGER;
+        let ymax = Number.MIN_SAFE_INTEGER;
+
+        for (let i = 0; i < points.length; i += 2) {
+          if (points[i] < xmin) xmin = points[i];
+          if (points[i + 1] < ymin) ymin = points[i + 1];
+          if (points[i] > xmax) xmax = points[i];
+          if (points[i + 1] > ymax) ymax = points[i + 1];
+        }
+
+        return {
+          xmin,
+          ymin,
+          xmax,
+          ymax
+        };
+      }
+
+      function normalize(points, box) {
+        const normalized = [];
+        const width = box.xmax - box.xmin;
+        const height = box.ymax - box.ymin;
+
+        for (let i = 0; i < points.length; i += 2) {
+          normalized.push((points[i] - box.xmin) / width, (points[i + 1] - box.ymin) / height);
+        }
+
+        return normalized;
+      }
+
+      function denormalize(points, box) {
+        const denormalized = [];
+        const width = box.xmax - box.xmin;
+        const height = box.ymax - box.ymin;
+
+        for (let i = 0; i < points.length; i += 2) {
+          denormalized.push(points[i] * width + box.xmin, points[i + 1] * height + box.ymin);
+        }
+
+        return denormalized;
+      }
+
+      function toPoints(array) {
+        const points = [];
+
+        for (let i = 0; i < array.length; i += 2) {
+          points.push({
+            x: array[i],
+            y: array[i + 1]
+          });
+        }
+
+        return points;
+      }
+
+      function toArray(points) {
+        const array = [];
+
+        for (const point of points) {
+          array.push(point.x, point.y);
+        }
+
+        return array;
+      }
+
+      function computeDistances(source, target) {
+        const distances = {};
+
+        for (let i = 0; i < source.length; i++) {
+          distances[i] = distances[i] || {};
+
+          for (let j = 0; j < target.length; j++) {
+            const dx = source[i].x - target[j].x;
+            const dy = source[i].y - target[j].y;
+            distances[i][j] = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+          }
+        }
+
+        return distances;
+      }
+
+      function truncateByThreshold(mapping, threshold) {
+        for (const key of Object.keys(mapping)) {
+          if (mapping[key].distance > threshold) {
+            delete mapping[key];
+          }
+        }
+      } // https://en.wikipedia.org/wiki/Stable_marriage_problem
+      // TODO: One of important part of the algorithm is to correctly match
+      // "corner" points. Thus it is possible for each of such point calculate
+      // a descriptor (d) and use (x, y, d) to calculate the distance. One more
+      // idea is to be sure that order or matched points is preserved. For example,
+      // if p1 matches q1 and p2 matches q2 and between p1 and p2 we don't have any
+      // points thus we should not have points between q1 and q2 as well.
+
+
+      function stableMarriageProblem(men, women, distances) {
+        const menPreferences = {};
+
+        for (const man of men) {
+          menPreferences[man] = women.concat().sort((w1, w2) => distances[man][w1] - distances[man][w2]);
+        } // Start alghoritm with max N^2 complexity
+
+
+        const womenMaybe = {}; // id woman:id man,distance
+
+        const menBusy = {}; // id man:boolean
+
+        let prefIndex = 0; // While there is at least one free man
+
+        while (Object.values(menBusy).length !== men.length) {
+          // Every man makes offer to the best woman
+          for (const man of men) {
+            // The man have already found a woman
+            if (menBusy[man]) {
+              continue;
+            }
+
+            const woman = menPreferences[man][prefIndex];
+            const distance = distances[man][woman]; // A women chooses the best offer and says "maybe"
+
+            if (woman in womenMaybe && womenMaybe[woman].distance > distance) {
+              // A woman got better offer
+              const prevChoice = womenMaybe[woman].value;
+              delete womenMaybe[woman];
+              delete menBusy[prevChoice];
+            }
+
+            if (!(woman in womenMaybe)) {
+              womenMaybe[woman] = {
+                value: man,
+                distance
+              };
+              menBusy[man] = true;
+            }
+          }
+
+          prefIndex++;
+        }
+
+        const result = {};
+
+        for (const woman of Object.keys(womenMaybe)) {
+          result[womenMaybe[woman].value] = {
+            value: woman,
+            distance: womenMaybe[woman].distance
+          };
+        }
+
+        return result;
+      }
+
+      function getMapping(source, target) {
+        function sumEdges(points) {
+          let result = 0;
+
+          for (let i = 1; i < points.length; i += 2) {
+            const distance = Math.sqrt(Math.pow(points[i].x - points[i - 1].x, 2) + Math.pow(points[i].y - points[i - 1].y, 2));
+            result += distance;
+          } // Corner case when work with one point
+          // Mapping in this case can't be wrong
+
+
+          if (!result) {
+            return Number.MAX_SAFE_INTEGER;
+          }
+
+          return result;
+        }
+
+        function computeDeviation(points, average) {
+          let result = 0;
+
+          for (let i = 1; i < points.length; i += 2) {
+            const distance = Math.sqrt(Math.pow(points[i].x - points[i - 1].x, 2) + Math.pow(points[i].y - points[i - 1].y, 2));
+            result += Math.pow(distance - average, 2);
+          }
+
+          return result;
+        }
+
+        const processedSource = [];
+        const processedTarget = [];
+        const distances = computeDistances(source, target);
+        const mapping = stableMarriageProblem(Array.from(source.keys()), Array.from(target.keys()), distances);
+        const average = (sumEdges(target) + sumEdges(source)) / (target.length + source.length);
+        const meanSquareDeviation = Math.sqrt((computeDeviation(source, average) + computeDeviation(target, average)) / (source.length + target.length));
+        const threshold = average + 3 * meanSquareDeviation; // 3 sigma rule
+
+        truncateByThreshold(mapping, threshold);
+
+        for (const key of Object.keys(mapping)) {
+          mapping[key] = mapping[key].value;
+        } // const receivingOrder = Object.keys(mapping).map(x => +x).sort((a,b) => a - b);
+
+
+        const receivingOrder = this.appendMapping(mapping, source, target);
+
+        for (const pointIdx of receivingOrder) {
+          processedSource.push(source[pointIdx]);
+          processedTarget.push(target[mapping[pointIdx]]);
+        }
+
+        return [processedSource, processedTarget];
+      }
+
+      let leftBox = findBox(leftPosition.points);
+      let rightBox = findBox(rightPosition.points); // Sometimes (if shape has one point or shape is line),
+      // We can get box with zero area
+      // Next computation will be with NaN in this case
+      // We have to prevent it
+
+      const delta = 1;
+
+      if (leftBox.xmax - leftBox.xmin < delta || rightBox.ymax - rightBox.ymin < delta) {
+        leftBox = {
+          xmin: 0,
+          xmax: 1024,
+          // TODO: Get actual image size
+          ymin: 0,
+          ymax: 768
+        };
+        rightBox = leftBox;
+      }
+
+      const leftPoints = toPoints(normalize(leftPosition.points, leftBox));
+      const rightPoints = toPoints(normalize(rightPosition.points, rightBox));
+      let newLeftPoints = [];
+      let newRightPoints = [];
+
+      if (leftPoints.length > rightPoints.length) {
+        const [processedRight, processedLeft] = getMapping.call(this, rightPoints, leftPoints);
+        newLeftPoints = processedLeft;
+        newRightPoints = processedRight;
+      } else {
+        const [processedLeft, processedRight] = getMapping.call(this, leftPoints, rightPoints);
+        newLeftPoints = processedLeft;
+        newRightPoints = processedRight;
+      }
+
+      const absoluteLeftPoints = denormalize(toArray(newLeftPoints), leftBox);
+      const absoluteRightPoints = denormalize(toArray(newRightPoints), rightBox);
+      const offset = (targetFrame - leftPosition.frame) / (rightPosition.frame - leftPosition.frame);
+      const interpolation = [];
+
+      for (let i = 0; i < absoluteLeftPoints.length; i++) {
+        interpolation.push(absoluteLeftPoints[i] + (absoluteRightPoints[i] - absoluteLeftPoints[i]) * offset);
+      }
+
+      return {
+        points: interpolation,
+        occluded: leftPosition.occluded,
+        outside: leftPosition.outside,
+        zOrder: leftPosition.zOrder
+      };
+    } // mapping is predicted order of points sourse_idx:target_idx
+    // some points from source and target can absent in mapping
+    // source, target - arrays of points. Target array size >= sourse array size
+
+
+    appendMapping(mapping, source, target) {
+      const targetMatched = Object.values(mapping).map(x => +x);
+      const sourceMatched = Object.keys(mapping).map(x => +x);
+      const orderForReceive = [];
+
+      function findNeighbors(point) {
+        let prev = point;
+        let next = point;
+
+        if (!targetMatched.length) {
+          // Prevent infinity loop
+          throw new ScriptingError('Interpolation mapping is empty');
+        }
+
+        while (!targetMatched.includes(prev)) {
+          prev--;
+
+          if (prev < 0) {
+            prev = target.length - 1;
+          }
+        }
+
+        while (!targetMatched.includes(next)) {
+          next++;
+
+          if (next >= target.length) {
+            next = 0;
+          }
+        }
+
+        return [prev, next];
+      }
+
+      function computeOffset(point, prev, next) {
+        const pathPoints = [];
+
+        while (prev !== next) {
+          pathPoints.push(target[prev]);
+          prev++;
+
+          if (prev >= target.length) {
+            prev = 0;
+          }
+        }
+
+        pathPoints.push(target[next]);
+        let curveLength = 0;
+        let offset = 0;
+        let iCrossed = false;
+
+        for (let k = 1; k < pathPoints.length; k++) {
+          const p1 = pathPoints[k];
+          const p2 = pathPoints[k - 1];
+          const distance = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+
+          if (!iCrossed) {
+            offset += distance;
+          }
+
+          curveLength += distance;
+
+          if (target[point] === pathPoints[k]) {
+            iCrossed = true;
+          }
+        }
+
+        if (!curveLength) {
+          return 0;
+        }
+
+        return offset / curveLength;
+      }
+
+      for (let i = 0; i < target.length; i++) {
+        const index = targetMatched.indexOf(i);
+
+        if (index === -1) {
+          // We have to find a neighbours which have been mapped
+          const [prev, next] = findNeighbors(i); // Now compute edge offset
+
+          const offset = computeOffset(i, prev, next); // Get point between two neighbors points
+
+          const prevPoint = target[prev];
+          const nextPoint = target[next];
+          const autoPoint = {
+            x: prevPoint.x + (nextPoint.x - prevPoint.x) * offset,
+            y: prevPoint.y + (nextPoint.y - prevPoint.y) * offset
+          }; // Put it into matched
+
+          source.push(autoPoint);
+          mapping[source.length - 1] = i;
+          orderForReceive.push(source.length - 1);
+        } else {
+          orderForReceive.push(sourceMatched[index]);
+        }
+      }
+
+      return orderForReceive;
+    }
+
+  }
+
+  class PolygonTrack extends PolyTrack {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+      this.shapeType = ObjectShape.POLYGON;
+
+      for (const shape of Object.values(this.shapes)) {
+        checkNumberOfPoints(this.shapeType, shape.points);
+      }
+    }
+
+  }
+
+  class PolylineTrack extends PolyTrack {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+      this.shapeType = ObjectShape.POLYLINE;
+
+      for (const shape of Object.values(this.shapes)) {
+        checkNumberOfPoints(this.shapeType, shape.points);
+      }
+    }
+
+  }
+
+  class PointsTrack extends PolyTrack {
+    constructor(data, clientID, color, injection) {
+      super(data, clientID, color, injection);
+      this.shapeType = ObjectShape.POINTS;
+
+      for (const shape of Object.values(this.shapes)) {
+        checkNumberOfPoints(this.shapeType, shape.points);
+      }
+    }
+
+  }
+
+  RectangleTrack.distance = RectangleShape.distance;
+  PolygonTrack.distance = PolygonShape.distance;
+  PolylineTrack.distance = PolylineShape.distance;
+  PointsTrack.distance = PointsShape.distance;
+  module.exports = {
+    RectangleShape,
+    PolygonShape,
+    PolylineShape,
+    PointsShape,
+    RectangleTrack,
+    PolygonTrack,
+    PolylineTrack,
+    PointsTrack,
+    Track,
+    Shape,
+    Tag,
+    objectStateFactory
+  };
+})();
+
+/***/ }),
+
+/***/ "./src/annotations-saver.js":
+/*!**********************************!*\
+  !*** ./src/annotations-saver.js ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+
+__webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+
+__webpack_require__(/*! core-js/modules/web.dom-collections.iterator */ "./node_modules/core-js/modules/web.dom-collections.iterator.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+(() => {
+  const serverProxy = __webpack_require__(/*! ./server-proxy */ "./src/server-proxy.js");
+
+  const {
+    Task
+  } = __webpack_require__(/*! ./session */ "./src/session.js");
+
+  const {
+    ScriptingError
+  } = './exceptions';
+
+  class AnnotationsSaver {
+    constructor(version, collection, session) {
+      this.sessionType = session instanceof Task ? 'task' : 'job';
+      this.id = session.id;
+      this.version = version;
+      this.collection = collection;
+      this.initialObjects = [];
+      this.hash = this._getHash(); // We need use data from export instead of initialData
+      // Otherwise we have differ keys order and JSON comparison code incorrect
+
+      const exported = this.collection.export();
+
+      for (const shape of exported.shapes) {
+        this.initialObjects[shape.id] = shape;
+      }
+
+      for (const track of exported.tracks) {
+        this.initialObjects[track.id] = track;
+      }
+
+      for (const tag of exported.tags) {
+        this.initialObjects[tag.id] = tag;
+      }
+    }
+
+    _getHash() {
+      const exported = this.collection.export();
+      return JSON.stringify(exported);
+    }
+
+    async _request(data, action) {
+      const result = await serverProxy.annotations.updateAnnotations(this.sessionType, this.id, data, action);
+      return result;
+    }
+
+    async _put(data) {
+      const result = await this._request(data, 'put');
+      return result;
+    }
+
+    async _create(created) {
+      const result = await this._request(created, 'create');
+      return result;
+    }
+
+    async _update(updated) {
+      const result = await this._request(updated, 'update');
+      return result;
+    }
+
+    async _delete(deleted) {
+      const result = await this._request(deleted, 'delete');
+      return result;
+    }
+
+    _split(exported) {
+      const splitted = {
+        created: {
+          shapes: [],
+          tracks: [],
+          tags: []
+        },
+        updated: {
+          shapes: [],
+          tracks: [],
+          tags: []
+        },
+        deleted: {
+          shapes: [],
+          tracks: [],
+          tags: []
+        }
+      }; // Find created and updated objects
+
+      for (const type of Object.keys(exported)) {
+        for (const object of exported[type]) {
+          if (object.id in this.initialObjects) {
+            const exportedHash = JSON.stringify(object);
+            const initialHash = JSON.stringify(this.initialObjects[object.id]);
+
+            if (exportedHash !== initialHash) {
+              splitted.updated[type].push(object);
+            }
+          } else if (typeof object.id === 'undefined') {
+            splitted.created[type].push(object);
+          } else {
+            throw new ScriptingError(`Id of object is defined "${object.id}"` + 'but it absents in initial state');
+          }
+        }
+      } // Now find deleted objects
+
+
+      const indexes = exported.tracks.concat(exported.shapes).concat(exported.tags).map(object => object.id);
+
+      for (const id of Object.keys(this.initialObjects)) {
+        if (!indexes.includes(+id)) {
+          const object = this.initialObjects[id];
+          let type = null;
+
+          if ('shapes' in object) {
+            type = 'tracks';
+          } else if ('points' in object) {
+            type = 'shapes';
+          } else {
+            type = 'tags';
+          }
+
+          splitted.deleted[type].push(object);
+        }
+      }
+
+      return splitted;
+    }
+
+    _updateCreatedObjects(saved, indexes) {
+      const savedLength = saved.tracks.length + saved.shapes.length + saved.tags.length;
+      const indexesLength = indexes.tracks.length + indexes.shapes.length + indexes.tags.length;
+
+      if (indexesLength !== savedLength) {
+        throw new ScriptingError('Number of indexes is differed by number of saved objects' + `${indexesLength} vs ${savedLength}`);
+      } // Updated IDs of created objects
+
+
+      for (const type of Object.keys(indexes)) {
+        for (let i = 0; i < indexes[type].length; i++) {
+          const clientID = indexes[type][i];
+          this.collection.objects[clientID].serverID = saved[type][i].id;
+
+          if (type === 'tracks') {
+            // We have to reset cache because of old value of serverID was saved there
+            this.collection.objects[clientID].resetCache();
+          }
+        }
+      }
+    }
+
+    _receiveIndexes(exported) {
+      // Receive client indexes before saving
+      const indexes = {
+        tracks: exported.tracks.map(track => track.clientID),
+        shapes: exported.shapes.map(shape => shape.clientID),
+        tags: exported.tags.map(tag => tag.clientID)
+      }; // Remove them from the request body
+
+      exported.tracks.concat(exported.shapes).concat(exported.tags).map(value => {
+        delete value.clientID;
+        return value;
+      });
+      return indexes;
+    }
+
+    async save(onUpdate) {
+      if (typeof onUpdate !== 'function') {
+        onUpdate = message => {
+          console.log(message);
+        };
+      }
+
+      try {
+        const exported = this.collection.export();
+        const {
+          flush
+        } = this.collection;
+
+        if (flush) {
+          onUpdate('New objects are being saved..');
+
+          const indexes = this._receiveIndexes(exported);
+
+          const savedData = await this._put(Object.assign({}, exported, {
+            version: this.version
+          }));
+          this.version = savedData.version;
+          this.collection.flush = false;
+          onUpdate('Saved objects are being updated in the client');
+
+          this._updateCreatedObjects(savedData, indexes);
+
+          onUpdate('Initial state is being updated');
+
+          for (const object of savedData.shapes.concat(savedData.tracks).concat(savedData.tags)) {
+            this.initialObjects[object.id] = object;
+          }
+        } else {
+          const {
+            created,
+            updated,
+            deleted
+          } = this._split(exported);
+
+          onUpdate('New objects are being saved..');
+
+          const indexes = this._receiveIndexes(created);
+
+          const createdData = await this._create(Object.assign({}, created, {
+            version: this.version
+          }));
+          this.version = createdData.version;
+          onUpdate('Saved objects are being updated in the client');
+
+          this._updateCreatedObjects(createdData, indexes);
+
+          onUpdate('Initial state is being updated');
+
+          for (const object of createdData.shapes.concat(createdData.tracks).concat(createdData.tags)) {
+            this.initialObjects[object.id] = object;
+          }
+
+          onUpdate('Changed objects are being saved..');
+
+          this._receiveIndexes(updated);
+
+          const updatedData = await this._update(Object.assign({}, updated, {
+            version: this.version
+          }));
+          this.version = createdData.version;
+          onUpdate('Initial state is being updated');
+
+          for (const object of updatedData.shapes.concat(updatedData.tracks).concat(updatedData.tags)) {
+            this.initialObjects[object.id] = object;
+          }
+
+          onUpdate('Changed objects are being saved..');
+
+          this._receiveIndexes(deleted);
+
+          const deletedData = await this._delete(Object.assign({}, deleted, {
+            version: this.version
+          }));
+          this._version = deletedData.version;
+          onUpdate('Initial state is being updated');
+
+          for (const object of deletedData.shapes.concat(deletedData.tracks).concat(deletedData.tags)) {
+            delete this.initialObjects[object.id];
+          }
+        }
+
+        this.hash = this._getHash();
+        onUpdate('Saving is done');
+      } catch (error) {
+        onUpdate(`Can not save annotations: ${error.message}`);
+        throw error;
+      }
+    }
+
+    hasUnsavedChanges() {
+      return this._getHash() !== this.hash;
+    }
+
+  }
+
+  module.exports = AnnotationsSaver;
+})();
+
+/***/ }),
+
+/***/ "./src/annotations.js":
+/*!****************************!*\
+  !*** ./src/annotations.js ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+
+__webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+
+__webpack_require__(/*! core-js/modules/web.dom-collections.iterator */ "./node_modules/core-js/modules/web.dom-collections.iterator.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+(() => {
+  const serverProxy = __webpack_require__(/*! ./server-proxy */ "./src/server-proxy.js");
+
+  const Collection = __webpack_require__(/*! ./annotations-collection */ "./src/annotations-collection.js");
+
+  const AnnotationsSaver = __webpack_require__(/*! ./annotations-saver */ "./src/annotations-saver.js");
+
+  const {
+    checkObjectType
+  } = __webpack_require__(/*! ./common */ "./src/common.js");
+
+  const {
+    Task
+  } = __webpack_require__(/*! ./session */ "./src/session.js");
+
+  const {
+    ScriptingError,
+    DataError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js");
+
+  const jobCache = new WeakMap();
+  const taskCache = new WeakMap();
+
+  function getCache(sessionType) {
+    if (sessionType === 'task') {
+      return taskCache;
+    }
+
+    if (sessionType === 'job') {
+      return jobCache;
+    }
+
+    throw new ScriptingError(`Unknown session type was received ${sessionType}`);
+  }
+
+  async function getAnnotationsFromServer(session) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+
+    if (!cache.has(session)) {
+      const rawAnnotations = await serverProxy.annotations.getAnnotations(sessionType, session.id); // Get meta information about frames
+
+      const startFrame = sessionType === 'job' ? session.startFrame : 0;
+      const stopFrame = sessionType === 'job' ? session.stopFrame : session.size - 1;
+      const frameMeta = {};
+
+      for (let i = startFrame; i <= stopFrame; i++) {
+        frameMeta[i] = await session.frames.get(i);
+      }
+
+      const collection = new Collection({
+        labels: session.labels || session.task.labels,
+        startFrame,
+        stopFrame,
+        frameMeta
+      }).import(rawAnnotations);
+      const saver = new AnnotationsSaver(rawAnnotations.version, collection, session);
+      cache.set(session, {
+        collection,
+        saver
+      });
+    }
+  }
+
+  async function getAnnotations(session, frame, filter) {
+    await getAnnotationsFromServer(session);
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+    return cache.get(session).collection.get(frame, filter);
+  }
+
+  async function saveAnnotations(session, onUpdate) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+
+    if (cache.has(session)) {
+      await cache.get(session).saver.save(onUpdate);
+    } // If a collection wasn't uploaded, than it wasn't changed, finally we shouldn't save it
+
+  }
+
+  function mergeAnnotations(session, objectStates) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+
+    if (cache.has(session)) {
+      return cache.get(session).collection.merge(objectStates);
+    }
+
+    throw new DataError('Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before');
+  }
+
+  function splitAnnotations(session, objectState, frame) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+
+    if (cache.has(session)) {
+      return cache.get(session).collection.split(objectState, frame);
+    }
+
+    throw new DataError('Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before');
+  }
+
+  function groupAnnotations(session, objectStates, reset) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+
+    if (cache.has(session)) {
+      return cache.get(session).collection.group(objectStates, reset);
+    }
+
+    throw new DataError('Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before');
+  }
+
+  function hasUnsavedChanges(session) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+
+    if (cache.has(session)) {
+      return cache.get(session).saver.hasUnsavedChanges();
+    }
+
+    return false;
+  }
+
+  async function clearAnnotations(session, reload) {
+    checkObjectType('reload', reload, 'boolean', null);
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+
+    if (cache.has(session)) {
+      cache.get(session).collection.clear();
+    }
+
+    if (reload) {
+      cache.delete(session);
+      await getAnnotationsFromServer(session);
+    }
+  }
+
+  function annotationsStatistics(session) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+
+    if (cache.has(session)) {
+      return cache.get(session).collection.statistics();
+    }
+
+    throw new DataError('Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before');
+  }
+
+  function putAnnotations(session, objectStates) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+
+    if (cache.has(session)) {
+      return cache.get(session).collection.put(objectStates);
+    }
+
+    throw new DataError('Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before');
+  }
+
+  function selectObject(session, objectStates, x, y) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const cache = getCache(sessionType);
+
+    if (cache.has(session)) {
+      return cache.get(session).collection.select(objectStates, x, y);
+    }
+
+    throw new DataError('Collection has not been initialized yet. Call annotations.get() or annotations.clear(true) before');
+  }
+
+  async function uploadAnnotations(session, file, format) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    await serverProxy.annotations.uploadAnnotations(sessionType, session.id, file, format);
+  }
+
+  async function dumpAnnotations(session, name, format) {
+    const sessionType = session instanceof Task ? 'task' : 'job';
+    const result = await serverProxy.annotations.dumpAnnotations(sessionType, session.id, name, format);
+    return result;
+  }
+
+  module.exports = {
+    getAnnotations,
+    putAnnotations,
+    saveAnnotations,
+    hasUnsavedChanges,
+    mergeAnnotations,
+    splitAnnotations,
+    groupAnnotations,
+    clearAnnotations,
+    annotationsStatistics,
+    selectObject,
+    uploadAnnotations,
+    dumpAnnotations
+  };
+})();
+
+/***/ }),
+
+/***/ "./src/api-implementation.js":
+/*!***********************************!*\
+  !*** ./src/api-implementation.js ***!
+  \***********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+
+__webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+
+__webpack_require__(/*! core-js/modules/web.dom-collections.iterator */ "./node_modules/core-js/modules/web.dom-collections.iterator.js");
+
+__webpack_require__(/*! core-js/modules/web.url */ "./node_modules/core-js/modules/web.url.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* eslint prefer-arrow-callback: [ "error", { "allowNamedFunctions": true } ] */
+
+/* global
+    require:false
+*/
+(() => {
+  const PluginRegistry = __webpack_require__(/*! ./plugins */ "./src/plugins.js");
+
+  const serverProxy = __webpack_require__(/*! ./server-proxy */ "./src/server-proxy.js");
+
+  const {
+    isBoolean,
+    isInteger,
+    isEnum,
+    isString,
+    checkFilter
+  } = __webpack_require__(/*! ./common */ "./src/common.js");
+
+  const {
+    TaskStatus,
+    TaskMode
+  } = __webpack_require__(/*! ./enums */ "./src/enums.js");
+
+  const User = __webpack_require__(/*! ./user */ "./src/user.js");
+
+  const {
+    ArgumentError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js");
+
+  const {
+    Task
+  } = __webpack_require__(/*! ./session */ "./src/session.js");
+
+  function implementAPI(cvat) {
+    cvat.plugins.list.implementation = PluginRegistry.list;
+    cvat.plugins.register.implementation = PluginRegistry.register.bind(cvat);
+
+    cvat.server.about.implementation = async () => {
+      const result = await serverProxy.server.about();
+      return result;
+    };
+
+    cvat.server.share.implementation = async directory => {
+      const result = await serverProxy.server.share(directory);
+      return result;
+    };
+
+    cvat.server.login.implementation = async (username, password) => {
+      await serverProxy.server.login(username, password);
+    };
+
+    cvat.server.logout.implementation = async () => {
+      await serverProxy.server.logout();
+    };
+
+    cvat.users.get.implementation = async filter => {
+      checkFilter(filter, {
+        self: isBoolean
+      });
+      let users = null;
+
+      if ('self' in filter && filter.self) {
+        users = await serverProxy.users.getSelf();
+        users = [users];
+      } else {
+        users = await serverProxy.users.getUsers();
+      }
+
+      users = users.map(user => new User(user));
+      return users;
+    };
+
+    cvat.jobs.get.implementation = async filter => {
+      checkFilter(filter, {
+        taskID: isInteger,
+        jobID: isInteger
+      });
+
+      if ('taskID' in filter && 'jobID' in filter) {
+        throw new ArgumentError('Only one of fields "taskID" and "jobID" allowed simultaneously');
+      }
+
+      if (!Object.keys(filter).length) {
+        throw new ArgumentError('Job filter must not be empty');
+      }
+
+      let tasks = null;
+
+      if ('taskID' in filter) {
+        tasks = await serverProxy.tasks.getTasks(`id=${filter.taskID}`);
+      } else {
+        const job = await serverProxy.jobs.getJob(filter.jobID);
+
+        if (typeof job.task_id !== 'undefined') {
+          tasks = await serverProxy.tasks.getTasks(`id=${job.task_id}`);
+        }
+      } // If task was found by its id, then create task instance and get Job instance from it
+
+
+      if (tasks !== null && tasks.length) {
+        const task = new Task(tasks[0]);
+        return filter.jobID ? task.jobs.filter(job => job.id === filter.jobID) : task.jobs;
+      }
+
+      return [];
+    };
+
+    cvat.tasks.get.implementation = async filter => {
+      checkFilter(filter, {
+        page: isInteger,
+        name: isString,
+        id: isInteger,
+        owner: isString,
+        assignee: isString,
+        search: isString,
+        status: isEnum.bind(TaskStatus),
+        mode: isEnum.bind(TaskMode)
+      });
+
+      if ('search' in filter && Object.keys(filter).length > 1) {
+        if (!('page' in filter && Object.keys(filter).length === 2)) {
+          throw new ArgumentError('Do not use the filter field "search" with others');
+        }
+      }
+
+      if ('id' in filter && Object.keys(filter).length > 1) {
+        if (!('page' in filter && Object.keys(filter).length === 2)) {
+          throw new ArgumentError('Do not use the filter field "id" with others');
+        }
+      }
+
+      const searchParams = new URLSearchParams();
+
+      for (const field of ['name', 'owner', 'assignee', 'search', 'status', 'mode', 'id', 'page']) {
+        if (Object.prototype.hasOwnProperty.call(filter, field)) {
+          searchParams.set(field, filter[field]);
+        }
+      }
+
+      const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
+      const tasks = tasksData.map(task => new Task(task));
+      tasks.count = tasksData.count;
+      return tasks;
+    };
+
+    return cvat;
+  }
+
+  module.exports = implementAPI;
+})();
+
+/***/ }),
+
+/***/ "./src/api.js":
+/*!********************!*\
+  !*** ./src/api.js ***!
+  \********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+
+/**
+    * External API which should be used by for development
+    * @module API
+*/
+function build() {
+  const PluginRegistry = __webpack_require__(/*! ./plugins */ "./src/plugins.js");
+
+  const User = __webpack_require__(/*! ./user */ "./src/user.js");
+
+  const ObjectState = __webpack_require__(/*! ./object-state */ "./src/object-state.js");
+
+  const Statistics = __webpack_require__(/*! ./statistics */ "./src/statistics.js");
+
+  const {
+    Job,
+    Task
+  } = __webpack_require__(/*! ./session */ "./src/session.js");
+
+  const {
+    Attribute,
+    Label
+  } = __webpack_require__(/*! ./labels */ "./src/labels.js");
+
+  const {
+    ShareFileType,
+    TaskStatus,
+    TaskMode,
+    AttributeType,
+    ObjectType,
+    ObjectShape,
+    LogType,
+    EventType
+  } = __webpack_require__(/*! ./enums */ "./src/enums.js");
+
+  const {
+    Exception,
+    ArgumentError,
+    DataError,
+    ScriptingError,
+    PluginError,
+    ServerError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js");
+
+  const pjson = __webpack_require__(/*! ../package.json */ "./package.json");
+
+  const config = __webpack_require__(/*! ./config */ "./src/config.js");
+  /**
+      * API entrypoint
+      * @namespace cvat
+      * @memberof module:API
+  */
+
+
+  const cvat = {
+    /**
+        * Namespace is used for an interaction with a server
+        * @namespace server
+        * @package
+        * @memberof module:API.cvat
+    */
+    server: {
+      /**
+          * @typedef {Object} ServerInfo
+          * @property {string} name A name of the tool
+          * @property {string} description A description of the tool
+          * @property {string} version A version of the tool
+          * @global
+      */
+
+      /**
+          * Method returns some information about the annotation tool
+          * @method about
+          * @async
+          * @memberof module:API.cvat.server
+          * @return {ServerInfo}
+          * @throws {module:API.cvat.exceptions.ServerError}
+          * @throws {module:API.cvat.exceptions.PluginError}
+      */
+      async about() {
+        const result = await PluginRegistry.apiWrapper(cvat.server.about);
+        return result;
+      },
+
+      /**
+          * @typedef {Object} FileInfo
+          * @property {string} name A name of a file
+          * @property {module:API.cvat.enums.ShareFileType} type
+          * A type of a file
+          * @global
+      */
+
+      /**
+          * Method returns a list of files in a specified directory on a share
+          * @method share
+          * @async
+          * @memberof module:API.cvat.server
+          * @param {string} [directory=/] - Share directory path
+          * @returns {FileInfo[]}
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+      */
+      async share(directory = '/') {
+        const result = await PluginRegistry.apiWrapper(cvat.server.share, directory);
+        return result;
+      },
+
+      /**
+          * Method allows to login on a server
+          * @method login
+          * @async
+          * @memberof module:API.cvat.server
+          * @param {string} username An username of an account
+          * @param {string} password A password of an account
+          * @throws {module:API.cvat.exceptions.ScriptingError}
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+      */
+      async login(username, password) {
+        const result = await PluginRegistry.apiWrapper(cvat.server.login, username, password);
+        return result;
+      },
+
+      /**
+          * Method allows to logout from the server
+          * @method logout
+          * @async
+          * @memberof module:API.cvat.server
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+      */
+      async logout() {
+        const result = await PluginRegistry.apiWrapper(cvat.server.logout);
+        return result;
+      }
+
+    },
+
+    /**
+        * Namespace is used for getting tasks
+        * @namespace tasks
+        * @memberof module:API.cvat
+    */
+    tasks: {
+      /**
+          * @typedef {Object} TaskFilter
+          * @property {string} name Check if name contains this value
+          * @property {module:API.cvat.enums.TaskStatus} status
+          * Check if status contains this value
+          * @property {module:API.cvat.enums.TaskMode} mode
+          * Check if mode contains this value
+          * @property {integer} id Check if id equals this value
+          * @property {integer} page Get specific page
+          * (default REST API returns 20 tasks per request.
+          * In order to get more, it is need to specify next page)
+          * @property {string} owner Check if owner user contains this value
+          * @property {string} assignee Check if assigneed contains this value
+          * @property {string} search Combined search of contains among all fields
+          * @global
+      */
+
+      /**
+          * Method returns list of tasks corresponding to a filter
+          * @method get
+          * @async
+          * @memberof module:API.cvat.tasks
+          * @param {TaskFilter} [filter={}] task filter
+          * @returns {module:API.cvat.classes.Task[]}
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+      */
+      async get(filter = {}) {
+        const result = await PluginRegistry.apiWrapper(cvat.tasks.get, filter);
+        return result;
+      }
+
+    },
+
+    /**
+        * Namespace is used for getting jobs
+        * @namespace jobs
+        * @memberof module:API.cvat
+    */
+    jobs: {
+      /**
+          * @typedef {Object} JobFilter
+          * Only one of fields is allowed simultaneously
+          * @property {integer} taskID filter all jobs of specific task
+          * @property {integer} jobID filter job with a specific id
+          * @global
+      */
+
+      /**
+          * Method returns list of jobs corresponding to a filter
+          * @method get
+          * @async
+          * @memberof module:API.cvat.jobs
+          * @param {JobFilter} filter job filter
+          * @returns {module:API.cvat.classes.Job[]}
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+      */
+      async get(filter = {}) {
+        const result = await PluginRegistry.apiWrapper(cvat.jobs.get, filter);
+        return result;
+      }
+
+    },
+
+    /**
+        * Namespace is used for getting users
+        * @namespace users
+        * @memberof module:API.cvat
+    */
+    users: {
+      /**
+          * @typedef {Object} UserFilter
+          * @property {boolean} self get only self
+          * @global
+      */
+
+      /**
+          * Method returns list of users corresponding to a filter
+          * @method get
+          * @async
+          * @memberof module:API.cvat.users
+          * @param {UserFilter} [filter={}] user filter
+          * @returns {User[]}
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+      */
+      async get(filter = {}) {
+        const result = await PluginRegistry.apiWrapper(cvat.users.get, filter);
+        return result;
+      }
+
+    },
+
+    /**
+        * Namespace is used for plugin management
+        * @namespace plugins
+        * @memberof module:API.cvat
+    */
+    plugins: {
+      /**
+          * @typedef {Object} Plugin
+          * A plugin is a Javascript object. It must have properties are listed below. <br>
+          * It also mustn't have property 'functions' which is used internally. <br>
+          * You can expand any API method including class methods. <br>
+          * In order to expand class method just use a class name
+          * in a cvat space (example is listed below).
+          *
+          * @property {string} name A name of a plugin
+          * @property {string} description A description of a plugin
+          * Example plugin implementation listed below:
+          * @example
+          * plugin = {
+          *   name: 'Example Plugin',
+          *   description: 'This example plugin demonstrates how plugin system in CVAT works',
+          *   cvat: {
+          *     server: {
+          *       about: {
+          *         // Plugin adds some actions after executing the cvat.server.about()
+          *         // For example it adds a field with installed plugins to a result
+          *         // An argument "self" is a plugin itself
+          *         // An argument "result" is a return value of cvat.server.about()
+          *         // All next arguments are arguments of a wrapped function
+          *         // (in this case the wrapped function doesn't have any arguments)
+          *         async leave(self, result) {
+          *           result.plugins = await self.internal.getPlugins();
+          *           // Note that a method leave must return "result" (changed or not)
+          *           // Otherwise API won't work as expected
+          *           return result;
+          *         },
+          *       },
+          *     },
+          *     // In this example plugin also wraps a class method
+          *     classes: {
+          *       Job: {
+          *         prototype: {
+          *           annotations: {
+          *             put: {
+          *               // The first argument "self" is a plugin, like in a case above
+          *               // The second argument is an argument of the
+          *               // Job.annotations.put()
+          *               // It contains an array of objects to put
+          *               // In this sample we round objects coordinates and save them
+          *               enter(self, objects) {
+          *                 for (const obj of objects) {
+          *                   if (obj.type != 'tag') {
+          *                     const points = obj.position.map((point) => {
+          *                       const roundPoint = {
+          *                         x: Math.round(point.x),
+          *                         y: Math.round(point.y),
+          *                       };
+          *                       return roundPoint;
+          *                     });
+          *                   }
+          *                 }
+          *               },
+          *             },
+          *           },
+          *         },
+          *       },
+          *     },
+          *   },
+          *   // In general you can add any others members to your plugin
+          *   // Members below are only examples
+          *   internal: {
+          *     async getPlugins() {
+          *       // Collect information about installed plugins
+          *       const plugins = await cvat.plugins.list();
+          *       return plugins.map((el) => {
+          *         return {
+          *           name: el.name,
+          *           description: el.description,
+          *         };
+          *       });
+          *     },
+          *   },
+          * };
+          * @global
+      */
+
+      /**
+          * Method returns list of installed plugins
+          * @method list
+          * @async
+          * @memberof module:API.cvat.plugins
+          * @returns {Plugin[]}
+          * @throws {module:API.cvat.exceptions.PluginError}
+      */
+      async list() {
+        const result = await PluginRegistry.apiWrapper(cvat.plugins.list);
+        return result;
+      },
+
+      /**
+          * Install plugin to CVAT
+          * @method register
+          * @async
+          * @memberof module:API.cvat.plugins
+          * @param {Plugin} [plugin] plugin for registration
+          * @throws {module:API.cvat.exceptions.PluginError}
+      */
+      async register(plugin) {
+        const result = await PluginRegistry.apiWrapper(cvat.plugins.register, plugin);
+        return result;
+      }
+
+    },
+
+    /**
+        * Namespace contains some changeable configurations
+        * @namespace config
+        * @memberof module:API.cvat
+    */
+    config: {
+      /**
+          * @memberof module:API.cvat.config
+          * @property {string} backendAPI host with a backend api
+          * @memberof module:API.cvat.config
+          * @property {string} proxy Axios proxy settings.
+          * For more details please read <a href="https://github.com/axios/axios"> here </a>
+          * @memberof module:API.cvat.config
+          * @property {integer} taskID this value is displayed in a logs if available
+          * @memberof module:API.cvat.config
+          * @property {integer} jobID this value is displayed in a logs if available
+          * @memberof module:API.cvat.config
+          * @property {integer} clientID read only auto-generated
+          * value which is displayed in a logs
+          * @memberof module:API.cvat.config
+      */
+      get backendAPI() {
+        return config.backendAPI;
+      },
+
+      set backendAPI(value) {
+        config.backendAPI = value;
+      },
+
+      get proxy() {
+        return config.proxy;
+      },
+
+      set proxy(value) {
+        config.proxy = value;
+      },
+
+      get taskID() {
+        return config.taskID;
+      },
+
+      set taskID(value) {
+        config.taskID = value;
+      },
+
+      get jobID() {
+        return config.jobID;
+      },
+
+      set jobID(value) {
+        config.jobID = value;
+      },
+
+      get clientID() {
+        return config.clientID;
+      }
+
+    },
+
+    /**
+        * Namespace contains some library information e.g. api version
+        * @namespace client
+        * @memberof module:API.cvat
+    */
+    client: {
+      /**
+          * @property {string} version Client version.
+          * Format: <b>{major}.{minor}.{patch}</b>
+          * <li style="margin-left: 10px;"> A major number is changed after an API becomes
+          * incompatible with a previous version
+          * <li style="margin-left: 10px;"> A minor number is changed after an API expands
+          * <li style="margin-left: 10px;"> A patch number is changed after an each build
+          * @memberof module:API.cvat.client
+          * @readonly
+      */
+      version: `${pjson.version}`
+    },
+
+    /**
+        * Namespace is used for access to enums
+        * @namespace enums
+        * @memberof module:API.cvat
+    */
+    enums: {
+      ShareFileType,
+      TaskStatus,
+      TaskMode,
+      AttributeType,
+      ObjectType,
+      ObjectShape,
+      LogType,
+      EventType
+    },
+
+    /**
+        * Namespace is used for access to exceptions
+        * @namespace exceptions
+        * @memberof module:API.cvat
+    */
+    exceptions: {
+      Exception,
+      ArgumentError,
+      DataError,
+      ScriptingError,
+      PluginError,
+      ServerError
+    },
+
+    /**
+        * Namespace is used for access to classes
+        * @namespace classes
+        * @memberof module:API.cvat
+    */
+    classes: {
+      Task,
+      User,
+      Job,
+      Attribute,
+      Label,
+      Statistics,
+      ObjectState
+    }
+  };
+  cvat.server = Object.freeze(cvat.server);
+  cvat.tasks = Object.freeze(cvat.tasks);
+  cvat.jobs = Object.freeze(cvat.jobs);
+  cvat.users = Object.freeze(cvat.users);
+  cvat.plugins = Object.freeze(cvat.plugins);
+  cvat.client = Object.freeze(cvat.client);
+  cvat.enums = Object.freeze(cvat.enums);
+
+  const implementAPI = __webpack_require__(/*! ./api-implementation */ "./src/api-implementation.js");
+
+  Math.clamp = function (value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  };
+
+  const implemented = Object.freeze(implementAPI(cvat));
+  return implemented;
+}
+
+module.exports = build();
+
+/***/ }),
+
+/***/ "./src/common.js":
+/*!***********************!*\
+  !*** ./src/common.js ***!
+  \***********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+(() => {
+  const {
+    ArgumentError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js");
+
+  function isBoolean(value) {
+    return typeof value === 'boolean';
+  }
+
+  function isInteger(value) {
+    return typeof value === 'number' && Number.isInteger(value);
+  } // Called with specific Enum context
+
+
+  function isEnum(value) {
+    for (const key in this) {
+      if (Object.prototype.hasOwnProperty.call(this, key)) {
+        if (this[key] === value) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  function isString(value) {
+    return typeof value === 'string';
+  }
+
+  function checkFilter(filter, fields) {
+    for (const prop in filter) {
+      if (Object.prototype.hasOwnProperty.call(filter, prop)) {
+        if (!(prop in fields)) {
+          throw new ArgumentError(`Unsupported filter property has been recieved: "${prop}"`);
+        } else if (!fields[prop](filter[prop])) {
+          throw new ArgumentError(`Received filter property "${prop}" is not satisfied for checker`);
+        }
+      }
+    }
+  }
+
+  function checkObjectType(name, value, type, instance) {
+    if (type) {
+      if (typeof value !== type) {
+        // specific case for integers which aren't native type in JS
+        if (type === 'integer' && Number.isInteger(value)) {
+          return;
+        }
+
+        throw new ArgumentError(`"${name}" is expected to be "${type}", but "${typeof value}" has been got.`);
+      }
+    } else if (instance) {
+      if (!(value instanceof instance)) {
+        if (value !== undefined) {
+          throw new ArgumentError(`"${name}" is expected to be ${instance.name}, but ` + `"${value.constructor.name}" has been got`);
+        }
+
+        throw new ArgumentError(`"${name}" is expected to be ${instance.name}, but "undefined" has been got.`);
+      }
+    }
+  }
+
+  module.exports = {
+    isBoolean,
+    isInteger,
+    isEnum,
+    isString,
+    checkFilter,
+    checkObjectType
+  };
+})();
+
+/***/ }),
+
+/***/ "./src/config.js":
+/*!***********************!*\
+  !*** ./src/config.js ***!
+  \***********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+module.exports = {
+  backendAPI: 'http://localhost:7000/api/v1',
+  proxy: false,
+  taskID: undefined,
+  jobID: undefined,
+  clientID: +Date.now().toString().substr(-6)
+};
+
+/***/ }),
+
+/***/ "./src/enums.js":
+/*!**********************!*\
+  !*** ./src/enums.js ***!
+  \**********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+(() => {
+  /**
+      * Enum for type of server files
+      * @enum {string}
+      * @name ShareFileType
+      * @memberof module:API.cvat.enums
+      * @property {string} DIR 'DIR'
+      * @property {string} REG 'REG'
+      * @readonly
+  */
+  const ShareFileType = Object.freeze({
+    DIR: 'DIR',
+    REG: 'REG'
+  });
+  /**
+      * Enum for a status of a task
+      * @enum {string}
+      * @name TaskStatus
+      * @memberof module:API.cvat.enums
+      * @property {string} ANNOTATION 'annotation'
+      * @property {string} VALIDATION 'validation'
+      * @property {string} COMPLETED 'completed'
+      * @readonly
+  */
+
+  const TaskStatus = Object.freeze({
+    ANNOTATION: 'annotation',
+    VALIDATION: 'validation',
+    COMPLETED: 'completed'
+  });
+  /**
+      * Enum for a mode of a task
+      * @enum {string}
+      * @name TaskMode
+      * @memberof module:API.cvat.enums
+      * @property {string} ANNOTATION 'annotation'
+      * @property {string} INTERPOLATION 'interpolation'
+      * @readonly
+  */
+
+  const TaskMode = Object.freeze({
+    ANNOTATION: 'annotation',
+    INTERPOLATION: 'interpolation'
+  });
+  /**
+      * Enum for type of server files
+      * @enum {string}
+      * @name AttributeType
+      * @memberof module:API.cvat.enums
+      * @property {string} CHECKBOX 'checkbox'
+      * @property {string} SELECT 'select'
+      * @property {string} RADIO 'radio'
+      * @property {string} NUMBER 'number'
+      * @property {string} TEXT 'text'
+      * @readonly
+  */
+
+  const AttributeType = Object.freeze({
+    CHECKBOX: 'checkbox',
+    RADIO: 'radio',
+    SELECT: 'select',
+    NUMBER: 'number',
+    TEXT: 'text'
+  });
+  /**
+      * Enum for type of an object
+      * @enum {string}
+      * @name ObjectType
+      * @memberof module:API.cvat.enums
+      * @property {string} TAG 'tag'
+      * @property {string} SHAPE 'shape'
+      * @property {string} TRACK 'track'
+      * @readonly
+  */
+
+  const ObjectType = Object.freeze({
+    TAG: 'tag',
+    SHAPE: 'shape',
+    TRACK: 'track'
+  });
+  /**
+      * Enum for type of server files
+      * @enum {string}
+      * @name ObjectShape
+      * @memberof module:API.cvat.enums
+      * @property {string} RECTANGLE 'rectangle'
+      * @property {string} POLYGON 'polygon'
+      * @property {string} POLYLINE 'polyline'
+      * @property {string} POINTS 'points'
+      * @readonly
+  */
+
+  const ObjectShape = Object.freeze({
+    RECTANGLE: 'rectangle',
+    POLYGON: 'polygon',
+    POLYLINE: 'polyline',
+    POINTS: 'points'
+  });
+  /**
+      * Enum for type of server files
+      * @enum {number}
+      * @name LogType
+      * @memberof module:API.cvat.enums
+      * @property {number} pasteObject 0
+      * @property {number} changeAttribute 1
+      * @property {number} dragObject 2
+      * @property {number} deleteObject 3
+      * @property {number} pressShortcut 4
+      * @property {number} resizeObject 5
+      * @property {number} sendLogs 6
+      * @property {number} saveJob 7
+      * @property {number} jumpFrame 8
+      * @property {number} drawObject 9
+      * @property {number} changeLabel 10
+      * @property {number} sendTaskInfo 11
+      * @property {number} loadJob 12
+      * @property {number} moveImage 13
+      * @property {number} zoomImage 14
+      * @property {number} lockObject 15
+      * @property {number} mergeObjects 16
+      * @property {number} copyObject 17
+      * @property {number} propagateObject 18
+      * @property {number} undoAction 19
+      * @property {number} redoAction 20
+      * @property {number} sendUserActivity 21
+      * @property {number} sendException 22
+      * @property {number} changeFrame 23
+      * @property {number} debugInfo 24
+      * @property {number} fitImage 25
+      * @property {number} rotateImage 26
+      * @readonly
+  */
+
+  const LogType = {
+    pasteObject: 0,
+    changeAttribute: 1,
+    dragObject: 2,
+    deleteObject: 3,
+    pressShortcut: 4,
+    resizeObject: 5,
+    sendLogs: 6,
+    saveJob: 7,
+    jumpFrame: 8,
+    drawObject: 9,
+    changeLabel: 10,
+    sendTaskInfo: 11,
+    loadJob: 12,
+    moveImage: 13,
+    zoomImage: 14,
+    lockObject: 15,
+    mergeObjects: 16,
+    copyObject: 17,
+    propagateObject: 18,
+    undoAction: 19,
+    redoAction: 20,
+    sendUserActivity: 21,
+    sendException: 22,
+    changeFrame: 23,
+    debugInfo: 24,
+    fitImage: 25,
+    rotateImage: 26
+  };
+  /**
+      * Enum for type of server files
+      * @enum {number}
+      * @name EventType
+      * @memberof module:API.cvat.enums
+      * @property {number} frameDownloaded 0
+      * @readonly
+  */
+
+  const EventType = Object.freeze({
+    frameDownloaded: 0
+  });
+  module.exports = {
+    ShareFileType,
+    TaskStatus,
+    TaskMode,
+    AttributeType,
+    ObjectType,
+    ObjectShape,
+    LogType,
+    EventType
+  };
+})();
+
+/***/ }),
+
+/***/ "./src/exceptions.js":
+/*!***************************!*\
+  !*** ./src/exceptions.js ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+(() => {
+  const Platform = __webpack_require__(/*! platform */ "./node_modules/platform/platform.js");
+
+  const ErrorStackParser = __webpack_require__(/*! error-stack-parser */ "./node_modules/error-stack-parser/error-stack-parser.js");
+
+  const config = __webpack_require__(/*! ./config */ "./src/config.js");
+  /**
+      * Base exception class
+      * @memberof module:API.cvat.exceptions
+      * @extends Error
+      * @ignore
+  */
+
+
+  class Exception extends Error {
+    /**
+        * @param {string} message - Exception message
+    */
+    constructor(message) {
+      super(message);
+      const time = new Date().toISOString();
+      const system = Platform.os.toString();
+      const client = `${Platform.name} ${Platform.version}`;
+      const info = ErrorStackParser.parse(this)[0];
+      const filename = `${info.fileName}`;
+      const line = info.lineNumber;
+      const column = info.columnNumber;
+      const {
+        jobID,
+        taskID,
+        clientID
+      } = config;
+      const projID = undefined; // wasn't implemented
+
+      Object.defineProperties(this, Object.freeze({
+        system: {
+          /**
+              * @name system
+              * @type {string}
+              * @memberof module:API.cvat.exceptions.Exception
+              * @readonly
+              * @instance
+          */
+          get: () => system
+        },
+        client: {
+          /**
+              * @name client
+              * @type {string}
+              * @memberof module:API.cvat.exceptions.Exception
+              * @readonly
+              * @instance
+          */
+          get: () => client
+        },
+        time: {
+          /**
+              * @name time
+              * @type {string}
+              * @memberof module:API.cvat.exceptions.Exception
+              * @readonly
+              * @instance
+          */
+          get: () => time
+        },
+        jobID: {
+          /**
+              * @name jobID
+              * @type {integer}
+              * @memberof module:API.cvat.exceptions.Exception
+              * @readonly
+              * @instance
+          */
+          get: () => jobID
+        },
+        taskID: {
+          /**
+              * @name taskID
+              * @type {integer}
+              * @memberof module:API.cvat.exceptions.Exception
+              * @readonly
+              * @instance
+          */
+          get: () => taskID
+        },
+        projID: {
+          /**
+              * @name projID
+              * @type {integer}
+              * @memberof module:API.cvat.exceptions.Exception
+              * @readonly
+              * @instance
+          */
+          get: () => projID
+        },
+        clientID: {
+          /**
+              * @name clientID
+              * @type {integer}
+              * @memberof module:API.cvat.exceptions.Exception
+              * @readonly
+              * @instance
+          */
+          get: () => clientID
+        },
+        filename: {
+          /**
+              * @name filename
+              * @type {string}
+              * @memberof module:API.cvat.exceptions.Exception
+              * @readonly
+              * @instance
+          */
+          get: () => filename
+        },
+        line: {
+          /**
+              * @name line
+              * @type {integer}
+              * @memberof module:API.cvat.exceptions.Exception
+              * @readonly
+              * @instance
+          */
+          get: () => line
+        },
+        column: {
+          /**
+              * @name column
+              * @type {integer}
+              * @memberof module:API.cvat.exceptions.Exception
+              * @readonly
+              * @instance
+          */
+          get: () => column
+        }
+      }));
+    }
+    /**
+        * Save an exception on a server
+        * @name save
+        * @method
+        * @memberof Exception
+        * @instance
+        * @async
+    */
+
+
+    async save() {
+      const exceptionObject = {
+        system: this.system,
+        client: this.client,
+        time: this.time,
+        job_id: this.jobID,
+        task_id: this.taskID,
+        proj_id: this.projID,
+        client_id: this.clientID,
+        message: this.message,
+        filename: this.filename,
+        line: this.line,
+        column: this.column,
+        stack: this.stack
+      };
+
+      try {
+        const serverProxy = __webpack_require__(/*! ./server-proxy */ "./src/server-proxy.js");
+
+        await serverProxy.server.exception(exceptionObject);
+      } catch (exception) {// add event
+      }
+    }
+
+  }
+  /**
+      * Exceptions are referred with arguments data
+      * @memberof module:API.cvat.exceptions
+      * @extends module:API.cvat.exceptions.Exception
+  */
+
+
+  class ArgumentError extends Exception {
+    /**
+        * @param {string} message - Exception message
+    */
+    constructor(message) {
+      super(message);
+    }
+
+  }
+  /**
+      * Unexpected problems with data which are not connected with a user input
+      * @memberof module:API.cvat.exceptions
+      * @extends module:API.cvat.exceptions.Exception
+  */
+
+
+  class DataError extends Exception {
+    /**
+        * @param {string} message - Exception message
+    */
+    constructor(message) {
+      super(message);
+    }
+
+  }
+  /**
+      * Unexpected situations in code
+      * @memberof module:API.cvat.exceptions
+      * @extends module:API.cvat.exceptions.Exception
+      */
+
+
+  class ScriptingError extends Exception {
+    /**
+        * @param {string} message - Exception message
+    */
+    constructor(message) {
+      super(message);
+    }
+
+  }
+  /**
+      * Plugin-referred exceptions
+      * @memberof module:API.cvat.exceptions
+      * @extends module:API.cvat.exceptions.Exception
+  */
+
+
+  class PluginError extends Exception {
+    /**
+        * @param {string} message - Exception message
+    */
+    constructor(message) {
+      super(message);
+    }
+
+  }
+  /**
+      * Exceptions in interaction with a server
+      * @memberof module:API.cvat.exceptions
+      * @extends module:API.cvat.exceptions.Exception
+  */
+
+
+  class ServerError extends Exception {
+    /**
+        * @param {string} message - Exception message
+        * @param {(string|integer)} code - Response code
+    */
+    constructor(message, code) {
+      super(message);
+      Object.defineProperties(this, Object.freeze({
+        /**
+            * @name code
+            * @type {(string|integer)}
+            * @memberof module:API.cvat.exceptions.ServerError
+            * @readonly
+            * @instance
+        */
+        code: {
+          get: () => code
+        }
+      }));
+    }
+
+  }
+
+  module.exports = {
+    Exception,
+    ArgumentError,
+    DataError,
+    ScriptingError,
+    PluginError,
+    ServerError
+  };
+})();
+
+/***/ }),
+
+/***/ "./src/frames.js":
+/*!***********************!*\
+  !*** ./src/frames.js ***!
+  \***********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(global) {__webpack_require__(/*! core-js/modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+
+__webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+
+__webpack_require__(/*! core-js/modules/web.dom-collections.iterator */ "./node_modules/core-js/modules/web.dom-collections.iterator.js");
+
+__webpack_require__(/*! core-js/modules/web.url */ "./node_modules/core-js/modules/web.url.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+    global:false
+*/
+(() => {
+  const PluginRegistry = __webpack_require__(/*! ./plugins */ "./src/plugins.js");
+
+  const serverProxy = __webpack_require__(/*! ./server-proxy */ "./src/server-proxy.js");
+
+  const {
+    ArgumentError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js"); // This is the frames storage
+
+
+  const frameDataCache = {};
+  const frameCache = {};
+  /**
+      * Class provides meta information about specific frame and frame itself
+      * @memberof module:API.cvat.classes
+      * @hideconstructor
+  */
+
+  class FrameData {
+    constructor(width, height, tid, number) {
+      Object.defineProperties(this, Object.freeze({
+        /**
+            * @name width
+            * @type {integer}
+            * @memberof module:API.cvat.classes.FrameData
+            * @readonly
+            * @instance
+        */
+        width: {
+          value: width,
+          writable: false
+        },
+
+        /**
+            * @name height
+            * @type {integer}
+            * @memberof module:API.cvat.classes.FrameData
+            * @readonly
+            * @instance
+        */
+        height: {
+          value: height,
+          writable: false
+        },
+        tid: {
+          value: tid,
+          writable: false
+        },
+        number: {
+          value: number,
+          writable: false
+        }
+      }));
+    }
+    /**
+        * Method returns URL encoded image which can be placed in the img tag
+        * @method data
+        * @returns {string}
+        * @memberof module:API.cvat.classes.FrameData
+        * @instance
+        * @async
+        * @throws {module:API.cvat.exception.ServerError}
+        * @throws {module:API.cvat.exception.PluginError}
+    */
+
+
+    async data() {
+      const result = await PluginRegistry.apiWrapper.call(this, FrameData.prototype.data);
+      return result;
+    }
+
+  }
+
+  FrameData.prototype.data.implementation = async function () {
+    if (!(this.number in frameCache[this.tid])) {
+      const frame = await serverProxy.frames.getData(this.tid, this.number);
+
+      if ( true && module.exports) {
+        frameCache[this.tid][this.number] = global.Buffer.from(frame, 'binary').toString('base64');
+      } else {
+        const url = URL.createObjectURL(new Blob([frame]));
+        frameCache[this.tid][this.number] = url;
+      }
+    }
+
+    return frameCache[this.tid][this.number];
+  };
+
+  async function getFrame(taskID, mode, frame) {
+    if (!(taskID in frameDataCache)) {
+      frameDataCache[taskID] = {};
+      frameDataCache[taskID].meta = await serverProxy.frames.getMeta(taskID);
+      frameCache[taskID] = {};
+    }
+
+    if (!(frame in frameDataCache[taskID])) {
+      let size = null;
+
+      if (mode === 'interpolation') {
+        [size] = frameDataCache[taskID].meta;
+      } else if (mode === 'annotation') {
+        if (frame >= frameDataCache[taskID].meta.length) {
+          throw new ArgumentError(`Meta information about frame ${frame} can't be received from the server`);
+        } else {
+          size = frameDataCache[taskID].meta[frame];
+        }
+      } else {
+        throw new ArgumentError(`Invalid mode is specified ${mode}`);
+      }
+
+      frameDataCache[taskID][frame] = new FrameData(size.width, size.height, taskID, frame);
+    }
+
+    return frameDataCache[taskID][frame];
+  }
+
+  module.exports = {
+    FrameData,
+    getFrame
+  };
+})();
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./../node_modules/webpack/buildin/global.js */ "./node_modules/webpack/buildin/global.js")))
+
+/***/ }),
+
+/***/ "./src/labels.js":
+/*!***********************!*\
+  !*** ./src/labels.js ***!
+  \***********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+
+__webpack_require__(/*! core-js/modules/web.dom-collections.iterator */ "./node_modules/core-js/modules/web.dom-collections.iterator.js");
+
+__webpack_require__(/*! core-js/modules/web.url.to-json */ "./node_modules/core-js/modules/web.url.to-json.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+(() => {
+  const {
+    AttributeType
+  } = __webpack_require__(/*! ./enums */ "./src/enums.js");
+
+  const {
+    ArgumentError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js");
+  /**
+      * Class representing an attribute
+      * @memberof module:API.cvat.classes
+      * @hideconstructor
+  */
+
+
+  class Attribute {
+    constructor(initialData) {
+      const data = {
+        id: undefined,
+        default_value: undefined,
+        input_type: undefined,
+        mutable: undefined,
+        name: undefined,
+        values: undefined
+      };
+
+      for (const key in data) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+          if (Object.prototype.hasOwnProperty.call(initialData, key)) {
+            if (Array.isArray(initialData[key])) {
+              data[key] = [...initialData[key]];
+            } else {
+              data[key] = initialData[key];
+            }
+          }
+        }
+      }
+
+      if (!Object.values(AttributeType).includes(data.input_type)) {
+        throw new ArgumentError(`Got invalid attribute type ${data.input_type}`);
+      }
+
+      Object.defineProperties(this, Object.freeze({
+        /**
+            * @name id
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Attribute
+            * @readonly
+            * @instance
+        */
+        id: {
+          get: () => data.id
+        },
+
+        /**
+            * @name defaultValue
+            * @type {(string|integer|boolean)}
+            * @memberof module:API.cvat.classes.Attribute
+            * @readonly
+            * @instance
+        */
+        defaultValue: {
+          get: () => data.default_value
+        },
+
+        /**
+            * @name inputType
+            * @type {module:API.cvat.enums.AttributeType}
+            * @memberof module:API.cvat.classes.Attribute
+            * @readonly
+            * @instance
+        */
+        inputType: {
+          get: () => data.input_type
+        },
+
+        /**
+            * @name mutable
+            * @type {boolean}
+            * @memberof module:API.cvat.classes.Attribute
+            * @readonly
+            * @instance
+        */
+        mutable: {
+          get: () => data.mutable
+        },
+
+        /**
+            * @name name
+            * @type {string}
+            * @memberof module:API.cvat.classes.Attribute
+            * @readonly
+            * @instance
+        */
+        name: {
+          get: () => data.name
+        },
+
+        /**
+            * @name values
+            * @type {(string[]|integer[]|boolean[])}
+            * @memberof module:API.cvat.classes.Attribute
+            * @readonly
+            * @instance
+        */
+        values: {
+          get: () => [...data.values]
+        }
+      }));
+    }
+
+    toJSON() {
+      const object = {
+        name: this.name,
+        mutable: this.mutable,
+        input_type: this.inputType,
+        default_value: this.defaultValue,
+        values: this.values
+      };
+
+      if (typeof this.id !== 'undefined') {
+        object.id = this.id;
+      }
+
+      return object;
+    }
+
+  }
+  /**
+      * Class representing a label
+      * @memberof module:API.cvat.classes
+      * @hideconstructor
+  */
+
+
+  class Label {
+    constructor(initialData) {
+      const data = {
+        id: undefined,
+        name: undefined
+      };
+
+      for (const key in data) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+          if (Object.prototype.hasOwnProperty.call(initialData, key)) {
+            data[key] = initialData[key];
+          }
+        }
+      }
+
+      data.attributes = [];
+
+      if (Object.prototype.hasOwnProperty.call(initialData, 'attributes') && Array.isArray(initialData.attributes)) {
+        for (const attrData of initialData.attributes) {
+          data.attributes.push(new Attribute(attrData));
+        }
+      }
+
+      Object.defineProperties(this, Object.freeze({
+        /**
+            * @name id
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Label
+            * @readonly
+            * @instance
+        */
+        id: {
+          get: () => data.id
+        },
+
+        /**
+            * @name name
+            * @type {string}
+            * @memberof module:API.cvat.classes.Label
+            * @readonly
+            * @instance
+        */
+        name: {
+          get: () => data.name
+        },
+
+        /**
+            * @name attributes
+            * @type {module:API.cvat.classes.Attribute[]}
+            * @memberof module:API.cvat.classes.Label
+            * @readonly
+            * @instance
+        */
+        attributes: {
+          get: () => [...data.attributes]
+        }
+      }));
+    }
+
+    toJSON() {
+      const object = {
+        name: this.name,
+        attributes: [...this.attributes.map(el => el.toJSON())]
+      };
+
+      if (typeof this.id !== 'undefined') {
+        object.id = this.id;
+      }
+
+      return object;
+    }
+
+  }
+
+  module.exports = {
+    Attribute,
+    Label
+  };
+})();
+
+/***/ }),
+
+/***/ "./src/object-state.js":
+/*!*****************************!*\
+  !*** ./src/object-state.js ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+
+__webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+
+__webpack_require__(/*! core-js/modules/web.dom-collections.iterator */ "./node_modules/core-js/modules/web.dom-collections.iterator.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+(() => {
+  const PluginRegistry = __webpack_require__(/*! ./plugins */ "./src/plugins.js");
+
+  const {
+    ArgumentError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js");
+  /**
+      * Class representing a state of an object on a specific frame
+      * @memberof module:API.cvat.classes
+  */
+
+
+  class ObjectState {
+    /**
+        * @param {Object} serialized - is an dictionary which contains
+        * initial information about an ObjectState;
+        * Necessary fields: objectType, shapeType
+        * Necessary fields for objects which haven't been added to collection yet: frame
+        * Optional fields: points, group, zOrder, outside, occluded,
+        * attributes, lock, label, mode, color, keyframe, clientID, serverID
+        * These fields can be set later via setters
+    */
+    constructor(serialized) {
+      const data = {
+        label: null,
+        attributes: {},
+        points: null,
+        outside: null,
+        occluded: null,
+        keyframe: null,
+        group: null,
+        zOrder: null,
+        lock: null,
+        color: null,
+        clientID: serialized.clientID,
+        serverID: serialized.serverID,
+        frame: serialized.frame,
+        objectType: serialized.objectType,
+        shapeType: serialized.shapeType,
+        updateFlags: {}
+      }; // Shows whether any properties updated since last reset() or interpolation
+
+      Object.defineProperty(data.updateFlags, 'reset', {
+        value: function reset() {
+          this.label = false;
+          this.attributes = false;
+          this.points = false;
+          this.outside = false;
+          this.occluded = false;
+          this.keyframe = false;
+          this.group = false;
+          this.zOrder = false;
+          this.lock = false;
+          this.color = false;
+        },
+        writable: false
+      });
+      Object.defineProperties(this, Object.freeze({
+        // Internal property. We don't need document it.
+        updateFlags: {
+          get: () => data.updateFlags
+        },
+        frame: {
+          /**
+              * @name frame
+              * @type {integer}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @readonly
+              * @instance
+          */
+          get: () => data.frame
+        },
+        objectType: {
+          /**
+              * @name objectType
+              * @type {module:API.cvat.enums.ObjectType}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @readonly
+              * @instance
+          */
+          get: () => data.objectType
+        },
+        shapeType: {
+          /**
+              * @name shapeType
+              * @type {module:API.cvat.enums.ObjectShape}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @readonly
+              * @instance
+          */
+          get: () => data.shapeType
+        },
+        clientID: {
+          /**
+              * @name clientID
+              * @type {integer}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @readonly
+              * @instance
+          */
+          get: () => data.clientID
+        },
+        serverID: {
+          /**
+              * @name serverID
+              * @type {integer}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @readonly
+              * @instance
+          */
+          get: () => data.serverID
+        },
+        label: {
+          /**
+              * @name shape
+              * @type {module:API.cvat.classes.Label}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @instance
+          */
+          get: () => data.label,
+          set: labelInstance => {
+            data.updateFlags.label = true;
+            data.label = labelInstance;
+          }
+        },
+        color: {
+          /**
+              * @name color
+              * @type {string}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @instance
+          */
+          get: () => data.color,
+          set: color => {
+            data.updateFlags.color = true;
+            data.color = color;
+          }
+        },
+        points: {
+          /**
+              * @name points
+              * @type {number[]}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @throws {module:API.cvat.exceptions.ArgumentError}
+              * @instance
+          */
+          get: () => data.points,
+          set: points => {
+            if (Array.isArray(points)) {
+              data.updateFlags.points = true;
+              data.points = [...points];
+            } else {
+              throw new ArgumentError('Points are expected to be an array ' + `but got ${typeof points === 'object' ? points.constructor.name : typeof points}`);
+            }
+          }
+        },
+        group: {
+          /**
+              * @name group
+              * @type {integer}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @instance
+          */
+          get: () => data.group,
+          set: group => {
+            data.updateFlags.group = true;
+            data.group = group;
+          }
+        },
+        zOrder: {
+          /**
+              * @name zOrder
+              * @type {integer}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @instance
+          */
+          get: () => data.zOrder,
+          set: zOrder => {
+            data.updateFlags.zOrder = true;
+            data.zOrder = zOrder;
+          }
+        },
+        outside: {
+          /**
+              * @name outside
+              * @type {boolean}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @instance
+          */
+          get: () => data.outside,
+          set: outside => {
+            data.updateFlags.outside = true;
+            data.outside = outside;
+          }
+        },
+        keyframe: {
+          /**
+              * @name keyframe
+              * @type {boolean}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @instance
+          */
+          get: () => data.keyframe,
+          set: keyframe => {
+            data.updateFlags.keyframe = true;
+            data.keyframe = keyframe;
+          }
+        },
+        occluded: {
+          /**
+              * @name occluded
+              * @type {boolean}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @instance
+          */
+          get: () => data.occluded,
+          set: occluded => {
+            data.updateFlags.occluded = true;
+            data.occluded = occluded;
+          }
+        },
+        lock: {
+          /**
+              * @name lock
+              * @type {boolean}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @instance
+          */
+          get: () => data.lock,
+          set: lock => {
+            data.updateFlags.lock = true;
+            data.lock = lock;
+          }
+        },
+        attributes: {
+          /**
+              * Object is id:value pairs where "id" is an integer
+              * attribute identifier and "value" is an attribute value
+              * @name attributes
+              * @type {Object}
+              * @memberof module:API.cvat.classes.ObjectState
+              * @throws {module:API.cvat.exceptions.ArgumentError}
+              * @instance
+          */
+          get: () => data.attributes,
+          set: attributes => {
+            if (typeof attributes !== 'object') {
+              throw new ArgumentError('Attributes are expected to be an object ' + `but got ${typeof attributes === 'object' ? attributes.constructor.name : typeof attributes}`);
+            }
+
+            for (const attrID of Object.keys(attributes)) {
+              data.updateFlags.attributes = true;
+              data.attributes[attrID] = attributes[attrID];
+            }
+          }
+        }
+      }));
+      this.label = serialized.label;
+      this.group = serialized.group;
+      this.zOrder = serialized.zOrder;
+      this.outside = serialized.outside;
+      this.keyframe = serialized.keyframe;
+      this.occluded = serialized.occluded;
+      this.color = serialized.color;
+      this.lock = serialized.lock; // It can be undefined in a constructor and it can be defined later
+
+      if (typeof serialized.points !== 'undefined') {
+        this.points = serialized.points;
+      }
+
+      if (typeof serialized.attributes !== 'undefined') {
+        this.attributes = serialized.attributes;
+      }
+
+      data.updateFlags.reset();
+    }
+    /**
+        * Method saves/updates an object state in a collection
+        * @method save
+        * @memberof module:API.cvat.classes.ObjectState
+        * @readonly
+        * @instance
+        * @async
+        * @throws {module:API.cvat.exceptions.PluginError}
+        * @throws {module:API.cvat.exceptions.ArgumentError}
+        * @returns {module:API.cvat.classes.ObjectState} updated state of an object
+    */
+
+
+    async save() {
+      const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.save);
+      return result;
+    }
+    /**
+        * Method deletes an object from a collection
+        * @method delete
+        * @memberof module:API.cvat.classes.ObjectState
+        * @readonly
+        * @instance
+        * @param {boolean} [force=false] delete object even if it is locked
+        * @async
+        * @returns {boolean} true if object has been deleted
+        * @throws {module:API.cvat.exceptions.PluginError}
+    */
+
+
+    async delete(force = false) {
+      const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.delete, force);
+      return result;
+    }
+    /**
+        * Set the highest ZOrder within a frame
+        * @method up
+        * @memberof module:API.cvat.classes.ObjectState
+        * @readonly
+        * @instance
+        * @async
+        * @throws {module:API.cvat.exceptions.PluginError}
+    */
+
+
+    async up() {
+      const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.up);
+      return result;
+    }
+    /**
+        * Set the lowest ZOrder within a frame
+        * @method down
+        * @memberof module:API.cvat.classes.ObjectState
+        * @readonly
+        * @instance
+        * @async
+        * @throws {module:API.cvat.exceptions.PluginError}
+    */
+
+
+    async down() {
+      const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.down);
+      return result;
+    }
+
+  } // Default implementation saves element in collection
+
+
+  ObjectState.prototype.save.implementation = async function () {
+    if (this.hidden && this.hidden.save) {
+      return this.hidden.save();
+    }
+
+    return this;
+  }; // Default implementation do nothing
+
+
+  ObjectState.prototype.delete.implementation = async function (force) {
+    if (this.hidden && this.hidden.delete) {
+      return this.hidden.delete(force);
+    }
+
+    return false;
+  };
+
+  ObjectState.prototype.up.implementation = async function () {
+    if (this.hidden && this.hidden.up) {
+      return this.hidden.up();
+    }
+
+    return false;
+  };
+
+  ObjectState.prototype.down.implementation = async function () {
+    if (this.hidden && this.hidden.down) {
+      return this.hidden.down();
+    }
+
+    return false;
+  };
+
+  module.exports = ObjectState;
+})();
+
+/***/ }),
+
+/***/ "./src/plugins.js":
+/*!************************!*\
+  !*** ./src/plugins.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.symbol.description */ "./node_modules/core-js/modules/es.symbol.description.js");
+
+__webpack_require__(/*! core-js/modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+
+__webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+
+__webpack_require__(/*! core-js/modules/web.dom-collections.iterator */ "./node_modules/core-js/modules/web.dom-collections.iterator.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+(() => {
+  const {
+    PluginError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js");
+
+  const plugins = [];
+
+  class PluginRegistry {
+    static async apiWrapper(wrappedFunc, ...args) {
+      // I have to optimize the wrapper
+      const pluginList = await PluginRegistry.list();
+
+      for (const plugin of pluginList) {
+        const pluginDecorators = plugin.functions.filter(obj => obj.callback === wrappedFunc)[0];
+
+        if (pluginDecorators && pluginDecorators.enter) {
+          try {
+            await pluginDecorators.enter.call(this, plugin, ...args);
+          } catch (exception) {
+            if (exception instanceof PluginError) {
+              throw exception;
+            } else {
+              throw new PluginError(`Exception in plugin ${plugin.name}: ${exception.toString()}`);
+            }
+          }
+        }
+      }
+
+      let result = await wrappedFunc.implementation.call(this, ...args);
+
+      for (const plugin of pluginList) {
+        const pluginDecorators = plugin.functions.filter(obj => obj.callback === wrappedFunc)[0];
+
+        if (pluginDecorators && pluginDecorators.leave) {
+          try {
+            result = await pluginDecorators.leave.call(this, plugin, result, ...args);
+          } catch (exception) {
+            if (exception instanceof PluginError) {
+              throw exception;
+            } else {
+              throw new PluginError(`Exception in plugin ${plugin.name}: ${exception.toString()}`);
+            }
+          }
+        }
+      }
+
+      return result;
+    } // Called with cvat context
+
+
+    static async register(plug) {
+      const functions = [];
+
+      if (typeof plug !== 'object') {
+        throw new PluginError(`Plugin should be an object, but got "${typeof plug}"`);
+      }
+
+      if (!('name' in plug) || typeof plug.name !== 'string') {
+        throw new PluginError('Plugin must contain a "name" field and it must be a string');
+      }
+
+      if (!('description' in plug) || typeof plug.description !== 'string') {
+        throw new PluginError('Plugin must contain a "description" field and it must be a string');
+      }
+
+      if ('functions' in plug) {
+        throw new PluginError('Plugin must not contain a "functions" field');
+      }
+
+      (function traverse(plugin, api) {
+        const decorator = {};
+
+        for (const key in plugin) {
+          if (Object.prototype.hasOwnProperty.call(plugin, key)) {
+            if (typeof plugin[key] === 'object') {
+              if (Object.prototype.hasOwnProperty.call(api, key)) {
+                traverse(plugin[key], api[key]);
+              }
+            } else if (['enter', 'leave'].includes(key) && typeof api === 'function' && typeof (plugin[key] === 'function')) {
+              decorator.callback = api;
+              decorator[key] = plugin[key];
+            }
+          }
+        }
+
+        if (Object.keys(decorator).length) {
+          functions.push(decorator);
+        }
+      })(plug, {
+        cvat: this
+      });
+
+      Object.defineProperty(plug, 'functions', {
+        value: functions,
+        writable: false
+      });
+      plugins.push(plug);
+    }
+
+    static async list() {
+      return plugins;
+    }
+
+  }
+
+  module.exports = PluginRegistry;
+})();
+
+/***/ }),
+
+/***/ "./src/server-proxy.js":
+/*!*****************************!*\
+  !*** ./src/server-proxy.js ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+
+__webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+
+__webpack_require__(/*! core-js/modules/es.string.replace */ "./node_modules/core-js/modules/es.string.replace.js");
+
+__webpack_require__(/*! core-js/modules/web.dom-collections.iterator */ "./node_modules/core-js/modules/web.dom-collections.iterator.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+    encodeURIComponent:false
+*/
+(() => {
+  const FormData = __webpack_require__(/*! form-data */ "./node_modules/form-data/lib/browser.js");
+
+  const {
+    ServerError,
+    ScriptingError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js");
+
+  const config = __webpack_require__(/*! ./config */ "./src/config.js");
+
+  class ServerProxy {
+    constructor() {
+      const Cookie = __webpack_require__(/*! js-cookie */ "./node_modules/js-cookie/src/js.cookie.js");
+
+      const Axios = __webpack_require__(/*! axios */ "./node_modules/axios/index.js");
+
+      function setCSRFHeader(header) {
+        Axios.defaults.headers.delete['X-CSRFToken'] = header;
+        Axios.defaults.headers.patch['X-CSRFToken'] = header;
+        Axios.defaults.headers.post['X-CSRFToken'] = header;
+        Axios.defaults.headers.put['X-CSRFToken'] = header; // Allows to move authentification headers to backend
+
+        Axios.defaults.withCredentials = true;
+      }
+
+      async function about() {
+        const {
+          backendAPI
+        } = config;
+        let response = null;
+
+        try {
+          response = await Axios.get(`${backendAPI}/server/about`, {
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not get "about" information from the server', code);
+        }
+
+        return response.data;
+      }
+
+      async function share(directory) {
+        const {
+          backendAPI
+        } = config;
+        directory = encodeURIComponent(directory);
+        let response = null;
+
+        try {
+          response = await Axios.get(`${backendAPI}/server/share?directory=${directory}`, {
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not get "share" information from the server', code);
+        }
+
+        return response.data;
+      }
+
+      async function exception(exceptionObject) {
+        const {
+          backendAPI
+        } = config;
+
+        try {
+          await Axios.post(`${backendAPI}/server/exception`, JSON.stringify(exceptionObject), {
+            proxy: config.proxy,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not send an exception to the server', code);
+        }
+      }
+
+      async function login(username, password) {
+        function setCookie(response) {
+          if (response.headers['set-cookie']) {
+            // Browser itself setup cookie and header is none
+            // In NodeJS we need do it manually
+            let cookies = '';
+
+            for (let cookie of response.headers['set-cookie']) {
+              [cookie] = cookie.split(';'); // truncate extra information
+
+              const name = cookie.split('=')[0];
+              const value = cookie.split('=')[1];
+
+              if (name === 'csrftoken') {
+                setCSRFHeader(value);
+              }
+
+              Cookie.set(name, value);
+              cookies += `${cookie};`;
+            }
+
+            Axios.defaults.headers.common.Cookie = cookies;
+          } else {
+            // Browser code. We need set additinal header for authentification
+            let csrftoken = response.data.csrf;
+
+            if (csrftoken) {
+              setCSRFHeader(csrftoken);
+              Cookie.set('csrftoken', csrftoken);
+            } else {
+              csrftoken = Cookie.get('csrftoken');
+
+              if (csrftoken) {
+                setCSRFHeader(csrftoken);
+              } else {
+                throw new ScriptingError('An environment has been detected as a browser' + ', but CSRF token has not been found in cookies');
+              }
+            }
+          }
+        }
+
+        const host = config.backendAPI.slice(0, -7);
+        let csrf = null;
+
+        try {
+          csrf = await Axios.get(`${host}/auth/csrf`, {
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not get CSRF token from a server', code);
+        }
+
+        setCookie(csrf);
+        const authentificationData = [`${encodeURIComponent('username')}=${encodeURIComponent(username)}`, `${encodeURIComponent('password')}=${encodeURIComponent(password)}`].join('&').replace(/%20/g, '+');
+        let authentificationResponse = null;
+
+        try {
+          authentificationResponse = await Axios.post(`${host}/auth/login`, authentificationData, {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            proxy: config.proxy,
+            // do not redirect to a dashboard,
+            // otherwise we don't get a session id in a response
+            maxRedirects: 0
+          });
+        } catch (errorData) {
+          if (errorData.response.status === 302) {
+            // Redirection code expected
+            authentificationResponse = errorData.response;
+          } else {
+            const code = errorData.response ? errorData.response.status : errorData.code;
+            throw new ServerError('Could not login on a server', code);
+          }
+        } // TODO: Perhaps we should redesign the authorization method on the server.
+
+
+        if (authentificationResponse.data.includes('didn\'t match')) {
+          throw new ServerError('The pair login/password is invalid', 403);
+        }
+
+        setCookie(authentificationResponse);
+      }
+
+      async function logout() {
+        const host = config.backendAPI.slice(0, -7);
+
+        try {
+          await Axios.get(`${host}/auth/logout`, {
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not logout from the server', code);
+        }
+      }
+
+      async function getTasks(filter = '') {
+        const {
+          backendAPI
+        } = config;
+        let response = null;
+
+        try {
+          response = await Axios.get(`${backendAPI}/tasks?${filter}`, {
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not get tasks from a server', code);
+        }
+
+        response.data.results.count = response.data.count;
+        return response.data.results;
+      }
+
+      async function saveTask(id, taskData) {
+        const {
+          backendAPI
+        } = config;
+
+        try {
+          await Axios.patch(`${backendAPI}/tasks/${id}`, JSON.stringify(taskData), {
+            proxy: config.proxy,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not save the task on the server', code);
+        }
+      }
+
+      async function deleteTask(id) {
+        const {
+          backendAPI
+        } = config;
+
+        try {
+          await Axios.delete(`${backendAPI}/tasks/${id}`);
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          const data = (errorData.response || {}).data || errorData.message;
+          throw new ServerError('Could not delete the task from the server' + `${typeof data === 'string' ? data : JSON.stringify(data)}.`, code);
+        }
+      }
+
+      async function createTask(taskData, files, onUpdate) {
+        const {
+          backendAPI
+        } = config;
+
+        async function wait(id) {
+          return new Promise((resolve, reject) => {
+            async function checkStatus() {
+              try {
+                const response = await Axios.get(`${backendAPI}/tasks/${id}/status`);
+
+                if (['Queued', 'Started'].includes(response.data.state)) {
+                  if (response.data.message !== '') {
+                    onUpdate(response.data.message);
+                  }
+
+                  setTimeout(checkStatus, 1000);
+                } else if (response.data.state === 'Finished') {
+                  resolve();
+                } else if (response.data.state === 'Failed') {
+                  // If request has been successful, but task hasn't been created
+                  // Then passed data is wrong and we can pass code 400
+                  reject(new ServerError('Could not create the task on the server. ' + `${response.data.message}.`, 400));
+                } else {
+                  // If server has another status, it is unexpected
+                  // Therefore it is server error and we can pass code 500
+                  reject(new ServerError(`Unknown task state has been recieved: ${response.data.state}` + `${response.data.message}.`, 500));
+                }
+              } catch (errorData) {
+                const code = errorData.response ? errorData.response.status : errorData.code;
+                const data = (errorData.response || {}).data || errorData.message;
+                reject(new ServerError('Data uploading error occured. ' + `${typeof data === 'string' ? data : JSON.stringify(data)}.`, code));
+              }
+            }
+
+            setTimeout(checkStatus, 1000);
+          });
+        }
+
+        const batchOfFiles = new FormData();
+
+        for (const key in files) {
+          if (Object.prototype.hasOwnProperty.call(files, key)) {
+            for (let i = 0; i < files[key].length; i++) {
+              batchOfFiles.append(`${key}[${i}]`, files[key][i]);
+            }
+          }
+        }
+
+        let response = null;
+        onUpdate('The task is being created on the server..');
+
+        try {
+          response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskData), {
+            proxy: config.proxy,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          const data = (errorData.response || {}).data || errorData.message;
+          throw new ServerError('Could not put data to the server. ' + `${typeof data === 'string' ? data : JSON.stringify(data)}.`, code);
+        }
+
+        onUpdate('The data is being uploaded to the server..');
+
+        try {
+          await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, batchOfFiles, {
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          await deleteTask(response.data.id);
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          const data = (errorData.response || {}).data || errorData.message;
+          throw new ServerError('Could not put data to the server. ' + `${typeof data === 'string' ? data : JSON.stringify(data)}.`, code);
+        }
+
+        try {
+          await wait(response.data.id);
+        } catch (createException) {
+          await deleteTask(response.data.id);
+          throw createException;
+        }
+
+        const createdTask = await getTasks(`?id=${response.id}`);
+        return createdTask[0];
+      }
+
+      async function getJob(jobID) {
+        const {
+          backendAPI
+        } = config;
+        let response = null;
+
+        try {
+          response = await Axios.get(`${backendAPI}/jobs/${jobID}`, {
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not get jobs from a server', code);
+        }
+
+        return response.data;
+      }
+
+      async function saveJob(id, jobData) {
+        const {
+          backendAPI
+        } = config;
+
+        try {
+          await Axios.patch(`${backendAPI}/jobs/${id}`, JSON.stringify(jobData), {
+            proxy: config.proxy,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not save the job on the server', code);
+        }
+      }
+
+      async function getUsers() {
+        const {
+          backendAPI
+        } = config;
+        let response = null;
+
+        try {
+          response = await Axios.get(`${backendAPI}/users`, {
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not get users from the server', code);
+        }
+
+        return response.data.results;
+      }
+
+      async function getSelf() {
+        const {
+          backendAPI
+        } = config;
+        let response = null;
+
+        try {
+          response = await Axios.get(`${backendAPI}/users/self`, {
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not get users from the server', code);
+        }
+
+        return response.data;
+      }
+
+      async function register(data) {
+        const host = config.backendAPI.slice(0, -7);
+        const registrationData = [`${encodeURIComponent('username')}=${encodeURIComponent(data.username)}`, `${encodeURIComponent('first_name')}=${encodeURIComponent(data.firstName)}`, `${encodeURIComponent('last_name')}=${encodeURIComponent(data.lastName)}`, `${encodeURIComponent('email')}=${encodeURIComponent(data.email)}`, `${encodeURIComponent('password1')}=${encodeURIComponent(data.password1)}`, `${encodeURIComponent('password2')}=${encodeURIComponent(data.password2)}`].join('&').replace(/%20/g, '+');
+        let response = null;
+
+        try {
+          response = await Axios.post(`${host}/auth/register`, registrationData, {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError('Could not get users from the server', code);
+        }
+
+        return response.data;
+      }
+
+      async function getData(tid, frame) {
+        const {
+          backendAPI
+        } = config;
+        let response = null;
+
+        try {
+          response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/${frame}`, {
+            proxy: config.proxy,
+            responseType: 'blob'
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError(`Could not get frame ${frame} for the task ${tid} from the server`, code);
+        }
+
+        return response.data;
+      }
+
+      async function getMeta(tid) {
+        const {
+          backendAPI
+        } = config;
+        let response = null;
+
+        try {
+          response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/meta`, {
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError(`Could not get frame meta info for the task ${tid} from the server`, code);
+        }
+
+        return response.data;
+      } // Session is 'task' or 'job'
+
+
+      async function getAnnotations(session, id) {
+        const {
+          backendAPI
+        } = config;
+        let response = null;
+
+        try {
+          response = await Axios.get(`${backendAPI}/${session}s/${id}/annotations`, {
+            proxy: config.proxy
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError(`Could not get annotations for the ${session} ${id} from the server`, code);
+        }
+
+        return response.data;
+      } // Session is 'task' or 'job'
+
+
+      async function updateAnnotations(session, id, data, action) {
+        const {
+          backendAPI
+        } = config;
+        let requestFunc = null;
+        let url = null;
+
+        if (action.toUpperCase() === 'PUT') {
+          requestFunc = Axios.put.bind(Axios);
+          url = `${backendAPI}/${session}s/${id}/annotations`;
+        } else {
+          requestFunc = Axios.patch.bind(Axios);
+          url = `${backendAPI}/${session}s/${id}/annotations?action=${action}`;
+        }
+
+        let response = null;
+
+        try {
+          response = await requestFunc(url, JSON.stringify(data), {
+            proxy: config.proxy,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        } catch (errorData) {
+          const code = errorData.response ? errorData.response.status : errorData.code;
+          throw new ServerError(`Could not updated annotations for the ${session} ${id} on the server`, code);
+        }
+
+        return response.data;
+      } // Session is 'task' or 'job'
+
+
+      async function uploadAnnotations(session, id, file, format) {
+        const {
+          backendAPI
+        } = config;
+        let annotationData = new FormData();
+        annotationData.append('annotation_file', file);
+        return new Promise((resolve, reject) => {
+          async function request() {
+            try {
+              const response = await Axios.post(`${backendAPI}/${session}s/${id}/annotations?upload_format=${format}`, annotationData, {
+                proxy: config.proxy
+              });
+
+              if (response.status === 202) {
+                annotationData = new FormData();
+                setTimeout(request, 3000);
+              } else {
+                resolve();
+              }
+            } catch (errorData) {
+              const code = errorData.response ? errorData.response.status : errorData.code;
+              const error = new ServerError(`Could not upload annotations for the ${session} ${id}`, code);
+              reject(error);
+            }
+          }
+
+          setTimeout(request);
+        });
+      } // Session is 'task' or 'job'
+
+
+      async function dumpAnnotations(id, name, format) {
+        const {
+          backendAPI
+        } = config;
+        const filename = name.replace(/\//g, '_');
+        let url = `${backendAPI}/tasks/${id}/annotations/${filename}?dump_format=${format}`;
+        return new Promise((resolve, reject) => {
+          async function request() {
+            try {
+              const response = await Axios.get(`${url}`, {
+                proxy: config.proxy
+              });
+
+              if (response.status === 202) {
+                setTimeout(request, 3000);
+              } else {
+                url = `${url}&action=download`;
+                resolve(url);
+              }
+            } catch (errorData) {
+              const code = errorData.response ? errorData.response.status : errorData.code;
+              const error = new ServerError(`Could not dump annotations for the task ${id} from the server`, code);
+              reject(error);
+            }
+          }
+
+          setTimeout(request);
+        });
+      } // Set csrftoken header from browser cookies if it exists
+      // NodeJS env returns 'undefined'
+      // So in NodeJS we need login after each run
+
+
+      const csrftoken = Cookie.get('csrftoken');
+
+      if (csrftoken) {
+        setCSRFHeader(csrftoken);
+      }
+
+      Object.defineProperties(this, Object.freeze({
+        server: {
+          value: Object.freeze({
+            about,
+            share,
+            exception,
+            login,
+            logout
+          }),
+          writable: false
+        },
+        tasks: {
+          value: Object.freeze({
+            getTasks,
+            saveTask,
+            createTask,
+            deleteTask
+          }),
+          writable: false
+        },
+        jobs: {
+          value: Object.freeze({
+            getJob,
+            saveJob
+          }),
+          writable: false
+        },
+        users: {
+          value: Object.freeze({
+            getUsers,
+            getSelf,
+            register
+          }),
+          writable: false
+        },
+        frames: {
+          value: Object.freeze({
+            getData,
+            getMeta
+          }),
+          writable: false
+        },
+        annotations: {
+          value: Object.freeze({
+            updateAnnotations,
+            getAnnotations,
+            dumpAnnotations,
+            uploadAnnotations
+          }),
+          writable: false
+        }
+      }));
+    }
+
+  }
+
+  const serverProxy = new ServerProxy();
+  module.exports = serverProxy;
+})();
+
+/***/ }),
+
+/***/ "./src/session.js":
+/*!************************!*\
+  !*** ./src/session.js ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.array.iterator */ "./node_modules/core-js/modules/es.array.iterator.js");
+
+__webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+
+__webpack_require__(/*! core-js/modules/es.string.trim */ "./node_modules/core-js/modules/es.string.trim.js");
+
+__webpack_require__(/*! core-js/modules/web.dom-collections.iterator */ "./node_modules/core-js/modules/web.dom-collections.iterator.js");
+
+__webpack_require__(/*! core-js/modules/web.url.to-json */ "./node_modules/core-js/modules/web.url.to-json.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+(() => {
+  const PluginRegistry = __webpack_require__(/*! ./plugins */ "./src/plugins.js");
+
+  const serverProxy = __webpack_require__(/*! ./server-proxy */ "./src/server-proxy.js");
+
+  const {
+    getFrame
+  } = __webpack_require__(/*! ./frames */ "./src/frames.js");
+
+  const {
+    ArgumentError
+  } = __webpack_require__(/*! ./exceptions */ "./src/exceptions.js");
+
+  const {
+    TaskStatus
+  } = __webpack_require__(/*! ./enums */ "./src/enums.js");
+
+  const {
+    Label
+  } = __webpack_require__(/*! ./labels */ "./src/labels.js");
+
+  function buildDublicatedAPI(prototype) {
+    Object.defineProperties(prototype, {
+      annotations: Object.freeze({
+        value: {
+          async upload(file, format) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.upload, file, format);
+            return result;
+          },
+
+          async save() {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.save);
+            return result;
+          },
+
+          async clear(reload = false) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.clear, reload);
+            return result;
+          },
+
+          async dump(name, format) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.dump, name, format);
+            return result;
+          },
+
+          async statistics() {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.statistics);
+            return result;
+          },
+
+          async put(arrayOfObjects = []) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.put, arrayOfObjects);
+            return result;
+          },
+
+          async get(frame, filter = {}) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.get, frame, filter);
+            return result;
+          },
+
+          async search(filter, frameFrom, frameTo) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.search, filter, frameFrom, frameTo);
+            return result;
+          },
+
+          async select(objectStates, x, y) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.select, objectStates, x, y);
+            return result;
+          },
+
+          async hasUnsavedChanges() {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.hasUnsavedChanges);
+            return result;
+          },
+
+          async merge(objectStates) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.merge, objectStates);
+            return result;
+          },
+
+          async split(objectState, frame) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.split, objectState, frame);
+            return result;
+          },
+
+          async group(objectStates, reset = false) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.group, objectStates, reset);
+            return result;
+          }
+
+        },
+        writable: true
+      }),
+      frames: Object.freeze({
+        value: {
+          async get(frame) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.frames.get, frame);
+            return result;
+          }
+
+        },
+        writable: true
+      }),
+      logs: Object.freeze({
+        value: {
+          async put(logType, details) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.logs.put, logType, details);
+            return result;
+          },
+
+          async save(onUpdate) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.logs.save, onUpdate);
+            return result;
+          }
+
+        },
+        writable: true
+      }),
+      actions: Object.freeze({
+        value: {
+          async undo(count) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.actions.undo, count);
+            return result;
+          },
+
+          async redo(count) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.actions.redo, count);
+            return result;
+          },
+
+          async clear() {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.actions.clear);
+            return result;
+          }
+
+        },
+        writable: true
+      }),
+      events: Object.freeze({
+        value: {
+          async subscribe(evType, callback) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.events.subscribe, evType, callback);
+            return result;
+          },
+
+          async unsubscribe(evType, callback = null) {
+            const result = await PluginRegistry.apiWrapper.call(this, prototype.events.unsubscribe, evType, callback);
+            return result;
+          }
+
+        },
+        writable: true
+      })
+    });
+  }
+  /**
+      * Base abstract class for Task and Job. It contains common members.
+      * @hideconstructor
+      * @virtual
+  */
+
+
+  class Session {
+    constructor() {
+      /**
+          * An interaction with annotations
+          * @namespace annotations
+          * @memberof Session
+      */
+
+      /**
+          * Upload annotations from a dump file
+          * You need upload annotations from a server again after successful executing
+          * @method upload
+          * @memberof Session.annotations
+          * @param {File} annotations - a text file with annotations
+          * @param {string} format - a format of the file
+          * @instance
+          * @async
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+      */
+
+      /**
+          * Save all changes in annotations on a server
+          * Objects which hadn't been saved on a server before,
+          * get a serverID after saving. But received object states aren't updated.
+          * So, after successful saving it's recommended to update them manually
+          * (call the annotations.get() again)
+          * @method save
+          * @memberof Session.annotations
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+          * @instance
+          * @async
+          * @param {function} [onUpdate] saving can be long.
+          * This callback can be used to notify a user about current progress
+          * Its argument is a text string
+      */
+
+      /**
+          * Remove all annotations and optionally reinitialize it
+          * @method clear
+          * @memberof Session.annotations
+          * @param {boolean} [reload = false] reset all changes and
+          * reinitialize annotations by data from a server
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Dump of annotations to a file.
+          * Method always dumps annotations for a whole task.
+          * @method dump
+          * @memberof Session.annotations
+          * @param {string} name - a name of a file with annotations
+          * @param {string} format - a format of the file
+          * @returns {string} URL which can be used in order to get a dump file
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Collect short statistics about a task or a job.
+          * @method statistics
+          * @memberof Session.annotations
+          * @returns {module:API.cvat.classes.Statistics} statistics object
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Create new objects from one-frame states
+          * After successful adding you need to update object states on a frame
+          * @method put
+          * @memberof Session.annotations
+          * @param {module:API.cvat.classes.ObjectState[]} data
+          * array of objects on the specific frame
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.DataError}
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * @typedef {Object} ObjectFilter
+          * @property {string} [label] a name of a label
+          * @property {module:API.cvat.enums.ObjectType} [type]
+          * @property {module:API.cvat.enums.ObjectShape} [shape]
+          * @property {boolean} [occluded] a value of occluded property
+          * @property {boolean} [lock] a value of lock property
+          * @property {number} [width] a width of a shape
+          * @property {number} [height] a height of a shape
+          * @property {Object[]} [attributes] dictionary with "name: value" pairs
+          * @global
+      */
+
+      /**
+          * Get annotations for a specific frame
+          * @method get
+          * @param {integer} frame get objects from the frame
+          * @param {ObjectFilter[]} [filter = []]
+          * get only objects are satisfied to specific filter
+          * @returns {module:API.cvat.classes.ObjectState[]}
+          * @memberof Session.annotations
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Find frame which contains at least one object satisfied to a filter
+          * @method search
+          * @memberof Session.annotations
+          * @param {ObjectFilter} [filter = []] filter
+          * @param {integer} from lower bound of a search
+          * @param {integer} to upper bound of a search
+          * @returns {integer} the nearest frame which contains filtered objects
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Select shape under a cursor by using minimal distance
+          * between a cursor and a shape edge or a shape point
+          * For closed shapes a cursor is placed inside a shape
+          * @method select
+          * @memberof Session.annotations
+          * @param {module:API.cvat.classes.ObjectState[]} objectStates
+          * objects which can be selected
+          * @param {float} x horizontal coordinate
+          * @param {float} y vertical coordinate
+          * @returns {Object}
+          * a pair of {state: ObjectState, distance: number} for selected object.
+          * Pair values can be null if there aren't any sutisfied objects
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Method unites several shapes and tracks into the one
+          * All shapes must be the same (rectangle, polygon, etc)
+          * All labels must be the same
+          * After successful merge you need to update object states on a frame
+          * @method merge
+          * @memberof Session.annotations
+          * @param {module:API.cvat.classes.ObjectState[]} objectStates
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Method splits a track into two parts
+          * (start frame: previous frame), (frame, last frame)
+          * After successful split you need to update object states on a frame
+          * @method split
+          * @memberof Session.annotations
+          * @param {module:API.cvat.classes.ObjectState} objectState
+          * @param {integer} frame
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Method creates a new group and put all passed objects into it
+          * After successful split you need to update object states on a frame
+          * @method group
+          * @memberof Session.annotations
+          * @param {module:API.cvat.classes.ObjectState[]} objectStates
+          * @param {boolean} reset pass "true" to reset group value (set it to 0)
+          * @returns {integer} an ID of created group
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Indicate if there are any changes in
+          * annotations which haven't been saved on a server
+          * @method hasUnsavedChanges
+          * @memberof Session.annotations
+          * @returns {boolean}
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Namespace is used for an interaction with frames
+          * @namespace frames
+          * @memberof Session
+      */
+
+      /**
+          * Get frame by its number
+          * @method get
+          * @memberof Session.frames
+          * @param {integer} frame number of frame which you want to get
+          * @returns {module:API.cvat.classes.FrameData}
+          * @instance
+          * @async
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+      */
+
+      /**
+          * Namespace is used for an interaction with logs
+          * @namespace logs
+          * @memberof Session
+      */
+
+      /**
+          * Append log to a log collection.
+          * Continue logs will have been added after "close" method is called
+          * @method put
+          * @memberof Session.logs
+          * @param {module:API.cvat.enums.LogType} type a type of a log
+          * @param {boolean} continuous log is a continuous log
+          * @param {Object} details any others data which will be append to log data
+          * @returns {module:API.cvat.classes.Log}
+          * @instance
+          * @async
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+      */
+
+      /**
+          * Save accumulated logs on a server
+          * @method save
+          * @memberof Session.logs
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ServerError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Namespace is used for an interaction with actions
+          * @namespace actions
+          * @memberof Session
+      */
+
+      /**
+          * Is a dictionary of pairs "id:action" where "id" is an identifier of an object
+          * which has been affected by undo/redo and "action" is what exactly has been
+          * done with the object. Action can be: "created", "deleted", "updated".
+          * Size of an output array equal the param "count".
+          * @typedef {Object} HistoryAction
+          * @global
+      */
+
+      /**
+          * Undo actions
+          * @method undo
+          * @memberof Session.actions
+          * @returns {HistoryAction}
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Redo actions
+          * @method redo
+          * @memberof Session.actions
+          * @returns {HistoryAction}
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Namespace is used for an interaction with events
+          * @namespace events
+          * @memberof Session
+      */
+
+      /**
+          * Subscribe on an event
+          * @method subscribe
+          * @memberof Session.events
+          * @param {module:API.cvat.enums.EventType} type - event type
+          * @param {functions} callback - function which will be called on event
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+          * @instance
+          * @async
+      */
+
+      /**
+          * Unsubscribe from an event. If callback is not provided,
+          * all callbacks will be removed from subscribers for the event
+          * @method unsubscribe
+          * @memberof Session.events
+          * @param {module:API.cvat.enums.EventType} type - event type
+          * @param {functions} [callback = null] - function which is called on event
+          * @throws {module:API.cvat.exceptions.PluginError}
+          * @throws {module:API.cvat.exceptions.ArgumentError}
+          * @instance
+          * @async
+      */
+    }
+
+  }
+  /**
+      * Class representing a job.
+      * @memberof module:API.cvat.classes
+      * @hideconstructor
+      * @extends Session
+  */
+
+
+  class Job extends Session {
+    constructor(initialData) {
+      super();
+      const data = {
+        id: undefined,
+        assignee: undefined,
+        status: undefined,
+        start_frame: undefined,
+        stop_frame: undefined,
+        task: undefined
+      };
+
+      for (const property in data) {
+        if (Object.prototype.hasOwnProperty.call(data, property)) {
+          if (property in initialData) {
+            data[property] = initialData[property];
+          }
+
+          if (data[property] === undefined) {
+            throw new ArgumentError(`Job field "${property}" was not initialized`);
+          }
+        }
+      }
+
+      Object.defineProperties(this, Object.freeze({
+        /**
+            * @name id
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Job
+            * @readonly
+            * @instance
+        */
+        id: {
+          get: () => data.id
+        },
+
+        /**
+            * Identifier of a user who is responsible for the job
+            * @name assignee
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Job
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        assignee: {
+          get: () => data.assignee,
+          set: () => assignee => {
+            if (!Number.isInteger(assignee) || assignee < 0) {
+              throw new ArgumentError('Value must be a non negative integer');
+            }
+
+            data.assignee = assignee;
+          }
+        },
+
+        /**
+            * @name status
+            * @type {module:API.cvat.enums.TaskStatus}
+            * @memberof module:API.cvat.classes.Job
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        status: {
+          get: () => data.status,
+          set: status => {
+            const type = TaskStatus;
+            let valueInEnum = false;
+
+            for (const value in type) {
+              if (type[value] === status) {
+                valueInEnum = true;
+                break;
+              }
+            }
+
+            if (!valueInEnum) {
+              throw new ArgumentError('Value must be a value from the enumeration cvat.enums.TaskStatus');
+            }
+
+            data.status = status;
+          }
+        },
+
+        /**
+            * @name startFrame
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Job
+            * @readonly
+            * @instance
+        */
+        startFrame: {
+          get: () => data.start_frame
+        },
+
+        /**
+            * @name stopFrame
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Job
+            * @readonly
+            * @instance
+        */
+        stopFrame: {
+          get: () => data.stop_frame
+        },
+
+        /**
+            * @name task
+            * @type {module:API.cvat.classes.Task}
+            * @memberof module:API.cvat.classes.Job
+            * @readonly
+            * @instance
+        */
+        task: {
+          get: () => data.task
+        }
+      })); // When we call a function, for example: task.annotations.get()
+      // In the method get we lose the task context
+      // So, we need return it
+
+      this.annotations = {
+        get: Object.getPrototypeOf(this).annotations.get.bind(this),
+        put: Object.getPrototypeOf(this).annotations.put.bind(this),
+        save: Object.getPrototypeOf(this).annotations.save.bind(this),
+        dump: Object.getPrototypeOf(this).annotations.dump.bind(this),
+        merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
+        split: Object.getPrototypeOf(this).annotations.split.bind(this),
+        group: Object.getPrototypeOf(this).annotations.group.bind(this),
+        clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
+        upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
+        select: Object.getPrototypeOf(this).annotations.select.bind(this),
+        statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
+        hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this)
+      };
+      this.frames = {
+        get: Object.getPrototypeOf(this).frames.get.bind(this)
+      };
+    }
+    /**
+        * Method updates job data like status or assignee
+        * @method save
+        * @memberof module:API.cvat.classes.Job
+        * @readonly
+        * @instance
+        * @async
+        * @throws {module:API.cvat.exceptions.ServerError}
+        * @throws {module:API.cvat.exceptions.PluginError}
+    */
+
+
+    async save() {
+      const result = await PluginRegistry.apiWrapper.call(this, Job.prototype.save);
+      return result;
+    }
+
+  }
+  /**
+      * Class representing a task
+      * @memberof module:API.cvat.classes
+      * @extends Session
+  */
+
+
+  class Task extends Session {
+    /**
+        * In a fact you need use the constructor only if you want to create a task
+        * @param {object} initialData - Object which is used for initalization
+        * <br> It can contain keys:
+        * <br> <li style="margin-left: 10px;"> name
+        * <br> <li style="margin-left: 10px;"> assignee
+        * <br> <li style="margin-left: 10px;"> bug_tracker
+        * <br> <li style="margin-left: 10px;"> z_order
+        * <br> <li style="margin-left: 10px;"> labels
+        * <br> <li style="margin-left: 10px;"> segment_size
+        * <br> <li style="margin-left: 10px;"> overlap
+    */
+    constructor(initialData) {
+      super();
+      const data = {
+        id: undefined,
+        name: undefined,
+        status: undefined,
+        size: undefined,
+        mode: undefined,
+        owner: undefined,
+        assignee: undefined,
+        created_date: undefined,
+        updated_date: undefined,
+        bug_tracker: undefined,
+        overlap: undefined,
+        segment_size: undefined,
+        z_order: undefined,
+        image_quality: undefined,
+        start_frame: undefined,
+        stop_frame: undefined,
+        frame_filter: undefined
+      };
+
+      for (const property in data) {
+        if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
+          data[property] = initialData[property];
+        }
+      }
+
+      data.labels = [];
+      data.jobs = [];
+      data.files = Object.freeze({
+        server_files: [],
+        client_files: [],
+        remote_files: []
+      });
+
+      if (Array.isArray(initialData.segments)) {
+        for (const segment of initialData.segments) {
+          if (Array.isArray(segment.jobs)) {
+            for (const job of segment.jobs) {
+              const jobInstance = new Job({
+                url: job.url,
+                id: job.id,
+                assignee: job.assignee,
+                status: job.status,
+                start_frame: segment.start_frame,
+                stop_frame: segment.stop_frame,
+                task: this
+              });
+              data.jobs.push(jobInstance);
+            }
+          }
+        }
+      }
+
+      if (Array.isArray(initialData.labels)) {
+        for (const label of initialData.labels) {
+          const classInstance = new Label(label);
+          data.labels.push(classInstance);
+        }
+      }
+
+      Object.defineProperties(this, Object.freeze({
+        /**
+            * @name id
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Task
+            * @readonly
+            * @instance
+        */
+        id: {
+          get: () => data.id
+        },
+
+        /**
+            * @name name
+            * @type {string}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        name: {
+          get: () => data.name,
+          set: value => {
+            if (!value.trim().length) {
+              throw new ArgumentError('Value must not be empty');
+            }
+
+            data.name = value;
+          }
+        },
+
+        /**
+            * @name status
+            * @type {module:API.cvat.enums.TaskStatus}
+            * @memberof module:API.cvat.classes.Task
+            * @readonly
+            * @instance
+        */
+        status: {
+          get: () => data.status
+        },
+
+        /**
+            * @name size
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Task
+            * @readonly
+            * @instance
+        */
+        size: {
+          get: () => data.size
+        },
+
+        /**
+            * @name mode
+            * @type {TaskMode}
+            * @memberof module:API.cvat.classes.Task
+            * @readonly
+            * @instance
+        */
+        mode: {
+          get: () => data.mode
+        },
+
+        /**
+            * Identificator of a user who has created the task
+            * @name owner
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Task
+            * @readonly
+            * @instance
+        */
+        owner: {
+          get: () => data.owner
+        },
+
+        /**
+            * Identificator of a user who is responsible for the task
+            * @name assignee
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        assignee: {
+          get: () => data.assignee,
+          set: () => assignee => {
+            if (!Number.isInteger(assignee) || assignee < 0) {
+              throw new ArgumentError('Value must be a non negative integer');
+            }
+
+            data.assignee = assignee;
+          }
+        },
+
+        /**
+            * @name createdDate
+            * @type {string}
+            * @memberof module:API.cvat.classes.Task
+            * @readonly
+            * @instance
+        */
+        createdDate: {
+          get: () => data.created_date
+        },
+
+        /**
+            * @name updatedDate
+            * @type {string}
+            * @memberof module:API.cvat.classes.Task
+            * @readonly
+            * @instance
+        */
+        updatedDate: {
+          get: () => data.updated_date
+        },
+
+        /**
+            * @name bugTracker
+            * @type {string}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        bugTracker: {
+          get: () => data.bug_tracker,
+          set: tracker => {
+            data.bug_tracker = tracker;
+          }
+        },
+
+        /**
+            * @name overlap
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        overlap: {
+          get: () => data.overlap,
+          set: overlap => {
+            if (!Number.isInteger(overlap) || overlap < 0) {
+              throw new ArgumentError('Value must be a non negative integer');
+            }
+
+            data.overlap = overlap;
+          }
+        },
+
+        /**
+            * @name segmentSize
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        segmentSize: {
+          get: () => data.segment_size,
+          set: segment => {
+            if (!Number.isInteger(segment) || segment < 0) {
+              throw new ArgumentError('Value must be a positive integer');
+            }
+
+            data.segment_size = segment;
+          }
+        },
+
+        /**
+            * @name zOrder
+            * @type {boolean}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        zOrder: {
+          get: () => data.z_order,
+          set: zOrder => {
+            if (typeof zOrder !== 'boolean') {
+              throw new ArgumentError('Value must be a boolean');
+            }
+
+            data.z_order = zOrder;
+          }
+        },
+
+        /**
+            * @name imageQuality
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        imageQuality: {
+          get: () => data.image_quality,
+          set: quality => {
+            if (!Number.isInteger(quality) || quality < 0) {
+              throw new ArgumentError('Value must be a positive integer');
+            }
+
+            data.image_quality = quality;
+          }
+        },
+
+        /**
+            * After task has been created value can be appended only.
+            * @name labels
+            * @type {module:API.cvat.classes.Label[]}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        labels: {
+          get: () => [...data.labels],
+          set: labels => {
+            if (!Array.isArray(labels)) {
+              throw new ArgumentError('Value must be an array of Labels');
+            }
+
+            for (const label of labels) {
+              if (!(label instanceof Label)) {
+                throw new ArgumentError('Each array value must be an instance of Label. ' + `${typeof label} was found`);
+              }
+            }
+
+            if (typeof data.id === 'undefined') {
+              data.labels = [...labels];
+            } else {
+              data.labels = data.labels.concat([...labels]);
+            }
+          }
+        },
+
+        /**
+            * @name jobs
+            * @type {module:API.cvat.classes.Job[]}
+            * @memberof module:API.cvat.classes.Task
+            * @readonly
+            * @instance
+        */
+        jobs: {
+          get: () => [...data.jobs]
+        },
+
+        /**
+            * List of files from shared resource
+            * @name serverFiles
+            * @type {string[]}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        serverFiles: {
+          get: () => [...data.files.server_files],
+          set: serverFiles => {
+            if (!Array.isArray(serverFiles)) {
+              throw new ArgumentError(`Value must be an array. But ${typeof serverFiles} has been got.`);
+            }
+
+            for (const value of serverFiles) {
+              if (typeof value !== 'string') {
+                throw new ArgumentError(`Array values must be a string. But ${typeof value} has been got.`);
+              }
+            }
+
+            Array.prototype.push.apply(data.files.server_files, serverFiles);
+          }
+        },
+
+        /**
+            * List of files from client host
+            * @name clientFiles
+            * @type {File[]}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        clientFiles: {
+          get: () => [...data.files.client_files],
+          set: clientFiles => {
+            if (!Array.isArray(clientFiles)) {
+              throw new ArgumentError(`Value must be an array. But ${typeof clientFiles} has been got.`);
+            }
+
+            for (const value of clientFiles) {
+              if (!(value instanceof File)) {
+                throw new ArgumentError(`Array values must be a File. But ${value.constructor.name} has been got.`);
+              }
+            }
+
+            Array.prototype.push.apply(data.files.client_files, clientFiles);
+          }
+        },
+
+        /**
+            * List of files from remote host
+            * @name remoteFiles
+            * @type {File[]}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        remoteFiles: {
+          get: () => [...data.files.remote_files],
+          set: remoteFiles => {
+            if (!Array.isArray(remoteFiles)) {
+              throw new ArgumentError(`Value must be an array. But ${typeof remoteFiles} has been got.`);
+            }
+
+            for (const value of remoteFiles) {
+              if (typeof value !== 'string') {
+                throw new ArgumentError(`Array values must be a string. But ${typeof value} has been got.`);
+              }
+            }
+
+            Array.prototype.push.apply(data.files.remote_files, remoteFiles);
+          }
+        },
+
+        /**
+            * The first frame of a video to annotation
+            * @name startFrame
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        startFrame: {
+          get: () => data.start_frame,
+          set: frame => {
+            if (!Number.isInteger(frame) || frame < 0) {
+              throw new ArgumentError('Value must be a not negative integer');
+            }
+
+            data.start_frame = frame;
+          }
+        },
+
+        /**
+            * The last frame of a video to annotation
+            * @name stopFrame
+            * @type {integer}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        stopFrame: {
+          get: () => data.stop_frame,
+          set: frame => {
+            if (!Number.isInteger(frame) || frame < 0) {
+              throw new ArgumentError('Value must be a not negative integer');
+            }
+
+            data.stop_frame = frame;
+          }
+        },
+
+        /**
+            * Filter to ignore some frames during task creation
+            * @name frameFilter
+            * @type {string}
+            * @memberof module:API.cvat.classes.Task
+            * @instance
+            * @throws {module:API.cvat.exceptions.ArgumentError}
+        */
+        frameFilter: {
+          get: () => data.frame_filter,
+          set: filter => {
+            if (typeof filter !== 'string') {
+              throw new ArgumentError(`Filter value must be a string. But ${typeof filter} has been got.`);
+            }
+
+            data.frame_filter = filter;
+          }
+        }
+      })); // When we call a function, for example: task.annotations.get()
+      // In the method get we lose the task context
+      // So, we need return it
+
+      this.annotations = {
+        get: Object.getPrototypeOf(this).annotations.get.bind(this),
+        put: Object.getPrototypeOf(this).annotations.put.bind(this),
+        save: Object.getPrototypeOf(this).annotations.save.bind(this),
+        dump: Object.getPrototypeOf(this).annotations.dump.bind(this),
+        merge: Object.getPrototypeOf(this).annotations.merge.bind(this),
+        split: Object.getPrototypeOf(this).annotations.split.bind(this),
+        group: Object.getPrototypeOf(this).annotations.group.bind(this),
+        clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
+        upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
+        select: Object.getPrototypeOf(this).annotations.select.bind(this),
+        statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
+        hasUnsavedChanges: Object.getPrototypeOf(this).annotations.hasUnsavedChanges.bind(this)
+      };
+      this.frames = {
+        get: Object.getPrototypeOf(this).frames.get.bind(this)
+      };
+    }
+    /**
+        * Method updates data of a created task or creates new task from scratch
+        * @method save
+        * @returns {module:API.cvat.classes.Task}
+        * @memberof module:API.cvat.classes.Task
+        * @param {function} [onUpdate] - the function which is used only if task hasn't
+        * been created yet. It called in order to notify about creation status.
+        * It receives the string parameter which is a status message
+        * @readonly
+        * @instance
+        * @async
+        * @throws {module:API.cvat.exceptions.ServerError}
+        * @throws {module:API.cvat.exceptions.PluginError}
+    */
+
+
+    async save(onUpdate = () => {}) {
+      const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.save, onUpdate);
+      return result;
+    }
+    /**
+        * Method deletes a task from a server
+        * @method delete
+        * @memberof module:API.cvat.classes.Task
+        * @readonly
+        * @instance
+        * @async
+        * @throws {module:API.cvat.exceptions.ServerError}
+        * @throws {module:API.cvat.exceptions.PluginError}
+    */
+
+
+    async delete() {
+      const result = await PluginRegistry.apiWrapper.call(this, Task.prototype.delete);
+      return result;
+    }
+
+  }
+
+  module.exports = {
+    Job,
+    Task
+  };
+
+  const {
+    getAnnotations,
+    putAnnotations,
+    saveAnnotations,
+    hasUnsavedChanges,
+    mergeAnnotations,
+    splitAnnotations,
+    groupAnnotations,
+    clearAnnotations,
+    selectObject,
+    annotationsStatistics,
+    uploadAnnotations,
+    dumpAnnotations
+  } = __webpack_require__(/*! ./annotations */ "./src/annotations.js");
+
+  buildDublicatedAPI(Job.prototype);
+  buildDublicatedAPI(Task.prototype);
+
+  Job.prototype.save.implementation = async function () {
+    // TODO: Add ability to change an assignee
+    if (this.id) {
+      const jobData = {
+        status: this.status
+      };
+      await serverProxy.jobs.saveJob(this.id, jobData);
+      return this;
+    }
+
+    throw new ArgumentError('Can not save job without and id');
+  };
+
+  Job.prototype.frames.get.implementation = async function (frame) {
+    if (!Number.isInteger(frame) || frame < 0) {
+      throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
+    }
+
+    if (frame < this.startFrame || frame > this.stopFrame) {
+      throw new ArgumentError(`The frame with number ${frame} is out of the job`);
+    }
+
+    const frameData = await getFrame(this.task.id, this.task.mode, frame);
+    return frameData;
+  }; // TODO: Check filter for annotations
+
+
+  Job.prototype.annotations.get.implementation = async function (frame, filter) {
+    if (frame < this.startFrame || frame > this.stopFrame) {
+      throw new ArgumentError(`Frame ${frame} does not exist in the job`);
+    }
+
+    const annotationsData = await getAnnotations(this, frame, filter);
+    return annotationsData;
+  };
+
+  Job.prototype.annotations.save.implementation = async function (onUpdate) {
+    const result = await saveAnnotations(this, onUpdate);
+    return result;
+  };
+
+  Job.prototype.annotations.merge.implementation = async function (objectStates) {
+    const result = await mergeAnnotations(this, objectStates);
+    return result;
+  };
+
+  Job.prototype.annotations.split.implementation = async function (objectState, frame) {
+    const result = await splitAnnotations(this, objectState, frame);
+    return result;
+  };
+
+  Job.prototype.annotations.group.implementation = async function (objectStates, reset) {
+    const result = await groupAnnotations(this, objectStates, reset);
+    return result;
+  };
+
+  Job.prototype.annotations.hasUnsavedChanges.implementation = function () {
+    const result = hasUnsavedChanges(this);
+    return result;
+  };
+
+  Job.prototype.annotations.clear.implementation = async function (reload) {
+    const result = await clearAnnotations(this, reload);
+    return result;
+  };
+
+  Job.prototype.annotations.select.implementation = function (frame, x, y) {
+    const result = selectObject(this, frame, x, y);
+    return result;
+  };
+
+  Job.prototype.annotations.statistics.implementation = function () {
+    const result = annotationsStatistics(this);
+    return result;
+  };
+
+  Job.prototype.annotations.put.implementation = function (objectStates) {
+    const result = putAnnotations(this, objectStates);
+    return result;
+  };
+
+  Job.prototype.annotations.upload.implementation = async function (file, format) {
+    const result = await uploadAnnotations(this, file, format);
+    return result;
+  };
+
+  Job.prototype.annotations.dump.implementation = async function (name, format) {
+    const result = await dumpAnnotations(this, name, format);
+    return result;
+  };
+
+  Task.prototype.save.implementation = async function saveTaskImplementation(onUpdate) {
+    // TODO: Add ability to change an owner and an assignee
+    if (typeof this.id !== 'undefined') {
+      // If the task has been already created, we update it
+      const taskData = {
+        name: this.name,
+        bug_tracker: this.bugTracker,
+        z_order: this.zOrder,
+        labels: [...this.labels.map(el => el.toJSON())]
+      };
+      await serverProxy.tasks.saveTask(this.id, taskData);
+      return this;
+    }
+
+    const taskData = {
+      name: this.name,
+      labels: this.labels.map(el => el.toJSON()),
+      image_quality: this.imageQuality,
+      z_order: Boolean(this.zOrder)
+    };
+
+    if (this.bugTracker) {
+      taskData.bug_tracker = this.bugTracker;
+    }
+
+    if (this.segmentSize) {
+      taskData.segment_size = this.segmentSize;
+    }
+
+    if (this.overlap) {
+      taskData.overlap = this.overlap;
+    }
+
+    if (this.startFrame) {
+      taskData.start_frame = this.startFrame;
+    }
+
+    if (this.stopFrame) {
+      taskData.stop_frame = this.stopFrame;
+    }
+
+    if (this.frameFilter) {
+      taskData.frame_filter = this.frameFilter;
+    }
+
+    const taskFiles = {
+      client_files: this.clientFiles,
+      server_files: this.serverFiles,
+      remote_files: this.remoteFiles
+    };
+    const task = await serverProxy.tasks.createTask(taskData, taskFiles, onUpdate);
+    return new Task(task);
+  };
+
+  Task.prototype.delete.implementation = async function () {
+    const result = await serverProxy.tasks.deleteTask(this.id);
+    return result;
+  };
+
+  Task.prototype.frames.get.implementation = async function (frame) {
+    if (!Number.isInteger(frame) || frame < 0) {
+      throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
+    }
+
+    if (frame >= this.size) {
+      throw new ArgumentError(`The frame with number ${frame} is out of the task`);
+    }
+
+    const result = await getFrame(this.id, this.mode, frame);
+    return result;
+  }; // TODO: Check filter for annotations
+
+
+  Task.prototype.annotations.get.implementation = async function (frame, filter) {
+    if (!Number.isInteger(frame) || frame < 0) {
+      throw new ArgumentError(`Frame must be a positive integer. Got: "${frame}"`);
+    }
+
+    if (frame >= this.size) {
+      throw new ArgumentError(`Frame ${frame} does not exist in the task`);
+    }
+
+    const result = await getAnnotations(this, frame, filter);
+    return result;
+  };
+
+  Task.prototype.annotations.save.implementation = async function (onUpdate) {
+    const result = await saveAnnotations(this, onUpdate);
+    return result;
+  };
+
+  Task.prototype.annotations.merge.implementation = async function (objectStates) {
+    const result = await mergeAnnotations(this, objectStates);
+    return result;
+  };
+
+  Task.prototype.annotations.split.implementation = async function (objectState, frame) {
+    const result = await splitAnnotations(this, objectState, frame);
+    return result;
+  };
+
+  Task.prototype.annotations.group.implementation = async function (objectStates, reset) {
+    const result = await groupAnnotations(this, objectStates, reset);
+    return result;
+  };
+
+  Task.prototype.annotations.hasUnsavedChanges.implementation = function () {
+    const result = hasUnsavedChanges(this);
+    return result;
+  };
+
+  Task.prototype.annotations.clear.implementation = async function (reload) {
+    const result = await clearAnnotations(this, reload);
+    return result;
+  };
+
+  Task.prototype.annotations.select.implementation = function (frame, x, y) {
+    const result = selectObject(this, frame, x, y);
+    return result;
+  };
+
+  Task.prototype.annotations.statistics.implementation = function () {
+    const result = annotationsStatistics(this);
+    return result;
+  };
+
+  Task.prototype.annotations.put.implementation = function (objectStates) {
+    const result = putAnnotations(this, objectStates);
+    return result;
+  };
+
+  Task.prototype.annotations.upload.implementation = async function (file, format) {
+    const result = await uploadAnnotations(this, file, format);
+    return result;
+  };
+
+  Task.prototype.annotations.dump.implementation = async function (name, format) {
+    const result = await dumpAnnotations(this, name, format);
+    return result;
+  };
+})();
+
+/***/ }),
+
+/***/ "./src/statistics.js":
+/*!***************************!*\
+  !*** ./src/statistics.js ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+(() => {
+  /**
+      * Class representing collection statistics
+      * @memberof module:API.cvat.classes
+      * @hideconstructor
+  */
+  class Statistics {
+    constructor(label, total) {
+      Object.defineProperties(this, Object.freeze({
+        /**
+            * Statistics by labels with a structure:
+            * @example
+            * {
+            *     label: {
+            *         boxes: {
+            *             tracks: 10,
+            *             shapes: 11,
+            *         },
+            *         polygons: {
+            *             tracks: 13,
+            *             shapes: 14,
+            *         },
+            *         polylines: {
+            *             tracks: 16,
+            *             shapes: 17,
+            *         },
+            *         points: {
+            *             tracks: 19,
+            *             shapes: 20,
+            *         },
+            *         tags: 66,
+            *         manually: 186,
+            *         interpolated: 500,
+            *         total: 608,
+            *     }
+            * }
+            * @name label
+            * @type {Object}
+            * @memberof module:API.cvat.classes.Statistics
+            * @readonly
+            * @instance
+        */
+        label: {
+          get: () => JSON.parse(JSON.stringify(label))
+        },
+
+        /**
+            * Total statistics (covers all labels) with a structure:
+            * @example
+            * {
+            *     boxes: {
+            *             tracks: 10,
+            *             shapes: 11,
+            *     },
+            *     polygons: {
+            *         tracks: 13,
+            *         shapes: 14,
+            *     },
+            *     polylines: {
+            *        tracks: 16,
+            *        shapes: 17,
+            *    },
+            *    points: {
+            *        tracks: 19,
+            *        shapes: 20,
+            *    },
+            *    tags: 66,
+            *    manually: 186,
+            *    interpolated: 500,
+            *    total: 608,
+            * }
+            * @name total
+            * @type {Object}
+            * @memberof module:API.cvat.classes.Statistics
+            * @readonly
+            * @instance
+        */
+        total: {
+          get: () => JSON.parse(JSON.stringify(total))
+        }
+      }));
+    }
+
+  }
+
+  module.exports = Statistics;
+})();
+
+/***/ }),
+
+/***/ "./src/user.js":
+/*!*********************!*\
+  !*** ./src/user.js ***!
+  \*********************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+__webpack_require__(/*! core-js/modules/es.promise */ "./node_modules/core-js/modules/es.promise.js");
+
+/*
+* Copyright (C) 2018 Intel Corporation
+* SPDX-License-Identifier: MIT
+*/
+
+/* global
+    require:false
+*/
+(() => {
+  const PluginRegistry = __webpack_require__(/*! ./plugins */ "./src/plugins.js");
+
+  const serverProxy = __webpack_require__(/*! ./server-proxy */ "./src/server-proxy.js");
+  /**
+      * Class representing a user
+      * @memberof module:API.cvat.classes
+      * @hideconstructor
+  */
+
+
+  class User {
+    constructor(initialData) {
+      const data = {
+        id: null,
+        username: null,
+        email: null,
+        first_name: null,
+        last_name: null,
+        groups: null,
+        last_login: null,
+        date_joined: null,
+        is_staff: null,
+        is_superuser: null,
+        is_active: null
+      };
+
+      for (const property in data) {
+        if (Object.prototype.hasOwnProperty.call(data, property) && property in initialData) {
+          data[property] = initialData[property];
+        }
+      }
+
+      Object.defineProperties(this, Object.freeze({
+        id: {
+          /**
+              * @name id
+              * @type {integer}
+              * @memberof module:API.cvat.classes.User
+              * @readonly
+              * @instance
+          */
+          get: () => data.id
+        },
+        username: {
+          /**
+              * @name username
+              * @type {string}
+              * @memberof module:API.cvat.classes.User
+              * @readonly
+              * @instance
+          */
+          get: () => data.username
+        },
+        email: {
+          /**
+              * @name email
+              * @type {string}
+              * @memberof module:API.cvat.classes.User
+              * @readonly
+              * @instance
+          */
+          get: () => data.email
+        },
+        firstName: {
+          /**
+              * @name firstName
+              * @type {string}
+              * @memberof module:API.cvat.classes.User
+              * @readonly
+              * @instance
+          */
+          get: () => data.first_name
+        },
+        lastName: {
+          /**
+              * @name lastName
+              * @type {string}
+              * @memberof module:API.cvat.classes.User
+              * @readonly
+              * @instance
+          */
+          get: () => data.last_name
+        },
+        groups: {
+          /**
+              * @name groups
+              * @type {string[]}
+              * @memberof module:API.cvat.classes.User
+              * @readonly
+              * @instance
+          */
+          get: () => JSON.parse(JSON.stringify(data.groups))
+        },
+        lastLogin: {
+          /**
+              * @name lastLogin
+              * @type {string}
+              * @memberof module:API.cvat.classes.User
+              * @readonly
+              * @instance
+          */
+          get: () => data.last_login
+        },
+        dateJoined: {
+          /**
+              * @name dateJoined
+              * @type {string}
+              * @memberof module:API.cvat.classes.User
+              * @readonly
+              * @instance
+          */
+          get: () => data.date_joined
+        },
+        isStaff: {
+          /**
+              * @name isStaff
+              * @type {boolean}
+              * @memberof module:API.cvat.classes.User
+              * @readonly
+              * @instance
+          */
+          get: () => data.is_staff
+        },
+        isSuperuser: {
+          /**
+              * @name isSuperuser
+              * @type {boolean}
+              * @memberof module:API.cvat.classes.User
+              * @readonly
+              * @instance
+          */
+          get: () => data.is_superuser
+        },
+        isActive: {
+          /**
+              * @name isActive
+              * @type {boolean}
+              * @memberof module:API.cvat.classes.User
+              * @readonly
+              * @instance
+          */
+          get: () => data.is_active
+        }
+      }));
+    }
+    /**
+        * Method creates a new user on a server
+        * @method register
+        * @returns {module:API.cvat.classes.User}
+        * @memberof module:API.cvat.classes.User
+        * @readonly
+        * @static
+        * @async
+        * @param data is an object with string fields:
+        * username, [firstName = ""], [lastName = ""], email, password1, password2,
+        * @throws {module:API.cvat.exceptions.ServerError}
+        * @throws {module:API.cvat.exceptions.PluginError}
+    */
+
+
+    static async register(data) {
+      const result = await PluginRegistry.apiWrapper.call(this, User.register, data);
+      return result;
+    }
+
+  }
+
+  User.register.implementation = async function (data) {
+    serverProxy.users.register(data);
+  };
+
+  module.exports = User;
+})();
+
+/***/ })
+
+/******/ });
+//# sourceMappingURL=cvat-core.js.map

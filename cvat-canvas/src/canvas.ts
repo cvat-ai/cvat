@@ -3,9 +3,8 @@
 * SPDX-License-Identifier: MIT
 */
 
-/* eslint-disable */
-// Temporary disable eslint
-
+import CanvasModelImpl from './canvasModel';
+import CanvasControllerImpl from './canvasController';
 import CanvasViewImpl from './canvasView';
 
 interface Canvas {
@@ -17,7 +16,7 @@ interface Canvas {
     fit(): void;
     grid(stepX: number, stepY: number): void;
 
-    draw(shapeType: string, numberOfPoints: number, initialState: any): any;
+    draw(enabled?: boolean, shapeType?: string, numberOfPoints?: number, initialState?: any): any;
     split(enabled?: boolean): any;
     group(enabled?: boolean): any;
     merge(enabled?: boolean): any;
@@ -31,10 +30,14 @@ export enum Rotation {
 }
 
 class CanvasImpl implements Canvas {
-    readonly view: CanvasViewImpl;
+    private model: CanvasModelImpl;
+    private controller: CanvasControllerImpl;
+    private view: CanvasViewImpl;
 
     public constructor() {
-        this.view = new CanvasViewImpl();
+        this.model = new CanvasModelImpl();
+        this.controller = new CanvasControllerImpl(this.model);
+        this.view = new CanvasViewImpl(this.model, this.controller);
     }
 
     public html(): HTMLDivElement {
@@ -42,48 +45,48 @@ class CanvasImpl implements Canvas {
     }
 
     public setup(frameData: any, objectStates: any[]): void {
-        throw new Error('Method not implemented.');
+        return this.model.setup(frameData, objectStates);
     }
 
     public activate(clientID: number, attributeID: number = null): void {
-        throw new Error('Method not implemented.');
+        return this.model.activate(clientID, attributeID);
     }
 
     public rotate(direction: Rotation): void {
-        throw new Error('Method not implemented.');
+        return this.model.rotate(direction);
     }
 
     public focus(clientID: number, padding: number = 0): void {
-        throw new Error('Method not implemented.');
+        return this.model.focus(clientID, padding);
     }
 
     public fit(): void {
-        throw new Error('Method not implemented.');
+        return this.model.fit();
     }
 
     public grid(stepX: number, stepY: number): void {
-        throw new Error('Method not implemented.');
+        return this.model.grid(stepX, stepY);
     }
 
-    public draw(shapeType: string, numberOfPoints: number, initialState: any): any {
-        throw new Error('Method not implemented.');
+    public draw(enabled: boolean = false, shapeType: string = '', numberOfPoints: number = 0, initialState: any = null): any {
+        return this.model.draw(enabled, shapeType, numberOfPoints, initialState);
     }
 
     public split(enabled: boolean = false): any {
-        throw new Error('Method not implemented.');
+        return this.model.split(enabled);
     }
 
     public group(enabled: boolean = false): any {
-        throw new Error('Method not implemented.');
+        return this.model.group(enabled);
     }
 
     public merge(enabled: boolean = false): any {
-        throw new Error('Method not implemented.');
+        return this.model.merge(enabled);
     }
 
     public cancel(): void {
-        throw new Error('Method not implemented.');
+        return this.model.cancel();
     }
 }
 
-export {CanvasImpl as Canvas};
+export { CanvasImpl as Canvas };

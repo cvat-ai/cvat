@@ -3,6 +3,8 @@
 * SPDX-License-Identifier: MIT
 */
 
+import CanvasModelImpl from './canvasModel';
+import CanvasControllerImpl from './canvasController';
 
 interface CanvasView {
     html(): HTMLDivElement;
@@ -26,8 +28,13 @@ export default class CanvasViewImpl implements CanvasView {
     private content: SVGSVGElement;
     private rotationWrapper: HTMLDivElement;
     private gridPath: SVGPathElement;
+    private model: CanvasModelImpl;
+    private controller: CanvasControllerImpl;
 
-    public constructor() {
+    public constructor(model: CanvasModelImpl, controller: CanvasControllerImpl) {
+        this.model = model;
+        this.controller = controller;
+
         this.loadingAnimation = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.text = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.background = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
