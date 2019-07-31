@@ -388,13 +388,12 @@ function setupMenu(job, task, shapeCollectionModel,
         ${shortkeys.open_settings.view_value} - ${shortkeys.open_settings.description}`);
 
     for (const format of annotationFormats) {
-        for (const dumpSpec of format.dump_specification) {
-            const displayName = `${format.name} ${format.format} ${dumpSpec}`;
-            $(`<li>${displayName}</li>`).on('click', async () => {
+        for (const dumpSpec of format.dumpers) {
+            $(`<li>${dumpSpec.display_name}</li>`).on('click', async () => {
                 $('#downloadAnnotationButton')[0].disabled = true;
                 $('#downloadDropdownMenu').addClass('hidden');
                 try {
-                    await dumpAnnotationRequest(task.id, task.name, format.id, dumpSpec);
+                    await dumpAnnotationRequest(task.id, task.name, dumpSpec.display_name);
                 } catch (error) {
                     showMessage(error.message);
                 } finally {
@@ -419,7 +418,7 @@ function setupMenu(job, task, shapeCollectionModel,
                     historyModel,
                     annotationSaverModel,
                     $('#uploadAnnotationButton'),
-                    CVATformat.id,
+                    CVATformat.loaders[0].display_name,
                 );
             });
     });

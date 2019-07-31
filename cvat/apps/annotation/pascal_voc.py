@@ -1,16 +1,20 @@
 format_spec = {
     "name": "PASCAL VOC",
-    "format": "XML",
-    "version": "1.0",
-    "dump_specification": [],
-    "parse_specification": [],
-    "file_extension": "zip",
+    "dumpers": [
+        {
+            "display_name": "{name} {format} {version}",
+            "format": "ZIP",
+            "version": "1.0",
+            "handler": "dump"
+        },
+    ],
+    "loaders": [],
 }
 
 def load(file_object, annotations, spec):
     raise NotImplementedError
 
-def dump(file_object, annotations, spec):
+def dump(file_object, annotations):
     from pascal_voc_writer import Writer
     import os
     from zipfile import ZipFile

@@ -88,7 +88,7 @@ class TaskView {
                 const annotationData = new FormData();
                 annotationData.append('annotation_file', file);
                 try {
-                    await uploadTaskAnnotationRequest(this._task.id, annotationData, CVATformat.id);
+                    await uploadTaskAnnotationRequest(this._task.id, annotationData, CVATformat.loaders[0].display_name);
                 } catch (error) {
                     showMessage(error.message);
                 } finally {
@@ -99,10 +99,10 @@ class TaskView {
         }).click();
     }
 
-    async _dump(button, formatId, dumpSpec) {
+    async _dump(button, format) {
         button.disabled = true;
         try {
-            await dumpAnnotationRequest(this._task.id, this._task.name, formatId, dumpSpec);
+            await dumpAnnotationRequest(this._task.id, this._task.name, format);
         } catch (error) {
             showMessage(error.message);
         } finally {
@@ -134,11 +134,10 @@ class TaskView {
         const downloadButton = $('<button class="regular dashboardButtonUI"> Dump Annotation </button>');
         const dropdownMenu = $('<ul class="dropdown-content hidden"></ul>');
         for (const format of this._annotationFormats) {
-            for (const dumpSpec of format.dump_specification) {
-                const displayName = `${format.name} ${format.format} ${dumpSpec}`;
-                dropdownMenu.append($(`<li>${displayName}</li>`).on('click', () => {
+            for (const dumpSpec of format.dumpers) {
+                dropdownMenu.append($(`<li>${dumpSpec.display_name}</li>`).on('click', () => {
                     dropdownMenu.addClass('hidden');
-                    this._dump(downloadButton[0], format.id, dumpSpec);
+                    this._dump(downloadButton[0], dumpSpec.display_name);
                 }));
             }
         }
