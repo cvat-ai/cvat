@@ -6,7 +6,7 @@
 /* eslint-disable */
 // Temporary disable eslint
 
-interface CanvasInterface {
+interface Canvas {
     html(): HTMLElement;
     setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number, attributeID?: number): void;
@@ -28,7 +28,7 @@ export enum Rotation {
     ANTICLOCKWISE90,
 }
 
-export class Canvas implements CanvasInterface {
+export class CanvasImpl implements Canvas {
     public constructor() {
         return this;
     }
@@ -81,3 +81,6 @@ export class Canvas implements CanvasInterface {
         throw new Error('Method not implemented.');
     }
 }
+
+
+// Create view (With animation)
