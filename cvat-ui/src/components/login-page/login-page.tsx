@@ -4,18 +4,24 @@ import { connect } from 'react-redux';
 import { loginAsync } from '../../actions/auth.actions';
 
 import { Button, Icon, Input, Form, Col, Row } from 'antd';
-
-import './login.scss';
 import Title from 'antd/lib/typography/Title';
+
+import './login-page.scss';
 
 
 class LoginForm extends PureComponent<any, any> {
+  componentWillMount() {
+    if (localStorage.getItem('session')) {
+      this.props.history.push('/dashboard');
+    }
+  }
+
   render() {
     const { getFieldDecorator } = this.props.form;
 
     return (
       <Row type="flex" justify="center" align="middle">
-        <Col span={4}>
+        <Col xs={12} md={10} lg={8} xl={6}>
           <Form className="login-form" onSubmit={ this.onSubmit }>
             <Title className="login-form__title">Login</Title>
 
@@ -63,7 +69,7 @@ class LoginForm extends PureComponent<any, any> {
 
     this.props.form.validateFields((error: any, values: any) => {
       if (!error) {
-        this.props.dispatch(loginAsync(values.username, values.password))
+        this.props.dispatch(loginAsync(values.username, values.password, this.props.history));
       }
     });
   }

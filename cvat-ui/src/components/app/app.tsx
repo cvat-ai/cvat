@@ -2,34 +2,47 @@ import React, { PureComponent } from 'react';
 import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-dom';
 
 import { connect } from 'react-redux';
-import { loginAsync } from '../../actions/auth.actions';
 
-import Dashboard from '../dashboard/dashboard';
-import Login from '../login/login';
-import NotFound from '../not-found/not-found';
+import DashboardPage from '../dashboard-page/dashboard-page';
+import LoginPage from '../login-page/login-page';
+import RegisterPage from '../register-page/register-page';
+import PageNotFound from '../page-not-found/page-not-found';
 
 import './app.scss';
 
 
-class App extends PureComponent<any, any> {
-  componentDidMount() {
-    // TODO: remove when proper login flow (with router) will be implemented
-    this.props.dispatch(
-      loginAsync(
-        process.env.REACT_APP_LOGIN as string,
-        process.env.REACT_APP_PASSWORD as string,
-      ),
-    );
-  }
+const ProtectedRoute = ({ component: Component, ...rest }: any) => {
+  return (
+    <Route
+      { ...rest }
+      render={ (props) => {
+        return localStorage.getItem('session') ? (
+          <Component { ...props } />
+        ) : (
+          <Redirect
+            to={{
+              pathname: "/login",
+              state: {
+                from: props.location,
+              },
+            }}
+          />
+        );
+      } }
+    />
+  );
+};
 
+class App extends PureComponent<any, any> {
   render() {
     return(
       <Router>
         <Switch>
           <Redirect path="/" exact to="/dashboard" />
-          <Route path="/dashboard" component={ Dashboard } />
-          <Route path="/login" component={ Login } />
-          <Route component={ NotFound } />
+          <ProtectedRoute path="/dashboard" component={ DashboardPage } />
+          <Route path="/login" component={ LoginPage } />
+          <Route path="/register" component={ RegisterPage } />
+          <Route component={ PageNotFound } />
         </Switch>
       </Router>
     );

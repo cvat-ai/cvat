@@ -10,6 +10,7 @@
     "@types/react-dom": "16.8.4",
     "@types/react-redux": "^7.1.1",
     "@types/react-router-dom": "^4.3.4",
+    "@types/redux-logger": "^3.0.7",
     "antd": "^3.19.1",
     "babel-plugin-import": "^1.11.2",
     "customize-cra": "^0.2.12",
@@ -24,6 +25,7 @@
     "react-router-dom": "^5.0.1",
     "react-scripts": "3.0.1",
     "redux": "^4.0.3",
+    "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
     "source-map-explorer": "^1.8.0",
     "typescript": "3.4.5"
