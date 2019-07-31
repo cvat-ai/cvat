@@ -709,7 +709,7 @@ window.addEventListener('DOMContentLoaded', () => {
         // TODO: Use REST API in order to get meta
         $.get('/dashboard/meta'),
         $.get(`/api/v1/tasks${window.location.search}`),
-        $.get('/api/v1/server/formats'),
+        $.get('/api/v1/server/annotation/formats'),
     ).then((metaData, taskData, annotationFormats) => {
         try {
             new DashboardView(metaData[0], taskData[0], annotationFormats[0]);

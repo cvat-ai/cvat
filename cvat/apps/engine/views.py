@@ -153,7 +153,7 @@ class ServerViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
-    @action(detail=False, methods=['GET'])
+    @action(detail=False, methods=['GET'], url_path='annotation/formats')
     def formats(request):
         data = get_annotation_formats()
         return Response(data)
@@ -312,10 +312,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             else:
                 return Response(status=status.HTTP_202_ACCEPTED)
 
-        rq_job = queue.enqueue_call(func=annotation.dump_task_data,
-            args=(pk, request.user, file_path, request.scheme,
-                request.get_host(), db_dumper, dump_spec),
-            job_id=rq_id)
+        rq_job = queue.enqueue_call(
+            func=annotation.dump_task_data,
+            args=(pk, request.user, file_path, db_dumper, dump_spec,
+                  request.scheme, request.get_host()),
+            job_id=rq_id,
+        )
         rq_job.meta["file_path"] = file_path
         rq_job.save_meta()
 

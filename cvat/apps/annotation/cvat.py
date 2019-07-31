@@ -11,7 +11,7 @@ def pairwise(iterable):
     a = iter(iterable)
     return zip(a, a)
 
-def dump(file_object, annotations, dump_spec):
+def dump(file_object, annotations, spec):
     from xml.sax.saxutils import XMLGenerator
     from collections import OrderedDict
 
@@ -311,14 +311,14 @@ def dump(file_object, annotations, dump_spec):
     dumper.open_root()
     dumper.add_meta(annotations.meta)
 
-    if dump_spec == "for images":
+    if spec == "for images":
         dump_as_cvat_annotation(dumper, annotations)
     else:
         dump_as_cvat_interpolation(dumper, annotations)
 
     dumper.close_root()
 
-def parse(file_object, annotations, parse_spec):
+def load(file_object, annotations, spec):
     import xml.etree.ElementTree as et
     context = et.iterparse(file_object, events=("start", "end"))
     context = iter(context)

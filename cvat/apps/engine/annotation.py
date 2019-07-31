@@ -98,14 +98,14 @@ def patch_task_data(pk, user, data, action):
     return annotation.data
 
 @transaction.atomic
-def upload_task_anno(pk, user, filename, parser, spec):
+def upload_task_anno(pk, user, filename, loader, spec):
     annotation = TaskAnnotation(pk, user)
-    annotation.upload(filename, parser, spec)
+    annotation.upload(filename, loader, spec)
 
 @transaction.atomic
-def upload_job_anno(pk, user, filename, parser, spec):
+def upload_job_anno(pk, user, filename, loader, spec):
     annotation = JobAnnotation(pk, user)
-    annotation.upload(filename, parser, spec)
+    annotation.upload(filename, loader, spec)
 
 @silk_profile(name="DELETE task data")
 @transaction.atomic
@@ -113,8 +113,7 @@ def delete_task_data(pk, user):
     annotation = TaskAnnotation(pk, user)
     annotation.delete()
 
-
-def dump_task_data(pk, user, file_path, scheme, host, dumper, spec):
+def dump_task_data(pk, user, filename, dumper, spec, scheme, host):
     # For big tasks dump function may run for a long time and
     # we dont need to acquire lock after _AnnotationForTask instance
     # has been initialized from DB.
@@ -124,21 +123,7 @@ def dump_task_data(pk, user, file_path, scheme, host, dumper, spec):
         annotation = TaskAnnotation(pk, user)
         annotation.init_from_db()
 
-    annotation.dump(file_path, scheme, host, dumper, spec)
-
-def _parse_task_annotation(annotation_file, annotation_importer, parser, spec):
-    with open(annotation_file, 'rb') as file_object:
-        source_code = open(os.path.join(settings.BASE_DIR, parser.handler_file.name)).read()
-        global_vars = globals()
-        imports = import_modules(source_code)
-        global_vars.update(imports)
-        exec(source_code, global_vars)
-
-        global_vars["file_object"] = file_object
-        global_vars["annotations"] = annotation_importer
-        global_vars["parse_spec"] = spec
-
-        exec("parse(file_object, annotations, parse_spec)", global_vars)
+    annotation.dump(filename, dumper, spec, scheme, host)
 
 def bulk_create(db_model, objects, flt_param):
     if objects:
@@ -596,14 +581,25 @@ class JobAnnotation:
         return self.ir_data.data
 
     def upload(self, annotation_file, parser, spec):
-        anno_importer = Annotation(
+        annotation_importer = Annotation(
             annotation_ir=self.ir_data,
             db_task=self.db_job.segment.task,
             create_callback=self.create,
             )
         self.delete()
-        _parse_task_annotation(annotation_file, anno_importer, parser, spec)
-        self.create(anno_importer.data.slice(self.start_frame, self.stop_frame).serialize())
+        with open(annotation_file, 'rb') as file_object:
+            source_code = open(os.path.join(settings.BASE_DIR, parser.handler_file.name)).read()
+            global_vars = globals()
+            imports = import_modules(source_code)
+            global_vars.update(imports)
+            exec(source_code, global_vars)
+
+            global_vars["file_object"] = file_object
+            global_vars["annotations"] = annotation_importer
+            global_vars["spec"] = spec
+
+            exec("load(file_object, annotations, spec)", global_vars)
+        self.create(annotation_importer.data.slice(self.start_frame, self.stop_frame).serialize())
 
 class TaskAnnotation:
     def __init__(self, pk, user):
@@ -669,35 +665,46 @@ class TaskAnnotation:
             overlap = self.db_task.overlap
             self._merge_data(annotation.ir_data, start_frame, overlap)
 
-    def dump(self, file_path, scheme, host, dumper, spec):
+    def dump(self, filename, dumper, spec, scheme, host):
         anno_exporter = Annotation(
             annotation_ir=self.ir_data,
             db_task=self.db_task,
             scheme=scheme,
             host=host,
-            )
+        )
 
-        with open(file_path, 'wb') as dump_file:
+        with open(filename, 'wb') as dump_file:
             source_code = open(os.path.join(settings.BASE_DIR, dumper.handler_file.name)).read()
             global_vars = globals()
             imports = import_modules(source_code)
             global_vars.update(imports)
             exec(source_code, global_vars)
-            global_vars["annotations"] = anno_exporter
-            global_vars["dump_spec"] = spec
             global_vars["file_object"] = dump_file
+            global_vars["annotations"] = anno_exporter
+            global_vars["spec"] = spec
 
-            exec("dump(file_object, annotations, dump_spec)", global_vars)
+            exec("dump(file_object, annotations, spec)", global_vars)
 
-    def upload(self, file_object, parser, spec):
-        anno_importer = Annotation(
+    def upload(self, annotation_file, loader, spec):
+        annotation_importer = Annotation(
             annotation_ir=AnnotationIR(),
             db_task=self.db_task,
             create_callback=self.create,
             )
         self.delete()
-        _parse_task_annotation(file_object, anno_importer, parser, spec)
-        self.create(anno_importer.data.serialize())
+        with open(annotation_file, 'rb') as file_object:
+            source_code = open(os.path.join(settings.BASE_DIR, loader.handler_file.name)).read()
+            global_vars = globals()
+            imports = import_modules(source_code)
+            global_vars.update(imports)
+            exec(source_code, global_vars)
+
+            global_vars["file_object"] = file_object
+            global_vars["annotations"] = annotation_importer
+            global_vars["spec"] = spec
+
+            exec("load(file_object, annotations, spec)", global_vars)
+        self.create(annotation_importer.data.serialize())
 
     @property
     def data(self):

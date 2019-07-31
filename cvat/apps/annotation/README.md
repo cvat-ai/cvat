@@ -19,18 +19,18 @@ It allows to download and upload annotations in different formats and easily add
       ```
     - **dump** - a function with the following signature:
     ```python
-    def dump(file_object, annotations, dump_spec):
+    def dump(file_object, annotations, spec):
     ```
-    - **parse** - a function with the signature:
+    - **load** - a function with the signature:
     ```python
-    def parse(file_object, annotations, parse_spec):
+    def load(file_object, annotations, spec):
     ```
 
     Inside of the script environment 3 variables are available:
     - file_object - python's standard file object returned by open() function and exposing a file-oriented API
     (with methods such as read() or write()) to an underlying resource.
     - **annotations** - instance of [Annotation](annotation.py#L106) class.
-    - **parse_spec / dump_spec** - string with name of the requested specification
+    - **spec** - string with name of the requested specification
     (if the annotation format defines them).
     It may be useful if one script implements more than one format support.
 
