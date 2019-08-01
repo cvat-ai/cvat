@@ -5,7 +5,6 @@
 from cvat.apps.annotation import models
 from django.conf import settings
 from cvat.apps.annotation.serializers import AnnotationFormatSerializer
-from django.core.files.base import File
 
 import os
 from copy import deepcopy

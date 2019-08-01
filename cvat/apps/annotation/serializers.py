@@ -18,6 +18,7 @@ class AnnotationFormatSerializer(serializers.ModelSerializer):
         model = models.AnnotationFormat
         exclude = ("handler_file", )
 
+    # pylint: disable=no-self-use
     def create(self, validated_data):
         handlers = validated_data.pop('handlers')
 
@@ -28,7 +29,7 @@ class AnnotationFormatSerializer(serializers.ModelSerializer):
 
         return annotation_format
 
-    # # pylint: disable=no-self-use
+    # pylint: disable=no-self-use
     def to_internal_value(self, data):
         _data = data.copy()
         _data["handlers"] = []

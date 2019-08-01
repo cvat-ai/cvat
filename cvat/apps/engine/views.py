@@ -42,7 +42,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
-from cvat.apps.annotation.models import AnnotationFormat, AnnotationHandler
+from cvat.apps.annotation.models import AnnotationHandler
 from cvat.apps.annotation.format import get_annotation_formats
 
 # Server REST API
