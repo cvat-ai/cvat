@@ -10,7 +10,7 @@ from cvat.apps.engine.models import Task, Job, User
 from cvat.apps.engine.annotation import dump_task_data
 from cvat.apps.engine.plugins import add_plugin
 from cvat.apps.git.models import GitStatusChoice
-from cvat.apps.annotation.models import AnnotationFormat
+from cvat.apps.annotation.models import AnnotationHandler
 
 from cvat.apps.git.models import GitData
 from collections import OrderedDict
@@ -261,20 +261,19 @@ class Git:
                 self._rep.git.add(['.gitattributes'])
 
         # Dump an annotation
-        # TODO: Fix dump, query params
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        cvat_dumper = AnnotationFormat.objects.get(name="CVAT")
-        spec = "for videos" if self._task_mode == "interpolation" else "for images"
+        display_name = "CVAT XML 1.1"
+        display_name += " for images" if self._task_mode == "annotation" else " for videos"
+        cvat_dumper = AnnotationHandler.objects.get(display_name=display_name)
         dump_name = os.path.join(db_task.get_task_dirname(),
             "git_annotation_{}.".format(timestamp) + "dump")
         dump_task_data(
             pk=self._tid,
             user=user,
-            file_path=dump_name,
+            filename=dump_name,
+            dumper=cvat_dumper,
             scheme=scheme,
             host=host,
-            dumper=cvat_dumper,
-            spec=spec,
         )
 
         ext = os.path.splitext(self._path)[1]

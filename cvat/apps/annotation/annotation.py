@@ -146,6 +146,7 @@ class Annotation:
         for db_label in self._label_mapping.values():
             if label_name == db_label.name:
                 return db_label.id
+        return None
 
     def _get_label_name(self, label_id):
         return self._label_mapping[label_id].name
@@ -380,16 +381,22 @@ class Annotation:
             self._annotation_ir.reset()
 
     def add_tag(self, tag):
-        self._annotation_ir.add_tag(self._import_tag(tag))
-        self._call_callback()
+        imported_tag = self._import_tag(tag)
+        if imported_tag['label_id']:
+            self._annotation_ir.add_tag(imported_tag)
+            self._call_callback()
 
     def add_shape(self, shape):
-        self._annotation_ir.add_shape(self._import_shape(shape))
-        self._call_callback()
+        imported_shape = self._import_shape(shape)
+        if imported_shape['label_id']:
+            self._annotation_ir.add_shape(imported_shape)
+            self._call_callback()
 
     def add_track(self, track):
-        self._annotation_ir.add_track(self._import_track(track))
-        self._call_callback()
+        imported_track = self._import_track(track)
+        if imported_track['label_id']:
+            self._annotation_ir.add_track(imported_track)
+            self._call_callback()
 
     @property
     def data(self):
