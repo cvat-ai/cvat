@@ -9,6 +9,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     let frame = 0;
     const callback = async () => {
+        canvas.fit();
         const frameData = await job.frames.get(frame);
         canvas.setup(frameData, []);
         frame += 1;

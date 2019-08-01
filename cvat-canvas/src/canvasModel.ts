@@ -12,6 +12,7 @@ export interface Size {
 
 export interface Geometry {
     image: Size;
+    canvas: Size;
     top: number;
     left: number;
     scale: number;
@@ -30,12 +31,17 @@ export enum Rotation {
 
 export enum UpdateReasons {
     IMAGE = 'image',
+    ZOOM = 'zoom',
+    FIT = 'fit',
 }
 
 export interface CanvasModel extends MasterImpl {
     image: string;
     geometry: Geometry;
     imageSize: Size;
+    canvasSize: Size;
+
+    zoom(x: number, y: number, direction: number): void;
 
     setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number, attributeID: number): void;
@@ -56,6 +62,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     private data: {
         image: string;
         imageSize: Size;
+        canvasSize: Size;
         imageOffset: number;
         scale: number;
         top: number;
@@ -71,12 +78,27 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 width: 0,
                 height: 0,
             },
+            canvasSize: {
+                width: 0,
+                height: 0,
+            },
             imageOffset: 0,
             scale: 1,
             top: 0,
             left: 0,
         };
     }
+
+    public zoom(x: number, y: number, direction: number): void {
+        const oldScale: number = this.data.scale;
+        const newScale: number = direction > 0 ? oldScale * 6 / 5 : oldScale * 5 / 6;
+        this.data.scale = Math.min(Math.max(newScale, FrameZoom.MIN), FrameZoom.MAX);
+        this.data.left += (x * (oldScale / this.data.scale - 1)) * this.data.scale;
+        this.data.top += (y * (oldScale / this.data.scale - 1)) * this.data.scale;
+
+        this.notify(UpdateReasons.ZOOM);
+    }
+
 
     public setup(frameData: any, objectStates: any[]): void {
         frameData.data(
@@ -85,6 +107,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.notify(UpdateReasons.IMAGE);
             },
         ).then((data: string): void => {
+            this.data.imageSize = {
+                width: (frameData.width as number),
+                height: (frameData.height as number),
+            };
+
             this.data.image = data;
             this.notify(UpdateReasons.IMAGE);
         }).catch((exception: any): void => {
@@ -107,7 +134,22 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public fit(): void {
-        console.log('Fit()');
+        this.data.scale = Math.min(
+            this.data.canvasSize.width / this.data.imageSize.width,
+            this.data.canvasSize.height / this.data.imageSize.height,
+        );
+
+        this.data.scale = Math.min(
+            Math.max(this.data.scale, FrameZoom.MIN),
+            FrameZoom.MAX,
+        );
+
+        this.data.top = (this.data.canvasSize.height
+            - this.data.imageSize.height * this.data.scale) / 2;
+        this.data.left = (this.data.canvasSize.width
+            - this.data.imageSize.width * this.data.scale) / 2;
+
+        this.notify(UpdateReasons.FIT);
     }
 
     public grid(stepX: number, stepY: number): void {
@@ -146,6 +188,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 width: this.data.imageSize.width,
                 height: this.data.imageSize.height,
             },
+            canvas: {
+                width: this.data.canvasSize.width,
+                height: this.data.canvasSize.height,
+            },
             top: this.data.top,
             left: this.data.left,
             scale: this.data.scale,
@@ -162,11 +208,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             width: value.width,
             height: value.height,
         };
-
-        this.data.imageOffset = Math.floor(Math.max(
-            this.data.imageSize.height / FrameZoom.MIN,
-            this.data.imageSize.width / FrameZoom.MIN,
-        ));
     }
 
     public get imageSize(): Size {
@@ -175,11 +216,28 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             height: this.data.imageSize.height,
         };
     }
+
+    public set canvasSize(value: Size) {
+        this.data.canvasSize = {
+            width: value.width,
+            height: value.height,
+        };
+
+        this.data.imageOffset = Math.floor(Math.max(
+            this.data.canvasSize.height / FrameZoom.MIN,
+            this.data.canvasSize.width / FrameZoom.MIN,
+        ));
+    }
+
+    public get canvasSize(): Size {
+        return {
+            width: this.data.canvasSize.width,
+            height: this.data.canvasSize.height,
+        };
+    }
 }
 
 // TODO List:
-// 2) Resize image
-// 3) Move image
-// 4) Fit image
-// 5) Add grid
-// 6) Draw objects
+// 1) Move image
+// 2) Add grid
+// 3) Draw objects

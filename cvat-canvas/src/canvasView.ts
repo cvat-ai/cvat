@@ -15,6 +15,35 @@ interface HTMLAttribute {
     [index: string]: string;
 }
 
+
+function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
+    const output = [];
+    const transformationMatrix = svg.getScreenCTM().inverse();
+    let pt = svg.createSVGPoint();
+    for (let i = 0; i < points.length; i += 2) {
+        [pt.x] = points;
+        [, pt.y] = points;
+        pt = pt.matrixTransform(transformationMatrix);
+        output.push(pt.x, pt.y);
+    }
+
+    return output;
+}
+
+function translateFromSVG(svg: SVGSVGElement, points: number[]): number[] {
+    const output = [];
+    const transformationMatrix = svg.getScreenCTM();
+    let pt = svg.createSVGPoint();
+    for (let i = 0; i < points.length; i += 2) {
+        [pt.x] = points;
+        [, pt.y] = points;
+        pt = pt.matrixTransform(transformationMatrix);
+        output.push(pt.x, pt.y);
+    }
+
+    return output;
+}
+
 export class CanvasViewImpl implements CanvasView, Listener {
     private loadingAnimation: SVGSVGElement;
     private text: SVGSVGElement;
@@ -22,12 +51,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private grid: SVGSVGElement;
     private content: SVGSVGElement;
     private rotationWrapper: HTMLDivElement;
+    private canvas: HTMLDivElement;
     private gridPath: SVGPathElement;
-    private model: CanvasModel & Master;
     private controller: CanvasController;
 
     public constructor(model: CanvasModel & Master, controller: CanvasController) {
-        this.model = model;
         this.controller = controller;
 
         // Create HTML elements
@@ -40,6 +68,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.content = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.rotationWrapper = window.document.createElement('div');
+        this.canvas = window.document.createElement('div');
 
         const loadingCircle: SVGCircleElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         const gridDefs: SVGDefsElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'defs');
@@ -63,7 +92,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         gridPattern.setAttribute('width', '100');
         gridPattern.setAttribute('height', '100');
         gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
-        gridRect.setAttribute('width', '100%classList.remove('canvas_hidden');');
+        gridRect.setAttribute('width', '100%');
         gridRect.setAttribute('height', '100%');
         gridRect.setAttribute('fill', 'url(#canvas_grid_pattern)');
 
@@ -74,9 +103,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.content.setAttribute('id', 'canvas_content');
 
         // Setup wrappers
-        this.rotationWrapper.style.width = '100%';
-        this.rotationWrapper.style.height = '100%';
-        this.rotationWrapper.style.position = 'relatiove';
+        this.rotationWrapper.setAttribute('id', 'canvas_rotation_wrapper');
+        this.canvas.setAttribute('id', 'canvas_wrapper');
 
         // Unite created HTML elements together
         this.loadingAnimation.appendChild(loadingCircle);
@@ -92,12 +120,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.rotationWrapper.appendChild(this.grid);
         this.rotationWrapper.appendChild(this.content);
 
+        this.canvas.appendChild(this.rotationWrapper);
+
         // A little hack to get size after first mounting
         // http://www.backalleycoder.com/2012/04/25/i-want-a-damnodeinserted/
         const self = this;
         const canvasFirstMounted = (event: AnimationEvent): void => {
             if (event.animationName === 'loadingAnimation') {
-                self.model.imageSize = {
+                self.controller.canvasSize = {
                     width: self.rotationWrapper.clientWidth,
                     height: self.rotationWrapper.clientHeight,
                 };
@@ -106,41 +136,59 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         };
 
-        this.rotationWrapper.addEventListener('animationstart', canvasFirstMounted);
+        this.canvas.addEventListener('animationstart', canvasFirstMounted);
+        this.content.addEventListener('dblclick', (): void => {
+            self.controller.fit();
+        });
+
+        this.content.addEventListener('wheel', (event): void => {
+            const point = translateToSVG(self.background, [event.clientX, event.clientY]);
+            self.controller.zoom(point[0], point[1], event.deltaY > 0 ? -1 : 1);
+            event.preventDefault();
+        });
+
+
         model.subscribe(this);
     }
 
     public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
+        function updateGeometry(): void {
+            const { geometry } = this.controller;
+
+            for (const obj of [this.background, this.grid, this.loadingAnimation]) {
+                obj.style.width = `${geometry.image.width}`;
+                obj.style.height = `${geometry.image.height}`;
+                obj.style.top = `${geometry.top}`;
+                obj.style.left = `${geometry.left}`;
+                obj.style.transform = `scale(${geometry.scale})`;
+            }
+
+            for (const obj of [this.content, this.text]) {
+                obj.style.width = `${geometry.image.width + geometry.offset * 2}`;
+                obj.style.height = `${geometry.image.height + geometry.offset * 2}`;
+                obj.style.top = `${geometry.top - geometry.offset * geometry.scale}`;
+                obj.style.left = `${geometry.left - geometry.offset * geometry.scale}`;
+            }
+
+            this.content.style.transform = `scale(${geometry.scale})`;
+        }
+
         if (reason === UpdateReasons.IMAGE) {
             if (!model.image.length) {
                 this.loadingAnimation.classList.remove('canvas_hidden');
             } else {
                 this.loadingAnimation.classList.add('canvas_hidden');
                 this.background.style.backgroundImage = `url("${model.image}")`;
-                const { geometry } = this.controller;
-
-                for (const obj of [this.background, this.grid, this.loadingAnimation]) {
-                    obj.style.width = `${geometry.image.width}`;
-                    obj.style.height = `${geometry.image.height}`;
-                    obj.style.top = `${geometry.top}`;
-                    obj.style.left = `${geometry.left}`;
-                    obj.style.transform = `scale(${geometry.scale})`;
-                }
-
-                for (const obj of [this.content, this.text]) {
-                    obj.style.width = `${geometry.image.width + geometry.offset * 2}`;
-                    obj.style.height = `${geometry.image.height + geometry.offset * 2}`;
-                    obj.style.top = `${geometry.top - geometry.offset * geometry.scale}`;
-                    obj.style.left = `${geometry.left - geometry.offset * geometry.scale}`;
-                }
-
+                updateGeometry.call(this);
                 const event: Event = new Event('canvas.setup');
-                this.rotationWrapper.dispatchEvent(event);
+                this.canvas.dispatchEvent(event);
             }
+        } else if (reason === UpdateReasons.ZOOM || reason === UpdateReasons.FIT) {
+            updateGeometry.call(this);
         }
     }
 
     public html(): HTMLDivElement {
-        return this.rotationWrapper;
+        return this.canvas;
     }
 }
