@@ -14,7 +14,7 @@
     stroke: #09c;
     stroke-width: 3px;
     stroke-dasharray: 50;
-    animation: dash 1s linear infinite;
+    animation: loadingAnimation 1s linear infinite;
 }
 
 #canvas_text_content {
@@ -53,7 +53,7 @@
     height: 100%;
 }
 
-@keyframes dash {
+@keyframes loadingAnimation {
     0%   {stroke-dashoffset: 1; stroke: #09c;}
     50%  {stroke-dashoffset: 100; stroke: #f44;}
     100% {stroke-dashoffset: 300; stroke: #09c;}

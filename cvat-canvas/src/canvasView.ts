@@ -128,6 +128,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.rotationWrapper.appendChild(this.grid);
         this.rotationWrapper.appendChild(this.content);
 
+        const self = this;
+        const canvasFirstMounted = (event: AnimationEvent): void => {
+            if (event.animationName === 'loadingAnimation') {
+                self.model.imageSize = {
+                    width: self.rotationWrapper.clientWidth,
+                    height: self.rotationWrapper.clientHeight,
+                };
+
+                self.rotationWrapper.removeEventListener('animationstart', canvasFirstMounted);
+            }
+        };
+
+        this.rotationWrapper.addEventListener('animationstart', canvasFirstMounted);
         model.subscribe(this);
     }
 
@@ -138,6 +151,23 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else {
                 this.loadingAnimation.classList.add('canvas_hidden');
                 this.background.style.backgroundImage = `url("${model.image}")`;
+                const { geometry } = this.controller;
+
+                for (const obj of [this.background, this.grid]) {
+                    obj.style.width = `${geometry.image.width}`;
+                    obj.style.height = `${geometry.image.height}`;
+                    obj.style.top = `${geometry.top}`;
+                    obj.style.left = `${geometry.left}`;
+                    obj.style.transform = `scale(${geometry.scale})`;
+                }
+
+                for (const obj of [this.content, this.text]) {
+                    obj.style.width = `${geometry.image.width + geometry.offset * 2}`;
+                    obj.style.height = `${geometry.image.height + geometry.offset * 2}`;
+                    obj.style.top = `${geometry.top - geometry.offset * geometry.scale}`;
+                    obj.style.left = `${geometry.left - geometry.offset * geometry.scale}`;
+                }
+
                 const event: Event = new Event('canvas.setup');
                 this.rotationWrapper.dispatchEvent(event);
             }

@@ -3,10 +3,11 @@
 * SPDX-License-Identifier: MIT
 */
 
-import { CanvasModel } from './canvasModel';
+import { CanvasModel, Geometry } from './canvasModel';
+
 
 export interface CanvasController {
-    a: string;
+    readonly geometry: Geometry;
 }
 
 export class CanvasControllerImpl implements CanvasController {
@@ -16,7 +17,7 @@ export class CanvasControllerImpl implements CanvasController {
         this.model = model;
     }
 
-    public get a(): string {
-        return 'string';
+    public get geometry(): Geometry {
+        return this.model.geometry;
     }
 }
