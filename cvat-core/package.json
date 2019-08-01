@@ -19,6 +19,7 @@
     "babel-loader": "^8.0.6",
     "core-js": "^3.0.1",
     "coveralls": "^3.0.5",
+    "eslint": "^6.1.0",
     "jest": "^24.8.0",
     "jest-junit": "^6.4.0",
     "jsdoc": "^3.6.2",

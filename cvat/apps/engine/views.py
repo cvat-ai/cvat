@@ -42,7 +42,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
-from cvat.apps.annotation.models import AnnotationFormat
+from cvat.apps.annotation.models import AnnotationFormat, AnnotationHandler
 from cvat.apps.annotation.format import get_annotation_formats
 
 # Server REST API
@@ -153,7 +153,7 @@ class ServerViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
-    @action(detail=False, methods=['GET'])
+    @action(detail=False, methods=['GET'], url_path='annotation/formats')
     def formats(request):
         data = get_annotation_formats()
         return Response(data)
@@ -235,10 +235,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 return Response(serializer.data)
         elif request.method == 'PUT':
             if request.query_params.get("format", ""):
-                return upload_anno_proxy(
+                return load_data_proxy(
                     request=request,
                     rq_id="{}@/api/v1/tasks/{}/annotations/upload".format(request.user, pk),
-                    rq_func=annotation.upload_task_anno,
+                    rq_func=annotation.load_task_data,
                     pk=pk,
                 )
             else:
@@ -274,16 +274,15 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Please specify a correct 'action' for the request")
 
-        dump_format_id = request.query_params.get("format", "")
-        dump_spec = request.query_params.get("spec", "")
+        dump_format = request.query_params.get("format", "")
         try:
-            db_dumper = AnnotationFormat.objects.get(pk=dump_format_id)
+            db_dumper = AnnotationHandler.objects.get(display_name=dump_format)
         except ObjectDoesNotExist:
             raise serializers.ValidationError(
                 "Please specify a correct 'format' parameter for the request")
 
         file_path = os.path.join(db_task.get_task_dirname(),
-            "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.file_extension))
+            "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.format.lower()))
 
         queue = django_rq.get_queue("default")
         rq_id = "{}@/api/v1/tasks/{}/annotations/{}".format(username, pk, filename)
@@ -296,7 +295,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                         rq_job.meta[action] = True
                         rq_job.save_meta()
                         return sendfile(request, rq_job.meta["file_path"], attachment=True,
-                            attachment_filename="{}.{}".format(filename, db_dumper.file_extension))
+                            attachment_filename="{}.{}".format(filename, db_dumper.format.lower()))
                     else:
                         return Response(status=status.HTTP_201_CREATED)
                 else: # Remove the old dump file
@@ -312,10 +311,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             else:
                 return Response(status=status.HTTP_202_ACCEPTED)
 
-        rq_job = queue.enqueue_call(func=annotation.dump_task_data,
-            args=(pk, request.user, file_path, request.scheme,
-                request.get_host(), db_dumper, dump_spec),
-            job_id=rq_id)
+        rq_job = queue.enqueue_call(
+            func=annotation.dump_task_data,
+            args=(pk, request.user, file_path, db_dumper,
+                  request.scheme, request.get_host()),
+            job_id=rq_id,
+        )
         rq_job.meta["file_path"] = file_path
         rq_job.save_meta()
 
@@ -407,10 +408,10 @@ class JobViewSet(viewsets.GenericViewSet,
             return Response(data)
         elif request.method == 'PUT':
             if request.query_params.get("format", ""):
-                return upload_anno_proxy(
+                return load_data_proxy(
                     request=request,
                     rq_id="{}@/api/v1/jobs/{}/annotations/upload".format(request.user, pk),
-                    rq_func=annotation.upload_job_anno,
+                    rq_func=annotation.load_job_data,
                     pk=pk,
                 )
             else:
@@ -497,17 +498,16 @@ def rq_handler(job, exc_type, exc_value, tb):
 
     return True
 
-def upload_anno_proxy(request, rq_id, rq_func, pk):
+def load_data_proxy(request, rq_id, rq_func, pk):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
-    upload_format_id = request.query_params.get("format", "")
-    upload_format_spec = request.query_params.get("spec", "")
+    upload_format = request.query_params.get("format", "")
 
     if not rq_job:
         serializer = AnnotationFileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             try:
-                db_parser = AnnotationFormat.objects.get(pk=upload_format_id)
+                db_parser = AnnotationHandler.objects.get(pk=upload_format)
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(
                     "Please specify a correct 'format' parameter for the upload request")
@@ -519,7 +519,7 @@ def upload_anno_proxy(request, rq_id, rq_func, pk):
                     f.write(chunk)
             rq_job = queue.enqueue_call(
                 func=rq_func,
-                args=(pk, request.user, filename, db_parser, upload_format_spec),
+                args=(pk, request.user, filename, db_parser),
                 job_id=rq_id
             )
             rq_job.meta['tmp_file'] = filename

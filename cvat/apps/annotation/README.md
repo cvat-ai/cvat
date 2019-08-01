@@ -5,32 +5,55 @@ It allows to download and upload annotations in different formats and easily add
 
 ## How to add a new annotation format support
 
-1.  Write a python script that will be executed via exec() function. Script must defines following items:
-    - **format_spec** - a dictionary with the following keys:
-    ```python
-    format_spec = {
+1.  Write a python script that will be executed via exec() function. Following items must be defined inside at code:
+    - **format_spec** - a dictionary with the following structure:
+      ```python
+      format_spec = {
         "name": "CVAT",
-        "format": "XML",
-        "version": "1.1",
-        "dump_specification": ["for videos", "for images"],
-        "parse_specification": [],
-        "file_extension": "xml",
+        "dumpers": [
+            {
+                "display_name": "{name} {format} {version} for videos",
+                "format": "XML",
+                "version": "1.1",
+                "handler": "dump_as_cvat_interpolation"
+            },
+            {
+                "display_name": "{name} {format} {version} for images",
+                "format": "XML",
+                "version": "1.1",
+                "handler": "dump_as_cvat_annotation"
+            }
+        ],
+        "loaders": [
+            {
+                "display_name": "{name} {format} {version}",
+                "format": "XML",
+                "version": "1.1",
+                "handler": "load",
+            }
+        ],
       }
       ```
-    - **dump** - a function with the following signature:
-    ```python
-    def dump(file_object, annotations, dump_spec):
-    ```
-    - **parse** - a function with the signature:
-    ```python
-    def parse(file_object, annotations, parse_spec):
-    ```
+      - **name** - unique name for each format
+      - **dumpers and loaders** - lists of objects that describes exposed dumpers and loaders and must
+        have following keys:
+        1. display_name - **unique** string used as ID for a dumpers and loaders.
+           Also this string is displayed in CVAT UI.
+           Possible to use a named placeholders like the python format function
+           (supports only name, format and version variables).
+        1. format - a string, used as extension for a dumped annotation.
+        1. version - just string with version.
+        1. handler - function that will be called and should be defined at top scope.
+    - dumper/loader handler functions. Each function should have the following signature:
+      ```python
+      def dump_handler(file_object, annotations):
+      ```
 
     Inside of the script environment 3 variables are available:
     - file_object - python's standard file object returned by open() function and exposing a file-oriented API
     (with methods such as read() or write()) to an underlying resource.
     - **annotations** - instance of [Annotation](annotation.py#L106) class.
-    - **parse_spec / dump_spec** - string with name of the requested specification
+    - **spec** - string with name of the requested specification
     (if the annotation format defines them).
     It may be useful if one script implements more than one format support.
 
@@ -124,8 +147,8 @@ It allows to download and upload annotations in different formats and easily add
 ## Ideas for improvements
 
 - Annotation format manager like DL Model manager with which the user can add custom format support by
-  writing dumper/paser scripts.
-- Often a custom parser/dumper requires additional python packages and it would be useful if CVAT provided some API
+  writing dumper/loader scripts.
+- Often a custom loader/dumper requires additional python packages and it would be useful if CVAT provided some API
   that allows the user to install a python dependencies from their own code without changing the source code.
   Possible solutions: install additional modules via pip call to a separate directory for each Annotation Format
   to reduce version conflicts, etc. Thus, custom code can be run in an extended environment, and core CVAT modules

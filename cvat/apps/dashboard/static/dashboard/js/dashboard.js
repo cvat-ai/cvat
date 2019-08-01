@@ -76,7 +76,7 @@ class TaskView {
         });
     }
 
-    _upload(uploadAnnotationButton, formatId, parseSpec) {
+    _upload(uploadAnnotationButton, format) {
         const button = $(uploadAnnotationButton);
         $('<input type="file" accept="text/xml">').on('change', async (onChangeEvent) => {
             const file = onChangeEvent.target.files[0];
@@ -87,7 +87,7 @@ class TaskView {
                 const annotationData = new FormData();
                 annotationData.append('annotation_file', file);
                 try {
-                    await uploadTaskAnnotationRequest(this._task.id, annotationData, formatId, parseSpec);
+                    await uploadTaskAnnotationRequest(this._task.id, annotationData, format);
                 } catch (error) {
                     showMessage(error.message);
                 } finally {
@@ -98,10 +98,10 @@ class TaskView {
         }).click();
     }
 
-    async _dump(button, formatId, dumpSpec) {
+    async _dump(button, format) {
         button.disabled = true;
         try {
-            await dumpAnnotationRequest(this._task.id, this._task.name, formatId, dumpSpec);
+            await dumpAnnotationRequest(this._task.id, this._task.name, format);
         } catch (error) {
             showMessage(error.message);
         } finally {
@@ -137,19 +137,19 @@ class TaskView {
         const dropdownUploadMenu = $('<ul class="dropdown-content hidden"></ul>');
 
         for (const format of this._annotationFormats) {
-            for (const dumpSpec of format.dump_specification) {
-                const displayName = `${format.name} ${format.format} ${dumpSpec}`;
-                dropdownDownloadMenu.append($(`<li>${displayName}</li>`).on('click', () => {
-                    dropdownDownloadMenu.addClass('hidden');
-                    this._dump(downloadButton[0], format.id, dumpSpec);
+            for (const dumper of format.dumpers) {
+                dropdownMenu.append($(`<li>${dumper.display_name}</li>`).on('click', () => {
+                    dropdownMenu.addClass('hidden');
+                    this._dump(downloadButton[0], format.id, dumper.display_name);
                 }));
             }
 
-            for (const parseSpec of format.parse_specification) {
-                const displayName = `${format.name} ${format.format} ${parseSpec}`;
-                dropdownUploadMenu.append($(`<li>${displayName}</li>`).on('click', () => {
+            for (const loader of format.loaders) {
+                dropdownUploadMenu.append($(`<li>${loader.display_name}</li>`).on('click', () => {
                     dropdownUploadMenu.addClass('hidden');
-                    userConfirm('The current annotation will be lost. Are you sure?', () => this._upload(uploadButton, format.id, parseSpec));
+                    userConfirm('The current annotation will be lost. Are you sure?', () => {
+                        this._upload(uploadButton, loader.display_name);
+                    });
                 }));
             }
         }
@@ -722,7 +722,7 @@ window.addEventListener('DOMContentLoaded', () => {
         // TODO: Use REST API in order to get meta
         $.get('/dashboard/meta'),
         $.get(`/api/v1/tasks${window.location.search}`),
-        $.get('/api/v1/server/formats'),
+        $.get('/api/v1/server/annotation/formats'),
     ).then((metaData, taskData, annotationFormats) => {
         try {
             new DashboardView(metaData[0], taskData[0], annotationFormats[0]);

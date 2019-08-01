@@ -65,7 +65,7 @@ function blurAllElements() {
 }
 
 function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationSaverModel,
-    uploadAnnotationButton, formatId, parseSpec) {
+    uploadAnnotationButton, format) {
     $('#annotationFileSelector').one('change', async (changedFileEvent) => {
         const file = changedFileEvent.target.files['0'];
         changedFileEvent.target.value = '';
@@ -75,7 +75,7 @@ function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationS
         const annotationData = new FormData();
         annotationData.append('annotation_file', file);
         try {
-            await uploadJobAnnotationRequest(jobId, annotationData, formatId, parseSpec);
+            await uploadJobAnnotationRequest(jobId, annotationData, format);
             historyModel.empty();
             shapeCollectionModel.empty();
             const data = await $.get(`/api/v1/jobs/${jobId}/annotations`);
@@ -388,13 +388,12 @@ function setupMenu(job, task, shapeCollectionModel,
         ${shortkeys.open_settings.view_value} - ${shortkeys.open_settings.description}`);
 
     for (const format of annotationFormats) {
-        for (const dumpSpec of format.dump_specification) {
-            const displayName = `${format.name} ${format.format} ${dumpSpec}`;
-            $(`<li>${displayName}</li>`).on('click', async () => {
+        for (const dumpSpec of format.dumpers) {
+            $(`<li>${dumpSpec.display_name}</li>`).on('click', async () => {
                 $('#downloadAnnotationButton')[0].disabled = true;
                 $('#downloadDropdownMenu').addClass('hidden');
                 try {
-                    await dumpAnnotationRequest(task.id, task.name, format.id, dumpSpec);
+                    await dumpAnnotationRequest(task.id, task.name, dumpSpec.display_name);
                 } catch (error) {
                     showMessage(error.message);
                 } finally {
@@ -403,9 +402,8 @@ function setupMenu(job, task, shapeCollectionModel,
             }).appendTo('#downloadDropdownMenu');
         }
 
-        for (const parseSpec of format.parse_specification) {
-            const displayName = `${format.name} ${format.format} ${parseSpec}`;
-            $(`<li>${displayName}</li>`).on('click', async () => {
+        for (const loader of format.loaders) {
+            $(`<li>${loader.display_name}</li>`).on('click', async () => {
                 $('#uploadAnnotationButton')[0].disabled = true;
                 $('#uploadDropdownMenu').addClass('hidden');
                 try {
@@ -417,8 +415,7 @@ function setupMenu(job, task, shapeCollectionModel,
                             historyModel,
                             annotationSaverModel,
                             $('#uploadAnnotationButton'),
-                            format.id,
-                            parseSpec,
+                            loader.display_name,
                         );
                     });
                 } catch (error) {
@@ -692,7 +689,7 @@ function callAnnotationUI(jid) {
             $.get(`/api/v1/tasks/${jobData.task_id}`),
             $.get(`/api/v1/tasks/${jobData.task_id}/frames/meta`),
             $.get(`/api/v1/jobs/${jid}/annotations`),
-            $.get('/api/v1/server/formats'),
+            $.get('/api/v1/server/annotation/formats'),
         ).then((taskData, imageMetaData, annotationData, annotationFormats) => {
             $('#loadingOverlay').remove();
             setTimeout(() => {
