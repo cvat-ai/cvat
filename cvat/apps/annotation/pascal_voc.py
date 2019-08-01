@@ -73,7 +73,7 @@ def load(file_object, annotations):
                 if '.xml' == os.path.splitext(file)[1]:
                     parse_xml_file(os.path.join(dirpath, file))
 
-def dump(file_object, annotations, dump_spec):
+def dump(file_object, annotations):
     from pascal_voc_writer import Writer
     import os
     from zipfile import ZipFile

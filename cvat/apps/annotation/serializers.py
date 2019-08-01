@@ -10,6 +10,13 @@ class AnnotationHandlerSerializer(serializers.ModelSerializer):
         model = models.AnnotationHandler
         exclude = ('annotation_format',)
 
+    def update(self, instance, validated_data):
+        instance.display_name = validated_data.get('display_name', instance.display_name)
+        instance.format = validated_data.get('format', instance.format)
+        instance.version = validated_data.get('version', instance.version)
+        instance.handler = validated_data.get('handler', instance.handler)
+        instance.save()
+        return instance
 
 class AnnotationFormatSerializer(serializers.ModelSerializer):
     handlers = AnnotationHandlerSerializer(many=True, source='annotationhandler_set')
@@ -27,6 +34,33 @@ class AnnotationFormatSerializer(serializers.ModelSerializer):
         models.AnnotationHandler.objects.bulk_create(handlers)
 
         return annotation_format
+
+    def update(self, instance, validated_data):
+        handler_names = [handler["display_name"] for handler in validated_data["handlers"]]
+
+        handlers_to_delete = [ db_handler for db_handler in instance.annotationhandler_set.all() if db_handler.display_name not in handler_names]
+        for db_handler in handlers_to_delete:
+            db_handler.delete()
+
+        handlers_to_create = []
+        for handler in validated_data["handlers"]:
+            updated = False
+            for db_handler in instance.annotationhandler_set.all():
+                if handler["display_name"] == db_handler.display_name:
+                    serializer = AnnotationHandlerSerializer(db_handler, data=handler)
+                    if serializer.is_valid(raise_exception=True):
+                        serializer.save()
+                        updated = True
+                        break
+            if not updated:
+                handlers_to_create.append(handler)
+
+        handlers_to_create = [models.AnnotationHandler(annotation_format=instance, **handler) for handler in handlers_to_create]
+        if handlers_to_create:
+            models.AnnotationHandler.objects.bulk_create(handlers_to_create)
+
+        instance.save()
+        return instance
 
     # # pylint: disable=no-self-use
     def to_internal_value(self, data):

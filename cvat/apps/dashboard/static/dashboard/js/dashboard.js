@@ -138,9 +138,9 @@ class TaskView {
 
         for (const format of this._annotationFormats) {
             for (const dumper of format.dumpers) {
-                dropdownMenu.append($(`<li>${dumper.display_name}</li>`).on('click', () => {
-                    dropdownMenu.addClass('hidden');
-                    this._dump(downloadButton[0], format.id, dumper.display_name);
+                dropdownDownloadMenu.append($(`<li>${dumper.display_name}</li>`).on('click', () => {
+                    dropdownDownloadMenu.addClass('hidden');
+                    this._dump(downloadButton[0], dumper.display_name);
                 }));
             }
 
