@@ -9,7 +9,7 @@ class AnnotationHandlerSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AnnotationHandler
         exclude = ('annotation_format',)
-
+    # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         instance.display_name = validated_data.get('display_name', instance.display_name)
         instance.format = validated_data.get('format', instance.format)
@@ -25,6 +25,7 @@ class AnnotationFormatSerializer(serializers.ModelSerializer):
         model = models.AnnotationFormat
         exclude = ("handler_file", )
 
+    # pylint: disable=no-self-use
     def create(self, validated_data):
         handlers = validated_data.pop('handlers')
 
@@ -35,6 +36,7 @@ class AnnotationFormatSerializer(serializers.ModelSerializer):
 
         return annotation_format
 
+    # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         handler_names = [handler["display_name"] for handler in validated_data["handlers"]]
 
@@ -62,7 +64,7 @@ class AnnotationFormatSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    # # pylint: disable=no-self-use
+    # pylint: disable=no-self-use
     def to_internal_value(self, data):
         _data = data.copy()
         _data["handlers"] = []

@@ -165,8 +165,7 @@ async function dumpAnnotationRequest(tid, taskName, format) {
 
 async function uploadAnnoRequest(url, formData, format) {
     return new Promise((resolve, reject) => {
-        let queryString = `format=${format}`;
-
+        const queryString = `format=${format}`;
         async function request(data) {
             try {
                 await $.ajax({
