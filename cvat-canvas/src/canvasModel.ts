@@ -10,6 +10,11 @@ export interface Size {
     height: number;
 }
 
+export interface Position {
+    x: number;
+    y: number;
+}
+
 export interface Geometry {
     image: Size;
     canvas: Size;
@@ -33,6 +38,7 @@ export enum UpdateReasons {
     IMAGE = 'image',
     ZOOM = 'zoom',
     FIT = 'fit',
+    MOVE = 'move',
 }
 
 export interface CanvasModel extends MasterImpl {
@@ -42,6 +48,7 @@ export interface CanvasModel extends MasterImpl {
     canvasSize: Size;
 
     zoom(x: number, y: number, direction: number): void;
+    move(topOffset: number, leftOffset: number): void;
 
     setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number, attributeID: number): void;
@@ -97,6 +104,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.data.top += (y * (oldScale / this.data.scale - 1)) * this.data.scale;
 
         this.notify(UpdateReasons.ZOOM);
+    }
+
+    public move(topOffset: number, leftOffset: number): void {
+        this.data.top += topOffset;
+        this.data.left += leftOffset;
+        this.notify(UpdateReasons.MOVE);
     }
 
 
@@ -238,6 +251,5 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 }
 
 // TODO List:
-// 1) Move image
-// 2) Add grid
+// 2) Rotate image
 // 3) Draw objects

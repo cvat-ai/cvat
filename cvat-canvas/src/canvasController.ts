@@ -3,7 +3,12 @@
 * SPDX-License-Identifier: MIT
 */
 
-import { CanvasModel, Geometry, Size } from './canvasModel';
+import {
+    CanvasModel,
+    Geometry,
+    Size,
+    Position,
+} from './canvasModel';
 
 
 export interface CanvasController {
@@ -11,11 +16,17 @@ export interface CanvasController {
     canvasSize: Size;
 
     zoom(x: number, y: number, direction: number): void;
+    enableDrag(x: number, y: number): void;
+    drag(x: number, y: number): void;
+    disableDrag(): void;
+
     fit(): void;
 }
 
 export class CanvasControllerImpl implements CanvasController {
     private model: CanvasModel;
+    private lastDragPosition: Position;
+    private isDragging: boolean;
 
     public constructor(model: CanvasModel) {
         this.model = model;
@@ -39,5 +50,29 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get canvasSize(): Size {
         return this.model.canvasSize;
+    }
+
+    public enableDrag(x: number, y: number): void {
+        this.lastDragPosition = {
+            x,
+            y,
+        };
+        this.isDragging = true;
+    }
+
+    public drag(x: number, y: number): void {
+        if (this.isDragging) {
+            const topOffset: number = y - this.lastDragPosition.y;
+            const leftOffset: number = x - this.lastDragPosition.x;
+            this.lastDragPosition = {
+                x,
+                y,
+            };
+            this.model.move(topOffset, leftOffset);
+        }
+    }
+
+    public disableDrag(): void {
+        this.isDragging = false;
     }
 }

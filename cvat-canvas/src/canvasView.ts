@@ -3,7 +3,7 @@
 * SPDX-License-Identifier: MIT
 */
 
-import { CanvasModel, UpdateReasons } from './canvasModel';
+import { CanvasModel, UpdateReasons, Geometry } from './canvasModel';
 import { Listener, Master } from './master';
 import { CanvasController } from './canvasController';
 
@@ -141,31 +141,53 @@ export class CanvasViewImpl implements CanvasView, Listener {
             self.controller.fit();
         });
 
+        this.content.addEventListener('mousedown', (event): void => {
+            self.controller.enableDrag(event.clientX, event.clientY);
+        });
+
+        this.content.addEventListener('mousemove', (event): void => {
+            self.controller.drag(event.clientX, event.clientY);
+        });
+
+        window.document.addEventListener('mouseup', (): void => {
+            self.controller.disableDrag();
+        });
+
         this.content.addEventListener('wheel', (event): void => {
             const point = translateToSVG(self.background, [event.clientX, event.clientY]);
             self.controller.zoom(point[0], point[1], event.deltaY > 0 ? -1 : 1);
             event.preventDefault();
         });
 
-
         model.subscribe(this);
     }
 
     public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
-        function updateGeometry(): void {
-            const { geometry } = this.controller;
+        function transform(geometry: Geometry): void {
+            for (const obj of [this.background, this.grid, this.loadingAnimation, this.content]) {
+                obj.style.transform = `scale(${geometry.scale})`;
+            }
+        }
 
+        function resize(geometry: Geometry): void {
             for (const obj of [this.background, this.grid, this.loadingAnimation]) {
                 obj.style.width = `${geometry.image.width}`;
                 obj.style.height = `${geometry.image.height}`;
-                obj.style.top = `${geometry.top}`;
-                obj.style.left = `${geometry.left}`;
-                obj.style.transform = `scale(${geometry.scale})`;
             }
 
             for (const obj of [this.content, this.text]) {
                 obj.style.width = `${geometry.image.width + geometry.offset * 2}`;
                 obj.style.height = `${geometry.image.height + geometry.offset * 2}`;
+            }
+        }
+
+        function move(geometry: Geometry): void {
+            for (const obj of [this.background, this.grid, this.loadingAnimation]) {
+                obj.style.top = `${geometry.top}`;
+                obj.style.left = `${geometry.left}`;
+            }
+
+            for (const obj of [this.content, this.text]) {
                 obj.style.top = `${geometry.top - geometry.offset * geometry.scale}`;
                 obj.style.left = `${geometry.left - geometry.offset * geometry.scale}`;
             }
@@ -173,18 +195,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.content.style.transform = `scale(${geometry.scale})`;
         }
 
+        const { geometry } = this.controller;
         if (reason === UpdateReasons.IMAGE) {
             if (!model.image.length) {
                 this.loadingAnimation.classList.remove('canvas_hidden');
             } else {
                 this.loadingAnimation.classList.add('canvas_hidden');
                 this.background.style.backgroundImage = `url("${model.image}")`;
-                updateGeometry.call(this);
+                move.call(this, geometry);
+                resize.call(this, geometry);
+                transform.call(this, geometry);
                 const event: Event = new Event('canvas.setup');
                 this.canvas.dispatchEvent(event);
             }
         } else if (reason === UpdateReasons.ZOOM || reason === UpdateReasons.FIT) {
-            updateGeometry.call(this);
+            move.call(this, geometry);
+            resize.call(this, geometry);
+            transform.call(this, geometry);
+        } else if (reason === UpdateReasons.MOVE) {
+            move.call(this, geometry);
         }
     }
 
