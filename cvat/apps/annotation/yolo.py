@@ -1,17 +1,28 @@
 format_spec = {
     "name": "YOLO",
-    "format": "TXT",
-    "version": "1.0",
-    "dump_specification": [],
-    "parse_specification": [],
-    "file_extension": "zip",
+    "dumpers": [
+        {
+            "display_name": "{name} {format} {version}",
+            "format": "ZIP",
+            "version": "1.0",
+            "handler": "dump"
+        },
+    ],
+    "loaders": [
+        {
+            "display_name": "{name} {format}",
+            "format": "ZIP",
+            "version": "1.0",
+            "handler": "load"
+        },
+    ],
 }
 
 def get_filename(path):
     import os
     return os.path.splitext(os.path.basename(path))[0]
 
-def parse(file_object, annotations, parse_format):
+def load(file_object, annotations):
     from pyunpack import Archive
     import os
     from tempfile import TemporaryDirectory
@@ -78,7 +89,7 @@ def parse(file_object, annotations, parse_format):
                     parse_yolo_file(os.path.join(dirpath, file), labels_mapping)
 
 
-def dump(file_object, annotations, dump_spec):
+def dump(file_object, annotations):
     import os
     from zipfile import ZipFile
     from tempfile import TemporaryDirectory
