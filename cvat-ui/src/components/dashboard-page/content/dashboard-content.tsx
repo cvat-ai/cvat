@@ -3,12 +3,18 @@ import React, { Component } from 'react';
 import { withRouter } from 'react-router-dom';
 
 import { connect } from 'react-redux';
-import { deleteTaskAsync } from '../../../actions/tasks.actions';
+import { createTaskAsync, updateTaskAsync, deleteTaskAsync } from '../../../actions/tasks.actions';
 
 import { Layout, Empty, Button, Modal, Col, Row } from 'antd';
 import Title from 'antd/lib/typography/Title';
 
+import TaskUpdateForm from '../../modals/task-update/task-update';
+import TaskCreateForm from '../../modals/task-create/task-create';
+
+import { deserializeLabels } from '../../../utils/labels';
+
 import './dashboard-content.scss';
+
 
 const { Content } = Layout;
 const { confirm } = Modal;
@@ -16,6 +22,9 @@ const { confirm } = Modal;
 class DashboardContent extends Component<any, any> {
   hostUrl: string | undefined;
   apiUrl: string | undefined;
+
+  createFormRef: any;
+  updateFormRef: any;
 
   constructor(props: any) {
     super(props);
@@ -36,7 +45,7 @@ class DashboardContent extends Component<any, any> {
   private renderPlaceholder() {
     return (
       <Empty className="empty" description="No tasks found...">
-        <Button type="primary" onClick={ this.createTask }>
+        <Button type="primary" onClick={ this.onCreateTask }>
           Create task
         </Button>
       </Empty>
@@ -73,7 +82,7 @@ class DashboardContent extends Component<any, any> {
                       </Button>
                     </Row>
                     <Row type="flex">
-                      <Button type="primary" onClick={ this.onUpdateTask }>
+                      <Button type="primary" onClick={ () => this.onUpdateTask(task) }>
                         Update task
                       </Button>
                     </Row>
@@ -105,34 +114,80 @@ class DashboardContent extends Component<any, any> {
     );
   }
 
-  private createTask = () => {
-    console.log('Create task');
+  private setTaskCreateFormRef = (ref: any) => {
+    this.createFormRef = ref;
+  }
+
+  private setTaskUpdateFormRef = (ref: any) => {
+    this.updateFormRef = ref;
+  }
+
+  private onCreateTask = () => {
+    confirm({
+      title: 'Create new task',
+      content: <TaskCreateForm ref={ this.setTaskCreateFormRef } />,
+      centered: true,
+      okText: 'Create',
+      okType: 'primary',
+      onOk: (closeFunction: Function) => {
+        this.createFormRef.validateFields((error: any, values: any) => {
+          if (!error) {
+            const newTask = new (window as any).cvat.classes.Task({name: 'test', image_quality: 50});
+            debugger;
+            this.props.dispatch(createTaskAsync(newTask)).then(closeFunction());
+          }
+        });
+      },
+      onCancel: () => {
+        return;
+      },
+    });
   }
 
   private onUpdateTask = (task: any) => {
-    console.log('Update task');
+    confirm({
+      title: 'Update task',
+      content: <TaskUpdateForm task={ task } ref={ this.setTaskUpdateFormRef } />,
+      centered: true,
+      okText: 'Update',
+      okType: 'primary',
+      onOk: (closeFunction: Function) => {
+        this.updateFormRef.validateFields((error: any, values: any) => {
+          if (!error) {
+            const deserializedLabels = deserializeLabels(values.newLabels);
+            const newLabels = deserializedLabels.map(label => new (window as any).cvat.classes.Label(label));
+            task.labels = newLabels;
+            this.props.dispatch(updateTaskAsync(task)).then(closeFunction());
+          } else {
+            return;
+          }
+        });
+      },
+      onCancel: () => {
+        return;
+      },
+    });
   }
 
   private onDeleteTask = (task: any) => {
-    const self = this;
-
     confirm({
       title: 'Do you want to delete this task?',
       okText: 'Yes',
       okType: 'danger',
       centered: true,
-      onOk() {
-        return self.props.dispatch(deleteTaskAsync(task, self.props.history));
+      autoFocusButton: 'cancel',
+      onOk: () => {
+        return this.props.dispatch(deleteTaskAsync(task, this.props.history));
       },
       cancelText: 'No',
-      onCancel() {
+      onCancel: () => {
         return;
       },
     });
   }
 
   private onDumpAnnotation = () => {
-    console.log('Dump annotatio');
+    console.log('Dump annotation');
   }
 
   private onUploadAnnotation = () => {

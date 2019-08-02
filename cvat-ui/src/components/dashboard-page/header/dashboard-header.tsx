@@ -4,16 +4,22 @@ import { withRouter } from 'react-router-dom';
 
 import { connect } from 'react-redux';
 
-import { Layout, Row, Col, Button, Input } from 'antd';
+import { Modal, Layout, Row, Col, Button, Input } from 'antd';
 import Title from 'antd/lib/typography/Title';
+
+import TaskCreateForm from '../../modals/task-create/task-create';
 
 import './dashboard-header.scss';
 
+
 const { Header } = Layout;
 const { Search } = Input;
+const { confirm } = Modal;
 
 class DashboardHeader extends Component<any, any> {
   hostUrl: string | undefined;
+
+  createFormRef: any;
 
   constructor(props: any) {
     super(props);
@@ -50,7 +56,7 @@ class DashboardHeader extends Component<any, any> {
             <Button
               className="action"
               type="primary"
-              onClick={ this.createTask }>
+              onClick={ this.onCreateTask }>
               Create task
             </Button>
             <Button
@@ -66,8 +72,28 @@ class DashboardHeader extends Component<any, any> {
     );
   }
 
-  private createTask = () => {
-    console.log('Create task');
+  private setTaskCreateFormRef = (ref: any) => {
+    this.createFormRef = ref;
+  }
+
+  private onCreateTask = () => {
+    confirm({
+      title: 'Create new task',
+      content: <TaskCreateForm ref={ this.setTaskCreateFormRef }/>,
+      centered: true,
+      okText: 'Create',
+      okType: 'primary',
+      onOk: (closeFunction: Function) => {
+        this.createFormRef.validateFields((error: any, values: any) => {
+          if (!error) {
+            closeFunction();
+          }
+        });
+      },
+      onCancel: () => {
+        return;
+      },
+    });
   }
 
   private onValueChange = (event: any) => {
