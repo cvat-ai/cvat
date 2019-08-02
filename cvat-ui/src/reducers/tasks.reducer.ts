@@ -24,6 +24,34 @@ export default (
         error: action.payload,
       });
 
+    case 'CREATE_TASK':
+      return Object.assign({}, state, {
+        isFetching: true,
+      });
+    case 'CREATE_TASK_SUCCESS':
+      return Object.assign({}, state, {
+        isFetching: false,
+      });
+    case 'CREATE_TASK_ERROR':
+      return Object.assign({}, state, {
+        isFetching: false,
+        error: action.payload,
+      });
+
+    case 'UPDATE_TASK':
+      return Object.assign({}, state, {
+        isFetching: true,
+      });
+    case 'UPDATE_TASK_SUCCESS':
+      return Object.assign({}, state, {
+        isFetching: false,
+      });
+    case 'UPDATE_TASK_ERROR':
+      return Object.assign({}, state, {
+        isFetching: false,
+        error: action.payload,
+      });
+
     case 'DELETE_TASK':
       return Object.assign({}, state, {
         isFetching: true,

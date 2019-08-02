@@ -1,6 +1,6 @@
 import queryString from 'query-string';
 
-import setQueryObject from '../utils/tasks-filter-dto'
+import setQueryObject from '../utils/tasks-filter'
 
 
 export const getTasks = () => (dispatch: any, getState: any) => {
@@ -19,6 +19,44 @@ export const getTasksSuccess = (tasks: []) => (dispatch: any, getState: any) => 
 export const getTasksError = (error: {}) => (dispatch: any, getState: any) => {
   dispatch({
     type: 'GET_TASKS_ERROR',
+    payload: error,
+  });
+}
+
+export const createTask = () => (dispatch: any, getState: any) => {
+  dispatch({
+    type: 'CREATE_TASK',
+  });
+}
+
+export const createTaskSuccess = () => (dispatch: any, getState: any) => {
+  dispatch({
+    type: 'CREATE_TASK_SUCCESS',
+  });
+}
+
+export const createTaskError = (error: {}) => (dispatch: any, getState: any) => {
+  dispatch({
+    type: 'CREATE_TASK_ERROR',
+    payload: error,
+  });
+}
+
+export const updateTask = () => (dispatch: any, getState: any) => {
+  dispatch({
+    type: 'UPDATE_TASK',
+  });
+}
+
+export const updateTaskSuccess = () => (dispatch: any, getState: any) => {
+  dispatch({
+    type: 'UPDATE_TASK_SUCCESS',
+  });
+}
+
+export const updateTaskError = (error: {}) => (dispatch: any, getState: any) => {
+  dispatch({
+    type: 'UPDATE_TASK_ERROR',
     payload: error,
   });
 }
@@ -57,6 +95,44 @@ export const getTasksAsync = (queryObject = {}) => {
   };
 }
 
+export const createTaskAsync = (task: any) => {
+  return (dispatch: any, getState: any) => {
+    dispatch(createTask());
+
+    return task.save().then(
+      (created: any) => {
+        dispatch(createTaskSuccess());
+
+        return dispatch(getTasksAsync());
+      },
+      (error: any) => {
+        dispatch(createTaskError(error));
+
+        throw error;
+      },
+    );
+  };
+}
+
+export const updateTaskAsync = (task: any) => {
+  return (dispatch: any, getState: any) => {
+    dispatch(updateTask());
+
+    return task.save().then(
+      (updated: any) => {
+        dispatch(updateTaskSuccess());
+
+        return dispatch(getTasksAsync());
+      },
+      (error: any) => {
+        dispatch(updateTaskError(error));
+
+        throw error;
+      },
+    );
+  };
+}
+
 export const deleteTaskAsync = (task: any, history: any) => {
   return (dispatch: any, getState: any) => {
     dispatch(deleteTask());
@@ -77,14 +153,17 @@ export const deleteTaskAsync = (task: any, history: any) => {
 
           history.push({ search: queryString.stringify(queryObject) });
         } else if (state.tasks.tasksCount === 1) {
-          dispatch(getTasksAsync());
+          return dispatch(getTasksAsync());
         } else {
           const query = setQueryObject(queryObject);
-          dispatch(getTasksAsync(query));
+
+          return dispatch(getTasksAsync(query));
         }
       },
       (error: any) => {
         dispatch(deleteTaskError(error));
+
+        throw error;
       },
     );
   };
