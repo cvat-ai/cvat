@@ -408,16 +408,16 @@ function setupMenu(job, task, shapeCollectionModel,
                 $('#uploadDropdownMenu').addClass('hidden');
                 try {
                     userConfirm('Current annotation will be removed from the client. Continue?',
-                    async () => {
-                        await uploadAnnotation(
-                            job.id,
-                            shapeCollectionModel,
-                            historyModel,
-                            annotationSaverModel,
-                            $('#uploadAnnotationButton'),
-                            loader.display_name,
-                        );
-                    });
+                        async () => {
+                            await uploadAnnotation(
+                                job.id,
+                                shapeCollectionModel,
+                                historyModel,
+                                annotationSaverModel,
+                                $('#uploadAnnotationButton'),
+                                loader.display_name,
+                            );
+                        });
                 } catch (error) {
                     showMessage(error.message);
                 } finally {

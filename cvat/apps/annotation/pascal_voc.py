@@ -68,7 +68,7 @@ def load(file_object, annotations):
     with TemporaryDirectory() as tmp_dir:
         Archive(archive_file).extractall(tmp_dir)
 
-        for dirpath, dirnames, filenames in os.walk(tmp_dir):
+        for dirpath, _, filenames in os.walk(tmp_dir):
             for file in filenames:
                 if '.xml' == os.path.splitext(file)[1]:
                     parse_xml_file(os.path.join(dirpath, file))
