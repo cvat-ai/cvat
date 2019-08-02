@@ -5,17 +5,18 @@
  */
 
 /* global
-    AnnotationParser:false
     userConfirm:false
-    dumpAnnotationRequest: false
+    dumpAnnotationRequest:false
+    uploadTaskAnnotationRequest:false
     LabelsInfo:false
     showMessage:false
     showOverlay:false
 */
 
 class TaskView {
-    constructor(task) {
+    constructor(task, annotationFormats) {
         this.init(task);
+        this._annotationFormats = annotationFormats;
 
         this._UI = null;
     }
@@ -75,147 +76,34 @@ class TaskView {
         });
     }
 
-    _upload() {
-        async function saveChunk(parsed) {
-            const CHUNK_SIZE = 30000;
-            let chunk = null;
-
-            class Chunk {
-                constructor() {
-                    this.shapes = [];
-                    this.tracks = [];
-                    this.tags = [];
-                    this.capasity = CHUNK_SIZE;
-                    this.version = 0;
-                }
-
-                length() {
-                    return this.tags.length
-                           + this.shapes.length
-                           + this.tracks.reduce((sum, track) => sum + track.shapes.length, 0);
-                }
-
-                isFull() {
-                    return this.length() >= this.capasity;
-                }
-
-                isEmpty() {
-                    return this.length() === 0;
-                }
-
-                clear() {
-                    this.shapes = [];
-                    this.tracks = [];
-                    this.tags = [];
-                }
-
-                export() {
-                    return {
-                        shapes: this.shapes,
-                        tracks: this.tracks,
-                        tags: this.tags,
-                        version: this.version,
-                    };
-                }
-
-                async save(taskID) {
-                    try {
-                        const response = await $.ajax({
-                            url: `/api/v1/tasks/${taskID}/annotations?action=create`,
-                            type: 'PATCH',
-                            data: JSON.stringify(chunk.export()),
-                            contentType: 'application/json',
-                        });
-                        this.version = response.version;
-                        this.clear();
-                    } catch (error) {
-                        throw error;
-                    }
-                }
-            }
-
-            const splitAndSave = async (chunkForSave, prop, splitStep) => {
-                for (let start = 0; start < parsed[prop].length; start += splitStep) {
-                    Array.prototype.push.apply(chunkForSave[prop],
-                        parsed[prop].slice(start, start + splitStep));
-                    if (chunkForSave.isFull()) {
-                        await chunkForSave.save(this._task.id);
-                    }
-                }
-                // save tail
-                if (!chunkForSave.isEmpty()) {
-                    await chunkForSave.save(this._task.id);
-                }
-            };
-
-            chunk = new Chunk();
-            // TODO tags aren't supported by parser
-            // await split(chunk, "tags", CHUNK_SIZE);
-            await splitAndSave(chunk, 'shapes', CHUNK_SIZE);
-            await splitAndSave(chunk, 'tracks', 1);
-        }
-
-        async function save(parsed) {
-            await $.ajax({
-                url: `/api/v1/tasks/${this._task.id}/annotations`,
-                type: 'DELETE',
-            });
-
-            await saveChunk.call(this, parsed);
-        }
-
-        async function onload(overlay, text) {
-            try {
-                overlay.setMessage('Required data are being downloaded from the server..');
-                const imageCache = await $.get(`/api/v1/tasks/${this._task.id}/frames/meta`);
-                const labelsCopy = JSON.parse(JSON.stringify(this._task.labels
-                    .map(el => el.toJSON())));
-                const parser = new AnnotationParser({
-                    start: 0,
-                    stop: this._task.size,
-                    image_meta_data: imageCache,
-                }, new LabelsInfo(labelsCopy));
-
-                overlay.setMessage('The annotation file is being parsed..');
-                const parsed = parser.parse(text);
-
-                overlay.setMessage('The annotation is being saved..');
-                await save.call(this, parsed);
-
-                const message = 'Annotation have been successfully uploaded';
-                showMessage(message);
-            } catch (errorData) {
-                let message = null;
-                if (typeof (errorData) === 'string') {
-                    message = `Can not upload annotations. ${errorData}`;
-                } else {
-                    message = `Can not upload annotations. Code: ${errorData.status}. `
-                        + `Message: ${errorData.responseText || errorData.statusText}`;
-                }
-                showMessage(message);
-            } finally {
-                overlay.remove();
-            }
-        }
-
-        $('<input type="file" accept="text/xml">').on('change', (onChangeEvent) => {
+    _upload(uploadAnnotationButton) {
+        const button = $(uploadAnnotationButton);
+        const CVATformat = this._annotationFormats.find(el => el.name === 'CVAT');
+        $('<input type="file" accept="text/xml">').on('change', async (onChangeEvent) => {
             const file = onChangeEvent.target.files[0];
             $(onChangeEvent.target).remove();
             if (file) {
-                const overlay = showOverlay('File is being parsed..');
-                const fileReader = new FileReader();
-                fileReader.onload = (onloadEvent) => {
-                    onload.call(this, overlay, onloadEvent.target.result);
-                };
-                fileReader.readAsText(file);
+                button.text('Uploading..');
+                button.prop('disabled', true);
+                const annotationData = new FormData();
+                annotationData.append('annotation_file', file);
+                try {
+                    await uploadTaskAnnotationRequest(this._task.id, annotationData,
+                        CVATformat.loaders[0].display_name);
+                } catch (error) {
+                    showMessage(error.message);
+                } finally {
+                    button.prop('disabled', false);
+                    button.text('Upload Annotation');
+                }
             }
         }).click();
     }
 
-    async _dump(button) {
+    async _dump(button, format) {
         button.disabled = true;
         try {
-            await dumpAnnotationRequest(this._task.id, this._task.name);
+            await dumpAnnotationRequest(this._task.id, this._task.name, format);
         } catch (error) {
             showMessage(error.message);
         } finally {
@@ -242,14 +130,27 @@ class TaskView {
             }),
         );
 
-
         const buttonsContainer = $('<div class="dashboardButtonsUI"> </div>').appendTo(this._UI);
-        $('<button class="regular dashboardButtonUI"> Dump Annotation </button>').on('click', (e) => {
-            this._dump(e.target);
-        }).appendTo(buttonsContainer);
 
-        $('<button class="regular dashboardButtonUI"> Upload Annotation </button>').on('click', () => {
-            userConfirm('The current annotation will be lost. Are you sure?', () => this._upload());
+        const downloadButton = $('<button class="regular dashboardButtonUI"> Dump Annotation </button>');
+        const dropdownMenu = $('<ul class="dropdown-content hidden"></ul>');
+        for (const format of this._annotationFormats) {
+            for (const dumpSpec of format.dumpers) {
+                dropdownMenu.append($(`<li>${dumpSpec.display_name}</li>`).on('click', () => {
+                    dropdownMenu.addClass('hidden');
+                    this._dump(downloadButton[0], dumpSpec.display_name);
+                }));
+            }
+        }
+
+        $('<div class="dropdown"></div>').append(
+            downloadButton.on('click', () => {
+                dropdownMenu.toggleClass('hidden');
+            }),
+        ).append(dropdownMenu).appendTo(buttonsContainer);
+
+        $('<button class="regular dashboardButtonUI"> Upload Annotation </button>').on('click', (e) => {
+            userConfirm('The current annotation will be lost. Are you sure?', () => this._upload(e.target));
         }).appendTo(buttonsContainer);
 
         $('<button class="regular dashboardButtonUI"> Update Task </button>').on('click', () => {
@@ -290,13 +191,14 @@ class TaskView {
 
 
 class DashboardView {
-    constructor(metaData, taskData) {
+    constructor(metaData, taskData, annotationFormats) {
         this._dashboardList = taskData.results;
         this._maxUploadSize = metaData.max_upload_size;
         this._maxUploadCount = metaData.max_upload_count;
         this._baseURL = metaData.base_url;
         this._sharePath = metaData.share_path;
         this._params = {};
+        this._annotationFormats = annotationFormats;
 
         this._setupList();
         this._setupTaskSearch();
@@ -348,7 +250,7 @@ class DashboardView {
                 }));
 
                 for (const task of tasks) {
-                    const taskView = new TaskView(task);
+                    const taskView = new TaskView(task, this._annotationFormats);
                     dashboardList.append(taskView.render(baseURL));
                 }
 
@@ -807,9 +709,10 @@ window.addEventListener('DOMContentLoaded', () => {
         // TODO: Use REST API in order to get meta
         $.get('/dashboard/meta'),
         $.get(`/api/v1/tasks${window.location.search}`),
-    ).then((metaData, taskData) => {
+        $.get('/api/v1/server/annotation/formats'),
+    ).then((metaData, taskData, annotationFormats) => {
         try {
-            new DashboardView(metaData[0], taskData[0]);
+            new DashboardView(metaData[0], taskData[0], annotationFormats[0]);
         } catch (exception) {
             $('#content').empty();
             const message = `Can not build CVAT dashboard. Exception: ${exception}.`;

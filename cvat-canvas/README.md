@@ -1,7 +1,30 @@
-# Module
+# Module CVAT-CANVAS
 
-- Written on typescript
-- Contains the class ```Canvas``` and the Enum ```Rotation```
+## Description
+The CVAT module presents a canvas to viewing, drawing and editing of annotations.
+
+- It has been written on typescript
+- It contains the class ```Canvas``` and the enum ```Rotation```
+
+## Commands
+- Building of the module from sources in the ```dist``` directory:
+
+```bash
+npm run build
+npm run build -- --mode=development     # without a minification
+```
+
+- Running development server
+```bash
+npm run server
+```
+
+- Updating of a module version:
+```bash
+npm version patch   # updated after minor fixes
+npm version minor   # updated after major changes which don't affect API compatibility with previous versions
+npm version major   # updated after major changes which affect API compatibility with previous versions
+```
 
 ## Creation
 Canvas is created by using constructor:
@@ -26,22 +49,21 @@ Canvas itself handles:
 
 All methods are sync.
 
-```js
-    html() => canvas HTML element
-    setup(const FrameData: frameData, [ObjectState]) => undefined
+```ts
+    html(): HTMLElement;
+    setup(frameData: FrameData, objectStates: ObjectState): void;
+    activate(clientID: number, attributeID?: number): void;
+    rotate(direction: Rotation): void;
+    focus(clientID: number, padding?: number): void;
+    fit(): void;
+    grid(stepX: number, stepY: number): void;
 
-    activate(const number: clientID, const number: attributeID = null) => undefined // select if can't activate
-    rotate(const Rotation: Rotation.CLOCKWISE) => undefined
-    focus(const number: clientID, const number: padding) => undefined
-    fit() => undefined
-    grid(stepX, stepY, color, opacity) => undefined
+    draw(enabled?: boolean, shapeType?: string, numberOfPoints?: number, initialState?: any): void | ObjectState;
+    split(enabled?: boolean): void | ObjectState;
+    group(enabled?: boolean): void | ObjectState;
+    merge(enabled?: boolean): void | ObjectState;
 
-    draw(shapeType, numberOfPoints = null, initializeState = null) => ObjectState
-    split(const boolean: enabled = false) => ObjectState || undefined
-    group(const boolean: enabled = false) => [ObjectState] || undefined
-    merge(const boolean: enabled = false) => [ObjectState] || undefined
-
-    cancel() => undefined
+    cancel(): any;
 ```
 
 ### CSS Classes/IDs
@@ -72,7 +94,7 @@ Standard JS events are used.
 
 ## States
 
- ![](images/states.png)
+ ![](images/states.svg)
 
 ## API Reaction
 
@@ -85,7 +107,6 @@ Standard JS events are used.
 | focus()    | +    | +        | +         | +       | +       | +       |
 | fit()      | +    | +        | +         | +       | +       | +       |
 | grid()     | +    | +        | +         | +       | +       | +       |
-| adjust()   | +    | +        | +         | +       | +       | +       |
 | draw()     | +    | -        | -         | -       | -       | -       |
 | split()    | +    | -        | +         | -       | -       | -       |
 | group      | +    | +        | -         | -       | -       | -       |
