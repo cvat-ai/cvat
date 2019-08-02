@@ -13,7 +13,7 @@ from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.conf import settings
 from sendfile import sendfile
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework import status
@@ -39,6 +39,7 @@ from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
 from django.contrib.auth.models import User
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
+from django.contrib.auth import login, logout, authenticate
 
 # Server REST API
 @login_required
@@ -411,11 +412,12 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     serializer_class = UserSerializer
 
     def get_permissions(self):
-        permissions = [IsAuthenticated]
-
+        if self.action in ["login"]:
+            permissions = [AllowAny]
         if self.action in ["self"]:
-            pass
+            permissions = [IsAuthenticated]
         else:
+            permissions = [IsAuthenticated]
             user = self.request.user
             if self.action != "retrieve" or int(self.kwargs.get("pk", 0)) != user.id:
                 permissions.append(auth.AdminRolePermission)
@@ -426,6 +428,31 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     @action(detail=False, methods=['GET'], serializer_class=UserSerializer)
     def self(request):
         serializer = UserSerializer(request.user, context={ "request": request })
+        return Response(serializer.data)
+
+    @staticmethod
+    @action(detail=False, methods=['POST'], serializer_class=None)
+    def login(request):
+        username = request.data['username']
+        password = request.data['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+    @staticmethod
+    @action(detail=False, methods=['POST'], serializer_class=None)
+    def logout(request):
+        logout(request)
+        return Response(status=status.HTTP_200_OK)
+
+    @staticmethod
+    @action(detail=False, methods=['POST'], serializer_class=UserSerializer)
+    def register(request):
+        user = User.objects.create_user(**request.data)
+        serializer = UserSerializer(user, context={ "request": request })
         return Response(serializer.data)
 
 class PluginViewSet(viewsets.ModelViewSet):
