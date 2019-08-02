@@ -35,10 +35,10 @@ def load(file_object, annotations):
             if cvat_filename == pascal_filename:
                 return frame_number
 
-        # try to extract frame number from filename
-        possible_numbers = re.findall(r'\d+', filename)
-        if possible_numbers and len(possible_numbers) == 1:
-            return int(possible_numbers[0])
+        # try to extract framenumber from filename
+        numbers = re.findall(r'\d+', filename)
+        if numbers and len(numbers) == 1:
+            return int(numbers[0])
 
         raise Exception('Cannot match filename or determinate framenumber for {} filename'.format(filename))
 
