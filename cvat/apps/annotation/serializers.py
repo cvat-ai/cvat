@@ -9,6 +9,7 @@ class AnnotationHandlerSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AnnotationHandler
         exclude = ('annotation_format',)
+
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
         instance.display_name = validated_data.get('display_name', instance.display_name)

@@ -1,9 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import DashboardFooter from './dashboard-footer';
+
+import DashboardHeader from './dashboard-header';
+
 
 it('renders without crashing', () => {
   const div = document.createElement('div');
-  ReactDOM.render(<DashboardFooter />, div);
+  ReactDOM.render(<DashboardHeader />, div);
   ReactDOM.unmountComponentAtNode(div);
 });

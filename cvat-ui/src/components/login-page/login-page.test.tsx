@@ -1,9 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import Dashboard from './dashboard';
+
+import Login from './login-page';
+
 
 it('renders without crashing', () => {
   const div = document.createElement('div');
-  ReactDOM.render(<Dashboard />, div);
+  ReactDOM.render(<Login />, div);
   ReactDOM.unmountComponentAtNode(div);
 });
