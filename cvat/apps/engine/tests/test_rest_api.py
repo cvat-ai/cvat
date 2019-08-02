@@ -13,6 +13,8 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group
 from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
     AttributeType)
+from cvat.apps.annotation.models import AnnotationFormat
+from cvat.apps.annotation.models import HandlerType
 from unittest import mock
 import io
 import xml.etree.ElementTree as ET
@@ -1636,7 +1638,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
     def _dump_api_v1_tasks_id_annotations(self, pk, user, query_params=""):
         with ForceLogin(user, self.client):
             response = self.client.get(
-                "/api/v1/tasks/{0}/annotations/my_task_{0}{1}".format(pk, query_params))
+                "/api/v1/tasks/{0}/annotations/my_task_{0}?{1}".format(pk, query_params))
 
         return response
 
@@ -2022,15 +2024,20 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             "create", data)
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
-        response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator)
-        self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
+        cvat_format = AnnotationFormat.objects.get(name="CVAT")
+        for annotation_handler in cvat_format.annotationhandler_set.filter(type=HandlerType.DUMPER):
+            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
+                "format={}".format(annotation_handler.display_name))
+            self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
-        response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator)
-        self.assertEqual(response.status_code, HTTP_201_CREATED)
+            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
+                "format={}".format(annotation_handler.display_name))
+            self.assertEqual(response.status_code, HTTP_201_CREATED)
 
-        response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator, "?action=download")
-        self.assertEqual(response.status_code, HTTP_200_OK)
-        self._check_dump_response(response, task, jobs, data)
+            response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
+                "action=download&format={}".format(annotation_handler.display_name))
+            self.assertEqual(response.status_code, HTTP_200_OK)
+            self._check_dump_response(response, task, jobs, data)
 
     def _check_dump_response(self, response, task, jobs, data):
         if response.status_code == status.HTTP_200_OK:
