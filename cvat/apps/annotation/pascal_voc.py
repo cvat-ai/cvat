@@ -10,7 +10,7 @@ format_spec = {
     ],
     "loaders": [
         {
-            "display_name": "{name} {format}",
+            "display_name": "{name} {format} {version}",
             "format": "ZIP",
             "version": "1.0",
             "handler": "load"
@@ -43,8 +43,8 @@ def load(file_object, annotations):
         raise Exception('Cannot match filename or determinate framenumber for {} filename'.format(filename))
 
     def parse_xml_file(annotation_file):
-        from lxml import etree
-        root = etree.parse(annotation_file).getroot()
+        import xml.etree.ElementTree as ET
+        root = ET.parse(annotation_file).getroot()
         filename = root.find('filename').text
 
         for obj_tag in root.iter('object'):
@@ -69,9 +69,9 @@ def load(file_object, annotations):
         Archive(archive_file).extractall(tmp_dir)
 
         for dirpath, _, filenames in os.walk(tmp_dir):
-            for file in filenames:
-                if '.xml' == os.path.splitext(file)[1]:
-                    parse_xml_file(os.path.join(dirpath, file))
+            for _file in filenames:
+                if '.xml' == os.path.splitext(_file)[1]:
+                    parse_xml_file(os.path.join(dirpath, _file))
 
 def dump(file_object, annotations):
     from pascal_voc_writer import Writer

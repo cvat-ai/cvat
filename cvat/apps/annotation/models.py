@@ -3,29 +3,16 @@
 # SPDX-License-Identifier: MIT
 
 import os
-from enum import Enum
 
 from django.db import models
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-
-from cvat.apps.engine.models import SafeCharField
 from django.contrib.auth.models import User
 
+from cvat.apps.engine.models import SafeCharField
 
 def upload_file_handler(instance, filename):
     return os.path.join('formats', str(instance.id), filename)
-
-class HandlerType(str, Enum):
-    DUMPER = 'dumper'
-    LOADER = 'loader'
-
-    @classmethod
-    def choices(self):
-        return tuple((x.value, x.name) for x in self)
-
-    def __str__(self):
-        return self.value
 
 class AnnotationFormat(models.Model):
     name = SafeCharField(max_length=256)
@@ -42,8 +29,6 @@ class AnnotationFormat(models.Model):
         default_permissions = ()
 
 class AnnotationHandler(models.Model):
-    type = models.CharField(max_length=16,
-        choices=HandlerType.choices())
     display_name = SafeCharField(max_length=256, primary_key=True)
     format = models.CharField(max_length=16)
     version = models.CharField(max_length=16)
@@ -52,3 +37,10 @@ class AnnotationHandler(models.Model):
 
     class Meta:
         default_permissions = ()
+        abstract = True
+
+class AnnotationDumper(AnnotationHandler):
+    pass
+
+class AnnotationLoader(AnnotationHandler):
+    pass

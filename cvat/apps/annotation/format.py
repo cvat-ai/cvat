@@ -6,6 +6,7 @@ from cvat.apps.annotation import models
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.annotation.serializers import AnnotationFormatSerializer
+from django.core.files import File
 
 import os
 from copy import deepcopy
@@ -20,7 +21,7 @@ def register_format(format_file):
         raise Exception("Could not find \'format_spec\' definition in format file specification")
 
     format_spec = deepcopy(global_vars["format_spec"])
-    format_spec["handler_file"] = os.path.relpath(format_file, settings.BASE_DIR)
+    format_spec["handler_file"] = File(open(format_file))
     for spec in format_spec["loaders"] + format_spec["dumpers"]:
         spec["display_name"] = spec["display_name"].format(
             name=format_spec["name"],
