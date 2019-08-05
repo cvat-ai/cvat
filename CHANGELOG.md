@@ -18,7 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to create a custom extractors for unsupported media types
 - Added in PDF extractor
 - Added in a command line model manager tester
-- Pascal VOC format support
+- Ability to dump/upload an annotation in several formats(CVAT, Pascal VOC)
+- Yolo format support
 
 ### Changed
 - Outside and keyframe buttons in the side panel for all interpolation shapes (they were only for boxes before)

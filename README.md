@@ -27,13 +27,15 @@ CVAT is free, online, interactive video and image annotation tool for computer v
 - [Tutorial for polygons](https://www.youtube.com/watch?v=XTwfXDh4clI)
 - [Semi-automatic segmentation](https://www.youtube.com/watch?v=vnqXZ-Z-VTQ)
 
-## Supported formats
+## Supported annotation formats
 
+Format selection is possible after clicking on the Upload annotation / Dump annotation button.
 | Annotation format         | Dumper | Loader |
 | ------------------------- | ------ | ------ |
 | CVAT XML v1.1 for images  | X      | X      |
 | CVAT XML v1.1 for a video | X      | X      |
 | Pascal VOC                | X      | X      |
+| YOLO                      | X      | X      |
 
 ## Links
 - [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)

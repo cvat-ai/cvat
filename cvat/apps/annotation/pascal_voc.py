@@ -64,7 +64,7 @@ def load(file_object, annotations):
                 attributes=[],
             ))
 
-    archive_file = file_object if isinstance(file_object, str) else getattr(file_object, 'name')
+    archive_file = getattr(file_object, 'name')
     with TemporaryDirectory() as tmp_dir:
         Archive(archive_file).extractall(tmp_dir)
 
