@@ -42,7 +42,7 @@ def load(file_object, annotations):
         return [xtl, ytl, xbr, ybr]
 
     def parse_yolo_obj(img_size, obj):
-        label_id, x, y, w, h = obj.split(' ')
+        label_id, x, y, w, h = obj.split(" ")
         return int(label_id), convert_from_yolo(img_size, (float(x), float(y), float(w), float(h)))
 
     def match_frame(frame_info, filename):
@@ -50,16 +50,16 @@ def load(file_object, annotations):
         # try to match by filename
         yolo_filename = get_filename(filename)
         for frame_number, info in frame_info.items():
-            cvat_filename = get_filename(info['path'])
+            cvat_filename = get_filename(info["path"])
             if cvat_filename == yolo_filename:
                 return frame_number
 
         # try to extract frame number from filename
-        numbers = re.findall(r'\d+', filename)
+        numbers = re.findall(r"\d+", filename)
         if numbers and len(numbers) == 1:
             return int(numbers[0])
 
-        raise Exception('Cannot match filename or determinate framenumber for {} filename'.format(filename))
+        raise Exception("Cannot match filename or determinate framenumber for {} filename".format(filename))
 
     def parse_yolo_file(annotation_file, labels_mapping):
         with open(annotation_file, "r") as fp:
@@ -67,9 +67,9 @@ def load(file_object, annotations):
             while line:
                 frame_number = match_frame(annotations.frame_info, annotation_file)
                 frame_info = annotations.frame_info[frame_number]
-                label_id, points = parse_yolo_obj((frame_info['width'], frame_info['height']), line)
+                label_id, points = parse_yolo_obj((frame_info["width"], frame_info["height"]), line)
                 annotations.add_shape(annotations.LabeledShape(
-                    type='rectangle',
+                    type="rectangle",
                     frame=frame_number,
                     label=labels_mapping[label_id],
                     points=points,
@@ -78,14 +78,24 @@ def load(file_object, annotations):
                 ))
                 line = fp.readline()
 
-    archive_file = file_object if isinstance(file_object, str) else getattr(file_object, 'name')
-    labels_mapping = {idx: label[1]["name"] for idx, label in enumerate(annotations.meta['task']['labels'])}
+    def load_labels(labels_file):
+        with open(labels_file, "r") as f:
+            return {idx: label.strip() for idx, label in enumerate(f.readlines()) if label.strip()}
+
+    archive_file = file_object if isinstance(file_object, str) else getattr(file_object, "name")
+    labels_mapping = {idx: label[1]["name"] for idx, label in enumerate(annotations.meta["task"]["labels"])}
     with TemporaryDirectory() as tmp_dir:
         Archive(archive_file).extractall(tmp_dir)
 
+        labels_file = os.path.join(tmp_dir, "labels.txt")
+        if os.path.exists(labels_file):
+            labels_mapping = load_labels(labels_file)
+        else:
+            labels_mapping = {idx: label[1]["name"] for idx, label in enumerate(annotations.meta["task"]["labels"])}
+
         for dirpath, dirnames, filenames in os.walk(tmp_dir):
             for file in filenames:
-                if '.txt' == os.path.splitext(file)[1]:
+                if ".txt" == os.path.splitext(file)[1] and file != "labels.txt":
                     parse_yolo_file(os.path.join(dirpath, file), labels_mapping)
 
 def dump(file_object, annotations):
@@ -100,9 +110,9 @@ def dump(file_object, annotations):
 
         return x, y, w, h
 
-    labels_ids = {label[1]["name"]: idx for idx, label in enumerate(annotations.meta['task']['labels'])}
+    labels_ids = {label[1]["name"]: idx for idx, label in enumerate(annotations.meta["task"]["labels"])}
 
-    with ZipFile(file_object, 'w') as output_zip:
+    with ZipFile(file_object, "w") as output_zip:
         for frame_annotation in annotations.group_by_frame():
             image_name = frame_annotation.name
             annotation_name = "{}.txt".format(get_filename(image_name))
@@ -120,3 +130,4 @@ def dump(file_object, annotations):
                 yolo_annotation += "{} {}\n".format(labels_ids[label], yolo_bb)
 
             output_zip.writestr(annotation_name, yolo_annotation)
+        output_zip.writestr("labels.txt", "\n".join(l[0] for l in sorted(labels_ids.items(), key=lambda x:x[1])))
