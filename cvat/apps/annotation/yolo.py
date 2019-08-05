@@ -10,7 +10,7 @@ format_spec = {
     ],
     "loaders": [
         {
-            "display_name": "{name} {format}",
+            "display_name": "{name} {format} {version}",
             "format": "ZIP",
             "version": "1.0",
             "handler": "load"
@@ -55,9 +55,9 @@ def load(file_object, annotations):
                 return frame_number
 
         # try to extract frame number from filename
-        possible_numbers = re.findall(r'\d+', filename)
-        if possible_numbers and len(possible_numbers) == 1:
-            return int(possible_numbers[0])
+        numbers = re.findall(r'\d+', filename)
+        if numbers and len(numbers) == 1:
+            return int(numbers[0])
 
         raise Exception('Cannot match filename or determinate framenumber for {} filename'.format(filename))
 
@@ -88,11 +88,9 @@ def load(file_object, annotations):
                 if '.txt' == os.path.splitext(file)[1]:
                     parse_yolo_file(os.path.join(dirpath, file), labels_mapping)
 
-
 def dump(file_object, annotations):
     import os
     from zipfile import ZipFile
-    from tempfile import TemporaryDirectory
 
     def convert_to_yolo(img_size, box):
         x = (box[0] + box[2]) / 2 / img_size[0]
@@ -104,22 +102,21 @@ def dump(file_object, annotations):
 
     labels_ids = {label[1]["name"]: idx for idx, label in enumerate(annotations.meta['task']['labels'])}
 
-    with TemporaryDirectory() as out_dir:
-        with ZipFile(file_object, 'w') as output_zip:
-            for frame_annotation in annotations.group_by_frame():
-                image_name = frame_annotation.name
-                annotation_name = "{}.txt".format(get_filename(image_name))
-                width = frame_annotation.width
-                height = frame_annotation.height
+    with ZipFile(file_object, 'w') as output_zip:
+        for frame_annotation in annotations.group_by_frame():
+            image_name = frame_annotation.name
+            annotation_name = "{}.txt".format(get_filename(image_name))
+            width = frame_annotation.width
+            height = frame_annotation.height
 
-                yolo_annotation = ""
-                for shape in frame_annotation.labeled_shapes:
-                    if shape.type != "rectangle":
-                        continue
+            yolo_annotation = ""
+            for shape in frame_annotation.labeled_shapes:
+                if shape.type != "rectangle":
+                    continue
 
-                    label = shape.label
-                    yolo_bb = convert_to_yolo((width, height), shape.points)
-                    yolo_bb = " ".join("{:.6f}".format(p) for p in yolo_bb)
-                    yolo_annotation += "{} {}\n".format(labels_ids[label], yolo_bb)
+                label = shape.label
+                yolo_bb = convert_to_yolo((width, height), shape.points)
+                yolo_bb = " ".join("{:.6f}".format(p) for p in yolo_bb)
+                yolo_annotation += "{} {}\n".format(labels_ids[label], yolo_bb)
 
-                output_zip.writestr(annotation_name, yolo_annotation)
+            output_zip.writestr(annotation_name, yolo_annotation)
