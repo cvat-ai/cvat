@@ -1,13 +1,14 @@
 {
     "compilerOptions": {
         "emitDeclarationOnly": true,
-        "module": "commonjs",
+        "module": "es6",
+        "target": "es6",
         "noImplicitAny": true,
         "preserveConstEnums": true,
         "declaration": true,
         "declarationDir": "dist/declaration"
     },
     "include": [
-        "src/**/*"
+        "src/*.ts"
     ],
 }

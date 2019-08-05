@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
+    "browser-or-node": "^1.2.1",
     "error-stack-parser": "^2.0.2",
     "form-data": "^2.5.0",
     "jest-config": "^24.8.0",
