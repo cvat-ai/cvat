@@ -26,8 +26,12 @@ def load(file_object, annotations):
     from pyunpack import Archive
     import os
     from tempfile import TemporaryDirectory
+    from glob import glob
 
     def convert_from_yolo(img_size, box):
+        # convertation formulas are based on https://github.com/pjreddie/darknet/blob/master/scripts/voc_label.py
+        # <x> <y> <width> <height> - float values relative to width and height of image
+        # <x> <y> - are center of rectangle
         def clamp(value, _min, _max):
             return max(min(_max, value), _min)
         xtl = clamp(img_size[0] * (box[0] - box[2] / 2), 0, img_size[0])
@@ -58,10 +62,10 @@ def load(file_object, annotations):
         raise Exception("Cannot match filename or determinate framenumber for {} filename".format(filename))
 
     def parse_yolo_file(annotation_file, labels_mapping):
+        frame_number = match_frame(annotations.frame_info, annotation_file)
         with open(annotation_file, "r") as fp:
             line = fp.readline()
             while line:
-                frame_number = match_frame(annotations.frame_info, annotation_file)
                 frame_info = annotations.frame_info[frame_number]
                 label_id, points = parse_yolo_obj((frame_info["width"], frame_info["height"]), line)
                 annotations.add_shape(annotations.LabeledShape(
@@ -79,25 +83,29 @@ def load(file_object, annotations):
             return {idx: label.strip() for idx, label in enumerate(f.readlines()) if label.strip()}
 
     archive_file = file_object if isinstance(file_object, str) else getattr(file_object, "name")
-    labels_mapping = {idx: label[1]["name"] for idx, label in enumerate(annotations.meta["task"]["labels"])}
     with TemporaryDirectory() as tmp_dir:
         Archive(archive_file).extractall(tmp_dir)
 
-        labels_file = os.path.join(tmp_dir, "labels.txt")
-        if os.path.exists(labels_file):
-            labels_mapping = load_labels(labels_file)
+        labels_file = glob(os.path.join(tmp_dir, "*.names"))
+        if not labels_file:
+            raise Exception("Could not find '*.names' file with labels in uploaded archive")
+        elif len(labels_file) == 1:
+            labels_mapping = load_labels(labels_file[0])
         else:
-            labels_mapping = {idx: label[1]["name"] for idx, label in enumerate(annotations.meta["task"]["labels"])}
+            raise Exception("Too many '*.names' files in uploaded archive: {}".format(labels_file))
 
         for dirpath, dirnames, filenames in os.walk(tmp_dir):
             for file in filenames:
-                if ".txt" == os.path.splitext(file)[1] and file != "labels.txt":
+                if ".txt" == os.path.splitext(file)[1]:
                     parse_yolo_file(os.path.join(dirpath, file), labels_mapping)
 
 def dump(file_object, annotations):
     import os
     from zipfile import ZipFile
 
+    # convertation formulas are based on https://github.com/pjreddie/darknet/blob/master/scripts/voc_label.py
+    # <x> <y> <width> <height> - float values relative to width and height of image
+    # <x> <y> - are center of rectangle
     def convert_to_yolo(img_size, box):
         x = (box[0] + box[2]) / 2 / img_size[0]
         y = (box[1] + box[3]) / 2 / img_size[1]
@@ -126,4 +134,4 @@ def dump(file_object, annotations):
                 yolo_annotation += "{} {}\n".format(labels_ids[label], yolo_bb)
 
             output_zip.writestr(annotation_name, yolo_annotation)
-        output_zip.writestr("labels.txt", "\n".join(l[0] for l in sorted(labels_ids.items(), key=lambda x:x[1])))
+        output_zip.writestr("obj.names".format(),     "\n".join(l[0] for l in sorted(labels_ids.items(), key=lambda x:x[1])))

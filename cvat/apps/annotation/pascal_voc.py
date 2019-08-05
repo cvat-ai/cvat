@@ -45,7 +45,7 @@ def load(file_object, annotations):
     def parse_xml_file(annotation_file):
         import xml.etree.ElementTree as ET
         root = ET.parse(annotation_file).getroot()
-        filename = root.find('filename').text
+        frame_number = match_frame(root.find('filename').text)
 
         for obj_tag in root.iter('object'):
             bbox_tag = obj_tag.find("bndbox")
@@ -57,7 +57,7 @@ def load(file_object, annotations):
 
             annotations.add_shape(annotations.LabeledShape(
                 type='rectangle',
-                frame=match_frame(annotations.frame_info, filename),
+                frame=frame_number,
                 label=label,
                 points=[xmin, ymin, xmax, ymax],
                 occluded=False,
