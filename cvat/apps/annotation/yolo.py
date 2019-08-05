@@ -27,10 +27,6 @@ def load(file_object, annotations):
     import os
     from tempfile import TemporaryDirectory
 
-    def get_filename(path):
-        import os
-        return os.path.splitext(os.path.basename(path))[0]
-
     def convert_from_yolo(img_size, box):
         def clamp(value, _min, _max):
             return max(min(_max, value), _min)
