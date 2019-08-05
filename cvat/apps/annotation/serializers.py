@@ -5,8 +5,6 @@
 from rest_framework import serializers
 from cvat.apps.annotation import models
 
-import os
-
 class AnnotationDumperSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AnnotationDumper
