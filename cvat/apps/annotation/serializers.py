@@ -5,55 +5,72 @@
 from rest_framework import serializers
 from cvat.apps.annotation import models
 
-class AnnotationHandlerSerializer(serializers.ModelSerializer):
+class AnnotationDumperSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.AnnotationHandler
+        model = models.AnnotationDumper
         exclude = ('annotation_format',)
+        # https://www.django-rest-framework.org/api-guide/validators/#updating-nested-serializers
+        extra_kwargs = {
+            'display_name': {
+                'validators': [],
+            },
+        }
 
+class AnnotationLoaderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.AnnotationLoader
+        exclude = ('annotation_format',)
+        # https://www.django-rest-framework.org/api-guide/validators/#updating-nested-serializers
+        extra_kwargs = {
+            'display_name': {
+                'validators': [],
+            },
+        }
 
 class AnnotationFormatSerializer(serializers.ModelSerializer):
-    handlers = AnnotationHandlerSerializer(many=True, source='annotationhandler_set')
+    dumpers = AnnotationDumperSerializer(many=True, source="annotationdumper_set")
+    loaders = AnnotationLoaderSerializer(many=True, source="annotationloader_set")
 
     class Meta:
         model = models.AnnotationFormat
-        exclude = ("handler_file", )
+        fields = "__all__"
 
     # pylint: disable=no-self-use
     def create(self, validated_data):
-        handlers = validated_data.pop('handlers')
+        dumpers = validated_data.pop("annotationdumper_set")
+        loaders = validated_data.pop("annotationloader_set")
 
-        annotation_format = models.AnnotationFormat.objects.create(**validated_data)
+        annotation_format = models.AnnotationFormat()
+        annotation_format.name = validated_data["name"]
+        annotation_format.handler_file = validated_data["handler_file"].name
+        annotation_format.save()
 
-        handlers = [models.AnnotationHandler(annotation_format=annotation_format, **handler) for handler in handlers]
-        models.AnnotationHandler.objects.bulk_create(handlers)
+        for dumper in dumpers:
+            models.AnnotationDumper(annotation_format=annotation_format, **dumper).save()
+
+        for loader in loaders:
+            models.AnnotationLoader(annotation_format=annotation_format, **loader).save()
 
         return annotation_format
 
     # pylint: disable=no-self-use
-    def to_internal_value(self, data):
-        _data = data.copy()
-        _data["handlers"] = []
-        for d in _data.pop("dumpers"):
-            d["type"] = models.HandlerType.DUMPER
-            _data["handlers"].append(d)
+    def update(self, instance, validated_data):
+        dumper_names = [handler["display_name"] for handler in validated_data["annotationdumper_set"]]
+        loader_names = [handler["display_name"] for handler in validated_data["annotationloader_set"]]
 
-        for l in _data.pop("loaders"):
-            l["type"] = models.HandlerType.LOADER
-            _data["handlers"].append(l)
-        return _data
+        handlers_to_delete = [d for d in instance.annotationdumper_set.all() if d.display_name not in dumper_names] + \
+            [l for l in instance.annotationloader_set.all() if l.display_name not in loader_names]
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['dumpers'] = []
-        data['loaders'] = []
-        for handler in data.pop("handlers"):
-            handler_type = handler.pop("type")
-            if handler_type == models.HandlerType.DUMPER:
-                data["dumpers"].append(handler)
-            else:
-                data["loaders"].append(handler)
+        for db_handler in handlers_to_delete:
+            db_handler.delete()
 
-        return data
+        for dumper in validated_data["annotationdumper_set"]:
+            models.AnnotationDumper(annotation_format=instance, **dumper).save()
+        for loader in validated_data["annotationloader_set"]:
+            models.AnnotationLoader(annotation_format=instance, **loader).save()
+
+        instance.save()
+        return instance
 
 class AnnotationFileSerializer(serializers.Serializer):
     annotation_file = serializers.FileField()

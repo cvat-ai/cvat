@@ -408,3 +408,7 @@ class Annotation:
             track_len += len(track['shapes'])
 
         return len(self._annotation_ir.tags) + len(self._annotation_ir.shapes) + track_len
+
+    @property
+    def frame_info(self):
+        return self._frame_info

@@ -37,7 +37,7 @@ It allows to download and upload annotations in different formats and easily add
       - **name** - unique name for each format
       - **dumpers and loaders** - lists of objects that describes exposed dumpers and loaders and must
         have following keys:
-        1. display_name - **unique** string used as ID for a dumpers and loaders.
+        1. display_name - **unique** string used as ID for dumpers and loaders.
            Also this string is displayed in CVAT UI.
            Possible to use a named placeholders like the python format function
            (supports only name, format and version variables).
@@ -49,16 +49,13 @@ It allows to download and upload annotations in different formats and easily add
       def dump_handler(file_object, annotations):
       ```
 
-    Inside of the script environment 3 variables are available:
-    - file_object - python's standard file object returned by open() function and exposing a file-oriented API
+    Inside of the script environment 2 variables are available:
+    - **file_object** - python's standard file object returned by open() function and exposing a file-oriented API
     (with methods such as read() or write()) to an underlying resource.
     - **annotations** - instance of [Annotation](annotation.py#L106) class.
-    - **spec** - string with name of the requested specification
-    (if the annotation format defines them).
-    It may be useful if one script implements more than one format support.
 
     Annotation class expose API and some additional pre-defined types that allow to get/add shapes inside
-    a parser/dumper code.
+    a loader/dumper code.
 
     Short description of the public methods:
     - **Annotation.shapes** - property, returns a generator of Annotation.LabeledShape objects
@@ -115,7 +112,7 @@ It allows to download and upload annotations in different formats and easily add
     file_object.write(...)
     ...
     ```
-    Pseudocode for a parser code
+    Pseudocode for a loader code
     ```python
     ...
     #read file_object

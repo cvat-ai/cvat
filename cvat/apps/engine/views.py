@@ -42,7 +42,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
-from cvat.apps.annotation.models import AnnotationHandler
+from cvat.apps.annotation.models import AnnotationDumper, AnnotationLoader
 from cvat.apps.annotation.format import get_annotation_formats
 
 # Server REST API
@@ -276,7 +276,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         dump_format = request.query_params.get("format", "")
         try:
-            db_dumper = AnnotationHandler.objects.get(display_name=dump_format)
+            db_dumper = AnnotationDumper.objects.get(display_name=dump_format)
         except ObjectDoesNotExist:
             raise serializers.ValidationError(
                 "Please specify a correct 'format' parameter for the request")
@@ -507,7 +507,7 @@ def load_data_proxy(request, rq_id, rq_func, pk):
         serializer = AnnotationFileSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             try:
-                db_parser = AnnotationHandler.objects.get(pk=upload_format)
+                db_parser = AnnotationLoader.objects.get(pk=upload_format)
             except ObjectDoesNotExist:
                 raise serializers.ValidationError(
                     "Please specify a correct 'format' parameter for the upload request")

@@ -76,9 +76,8 @@ class TaskView {
         });
     }
 
-    _upload(uploadAnnotationButton) {
+    _upload(uploadAnnotationButton, format) {
         const button = $(uploadAnnotationButton);
-        const CVATformat = this._annotationFormats.find(el => el.name === 'CVAT');
         $('<input type="file" accept="text/xml">').on('change', async (onChangeEvent) => {
             const file = onChangeEvent.target.files[0];
             $(onChangeEvent.target).remove();
@@ -88,8 +87,7 @@ class TaskView {
                 const annotationData = new FormData();
                 annotationData.append('annotation_file', file);
                 try {
-                    await uploadTaskAnnotationRequest(this._task.id, annotationData,
-                        CVATformat.loaders[0].display_name);
+                    await uploadTaskAnnotationRequest(this._task.id, annotationData, format);
                 } catch (error) {
                     showMessage(error.message);
                 } finally {
@@ -133,25 +131,40 @@ class TaskView {
         const buttonsContainer = $('<div class="dashboardButtonsUI"> </div>').appendTo(this._UI);
 
         const downloadButton = $('<button class="regular dashboardButtonUI"> Dump Annotation </button>');
-        const dropdownMenu = $('<ul class="dropdown-content hidden"></ul>');
+        const dropdownDownloadMenu = $('<ul class="dropdown-content hidden"></ul>');
+
+        const uploadButton = $('<button class="regular dashboardButtonUI"> Upload Annotation </button>');
+        const dropdownUploadMenu = $('<ul class="dropdown-content hidden"></ul>');
+
         for (const format of this._annotationFormats) {
-            for (const dumpSpec of format.dumpers) {
-                dropdownMenu.append($(`<li>${dumpSpec.display_name}</li>`).on('click', () => {
-                    dropdownMenu.addClass('hidden');
-                    this._dump(downloadButton[0], dumpSpec.display_name);
+            for (const dumper of format.dumpers) {
+                dropdownDownloadMenu.append($(`<li>${dumper.display_name}</li>`).on('click', () => {
+                    dropdownDownloadMenu.addClass('hidden');
+                    this._dump(downloadButton[0], dumper.display_name);
+                }));
+            }
+
+            for (const loader of format.loaders) {
+                dropdownUploadMenu.append($(`<li>${loader.display_name}</li>`).on('click', () => {
+                    dropdownUploadMenu.addClass('hidden');
+                    userConfirm('The current annotation will be lost. Are you sure?', () => {
+                        this._upload(uploadButton, loader.display_name);
+                    });
                 }));
             }
         }
 
         $('<div class="dropdown"></div>').append(
             downloadButton.on('click', () => {
-                dropdownMenu.toggleClass('hidden');
+                dropdownDownloadMenu.toggleClass('hidden');
             }),
-        ).append(dropdownMenu).appendTo(buttonsContainer);
+        ).append(dropdownDownloadMenu).appendTo(buttonsContainer);
 
-        $('<button class="regular dashboardButtonUI"> Upload Annotation </button>').on('click', (e) => {
-            userConfirm('The current annotation will be lost. Are you sure?', () => this._upload(e.target));
-        }).appendTo(buttonsContainer);
+        $('<div class="dropdown"></div>').append(
+            uploadButton.on('click', () => {
+                dropdownUploadMenu.toggleClass('hidden');
+            }),
+        ).append(dropdownUploadMenu).appendTo(buttonsContainer);
 
         $('<button class="regular dashboardButtonUI"> Update Task </button>').on('click', () => {
             this._update();

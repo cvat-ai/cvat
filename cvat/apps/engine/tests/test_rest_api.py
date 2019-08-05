@@ -14,7 +14,6 @@ from django.contrib.auth.models import User, Group
 from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
     AttributeType)
 from cvat.apps.annotation.models import AnnotationFormat
-from cvat.apps.annotation.models import HandlerType
 from unittest import mock
 import io
 import xml.etree.ElementTree as ET
@@ -2025,7 +2024,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         self.assertEqual(response.status_code, HTTP_400_BAD_REQUEST)
 
         cvat_format = AnnotationFormat.objects.get(name="CVAT")
-        for annotation_handler in cvat_format.annotationhandler_set.filter(type=HandlerType.DUMPER):
+        for annotation_handler in cvat_format.annotationdumper_set.all():
             response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
                 "format={}".format(annotation_handler.display_name))
             self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
