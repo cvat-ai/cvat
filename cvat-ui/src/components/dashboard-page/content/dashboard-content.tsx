@@ -127,13 +127,13 @@ class DashboardContent extends Component<any, any> {
       title: 'Create new task',
       content: <TaskCreateForm ref={ this.setTaskCreateFormRef } />,
       centered: true,
+      className: 'crud-modal',
       okText: 'Create',
       okType: 'primary',
       onOk: (closeFunction: Function) => {
         this.createFormRef.validateFields((error: any, values: any) => {
           if (!error) {
-            const newTask = new (window as any).cvat.classes.Task({name: 'test', image_quality: 50});
-            debugger;
+            const newTask = new (window as any).cvat.classes.Task({ name: 'test', image_quality: 50 });
             this.props.dispatch(createTaskAsync(newTask)).then(closeFunction());
           }
         });
@@ -149,6 +149,7 @@ class DashboardContent extends Component<any, any> {
       title: 'Update task',
       content: <TaskUpdateForm task={ task } ref={ this.setTaskUpdateFormRef } />,
       centered: true,
+      className: 'crud-modal',
       okText: 'Update',
       okType: 'primary',
       onOk: (closeFunction: Function) => {

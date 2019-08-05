@@ -2,16 +2,39 @@ import React, { PureComponent } from 'react';
 
 import { Form, Input, Icon, Checkbox, Radio, Upload } from 'antd';
 
+import { validateLabels, convertStringToNumber } from '../../../utils/labels';
+
 import './task-create.scss';
 
 
 const { Dragger } = Upload;
+
+const formItemLayout = {
+  labelCol: {
+    xs: { span: 24 },
+    sm: { span: 8 },
+  },
+  wrapperCol: {
+    xs: { span: 24 },
+    sm: { span: 16 },
+  },
+};
+
+const formItemTailLayout = {
+  labelCol: {
+    xs: { span: 24 },
+  },
+  wrapperCol: {
+    xs: { span: 24 },
+  },
+};
 
 class TaskCreateForm extends PureComponent<any, any> {
   constructor(props: any) {
     super(props);
 
     this.state = {
+      confirmDirty: false,
       selectedFile: null,
       selectedFileList: [],
     };
@@ -21,10 +44,16 @@ class TaskCreateForm extends PureComponent<any, any> {
     const { getFieldDecorator } = this.props.form;
 
     return (
-      <Form layout="inline">
-        <Form.Item label="Name">
+      <Form>
+        <Form.Item { ...formItemLayout } label="Name">
           {getFieldDecorator('name', {
-            rules: [{ required: true, message: 'Please input task name!' }],
+            rules: [
+              {
+                required: true,
+                pattern: new RegExp('[a-zA-Z0-9_]+'),
+                message: 'Bad task name!',
+              },
+            ],
           })(
             <Input
               prefix={ <Icon type="profile" /> }
@@ -34,9 +63,12 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item label="Labels">
+        <Form.Item { ...formItemLayout } label="Labels">
           {getFieldDecorator('labels', {
-            rules: [{ required: true, message: 'Please add some labels!' }],
+            rules: [
+              { required: true, message: 'Please add some labels!' },
+              { validator: validateLabels, message: 'Bad labels format!' },
+            ],
           })(
             <Input
               prefix={ <Icon type="tag" /> }
@@ -46,21 +78,21 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item label="Bug tracker">
+        <Form.Item { ...formItemLayout } label="Bug tracker">
           {getFieldDecorator('bugTracker', {
-            rules: [],
+            rules: [{ type: 'url', required: true, message: 'Bad bug tracker link!' }],
           })(
             <Input
-              prefix={ <Icon type="bug" /> }
+              prefix={ <Icon type="tool" /> }
               type="text"
               name="bug-tracker"
             />
           )}
         </Form.Item>
 
-        <Form.Item label="Dataset repository">
+        <Form.Item { ...formItemLayout } label="Dataset repository">
           {getFieldDecorator('datasetRepository', {
-            rules: [],
+            rules: [{ type: 'url', required: true, message: 'Bad dataset repository link!' }],
           })(
             <Input
               prefix={ <Icon type="database" /> }
@@ -70,9 +102,10 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item label="Use LFS">
+        <Form.Item { ...formItemLayout } label="Use LFS" >
           {getFieldDecorator('useLFS', {
             rules: [],
+            initialValue: true,
           })(
             <Checkbox
               defaultChecked
@@ -81,7 +114,7 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item label="Source">
+        <Form.Item { ...formItemLayout } label="Source">
           {getFieldDecorator('source', {
             rules: [],
             initialValue: 1,
@@ -94,9 +127,10 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item label="Z-Order">
+        <Form.Item { ...formItemLayout } label="Z-Order">
           {getFieldDecorator('zOrder', {
             rules: [],
+            initialValue: false,
           })(
             <Checkbox
               name="z-order"
@@ -104,21 +138,18 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item label="Overlap size">
-          {getFieldDecorator('overlapSize', {
-            rules: [],
-          })(
-            <Input
-              prefix={ <Icon type="profile" /> }
-              type="number"
-              name="overlap-size"
-            />
-          )}
-        </Form.Item>
-
-        <Form.Item label="Segment size">
+        <Form.Item { ...formItemLayout } label="Segment size" hasFeedback>
           {getFieldDecorator('segmentSize', {
-            rules: [],
+            rules: [
+              {
+                type: 'number',
+                min: 100,
+                max: 50000,
+                message: 'Segment size out of range!',
+              },
+            ],
+            initialValue: 5000,
+            getValueFromEvent: convertStringToNumber,
           })(
             <Input
               prefix={ <Icon type="profile" /> }
@@ -128,9 +159,31 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item label="Image quality">
+        <Form.Item { ...formItemLayout } label="Overlap size" hasFeedback>
+          {getFieldDecorator('overlapSize', {
+            rules: [
+              {
+                type: 'number',
+                min: 0,
+                max: this.props.form.getFieldValue('segmentSize') - 1,
+              },
+            ],
+            initialValue: 0,
+            getValueFromEvent: convertStringToNumber,
+          })(
+            <Input
+              prefix={ <Icon type="profile" /> }
+              type="number"
+              name="overlap-size"
+            />
+          )}
+        </Form.Item>
+
+        <Form.Item { ...formItemLayout } label="Image quality">
           {getFieldDecorator('imageQuality', {
             rules: [],
+            initialValue: 50,
+            getValueFromEvent: convertStringToNumber,
           })(
             <Input
               prefix={ <Icon type="file-image" /> }
@@ -140,9 +193,17 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item label="Start frame">
+        <Form.Item { ...formItemLayout } label="Start frame" hasFeedback>
           {getFieldDecorator('startFrame', {
-            rules: [],
+            rules: [
+              {
+                type: 'number',
+                min: 0,
+                message: 'Bad start frame!',
+              },
+            ],
+            initialValue: 0,
+            getValueFromEvent: convertStringToNumber,
           })(
             <Input
               prefix={ <Icon type="profile" /> }
@@ -152,9 +213,17 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item label="Stop frame">
+        <Form.Item { ...formItemLayout } label="Stop frame" hasFeedback>
           {getFieldDecorator('stopFrame', {
-            rules: [],
+            rules: [
+              {
+                type: 'number',
+                min: this.props.form.getFieldValue('startFrame'),
+                message: 'Stop frame must be greater than or equal to start frame!',
+              },
+            ],
+            initialValue: 0,
+            getValueFromEvent: convertStringToNumber,
           })(
             <Input
               prefix={ <Icon type="profile" /> }
@@ -164,7 +233,7 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item label="Frame filter">
+        <Form.Item { ...formItemLayout } label="Frame filter">
           {getFieldDecorator('frameFilter', {
             rules: [],
           })(
@@ -176,7 +245,7 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item>
+        <Form.Item { ...formItemTailLayout }>
           {getFieldDecorator('filesUpload', {
             rules: [],
           })(

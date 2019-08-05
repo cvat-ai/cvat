@@ -2,7 +2,7 @@ import React, { PureComponent } from 'react';
 
 import { Form, Input, Icon } from 'antd';
 
-import { serializeLabels, deserializeLabels } from '../../../utils/labels'
+import { serializeLabels, validateLabels } from '../../../utils/labels'
 
 import './task-update.scss';
 
@@ -32,7 +32,7 @@ class TaskUpdateForm extends PureComponent<any, any> {
           {getFieldDecorator('newLabels', {
             rules: [
               { required: true, message: 'Please input new labels!' },
-              { validator: this.validateLabels, message: 'Bad labels format!' },
+              { validator: validateLabels, message: 'Bad labels format!' },
             ],
           })(
             <Input
@@ -45,18 +45,6 @@ class TaskUpdateForm extends PureComponent<any, any> {
         </Form.Item>
       </Form>
     );
-  }
-
-  private validateLabels = (rule: any, value: string, callback: Function) => {
-    if (value) {
-      try {
-        deserializeLabels(value);
-      } catch (error) {
-        callback(error.message);
-      }
-    }
-
-    callback();
   }
 }
 

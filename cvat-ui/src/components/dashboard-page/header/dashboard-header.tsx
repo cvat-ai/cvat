@@ -81,6 +81,7 @@ class DashboardHeader extends Component<any, any> {
       title: 'Create new task',
       content: <TaskCreateForm ref={ this.setTaskCreateFormRef }/>,
       centered: true,
+      className: 'crud-modal',
       okText: 'Create',
       okType: 'primary',
       onOk: (closeFunction: Function) => {

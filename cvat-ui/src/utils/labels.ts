@@ -1,3 +1,25 @@
+export function validateLabels(rule: any, value: string, callback: Function) {
+  if (value) {
+    try {
+      deserializeLabels(value);
+    } catch (error) {
+      callback(error.message);
+    }
+  }
+
+  callback();
+}
+
+export function convertStringToNumber(event: React.FormEvent<HTMLInputElement>) {
+  const convertedValue = Number(event.currentTarget.value);
+
+  if (isNaN(convertedValue)) {
+    return 0;
+  } else {
+    return convertedValue;
+  }
+}
+
 export function serializeLabels(task: any) {
   const labels = task.labels.map((label: any) => label.toJSON());
 
