@@ -5,7 +5,7 @@
   "main": "babel.config.js",
   "scripts": {
     "build": "tsc && webpack --config ./webpack.config.js",
-    "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --open'"
+    "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
   },
   "author": "Intel",
   "license": "MIT",
@@ -17,10 +17,11 @@
     "@babel/core": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
     "@babel/preset-typescript": "^7.3.3",
-    "eslint": "^6.1.0",
+    "@types/node": "^12.6.8",
     "@typescript-eslint/eslint-plugin": "^1.13.0",
     "@typescript-eslint/parser": "^1.13.0",
     "babel-loader": "^8.0.6",
+    "eslint": "^6.1.0",
     "nodemon": "^1.19.1",
     "typescript": "^3.5.3",
     "webpack": "^4.36.1",

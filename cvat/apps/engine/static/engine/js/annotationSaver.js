@@ -22,7 +22,7 @@ class AnnotationSaverModel extends Listener {
         this._shapeCollection = shapeCollection;
         this._initialObjects = [];
 
-        this._hash = this._getHash();
+        this.update();
 
         // We need use data from export instead of initialData
         // Otherwise we have differ keys order and JSON comparison code incorrect
@@ -34,6 +34,10 @@ class AnnotationSaverModel extends Listener {
         for (const track of data.tracks) {
             this._initialObjects[track.id] = track;
         }
+    }
+
+    update() {
+        this._hash = this._getHash();
     }
 
     async _request(data, action) {
@@ -399,4 +403,5 @@ function buildAnnotationSaver(initialData, shapeCollection) {
     const model = new AnnotationSaverModel(initialData, shapeCollection);
     const controller = new AnnotationSaverController(model);
     new AnnotationSaverView(model, controller);
+    return model;
 }

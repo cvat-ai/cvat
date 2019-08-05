@@ -50,7 +50,7 @@ Canvas itself handles:
 All methods are sync.
 
 ```ts
-    html(): HTMLElement;
+    html(): HTMLDivElement;
     setup(frameData: FrameData, objectStates: ObjectState): void;
     activate(clientID: number, attributeID?: number): void;
     rotate(direction: Rotation): void;
@@ -76,6 +76,7 @@ All methods are sync.
  ```canvas_shape_drawing```
 - Tags has a class ```canvas_tag```
 - Canvas image has ID ```canvas_image```
+- Grid on the canvas has ID ```canvas_grid_pattern```
 
 ### Events
 

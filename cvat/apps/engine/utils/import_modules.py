@@ -4,6 +4,20 @@ import importlib
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
+def parse_imports(source_code: str):
+    root = ast.parse(source_code)
+
+    for node in ast.iter_child_nodes(root):
+        if isinstance(node, ast.Import):
+            module = []
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module
+        else:
+            continue
+
+        for n in node.names:
+            yield Import(module, n.name, n.asname)
+
 def import_modules(source_code: str):
     results = {}
     imports = parse_imports(source_code)
@@ -20,17 +34,3 @@ def import_modules(source_code: str):
             results[import_.name] = loaded_module
 
     return results
-
-def parse_imports(source_code: str):
-    root = ast.parse(source_code)
-
-    for node in ast.iter_child_nodes(root):
-        if isinstance(node, ast.Import):
-            module = []
-        elif isinstance(node, ast.ImportFrom):
-            module = node.module
-        else:
-            continue
-
-        for n in node.names:
-            yield Import(module, n.name, n.asname)

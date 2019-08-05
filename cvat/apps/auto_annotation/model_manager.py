@@ -26,7 +26,7 @@ from cvat.apps.engine.annotation import put_task_data, patch_task_data
 from .models import AnnotationModel, FrameworkChoice
 from .model_loader import ModelLoader, load_labelmap
 from .image_loader import ImageLoader
-from .import_modules import import_modules
+from cvat.apps.engine.utils.import_modules import import_modules
 
 
 def _remove_old_file(model_file_field):

@@ -14,13 +14,16 @@ module.exports = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'cvat-canvas.js',
         library: 'canvas',
-        libraryTarget: 'commonjs',
+        libraryTarget: 'window',
     },
     devServer: {
         contentBase: path.join(__dirname, 'dist'),
-        compress: true,
+        compress: false,
         inline: true,
-        port: 9000,
+        port: 3000,
+    },
+    resolve: {
+        extensions: ['.ts', '.js', '.json'],
     },
     module: {
         rules: [{
