@@ -10,8 +10,6 @@ import rq
 import shutil
 import tempfile
 import itertools
-import sys
-import traceback
 
 from django.db import transaction
 from django.utils import timezone
@@ -26,7 +24,8 @@ from cvat.apps.engine.annotation import put_task_data, patch_task_data
 from .models import AnnotationModel, FrameworkChoice
 from .model_loader import ModelLoader, load_labelmap
 from .image_loader import ImageLoader
-from cvat.apps.engine.utils.import_modules import import_modules
+from cvat.apps.engine.utils import import_modules, execute_python_code
+
 
 
 def _remove_old_file(model_file_field):
@@ -269,9 +268,6 @@ class Results():
             "attributes": attributes or {},
         }
 
-class InterpreterError(Exception):
-    pass
-
 def _process_detections(detections, path_to_conv_script, restricted=True):
     results = Results()
     local_vars = {
@@ -296,21 +292,10 @@ def _process_detections(detections, path_to_conv_script, restricted=True):
         imports = import_modules(source_code)
         global_vars.update(imports)
 
-    try:
-        exec(source_code, global_vars, local_vars)
-    except SyntaxError as err:
-        error_class = err.__class__.__name__
-        detail = err.args[0]
-        line_number = err.lineno
-    except Exception as err:
-        error_class = err.__class__.__name__
-        detail = err.args[0]
-        cl, exc, tb = sys.exc_info()
-        line_number = traceback.extract_tb(tb)[-1][1]
-    else:
-        return results
 
-    raise InterpreterError("%s at line %d: %s" % (error_class, line_number, detail))
+    execute_python_code(source_code, global_vars, local_vars)
+
+    return results
 
 def run_inference_engine_annotation(data, model_file, weights_file,
        labels_mapping, attribute_spec, convertation_file, job=None, update_progress=None, restricted=True):

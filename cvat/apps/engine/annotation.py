@@ -13,12 +13,12 @@ from django.db import transaction
 from cvat.apps.profiler import silk_profile
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.annotation.annotation import AnnotationIR, Annotation
+from cvat.apps.engine.utils import execute_python_code, import_modules
 
 from . import models
 from .data_manager import DataManager
 from .log import slogger
 from . import serializers
-from .utils.import_modules import import_modules
 
 class PatchAction(str, Enum):
     CREATE = "create"
@@ -593,12 +593,13 @@ class JobAnnotation:
             global_vars = globals()
             imports = import_modules(source_code)
             global_vars.update(imports)
-            exec(source_code, global_vars)
+
+            execute_python_code(source_code, global_vars)
 
             global_vars["file_object"] = file_object
             global_vars["annotations"] = annotation_importer
 
-            exec("{}(file_object, annotations)".format(loader.handler), global_vars)
+            execute_python_code("{}(file_object, annotations)".format(loader.handler), global_vars)
         self.create(annotation_importer.data.slice(self.start_frame, self.stop_frame).serialize())
 
 class TaskAnnotation:
@@ -679,11 +680,11 @@ class TaskAnnotation:
             global_vars = globals()
             imports = import_modules(source_code)
             global_vars.update(imports)
-            exec(source_code, global_vars)
+            execute_python_code(source_code, global_vars)
             global_vars["file_object"] = dump_file
             global_vars["annotations"] = anno_exporter
 
-            exec("{}(file_object, annotations)".format(dumper.handler), global_vars)
+            execute_python_code("{}(file_object, annotations)".format(dumper.handler), global_vars)
 
     def upload(self, annotation_file, loader):
         annotation_importer = Annotation(
@@ -698,12 +699,12 @@ class TaskAnnotation:
             global_vars = globals()
             imports = import_modules(source_code)
             global_vars.update(imports)
-            exec(source_code, global_vars)
+            execute_python_code(source_code, global_vars)
 
             global_vars["file_object"] = file_object
             global_vars["annotations"] = annotation_importer
 
-            exec("{}(file_object, annotations)".format(loader.handler), global_vars)
+            execute_python_code("{}(file_object, annotations)".format(loader.handler), global_vars)
         self.create(annotation_importer.data.serialize())
 
     @property

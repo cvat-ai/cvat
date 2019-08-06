@@ -46,6 +46,7 @@
     buildAnnotationSaver:false
     LabelsInfo:false
     uploadJobAnnotationRequest:false
+    isDefaultFormat:false
 */
 
 async function initLogger(jobID) {
@@ -389,7 +390,7 @@ function setupMenu(job, task, shapeCollectionModel,
 
     for (const format of annotationFormats) {
         for (const dumpSpec of format.dumpers) {
-            $(`<li>${dumpSpec.display_name}</li>`).on('click', async () => {
+            const listItem = $(`<li>${dumpSpec.display_name}</li>`).on('click', async () => {
                 $('#downloadAnnotationButton')[0].disabled = true;
                 $('#downloadDropdownMenu').addClass('hidden');
                 try {
@@ -399,7 +400,11 @@ function setupMenu(job, task, shapeCollectionModel,
                 } finally {
                     $('#downloadAnnotationButton')[0].disabled = false;
                 }
-            }).appendTo('#downloadDropdownMenu');
+            });
+            if (isDefaultFormat(dumpSpec.display_name, task.mode)) {
+                listItem.addClass('bold');
+            }
+            $('#downloadDropdownMenu').append(listItem);
         }
 
         for (const loader of format.loaders) {
