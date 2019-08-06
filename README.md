@@ -30,6 +30,7 @@ CVAT is free, online, interactive video and image annotation tool for computer v
 ## Supported annotation formats
 
 Format selection is possible after clicking on the Upload annotation / Dump annotation button.
+
 | Annotation format         | Dumper | Loader |
 | ------------------------- | ------ | ------ |
 | CVAT XML v1.1 for images  | X      | X      |
