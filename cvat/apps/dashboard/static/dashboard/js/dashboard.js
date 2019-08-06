@@ -11,6 +11,7 @@
     LabelsInfo:false
     showMessage:false
     showOverlay:false
+    isDefaultFormat:false
 */
 
 class TaskView {
@@ -138,10 +139,15 @@ class TaskView {
 
         for (const format of this._annotationFormats) {
             for (const dumper of format.dumpers) {
-                dropdownDownloadMenu.append($(`<li>${dumper.display_name}</li>`).on('click', () => {
+                const listItem = $(`<li>${dumper.display_name}</li>`).on('click', () => {
                     dropdownDownloadMenu.addClass('hidden');
                     this._dump(downloadButton[0], dumper.display_name);
-                }));
+                });
+
+                if (isDefaultFormat(dumper.display_name, this._task.mode)) {
+                    listItem.addClass('bold');
+                }
+                dropdownDownloadMenu.append(listItem);
             }
 
             for (const loader of format.loaders) {

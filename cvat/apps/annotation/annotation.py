@@ -119,9 +119,9 @@ class Annotation:
         self._create_callback=create_callback
         self._MAX_ANNO_SIZE=30000
 
-        db_labels = self._db_task.label_set.all().prefetch_related('attributespec_set')
+        db_labels = self._db_task.label_set.all().prefetch_related('attributespec_set').order_by('pk')
 
-        self._label_mapping = {db_label.id: db_label for db_label in db_labels}
+        self._label_mapping = OrderedDict((db_label.id, db_label) for db_label in db_labels)
 
         self._attribute_mapping = {
             'mutable': {},

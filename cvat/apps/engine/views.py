@@ -306,8 +306,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     finally:
                         rq_job.delete()
             elif rq_job.is_failed:
+                exc_info = str(rq_job.exc_info)
                 rq_job.delete()
-                return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response(data=exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
                 return Response(status=status.HTTP_202_ACCEPTED)
 
@@ -534,7 +535,8 @@ def load_data_proxy(request, rq_id, rq_func, pk):
         elif rq_job.is_failed:
             os.close(rq_job.meta['tmp_file_descriptor'])
             os.remove(rq_job.meta['tmp_file'])
+            exc_info = str(rq_job.exc_info)
             rq_job.delete()
-            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(data=exc_info, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(status=status.HTTP_202_ACCEPTED)
