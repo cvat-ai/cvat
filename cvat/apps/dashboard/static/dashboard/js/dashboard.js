@@ -11,6 +11,7 @@
     LabelsInfo:false
     showMessage:false
     showOverlay:false
+    isDefaultFormat:false
 */
 
 class TaskView {

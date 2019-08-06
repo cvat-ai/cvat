@@ -11,6 +11,7 @@
     showOverlay
     uploadJobAnnotationRequest
     uploadTaskAnnotationRequest
+    isDefaultFormat
 */
 
 /* global

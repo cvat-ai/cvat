@@ -47,10 +47,10 @@ def execute_python_code(source_code, global_vars=None, local_vars=None):
         error_class = err.__class__.__name__
         details = err.args[0]
         line_number = err.lineno
-        raise InterpreterError("{} at line {}}: {}".format(error_class, line_number, details))
+        raise InterpreterError("{} at line {}: {}".format(error_class, line_number, details))
     except Exception as err:
         error_class = err.__class__.__name__
         details = err.args[0]
-        cl, exc, tb = sys.exc_info()
+        _, _, tb = sys.exc_info()
         line_number = traceback.extract_tb(tb)[-1][1]
         raise InterpreterError("{} at line {}: {}".format(error_class, line_number, details))

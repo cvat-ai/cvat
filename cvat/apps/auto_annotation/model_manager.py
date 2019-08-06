@@ -10,8 +10,6 @@ import rq
 import shutil
 import tempfile
 import itertools
-import sys
-import traceback
 
 from django.db import transaction
 from django.utils import timezone

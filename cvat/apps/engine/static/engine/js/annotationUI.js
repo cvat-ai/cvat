@@ -46,6 +46,7 @@
     buildAnnotationSaver:false
     LabelsInfo:false
     uploadJobAnnotationRequest:false
+    isDefaultFormat:false
 */
 
 async function initLogger(jobID) {
@@ -400,7 +401,7 @@ function setupMenu(job, task, shapeCollectionModel,
                     $('#downloadAnnotationButton')[0].disabled = false;
                 }
             });
-            if (isDefaultFormat(dumpSpec.display_name), task.mode) {
+            if (isDefaultFormat(dumpSpec.display_name, task.mode)) {
                 listItem.addClass('bold');
             }
             $('#downloadDropdownMenu').append(listItem);
