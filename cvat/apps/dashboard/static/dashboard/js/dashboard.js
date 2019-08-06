@@ -143,8 +143,7 @@ class TaskView {
                     this._dump(downloadButton[0], dumper.display_name);
                 });
 
-                if ((dumper.display_name === 'CVAT XML 1.1 for videos' && this._task.mode === 'interpolation')
-                    || (dumper.display_name === 'CVAT XML 1.1 for images' && this._task.mode === 'annotation')) {
+                if (isDefaultFormat(dumper.display_name, this._task.mode)) {
                     listItem.addClass('bold');
                 }
                 dropdownDownloadMenu.append(listItem);

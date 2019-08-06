@@ -94,13 +94,12 @@ def load(file_object, annotations):
         else:
             raise Exception("Too many '*.names' files in uploaded archive: {}".format(labels_file))
 
-        for dirpath, dirnames, filenames in os.walk(tmp_dir):
+        for dirpath, _, filenames in os.walk(tmp_dir):
             for file in filenames:
                 if ".txt" == os.path.splitext(file)[1]:
                     parse_yolo_file(os.path.join(dirpath, file), labels_mapping)
 
 def dump(file_object, annotations):
-    import os
     from zipfile import ZipFile
 
     # convertation formulas are based on https://github.com/pjreddie/darknet/blob/master/scripts/voc_label.py
@@ -134,4 +133,4 @@ def dump(file_object, annotations):
                 yolo_annotation += "{} {}\n".format(labels_ids[label], yolo_bb)
 
             output_zip.writestr(annotation_name, yolo_annotation)
-        output_zip.writestr("obj.names".format(),     "\n".join(l[0] for l in sorted(labels_ids.items(), key=lambda x:x[1])))
+        output_zip.writestr("obj.names", "\n".join(l[0] for l in sorted(labels_ids.items(), key=lambda x:x[1])))

@@ -400,8 +400,7 @@ function setupMenu(job, task, shapeCollectionModel,
                     $('#downloadAnnotationButton')[0].disabled = false;
                 }
             });
-            if ((dumpSpec.display_name === 'CVAT XML 1.1 for videos' && task.mode === 'interpolation')
-                || (dumpSpec.display_name === 'CVAT XML 1.1 for images' && task.mode === 'annotation')) {
+            if (isDefaultFormat(dumpSpec.display_name), task.mode) {
                 listItem.addClass('bold');
             }
             $('#downloadDropdownMenu').append(listItem);
