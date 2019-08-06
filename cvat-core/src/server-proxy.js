@@ -21,16 +21,9 @@
         constructor() {
             const Cookie = require('js-cookie');
             const Axios = require('axios');
-
-            function setCSRFHeader(header) {
-                Axios.defaults.headers.delete['X-CSRFToken'] = header;
-                Axios.defaults.headers.patch['X-CSRFToken'] = header;
-                Axios.defaults.headers.post['X-CSRFToken'] = header;
-                Axios.defaults.headers.put['X-CSRFToken'] = header;
-
-                // Allows to move authentification headers to backend
-                Axios.defaults.withCredentials = true;
-            }
+            Axios.defaults.withCredentials = true;
+            Axios.defaults.xsrfHeaderName = "X-CSRFTOKEN";
+            Axios.defaults.xsrfCookieName = "csrftoken";
 
             async function about() {
                 const { backendAPI } = config;
@@ -100,50 +93,15 @@
                             [cookie] = cookie.split(';'); // truncate extra information
                             const name = cookie.split('=')[0];
                             const value = cookie.split('=')[1];
-                            if (name === 'csrftoken') {
-                                setCSRFHeader(value);
-                            }
                             Cookie.set(name, value);
                             cookies += `${cookie};`;
                         }
 
                         Axios.defaults.headers.common.Cookie = cookies;
-                    } else {
-                        // Browser code. We need set additinal header for authentification
-                        let csrftoken = response.data.csrf;
-                        if (csrftoken) {
-                            setCSRFHeader(csrftoken);
-                            Cookie.set('csrftoken', csrftoken);
-                        } else {
-                            csrftoken = Cookie.get('csrftoken');
-                            if (csrftoken) {
-                                setCSRFHeader(csrftoken);
-                            } else {
-                                throw new ScriptingError(
-                                    'An environment has been detected as a browser'
-                                    + ', but CSRF token has not been found in cookies',
-                                );
-                            }
-                        }
                     }
                 }
 
                 const host = config.backendAPI.slice(0, -7);
-                let csrf = null;
-                try {
-                    csrf = await Axios.get(`${host}/auth/csrf`, {
-                        proxy: config.proxy,
-                    });
-                } catch (errorData) {
-                    const code = errorData.response ? errorData.response.status : errorData.code;
-                    throw new ServerError(
-                        'Could not get CSRF token from a server',
-                        code,
-                    );
-                }
-
-                setCookie(csrf);
-
                 const authentificationData = ([
                     `${encodeURIComponent('username')}=${encodeURIComponent(username)}`,
                     `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
@@ -588,14 +546,6 @@
 
                     setTimeout(request);
                 });
-            }
-
-            // Set csrftoken header from browser cookies if it exists
-            // NodeJS env returns 'undefined'
-            // So in NodeJS we need login after each run
-            const csrftoken = Cookie.get('csrftoken');
-            if (csrftoken) {
-                setCSRFHeader(csrftoken);
             }
 
             Object.defineProperties(this, Object.freeze({
