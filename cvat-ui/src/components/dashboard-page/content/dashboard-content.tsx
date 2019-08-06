@@ -11,7 +11,7 @@ import Title from 'antd/lib/typography/Title';
 import TaskUpdateForm from '../../modals/task-update/task-update';
 import TaskCreateForm from '../../modals/task-create/task-create';
 
-import { deserializeLabels } from '../../../utils/labels';
+import { deserializeLabels, taskDTO } from '../../../utils/tasks-dto';
 
 import './dashboard-content.scss';
 
@@ -133,7 +133,8 @@ class DashboardContent extends Component<any, any> {
       onOk: (closeFunction: Function) => {
         this.createFormRef.validateFields((error: any, values: any) => {
           if (!error) {
-            const newTask = new (window as any).cvat.classes.Task({ name: 'test', image_quality: 50 });
+            const newTask = taskDTO(values);
+
             this.props.dispatch(createTaskAsync(newTask)).then(closeFunction());
           }
         });

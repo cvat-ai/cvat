@@ -1,8 +1,9 @@
 import React, { PureComponent } from 'react';
 
 import { Form, Input, Icon, Checkbox, Radio, Upload } from 'antd';
+import { UploadFile, UploadChangeParam } from 'antd/lib/upload/interface';
 
-import { validateLabels, convertStringToNumber } from '../../../utils/labels';
+import { validateLabels, convertStringToNumber } from '../../../utils/tasks-dto';
 
 import './task-create.scss';
 
@@ -35,7 +36,6 @@ class TaskCreateForm extends PureComponent<any, any> {
 
     this.state = {
       confirmDirty: false,
-      selectedFile: null,
       selectedFileList: [],
     };
   }
@@ -265,33 +265,30 @@ class TaskCreateForm extends PureComponent<any, any> {
     );
   }
 
-  private onUploaderChange = (info: any) => {
-    const nextState: { selectedFile: any, selectedFileList: any } = {
-      selectedFile: null,
-      selectedFileList: null,
+  private onUploaderChange = (info: UploadChangeParam) => {
+    const nextState: { selectedFileList: UploadFile[] } = {
+      selectedFileList: this.state.selectedFileList,
     };
+
     switch (info.file.status) {
       case 'uploading':
-        nextState.selectedFileList = [info.file];
+        nextState.selectedFileList.push(info.file);
         break;
       case 'done':
-        nextState.selectedFile = info.file;
-        nextState.selectedFileList = [info.file];
         break;
       default:
         // INFO: error or removed
-        nextState.selectedFile = null;
-        nextState.selectedFileList = [];
+        nextState.selectedFileList = info.fileList;
     }
+
     this.setState(() => nextState);
   };
 
   private simulateRequest = ({ file, onSuccess }: any) => {
     setTimeout(() => {
-      onSuccess('ok');
+      onSuccess(file);
     }, 0);
   };
-
 }
 
 export default Form.create()(TaskCreateForm);

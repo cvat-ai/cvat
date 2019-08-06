@@ -3,11 +3,14 @@ import React, { Component } from 'react';
 import { withRouter } from 'react-router-dom';
 
 import { connect } from 'react-redux';
+import { createTaskAsync } from '../../../actions/tasks.actions';
 
 import { Modal, Layout, Row, Col, Button, Input } from 'antd';
 import Title from 'antd/lib/typography/Title';
 
 import TaskCreateForm from '../../modals/task-create/task-create';
+
+import { taskDTO } from '../../../utils/tasks-dto';
 
 import './dashboard-header.scss';
 
@@ -87,7 +90,9 @@ class DashboardHeader extends Component<any, any> {
       onOk: (closeFunction: Function) => {
         this.createFormRef.validateFields((error: any, values: any) => {
           if (!error) {
-            closeFunction();
+            const newTask = taskDTO(values);
+
+            this.props.dispatch(createTaskAsync(newTask)).then(closeFunction());
           }
         });
       },

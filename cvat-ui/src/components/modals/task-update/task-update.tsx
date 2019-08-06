@@ -2,7 +2,7 @@ import React, { PureComponent } from 'react';
 
 import { Form, Input, Icon } from 'antd';
 
-import { serializeLabels, validateLabels } from '../../../utils/labels'
+import { serializeLabels, validateLabels } from '../../../utils/tasks-dto'
 
 import './task-update.scss';
 

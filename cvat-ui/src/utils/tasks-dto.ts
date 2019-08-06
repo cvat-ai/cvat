@@ -1,3 +1,36 @@
+enum FileSource {
+  Local = 1,
+  Remote = 2,
+  Share = 3,
+}
+
+export function taskDTO(values: any) {
+  const newTaskDTO = {
+    name: values.name,
+    labels: deserializeLabels(values.labels),
+    image_quality: values.imageQuality,
+    z_order: values.zOrder,
+    bug_tracker: values.bugTracker,
+    segment_size: values.segmentSize,
+    overlap: values.overlapSize,
+    frame_filter: values.frameFilter,
+    start_frame: values.startFrame,
+    stop_frame: values.stopFrame,
+  };
+
+  const newTask = new (window as any).cvat.classes.Task(newTaskDTO);
+
+  if (values.source === FileSource.Local) {
+    newTask.clientFiles = values.filesUpload.fileList.map((file: any) => file.response);
+  } else if (values.source === FileSource.Remote) {
+    newTask.serverFiles = values.filesUpload.fileList;
+  } else if (values.source === FileSource.Share) {
+    newTask.remoteFiles = values.filesUpload.fileList;
+  }
+
+  return newTask;
+}
+
 export function validateLabels(rule: any, value: string, callback: Function) {
   if (value) {
     try {
