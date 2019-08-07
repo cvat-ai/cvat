@@ -1,0 +1,93 @@
+<!--
+    Copyright (C) 2018 Intel Corporation
+
+    SPDX-License-Identifi er: MIT
+-->
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{{title}}</title>
+    </head>
+    <body>
+          HI
+        <div id="content">
+            <div style="width: 100%; display: flex;">
+                <div style="width: 50%; display: flex;"> </div>
+                <div style="width: 100%; display: flex;">
+                    <div id="dashboardManageButtons" style="display: flex;">
+                        <button id="dashboardCreateTaskButton" class="regular h1" style="padding: 7px;"> Create New Task </button>
+                    </div>
+                    <div style="width: 300px; display: flex; margin-left: 4px;">
+                        <input type="text" id="dashboardSearchInput" class="regular h3" placeholder="Search.." name="search">
+                        <button id="dashboardSearchSubmit" class="regular h3"> &#x1F50D; </button>
+                    </div>
+                </div>
+                <div style="width: 50%; display: flex;"> </div>
+            </div>
+
+            <div id="dashboardPagination">
+                <div id="dashboardList" style="float: left; width: 100%"> </div>
+            </div>
+        </div>
+
+        <div id="dashboardShareBrowseModal" class="modal hidden">
+            <div style="width: 600px; height: 400px;" class="modal-content noSelect">
+                <div style="text-align: center;"> <label id="dashboardShareBasePath" class="regular h1"> </label> </div>
+                <div id="dashboardShareBrowser"> </div>
+                <div style="text-align: center;">
+                    <button id="dashboardCancelBrowseServer" class="regular h2" style="margin: 0px 10px"> Cancel </button>
+                    <button id="dashboardSubmitBrowseServer" class="regular h2" style="margin: 0px 10px"> Submit </button>
+                </div>
+            </div>
+        </div>
+
+        <template id="dashboardUpdateTemplate">
+            <div id="dashboardUpdateModal" class="modal">
+                <div id="dashboardUpdateContent" class="modal-content">
+                    <input id="dashboardOldLabels" type="text" readonly=true class="regular h2">
+                    <input id="dashboardNewLabels" type="text" placeholder="expand the specification here" class="regular h2">
+                    <div style="text-align: center;">
+                        <button id="dashboardCancelUpdate" class="regular h2"> Cancel </button>
+                        <button id="dashboardSubmitUpdate" class="regular h2"> Update </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <svg class="overlay" id="loadingOverlay" style="display: block;">
+            <text class="semiBold" font-size="50" fill="#09c" x="44%" y="46%"> LOADING </text>
+        </svg>
+    </body>
+
+    <template id="confirmTemplate">
+        <div class="modal">
+            <div class="modal-content" style="width: 400px; height: auto; max-height: 600px; overflow: auto;">
+                <label class="regular templateMessage selectable"> </label>
+                <div style="text-align: center;">
+                    <button class="regular h2 templateDisagreeButton" style="margin-top: 20px"> Cancel </button>
+                    <button class="regular h2 templateAgreeButton" style="margin-top: 20px"> Ok </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
+    <template id="messageTemplate">
+        <div class="modal">
+            <div class="modal-content"  style="width: 400px; height: auto; max-height: 600px; overflow: auto;">
+                <label class="regular templateMessage selectable" style="word-break: break-word;"> </label>
+                <div style="text-align:center;">
+                    <button class="regular h2 templateOKButton" style="margin-top: 20px"> Ok </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="overlayTemplate">
+        <div class="modal" style="display: block !important;">
+            <div class="modal-content"  style="width: 400px; height: auto; max-height: 600px; overflow: auto;">
+                <label class="regular templateMessage selectable"> </label>
+            </div>
+        </div>
+    </template>
+</html>

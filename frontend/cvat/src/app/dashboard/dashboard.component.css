@@ -16,17 +16,17 @@ html {
 
 @font-face {
     font-family: BarlowSemiCondensed-Regular;
-    src: url(fonts/BarlowSemiCondensed-Regular.ttf);
+    src: url(src/assets/fonts/BarlowSemiCondensed-Regular.ttf);
 }
 
 @font-face {
     font-family: BarlowSemiCondensed-SemiBold;
-    src: url(fonts/BarlowSemiCondensed-SemiBold.ttf);
+    src: url(src/assets/fonts/BarlowSemiCondensed-SemiBold.ttf);
 }
 
 @font-face {
     font-family: BarlowSemiCondensed-Bold;
-    src: url(fonts/BarlowSemiCondensed-Bold.ttf);
+    src: url(src/assets/fonts/BarlowSemiCondensed-Bold.ttf);
 }
 
 .regular {
@@ -161,7 +161,7 @@ html {
  * SPDX-License-Identifier: MIT
  */
 
- 
+
 /*Source: /cvat/apps/dashboard/static/dashboard*/
 .dashboardItem {
     margin: 5px auto;
