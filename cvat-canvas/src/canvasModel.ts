@@ -248,11 +248,3 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         };
     }
 }
-
-// TODO List:
-// 1) Rotate image
-// 2) Context menu
-// 3) Draw objects
-// 4) activate(), focus(), grid()
-// 4) Dragging, resizing
-// 5) Draw, merge, split, group, cancel

@@ -3,6 +3,8 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* eslint-disable */
+
 module.exports = {
     defaultSeverity: 'error',
     extends: [
