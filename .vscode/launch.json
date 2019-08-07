@@ -19,7 +19,8 @@
                 "127.0.0.1:7000"
             ],
             "django": true,
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole"
         },
         {
             "name": "client",
@@ -50,7 +51,8 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {}
+            "env": {},
+            "console": "internalConsole"
         },
         {
             "name": "RQ - low",
@@ -68,7 +70,8 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {}
+            "env": {},
+            "console": "internalConsole"
         },
         {
             "name": "git",
@@ -83,7 +86,8 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {}
+            "env": {},
+            "console": "internalConsole"
         },
         {
             "name": "migrate",
@@ -98,7 +102,8 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {}
+            "env": {},
+            "console": "internalConsole"
         },
         {
             "name": "tests",
@@ -116,7 +121,8 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {}
+            "env": {},
+            "console": "internalConsole"
         },
         {
             "name": "cvat.js debug",
