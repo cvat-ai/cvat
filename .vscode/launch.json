@@ -19,6 +19,7 @@
                 "127.0.0.1:7000"
             ],
             "django": true,
+            "console": "internalConsole",
             "cwd": "${workspaceFolder}"
         },
         {
@@ -49,6 +50,7 @@
                 "cvat.simpleworker.SimpleWorker",
             ],
             "django": true,
+            "console": "internalConsole",
             "cwd": "${workspaceFolder}",
             "env": {}
         },
@@ -67,6 +69,7 @@
                 "cvat.simpleworker.SimpleWorker",
             ],
             "django": true,
+            "console": "internalConsole",
             "cwd": "${workspaceFolder}",
             "env": {}
         },
@@ -82,6 +85,7 @@
                 "update_git_states"
             ],
             "django": true,
+            "console": "internalConsole",
             "cwd": "${workspaceFolder}",
             "env": {}
         },
