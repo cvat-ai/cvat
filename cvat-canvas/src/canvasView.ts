@@ -76,19 +76,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const gridRect: SVGRectElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
 
         // Setup loading animation
-        this.loadingAnimation.setAttribute('id', 'canvas_loading_animation');
-        loadingCircle.setAttribute('id', 'canvas_loading_circle');
+        this.loadingAnimation.setAttribute('id', 'cvat_canvas_loading_animation');
+        loadingCircle.setAttribute('id', 'cvat_canvas_loading_circle');
         loadingCircle.setAttribute('r', '30');
         loadingCircle.setAttribute('cx', '50%');
         loadingCircle.setAttribute('cy', '50%');
 
         // Setup grid
-        this.grid.setAttribute('id', 'canvas_grid');
+        this.grid.setAttribute('id', 'cvat_canvas_grid');
         this.grid.setAttribute('version', '2');
         this.gridPath.setAttribute('d', 'M 1000 0 L 0 0 0 1000');
         this.gridPath.setAttribute('fill', 'none');
         this.gridPath.setAttribute('stroke-width', '1.5');
-        gridPattern.setAttribute('id', 'canvas_grid_pattern');
+        gridPattern.setAttribute('id', 'cvat_canvas_grid_pattern');
         gridPattern.setAttribute('width', '100');
         gridPattern.setAttribute('height', '100');
         gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
@@ -98,13 +98,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
 
         // Setup content
-        this.text.setAttribute('id', 'canvas_text_content');
-        this.background.setAttribute('id', 'canvas_background');
-        this.content.setAttribute('id', 'canvas_content');
+        this.text.setAttribute('id', 'cvat_canvas_text_content');
+        this.background.setAttribute('id', 'cvat_canvas_background');
+        this.content.setAttribute('id', 'cvat_canvas_content');
 
         // Setup wrappers
-        this.rotationWrapper.setAttribute('id', 'canvas_rotation_wrapper');
-        this.canvas.setAttribute('id', 'canvas_wrapper');
+        this.rotationWrapper.setAttribute('id', 'cvat_canvas_rotation_wrapper');
+        this.canvas.setAttribute('id', 'cvat_canvas_wrapper');
 
         // Unite created HTML elements together
         this.loadingAnimation.appendChild(loadingCircle);
