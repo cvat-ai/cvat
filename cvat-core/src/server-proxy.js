@@ -12,7 +12,6 @@
     const FormData = require('form-data');
     const {
         ServerError,
-        ScriptingError,
     } = require('./exceptions');
 
     const config = require('./config');
@@ -22,8 +21,8 @@
             const Cookie = require('js-cookie');
             const Axios = require('axios');
             Axios.defaults.withCredentials = true;
-            Axios.defaults.xsrfHeaderName = "X-CSRFTOKEN";
-            Axios.defaults.xsrfCookieName = "csrftoken";
+            Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
+            Axios.defaults.xsrfCookieName = 'csrftoken';
 
             async function about() {
                 const { backendAPI } = config;
@@ -102,16 +101,16 @@
                 }
 
                 const host = config.backendAPI.slice(0, -7);
-                const authentificationData = ([
+                const authenticationData = ([
                     `${encodeURIComponent('username')}=${encodeURIComponent(username)}`,
                     `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
                 ]).join('&').replace(/%20/g, '+');
 
-                let authentificationResponse = null;
+                let authenticationResponse = null;
                 try {
-                    authentificationResponse = await Axios.post(
+                    authenticationResponse = await Axios.post(
                         `${host}/auth/login`,
-                        authentificationData,
+                        authenticationData,
                         {
                             'Content-Type': 'application/x-www-form-urlencoded',
                             proxy: config.proxy,
@@ -123,7 +122,7 @@
                 } catch (errorData) {
                     if (errorData.response.status === 302) {
                         // Redirection code expected
-                        authentificationResponse = errorData.response;
+                        authenticationResponse = errorData.response;
                     } else {
                         const code = errorData.response
                             ? errorData.response.status : errorData.code;
@@ -135,14 +134,14 @@
                 }
 
                 // TODO: Perhaps we should redesign the authorization method on the server.
-                if (authentificationResponse.data.includes('didn\'t match')) {
+                if (authenticationResponse.data.includes('didn\'t match')) {
                     throw new ServerError(
                         'The pair login/password is invalid',
                         403,
                     );
                 }
 
-                setCookie(authentificationResponse);
+                setCookie(authenticationResponse);
             }
 
             async function logout() {
@@ -240,7 +239,7 @@
                                     // If server has another status, it is unexpected
                                     // Therefore it is server error and we can pass code 500
                                     reject(new ServerError(
-                                        `Unknown task state has been recieved: ${response.data.state}`,
+                                        `Unknown task state has been received: ${response.data.state}`,
                                         500,
                                     ));
                                 }
@@ -249,7 +248,7 @@
                                     ? errorData.response.status : errorData.code;
 
                                 reject(new ServerError(
-                                    'Data uploading error occured',
+                                    'Data uploading error occurred',
                                     code,
                                 ));
                             }
