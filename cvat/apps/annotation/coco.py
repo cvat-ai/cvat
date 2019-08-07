@@ -73,7 +73,7 @@ def dump(file_object, annotations):
         """
         empty_polygon = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-        for i in range(0, len(polygons)):
+        for i, _ in enumerate(polygons):
             rle_bottom = mask_util.frPyObjects([polygons[i]['points']], height, width)
             segment_overlapped = False
             for j in range(i + 1, len(polygons)):
