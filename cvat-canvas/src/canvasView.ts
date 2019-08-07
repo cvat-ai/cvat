@@ -174,25 +174,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         function resize(geometry: Geometry): void {
             for (const obj of [this.background, this.grid, this.loadingAnimation]) {
-                obj.style.width = `${geometry.image.width}`;
-                obj.style.height = `${geometry.image.height}`;
+                obj.style.width = `${geometry.image.width}px`;
+                obj.style.height = `${geometry.image.height}px`;
             }
 
             for (const obj of [this.content, this.text]) {
-                obj.style.width = `${geometry.image.width + geometry.offset * 2}`;
-                obj.style.height = `${geometry.image.height + geometry.offset * 2}`;
+                obj.style.width = `${geometry.image.width + geometry.offset * 2}px`;
+                obj.style.height = `${geometry.image.height + geometry.offset * 2}px`;
             }
         }
 
         function move(geometry: Geometry): void {
             for (const obj of [this.background, this.grid, this.loadingAnimation]) {
-                obj.style.top = `${geometry.top}`;
-                obj.style.left = `${geometry.left}`;
+                obj.style.top = `${geometry.top}px`;
+                obj.style.left = `${geometry.left}px`;
             }
 
             for (const obj of [this.content, this.text]) {
-                obj.style.top = `${geometry.top - geometry.offset * geometry.scale}`;
-                obj.style.left = `${geometry.left - geometry.offset * geometry.scale}`;
+                obj.style.top = `${geometry.top - geometry.offset * geometry.scale}px`;
+                obj.style.left = `${geometry.left - geometry.offset * geometry.scale}px`;
             }
 
             this.content.style.transform = `scale(${geometry.scale})`;
