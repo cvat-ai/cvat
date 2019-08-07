@@ -18,7 +18,6 @@ format_spec = {
 
 def dump(file_object, annotations):
     import numpy as np
-    import os
     import json
     from skimage import measure
     from pycocotools import mask as mask_util
@@ -47,9 +46,9 @@ def dump(file_object, annotations):
                 for xy in contour:
                     reshaped_contour.append(xy[0])
                     reshaped_contour.append(xy[1])
-                for i in range(0, len(reshaped_contour)):
-                    if reshaped_contour[i] < 0:
-                        reshaped_contour[i] = 0
+                for rcontour in reshaped_contour:
+                    if rcontour < 0:
+                        rcontour = 0
                 # Check if area of a polygon is enough
                 rle = mask_util.frPyObjects([reshaped_contour], mask.shape[0], mask.shape[1])
                 area = mask_util.area(rle)
@@ -114,10 +113,10 @@ def dump(file_object, annotations):
                 polygons[i]['points'] = [polygons[i]['points']]
 
         output_polygons = []
-        for i in range(0, len(polygons)):
-            poly_len = len(polygons[i]['points'])
-            if poly_len != 0 and polygons[i]['points'] != [empty_polygon]:
-                output_polygons.append(polygons[i])
+        for polygon in polygons:
+            poly_len = len(polygon['points'])
+            if poly_len != 0 and polygon['points'] != [empty_polygon]:
+                output_polygons.append(polygon)
 
         return output_polygons
 
@@ -221,22 +220,22 @@ def dump(file_object, annotations):
         result_annotation['images'].append(new_img)
 
 
-    def insert_annotation_data(image, category_map, segm_id, object, result_annotation):
+    def insert_annotation_data(image, category_map, segm_id, obj, result_annotation):
         """Get data from input annotation for object and fill fields for this object in output annotation
         Args:
             image: dictionary with data for image from input CVAT annotation
             category_map: map for categories represented in the annotation {name: id}
             segm_id: identificator of current object
-            object: includes data for the object [label, polygon]
+            obj: includes data for the object [label, polygon]
             result_annotation: output annotation in COCO representation
         """
         new_anno = {}
-        new_anno['category_id'] = category_map[object['label']]
+        new_anno['category_id'] = category_map[obj['label']]
         new_anno['id'] = segm_id
         new_anno['image_id'] = image.frame
         new_anno['iscrowd'] = 0
-        new_anno['segmentation'] = object['points']
-        area, bbox = polygon_area_and_bbox(object['points'], image.height, image.width)
+        new_anno['segmentation'] = obj['points']
+        area, bbox = polygon_area_and_bbox(obj['points'], image.height, image.width)
         new_anno['area'] = float(np.sum(area))
         new_anno['bbox'] = bbox
         result_annotation['annotations'].append(new_anno)
