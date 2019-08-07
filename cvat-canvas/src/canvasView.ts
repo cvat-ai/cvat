@@ -3,9 +3,9 @@
 * SPDX-License-Identifier: MIT
 */
 
-import { CanvasModel, UpdateReasons, Geometry } from './canvasModel';
-import { Listener, Master } from './master';
 import { CanvasController } from './canvasController';
+import { CanvasModel, Geometry, UpdateReasons } from './canvasModel';
+import { Listener, Master } from './master';
 
 export interface CanvasView {
     html(): HTMLDivElement;
@@ -14,7 +14,6 @@ export interface CanvasView {
 interface HTMLAttribute {
     [index: string]: string;
 }
-
 
 function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
     const output = [];
@@ -59,7 +58,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.controller = controller;
 
         // Create HTML elements
-        this.loadingAnimation = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        this.loadingAnimation = window.document
+            .createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.text = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.background = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 
@@ -70,10 +70,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.rotationWrapper = window.document.createElement('div');
         this.canvas = window.document.createElement('div');
 
-        const loadingCircle: SVGCircleElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        const gridDefs: SVGDefsElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const gridPattern: SVGPatternElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-        const gridRect: SVGRectElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        const loadingCircle: SVGCircleElement = window.document
+            .createElementNS('http://www.w3.org/2000/svg', 'circle');
+        const gridDefs: SVGDefsElement = window.document
+            .createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const gridPattern: SVGPatternElement = window.document
+            .createElementNS('http://www.w3.org/2000/svg', 'pattern');
+        const gridRect: SVGRectElement = window.document
+            .createElementNS('http://www.w3.org/2000/svg', 'rect');
 
         // Setup loading animation
         this.loadingAnimation.setAttribute('id', 'cvat_canvas_loading_animation');
@@ -95,7 +99,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         gridRect.setAttribute('width', '100%');
         gridRect.setAttribute('height', '100%');
         gridRect.setAttribute('fill', 'url(#canvas_grid_pattern)');
-
 
         // Setup content
         this.text.setAttribute('id', 'cvat_canvas_text_content');
@@ -128,8 +131,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const canvasFirstMounted = (event: AnimationEvent): void => {
             if (event.animationName === 'loadingAnimation') {
                 self.controller.canvasSize = {
-                    width: self.rotationWrapper.clientWidth,
                     height: self.rotationWrapper.clientHeight,
+                    width: self.rotationWrapper.clientWidth,
                 };
 
                 self.rotationWrapper.removeEventListener('animationstart', canvasFirstMounted);

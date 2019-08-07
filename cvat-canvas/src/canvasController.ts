@@ -6,10 +6,9 @@
 import {
     CanvasModel,
     Geometry,
-    Size,
     Position,
+    Size,
 } from './canvasModel';
-
 
 export interface CanvasController {
     readonly geometry: Geometry;
