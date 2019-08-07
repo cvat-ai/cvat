@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2018 Intel Corporation
+* Copyright (C) 2019 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -9,10 +9,6 @@ import { Listener, Master } from './master';
 
 export interface CanvasView {
     html(): HTMLDivElement;
-}
-
-interface HTMLAttribute {
-    [index: string]: string;
 }
 
 function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
@@ -170,6 +166,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             for (const obj of [this.background, this.grid, this.loadingAnimation, this.content]) {
                 obj.style.transform = `scale(${geometry.scale})`;
             }
+
+            this.rotationWrapper.style.transform = `rotate(${geometry.angle}deg)`;
         }
 
         function resize(geometry: Geometry): void {
