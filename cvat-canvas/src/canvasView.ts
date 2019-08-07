@@ -98,7 +98,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
         gridRect.setAttribute('width', '100%');
         gridRect.setAttribute('height', '100%');
-        gridRect.setAttribute('fill', 'url(#canvas_grid_pattern)');
+        gridRect.setAttribute('fill', 'url(#cvat_canvas_grid_pattern)');
 
         // Setup content
         this.text.setAttribute('id', 'cvat_canvas_text_content');
@@ -201,9 +201,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const { geometry } = this.controller;
         if (reason === UpdateReasons.IMAGE) {
             if (!model.image.length) {
-                this.loadingAnimation.classList.remove('canvas_hidden');
+                this.loadingAnimation.classList.remove('cvat_canvas_hidden');
             } else {
-                this.loadingAnimation.classList.add('canvas_hidden');
+                this.loadingAnimation.classList.add('cvat_canvas_hidden');
                 this.background.style.backgroundImage = `url("${model.image}")`;
                 move.call(this, geometry);
                 resize.call(this, geometry);
