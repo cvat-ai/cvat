@@ -80,19 +80,19 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         super();
 
         this.data = {
-            image: '',
-            imageSize: {
-                width: 0,
-                height: 0,
-            },
             canvasSize: {
-                width: 0,
                 height: 0,
+                width: 0,
             },
+            image: '',
             imageOffset: 0,
+            imageSize: {
+                height: 0,
+                width: 0,
+            },
+            left: 0,
             scale: 1,
             top: 0,
-            left: 0,
         };
     }
 
@@ -112,7 +112,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.MOVE);
     }
 
-
     public setup(frameData: any, objectStates: any[]): void {
         frameData.data(
             (): void => {
@@ -121,8 +120,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
         ).then((data: string): void => {
             this.data.imageSize = {
-                width: (frameData.width as number),
                 height: (frameData.height as number),
+                width: (frameData.width as number),
             };
 
             this.data.image = data;
@@ -170,12 +169,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public draw(enabled: boolean, shapeType: string,
-        numberOfPoints: number, initialState: any): any {
+                numberOfPoints: number, initialState: any): any {
         return {
             enabled,
-            shapeType,
-            numberOfPoints,
             initialState,
+            numberOfPoints,
+            shapeType,
         };
     }
 
@@ -192,23 +191,23 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public cancel(): void {
-
+        console.log('hello');
     }
 
     public get geometry(): Geometry {
         return {
-            image: {
-                width: this.data.imageSize.width,
-                height: this.data.imageSize.height,
-            },
             canvas: {
-                width: this.data.canvasSize.width,
                 height: this.data.canvasSize.height,
+                width: this.data.canvasSize.width,
             },
-            top: this.data.top,
+            image: {
+                height: this.data.imageSize.height,
+                width: this.data.imageSize.width,
+            },
             left: this.data.left,
-            scale: this.data.scale,
             offset: this.data.imageOffset,
+            scale: this.data.scale,
+            top: this.data.top,
         };
     }
 
@@ -218,22 +217,22 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public set imageSize(value: Size) {
         this.data.imageSize = {
-            width: value.width,
             height: value.height,
+            width: value.width,
         };
     }
 
     public get imageSize(): Size {
         return {
-            width: this.data.imageSize.width,
             height: this.data.imageSize.height,
+            width: this.data.imageSize.width,
         };
     }
 
     public set canvasSize(value: Size) {
         this.data.canvasSize = {
-            width: value.width,
             height: value.height,
+            width: value.width,
         };
 
         this.data.imageOffset = Math.floor(Math.max(
@@ -244,12 +243,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get canvasSize(): Size {
         return {
-            width: this.data.canvasSize.width,
             height: this.data.canvasSize.height,
+            width: this.data.canvasSize.width,
         };
     }
 }
-
-// TODO List:
-// 2) Rotate image
-// 3) Draw objects

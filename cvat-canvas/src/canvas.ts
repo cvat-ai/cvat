@@ -3,8 +3,8 @@
 * SPDX-License-Identifier: MIT
 */
 
-import { CanvasModel, CanvasModelImpl, Rotation } from './canvasModel';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
+import { CanvasModel, CanvasModelImpl, Rotation } from './canvasModel';
 import { CanvasView, CanvasViewImpl } from './canvasView';
 
 interface Canvas {
@@ -63,7 +63,8 @@ class CanvasImpl implements Canvas {
         this.model.grid(stepX, stepY);
     }
 
-    public draw(enabled: boolean = false, shapeType: string = '', numberOfPoints: number = 0, initialState: any = null): any {
+    public draw(enabled: boolean = false, shapeType: string = '',
+                numberOfPoints: number = 0, initialState: any = null): any {
         return this.model.draw(enabled, shapeType, numberOfPoints, initialState);
     }
 

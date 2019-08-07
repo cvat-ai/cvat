@@ -3,9 +3,9 @@
 * SPDX-License-Identifier: MIT
 */
 
-import { CanvasModel, UpdateReasons, Geometry } from './canvasModel';
-import { Listener, Master } from './master';
 import { CanvasController } from './canvasController';
+import { CanvasModel, Geometry, UpdateReasons } from './canvasModel';
+import { Listener, Master } from './master';
 
 export interface CanvasView {
     html(): HTMLDivElement;
@@ -14,7 +14,6 @@ export interface CanvasView {
 interface HTMLAttribute {
     [index: string]: string;
 }
-
 
 function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
     const output = [];
@@ -59,7 +58,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.controller = controller;
 
         // Create HTML elements
-        this.loadingAnimation = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        this.loadingAnimation = window.document
+            .createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.text = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.background = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 
@@ -70,41 +70,44 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.rotationWrapper = window.document.createElement('div');
         this.canvas = window.document.createElement('div');
 
-        const loadingCircle: SVGCircleElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        const gridDefs: SVGDefsElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const gridPattern: SVGPatternElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-        const gridRect: SVGRectElement = window.document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        const loadingCircle: SVGCircleElement = window.document
+            .createElementNS('http://www.w3.org/2000/svg', 'circle');
+        const gridDefs: SVGDefsElement = window.document
+            .createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const gridPattern: SVGPatternElement = window.document
+            .createElementNS('http://www.w3.org/2000/svg', 'pattern');
+        const gridRect: SVGRectElement = window.document
+            .createElementNS('http://www.w3.org/2000/svg', 'rect');
 
         // Setup loading animation
-        this.loadingAnimation.setAttribute('id', 'canvas_loading_animation');
-        loadingCircle.setAttribute('id', 'canvas_loading_circle');
+        this.loadingAnimation.setAttribute('id', 'cvat_canvas_loading_animation');
+        loadingCircle.setAttribute('id', 'cvat_canvas_loading_circle');
         loadingCircle.setAttribute('r', '30');
         loadingCircle.setAttribute('cx', '50%');
         loadingCircle.setAttribute('cy', '50%');
 
         // Setup grid
-        this.grid.setAttribute('id', 'canvas_grid');
+        this.grid.setAttribute('id', 'cvat_canvas_grid');
         this.grid.setAttribute('version', '2');
         this.gridPath.setAttribute('d', 'M 1000 0 L 0 0 0 1000');
         this.gridPath.setAttribute('fill', 'none');
         this.gridPath.setAttribute('stroke-width', '1.5');
-        gridPattern.setAttribute('id', 'canvas_grid_pattern');
+        gridPattern.setAttribute('id', 'cvat_canvas_grid_pattern');
         gridPattern.setAttribute('width', '100');
         gridPattern.setAttribute('height', '100');
         gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
         gridRect.setAttribute('width', '100%');
         gridRect.setAttribute('height', '100%');
-        gridRect.setAttribute('fill', 'url(#canvas_grid_pattern)');
-
+        gridRect.setAttribute('fill', 'url(#cvat_canvas_grid_pattern)');
 
         // Setup content
-        this.text.setAttribute('id', 'canvas_text_content');
-        this.background.setAttribute('id', 'canvas_background');
-        this.content.setAttribute('id', 'canvas_content');
+        this.text.setAttribute('id', 'cvat_canvas_text_content');
+        this.background.setAttribute('id', 'cvat_canvas_background');
+        this.content.setAttribute('id', 'cvat_canvas_content');
 
         // Setup wrappers
-        this.rotationWrapper.setAttribute('id', 'canvas_rotation_wrapper');
-        this.canvas.setAttribute('id', 'canvas_wrapper');
+        this.rotationWrapper.setAttribute('id', 'cvat_canvas_rotation_wrapper');
+        this.canvas.setAttribute('id', 'cvat_canvas_wrapper');
 
         // Unite created HTML elements together
         this.loadingAnimation.appendChild(loadingCircle);
@@ -128,8 +131,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const canvasFirstMounted = (event: AnimationEvent): void => {
             if (event.animationName === 'loadingAnimation') {
                 self.controller.canvasSize = {
-                    width: self.rotationWrapper.clientWidth,
                     height: self.rotationWrapper.clientHeight,
+                    width: self.rotationWrapper.clientWidth,
                 };
 
                 self.rotationWrapper.removeEventListener('animationstart', canvasFirstMounted);
@@ -171,25 +174,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         function resize(geometry: Geometry): void {
             for (const obj of [this.background, this.grid, this.loadingAnimation]) {
-                obj.style.width = `${geometry.image.width}`;
-                obj.style.height = `${geometry.image.height}`;
+                obj.style.width = `${geometry.image.width}px`;
+                obj.style.height = `${geometry.image.height}px`;
             }
 
             for (const obj of [this.content, this.text]) {
-                obj.style.width = `${geometry.image.width + geometry.offset * 2}`;
-                obj.style.height = `${geometry.image.height + geometry.offset * 2}`;
+                obj.style.width = `${geometry.image.width + geometry.offset * 2}px`;
+                obj.style.height = `${geometry.image.height + geometry.offset * 2}px`;
             }
         }
 
         function move(geometry: Geometry): void {
             for (const obj of [this.background, this.grid, this.loadingAnimation]) {
-                obj.style.top = `${geometry.top}`;
-                obj.style.left = `${geometry.left}`;
+                obj.style.top = `${geometry.top}px`;
+                obj.style.left = `${geometry.left}px`;
             }
 
             for (const obj of [this.content, this.text]) {
-                obj.style.top = `${geometry.top - geometry.offset * geometry.scale}`;
-                obj.style.left = `${geometry.left - geometry.offset * geometry.scale}`;
+                obj.style.top = `${geometry.top - geometry.offset * geometry.scale}px`;
+                obj.style.left = `${geometry.left - geometry.offset * geometry.scale}px`;
             }
 
             this.content.style.transform = `scale(${geometry.scale})`;
@@ -198,9 +201,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const { geometry } = this.controller;
         if (reason === UpdateReasons.IMAGE) {
             if (!model.image.length) {
-                this.loadingAnimation.classList.remove('canvas_hidden');
+                this.loadingAnimation.classList.remove('cvat_canvas_hidden');
             } else {
-                this.loadingAnimation.classList.add('canvas_hidden');
+                this.loadingAnimation.classList.add('cvat_canvas_hidden');
                 this.background.style.backgroundImage = `url("${model.image}")`;
                 move.call(this, geometry);
                 resize.call(this, geometry);
