@@ -5,7 +5,24 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "server",
+            "type": "node",
+            "request": "launch",
+            "name": "ui.js: server",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "start"
+            ],
+            "cwd": "${workspaceFolder}/cvat-ui",
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "ui.js: chrome",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/cvat-ui"
+        },
+        {
+            "name": "server: django",
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
@@ -23,7 +40,7 @@
             "console": "internalConsole"
         },
         {
-            "name": "client",
+            "name": "server: chrome",
             "type": "chrome",
             "request": "launch",
             "url": "http://localhost:7000/",
@@ -36,7 +53,7 @@
             }
         },
         {
-            "name": "RQ - default",
+            "name": "server: RQ - default",
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
@@ -55,7 +72,7 @@
             "console": "internalConsole"
         },
         {
-            "name": "RQ - low",
+            "name": "server: RQ - low",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -74,7 +91,7 @@
             "console": "internalConsole"
         },
         {
-            "name": "git",
+            "name": "server: git",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -90,7 +107,7 @@
             "console": "internalConsole"
         },
         {
-            "name": "migrate",
+            "name": "server: migrate",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -106,7 +123,7 @@
             "console": "internalConsole"
         },
         {
-            "name": "tests",
+            "name": "server: tests",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -125,7 +142,7 @@
             "console": "internalConsole"
         },
         {
-            "name": "cvat-core.js debug",
+            "name": "core.js: debug",
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}/cvat-core",
@@ -149,18 +166,29 @@
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "disableOptimisticBPs": true,
-          }
+        },
+        {
+            "type": "chrome",
+
+        }
     ],
     "compounds": [
         {
-            "name": "debugging",
+            "name": "server: debug",
             "configurations": [
-                "client",
-                "server",
-                "RQ - default",
-                "RQ - low",
-                "git",
+                "server: chrome",
+                "server: django",
+                "server: RQ - default",
+                "server: RQ - low",
+                "server: git",
             ]
         },
+        {
+            "name": "ui.js: debug",
+            "configurations": [
+                "ui.js: chrome",
+                "ui.js: server"
+            ]
+        }
     ]
 }
