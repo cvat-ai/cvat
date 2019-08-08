@@ -50,22 +50,27 @@ class TaskCreateForm extends PureComponent<any, any> {
           <Form.Item
             { ...formItemTailLayout }
             extra='Only one video, archive, pdf or many image, directory can be used simultaneously'>
-            {getFieldDecorator('filesUpload', {
-              rules: [{ required: true, message: 'Please, add some files!' }],
-            })(
-              <Badge count={ this.state.filesCounter }>
-                <Dragger
-                  multiple
-                  fileList={ this.state.selectedFileList }
-                  customRequest={ this.simulateRequest }
-                  onChange={ this.onUploaderChange }>
-                  <p className="ant-upload-drag-icon">
-                    <Icon type="inbox" />
-                  </p>
-                  <p className="ant-upload-text">Click or drag file to this area to upload</p>
-                </Dragger>
-              </Badge>
-            )}
+            <Badge
+              count={ this.state.filesCounter }
+              overflowCount={999}>
+              <div onClick={ this.resetUploader }>
+                {getFieldDecorator('filesUpload', {
+                  rules: [{ required: true, message: 'Please, add some files!' }],
+                })(
+                  <Dragger
+                    multiple
+                    showUploadList={ false }
+                    fileList={ this.state.selectedFileList }
+                    customRequest={ this.simulateRequest }
+                    onChange={ this.onUploaderChange }>
+                    <p className="ant-upload-drag-icon">
+                      <Icon type="inbox" />
+                    </p>
+                    <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                  </Dragger>
+                )}
+              </div>
+            </Badge>
           </Form.Item>
         );
       case FileSource.Remote:
@@ -314,6 +319,10 @@ class TaskCreateForm extends PureComponent<any, any> {
     }
 
     this.setState(() => nextState);
+  };
+
+  private resetUploader = () => {
+    this.setState({ selectedFileList: [], filesCounter: 0 });
   };
 
   private simulateRequest = ({ file, onSuccess }: any) => {
