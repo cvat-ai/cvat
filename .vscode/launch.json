@@ -5,19 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "node",
-            "request": "launch",
-            "name": "ui.js: server",
-            "runtimeExecutable": "npm",
-            "runtimeArgs": [
-                "start"
-            ],
-            "cwd": "${workspaceFolder}/cvat-ui",
-        },
-        {
             "type": "chrome",
             "request": "launch",
-            "name": "ui.js: chrome",
+            "preLaunchTask": "ui.js: server",
+            "name": "ui.js: debug",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/cvat-ui"
         },
@@ -181,13 +172,6 @@
                 "server: RQ - default",
                 "server: RQ - low",
                 "server: git",
-            ]
-        },
-        {
-            "name": "ui.js: debug",
-            "configurations": [
-                "ui.js: chrome",
-                "ui.js: server"
             ]
         }
     ]
