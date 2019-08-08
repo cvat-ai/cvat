@@ -37,13 +37,15 @@ export enum Rotation {
 
 export enum UpdateReasons {
     IMAGE = 'image',
+    OBJECTS = 'objects',
     ZOOM = 'zoom',
     FIT = 'fit',
     MOVE = 'move',
 }
 
 export interface CanvasModel extends MasterImpl {
-    image: string;
+    readonly image: string;
+    readonly objects: any[];
     geometry: Geometry;
     imageSize: Size;
     canvasSize: Size;
@@ -69,6 +71,7 @@ export interface CanvasModel extends MasterImpl {
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     private data: {
         image: string;
+        objects: any[];
         imageSize: Size;
         canvasSize: Size;
         imageOffset: number;
@@ -95,6 +98,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 width: 0,
             },
             left: 0,
+            objects: [],
             rememberAngle: false,
             scale: 1,
             top: 0,
@@ -135,6 +139,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
             this.data.image = data;
             this.notify(UpdateReasons.IMAGE);
+            this.data.objects = objectStates;
+            this.notify(UpdateReasons.OBJECTS);
         }).catch((exception: any): void => {
             console.log(exception.toString());
         });
@@ -153,7 +159,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.angle -= 90;
         }
 
-        this.data.angle %= 360;;
+        this.data.angle %= 360;
         this.data.rememberAngle = remember;
         this.fit();
     }
@@ -243,6 +249,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return this.data.image;
     }
 
+    public get objects(): any[] {
+        return this.data.objects;
+    }
+
     public set imageSize(value: Size) {
         this.data.imageSize = {
             height: value.height,
@@ -278,6 +288,5 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 }
 
 // TODO List:
-// 1) Image rotation
-// 2) Draw objects
-// 3) active(), focus()
+// 1) Draw objects and text
+// 2) activate(), focus()
