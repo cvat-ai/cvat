@@ -330,6 +330,9 @@ class Annotation:
     def tracks(self):
         for track in self._annotation_ir.tracks:
             tracked_shapes = TrackManager.get_interpolated_shapes(track, 0, self._db_task.size)
+            for tracked_shape in tracked_shapes:
+                tracked_shape["attributes"] += track["attributes"]
+
             yield Annotation.Track(
                 label=self._get_label_name(track["label_id"]),
                 group=track['group'],
