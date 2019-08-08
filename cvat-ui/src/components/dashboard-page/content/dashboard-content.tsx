@@ -53,7 +53,7 @@ class DashboardContent extends Component<any, any> {
   }
 
   private renderTasks() {
-    return(
+    return (
       <Content className="dashboard-content">
         {
           this.props.tasks.map(

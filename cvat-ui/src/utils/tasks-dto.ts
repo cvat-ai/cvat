@@ -1,4 +1,4 @@
-enum FileSource {
+export enum FileSource {
   Local = 1,
   Remote = 2,
   Share = 3,
@@ -23,9 +23,12 @@ export function taskDTO(values: any) {
   if (values.source === FileSource.Local) {
     newTask.clientFiles = values.filesUpload.fileList.map((file: any) => file.response);
   } else if (values.source === FileSource.Remote) {
-    newTask.serverFiles = values.filesUpload.fileList;
+    newTask.remoteFiles = values.remoteURL
+      .split(/\r?\n/)
+      .map((url: string) => url.trim())
+      .filter((url: string) => url.length > 0);
   } else if (values.source === FileSource.Share) {
-    newTask.remoteFiles = values.filesUpload.fileList;
+    newTask.serverFiles = values.filesUpload.fileList;
   }
 
   return newTask;

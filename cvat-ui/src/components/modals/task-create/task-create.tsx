@@ -3,7 +3,7 @@ import React, { PureComponent } from 'react';
 import { Form, Input, Icon, Checkbox, Radio, Upload, Badge } from 'antd';
 import { UploadFile, UploadChangeParam } from 'antd/lib/upload/interface';
 
-import { validateLabels, convertStringToNumber } from '../../../utils/tasks-dto';
+import { validateLabels, convertStringToNumber, FileSource } from '../../../utils/tasks-dto';
 
 import './task-create.scss';
 
@@ -37,7 +37,54 @@ class TaskCreateForm extends PureComponent<any, any> {
     this.state = {
       confirmDirty: false,
       selectedFileList: [],
+      filesCounter: 0,
     };
+  }
+
+  private renderUploader = () => {
+    const { getFieldDecorator } = this.props.form;
+
+    switch (this.props.form.getFieldValue('source')) {
+      case FileSource.Local:
+        return (
+          <Form.Item
+            { ...formItemTailLayout }
+            extra='Only one video, archive, pdf or many image, directory can be used simultaneously'>
+            {getFieldDecorator('filesUpload', {
+              rules: [{ required: true, message: 'Please, add some files!' }],
+            })(
+              <Badge count={ this.state.filesCounter }>
+                <Dragger
+                  multiple
+                  fileList={ this.state.selectedFileList }
+                  customRequest={ this.simulateRequest }
+                  onChange={ this.onUploaderChange }>
+                  <p className="ant-upload-drag-icon">
+                    <Icon type="inbox" />
+                  </p>
+                  <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                </Dragger>
+              </Badge>
+            )}
+          </Form.Item>
+        );
+      case FileSource.Remote:
+        return (
+          <Form.Item { ...formItemLayout } label="URLs">
+          {getFieldDecorator('remoteURL', {
+            rules: [],
+          })(
+            <Input.TextArea
+              name="remote-url"
+            />
+          )}
+        </Form.Item>
+        );
+      case FileSource.Share:
+        return ('');
+      default:
+        break;
+    }
   }
 
   render() {
@@ -243,40 +290,21 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item
-          { ...formItemTailLayout }
-          extra='Only one video, archive, pdf or many image, directory can be used simultaneously'>
-          {getFieldDecorator('filesUpload', {
-            rules: [{ required: true, message: 'Please, add some files!' }],
-          })(
-            <Badge count={ this.state.selectedFileList.length }>
-              <Dragger
-                multiple
-                fileList={ this.state.selectedFileList }
-                customRequest={ this.simulateRequest }
-                onChange={ this.onUploaderChange }>
-                <p className="ant-upload-drag-icon">
-                  <Icon type="inbox" />
-                </p>
-                <p className="ant-upload-text">Click or drag file to this area to upload</p>
-              </Dragger>
-            </Badge>
-          )}
-        </Form.Item>
+        { this.renderUploader() }
       </Form>
     );
   }
 
   private onUploaderChange = (info: UploadChangeParam) => {
-    const nextState: { selectedFileList: UploadFile[], fileCounter: number } = {
+    const nextState: { selectedFileList: UploadFile[], filesCounter: number } = {
       selectedFileList: this.state.selectedFileList,
-      fileCounter: 0,
+      filesCounter: this.state.filesCounter,
     };
 
     switch (info.file.status) {
       case 'uploading':
         nextState.selectedFileList.push(info.file);
-        nextState.fileCounter += 1;
+        nextState.filesCounter += 1;
         break;
       case 'done':
         break;
