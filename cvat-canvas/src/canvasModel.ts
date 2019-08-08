@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2018 Intel Corporation
+* Copyright (C) 2019 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -22,6 +22,7 @@ export interface Geometry {
     left: number;
     scale: number;
     offset: number;
+    angle: number;
 }
 
 export enum FrameZoom {
@@ -30,19 +31,21 @@ export enum FrameZoom {
 }
 
 export enum Rotation {
-    CLOCKWISE90,
     ANTICLOCKWISE90,
+    CLOCKWISE90,
 }
 
 export enum UpdateReasons {
     IMAGE = 'image',
+    OBJECTS = 'objects',
     ZOOM = 'zoom',
     FIT = 'fit',
     MOVE = 'move',
 }
 
 export interface CanvasModel extends MasterImpl {
-    image: string;
+    readonly image: string;
+    readonly objects: any[];
     geometry: Geometry;
     imageSize: Size;
     canvasSize: Size;
@@ -52,7 +55,7 @@ export interface CanvasModel extends MasterImpl {
 
     setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number, attributeID: number): void;
-    rotate(direction: Rotation): void;
+    rotate(rotation: Rotation, remember: boolean): void;
     focus(clientID: number, padding: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -68,18 +71,22 @@ export interface CanvasModel extends MasterImpl {
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     private data: {
         image: string;
+        objects: any[];
         imageSize: Size;
         canvasSize: Size;
         imageOffset: number;
         scale: number;
         top: number;
         left: number;
+        angle: number;
+        rememberAngle: boolean;
     };
 
     public constructor() {
         super();
 
         this.data = {
+            angle: 0,
             canvasSize: {
                 height: 0,
                 width: 0,
@@ -91,6 +98,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 width: 0,
             },
             left: 0,
+            objects: [],
+            rememberAngle: false,
             scale: 1,
             top: 0,
         };
@@ -124,8 +133,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 width: (frameData.width as number),
             };
 
+            if (!this.data.rememberAngle) {
+                this.data.angle = 0;
+            }
+
             this.data.image = data;
             this.notify(UpdateReasons.IMAGE);
+            this.data.objects = objectStates;
+            this.notify(UpdateReasons.OBJECTS);
         }).catch((exception: any): void => {
             console.log(exception.toString());
         });
@@ -137,8 +152,16 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         console.log(clientID, attributeID);
     }
 
-    public rotate(direction: Rotation): void {
-        console.log(direction);
+    public rotate(rotation: Rotation, remember: boolean = false): void {
+        if (rotation === Rotation.CLOCKWISE90) {
+            this.data.angle += 90;
+        } else {
+            this.data.angle -= 90;
+        }
+
+        this.data.angle %= 360;
+        this.data.rememberAngle = remember;
+        this.fit();
     }
 
     public focus(clientID: number, padding: number): void {
@@ -146,10 +169,20 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public fit(): void {
-        this.data.scale = Math.min(
-            this.data.canvasSize.width / this.data.imageSize.width,
-            this.data.canvasSize.height / this.data.imageSize.height,
-        );
+        const { angle } = this.data;
+
+        if ((angle / 90) % 2) {
+            // 90, 270, ..
+            this.data.scale = Math.min(
+                this.data.canvasSize.width / this.data.imageSize.height,
+                this.data.canvasSize.height / this.data.imageSize.width,
+            );
+        } else {
+            this.data.scale = Math.min(
+                this.data.canvasSize.width / this.data.imageSize.width,
+                this.data.canvasSize.height / this.data.imageSize.height,
+            );
+        }
 
         this.data.scale = Math.min(
             Math.max(this.data.scale, FrameZoom.MIN),
@@ -196,6 +229,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get geometry(): Geometry {
         return {
+            angle: this.data.angle,
             canvas: {
                 height: this.data.canvasSize.height,
                 width: this.data.canvasSize.width,
@@ -213,6 +247,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get image(): string {
         return this.data.image;
+    }
+
+    public get objects(): any[] {
+        return this.data.objects;
     }
 
     public set imageSize(value: Size) {

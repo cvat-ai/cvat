@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2018 Intel Corporation
+* Copyright (C) 2019 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -12,6 +12,7 @@ import {
 
 export interface CanvasController {
     readonly geometry: Geometry;
+    readonly objects: any[];
     canvasSize: Size;
 
     zoom(x: number, y: number, direction: number): void;
@@ -31,24 +32,12 @@ export class CanvasControllerImpl implements CanvasController {
         this.model = model;
     }
 
-    public get geometry(): Geometry {
-        return this.model.geometry;
-    }
-
     public zoom(x: number, y: number, direction: number): void {
         this.model.zoom(x, y, direction);
     }
 
     public fit(): void {
         this.model.fit();
-    }
-
-    public set canvasSize(value: Size) {
-        this.model.canvasSize = value;
-    }
-
-    public get canvasSize(): Size {
-        return this.model.canvasSize;
     }
 
     public enableDrag(x: number, y: number): void {
@@ -73,5 +62,21 @@ export class CanvasControllerImpl implements CanvasController {
 
     public disableDrag(): void {
         this.isDragging = false;
+    }
+
+    public get geometry(): Geometry {
+        return this.model.geometry;
+    }
+
+    public get objects(): any[] {
+        return this.model.objects;
+    }
+
+    public set canvasSize(value: Size) {
+        this.model.canvasSize = value;
+    }
+
+    public get canvasSize(): Size {
+        return this.model.canvasSize;
     }
 }

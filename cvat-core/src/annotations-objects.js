@@ -749,7 +749,7 @@
                 return Object.assign({}, this.interpolatePosition(
                     leftPosition,
                     rightPosition,
-                    targetFrame,
+                    (targetFrame - leftFrame) / (rightFrame - leftFrame),
                 ), {
                     keyframe: false,
                 });
@@ -1068,9 +1068,7 @@
             }
         }
 
-        interpolatePosition(leftPosition, rightPosition, targetFrame) {
-            const offset = (targetFrame - leftPosition.frame) / (
-                rightPosition.frame - leftPosition.frame);
+        interpolatePosition(leftPosition, rightPosition, offset) {
             const positionOffset = [
                 rightPosition.points[0] - leftPosition.points[0],
                 rightPosition.points[1] - leftPosition.points[1],
@@ -1097,7 +1095,7 @@
             super(data, clientID, color, injection);
         }
 
-        interpolatePosition(leftPosition, rightPosition, targetFrame) {
+        interpolatePosition(leftPosition, rightPosition, offset) {
             function findBox(points) {
                 let xmin = Number.MAX_SAFE_INTEGER;
                 let ymin = Number.MAX_SAFE_INTEGER;
@@ -1355,9 +1353,6 @@
 
             const absoluteLeftPoints = denormalize(toArray(newLeftPoints), leftBox);
             const absoluteRightPoints = denormalize(toArray(newRightPoints), rightBox);
-
-            const offset = (targetFrame - leftPosition.frame) / (
-                rightPosition.frame - leftPosition.frame);
 
             const interpolation = [];
             for (let i = 0; i < absoluteLeftPoints.length; i++) {

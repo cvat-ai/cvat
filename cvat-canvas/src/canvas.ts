@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2018 Intel Corporation
+* Copyright (C) 2019 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -11,7 +11,7 @@ interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number, attributeID?: number): void;
-    rotate(direction: Rotation): void;
+    rotate(rotation: Rotation, remember?: boolean): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -47,8 +47,8 @@ class CanvasImpl implements Canvas {
         this.model.activate(clientID, attributeID);
     }
 
-    public rotate(direction: Rotation): void {
-        this.model.rotate(direction);
+    public rotate(rotation: Rotation, remember: boolean): void {
+        this.model.rotate(rotation, remember);
     }
 
     public focus(clientID: number, padding: number = 0): void {
