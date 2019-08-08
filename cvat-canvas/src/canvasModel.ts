@@ -286,7 +286,3 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         };
     }
 }
-
-// TODO List:
-// 1) Draw objects and text
-// 2) activate(), focus()
