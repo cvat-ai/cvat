@@ -14,11 +14,6 @@ npm run build
 npm run build -- --mode=development     # without a minification
 ```
 
-- Running development server
-```bash
-npm run server
-```
-
 - Updating of a module version:
 ```bash
 npm version patch   # updated after minor fixes
@@ -53,7 +48,7 @@ All methods are sync.
     html(): HTMLDivElement;
     setup(frameData: FrameData, objectStates: ObjectState): void;
     activate(clientID: number, attributeID?: number): void;
-    rotate(direction: Rotation): void;
+    rotate(rotation: Rotation, remember?: boolean): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -68,15 +63,15 @@ All methods are sync.
 
 ### CSS Classes/IDs
 
-- Each drawn object (tag, shape, track) has id ```canvas_object_{objectState.id}```
-- Drawn shapes and tracks have classes ```canvas_shape```,
- ```canvas_shape_activated```,
- ```canvas_shape_grouping```,
- ```canvas_shape_merging```,
- ```canvas_shape_drawing```
-- Tags has a class ```canvas_tag```
-- Canvas image has ID ```canvas_image```
-- Grid on the canvas has ID ```canvas_grid_pattern```
+- Each drawn object (tag, shape, track) has id ```cvat_canvas_object_{objectState.id}```
+- Drawn shapes and tracks have classes ```cvat_canvas_shape```,
+ ```cvat_canvas_shape_activated```,
+ ```cvat_canvas_shape_grouping```,
+ ```cvat_canvas_shape_merging```,
+ ```cvat_canvas_shape_drawing```
+- Tags has a class ```cvat_canvas_tag```
+- Canvas image has ID ```cvat_canvas_image```
+- Grid on the canvas has ID ```cvat_canvas_grid_pattern```
 
 ### Events
 

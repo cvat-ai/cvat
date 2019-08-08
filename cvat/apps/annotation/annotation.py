@@ -123,20 +123,20 @@ class Annotation:
 
         self._label_mapping = OrderedDict((db_label.id, db_label) for db_label in db_labels)
 
-        self._attribute_mapping = {
-            'mutable': {},
-            'immutable': {},
-        }
+        self._attribute_mapping = {db_label.id: {'mutable': {}, 'immutable': {}} for db_label in db_labels}
+
         for db_label in db_labels:
             for db_attribute in db_label.attributespec_set.all():
                 if db_attribute.mutable:
-                    self._attribute_mapping['mutable'][db_attribute.id] = db_attribute.name
+                    self._attribute_mapping[db_label.id]['mutable'][db_attribute.id] = db_attribute.name
                 else:
-                    self._attribute_mapping['immutable'][db_attribute.id] = db_attribute.name
+                    self._attribute_mapping[db_label.id]['immutable'][db_attribute.id] = db_attribute.name
 
-        self._attribute_mapping_merged = {
-            **self._attribute_mapping['mutable'],
-            **self._attribute_mapping['immutable'],
+        self._attribute_mapping_merged = {}
+        for label_id, attr_mapping in self._attribute_mapping.items():
+            self._attribute_mapping_merged[label_id] = {
+                **attr_mapping['mutable'],
+                **attr_mapping['immutable'],
             }
 
         self._init_frame_info()
@@ -152,24 +152,26 @@ class Annotation:
         return self._label_mapping[label_id].name
 
     def _get_attribute_name(self, attribute_id):
-        return self._attribute_mapping_merged[attribute_id]
+        for attribute_mapping in self._attribute_mapping_merged.values():
+            if attribute_id in attribute_mapping:
+                return attribute_mapping[attribute_id]
 
-    def _get_attribute_id(self, attribute_name, attribute_type=None):
+    def _get_attribute_id(self, label_id, attribute_name, attribute_type=None):
         if attribute_type:
-            container = self._attribute_mapping[attribute_type]
+            container = self._attribute_mapping[label_id][attribute_type]
         else:
-            container = self._attribute_mapping_merged
+            container = self._attribute_mapping_merged[label_id]
 
         for attr_id, attr_name in container.items():
             if attribute_name == attr_name:
                 return attr_id
         return None
 
-    def _get_mutable_attribute_id(self, attribute_name):
-        return self._get_attribute_id(attribute_name, 'mutable')
+    def _get_mutable_attribute_id(self, label_id, attribute_name):
+        return self._get_attribute_id(label_id, attribute_name, 'mutable')
 
-    def _get_immutable_attribute_id(self, attribute_name):
-        return self._get_attribute_id(attribute_name, 'immutable')
+    def _get_immutable_attribute_id(self, label_id, attribute_name):
+        return self._get_attribute_id(label_id, attribute_name, 'immutable')
 
     def _init_frame_info(self):
         if self._db_task.mode == "interpolation":
@@ -252,9 +254,9 @@ class Annotation:
     def _export_attributes(self, attributes):
         exported_attributes = []
         for attr in attributes:
-            db_attribute = self._attribute_mapping_merged[attr["spec_id"]]
+            attribute_name = self._get_attribute_name(attr["spec_id"])
             exported_attributes.append(Annotation.Attribute(
-                name=db_attribute,
+                name=attribute_name,
                 value=attr["value"],
             ))
         return exported_attributes
@@ -330,6 +332,9 @@ class Annotation:
     def tracks(self):
         for track in self._annotation_ir.tracks:
             tracked_shapes = TrackManager.get_interpolated_shapes(track, 0, self._db_task.size)
+            for tracked_shape in tracked_shapes:
+                tracked_shape["attributes"] += track["attributes"]
+
             yield Annotation.Track(
                 label=self._get_label_name(track["label_id"]),
                 group=track['group'],
@@ -347,31 +352,38 @@ class Annotation:
 
     def _import_tag(self, tag):
         _tag = tag._asdict()
-        _tag['label_id'] = self._get_label_id(_tag.pop('label'))
-        _tag['attributes'] = [self._import_attribute(attrib) for attrib in _tag['attributes'] if self._get_attribute_id(attrib.name)]
+        label_id = self._get_label_id(_tag.pop('label'))
+        _tag['label_id'] = label_id
+        _tag['attributes'] = [self._import_attribute(label_id, attrib) for attrib in _tag['attributes']
+                                  if self._get_attribute_id(label_id, attrib.name)]
         return _tag
 
-    def _import_attribute(self, attribute):
+    def _import_attribute(self, label_id, attribute):
         return {
-            'spec_id': self._get_attribute_id(attribute.name),
+            'spec_id': self._get_attribute_id(label_id, attribute.name),
             'value': attribute.value,
         }
 
     def _import_shape(self, shape):
         _shape = shape._asdict()
-        _shape['label_id'] = self._get_label_id(_shape.pop('label'))
-        _shape['attributes'] = [self._import_attribute(attrib) for attrib in _shape['attributes'] if self._get_attribute_id(attrib.name)]
+        label_id = self._get_label_id(_shape.pop('label'))
+        _shape['label_id'] = label_id
+        _shape['attributes'] = [self._import_attribute(label_id, attrib) for attrib in _shape['attributes']
+                                    if self._get_attribute_id(label_id, attrib.name)]
         return _shape
 
     def _import_track(self, track):
         _track = track._asdict()
+        label_id = self._get_label_id(_track.pop('label'))
         _track['frame'] = min(shape.frame for shape in _track['shapes'])
-        _track['label_id'] = self._get_label_id(_track.pop('label'))
+        _track['label_id'] = label_id
         _track['attributes'] = []
         _track['shapes'] = [shape._asdict() for shape in _track['shapes']]
         for shape in _track['shapes']:
-            _track['attributes'] = [self._import_attribute(attrib) for attrib in shape['attributes'] if self._get_immutable_attribute_id(attrib.name)]
-            shape['attributes'] = [self._import_attribute(attrib) for attrib in shape['attributes'] if self._get_mutable_attribute_id(attrib.name)]
+            _track['attributes'] = [self._import_attribute(label_id, attrib) for attrib in shape['attributes']
+                                        if self._get_immutable_attribute_id(label_id, attrib.name)]
+            shape['attributes']  = [self._import_attribute(label_id, attrib) for attrib in shape['attributes']
+                                        if self._get_mutable_attribute_id(label_id, attrib.name)]
 
         return _track
 

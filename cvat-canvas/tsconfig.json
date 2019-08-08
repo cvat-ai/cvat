@@ -6,6 +6,7 @@
         "noImplicitAny": true,
         "preserveConstEnums": true,
         "declaration": true,
+        "moduleResolution": "node",
         "declarationDir": "dist/declaration"
     },
     "include": [

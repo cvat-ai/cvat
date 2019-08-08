@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2018 Intel Corporation
+* Copyright (C) 2019 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
-import { CanvasModel, CanvasModelImpl, Rotation } from './canvasModel';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
+import { CanvasModel, CanvasModelImpl, Rotation } from './canvasModel';
 import { CanvasView, CanvasViewImpl } from './canvasView';
 
 interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[]): void;
     activate(clientID: number, attributeID?: number): void;
-    rotate(direction: Rotation): void;
+    rotate(rotation: Rotation, remember?: boolean): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
@@ -47,8 +47,8 @@ class CanvasImpl implements Canvas {
         this.model.activate(clientID, attributeID);
     }
 
-    public rotate(direction: Rotation): void {
-        this.model.rotate(direction);
+    public rotate(rotation: Rotation, remember: boolean): void {
+        this.model.rotate(rotation, remember);
     }
 
     public focus(clientID: number, padding: number = 0): void {
@@ -63,7 +63,8 @@ class CanvasImpl implements Canvas {
         this.model.grid(stepX, stepY);
     }
 
-    public draw(enabled: boolean = false, shapeType: string = '', numberOfPoints: number = 0, initialState: any = null): any {
+    public draw(enabled: boolean = false, shapeType: string = '',
+                numberOfPoints: number = 0, initialState: any = null): any {
         return this.model.draw(enabled, shapeType, numberOfPoints, initialState);
     }
 
