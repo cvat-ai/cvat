@@ -104,6 +104,8 @@ RUN if [ "$WITH_TESTS" = "yes" ]; then \
 COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
 RUN pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
+# pycocotools package is impossible to install with its dependencies by one pip install command
+RUN pip3 install --no-cache-dir pycocotools==2.0.0
 
 # Install git application dependencies
 RUN apt-get update && \
