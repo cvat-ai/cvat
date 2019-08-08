@@ -294,21 +294,20 @@ def dump(file_object, annotations):
         ungrouped_poligons = []
         for polygon in polygons:
             group_id = polygon['group']
+            label = polygon['label']
             if group_id != 0:
                 if group_id not in grouped_poligons:
-                    grouped_poligons[group_id] = {
-                        'label': polygon['label'],
-                        'points': polygon['points'],
-                    }
-                elif polygon['label'] == grouped_poligons[group_id]['label']:
-                    grouped_poligons[group_id]['points'].append(*polygon['points'])
+                    grouped_poligons[group_id] = {}
+
+                if label not in grouped_poligons[group_id]:
+                    grouped_poligons[group_id][label] = polygon
                 else:
-                    ungrouped_poligons.append(polygon)
+                    grouped_poligons[group_id][label]['points'].extend(polygon['points'])
             else:
                 ungrouped_poligons.append(polygon)
+        polygons = ungrouped_poligons + [poly for group in grouped_poligons.values() for poly in group.values()]
 
         # Create new annotation for this image
-        polygons = list(grouped_poligons.values()) + ungrouped_poligons
         for segm_id, poly in enumerate(polygons):
             insert_annotation_data(img, category_map, segm_id, poly, result_annotation)
 
