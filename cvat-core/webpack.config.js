@@ -37,7 +37,7 @@ const webConfig = {
     entry: './src/api.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'cvat-core.js',
+        filename: 'cvat-core.min.js',
         library: 'cvat',
         libraryTarget: 'window',
     },

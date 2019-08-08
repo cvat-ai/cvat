@@ -18,7 +18,6 @@
 
     class ServerProxy {
         constructor() {
-            const Cookie = require('js-cookie');
             const Axios = require('axios');
             Axios.defaults.withCredentials = true;
             Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
@@ -83,24 +82,6 @@
             }
 
             async function login(username, password) {
-                function setCookie(response) {
-                    if (response.headers['set-cookie']) {
-                        // Browser itself setup cookie and header is none
-                        // In NodeJS we need do it manually
-                        let cookies = '';
-                        for (let cookie of response.headers['set-cookie']) {
-                            [cookie] = cookie.split(';'); // truncate extra information
-                            const name = cookie.split('=')[0];
-                            const value = cookie.split('=')[1];
-                            Cookie.set(name, value);
-                            cookies += `${cookie};`;
-                        }
-
-                        Axios.defaults.headers.common.Cookie = cookies;
-                    }
-                }
-
-                const host = config.backendAPI.slice(0, -7);
                 const authenticationData = ([
                     `${encodeURIComponent('username')}=${encodeURIComponent(username)}`,
                     `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
@@ -109,7 +90,7 @@
                 let authenticationResponse = null;
                 try {
                     authenticationResponse = await Axios.post(
-                        `${host}/auth/login`,
+                        `${config.backendAPI}/auth/login`,
                         authenticationData,
                         {
                             'Content-Type': 'application/x-www-form-urlencoded',
@@ -133,22 +114,20 @@
                     }
                 }
 
-                // TODO: Perhaps we should redesign the authorization method on the server.
-                if (authenticationResponse.data.includes('didn\'t match')) {
-                    throw new ServerError(
-                        'The pair login/password is invalid',
-                        403,
-                    );
+                if (authenticationResponse.headers['set-cookie']) {
+                    // Browser itself setup cookie and header is none
+                    // In NodeJS we need do it manually
+                    const cookies = authenticationResponse.headers['set-cookie'].join(';');
+                    Axios.defaults.headers.common.Cookie = cookies;
                 }
 
-                setCookie(authenticationResponse);
+                const token = authenticationResponse.data.key;
+                Axios.defaults.headers.common.Authorization = `Token ${token}`;
             }
 
             async function logout() {
-                const host = config.backendAPI.slice(0, -7);
-
                 try {
-                    await Axios.get(`${host}/auth/logout`, {
+                    await Axios.get(`${config.backendAPI}/auth/logout`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {

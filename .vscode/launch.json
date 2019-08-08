@@ -125,7 +125,7 @@
             "console": "internalConsole"
         },
         {
-            "name": "cvat.js debug",
+            "name": "cvat-core.js debug",
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}/cvat-core",
