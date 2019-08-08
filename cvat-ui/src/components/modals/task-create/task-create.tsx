@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 
-import { Form, Input, Icon, Checkbox, Radio, Upload } from 'antd';
+import { Form, Input, Icon, Checkbox, Radio, Upload, Badge } from 'antd';
 import { UploadFile, UploadChangeParam } from 'antd/lib/upload/interface';
 
 import { validateLabels, convertStringToNumber } from '../../../utils/tasks-dto';
@@ -80,7 +80,7 @@ class TaskCreateForm extends PureComponent<any, any> {
 
         <Form.Item { ...formItemLayout } label="Bug tracker">
           {getFieldDecorator('bugTracker', {
-            rules: [{ type: 'url', required: true, message: 'Bad bug tracker link!' }],
+            rules: [{ type: 'url', message: 'Bad bug tracker link!' }],
           })(
             <Input
               prefix={ <Icon type="tool" /> }
@@ -92,7 +92,7 @@ class TaskCreateForm extends PureComponent<any, any> {
 
         <Form.Item { ...formItemLayout } label="Dataset repository">
           {getFieldDecorator('datasetRepository', {
-            rules: [{ type: 'url', required: true, message: 'Bad dataset repository link!' }],
+            rules: [{ type: 'url', message: 'Bad dataset repository link!' }],
           })(
             <Input
               prefix={ <Icon type="database" /> }
@@ -148,7 +148,6 @@ class TaskCreateForm extends PureComponent<any, any> {
                 message: 'Segment size out of range!',
               },
             ],
-            initialValue: 5000,
             getValueFromEvent: convertStringToNumber,
           })(
             <Input
@@ -222,7 +221,6 @@ class TaskCreateForm extends PureComponent<any, any> {
                 message: 'Stop frame must be greater than or equal to start frame!',
               },
             ],
-            initialValue: 0,
             getValueFromEvent: convertStringToNumber,
           })(
             <Input
@@ -245,20 +243,24 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item { ...formItemTailLayout }>
+        <Form.Item
+          { ...formItemTailLayout }
+          extra='Only one video, archive, pdf or many image, directory can be used simultaneously'>
           {getFieldDecorator('filesUpload', {
-            rules: [],
+            rules: [{ required: true, message: 'Please, add some files!' }],
           })(
-            <Dragger
-              multiple
-              fileList={ this.state.selectedFileList }
-              customRequest={ this.simulateRequest }
-              onChange={ this.onUploaderChange }>
-              <p className="ant-upload-drag-icon">
-                <Icon type="inbox" />
-              </p>
-              <p className="ant-upload-text">Click or drag file to this area to upload</p>
-            </Dragger>
+            <Badge count={ this.state.selectedFileList.length }>
+              <Dragger
+                multiple
+                fileList={ this.state.selectedFileList }
+                customRequest={ this.simulateRequest }
+                onChange={ this.onUploaderChange }>
+                <p className="ant-upload-drag-icon">
+                  <Icon type="inbox" />
+                </p>
+                <p className="ant-upload-text">Click or drag file to this area to upload</p>
+              </Dragger>
+            </Badge>
           )}
         </Form.Item>
       </Form>
@@ -266,13 +268,15 @@ class TaskCreateForm extends PureComponent<any, any> {
   }
 
   private onUploaderChange = (info: UploadChangeParam) => {
-    const nextState: { selectedFileList: UploadFile[] } = {
+    const nextState: { selectedFileList: UploadFile[], fileCounter: number } = {
       selectedFileList: this.state.selectedFileList,
+      fileCounter: 0,
     };
 
     switch (info.file.status) {
       case 'uploading':
         nextState.selectedFileList.push(info.file);
+        nextState.fileCounter += 1;
         break;
       case 'done':
         break;
