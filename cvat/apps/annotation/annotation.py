@@ -152,7 +152,7 @@ class Annotation:
         return self._label_mapping[label_id].name
 
     def _get_attribute_name(self, attribute_id):
-        for label_id, attribute_mapping in self._attribute_mapping_merged.items():
+        for attribute_mapping in self._attribute_mapping_merged.values():
             if attribute_id in attribute_mapping:
                 return attribute_mapping[attribute_id]
 
