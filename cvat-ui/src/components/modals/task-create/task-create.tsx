@@ -171,7 +171,7 @@ class TaskCreateForm extends PureComponent<any, any> {
             rules: [],
             initialValue: 1,
           })(
-            <Radio.Group>
+            <Radio.Group onChange={ this.resetUploader }>
               <Radio.Button value={1}>Local</Radio.Button>
               <Radio.Button value={2}>Remote</Radio.Button>
               <Radio.Button value={3}>Share</Radio.Button>
