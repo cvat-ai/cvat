@@ -1,0 +1,6 @@
+engines:
+ tslint:
+   enabled: false
+ eslint:
+   enabled: true
+
