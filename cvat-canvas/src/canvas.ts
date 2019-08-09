@@ -64,7 +64,7 @@ class CanvasImpl implements Canvas {
     }
 
     public draw(enabled: boolean = false, shapeType: string = '',
-                numberOfPoints: number = 0, initialState: any = null): any {
+        numberOfPoints: number = 0, initialState: any = null): any {
         return this.model.draw(enabled, shapeType, numberOfPoints, initialState);
     }
 

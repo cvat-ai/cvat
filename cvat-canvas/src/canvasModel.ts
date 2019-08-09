@@ -202,7 +202,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public draw(enabled: boolean, shapeType: string,
-                numberOfPoints: number, initialState: any): any {
+        numberOfPoints: number, initialState: any): any {
         return {
             enabled,
             initialState,
