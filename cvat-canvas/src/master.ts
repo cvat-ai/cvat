@@ -3,8 +3,6 @@
 * SPDX-License-Identifier: MIT
 */
 
-/* tslint:disable */
-
 export interface Master {
     subscribe(listener: Listener): void;
     unsubscribe(listener: Listener): void;
