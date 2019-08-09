@@ -15,30 +15,28 @@ module.exports = {
         'ecmaVersion': 6,
     },
     'plugins': [
-        'security',
-        'no-unsanitized',
-        'no-unsafe-innerhtml',
         '@typescript-eslint',
     ],
     'extends': [
-        'eslint:recommended',
         'plugin:security/recommended',
         'plugin:no-unsanitized/DOM',
         'plugin:@typescript-eslint/recommended',
-        'airbnb',
+        'airbnb-typescript/base',
     ],
     'rules': {
-        'class-methods-use-this': [0],
-        'no-plusplus': [0],
-        'no-restricted-syntax': [0, {'selector': 'ForOfStatement'}],
-        'no-continue': [0],
-        'security/detect-object-injection': 0,
+        '@typescript-eslint/no-explicit-any': false,
         'indent': ['warn', 4],
-        'no-useless-constructor': 0,
-        'func-names': [0],
-        'no-console': [0], // this rule deprecates console.log, console.warn etc. because 'it is not good in production code'
-        '@typescript-eslint/no-explicit-any': [0],
-        'lines-between-class-members': [0],
+        'no-plusplus': false,
+        'no-restricted-syntax': [
+            false,
+            {
+                'selector': 'ForOfStatement'
+            }
+        ],
+        'no-continue': false,
+        'func-names': false,
+        'no-console': false, // this rule deprecates console.log, console.warn etc. because 'it is not good in production code'
+        'lines-between-class-members': false,
     },
     'settings': {
         'import/resolver': {
@@ -46,5 +44,5 @@ module.exports = {
                 'extensions': ['.ts', '.js', '.json'],
             },
         },
-      },
+    },
 };
