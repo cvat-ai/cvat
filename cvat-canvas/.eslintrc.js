@@ -11,32 +11,34 @@ module.exports = {
     },
     'parserOptions': {
         'parser': '@typescript-eslint/parser',
-        'sourceType': 'module',
         'ecmaVersion': 6,
     },
     'plugins': [
         '@typescript-eslint',
+        'import',
     ],
     'extends': [
-        'plugin:security/recommended',
-        'plugin:no-unsanitized/DOM',
         'plugin:@typescript-eslint/recommended',
         'airbnb-typescript/base',
+        'plugin:import/errors',
+        'plugin:import/warnings',
+        'plugin:import/typescript',
     ],
     'rules': {
-        '@typescript-eslint/no-explicit-any': false,
-        'indent': ['warn', 4],
-        'no-plusplus': false,
+        '@typescript-eslint/no-explicit-any': 0,
+        '@typescript-eslint/indent': ['warn', 4],
+        'no-plusplus': 0,
         'no-restricted-syntax': [
-            false,
+            0,
             {
                 'selector': 'ForOfStatement'
             }
         ],
-        'no-continue': false,
-        'func-names': false,
-        'no-console': false, // this rule deprecates console.log, console.warn etc. because 'it is not good in production code'
-        'lines-between-class-members': false,
+        'no-continue': 0,
+        'func-names': 0,
+        'no-console': 0, // this rule deprecates console.log, console.warn etc. because 'it is not good in production code'
+        'lines-between-class-members': 0,
+        'import/prefer-default-export': 0, // works incorrect with interfaces
     },
     'settings': {
         'import/resolver': {

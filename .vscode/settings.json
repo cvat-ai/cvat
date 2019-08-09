@@ -3,20 +3,20 @@
     "eslint.enable": true,
     "eslint.validate": [
         "javascript",
-        "typescript",
+        "typescript"
     ],
     "eslint.workingDirectories": [
         {
             "directory":  "./cvat-core",
-            "changeProcessCWD": true,
+            "changeProcessCWD": true
         },
         {
             "directory":  "./cvat-canvas",
-            "changeProcessCWD": true,
+            "changeProcessCWD": true
         },
         {
             "directory":  ".",
-            "changeProcessCWD": true,
-        },
-    ],
+            "changeProcessCWD": true
+        }
+    ]
 }

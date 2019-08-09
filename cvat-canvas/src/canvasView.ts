@@ -3,6 +3,9 @@
 * SPDX-License-Identifier: MIT
 */
 
+// Disable till full implementation
+/* eslint class-methods-use-this: "off" */
+
 import * as SVG from 'svg.js';
 
 // tslint:disable-next-line: ordered-imports
