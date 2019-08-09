@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to create a custom extractors for unsupported media types
 - Added in PDF extractor
 - Added in a command line model manager tester
-- Ability to dump/load annotations in several formats from UI (CVAT, Pascal VOC, YOLO, MS COCO)
+- Ability to dump/load annotations in several formats from UI (CVAT, Pascal VOC, YOLO, MS COCO, png mask)
 
 ### Changed
 - Outside and keyframe buttons in the side panel for all interpolation shapes (they were only for boxes before)

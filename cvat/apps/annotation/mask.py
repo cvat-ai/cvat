@@ -68,7 +68,7 @@ def dump(file_object, annotations):
                 idx = (mask > 0)
                 img[idx] = color
                 buf = io.BytesIO()
-                matplotlib.image.imsave(buf, img)
+                matplotlib.image.imsave(buf, img, format='png')
             output_zip.writestr(annotation_name, buf.getvalue())
         labels = '\n'.join('{}:{}'.format(label, ','.join(str(i) for i in color)) for label, color in label_colors.items())
         output_zip.writestr('colormap.txt', labels)
