@@ -1,6 +1,8 @@
 import ast
 from collections import namedtuple
 import importlib
+import sys
+import traceback
 
 Import = namedtuple("Import", ["module", "name", "alias"])
 
@@ -34,3 +36,21 @@ def import_modules(source_code: str):
             results[import_.name] = loaded_module
 
     return results
+
+class InterpreterError(Exception):
+    pass
+
+def execute_python_code(source_code, global_vars=None, local_vars=None):
+    try:
+        exec(source_code, global_vars, local_vars)
+    except SyntaxError as err:
+        error_class = err.__class__.__name__
+        details = err.args[0]
+        line_number = err.lineno
+        raise InterpreterError("{} at line {}: {}".format(error_class, line_number, details))
+    except Exception as err:
+        error_class = err.__class__.__name__
+        details = err.args[0]
+        _, _, tb = sys.exc_info()
+        line_number = traceback.extract_tb(tb)[-1][1]
+        raise InterpreterError("{} at line {}: {}".format(error_class, line_number, details))

@@ -4,7 +4,9 @@
 
 from cvat.apps.annotation import models
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.annotation.serializers import AnnotationFormatSerializer
+from django.core.files import File
 
 import os
 from copy import deepcopy
@@ -19,16 +21,20 @@ def register_format(format_file):
         raise Exception("Could not find \'format_spec\' definition in format file specification")
 
     format_spec = deepcopy(global_vars["format_spec"])
+    format_spec["handler_file"] = File(open(format_file))
+    for spec in format_spec["loaders"] + format_spec["dumpers"]:
+        spec["display_name"] = spec["display_name"].format(
+            name=format_spec["name"],
+            format=spec["format"],
+            version=spec["version"],
+            )
 
-    if not models.AnnotationFormat.objects.filter(name=format_spec["name"]).exists():
-        format_spec["handler_file"] = os.path.relpath(format_file, settings.BASE_DIR)
-        for spec in format_spec["loaders"] + format_spec["dumpers"]:
-            spec["display_name"] = spec["display_name"].format(
-                name=format_spec["name"],
-                format=spec["format"],
-                version=spec["version"],
-                )
-
+    try:
+        annotation_format = models.AnnotationFormat.objects.get(name=format_spec["name"])
+        serializer = AnnotationFormatSerializer(annotation_format, data=format_spec)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+    except ObjectDoesNotExist:
         serializer = AnnotationFormatSerializer(data=format_spec)
         if serializer.is_valid(raise_exception=True):
             serializer.save()

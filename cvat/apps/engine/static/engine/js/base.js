@@ -11,6 +11,7 @@
     showOverlay
     uploadJobAnnotationRequest
     uploadTaskAnnotationRequest
+    isDefaultFormat
 */
 
 /* global
@@ -221,3 +222,8 @@ $(document).ready(() => {
         height: `${window.screen.height * 0.95}px`,
     });
 });
+
+function isDefaultFormat(dumperName, taskMode) {
+    return (dumperName === 'CVAT XML 1.1 for videos' && taskMode === 'interpolation')
+    || (dumperName === 'CVAT XML 1.1 for images' && taskMode === 'annotation');
+}
