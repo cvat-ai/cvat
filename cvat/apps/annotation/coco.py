@@ -61,7 +61,7 @@ def mask_to_polygon(mask, tolerance=1.0, area_threshold=1):
 def dump(file_object, annotations):
     import numpy as np
     import json
-
+    from collections import OrderedDict
     from pycocotools import mask as mask_util
     from pycocotools import coco as coco_loader
 
@@ -153,11 +153,11 @@ def dump(file_object, annotations):
         Args:
             result_annotation: output annotation in COCO representation
         """
-        result_annotation['licenses'].append({
-            'name': '',
-            'id': 0,
-            'url': ''
-        })
+        result_annotation['licenses'].append(OrderedDict([
+            ('name', ''),
+            ('id', 0),
+            ('url', ''),
+        ]))
 
 
     def insert_info_data(annotations, result_annotation):
@@ -171,14 +171,14 @@ def dump(file_object, annotations):
         date = annotations.meta['dumped']
         date = date.split(' ')[0]
         year = date.split('-')[0]
-        result_annotation['info'] = {
-            'contributor': '',
-            'date_created': date,
-            'description': description,
-            'url': '',
-            'version': version,
-            'year': year
-        }
+        result_annotation['info'] = OrderedDict([
+            ('contributor', ''),
+            ('date_created', date),
+            ('description', description),
+            ('url', ''),
+            ('version', version),
+            ('year', year),
+        ])
 
 
     def insert_categories_data(annotations, result_annotation):
@@ -198,12 +198,14 @@ def dump(file_object, annotations):
             cat_id = 0
             for name in names:
                 category_map[name] = cat_id
-                categories.append({'id': cat_id, 'name': name, 'supercategory': ''})
+                categories.append(OrderedDict([
+                    ('id', cat_id),
+                    ('name', name),
+                    ('supercategory', ''),
+                ]))
                 cat_id += 1
             return category_map, categories
 
-        categories = []
-        category_map = {}
         label_names = [label[1]["name"] for label in annotations.meta['task']['labels']]
 
         category_map, categories = get_categories(label_names, sort=True)
@@ -218,7 +220,7 @@ def dump(file_object, annotations):
             image: dictionary with data for image from original annotation
             result_annotation: output annotation in COCO representation
         """
-        new_img = {}
+        new_img = OrderedDict()
         new_img['coco_url'] = ''
         new_img['date_captured'] = ''
         new_img['flickr_url'] = ''
@@ -239,7 +241,7 @@ def dump(file_object, annotations):
             obj: includes data for the object [label, polygon]
             result_annotation: output annotation in COCO representation
         """
-        new_anno = {}
+        new_anno = OrderedDict()
         new_anno['category_id'] = category_map[obj['label']]
         new_anno['id'] = segm_id
         new_anno['image_id'] = image.frame
@@ -250,13 +252,13 @@ def dump(file_object, annotations):
         new_anno['bbox'] = bbox
         result_annotation['annotations'].append(new_anno)
 
-    result_annotation = {
-        'licenses': [],
-        'info': {},
-        'categories': [],
-        'images': [],
-        'annotations': []
-    }
+    result_annotation = OrderedDict([
+        ('licenses', []),
+        ('info', {}),
+        ('categories', []),
+        ('images', []),
+        ('annotations', []),
+    ])
 
     insert_license_data(result_annotation)
     insert_info_data(annotations, result_annotation)
@@ -290,14 +292,14 @@ def dump(file_object, annotations):
         polygons = fix_segments_intersections(polygons, img.height, img.width, img.name)
 
         # combine grouped polygons with the same label
-        grouped_poligons = {}
+        grouped_poligons = OrderedDict()
         ungrouped_poligons = []
         for polygon in polygons:
             group_id = polygon['group']
             label = polygon['label']
             if group_id != 0:
                 if group_id not in grouped_poligons:
-                    grouped_poligons[group_id] = {}
+                    grouped_poligons[group_id] = OrderedDict()
 
                 if label not in grouped_poligons[group_id]:
                     grouped_poligons[group_id][label] = polygon
