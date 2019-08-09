@@ -3,6 +3,8 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* tslint:disable */
+
 // Disable till full implementation
 /* eslint class-methods-use-this: "off" */
 

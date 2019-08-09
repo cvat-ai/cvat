@@ -3,6 +3,8 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* tslint:disable */
+
 import { CanvasController, CanvasControllerImpl } from './canvasController';
 import { CanvasModel, CanvasModelImpl, Rotation } from './canvasModel';
 import { CanvasView, CanvasViewImpl } from './canvasView';

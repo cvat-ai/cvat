@@ -3,6 +3,8 @@
 * SPDX-License-Identifier: MIT
 */
 
+/* tslint:disable */
+
 import {
     CanvasModel,
     Geometry,
