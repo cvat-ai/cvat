@@ -1,13 +1,17 @@
 import React, { PureComponent } from 'react';
 
-import { Form, Input, Icon, Checkbox, Radio, Upload, Badge } from 'antd';
+import { Form, Input, Icon, Checkbox, Radio, Upload, Badge, Tree } from 'antd';
 import { UploadFile, UploadChangeParam } from 'antd/lib/upload/interface';
+
+import configureStore from '../../../store';
+import { getShareFilesAsync } from '../../../actions/server.actions';
 
 import { validateLabels, convertStringToNumber, FileSource } from '../../../utils/tasks-dto';
 
 import './task-create.scss';
 
 
+const { TreeNode, DirectoryTree } = Tree;
 const { Dragger } = Upload;
 
 const formItemLayout = {
@@ -31,14 +35,23 @@ const formItemTailLayout = {
 };
 
 class TaskCreateForm extends PureComponent<any, any> {
+  store: any;
+
   constructor(props: any) {
     super(props);
+
+    this.store = configureStore();
 
     this.state = {
       confirmDirty: false,
       selectedFileList: [],
       filesCounter: 0,
+      treeData: [],
     };
+  }
+
+  componentDidMount() {
+    this.getSharedFiles('');
   }
 
   private renderUploader = () => {
@@ -54,7 +67,7 @@ class TaskCreateForm extends PureComponent<any, any> {
               count={ this.state.filesCounter }
               overflowCount={999}>
               <div onClick={ this.resetUploader }>
-                {getFieldDecorator('filesUpload', {
+                {getFieldDecorator('localUpload', {
                   rules: [{ required: true, message: 'Please, add some files!' }],
                 })(
                   <Dragger
@@ -86,7 +99,21 @@ class TaskCreateForm extends PureComponent<any, any> {
         </Form.Item>
         );
       case FileSource.Share:
-        return ('');
+        return (
+          <Form.Item { ...formItemLayout } label="Shared files">
+            {getFieldDecorator('sharedFiles', {
+              rules: [],
+            })(
+              <DirectoryTree
+                multiple
+                loadData={ this.onLoadData }
+                onSelect={ this.onTreeNodeSelect }
+                onExpand={ this.onTreeNodeExpand }>
+                { this.renderTreeNodes(this.state.treeData) }
+              </DirectoryTree>
+            )}
+          </Form.Item>
+        );
       default:
         break;
     }
@@ -298,6 +325,63 @@ class TaskCreateForm extends PureComponent<any, any> {
         { this.renderUploader() }
       </Form>
     );
+  }
+
+  private onLoadData = (treeNode: any) => {
+    return new Promise<void>(resolve => {
+      if (treeNode.props.children) {
+        resolve();
+        return;
+      }
+
+      const treeData = this.store.getState().shareFiles.files;
+
+      this.getSharedFiles(treeNode.props.dataRef.name).then(
+        (data: any) => {
+          const index = treeData.findIndex((element: any) => {
+            return element.name === treeNode.props.dataRef.name
+          });
+
+          treeData[index].children = this.store.getState().shareFiles.files;
+
+          this.setState({
+            treeData: [...treeData],
+          });
+
+          resolve();
+        },
+      );
+    });
+  }
+
+  private renderTreeNodes = (data: any) => {
+    return data.map((item: any) => {
+      if (item.type === 'DIR') {
+        return (
+          <TreeNode title={ item.name } key={ item.name + item.type } dataRef={ item }>
+            { item.children ? this.renderTreeNodes(item.children) : '' }
+          </TreeNode>
+        );
+      }
+
+      return <TreeNode isLeaf title={ item.name } key={ item.name + item.type } dataRef={ item } />;
+    });
+  }
+
+  private getSharedFiles = (directory: string) => {
+    return this.store.dispatch(getShareFilesAsync(directory)).then(
+      (data: any) => {
+        this.setState({ treeData: this.store.getState().shareFiles.files });
+      },
+    );
+  }
+
+  private onTreeNodeSelect = (keys: any, event: any) => {
+    console.log('Trigger Select', keys, event);
+  }
+
+  private onTreeNodeExpand = () => {
+    console.log('Trigger Expand');
   }
 
   private onUploaderChange = (info: UploadChangeParam) => {

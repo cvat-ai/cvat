@@ -21,14 +21,14 @@ export function taskDTO(values: any) {
   const newTask = new (window as any).cvat.classes.Task(newTaskDTO);
 
   if (values.source === FileSource.Local) {
-    newTask.clientFiles = values.filesUpload.fileList.map((file: any) => file.response);
+    newTask.clientFiles = values.localUpload.fileList.map((file: any) => file.response);
   } else if (values.source === FileSource.Remote) {
     newTask.remoteFiles = values.remoteURL
       .split(/\r?\n/)
       .map((url: string) => url.trim())
       .filter((url: string) => url.length > 0);
   } else if (values.source === FileSource.Share) {
-    newTask.serverFiles = values.filesUpload.fileList;
+    newTask.serverFiles = values.sharedFiles;
   }
 
   return newTask;
