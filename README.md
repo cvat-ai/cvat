@@ -31,12 +31,13 @@ CVAT is free, online, interactive video and image annotation tool for computer v
 
 Format selection is possible after clicking on the Upload annotation / Dump annotation button.
 
-| Annotation format         | Dumper | Loader |
-| ------------------------- | ------ | ------ |
-| CVAT XML v1.1 for images  | X      | X      |
-| CVAT XML v1.1 for a video | X      | X      |
-| Pascal VOC                | X      | X      |
-| YOLO                      | X      | X      |
+| Annotation format                                                                  | Dumper | Loader |
+| ---------------------------------------------------------------------------------- | ------ | ------ |
+| [CVAT XML v1.1 for images](cvat/apps/documentation/xml_format.md#annotation)       | X      | X      |
+| [CVAT XML v1.1 for a video](cvat/apps/documentation/xml_format.md#interpolation)   | X      | X      |
+| [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                              | X      | X      |
+| [YOLO](https://pjreddie.com/darknet/yolo/)                                         | X      | X      |
+| [MS COCO Object Detection](http://cocodataset.org/#format-data)                    | X      | X      |
 
 ## Links
 - [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)

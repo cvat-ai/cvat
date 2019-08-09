@@ -13,48 +13,58 @@ format_spec = {
         },
     ],
     "loaders": [
+        {
+            "display_name": "{name} {format} {version}",
+            "format": "JSON",
+            "version": "1.0",
+            "handler": "load"
+        },
     ],
 }
+
+def mask_to_polygon(mask, tolerance=1.0, area_threshold=1):
+    """Convert object's mask to polygon [[x1,y1, x2,y2 ...], [...]]
+    Args:
+        mask: object's mask presented as 2D array of 0 and 1
+        tolerance: maximum distance from original points of polygon to approximated
+        area_threshold: if area of a polygon is less than this value, remove this small object
+    """
+    from skimage import measure
+    from pycocotools import mask as mask_util
+    import numpy as np
+
+    polygons = []
+    # pad mask with 0 around borders
+    padded_mask = np.pad(mask, pad_width=1, mode='constant', constant_values=0)
+    contours = measure.find_contours(padded_mask, 0.5)
+    # Fix coordinates after padding
+    contours = np.subtract(contours, 1)
+    for contour in contours:
+        if not np.array_equal(contour[0], contour[-1]):
+            contour = np.vstack((contour, contour[0]))
+        contour = measure.approximate_polygon(contour, tolerance)
+        if len(contour) > 2:
+            contour = np.flip(contour, axis=1)
+            reshaped_contour = []
+            for xy in contour:
+                reshaped_contour.append(xy[0])
+                reshaped_contour.append(xy[1])
+            reshaped_contour = [point if point > 0 else 0 for point in reshaped_contour]
+
+            # Check if area of a polygon is enough
+            rle = mask_util.frPyObjects([reshaped_contour], mask.shape[0], mask.shape[1])
+            area = mask_util.area(rle)
+            if sum(area) > area_threshold:
+                polygons.append(reshaped_contour)
+    return polygons
 
 def dump(file_object, annotations):
     import numpy as np
     import json
-    from skimage import measure
+    from collections import OrderedDict
     from pycocotools import mask as mask_util
     from pycocotools import coco as coco_loader
 
-    def mask_to_polygon(mask, tolerance=1.0, area_threshold=1):
-        """Convert object's mask to polygon [[x1,y1, x2,y2 ...], [...]]
-        Args:
-            mask: object's mask presented as 2D array of 0 and 1
-            tolerance: maximum distance from original points of polygon to approximated
-            area_threshold: if area of a polygon is less than this value, remove this small object
-        """
-        polygons = []
-        # pad mask with 0 around borders
-        padded_mask = np.pad(mask, pad_width=1, mode='constant', constant_values=0)
-        contours = measure.find_contours(padded_mask, 0.5)
-        # Fix coordinates after padding
-        contours = np.subtract(contours, 1)
-        for contour in contours:
-            if not np.array_equal(contour[0], contour[-1]):
-                contour = np.vstack((contour, contour[0]))
-            contour = measure.approximate_polygon(contour, tolerance)
-            if len(contour) > 2:
-                contour = np.flip(contour, axis=1)
-                reshaped_contour = []
-                for xy in contour:
-                    reshaped_contour.append(xy[0])
-                    reshaped_contour.append(xy[1])
-                for rcontour in reshaped_contour:
-                    if rcontour < 0:
-                        rcontour = 0
-                # Check if area of a polygon is enough
-                rle = mask_util.frPyObjects([reshaped_contour], mask.shape[0], mask.shape[1])
-                area = mask_util.area(rle)
-                if sum(area) > area_threshold:
-                    polygons.append(reshaped_contour)
-        return polygons
 
     def fix_segments_intersections(polygons, height, width, img_name,
                                 threshold=0.0, ratio_tolerance=0.001, area_threshold=1):
@@ -143,11 +153,11 @@ def dump(file_object, annotations):
         Args:
             result_annotation: output annotation in COCO representation
         """
-        result_annotation['licenses'].append({
-            'name': '',
-            'id': 0,
-            'url': ''
-        })
+        result_annotation['licenses'].append(OrderedDict([
+            ('name', ''),
+            ('id', 0),
+            ('url', ''),
+        ]))
 
 
     def insert_info_data(annotations, result_annotation):
@@ -161,14 +171,14 @@ def dump(file_object, annotations):
         date = annotations.meta['dumped']
         date = date.split(' ')[0]
         year = date.split('-')[0]
-        result_annotation['info'] = {
-            'contributor': '',
-            'date_created': date,
-            'description': description,
-            'url': '',
-            'version': version,
-            'year': year
-        }
+        result_annotation['info'] = OrderedDict([
+            ('contributor', ''),
+            ('date_created', date),
+            ('description', description),
+            ('url', ''),
+            ('version', version),
+            ('year', year),
+        ])
 
 
     def insert_categories_data(annotations, result_annotation):
@@ -188,12 +198,14 @@ def dump(file_object, annotations):
             cat_id = 0
             for name in names:
                 category_map[name] = cat_id
-                categories.append({'id': cat_id, 'name': name, 'supercategory': ''})
+                categories.append(OrderedDict([
+                    ('id', cat_id),
+                    ('name', name),
+                    ('supercategory', ''),
+                ]))
                 cat_id += 1
             return category_map, categories
 
-        categories = []
-        category_map = {}
         label_names = [label[1]["name"] for label in annotations.meta['task']['labels']]
 
         category_map, categories = get_categories(label_names, sort=True)
@@ -208,7 +220,7 @@ def dump(file_object, annotations):
             image: dictionary with data for image from original annotation
             result_annotation: output annotation in COCO representation
         """
-        new_img = {}
+        new_img = OrderedDict()
         new_img['coco_url'] = ''
         new_img['date_captured'] = ''
         new_img['flickr_url'] = ''
@@ -229,7 +241,7 @@ def dump(file_object, annotations):
             obj: includes data for the object [label, polygon]
             result_annotation: output annotation in COCO representation
         """
-        new_anno = {}
+        new_anno = OrderedDict()
         new_anno['category_id'] = category_map[obj['label']]
         new_anno['id'] = segm_id
         new_anno['image_id'] = image.frame
@@ -240,19 +252,18 @@ def dump(file_object, annotations):
         new_anno['bbox'] = bbox
         result_annotation['annotations'].append(new_anno)
 
-    result_annotation = {
-        'licenses': [],
-        'info': {},
-        'categories': [],
-        'images': [],
-        'annotations': []
-    }
+    result_annotation = OrderedDict([
+        ('licenses', []),
+        ('info', {}),
+        ('categories', []),
+        ('images', []),
+        ('annotations', []),
+    ])
 
     insert_license_data(result_annotation)
     insert_info_data(annotations, result_annotation)
     category_map = insert_categories_data(annotations, result_annotation)
 
-    segm_id = 0
     for img in annotations.group_by_frame():
         polygons = []
 
@@ -262,6 +273,7 @@ def dump(file_object, annotations):
                     'label': shape.label,
                     'points': shape.points,
                     'z_order': shape.z_order,
+                    'group': shape.group,
                 }
 
                 if shape.type == 'rectangle':
@@ -270,6 +282,7 @@ def dump(file_object, annotations):
                     xbr = polygon['points'][2]
                     ybr = polygon['points'][3]
                     polygon['points'] = [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr]
+
                 polygons.append(polygon)
 
         polygons.sort(key=lambda x: int(x['z_order']))
@@ -278,10 +291,27 @@ def dump(file_object, annotations):
         insert_image_data(img, result_annotation)
         polygons = fix_segments_intersections(polygons, img.height, img.width, img.name)
 
+        # combine grouped polygons with the same label
+        grouped_poligons = OrderedDict()
+        ungrouped_poligons = []
+        for polygon in polygons:
+            group_id = polygon['group']
+            label = polygon['label']
+            if group_id != 0:
+                if group_id not in grouped_poligons:
+                    grouped_poligons[group_id] = OrderedDict()
+
+                if label not in grouped_poligons[group_id]:
+                    grouped_poligons[group_id][label] = polygon
+                else:
+                    grouped_poligons[group_id][label]['points'].extend(polygon['points'])
+            else:
+                ungrouped_poligons.append(polygon)
+        polygons = ungrouped_poligons + [poly for group in grouped_poligons.values() for poly in group.values()]
+
         # Create new annotation for this image
-        for poly in polygons:
+        for segm_id, poly in enumerate(polygons):
             insert_annotation_data(img, category_map, segm_id, poly, result_annotation)
-            segm_id += 1
 
     file_object.write(json.dumps(result_annotation, indent=2).encode())
     file_object.flush()
@@ -291,3 +321,71 @@ def dump(file_object, annotations):
         coco_loader.COCO(file_object.name)
     except:
         raise
+
+def load(file_object, annotations):
+    from pycocotools import coco as coco_loader
+    from pycocotools import mask as mask_utils
+    import numpy as np
+
+    def get_filename(path):
+        import os
+        return os.path.splitext(os.path.basename(path))[0]
+
+    def match_frame(frame_info, filename):
+        import re
+        # try to match by filename
+        yolo_filename = get_filename(filename)
+        for frame_number, info in frame_info.items():
+            cvat_filename = get_filename(info["path"])
+            if cvat_filename == yolo_filename:
+                return frame_number
+
+        # try to extract frame number from filename
+        numbers = re.findall(r"\d+", filename)
+        if numbers and len(numbers) == 1:
+            return int(numbers[0])
+
+        raise Exception("Cannot match filename or determinate framenumber for {} filename".format(filename))
+
+    coco = coco_loader.COCO(file_object.name)
+    labels={cat['id']: cat['name'] for cat in coco.loadCats(coco.getCatIds())}
+
+    group_idx = 0
+    for img_id in coco.getImgIds():
+        anns = coco.loadAnns(coco.getAnnIds(imgIds=img_id))
+        img = coco.loadImgs(ids=img_id)[0]
+        frame_number = match_frame(annotations.frame_info, img['file_name'])
+        for ann in anns:
+            group = 0
+            label_name = labels[ann['category_id']]
+            if 'segmentation' in ann:
+                polygons = []
+                # polygon
+                if ann['iscrowd'] == 0:
+                    polygons = ann['segmentation']
+                # mask
+                else:
+                    if isinstance(ann['segmentation']['counts'], list):
+                        rle = mask_utils.frPyObjects([ann['segmentation']], img['height'], img['width'])
+                    else:
+                        rle = [ann['segmentation']]
+
+                    mask = np.array(mask_utils.decode(rle), dtype=np.uint8)
+                    mask = np.sum(mask, axis=2)
+                    mask = np.array(mask > 0, dtype=np.uint8)
+                    polygons = mask_to_polygon(mask)
+
+                if len(polygons) > 1:
+                    group_idx += 1
+                    group = group_idx
+
+                for polygon in polygons:
+                    annotations.add_shape(annotations.LabeledShape(
+                        type='polygon',
+                        frame=frame_number,
+                        label=label_name,
+                        points=polygon,
+                        occluded=False,
+                        attributes=[],
+                        group=group,
+                    ))
