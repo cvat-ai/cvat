@@ -227,5 +227,9 @@
         }
     }
 
-    module.exports = AnnotationFormat;
+    module.exports = {
+        AnnotationFormat,
+        Loader,
+        Dumper,
+    };
 })();

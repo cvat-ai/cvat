@@ -27,7 +27,7 @@
     } = require('./enums');
 
     const User = require('./user');
-    const AnnotationFormat = require('./annotation-format.js');
+    const { AnnotationFormat } = require('./annotation-format.js');
     const { ArgumentError } = require('./exceptions');
     const { Task } = require('./session');
 

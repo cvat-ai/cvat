@@ -551,7 +551,7 @@
                     async function request() {
                         try {
                             const response = await Axios
-                                .post(`${backendAPI}/${session}s/${id}/annotations?upload_format=${format}`, annotationData, {
+                                .post(`${backendAPI}/${session}s/${id}/annotations?format=${format}`, annotationData, {
                                     proxy: config.proxy,
                                 });
                             if (response.status === 202) {
@@ -579,7 +579,7 @@
             async function dumpAnnotations(id, name, format) {
                 const { backendAPI } = config;
                 const filename = name.replace(/\//g, '_');
-                let url = `${backendAPI}/tasks/${id}/annotations/${filename}?dump_format=${format}`;
+                let url = `${backendAPI}/tasks/${id}/annotations/${filename}?format=${format}`;
 
                 return new Promise((resolve, reject) => {
                     async function request() {

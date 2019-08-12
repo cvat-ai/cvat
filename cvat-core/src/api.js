@@ -485,11 +485,3 @@ function build() {
 }
 
 module.exports = build();
-
-async function tmp() {
-    await module.exports.server.login('admin', 'nimda760');
-    const formats = await module.exports.server.formats();
-    const a = 5;
-}
-
-tmp();
