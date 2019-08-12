@@ -14,11 +14,6 @@ npm run build
 npm run build -- --mode=development     # without a minification
 ```
 
-- Running development server
-```bash
-npm run server
-```
-
 - Updating of a module version:
 ```bash
 npm version patch   # updated after minor fixes
@@ -53,7 +48,7 @@ All methods are sync.
     html(): HTMLDivElement;
     setup(frameData: FrameData, objectStates: ObjectState): void;
     activate(clientID: number, attributeID?: number): void;
-    rotate(direction: Rotation): void;
+    rotate(rotation: Rotation, remember?: boolean): void;
     focus(clientID: number, padding?: number): void;
     fit(): void;
     grid(stepX: number, stepY: number): void;
