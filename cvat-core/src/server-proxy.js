@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2018 Intel Corporation
+* Copyright (C) 2019 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -88,6 +88,25 @@
                         code,
                     );
                 }
+            }
+
+            async function formats() {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/server/annotation/formats`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not get annotation formats from the server',
+                        code,
+                    );
+                }
+
+                return response.data;
             }
 
             async function login(username, password) {
@@ -603,6 +622,7 @@
                     value: Object.freeze({
                         about,
                         share,
+                        formats,
                         exception,
                         login,
                         logout,
