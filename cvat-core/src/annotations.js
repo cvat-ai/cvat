@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2018 Intel Corporation
+* Copyright (C) 2019 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -14,8 +14,13 @@
     const { checkObjectType } = require('./common');
     const { Task } = require('./session');
     const {
+        Loader,
+        Dumper,
+    } = require('./annotation-format.js');
+    const {
         ScriptingError,
         DataError,
+        ArgumentError,
     } = require('./exceptions');
 
     const jobCache = new WeakMap();
@@ -190,15 +195,33 @@
         );
     }
 
-    async function uploadAnnotations(session, file, format) {
+    async function uploadAnnotations(session, file, loader) {
         const sessionType = session instanceof Task ? 'task' : 'job';
-        await serverProxy.annotations.uploadAnnotations(sessionType, session.id, file, format);
+        if (!(loader instanceof Loader)) {
+            throw new ArgumentError(
+                'A loader must be instance of Loader class',
+            );
+        }
+        await serverProxy.annotations.uploadAnnotations(sessionType, session.id, file, loader.name);
     }
 
-    async function dumpAnnotations(session, name, format) {
+    async function dumpAnnotations(session, name, dumper) {
+        if (!(dumper instanceof Dumper)) {
+            throw new ArgumentError(
+                'A dumper must be instance of Dumper class',
+            );
+        }
+
+        let result = null;
         const sessionType = session instanceof Task ? 'task' : 'job';
-        const result = await serverProxy.annotations
-            .dumpAnnotations(sessionType, session.id, name, format);
+        if (sessionType === 'job') {
+            result = await serverProxy.annotations
+                .dumpAnnotations(session.task.id, name, dumper.name);
+        } else {
+            result = await serverProxy.annotations
+                .dumpAnnotations(session.id, name, dumper.name);
+        }
+
         return result;
     }
 
