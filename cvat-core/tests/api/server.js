@@ -17,6 +17,11 @@ jest.mock('../../src/server-proxy', () => {
 
 // Initialize api
 window.cvat = require('../../src/api');
+const {
+    AnnotationFormat,
+    Loader,
+    Dumper,
+} = require('../../src/annotation-format');
 
 // Test cases
 describe('Feature: get info about cvat', () => {
@@ -47,5 +52,45 @@ describe('Feature: get share storage info', () => {
         expect(window.cvat.server.share(
             'Unknown Directory',
         )).rejects.toThrow(window.cvat.exceptions.ServerError);
+    });
+});
+
+describe('Feature: get annotation formats', () => {
+    test('get annotation formats from a server', async () => {
+        const result = await window.cvat.server.formats();
+        expect(Array.isArray(result)).toBeTruthy();
+        for (const format of result) {
+            expect(format).toBeInstanceOf(AnnotationFormat);
+        }
+    });
+});
+
+describe('Feature: get annotation loaders', () => {
+    test('get annotation formats from a server', async () => {
+        const result = await window.cvat.server.formats();
+        expect(Array.isArray(result)).toBeTruthy();
+        for (const format of result) {
+            expect(format).toBeInstanceOf(AnnotationFormat);
+            const { loaders } = format;
+            expect(Array.isArray(loaders)).toBeTruthy();
+            for (const loader of loaders) {
+                expect(loader).toBeInstanceOf(Loader);
+            }
+        }
+    });
+});
+
+describe('Feature: get annotation dumpers', () => {
+    test('get annotation formats from a server', async () => {
+        const result = await window.cvat.server.formats();
+        expect(Array.isArray(result)).toBeTruthy();
+        for (const format of result) {
+            expect(format).toBeInstanceOf(AnnotationFormat);
+            const { dumpers } = format;
+            expect(Array.isArray(dumpers)).toBeTruthy();
+            for (const dumper of dumpers) {
+                expect(dumper).toBeInstanceOf(Dumper);
+            }
+        }
     });
 });

@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2018 Intel Corporation
+* Copyright (C) 2019 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -99,6 +99,20 @@ function build() {
             async share(directory = '/') {
                 const result = await PluginRegistry
                     .apiWrapper(cvat.server.share, directory);
+                return result;
+            },
+            /**
+                * Method returns available annotation formats
+                * @method formats
+                * @async
+                * @memberof module:API.cvat.server
+                * @returns {module:API.cvat.classes.AnnotationFormat[]}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async formats() {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.server.formats);
                 return result;
             },
             /**
@@ -218,7 +232,7 @@ function build() {
                 * @async
                 * @memberof module:API.cvat.users
                 * @param {UserFilter} [filter={}] user filter
-                * @returns {User[]}
+                * @returns {module:API.cvat.classes.User[]}
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */

@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2018 Intel Corporation
+* Copyright (C) 2019 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -19,9 +19,9 @@
         Object.defineProperties(prototype, {
             annotations: Object.freeze({
                 value: {
-                    async upload(file, format) {
+                    async upload(file, loader) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.upload, file, format);
+                            .apiWrapper.call(this, prototype.annotations.upload, file, loader);
                         return result;
                     },
 
@@ -37,9 +37,9 @@
                         return result;
                     },
 
-                    async dump(name, format) {
+                    async dump(name, dumper) {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.annotations.dump, name, format);
+                            .apiWrapper.call(this, prototype.annotations.dump, name, dumper);
                         return result;
                     },
 
@@ -183,7 +183,8 @@
                 * @method upload
                 * @memberof Session.annotations
                 * @param {File} annotations - a text file with annotations
-                * @param {string} format - a format of the file
+                * @param {module:API.cvat.classes.Loader} loader - a loader
+                * which will be used to upload
                 * @instance
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -224,10 +225,12 @@
                 * @method dump
                 * @memberof Session.annotations
                 * @param {string} name - a name of a file with annotations
-                * @param {string} format - a format of the file
+                * @param {module:API.cvat.classes.Dumper} dumper - a dumper
+                * which will be used to dump
                 * @returns {string} URL which can be used in order to get a dump file
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
                 * @async
             */
@@ -1272,13 +1275,13 @@
         return result;
     };
 
-    Job.prototype.annotations.upload.implementation = async function (file, format) {
-        const result = await uploadAnnotations(this, file, format);
+    Job.prototype.annotations.upload.implementation = async function (file, loader) {
+        const result = await uploadAnnotations(this, file, loader);
         return result;
     };
 
-    Job.prototype.annotations.dump.implementation = async function (name, format) {
-        const result = await dumpAnnotations(this, name, format);
+    Job.prototype.annotations.dump.implementation = async function (name, dumper) {
+        const result = await dumpAnnotations(this, name, dumper);
         return result;
     };
 
@@ -1418,13 +1421,13 @@
         return result;
     };
 
-    Task.prototype.annotations.upload.implementation = async function (file, format) {
-        const result = await uploadAnnotations(this, file, format);
+    Task.prototype.annotations.upload.implementation = async function (file, loader) {
+        const result = await uploadAnnotations(this, file, loader);
         return result;
     };
 
-    Task.prototype.annotations.dump.implementation = async function (name, format) {
-        const result = await dumpAnnotations(this, name, format);
+    Task.prototype.annotations.dump.implementation = async function (name, dumper) {
+        const result = await dumpAnnotations(this, name, dumper);
         return result;
     };
 })();

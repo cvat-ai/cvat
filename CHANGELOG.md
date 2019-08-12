@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to create a custom extractors for unsupported media types
 - Added in PDF extractor
 - Added in a command line model manager tester
-- Ability to dump/load annotations in several formats from UI (CVAT, Pascal VOC, YOLO)
+- Ability to dump/load annotations in several formats from UI (CVAT, Pascal VOC, YOLO, MS COCO, png mask)
 - Auth for REST API (api/v1/auth/): login, logout, register, ...
 
 ### Changed
