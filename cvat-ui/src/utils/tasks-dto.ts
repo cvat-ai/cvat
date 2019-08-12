@@ -4,6 +4,18 @@ export enum FileSource {
   Share = 3,
 }
 
+export function fileModel(parentNode: any, files: any) {
+  return files.map(
+    (file: any) => {
+      return {
+        id: parentNode.props ? `${parentNode.props.title}/${file.name}` : file.name,
+        isLeaf: file.type !== 'DIR',
+        name: file.name,
+      };
+    }
+  );
+}
+
 export function taskDTO(values: any) {
   const newTaskDTO = {
     name: values.name,

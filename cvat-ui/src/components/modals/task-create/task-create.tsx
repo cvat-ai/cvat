@@ -6,7 +6,7 @@ import { UploadFile, UploadChangeParam } from 'antd/lib/upload/interface';
 import configureStore from '../../../store';
 import { getShareFilesAsync } from '../../../actions/server.actions';
 
-import { validateLabels, convertStringToNumber, FileSource } from '../../../utils/tasks-dto';
+import { validateLabels, convertStringToNumber, FileSource, fileModel } from '../../../utils/tasks-dto';
 
 import './task-create.scss';
 
@@ -51,7 +51,25 @@ class TaskCreateForm extends PureComponent<any, any> {
   }
 
   componentDidMount() {
-    this.getSharedFiles('');
+    this.getSharedFiles('').then(
+      (data: any) => {
+        this.setState({ treeData: fileModel('', this.store.getState().shareFiles.files) });
+      },
+    );
+  }
+
+  private renderTreeNodes = (data: any) => {
+    return data.map((item: any) => {
+      if (!item.isLeaf) {
+        return (
+          <TreeNode title={ item.name } key={ item.id } dataRef={ item }>
+            { item.children ? this.renderTreeNodes(item.children) : '' }
+          </TreeNode>
+        );
+      }
+
+      return <TreeNode isLeaf title={ item.name } key={ item.id } dataRef={ item } />;
+    });
   }
 
   private renderUploader = () => {
@@ -106,6 +124,7 @@ class TaskCreateForm extends PureComponent<any, any> {
             })(
               <DirectoryTree
                 multiple
+                expandAction="doubleClick"
                 loadData={ this.onLoadData }
                 onSelect={ this.onTreeNodeSelect }
                 onExpand={ this.onTreeNodeExpand }>
@@ -331,21 +350,16 @@ class TaskCreateForm extends PureComponent<any, any> {
     return new Promise<void>(resolve => {
       if (treeNode.props.children) {
         resolve();
+
         return;
       }
 
-      const treeData = this.store.getState().shareFiles.files;
-
-      this.getSharedFiles(treeNode.props.dataRef.name).then(
+      this.getSharedFiles(treeNode.props.dataRef.id).then(
         (data: any) => {
-          const index = treeData.findIndex((element: any) => {
-            return element.name === treeNode.props.dataRef.name
-          });
-
-          treeData[index].children = this.store.getState().shareFiles.files;
+          treeNode.props.dataRef.children = fileModel(treeNode, this.store.getState().shareFiles.files);
 
           this.setState({
-            treeData: [...treeData],
+            treeData: [...this.state.treeData],
           });
 
           resolve();
@@ -354,26 +368,8 @@ class TaskCreateForm extends PureComponent<any, any> {
     });
   }
 
-  private renderTreeNodes = (data: any) => {
-    return data.map((item: any) => {
-      if (item.type === 'DIR') {
-        return (
-          <TreeNode title={ item.name } key={ item.name + item.type } dataRef={ item }>
-            { item.children ? this.renderTreeNodes(item.children) : '' }
-          </TreeNode>
-        );
-      }
-
-      return <TreeNode isLeaf title={ item.name } key={ item.name + item.type } dataRef={ item } />;
-    });
-  }
-
   private getSharedFiles = (directory: string) => {
-    return this.store.dispatch(getShareFilesAsync(directory)).then(
-      (data: any) => {
-        this.setState({ treeData: this.store.getState().shareFiles.files });
-      },
-    );
+    return this.store.dispatch(getShareFilesAsync(directory));
   }
 
   private onTreeNodeSelect = (keys: any, event: any) => {
