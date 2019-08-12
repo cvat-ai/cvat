@@ -57,8 +57,14 @@ def dump(file_object, annotations):
             width = frame_annotation.width
             height = frame_annotation.height
 
-            shapes = sorted(frame_annotation.labeled_shapes, key=lambda x: int(x.z_order))
+            shapes = frame_annotation.labeled_shapes
+            # convert to mask only rectangles and polygons
+            shapes = [shape for shape in shapes if shape.type == 'rectangle' or shape.type == 'polygon']
+            if not shapes:
+                continue
+            shapes = sorted(shapes, key=lambda x: int(x.z_order))
             img = np.zeros((height, width, 3))
+            buf = io.BytesIO()
             for shape in shapes:
                 points = shape.points if shape.type != 'rectangle' else convert_box_to_polygon(shape.points)
                 rles = maskUtils.frPyObjects([points], height, width)
@@ -67,8 +73,8 @@ def dump(file_object, annotations):
                 color = label_colors[shape.label] / 255
                 idx = (mask > 0)
                 img[idx] = color
-                buf = io.BytesIO()
-                matplotlib.image.imsave(buf, img, format='png')
+
+            matplotlib.image.imsave(buf, img, format='png')
             output_zip.writestr(annotation_name, buf.getvalue())
         labels = '\n'.join('{}:{}'.format(label, ','.join(str(i) for i in color)) for label, color in label_colors.items())
         output_zip.writestr('colormap.txt', labels)
