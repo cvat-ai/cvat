@@ -6,8 +6,6 @@
 
 /* global
     userConfirm:false
-    dumpAnnotationRequest:false
-    uploadTaskAnnotationRequest:false
     LabelsInfo:false
     showMessage:false
     showOverlay:false
@@ -85,10 +83,8 @@ class TaskView {
             if (file) {
                 button.text('Uploading..');
                 button.prop('disabled', true);
-                const annotationData = new FormData();
-                annotationData.append('annotation_file', file);
                 try {
-                    await uploadTaskAnnotationRequest(this._task.id, annotationData, format);
+                    await this._task.annotations.upload(file, format);
                 } catch (error) {
                     showMessage(error.message);
                 } finally {
@@ -102,7 +98,12 @@ class TaskView {
     async _dump(button, format) {
         button.disabled = true;
         try {
-            await dumpAnnotationRequest(this._task.id, this._task.name, format);
+            const url = await this._task.annotations.dump(this._task.name, format);
+            const a = document.createElement('a');
+            a.href = `${url}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
         } catch (error) {
             showMessage(error.message);
         } finally {
@@ -139,22 +140,22 @@ class TaskView {
 
         for (const format of this._annotationFormats) {
             for (const dumper of format.dumpers) {
-                const listItem = $(`<li>${dumper.display_name}</li>`).on('click', () => {
+                const listItem = $(`<li>${dumper.name}</li>`).on('click', () => {
                     dropdownDownloadMenu.addClass('hidden');
-                    this._dump(downloadButton[0], dumper.display_name);
+                    this._dump(downloadButton[0], dumper);
                 });
 
-                if (isDefaultFormat(dumper.display_name, this._task.mode)) {
+                if (isDefaultFormat(dumper.name, this._task.mode)) {
                     listItem.addClass('bold');
                 }
                 dropdownDownloadMenu.append(listItem);
             }
 
             for (const loader of format.loaders) {
-                dropdownUploadMenu.append($(`<li>${loader.display_name}</li>`).on('click', () => {
+                dropdownUploadMenu.append($(`<li>${loader.name}</li>`).on('click', () => {
                     dropdownUploadMenu.addClass('hidden');
                     userConfirm('The current annotation will be lost. Are you sure?', () => {
-                        this._upload(uploadButton, loader.display_name);
+                        this._upload(uploadButton, loader);
                     });
                 }));
             }
@@ -728,10 +729,10 @@ window.addEventListener('DOMContentLoaded', () => {
         // TODO: Use REST API in order to get meta
         $.get('/dashboard/meta'),
         $.get(`/api/v1/tasks${window.location.search}`),
-        $.get('/api/v1/server/annotation/formats'),
+        window.cvat.server.formats(),
     ).then((metaData, taskData, annotationFormats) => {
         try {
-            new DashboardView(metaData[0], taskData[0], annotationFormats[0]);
+            new DashboardView(metaData[0], taskData[0], annotationFormats);
         } catch (exception) {
             $('#content').empty();
             const message = `Can not build CVAT dashboard. Exception: ${exception}.`;

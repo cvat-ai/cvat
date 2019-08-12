@@ -139,7 +139,7 @@
             };
 
             data.dumpers = initialData.dumpers.map(el => new Dumper(el));
-            data.loaders = initialData.dumpers.map(el => new Loader(el));
+            data.loaders = initialData.loaders.map(el => new Loader(el));
 
             // Now all fields are readonly
             Object.defineProperties(this, {

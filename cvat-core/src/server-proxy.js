@@ -551,7 +551,7 @@
                     async function request() {
                         try {
                             const response = await Axios
-                                .post(`${backendAPI}/${session}s/${id}/annotations?format=${format}`, annotationData, {
+                                .put(`${backendAPI}/${session}s/${id}/annotations?format=${format}`, annotationData, {
                                     proxy: config.proxy,
                                 });
                             if (response.status === 202) {
