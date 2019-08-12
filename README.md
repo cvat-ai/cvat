@@ -38,6 +38,7 @@ Format selection is possible after clicking on the Upload annotation / Dump anno
 | [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)                              | X      | X      |
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                         | X      | X      |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)                    | X      | X      |
+| PNG mask                                                                           | X      |        |
 
 ## Links
 - [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
