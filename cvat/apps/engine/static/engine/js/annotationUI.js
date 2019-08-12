@@ -395,12 +395,18 @@ function setupMenu(job, task, shapeCollectionModel,
     for (const format of annotationFormats) {
         for (const dumper of format.dumpers) {
             dumpers[dumper.display_name] = dumper;
-            $(`<option>${dumper.display_name}</li>`).appendTo(downloadButton);
+            const item = $(`<option>${dumper.display_name}</li>`);
+
+            if (!isDefaultFormat(dumper.display_name, window.cvat.job.mode)) {
+                item.addClass('regular');
+            }
+
+            item.appendTo(downloadButton);
         }
 
         for (const loader of format.loaders) {
             loaders[loader.display_name] = loader;
-            $(`<option>${loader.display_name}</li>`).appendTo(uploadButton);
+            $(`<option class="regular">${loader.display_name}</li>`).appendTo(uploadButton);
         }
     }
 
@@ -493,6 +499,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
             z_order: taskData.z_order,
             id: jobData.id,
             task_id: taskData.id,
+            mode: taskData.mode,
             images: imageMetaData,
         },
         search: {

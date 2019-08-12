@@ -144,7 +144,11 @@ class TaskView {
         for (const format of this._annotationFormats) {
             for (const dumper of format.dumpers) {
                 dumpers[dumper.name] = dumper;
-                $(`<option>${dumper.name}</li>`).appendTo(downloadButton);
+                const item = $(`<option>${dumper.name}</li>`);
+                if (isDefaultFormat(dumper.name, this._task.mode)) {
+                    item.addClass('bold');
+                }
+                item.appendTo(downloadButton);
             }
 
             for (const loader of format.loaders) {
