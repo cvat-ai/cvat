@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 
-import { Form, Input, Icon, Checkbox, Radio, Upload, Badge, Tree } from 'antd';
+import { Form, Input, Icon, Checkbox, Radio, Upload, Badge, Tree, TreeSelect } from 'antd';
 import { UploadFile, UploadChangeParam } from 'antd/lib/upload/interface';
 
 import configureStore from '../../../store';
@@ -11,7 +11,8 @@ import { validateLabels, convertStringToNumber, FileSource, fileModel } from '..
 import './task-create.scss';
 
 
-const { TreeNode, DirectoryTree } = Tree;
+const { TreeNode } = Tree;
+const { SHOW_PARENT } = TreeSelect;
 const { Dragger } = Upload;
 
 const formItemLayout = {
@@ -62,13 +63,13 @@ class TaskCreateForm extends PureComponent<any, any> {
     return data.map((item: any) => {
       if (!item.isLeaf) {
         return (
-          <TreeNode title={ item.name } key={ item.id } dataRef={ item }>
+          <TreeNode title={ item.name } key={ item.id } value={ item.id } dataRef={ item }>
             { item.children ? this.renderTreeNodes(item.children) : '' }
           </TreeNode>
         );
       }
 
-      return <TreeNode isLeaf title={ item.name } key={ item.id } dataRef={ item } />;
+      return <TreeNode isLeaf title={ item.name } key={ item.id } value={ item.id } dataRef={ item } />;
     });
   }
 
@@ -118,18 +119,19 @@ class TaskCreateForm extends PureComponent<any, any> {
         );
       case FileSource.Share:
         return (
-          <Form.Item { ...formItemLayout } label="Shared files">
+          <Form.Item { ...formItemLayout } label="Shared files"
+            extra='Only one video, archive, pdf or many image, directory can be used simultaneously'>
             {getFieldDecorator('sharedFiles', {
-              rules: [],
+              rules: [{ required: true, message: 'Please, add some files!' }],
             })(
-              <DirectoryTree
+              <TreeSelect
                 multiple
-                expandAction="doubleClick"
+                treeCheckable={ true }
+                showCheckedStrategy={ SHOW_PARENT }
                 loadData={ this.onLoadData }
-                onSelect={ this.onTreeNodeSelect }
-                onExpand={ this.onTreeNodeExpand }>
+                onChange={ this.onTreeNodeSelect }>
                 { this.renderTreeNodes(this.state.treeData) }
-              </DirectoryTree>
+              </TreeSelect>
             )}
           </Form.Item>
         );
