@@ -13,7 +13,7 @@
     const {
         ServerError,
     } = require('./exceptions');
-
+    const store = require('store');
     const config = require('./config');
 
     class ServerProxy {
@@ -22,6 +22,11 @@
             Axios.defaults.withCredentials = true;
             Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
             Axios.defaults.xsrfCookieName = 'csrftoken';
+
+            const token = store.get('token');
+            if (token) {
+                Axios.defaults.headers.common.Authorization = `Token ${token}`;
+            }
 
             async function about() {
                 const { backendAPI } = config;
@@ -141,6 +146,7 @@
                 }
 
                 const token = authenticationResponse.data.key;
+                store.set('token', token);
                 Axios.defaults.headers.common.Authorization = `Token ${token}`;
             }
 
@@ -156,6 +162,9 @@
                         code,
                     );
                 }
+
+                store.remove('token');
+                Axios.defaults.headers.common.Authorization = '';
             }
 
             async function getTasks(filter = '') {
