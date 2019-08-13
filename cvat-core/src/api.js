@@ -146,7 +146,7 @@ function build() {
             },
             /**
                 * Method allows to know whether you are authorized on the server
-                * @method logout
+                * @method authorized
                 * @async
                 * @memberof module:API.cvat.server
                 * @returns {boolean}
