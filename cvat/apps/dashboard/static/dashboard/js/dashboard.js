@@ -77,7 +77,7 @@ class TaskView {
 
     _upload(uploadAnnotationButton, format) {
         const button = $(uploadAnnotationButton);
-        $('<input type="file" accept="text/xml,application/zip,application/json">')
+        $(`<input type="file" accept=".${format.format}">`)
             .on('change', async (onChangeEvent) => {
                 const file = onChangeEvent.target.files[0];
                 $(onChangeEvent.target).remove();

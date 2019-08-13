@@ -67,6 +67,7 @@ function blurAllElements() {
 
 function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationSaverModel,
     uploadAnnotationButton, format) {
+    $('#annotationFileSelector').attr('accept', `.${format.format}`);
     $('#annotationFileSelector').one('change', async (changedFileEvent) => {
         const file = changedFileEvent.target.files['0'];
         changedFileEvent.target.value = '';
@@ -75,7 +76,7 @@ function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationS
         const annotationData = new FormData();
         annotationData.append('annotation_file', file);
         try {
-            await uploadJobAnnotationRequest(jobId, annotationData, format);
+            await uploadJobAnnotationRequest(jobId, annotationData, format.display_name);
             historyModel.empty();
             shapeCollectionModel.empty();
             const data = await $.get(`/api/v1/jobs/${jobId}/annotations`);
@@ -389,12 +390,10 @@ function setupMenu(job, task, shapeCollectionModel,
     const downloadButton = $('#downloadAnnotationButton');
     const uploadButton = $('#uploadAnnotationButton');
 
-    const dumpers = {};
     const loaders = {};
 
     for (const format of annotationFormats) {
         for (const dumper of format.dumpers) {
-            dumpers[dumper.display_name] = dumper;
             const item = $(`<option>${dumper.display_name}</li>`);
 
             if (!isDefaultFormat(dumper.display_name, window.cvat.job.mode)) {
@@ -424,7 +423,7 @@ function setupMenu(job, task, shapeCollectionModel,
     });
 
     uploadButton.on('change', (e) => {
-        const loader = e.target.value;
+        const loader = loaders[e.target.value];
         uploadButton.prop('value', 'Upload Annotation');
         userConfirm('Current annotation will be removed from the client. Continue?',
             async () => {
