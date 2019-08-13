@@ -57,7 +57,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private grid: SVGSVGElement;
     private content: SVGSVGElement;
     private adoptedContent: SVG.Container;
-    private rotationWrapper: HTMLDivElement;
     private canvas: HTMLDivElement;
     private gridPath: SVGPathElement;
     private controller: CanvasController;
@@ -85,7 +84,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.content = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedContent = (SVG.adopt((this.content as any as HTMLElement)) as SVG.Container);
-        this.rotationWrapper = window.document.createElement('div');
         this.canvas = window.document.createElement('div');
 
         const loadingCircle: SVGCircleElement = window.document
@@ -124,7 +122,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.content.setAttribute('id', 'cvat_canvas_content');
 
         // Setup wrappers
-        this.rotationWrapper.setAttribute('id', 'cvat_canvas_rotation_wrapper');
         this.canvas.setAttribute('id', 'cvat_canvas_wrapper');
 
         // Unite created HTML elements together
@@ -135,13 +132,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         gridDefs.appendChild(gridPattern);
         gridPattern.appendChild(this.gridPath);
 
-        this.rotationWrapper.appendChild(this.loadingAnimation);
-        this.rotationWrapper.appendChild(this.text);
-        this.rotationWrapper.appendChild(this.background);
-        this.rotationWrapper.appendChild(this.grid);
-        this.rotationWrapper.appendChild(this.content);
+        this.canvas.appendChild(this.loadingAnimation);
+        this.canvas.appendChild(this.text);
+        this.canvas.appendChild(this.background);
+        this.canvas.appendChild(this.grid);
+        this.canvas.appendChild(this.content);
 
-        this.canvas.appendChild(this.rotationWrapper);
 
         // A little hack to get size after first mounting
         // http://www.backalleycoder.com/2012/04/25/i-want-a-damnodeinserted/
@@ -149,11 +145,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const canvasFirstMounted = (event: AnimationEvent): void => {
             if (event.animationName === 'loadingAnimation') {
                 self.controller.canvasSize = {
-                    height: self.rotationWrapper.clientHeight,
-                    width: self.rotationWrapper.clientWidth,
+                    height: self.canvas.clientHeight,
+                    width: self.canvas.clientWidth,
                 };
 
-                self.rotationWrapper.removeEventListener('animationstart', canvasFirstMounted);
+                self.canvas.removeEventListener('animationstart', canvasFirstMounted);
             }
         };
 
@@ -187,10 +183,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         function transform(geometry: Geometry): void {
             // Transform canvas
             for (const obj of [this.background, this.grid, this.loadingAnimation, this.content]) {
-                obj.style.transform = `scale(${geometry.scale})`;
+                obj.style.transform = `scale(${geometry.scale}) rotate(${geometry.angle}deg)`;
             }
-
-            this.rotationWrapper.style.transform = `rotate(${geometry.angle}deg)`;
 
             // Transform all shapes
             for (const element of window.document.getElementsByClassName('svg_select_points')) {
@@ -240,11 +234,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             for (const obj of [this.content, this.text]) {
-                obj.style.top = `${geometry.top - geometry.offset * geometry.scale}px`;
-                obj.style.left = `${geometry.left - geometry.offset * geometry.scale}px`;
+                obj.style.top = `${geometry.top - geometry.offset}px`;
+                obj.style.left = `${geometry.left - geometry.offset}px`;
             }
-
-            this.content.style.transform = `scale(${geometry.scale})`;
         }
 
         function setupObjects(objects: any[], geometry: Geometry): void {
