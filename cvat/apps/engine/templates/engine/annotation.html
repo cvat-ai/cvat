@@ -330,14 +330,14 @@
 
     <div id="annotationMenu" class="hidden regular">
         <center style="float:left; width: 28%; height: 100%;" id="engineMenuButtons">
-            <div class="dropdown">
-                <button id="downloadAnnotationButton" class="menuButton semiBold h2"> Dump Annotation </button>
-                <ul id="downloadDropdownMenu" class="dropdown-content hidden"></ul>
-            </div>
-            <div class="dropdown">
-                <button id="uploadAnnotationButton" class="menuButton semiBold h2"> Upload Annotation </button>
-                <ul id="uploadDropdownMenu" class="dropdown-content hidden"></ul>
-            </div>
+            <select id="downloadAnnotationButton" class="menuButton semiBold h2" style="text-align-last: center;">
+                <option selected disabled> Dump Annotation </option>
+            </select>
+
+            <select id="uploadAnnotationButton" class="menuButton semiBold h2" style="text-align-last: center;">
+                    <option selected disabled> Upload Annotation </option>
+            </select>
+
             <button id="removeAnnotationButton" class="menuButton semiBold h2"> Remove Annotation </button>
             <button id="settingsButton" class="menuButton semiBold h2"> Settings </button>
             <button id="fullScreenButton" class="menuButton semiBold h2"> Fullscreen Player </button>

@@ -77,22 +77,21 @@ class TaskView {
 
     _upload(uploadAnnotationButton, format) {
         const button = $(uploadAnnotationButton);
-        $('<input type="file" accept="text/xml">').on('change', async (onChangeEvent) => {
-            const file = onChangeEvent.target.files[0];
-            $(onChangeEvent.target).remove();
-            if (file) {
-                button.text('Uploading..');
-                button.prop('disabled', true);
-                try {
-                    await this._task.annotations.upload(file, format);
-                } catch (error) {
-                    showMessage(error.message);
-                } finally {
-                    button.prop('disabled', false);
-                    button.text('Upload Annotation');
+        $(`<input type="file" accept=".${format.format}">`)
+            .on('change', async (onChangeEvent) => {
+                const file = onChangeEvent.target.files[0];
+                $(onChangeEvent.target).remove();
+                if (file) {
+                    button.prop('disabled', true);
+                    try {
+                        await this._task.annotations.upload(file, format);
+                    } catch (error) {
+                        showMessage(error.message);
+                    } finally {
+                        button.prop('disabled', false);
+                    }
                 }
-            }
-        }).click();
+            }).click();
     }
 
     async _dump(button, format) {
@@ -131,47 +130,45 @@ class TaskView {
         );
 
         const buttonsContainer = $('<div class="dashboardButtonsUI"> </div>').appendTo(this._UI);
+        const downloadButton = $('<select class="regular dashboardButtonUI"'
+            + 'style="text-align-last: center;"> Dump Annotation </select>');
+        $('<option selected disabled> Dump Annotation </option>').appendTo(downloadButton);
 
-        const downloadButton = $('<button class="regular dashboardButtonUI"> Dump Annotation </button>');
-        const dropdownDownloadMenu = $('<ul class="dropdown-content hidden"></ul>');
+        const uploadButton = $('<select class="regular dashboardButtonUI"'
+        + 'style="text-align-last: center;"> Upload Annotation </select>');
+        $('<option selected disabled> Upload Annotation </option>').appendTo(uploadButton);
 
-        const uploadButton = $('<button class="regular dashboardButtonUI"> Upload Annotation </button>');
-        const dropdownUploadMenu = $('<ul class="dropdown-content hidden"></ul>');
+        const dumpers = {};
+        const loaders = {};
 
         for (const format of this._annotationFormats) {
             for (const dumper of format.dumpers) {
-                const listItem = $(`<li>${dumper.name}</li>`).on('click', () => {
-                    dropdownDownloadMenu.addClass('hidden');
-                    this._dump(downloadButton[0], dumper);
-                });
-
+                dumpers[dumper.name] = dumper;
+                const item = $(`<option>${dumper.name}</li>`);
                 if (isDefaultFormat(dumper.name, this._task.mode)) {
-                    listItem.addClass('bold');
+                    item.addClass('bold');
                 }
-                dropdownDownloadMenu.append(listItem);
+                item.appendTo(downloadButton);
             }
 
             for (const loader of format.loaders) {
-                dropdownUploadMenu.append($(`<li>${loader.name}</li>`).on('click', () => {
-                    dropdownUploadMenu.addClass('hidden');
-                    userConfirm('The current annotation will be lost. Are you sure?', () => {
-                        this._upload(uploadButton, loader);
-                    });
-                }));
+                loaders[loader.name] = loader;
+                $(`<option>${loader.name}</li>`).appendTo(uploadButton);
             }
         }
 
-        $('<div class="dropdown"></div>').append(
-            downloadButton.on('click', () => {
-                dropdownDownloadMenu.toggleClass('hidden');
-            }),
-        ).append(dropdownDownloadMenu).appendTo(buttonsContainer);
+        downloadButton.on('change', (e) => {
+            this._dump(e.target, dumpers[e.target.value]);
+            downloadButton.prop('value', 'Dump Annotation');
+        });
 
-        $('<div class="dropdown"></div>').append(
-            uploadButton.on('click', () => {
-                dropdownUploadMenu.toggleClass('hidden');
-            }),
-        ).append(dropdownUploadMenu).appendTo(buttonsContainer);
+        uploadButton.on('change', (e) => {
+            this._upload(e.target, loaders[e.target.value]);
+            uploadButton.prop('value', 'Upload Annotation');
+        });
+
+        downloadButton.appendTo(buttonsContainer);
+        uploadButton.appendTo(buttonsContainer);
 
         $('<button class="regular dashboardButtonUI"> Update Task </button>').on('click', () => {
             this._update();
