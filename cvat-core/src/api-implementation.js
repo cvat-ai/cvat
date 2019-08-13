@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2018 Intel Corporation
+* Copyright (C) 2019 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -27,6 +27,7 @@
     } = require('./enums');
 
     const User = require('./user');
+    const { AnnotationFormat } = require('./annotation-format.js');
     const { ArgumentError } = require('./exceptions');
     const { Task } = require('./session');
 
@@ -42,6 +43,11 @@
         cvat.server.share.implementation = async (directory) => {
             const result = await serverProxy.server.share(directory);
             return result;
+        };
+
+        cvat.server.formats.implementation = async () => {
+            const result = await serverProxy.server.formats();
+            return result.map(el => new AnnotationFormat(el));
         };
 
         cvat.server.login.implementation = async (username, password) => {

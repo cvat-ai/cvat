@@ -3,6 +3,9 @@
 * SPDX-License-Identifier: MIT
 */
 
+// Disable till full implementation
+/* eslint class-methods-use-this: "off" */
+
 import * as SVG from 'svg.js';
 
 // tslint:disable-next-line: ordered-imports
@@ -32,7 +35,7 @@ function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
     return output;
 }
 
-function darker(color: string, percentage: number) {
+function darker(color: string, percentage: number): string {
     const R = Math.round(parseInt(color.slice(1, 3), 16) * (1 - percentage / 100));
     const G = Math.round(parseInt(color.slice(3, 5), 16) * (1 - percentage / 100));
     const B = Math.round(parseInt(color.slice(5, 7), 16) * (1 - percentage / 100));
@@ -283,7 +286,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.canvas;
     }
 
-    private addObjects(ctm: SVGMatrix, objects: any[], geometry: Geometry) {
+    private addObjects(ctm: SVGMatrix, objects: any[], geometry: Geometry): void {
         for (const object of objects) {
             if (object.objectType === 'tag') {
                 this.addTag(object, geometry);
@@ -309,8 +312,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             }
 
                             return `${acc}${val},`;
-                        },
-                        '' ,
+                        }, '',
                     );
 
                     if (object.shapeType === 'polygon') {
@@ -329,12 +331,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.activate(geometry);
     }
 
-    private activate(geometry: Geometry) {
+    private activate(geometry: Geometry): void {
         for (const shape of this.svgShapes) {
             const self = this;
-            (shape as any).draggable().on('dragstart', () => {
+            (shape as any).draggable().on('dragstart', (): void => {
                 console.log('hello');
-            }).on('dragend', () => {
+            }).on('dragend', (): void => {
                 console.log('hello');
             });
 
@@ -352,7 +354,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             'stroke-width': self.BASE_STROKE_WIDTH / (3 * geometry.scale),
                         });
 
-                    circle.node.addEventListener('mouseenter', () => {
+                    circle.node.addEventListener('mouseenter', (): void => {
                         circle.attr({
                             'stroke-width': circle.attr('stroke-width') * 2,
                         });
@@ -360,7 +362,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         circle.addClass('cvat_canvas_selected_point');
                     });
 
-                    circle.node.addEventListener('mouseleave', () => {
+                    circle.node.addEventListener('mouseleave', (): void => {
                         circle.attr({
                             'stroke-width': circle.attr('stroke-width') / 2,
                         });
@@ -382,54 +384,55 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const [xtl, ytl, xbr, ybr] = points;
 
         return this.adoptedContent.rect().size(xbr - xtl, ybr - ytl).attr({
-            client_id: state.clientID,
+            clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
             fill: state.color,
             'shape-rendering': 'geometricprecision',
             stroke: darker(state.color, 50),
             'stroke-width': this.BASE_STROKE_WIDTH / geometry.scale,
-            z_order: state.zOrder,
-        }).move(xtl, ytl).addClass('cvat_canvas_shape');
+            zOrder: state.zOrder,
+        }).move(xtl, ytl)
+            .addClass('cvat_canvas_shape');
     }
 
     private addPolygon(points: string, state: any, geometry: Geometry): SVG.Polygon {
         return this.adoptedContent.polygon(points).attr({
-            client_id: state.clientID,
+            clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
             fill: state.color,
             'shape-rendering': 'geometricprecision',
             stroke: darker(state.color, 50),
             'stroke-width': this.BASE_STROKE_WIDTH / geometry.scale,
-            z_order: state.zOrder,
+            zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');
     }
 
     private addPolyline(points: string, state: any, geometry: Geometry): SVG.PolyLine {
         return this.adoptedContent.polyline(points).attr({
-            client_id: state.clientID,
+            clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
             fill: state.color,
             'shape-rendering': 'geometricprecision',
             stroke: darker(state.color, 50),
             'stroke-width': this.BASE_STROKE_WIDTH / geometry.scale,
-            z_order: state.zOrder,
+            zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');
     }
 
     private addPoints(points: string, state: any, geometry: Geometry): SVG.Polygon {
         return this.adoptedContent.polygon(points).attr({
-            client_id: state.clientID,
+            clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
             fill: state.color,
             opacity: 0,
             'shape-rendering': 'geometricprecision',
             stroke: darker(state.color, 50),
             'stroke-width': this.BASE_STROKE_WIDTH / geometry.scale,
-            z_order: state.zOrder,
+            zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');
     }
 
     private addTag(state: any, geometry: Geometry): void {
-        // TODO:
+        console.log(state, geometry);
     }
 }

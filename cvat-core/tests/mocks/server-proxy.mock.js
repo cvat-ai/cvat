@@ -12,6 +12,7 @@
 const {
     tasksDummyData,
     aboutDummyData,
+    formatsDummyData,
     shareDummyData,
     usersDummyData,
     taskAnnotationsDummyData,
@@ -46,6 +47,10 @@ class ServerProxy {
             }
 
             return JSON.parse(JSON.stringify(position));
+        }
+
+        async function formats() {
+            return JSON.parse(JSON.stringify(formatsDummyData));
         }
 
         async function exception() {
@@ -239,6 +244,7 @@ class ServerProxy {
                 value: Object.freeze({
                     about,
                     share,
+                    formats,
                     exception,
                     login,
                     logout,

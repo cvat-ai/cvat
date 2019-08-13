@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2018 Intel Corporation
+* Copyright (C) 2019 Intel Corporation
 * SPDX-License-Identifier: MIT
 */
 
@@ -88,6 +88,25 @@
                         code,
                     );
                 }
+            }
+
+            async function formats() {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/server/annotation/formats`, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not get annotation formats from the server',
+                        code,
+                    );
+                }
+
+                return response.data;
             }
 
             async function login(username, password) {
@@ -532,7 +551,7 @@
                     async function request() {
                         try {
                             const response = await Axios
-                                .post(`${backendAPI}/${session}s/${id}/annotations?upload_format=${format}`, annotationData, {
+                                .put(`${backendAPI}/${session}s/${id}/annotations?format=${format}`, annotationData, {
                                     proxy: config.proxy,
                                 });
                             if (response.status === 202) {
@@ -560,7 +579,7 @@
             async function dumpAnnotations(id, name, format) {
                 const { backendAPI } = config;
                 const filename = name.replace(/\//g, '_');
-                let url = `${backendAPI}/tasks/${id}/annotations/${filename}?dump_format=${format}`;
+                let url = `${backendAPI}/tasks/${id}/annotations/${filename}?format=${format}`;
 
                 return new Promise((resolve, reject) => {
                     async function request() {
@@ -603,6 +622,7 @@
                     value: Object.freeze({
                         about,
                         share,
+                        formats,
                         exception,
                         login,
                         logout,
