@@ -58,6 +58,11 @@
             await serverProxy.server.logout();
         };
 
+        cvat.server.authorized.implementation = async () => {
+            const result = await serverProxy.server.authorized();
+            return result;
+        };
+
         cvat.users.get.implementation = async (filter) => {
             checkFilter(filter, {
                 self: isBoolean,
