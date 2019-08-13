@@ -222,6 +222,20 @@
                 }
             }
 
+            async function authorized() {
+                try {
+                    await module.exports.users.getSelf();
+                } catch (serverError) {
+                    if (serverError.code === 403) {
+                        return false;
+                    }
+
+                    throw serverError;
+                }
+
+                return true;
+            }
+
             async function getTasks(filter = '') {
                 const { backendAPI } = config;
 
@@ -441,7 +455,7 @@
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new ServerError(
-                        'Could not get users from the server',
+                        'Could not get user data from the server',
                         code,
                     );
                 }
@@ -626,6 +640,7 @@
                         exception,
                         login,
                         logout,
+                        authorized,
                     }),
                     writable: false,
                 },
