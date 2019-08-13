@@ -171,7 +171,7 @@
                 try {
                     await module.exports.users.getSelf();
                 } catch (serverError) {
-                    if (serverError.code === 403) {
+                    if (serverError.code === 401) {
                         return false;
                     }
 
