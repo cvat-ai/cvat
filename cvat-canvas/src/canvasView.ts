@@ -34,13 +34,15 @@ interface TextDict {
     [index: number]: SVG.Text;
 }
 
+// Translate point array from the client coordinate system
+// to a coordinate system of a canvas
 function translateFromSVG(svg: SVGSVGElement, points: number[]): number[] {
     const output = [];
     const transformationMatrix = svg.getScreenCTM();
     let pt = svg.createSVGPoint();
-    for (let i = 0; i < points.length; i += 2) {
-        [pt.x] = points;
-        [, pt.y] = points;
+    for (let i = 0; i < points.length - 1; i += 2) {
+        pt.x = points[i];
+        pt.y = points[i + 1];
         pt = pt.matrixTransform(transformationMatrix);
         output.push(pt.x, pt.y);
     }
@@ -48,13 +50,15 @@ function translateFromSVG(svg: SVGSVGElement, points: number[]): number[] {
     return output;
 }
 
+// Translate point array from a coordinate system of a canvas
+// to the client coordinate system
 function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
     const output = [];
     const transformationMatrix = svg.getScreenCTM().inverse();
     let pt = svg.createSVGPoint();
     for (let i = 0; i < points.length; i += 2) {
-        [pt.x] = points;
-        [, pt.y] = points;
+        pt.x = points[i];
+        pt.y = points[i + 1];
         pt = pt.matrixTransform(transformationMatrix);
         output.push(pt.x, pt.y);
     }
@@ -216,7 +220,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             // Transform grid
             this.gridPath.setAttribute('stroke-width', `${this.BASE_STROKE_WIDTH / (2 * geometry.scale)}px`);
 
-            // Transform all shapes
+            // Transform all shape points
             for (const element of window.document.getElementsByClassName('svg_select_points')) {
                 element.setAttribute(
                     'stroke-width',
@@ -236,6 +240,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 );
             }
 
+            // Transform all drawn shapes
             for (const key in this.svgShapes) {
                 if (Object.prototype.hasOwnProperty.call(this.svgShapes, key)) {
                     const object = this.svgShapes[key];
@@ -449,26 +454,37 @@ export class CanvasViewImpl implements CanvasView, Listener {
     // Update text position after corresponding box has been moved, resized, etc.
     private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
         const margin = 10;
-        const box = (shape.node as any).getBBox();
+        let box = (shape.node as any).getBBox();
 
-        let [clientX, clientY]: number[] = translateFromSVG(this.content, [
-            box.x + box.width,
+        // Translate the whole box to the client coordinate system
+        const [x1, y1, x2, y2]: number[] = translateFromSVG(this.content, [
+            box.x,
             box.y,
+            box.x + box.width,
+            box.y + box.height,
         ]);
 
+        box = {
+            x: Math.min(x1, x2),
+            y: Math.min(y1, y2),
+            width: Math.max(x1, x2) - Math.min(x1, x2),
+            height: Math.max(y1, y2) - Math.min(y1, y2),
+        };
+
+        // Find the best place for a text
+        let [clientX, clientY]: number[] = [box.x + box.width, box.y];
         if (clientX + (text.node as any as SVGTextElement)
             .getBBox().width + margin > this.canvas.offsetWidth) {
-            ([clientX, clientY] = translateFromSVG(this.content, [
-                box.x,
-                box.y,
-            ]));
+            ([clientX, clientY] = [box.x, box.y]);
         }
 
+        // Translate back to text SVG
         const [x, y]: number[] = translateToSVG(this.text, [
             clientX + margin,
             clientY,
         ]);
 
+        // Finally draw a text
         text.move(x, y);
         for (const tspan of (text.lines() as any).members) {
             tspan.attr('x', text.attr('x'));
