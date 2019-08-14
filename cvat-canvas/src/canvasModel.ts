@@ -112,10 +112,22 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         const oldScale: number = this.data.scale;
         const newScale: number = direction > 0 ? oldScale * 6 / 5 : oldScale * 5 / 6;
         this.data.scale = Math.min(Math.max(newScale, FrameZoom.MIN), FrameZoom.MAX);
-        this.data.left += ((x - this.data.imageSize.width / 2)
-            * (oldScale / this.data.scale - 1)) * this.data.scale;
-        this.data.top += ((y - this.data.imageSize.height / 2)
-            * (oldScale / this.data.scale - 1)) * this.data.scale;
+
+        const { angle } = this.data;
+
+        const mutiplier = Math.sin(angle * Math.PI / 180) + Math.cos(angle * Math.PI / 180);
+        if ((angle / 90) % 2) {
+            // 90, 270, ..
+            this.data.top += mutiplier * ((x - this.data.imageSize.width / 2)
+                * (oldScale / this.data.scale - 1)) * this.data.scale;
+            this.data.left -= mutiplier * ((y - this.data.imageSize.height / 2)
+                * (oldScale / this.data.scale - 1)) * this.data.scale;
+        } else {
+            this.data.left += mutiplier * ((x - this.data.imageSize.width / 2)
+                * (oldScale / this.data.scale - 1)) * this.data.scale;
+            this.data.top += mutiplier * ((y - this.data.imageSize.height / 2)
+                * (oldScale / this.data.scale - 1)) * this.data.scale;
+        }
 
         this.notify(UpdateReasons.ZOOM);
     }
