@@ -14,11 +14,38 @@ import 'svg.resize.js';
 import 'svg.select.js';
 
 import { CanvasController } from './canvasController';
-import { CanvasModel, Geometry, UpdateReasons } from './canvasModel';
+import {
+    CanvasModel,
+    Geometry,
+    Size,
+    UpdateReasons,
+} from './canvasModel';
 import { Listener, Master } from './master';
 
 export interface CanvasView {
     html(): HTMLDivElement;
+}
+
+interface ShapeDict {
+    [index: number]: SVG.Shape;
+}
+
+interface TextDict {
+    [index: number]: SVG.Text;
+}
+
+function translateFromSVG(svg: SVGSVGElement, points: number[]): number[] {
+    const output = [];
+    const transformationMatrix = svg.getScreenCTM();
+    let pt = svg.createSVGPoint();
+    for (let i = 0; i < points.length; i += 2) {
+        [pt.x] = points;
+        [, pt.y] = points;
+        pt = pt.matrixTransform(transformationMatrix);
+        output.push(pt.x, pt.y);
+    }
+
+    return output;
 }
 
 function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
@@ -59,9 +86,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private adoptedContent: SVG.Container;
     private canvas: HTMLDivElement;
     private gridPath: SVGPathElement;
+    private gridPattern: SVGPatternElement;
     private controller: CanvasController;
-    private svgShapes: SVG.Shape[];
-    private svgTexts: SVG.Text[];
+    private svgShapes: ShapeDict;
+    private svgTexts: TextDict;
     private readonly BASE_STROKE_WIDTH: number;
     private readonly BASE_POINT_SIZE: number;
 
@@ -69,8 +97,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.controller = controller;
         this.BASE_STROKE_WIDTH = 2.5;
         this.BASE_POINT_SIZE = 7;
-        this.svgShapes = [];
-        this.svgTexts = [];
+        this.svgShapes = {};
+        this.svgTexts = {};
 
         // Create HTML elements
         this.loadingAnimation = window.document
@@ -81,6 +109,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.grid = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.gridPath = window.document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        this.gridPattern = window.document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
 
         this.content = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedContent = (SVG.adopt((this.content as any as HTMLElement)) as SVG.Container);
@@ -90,8 +119,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .createElementNS('http://www.w3.org/2000/svg', 'circle');
         const gridDefs: SVGDefsElement = window.document
             .createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const gridPattern: SVGPatternElement = window.document
-            .createElementNS('http://www.w3.org/2000/svg', 'pattern');
         const gridRect: SVGRectElement = window.document
             .createElementNS('http://www.w3.org/2000/svg', 'rect');
 
@@ -108,10 +135,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.gridPath.setAttribute('d', 'M 1000 0 L 0 0 0 1000');
         this.gridPath.setAttribute('fill', 'none');
         this.gridPath.setAttribute('stroke-width', '1.5');
-        gridPattern.setAttribute('id', 'cvat_canvas_grid_pattern');
-        gridPattern.setAttribute('width', '100');
-        gridPattern.setAttribute('height', '100');
-        gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
+        this.gridPattern.setAttribute('id', 'cvat_canvas_grid_pattern');
+        this.gridPattern.setAttribute('width', '100');
+        this.gridPattern.setAttribute('height', '100');
+        this.gridPattern.setAttribute('patternUnits', 'userSpaceOnUse');
         gridRect.setAttribute('width', '100%');
         gridRect.setAttribute('height', '100%');
         gridRect.setAttribute('fill', 'url(#cvat_canvas_grid_pattern)');
@@ -129,8 +156,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.grid.appendChild(gridDefs);
         this.grid.appendChild(gridRect);
 
-        gridDefs.appendChild(gridPattern);
-        gridPattern.appendChild(this.gridPath);
+        gridDefs.appendChild(this.gridPattern);
+        this.gridPattern.appendChild(this.gridPath);
 
         this.canvas.appendChild(this.loadingAnimation);
         this.canvas.appendChild(this.text);
@@ -186,6 +213,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 obj.style.transform = `scale(${geometry.scale}) rotate(${geometry.angle}deg)`;
             }
 
+            // Transform grid
+            this.gridPath.setAttribute('stroke-width', `${this.BASE_STROKE_WIDTH / (2 * geometry.scale)}px`);
+
             // Transform all shapes
             for (const element of window.document.getElementsByClassName('svg_select_points')) {
                 element.setAttribute(
@@ -206,11 +236,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 );
             }
 
-            for (const object of this.svgShapes) {
-                if (object.attr('stroke-width')) {
-                    object.attr({
-                        'stroke-width': this.BASE_STROKE_WIDTH / (geometry.scale),
-                    });
+            for (const key in this.svgShapes) {
+                if (Object.prototype.hasOwnProperty.call(this.svgShapes, key)) {
+                    const object = this.svgShapes[key];
+                    if (object.attr('stroke-width')) {
+                        object.attr({
+                            'stroke-width': this.BASE_STROKE_WIDTH / (geometry.scale),
+                        });
+                    }
+                }
+            }
+
+            // Transform all text
+            for (const key in this.svgShapes) {
+                if (Object.prototype.hasOwnProperty.call(this.svgShapes, key)
+                    && Object.prototype.hasOwnProperty.call(this.svgTexts, key)) {
+                    this.updateTextPosition(
+                        this.svgTexts[key],
+                        this.svgShapes[key],
+                    );
                 }
             }
         }
@@ -271,6 +315,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             move.call(this, geometry);
         } else if (reason === UpdateReasons.OBJECTS) {
             setupObjects.call(this, this.controller.objects, geometry);
+        } else if (reason === UpdateReasons.GRID) {
+            const size: Size = this.controller.gridSize;
+            this.gridPattern.setAttribute('width', `${size.width}`);
+            this.gridPattern.setAttribute('height', `${size.height}`);
         }
     }
 
@@ -278,8 +326,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.canvas;
     }
 
-    private addObjects(ctm: SVGMatrix, objects: any[], geometry: Geometry): void {
-        for (const object of objects) {
+    private addObjects(ctm: SVGMatrix, states: any[], geometry: Geometry): void {
+        for (const object of states) {
             if (object.objectType === 'tag') {
                 this.addTag(object, geometry);
             } else {
@@ -295,7 +343,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 // TODO: Use enums after typification cvat-core
                 if (object.shapeType === 'rectangle') {
-                    this.svgShapes.push(this.addRect(translatedPoints, object, geometry));
+                    this.svgShapes[object.clientID] = this
+                        .addRect(translatedPoints, object, geometry);
                 } else {
                     const stringified = translatedPoints.reduce(
                         (acc: string, val: number, idx: number): string => {
@@ -308,28 +357,45 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     );
 
                     if (object.shapeType === 'polygon') {
-                        this.svgShapes.push(this.addPolygon(stringified, object, geometry));
+                        this.svgShapes[object.clientID] = this
+                            .addPolygon(stringified, object, geometry);
                     } else if (object.shapeType === 'polyline') {
-                        this.svgShapes.push(this.addPolyline(stringified, object, geometry));
+                        this.svgShapes[object.clientID] = this
+                            .addPolyline(stringified, object, geometry);
                     } else if (object.shapeType === 'points') {
-                        this.svgShapes.push(this.addPoints(stringified, object, geometry));
+                        this.svgShapes[object.clientID] = this
+                            .addPoints(stringified, object, geometry);
                     }
                 }
 
-                // TODO: add text here if need
+                this.svgTexts[object.clientID] = this.addText(object);
+                this.updateTextPosition(
+                    this.svgTexts[object.clientID],
+                    this.svgShapes[object.clientID],
+                );
             }
         }
 
-        this.activate(geometry);
+        this.activate(geometry, states);
     }
 
-    private activate(geometry: Geometry): void {
-        for (const shape of this.svgShapes) {
+    private activate(geometry: Geometry, states: any[]): void {
+        for (const state of states) {
+            const shape = this.svgShapes[state.clientID];
+            const text = this.svgTexts[state.clientID];
             const self = this;
             (shape as any).draggable().on('dragstart', (): void => {
-                console.log('hello');
+                if (text) {
+                    text.addClass('cvat_canvas_hidden');
+                }
             }).on('dragend', (): void => {
-                console.log('hello');
+                if (text) {
+                    text.removeClass('cvat_canvas_hidden');
+                    self.updateTextPosition(
+                        text,
+                        shape,
+                    );
+                }
             });
 
             (shape as any).selectize({
@@ -364,12 +430,68 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                     return circle;
                 },
-            }).resize();
+            }).resize().on('resizestart', (): void => {
+                if (text) {
+                    text.addClass('cvat_canvas_hidden');
+                }
+            }).on('resizedone', (): void => {
+                if (text) {
+                    text.removeClass('cvat_canvas_hidden');
+                    self.updateTextPosition(
+                        text,
+                        shape,
+                    );
+                }
+            });
+        }
+    }
+
+    // Update text position after corresponding box has been moved, resized, etc.
+    private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
+        const margin = 10;
+        const box = (shape.node as any).getBBox();
+
+        let [clientX, clientY]: number[] = translateFromSVG(this.content, [
+            box.x + box.width,
+            box.y,
+        ]);
+
+        if (clientX + (text.node as any as SVGTextElement)
+            .getBBox().width + margin > this.canvas.offsetWidth) {
+            ([clientX, clientY] = translateFromSVG(this.content, [
+                box.x,
+                box.y,
+            ]));
         }
 
-        // add selectable
-        // add draggable
-        // add resizable
+        const [x, y]: number[] = translateToSVG(this.text, [
+            clientX + margin,
+            clientY,
+        ]);
+
+        text.move(x, y);
+        for (const tspan of (text.lines() as any).members) {
+            tspan.attr('x', text.attr('x'));
+        }
+    }
+
+    private addText(state: any): SVG.Text {
+        const { label, clientID, attributes } = state;
+        const attrNames = label.attributes.reduce((acc: any, val: any): void => {
+            acc[val.id] = val.name;
+            return acc;
+        }, {});
+
+        return this.adoptedText.text((block): void => {
+            block.tspan(`${label.name} ${clientID}`).style('text-transform', 'uppercase');
+            for (const attrID of Object.keys(attributes)) {
+                block.tspan(`${attrNames[attrID]}: ${attributes[attrID]}`).attr({
+                    attrID,
+                    dy: '1em',
+                    x: 0,
+                });
+            }
+        }).move(0, 0).addClass('cvat_canvas_text');
     }
 
     private addRect(points: number[], state: any, geometry: Geometry): SVG.Rect {

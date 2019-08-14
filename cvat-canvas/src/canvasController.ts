@@ -12,6 +12,7 @@ import {
 
 export interface CanvasController {
     readonly geometry: Geometry;
+    readonly gridSize: Size;
     readonly objects: any[];
     canvasSize: Size;
 
@@ -78,5 +79,9 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get canvasSize(): Size {
         return this.model.canvasSize;
+    }
+
+    public get gridSize(): Size {
+        return this.model.gridSize;
     }
 }

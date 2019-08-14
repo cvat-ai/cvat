@@ -12,6 +12,17 @@ polyline.cvat_canvas_shape {
     stroke-opacity: 1;
 }
 
+.cvat_canvas_text {
+    font-weight: bold;
+    font-size: 1.2em;
+    fill: white;
+    cursor: default;
+    font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+    text-shadow: 0px 0px 4px black;
+    user-select: none;
+    pointer-events: none;
+}
+
 .cvat_canvas_shape_activated {
 
 }

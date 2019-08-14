@@ -44,13 +44,15 @@ export enum UpdateReasons {
     ZOOM = 'zoom',
     FIT = 'fit',
     MOVE = 'move',
+    GRID = 'grid',
 }
 
 export interface CanvasModel extends MasterImpl {
     readonly image: string;
     readonly objects: any[];
+    readonly gridSize: Size;
+    readonly imageSize: Size;
     geometry: Geometry;
-    imageSize: Size;
     canvasSize: Size;
 
     zoom(x: number, y: number, direction: number): void;
@@ -76,6 +78,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         image: string;
         objects: any[];
         imageSize: Size;
+        gridSize: Size;
         canvasSize: Size;
         imageOffset: number;
         scale: number;
@@ -99,6 +102,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             imageSize: {
                 height: 0,
                 width: 0,
+            },
+            gridSize: {
+                height: 100,
+                width: 100,
             },
             left: 0,
             objects: [],
@@ -213,7 +220,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public grid(stepX: number, stepY: number): void {
-        console.log(stepX, stepY);
+        this.data.gridSize = {
+            height: stepY,
+            width: stepX,
+        };
+
+        this.notify(UpdateReasons.GRID);
     }
 
     public draw(enabled: boolean, shapeType: string,
@@ -268,13 +280,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return this.data.objects;
     }
 
-    public set imageSize(value: Size) {
-        this.data.imageSize = {
-            height: value.height,
-            width: value.width,
-        };
-    }
-
     public get imageSize(): Size {
         return {
             height: this.data.imageSize.height,
@@ -298,6 +303,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return {
             height: this.data.canvasSize.height,
             width: this.data.canvasSize.width,
+        };
+    }
+
+    public get gridSize(): Size {
+        return {
+            height: this.data.gridSize.height,
+            width: this.data.gridSize.width,
         };
     }
 }
