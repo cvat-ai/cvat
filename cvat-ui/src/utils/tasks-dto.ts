@@ -8,7 +8,7 @@ export function fileModel(parentNode: any, files: any) {
   return files.map(
     (file: any) => {
       return {
-        id: parentNode.props ? `${parentNode.props.title}/${file.name}` : file.name,
+        id: parentNode.props ? `${parentNode.props.value}/${file.name}` : file.name,
         isLeaf: file.type !== 'DIR',
         name: file.name,
       };

@@ -98,6 +98,8 @@ export const getAnnotationFormatsAsync = () => {
       },
       (error: any) => {
         dispatch(getAnnotationFormatsError(error));
+
+        throw error;
       },
     );
   };

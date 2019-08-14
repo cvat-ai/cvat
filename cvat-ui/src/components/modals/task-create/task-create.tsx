@@ -54,7 +54,7 @@ class TaskCreateForm extends PureComponent<any, any> {
   componentDidMount() {
     this.getSharedFiles('').then(
       (data: any) => {
-        this.setState({ treeData: fileModel('', this.store.getState().shareFiles.files) });
+        this.setState({ treeData: fileModel('', this.store.getState().server.files) });
       },
     );
   }
@@ -128,8 +128,7 @@ class TaskCreateForm extends PureComponent<any, any> {
                 multiple
                 treeCheckable={ true }
                 showCheckedStrategy={ SHOW_PARENT }
-                loadData={ this.onLoadData }
-                onChange={ this.onTreeNodeSelect }>
+                loadData={ this.onLoadData }>
                 { this.renderTreeNodes(this.state.treeData) }
               </TreeSelect>
             )}
@@ -190,19 +189,7 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item { ...formItemLayout } label="Dataset repository">
-          {getFieldDecorator('datasetRepository', {
-            rules: [{ type: 'url', message: 'Bad dataset repository link!' }],
-          })(
-            <Input
-              prefix={ <Icon type="database" /> }
-              type="text"
-              name="dataset-repository"
-            />
-          )}
-        </Form.Item>
-
-        <Form.Item { ...formItemLayout } label="Use LFS" >
+        <Form.Item { ...formItemLayout } label="Use LFS">
           {getFieldDecorator('useLFS', {
             rules: [],
             initialValue: true,
@@ -358,7 +345,7 @@ class TaskCreateForm extends PureComponent<any, any> {
 
       this.getSharedFiles(treeNode.props.dataRef.id).then(
         (data: any) => {
-          treeNode.props.dataRef.children = fileModel(treeNode, this.store.getState().shareFiles.files);
+          treeNode.props.dataRef.children = fileModel(treeNode, this.store.getState().server.files);
 
           this.setState({
             treeData: [...this.state.treeData],
@@ -372,14 +359,6 @@ class TaskCreateForm extends PureComponent<any, any> {
 
   private getSharedFiles = (directory: string) => {
     return this.store.dispatch(getShareFilesAsync(directory));
-  }
-
-  private onTreeNodeSelect = (keys: any, event: any) => {
-    console.log('Trigger Select', keys, event);
-  }
-
-  private onTreeNodeExpand = () => {
-    console.log('Trigger Expand');
   }
 
   private onUploaderChange = (info: UploadChangeParam) => {
@@ -401,17 +380,17 @@ class TaskCreateForm extends PureComponent<any, any> {
     }
 
     this.setState(() => nextState);
-  };
+  }
 
   private resetUploader = () => {
     this.setState({ selectedFileList: [], filesCounter: 0 });
-  };
+  }
 
   private simulateRequest = ({ file, onSuccess }: any) => {
     setTimeout(() => {
       onSuccess(file);
     }, 0);
-  };
+  }
 }
 
 export default Form.create()(TaskCreateForm);

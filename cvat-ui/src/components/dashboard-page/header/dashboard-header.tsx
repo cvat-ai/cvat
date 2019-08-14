@@ -17,7 +17,6 @@ import './dashboard-header.scss';
 
 const { Header } = Layout;
 const { Search } = Input;
-const { confirm } = Modal;
 
 class DashboardHeader extends Component<any, any> {
   hostUrl: string | undefined;
@@ -80,7 +79,7 @@ class DashboardHeader extends Component<any, any> {
   }
 
   private onCreateTask = () => {
-    confirm({
+    Modal.confirm({
       title: 'Create new task',
       content: <TaskCreateForm ref={ this.setTaskCreateFormRef }/>,
       centered: true,
@@ -88,12 +87,25 @@ class DashboardHeader extends Component<any, any> {
       okText: 'Create',
       okType: 'primary',
       onOk: (closeFunction: Function) => {
-        this.createFormRef.validateFields((error: any, values: any) => {
-          if (!error) {
-            const newTask = taskDTO(values);
+        return new Promise((resolve, reject) => {
+          this.createFormRef.validateFields((error: any, values: any) => {
+            if (!error) {
+              const newTask = taskDTO(values);
 
-            this.props.dispatch(createTaskAsync(newTask)).then(closeFunction());
-          }
+              this.props.dispatch(createTaskAsync(newTask)).then(
+                (data: any) => {
+                  resolve(data);
+                  closeFunction();
+                },
+                (error: any) => {
+                  reject(error);
+                  Modal.error({ title: error.message, centered: true, okType: 'danger' })
+                }
+              );
+            } else {
+              reject(error);
+            }
+          });
         });
       },
       onCancel: () => {
