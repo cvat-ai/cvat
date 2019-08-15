@@ -27,7 +27,6 @@ def dump(file_object, annotations):
     import os
     import string
     from zipfile import ZipFile
-    import io
     import codecs
     from tempfile import TemporaryDirectory
     from collections import OrderedDict
