@@ -8,12 +8,14 @@ import {
     Geometry,
     Position,
     Size,
+    FocusData,
 } from './canvasModel';
 
 export interface CanvasController {
-    readonly geometry: Geometry;
     readonly gridSize: Size;
     readonly objects: any[];
+    readonly focusData: FocusData;
+    geometry: Geometry;
     canvasSize: Size;
 
     zoom(x: number, y: number, direction: number): void;
@@ -69,6 +71,10 @@ export class CanvasControllerImpl implements CanvasController {
         return this.model.geometry;
     }
 
+    public set geometry(geometry: Geometry) {
+        this.model.geometry = geometry;
+    }
+
     public get objects(): any[] {
         return this.model.objects;
     }
@@ -83,5 +89,9 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get gridSize(): Size {
         return this.model.gridSize;
+    }
+
+    public get focusData(): FocusData {
+        return this.model.focusData;
     }
 }

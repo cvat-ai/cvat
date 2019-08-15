@@ -19,6 +19,8 @@ import {
     Geometry,
     Size,
     UpdateReasons,
+    FocusData,
+    FrameZoom,
 } from './canvasModel';
 import { Listener, Master } from './master';
 
@@ -288,6 +290,54 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         }
 
+        function computeFocus(focusData: FocusData, geometry: Geometry): void {
+            // This computation cann't be done in the model because of lack of data
+            const object = this.svgShapes[focusData.clientID];
+            if (!object) {
+                return;
+            }
+
+            // First of all, compute and apply scale
+
+            let scale = null;
+            const bbox: SVG.BBox = object.node.getBBox();
+            if ((geometry.angle / 90) % 2) {
+                // 90, 270, ..
+                scale = Math.min(Math.max(Math.min(
+                    geometry.canvas.width / bbox.height,
+                    geometry.canvas.height / bbox.width,
+                ), FrameZoom.MIN), FrameZoom.MAX);
+            } else {
+                scale = Math.min(Math.max(Math.min(
+                    geometry.canvas.width / bbox.width,
+                    geometry.canvas.height / bbox.height,
+                ), FrameZoom.MIN), FrameZoom.MAX);
+            }
+
+            transform.call(this, Object.assign({}, geometry, {
+                scale,
+            }));
+
+            const [x, y] = translateFromSVG(this.content, [
+                bbox.x + bbox.width / 2,
+                bbox.y + bbox.height / 2,
+            ]);
+
+            const [cx, cy] = [
+                this.canvas.clientWidth / 2 + this.canvas.offsetLeft,
+                this.canvas.clientHeight / 2 + this.canvas.offsetTop,
+            ];
+
+            const dragged = Object.assign({}, geometry, {
+                top: geometry.top + cy - y,
+                left: geometry.left + cx - x,
+                scale,
+            });
+
+            this.controller.geometry = dragged;
+            move.call(this, dragged);
+        }
+
         function setupObjects(objects: any[], geometry: Geometry): void {
             this.adoptedContent.clear();
             const ctm = this.content.getScreenCTM()
@@ -309,21 +359,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 move.call(this, geometry);
                 resize.call(this, geometry);
                 transform.call(this, geometry);
-                const event: Event = new Event('canvas.setup');
-                this.canvas.dispatchEvent(event);
             }
         } else if (reason === UpdateReasons.ZOOM || reason === UpdateReasons.FIT) {
             move.call(this, geometry);
-            resize.call(this, geometry);
             transform.call(this, geometry);
         } else if (reason === UpdateReasons.MOVE) {
             move.call(this, geometry);
         } else if (reason === UpdateReasons.OBJECTS) {
             setupObjects.call(this, this.controller.objects, geometry);
+            const event: Event = new Event('canvas.setup');
+            this.canvas.dispatchEvent(event);
         } else if (reason === UpdateReasons.GRID) {
             const size: Size = this.controller.gridSize;
             this.gridPattern.setAttribute('width', `${size.width}`);
             this.gridPattern.setAttribute('height', `${size.height}`);
+        } else if (reason === UpdateReasons.FOCUS) {
+            computeFocus.call(this, this.controller.focusData, geometry);
         }
     }
 

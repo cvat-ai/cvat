@@ -28,6 +28,11 @@ export interface Geometry {
     angle: number;
 }
 
+export interface FocusData {
+    clientID: number;
+    padding: number;
+}
+
 export enum FrameZoom {
     MIN = 0.1,
     MAX = 10,
@@ -45,6 +50,7 @@ export enum UpdateReasons {
     FIT = 'fit',
     MOVE = 'move',
     GRID = 'grid',
+    FOCUS = 'focus',
 }
 
 export interface CanvasModel extends MasterImpl {
@@ -52,6 +58,7 @@ export interface CanvasModel extends MasterImpl {
     readonly objects: any[];
     readonly gridSize: Size;
     readonly imageSize: Size;
+    readonly focusData: FocusData;
     geometry: Geometry;
     canvasSize: Size;
 
@@ -86,6 +93,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         left: number;
         angle: number;
         rememberAngle: boolean;
+        focusData: FocusData;
     };
 
     public constructor() {
@@ -102,6 +110,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             imageSize: {
                 height: 0,
                 width: 0,
+            },
+            focusData: {
+                clientID: 0,
+                padding: 0,
             },
             gridSize: {
                 height: 100,
@@ -189,7 +201,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public focus(clientID: number, padding: number): void {
-        console.log(clientID, padding);
+        this.data.focusData = {
+            clientID,
+            padding,
+        };
+
+        this.notify(UpdateReasons.FOCUS);
     }
 
     public fit(): void {
@@ -272,6 +289,22 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         };
     }
 
+    public set geometry(geometry: Geometry) {
+        this.data.angle = geometry.angle;
+        this.data.canvasSize = {
+            height: geometry.canvas.height,
+            width: geometry.canvas.width,
+        };
+        this.data.imageSize = {
+            height: geometry.image.height,
+            width: geometry.image.width,
+        };
+        this.data.left = geometry.left;
+        this.data.top = geometry.top;
+        this.data.imageOffset = geometry.offset;
+        this.data.scale = geometry.scale;
+    }
+
     public get image(): string {
         return this.data.image;
     }
@@ -310,6 +343,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return {
             height: this.data.gridSize.height,
             width: this.data.gridSize.width,
+        };
+    }
+
+    public get focusData(): FocusData {
+        return {
+            clientID: this.data.focusData.clientID,
+            padding: this.data.focusData.padding,
         };
     }
 }
