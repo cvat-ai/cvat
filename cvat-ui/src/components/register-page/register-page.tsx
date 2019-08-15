@@ -170,7 +170,7 @@ class RegisterForm extends PureComponent<any, any> {
     callback();
   };
 
-  private onSubmit = (event: any) => {
+  private onSubmit = (event: React.FormEvent<HTMLInputElement>) => {
     event.preventDefault();
 
     this.props.form.validateFields((error: any, values: any) => {

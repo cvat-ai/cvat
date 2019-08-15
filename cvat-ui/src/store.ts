@@ -11,11 +11,11 @@ export default function configureStore(initialState = {}) {
 
   const middlewares = [];
 
+  middlewares.push(thunk);
+
   if (process.env.NODE_ENV === `development`) {
     middlewares.push(logger);
   }
-
-  middlewares.push(thunk);
 
   return createStore(
     rootReducer,

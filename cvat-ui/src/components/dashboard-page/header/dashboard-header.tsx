@@ -3,17 +3,25 @@ import React, { Component } from 'react';
 import { withRouter } from 'react-router-dom';
 
 import { connect } from 'react-redux';
+import { createTaskAsync } from '../../../actions/tasks.actions';
 
-import { Layout, Row, Col, Button, Input } from 'antd';
+import { Modal, Layout, Row, Col, Button, Input } from 'antd';
 import Title from 'antd/lib/typography/Title';
 
+import TaskCreateForm from '../../modals/task-create/task-create';
+
+import { taskDTO } from '../../../utils/tasks-dto';
+
 import './dashboard-header.scss';
+
 
 const { Header } = Layout;
 const { Search } = Input;
 
 class DashboardHeader extends Component<any, any> {
   hostUrl: string | undefined;
+
+  createFormRef: any;
 
   constructor(props: any) {
     super(props);
@@ -50,7 +58,7 @@ class DashboardHeader extends Component<any, any> {
             <Button
               className="action"
               type="primary"
-              onClick={ this.createTask }>
+              onClick={ this.onCreateTask }>
               Create task
             </Button>
             <Button
@@ -66,8 +74,44 @@ class DashboardHeader extends Component<any, any> {
     );
   }
 
-  private createTask = () => {
-    console.log('Create task');
+  private setTaskCreateFormRef = (ref: any) => {
+    this.createFormRef = ref;
+  }
+
+  private onCreateTask = () => {
+    Modal.confirm({
+      title: 'Create new task',
+      content: <TaskCreateForm ref={ this.setTaskCreateFormRef }/>,
+      centered: true,
+      className: 'crud-modal',
+      okText: 'Create',
+      okType: 'primary',
+      onOk: (closeFunction: Function) => {
+        return new Promise((resolve, reject) => {
+          this.createFormRef.validateFields((error: any, values: any) => {
+            if (!error) {
+              const newTask = taskDTO(values);
+
+              this.props.dispatch(createTaskAsync(newTask)).then(
+                (data: any) => {
+                  resolve(data);
+                  closeFunction();
+                },
+                (error: any) => {
+                  reject(error);
+                  Modal.error({ title: error.message, centered: true, okType: 'danger' })
+                }
+              );
+            } else {
+              reject(error);
+            }
+          });
+        });
+      },
+      onCancel: () => {
+        return;
+      },
+    });
   }
 
   private onValueChange = (event: any) => {

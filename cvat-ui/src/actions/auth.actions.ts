@@ -29,6 +29,8 @@ export const loginAsync = (username: string, password: string, history: any) => 
       },
       (error: any) => {
         dispatch(loginError(error));
+
+        throw error;
       },
     );
   };

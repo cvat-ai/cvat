@@ -1,68 +1,52 @@
 export default (
-  state: any = {
-    tasks: [],
-    tasksCount: 0,
+  state = {
+    info: null,
+    files: [],
+    annotationFormats: [],
     isFetching: false,
     error: null,
   },
   action: any,
 ) => {
   switch (action.type) {
-    case 'GET_TASKS':
+    case 'GET_SERVER_INFO':
       return Object.assign({}, state, {
         isFetching: true,
       });
-    case 'GET_TASKS_SUCCESS':
+    case 'GET_SERVER_INFO_SUCCESS':
       return Object.assign({}, state, {
         isFetching: false,
-        tasks: Array.from(action.payload.values()),
-        tasksCount: action.payload.count,
+        info: action.payload,
       });
-    case 'GET_TASKS_ERROR':
+    case 'GET_SERVER_INFO_ERROR':
       return Object.assign({}, state, {
         isFetching: false,
         error: action.payload,
       });
-
-    case 'CREATE_TASK':
+    case 'GET_SHARE_FILES':
       return Object.assign({}, state, {
         isFetching: true,
       });
-    case 'CREATE_TASK_SUCCESS':
+    case 'GET_SHARE_FILES_SUCCESS':
       return Object.assign({}, state, {
         isFetching: false,
+        files: action.payload,
       });
-    case 'CREATE_TASK_ERROR':
+    case 'GET_SHARE_FILES_ERROR':
       return Object.assign({}, state, {
         isFetching: false,
         error: action.payload,
       });
-
-    case 'UPDATE_TASK':
+    case 'GET_ANNOTATION_FORMATS':
       return Object.assign({}, state, {
         isFetching: true,
       });
-    case 'UPDATE_TASK_SUCCESS':
+    case 'GET_ANNOTATION_FORMATS_SUCCESS':
       return Object.assign({}, state, {
         isFetching: false,
+        annotationFormats: action.payload,
       });
-    case 'UPDATE_TASK_ERROR':
-      return Object.assign({}, state, {
-        isFetching: false,
-        error: action.payload,
-      });
-
-    case 'DELETE_TASK':
-      return Object.assign({}, state, {
-        isFetching: true,
-      });
-
-    case 'DELETE_TASK_SUCCESS':
-      return Object.assign({}, state, {
-        isFetching: false,
-      });
-
-    case 'DELETE_TASK_ERROR':
+    case 'GET_ANNOTATION_FORMATS_ERROR':
       return Object.assign({}, state, {
         isFetching: false,
         error: action.payload,
