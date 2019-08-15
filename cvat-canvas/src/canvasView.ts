@@ -37,6 +37,12 @@ interface TextDict {
     [index: number]: SVG.Text;
 }
 
+enum Mode {
+    IDLE = 'idle',
+    DRAG = 'drag',
+    RESIZE = 'resize',
+}
+
 // Translate point array from the client coordinate system
 // to a coordinate system of a canvas
 function translateFromSVG(svg: SVGSVGElement, points: number[]): number[] {
@@ -98,6 +104,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private svgShapes: ShapeDict;
     private svgTexts: TextDict;
     private activeElement: ActiveElement;
+    private mode: Mode;
     private readonly BASE_STROKE_WIDTH: number;
     private readonly BASE_POINT_SIZE: number;
 
@@ -108,6 +115,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.svgShapes = {};
         this.svgTexts = {};
         this.activeElement = null;
+        this.mode = Mode.IDLE;
 
         // Create HTML elements
         this.loadingAnimation = window.document
@@ -216,6 +224,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.content.addEventListener('mousemove', (e): void => {
+            if (this.mode !== Mode.IDLE) return;
+
             const [x, y] = translateToSVG(this.background, [e.clientX, e.clientY]);
             const event: CustomEvent = new CustomEvent('canvas.moved', {
                 bubbles: false,
@@ -478,10 +488,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const self = this;
         (shape as any).draggable().on('dragstart', (): void => {
+            this.mode = Mode.DRAG;
             if (text) {
                 text.addClass('cvat_canvas_hidden');
             }
         }).on('dragend', (): void => {
+            this.mode = Mode.IDLE;
             if (text) {
                 text.removeClass('cvat_canvas_hidden');
                 self.updateTextPosition(
@@ -524,10 +536,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 return circle;
             },
         }).resize().on('resizestart', (): void => {
+            this.mode = Mode.RESIZE;
             if (text) {
                 text.addClass('cvat_canvas_hidden');
             }
         }).on('resizedone', (): void => {
+            this.mode = Mode.IDLE;
             if (text) {
                 text.removeClass('cvat_canvas_hidden');
                 self.updateTextPosition(

@@ -95,7 +95,7 @@ Standard JS events are used.
 
 ## API Reaction
 
-|            | FREE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING |
+|            | IDLE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING |
 |------------|------|----------|-----------|---------|---------|---------|
 | html()     | +    | +        | +         | +       | +       | +       |
 | setup()    | +    | +        | +         | +       | +       | -       |
