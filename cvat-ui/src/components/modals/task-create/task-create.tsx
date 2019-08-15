@@ -1,12 +1,12 @@
 import React, { PureComponent } from 'react';
 
-import { Form, Input, Icon, Checkbox, Radio, Upload, Badge, Tree, TreeSelect } from 'antd';
+import { Form, Input, Icon, Checkbox, Radio, Upload, Badge, Tree, TreeSelect, InputNumber } from 'antd';
 import { UploadFile, UploadChangeParam } from 'antd/lib/upload/interface';
 
 import configureStore from '../../../store';
 import { getShareFilesAsync } from '../../../actions/server.actions';
 
-import { validateLabels, convertStringToNumber, FileSource, fileModel } from '../../../utils/tasks-dto';
+import { validateLabels, FileSource, fileModel } from '../../../utils/tasks-dto';
 
 import './task-create.scss';
 
@@ -227,18 +227,11 @@ class TaskCreateForm extends PureComponent<any, any> {
 
         <Form.Item { ...formItemLayout } label="Segment size" hasFeedback>
           {getFieldDecorator('segmentSize', {
-            rules: [
-              {
-                type: 'number',
-                min: 100,
-                max: 50000,
-              },
-            ],
-            getValueFromEvent: convertStringToNumber,
+            rules: [],
           })(
-            <Input
-              prefix={ <Icon type="profile" /> }
-              type="number"
+            <InputNumber
+              min={100}
+              max={50000}
               name="segment-size"
             />
           )}
@@ -246,19 +239,12 @@ class TaskCreateForm extends PureComponent<any, any> {
 
         <Form.Item { ...formItemLayout } label="Overlap size" hasFeedback>
           {getFieldDecorator('overlapSize', {
-            rules: [
-              {
-                type: 'number',
-                min: 0,
-                max: this.props.form.getFieldValue('segmentSize') - 1,
-              },
-            ],
+            rules: [],
             initialValue: 0,
-            getValueFromEvent: convertStringToNumber,
           })(
-            <Input
-              prefix={ <Icon type="profile" /> }
-              type="number"
+            <InputNumber
+              min={0}
+              max={ this.props.form.getFieldValue('segmentSize') ? this.props.form.getFieldValue('segmentSize') - 1 : 0 }
               name="overlap-size"
             />
           )}
@@ -266,19 +252,12 @@ class TaskCreateForm extends PureComponent<any, any> {
 
         <Form.Item { ...formItemLayout } label="Image quality">
           {getFieldDecorator('imageQuality', {
-            rules: [
-              {
-                type: 'number',
-                min: 1,
-                max: 95,
-              }
-            ],
+            rules: [],
             initialValue: 50,
-            getValueFromEvent: convertStringToNumber,
           })(
-            <Input
-              prefix={ <Icon type="file-image" /> }
-              type="number"
+            <InputNumber
+              min={1}
+              max={95}
               name="image-quality"
             />
           )}
@@ -286,19 +265,11 @@ class TaskCreateForm extends PureComponent<any, any> {
 
         <Form.Item { ...formItemLayout } label="Start frame" hasFeedback>
           {getFieldDecorator('startFrame', {
-            rules: [
-              {
-                type: 'number',
-                min: 0,
-                message: 'Bad start frame!',
-              },
-            ],
+            rules: [],
             initialValue: 0,
-            getValueFromEvent: convertStringToNumber,
           })(
-            <Input
-              prefix={ <Icon type="profile" /> }
-              type="number"
+            <InputNumber
+              min={0}
               name="start-frame"
             />
           )}
@@ -306,18 +277,10 @@ class TaskCreateForm extends PureComponent<any, any> {
 
         <Form.Item { ...formItemLayout } label="Stop frame" hasFeedback>
           {getFieldDecorator('stopFrame', {
-            rules: [
-              {
-                type: 'number',
-                min: this.props.form.getFieldValue('startFrame'),
-                message: 'Stop frame must be greater than or equal to start frame!',
-              },
-            ],
-            getValueFromEvent: convertStringToNumber,
+            rules: [],
           })(
-            <Input
-              prefix={ <Icon type="profile" /> }
-              type="number"
+            <InputNumber
+              min={ this.props.form.getFieldValue('startFrame') }
               name="stop-frame"
             />
           )}
