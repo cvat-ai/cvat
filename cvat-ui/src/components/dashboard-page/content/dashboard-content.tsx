@@ -179,7 +179,7 @@ class DashboardContent extends Component<any, any> {
             (loader: any) => (
               <Menu.Item key={ loader.name }>
                 <Upload
-                  accept="text/xml"
+                  accept={ `.${loader.format}` }
                   showUploadList={ false }
                   customRequest={ this.simulateRequest }
                   onChange={ this.onUploaderChange }>
