@@ -64,7 +64,7 @@ class LoginForm extends PureComponent<any, any> {
     );
   }
 
-  private onSubmit = (event: any) => {
+  private onSubmit = (event: React.FormEvent<HTMLInputElement>) => {
     event.preventDefault();
 
     this.props.form.validateFields((error: any, values: any) => {

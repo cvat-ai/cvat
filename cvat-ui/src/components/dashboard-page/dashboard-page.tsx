@@ -3,7 +3,7 @@ import { Location, Action } from 'history';
 
 import * as queryString from 'query-string';
 
-import setQueryObject from '../../utils/tasks-filter-dto'
+import setQueryObject from '../../utils/tasks-filter'
 
 import { connect } from 'react-redux';
 import { getTasksAsync } from '../../actions/tasks.actions';
