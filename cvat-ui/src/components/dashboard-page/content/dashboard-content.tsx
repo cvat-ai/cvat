@@ -10,6 +10,9 @@ import { dumpAnnotationAsync, uploadAnnotationAsync } from '../../../actions/ann
 import { Layout, Empty, Button, Modal, Col, Row, Menu, Dropdown, Icon, Upload } from 'antd';
 import Title from 'antd/lib/typography/Title';
 
+import { ClickParam } from 'antd/lib/menu';
+import { UploadChangeParam } from 'antd/lib/upload';
+
 import TaskUpdateForm from '../../modals/task-update/task-update';
 import TaskCreateForm from '../../modals/task-create/task-create';
 
@@ -33,6 +36,7 @@ class DashboardContent extends Component<any, any> {
     this.state = {
       dumpers: [],
       loaders: [],
+      selectedLoader: null,
       activeTaskId: null,
     };
 
@@ -108,8 +112,7 @@ class DashboardContent extends Component<any, any> {
                         </Button>
                       </Dropdown>
                     </Row>
-                    {/* // TODO: Upload annotation */}
-                    {/* <Row type="flex">
+                    <Row type="flex">
                       <Dropdown
                         disabled={ this.props.isFetching && task.id === this.state.activeTaskId }
                         trigger={['click']}
@@ -118,7 +121,7 @@ class DashboardContent extends Component<any, any> {
                           Upload annotation <Icon type="down" />
                         </Button>
                       </Dropdown>
-                    </Row> */}
+                    </Row>
                     <Row type="flex">
                       <Button type="primary" onClick={ () => this.onUpdateTask(task) }>
                         Update task
@@ -154,7 +157,7 @@ class DashboardContent extends Component<any, any> {
 
   private dumpAnnotationMenu = (task: any) => {
     return (
-      <Menu onClick={ (event: any) => this.onDumpAnnotation(task, event, this) }>
+      <Menu onClick={ (params: ClickParam) => this.onDumpAnnotation(task, params, this) }>
         {
           this.state.dumpers.map(
             (dumper: any) => (
@@ -168,28 +171,30 @@ class DashboardContent extends Component<any, any> {
     );
   }
 
-  // TODO: Upload annotation
-  // private uploadAnnotationMenu = (task: any) => {
-  //   return (
-  //     <Menu>
-  //       {
-  //         this.state.loaders.map(
-  //           (loader: any) => (
-  //             <Upload
-  //               showUploadList={ false }
-  //               beforeUpload={ (file: File) => this.onUploadAnnotation(task, file, this) }
-  //               key={ loader.name }>
-  //               <Button>
-  //                 <Icon type="upload" />
-  //                 { loader.name }
-  //               </Button>
-  //             </Upload>
-  //           ),
-  //         )
-  //       }
-  //     </Menu>
-  //   );
-  // }
+  private uploadAnnotationMenu = (task: any) => {
+    return (
+      <Menu onClick={ (params: ClickParam) => this.setState({ selectedLoader: params.key, loaderTask: task }) }>
+        {
+          this.state.loaders.map(
+            (loader: any) => (
+              <Menu.Item key={ loader.name }>
+                <Upload
+                  accept="text/xml"
+                  showUploadList={ false }
+                  customRequest={ this.simulateRequest }
+                  onChange={ this.onUploaderChange }>
+                  <Button type="link">
+                    <Icon type="upload" />
+                    { loader.name }
+                  </Button>
+                </Upload>
+              </Menu.Item>
+            ),
+          )
+        }
+      </Menu>
+    );
+  }
 
   private setTaskCreateFormRef = (ref: any) => {
     this.createFormRef = ref;
@@ -314,22 +319,33 @@ class DashboardContent extends Component<any, any> {
     );
   }
 
-  // TODO: Upload annotation
-  // private onUploadAnnotation = (task: any, file: File, component: DashboardContent) => {
-  //   debugger;
-  //   const loader = component.state.loaders[0];
+  private onUploadAnnotation = (task: any, file: File) => {
+    const loader = this.state.loaders.find((loader: any) => loader.name === this.state.selectedLoader);
 
-  //   this.props.dispatch(uploadAnnotationAsync(task, file, loader)).then(
-  //     (data: any) => {
+    this.setState({ activeTaskId: task.id });
+    this.props.dispatch(uploadAnnotationAsync(task, file, loader)).then(
+      (data: any) => {
 
-  //     },
-  //     (error: any) => {
-  //       Modal.error({ title: error.message, centered: true, okType: 'danger' });
-  //     },
-  //   );
+      },
+      (error: any) => {
+        Modal.error({ title: error.message, centered: true, okType: 'danger' });
+      },
+    );
 
-  //   return true;
-  // }
+    return true;
+  }
+
+  private onUploaderChange = (info: UploadChangeParam) => {
+    if (info.file.status === 'uploading') {
+      this.onUploadAnnotation(this.state.loaderTask, (info.file.originFileObj as File));
+    }
+  }
+
+  private simulateRequest = ({ file, onSuccess }: any) => {
+    setTimeout(() => {
+      onSuccess(file);
+    }, 0);
+  }
 }
 
 const mapStateToProps = (state: any) => {

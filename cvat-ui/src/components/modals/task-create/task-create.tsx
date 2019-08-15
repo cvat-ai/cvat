@@ -232,7 +232,6 @@ class TaskCreateForm extends PureComponent<any, any> {
                 type: 'number',
                 min: 100,
                 max: 50000,
-                message: 'Segment size out of range!',
               },
             ],
             getValueFromEvent: convertStringToNumber,
@@ -267,7 +266,13 @@ class TaskCreateForm extends PureComponent<any, any> {
 
         <Form.Item { ...formItemLayout } label="Image quality">
           {getFieldDecorator('imageQuality', {
-            rules: [],
+            rules: [
+              {
+                type: 'number',
+                min: 1,
+                max: 95,
+              }
+            ],
             initialValue: 50,
             getValueFromEvent: convertStringToNumber,
           })(
