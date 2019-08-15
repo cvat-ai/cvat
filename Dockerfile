@@ -58,15 +58,12 @@ COPY components /tmp/components
 # OpenVINO toolkit support
 ARG OPENVINO_TOOLKIT
 ENV OPENVINO_TOOLKIT=${OPENVINO_TOOLKIT}
+ENV REID_MODEL_DIR=${HOME}/reid
 RUN if [ "$OPENVINO_TOOLKIT" = "yes" ]; then \
-        /tmp/components/openvino/install.sh; \
-    fi
-
-# CUDA support
-ARG CUDA_SUPPORT
-ENV CUDA_SUPPORT=${CUDA_SUPPORT}
-RUN if [ "$CUDA_SUPPORT" = "yes" ]; then \
-        /tmp/components/cuda/install.sh; \
+        /tmp/components/openvino/install.sh && \
+        mkdir ${REID_MODEL_DIR} && \
+        wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -O reid/reid.xml && \
+        wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -O reid/reid.bin; \
     fi
 
 # Tensorflow annotation support
@@ -120,12 +117,11 @@ RUN apt-get update && \
         echo export "GIT_SSH_COMMAND=\"ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ProxyCommand='nc -X 5 -x ${socks_proxy} %h %p'\"" >> ${HOME}/.bashrc; \
     fi
 
-# Download model for re-identification app
-ENV REID_MODEL_DIR=${HOME}/reid
-RUN if [ "$OPENVINO_TOOLKIT" = "yes" ]; then \
-        mkdir ${HOME}/reid && \
-        wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -O reid/reid.xml && \
-        wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -O reid/reid.bin; \
+# CUDA support
+ARG CUDA_SUPPORT
+ENV CUDA_SUPPORT=${CUDA_SUPPORT}
+RUN if [ "$CUDA_SUPPORT" = "yes" ]; then \
+        /tmp/components/cuda/install.sh; \
     fi
 
 # TODO: CHANGE URL
