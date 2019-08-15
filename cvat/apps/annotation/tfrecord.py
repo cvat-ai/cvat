@@ -129,7 +129,7 @@ def load(file_object, annotations):
     from glob import glob
     import numpy as np
 
-    tf.compat.v1.enable_eager_execution()
+    tf.enable_eager_execution()
 
     def parse_tfrecord_file(filenames):
         def clamp(value, _min, _max):
