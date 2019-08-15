@@ -7,16 +7,15 @@ import {
     CanvasModel,
     Geometry,
     Position,
-    Size,
     FocusData,
+    ActiveElement,
 } from './canvasModel';
 
 export interface CanvasController {
-    readonly gridSize: Size;
     readonly objects: any[];
     readonly focusData: FocusData;
+    readonly activeElement: ActiveElement;
     geometry: Geometry;
-    canvasSize: Size;
 
     zoom(x: number, y: number, direction: number): void;
     enableDrag(x: number, y: number): void;
@@ -79,19 +78,11 @@ export class CanvasControllerImpl implements CanvasController {
         return this.model.objects;
     }
 
-    public set canvasSize(value: Size) {
-        this.model.canvasSize = value;
-    }
-
-    public get canvasSize(): Size {
-        return this.model.canvasSize;
-    }
-
-    public get gridSize(): Size {
-        return this.model.gridSize;
-    }
-
     public get focusData(): FocusData {
         return this.model.focusData;
+    }
+
+    public get activeElement(): ActiveElement {
+        return this.model.activeElement;
     }
 }

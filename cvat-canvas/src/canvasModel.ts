@@ -21,6 +21,7 @@ export interface Position {
 export interface Geometry {
     image: Size;
     canvas: Size;
+    grid: Size;
     top: number;
     left: number;
     scale: number;
@@ -31,6 +32,11 @@ export interface Geometry {
 export interface FocusData {
     clientID: number;
     padding: number;
+}
+
+export interface ActiveElement {
+    clientID: number;
+    attributeID: number;
 }
 
 export enum FrameZoom {
@@ -51,16 +57,16 @@ export enum UpdateReasons {
     MOVE = 'move',
     GRID = 'grid',
     FOCUS = 'focus',
+    ACTIVATE = 'activate',
 }
 
 export interface CanvasModel extends MasterImpl {
     readonly image: string;
     readonly objects: any[];
     readonly gridSize: Size;
-    readonly imageSize: Size;
     readonly focusData: FocusData;
+    readonly activeElement: ActiveElement;
     geometry: Geometry;
-    canvasSize: Size;
 
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
@@ -82,24 +88,29 @@ export interface CanvasModel extends MasterImpl {
 
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     private data: {
-        image: string;
-        objects: any[];
-        imageSize: Size;
-        gridSize: Size;
+        activeElement: ActiveElement;
+        angle: number;
         canvasSize: Size;
+        image: string;
         imageOffset: number;
+        imageSize: Size;
+        focusData: FocusData;
+        gridSize: Size;
+        left: number;
+        objects: any[];
+        rememberAngle: boolean;
         scale: number;
         top: number;
-        left: number;
-        angle: number;
-        rememberAngle: boolean;
-        focusData: FocusData;
     };
 
     public constructor() {
         super();
 
         this.data = {
+            activeElement: {
+                clientID: null,
+                attributeID: null,
+            },
             angle: 0,
             canvasSize: {
                 height: 0,
@@ -185,7 +196,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public activate(clientID: number, attributeID: number): void {
-        console.log(clientID, attributeID);
+        this.data.activeElement = {
+            clientID,
+            attributeID,
+        };
+
+        this.notify(UpdateReasons.ACTIVATE);
     }
 
     public rotate(rotation: Rotation, remember: boolean = false): void {
@@ -274,14 +290,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public get geometry(): Geometry {
         return {
             angle: this.data.angle,
-            canvas: {
-                height: this.data.canvasSize.height,
-                width: this.data.canvasSize.width,
-            },
-            image: {
-                height: this.data.imageSize.height,
-                width: this.data.imageSize.width,
-            },
+            canvas: Object.assign({}, this.data.canvasSize),
+            image: Object.assign({}, this.data.imageSize),
+            grid: Object.assign({}, this.data.gridSize),
             left: this.data.left,
             offset: this.data.imageOffset,
             scale: this.data.scale,
@@ -291,18 +302,18 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public set geometry(geometry: Geometry) {
         this.data.angle = geometry.angle;
-        this.data.canvasSize = {
-            height: geometry.canvas.height,
-            width: geometry.canvas.width,
-        };
-        this.data.imageSize = {
-            height: geometry.image.height,
-            width: geometry.image.width,
-        };
+        this.data.canvasSize = Object.assign({}, geometry.canvas);
+        this.data.imageSize = Object.assign({}, geometry.image);
+        this.data.gridSize = Object.assign({}, geometry.grid);
         this.data.left = geometry.left;
         this.data.top = geometry.top;
         this.data.imageOffset = geometry.offset;
         this.data.scale = geometry.scale;
+
+        this.data.imageOffset = Math.floor(Math.max(
+            this.data.canvasSize.height / FrameZoom.MIN,
+            this.data.canvasSize.width / FrameZoom.MIN,
+        ));
     }
 
     public get image(): string {
@@ -313,43 +324,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return this.data.objects;
     }
 
-    public get imageSize(): Size {
-        return {
-            height: this.data.imageSize.height,
-            width: this.data.imageSize.width,
-        };
-    }
-
-    public set canvasSize(value: Size) {
-        this.data.canvasSize = {
-            height: value.height,
-            width: value.width,
-        };
-
-        this.data.imageOffset = Math.floor(Math.max(
-            this.data.canvasSize.height / FrameZoom.MIN,
-            this.data.canvasSize.width / FrameZoom.MIN,
-        ));
-    }
-
-    public get canvasSize(): Size {
-        return {
-            height: this.data.canvasSize.height,
-            width: this.data.canvasSize.width,
-        };
-    }
-
     public get gridSize(): Size {
-        return {
-            height: this.data.gridSize.height,
-            width: this.data.gridSize.width,
-        };
+        return Object.assign({}, this.data.gridSize);
     }
 
     public get focusData(): FocusData {
-        return {
-            clientID: this.data.focusData.clientID,
-            padding: this.data.focusData.padding,
-        };
+        return Object.assign({}, this.data.focusData);
+    }
+
+    public get activeElement(): ActiveElement {
+        return Object.assign({}, this.data.activeElement);
     }
 }
