@@ -144,6 +144,20 @@ function build() {
                     .apiWrapper(cvat.server.logout);
                 return result;
             },
+            /**
+                * Method allows to know whether you are authorized on the server
+                * @method authorized
+                * @async
+                * @memberof module:API.cvat.server
+                * @returns {boolean}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async authorized() {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.server.authorized);
+                return result;
+            },
         },
         /**
             * Namespace is used for getting tasks

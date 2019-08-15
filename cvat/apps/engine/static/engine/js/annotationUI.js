@@ -67,16 +67,16 @@ function blurAllElements() {
 
 function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationSaverModel,
     uploadAnnotationButton, format) {
+    $('#annotationFileSelector').attr('accept', `.${format.format}`);
     $('#annotationFileSelector').one('change', async (changedFileEvent) => {
         const file = changedFileEvent.target.files['0'];
         changedFileEvent.target.value = '';
         if (!file) return;
-        uploadAnnotationButton.text('Uploading..');
         uploadAnnotationButton.prop('disabled', true);
         const annotationData = new FormData();
         annotationData.append('annotation_file', file);
         try {
-            await uploadJobAnnotationRequest(jobId, annotationData, format);
+            await uploadJobAnnotationRequest(jobId, annotationData, format.display_name);
             historyModel.empty();
             shapeCollectionModel.empty();
             const data = await $.get(`/api/v1/jobs/${jobId}/annotations`);
@@ -87,7 +87,6 @@ function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationS
             showMessage(error.message);
         } finally {
             uploadAnnotationButton.prop('disabled', false);
-            uploadAnnotationButton.text('Upload Annotation');
         }
     }).click();
 }
@@ -388,56 +387,59 @@ function setupMenu(job, task, shapeCollectionModel,
     $('#settingsButton').attr('title', `
         ${shortkeys.open_settings.view_value} - ${shortkeys.open_settings.description}`);
 
+    const downloadButton = $('#downloadAnnotationButton');
+    const uploadButton = $('#uploadAnnotationButton');
+
+    const loaders = {};
+
     for (const format of annotationFormats) {
-        for (const dumpSpec of format.dumpers) {
-            const listItem = $(`<li>${dumpSpec.display_name}</li>`).on('click', async () => {
-                $('#downloadAnnotationButton')[0].disabled = true;
-                $('#downloadDropdownMenu').addClass('hidden');
-                try {
-                    await dumpAnnotationRequest(task.id, task.name, dumpSpec.display_name);
-                } catch (error) {
-                    showMessage(error.message);
-                } finally {
-                    $('#downloadAnnotationButton')[0].disabled = false;
-                }
-            });
-            if (isDefaultFormat(dumpSpec.display_name, task.mode)) {
-                listItem.addClass('bold');
+        for (const dumper of format.dumpers) {
+            const item = $(`<option>${dumper.display_name}</li>`);
+
+            if (!isDefaultFormat(dumper.display_name, window.cvat.job.mode)) {
+                item.addClass('regular');
             }
-            $('#downloadDropdownMenu').append(listItem);
+
+            item.appendTo(downloadButton);
         }
 
         for (const loader of format.loaders) {
-            $(`<li>${loader.display_name}</li>`).on('click', async () => {
-                $('#uploadAnnotationButton')[0].disabled = true;
-                $('#uploadDropdownMenu').addClass('hidden');
-                try {
-                    userConfirm('Current annotation will be removed from the client. Continue?',
-                        async () => {
-                            await uploadAnnotation(
-                                job.id,
-                                shapeCollectionModel,
-                                historyModel,
-                                annotationSaverModel,
-                                $('#uploadAnnotationButton'),
-                                loader.display_name,
-                            );
-                        });
-                } catch (error) {
-                    showMessage(error.message);
-                } finally {
-                    $('#uploadAnnotationButton')[0].disabled = false;
-                }
-            }).appendTo('#uploadDropdownMenu');
+            loaders[loader.display_name] = loader;
+            $(`<option class="regular">${loader.display_name}</li>`).appendTo(uploadButton);
         }
     }
 
-    $('#downloadAnnotationButton').on('click', () => {
-        $('#downloadDropdownMenu').toggleClass('hidden');
+    downloadButton.on('change', async (e) => {
+        const dumper = e.target.value;
+        downloadButton.prop('value', 'Dump Annotation');
+        try {
+            downloadButton.prop('disabled', true);
+            await dumpAnnotationRequest(task.id, task.name, dumper);
+        } catch (error) {
+            showMessage(error.message);
+        } finally {
+            downloadButton.prop('disabled', false);
+        }
     });
 
-    $('#uploadAnnotationButton').on('click', () => {
-        $('#uploadDropdownMenu').toggleClass('hidden');
+    uploadButton.on('change', (e) => {
+        const loader = loaders[e.target.value];
+        uploadButton.prop('value', 'Upload Annotation');
+        userConfirm('Current annotation will be removed from the client. Continue?',
+            async () => {
+                try {
+                    await uploadAnnotation(
+                        job.id,
+                        shapeCollectionModel,
+                        historyModel,
+                        annotationSaverModel,
+                        $('#uploadAnnotationButton'),
+                        loader,
+                    );
+                } catch (error) {
+                    showMessage(error.message);
+                }
+            });
     });
 
     $('#removeAnnotationButton').on('click', () => {
@@ -496,6 +498,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
             z_order: taskData.z_order,
             id: jobData.id,
             task_id: taskData.id,
+            mode: taskData.mode,
             images: imageMetaData,
         },
         search: {
