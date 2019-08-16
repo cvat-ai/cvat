@@ -23,7 +23,7 @@
             Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
             Axios.defaults.xsrfCookieName = 'csrftoken';
 
-            const token = store.get('token');
+            let token = store.get('token');
             if (token) {
                 Axios.defaults.headers.common.Authorization = `Token ${token}`;
             }
@@ -170,7 +170,7 @@
                     Axios.defaults.headers.common.Cookie = cookies;
                 }
 
-                const token = authenticationResponse.data.key;
+                token = authenticationResponse.data.key;
                 store.set('token', token);
                 Axios.defaults.headers.common.Authorization = `Token ${token}`;
             }
