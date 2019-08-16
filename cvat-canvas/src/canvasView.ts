@@ -103,15 +103,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private controller: CanvasController;
     private svgShapes: ShapeDict;
     private svgTexts: TextDict;
-    private activeElement: ActiveElement;
+    private activeElement: {
+        state: any;
+        attributeID: number;
+    };
+
     private mode: Mode;
     private readonly BASE_STROKE_WIDTH: number;
     private readonly BASE_POINT_SIZE: number;
 
     public constructor(model: CanvasModel & Master, controller: CanvasController) {
         this.controller = controller;
-        this.BASE_STROKE_WIDTH = 2.5;
-        this.BASE_POINT_SIZE = 7;
+        this.BASE_STROKE_WIDTH = 2;
+        this.BASE_POINT_SIZE = 8;
         this.svgShapes = {};
         this.svgTexts = {};
         this.activeElement = null;
@@ -416,11 +420,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private addObjects(ctm: SVGMatrix, states: any[], geometry: Geometry): void {
-        for (const object of states) {
-            if (object.objectType === 'tag') {
-                this.addTag(object, geometry);
+        for (const state of states) {
+            if (state.objectType === 'tag') {
+                this.addTag(state, geometry);
             } else {
-                const points: number[] = (object.points as number[]);
+                const points: number[] = (state.points as number[]);
                 const translatedPoints: number[] = [];
                 for (let i = 0; i <= points.length - 1; i += 2) {
                     let point: SVGPoint = this.background.createSVGPoint();
@@ -431,9 +435,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }
 
                 // TODO: Use enums after typification cvat-core
-                if (object.shapeType === 'rectangle') {
-                    this.svgShapes[object.clientID] = this
-                        .addRect(translatedPoints, object, geometry);
+                if (state.shapeType === 'rectangle') {
+                    this.svgShapes[state.clientID] = this
+                        .addRect(translatedPoints, state, geometry);
                 } else {
                     const stringified = translatedPoints.reduce(
                         (acc: string, val: number, idx: number): string => {
@@ -445,48 +449,83 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         }, '',
                     );
 
-                    if (object.shapeType === 'polygon') {
-                        this.svgShapes[object.clientID] = this
-                            .addPolygon(stringified, object, geometry);
-                    } else if (object.shapeType === 'polyline') {
-                        this.svgShapes[object.clientID] = this
-                            .addPolyline(stringified, object, geometry);
-                    } else if (object.shapeType === 'points') {
-                        this.svgShapes[object.clientID] = this
-                            .addPoints(stringified, object, geometry);
+                    if (state.shapeType === 'polygon') {
+                        this.svgShapes[state.clientID] = this
+                            .addPolygon(stringified, state, geometry);
+                    } else if (state.shapeType === 'polyline') {
+                        this.svgShapes[state.clientID] = this
+                            .addPolyline(stringified, state, geometry);
+                    } else if (state.shapeType === 'points') {
+                        this.svgShapes[state.clientID] = this
+                            .addPoints(stringified, state, geometry);
                     }
                 }
 
-                this.svgTexts[object.clientID] = this.addText(object);
-                this.updateTextPosition(
-                    this.svgTexts[object.clientID],
-                    this.svgShapes[object.clientID],
-                );
+                // TODO: Use enums after typification cvat-core
+                if (state.visibility === 'all') {
+                    this.svgTexts[state.clientID] = this.addText(state);
+                    this.updateTextPosition(
+                        this.svgTexts[state.clientID],
+                        this.svgShapes[state.clientID],
+                    );
+                }
             }
         }
     }
 
-    private deactivate(activeElement: ActiveElement): void {
-        this.svgTexts[activeElement.clientID].addClass('cvat_canvas_hidden');
-        (this.svgShapes[activeElement.clientID] as any)
-            .draggable(false)
-            .selectize(false, {
-                deepSelect: true,
-            }).resize(false);
-        this.activeElement = null;
+    private deactivate(): void {
+        if (this.activeElement) {
+            const { state } = this.activeElement;
+
+            (this.svgShapes[this.activeElement.state.clientID] as any)
+                .draggable(false)
+                .selectize(false, {
+                    deepSelect: true,
+                }).resize(false);
+
+            // Hide text only if it is hidden by settings
+            const text = this.svgTexts[state.clientID];
+            if (text && state.visibility === 'shape') {
+                text.remove();
+                delete this.svgTexts[state.clientID];
+            }
+            this.activeElement = null;
+        }
     }
 
     private activate(geometry: Geometry, activeElement: ActiveElement): void {
-        if (this.activeElement && this.activeElement.clientID !== activeElement.clientID) {
-            this.deactivate(this.activeElement);
+        // Check if other element have been already activated
+        if (this.activeElement) {
+            // Check if it is the same element
+            if (this.activeElement.state.clientID === activeElement.clientID) {
+                return;
+            }
+
+            // Deactivate previous element
+            this.deactivate();
         }
 
-        this.activeElement = activeElement;
+        const state = this.controller.objects
+            .filter((el): boolean => el.clientID === activeElement.clientID)[0];
+        this.activeElement = {
+            attributeID: activeElement.attributeID,
+            state,
+        };
+
         const shape = this.svgShapes[activeElement.clientID];
-        const text = this.svgTexts[activeElement.clientID];
-        text.removeClass('cvat_canvas_hidden');
+        let text = this.svgTexts[activeElement.clientID];
+        // Draw text if it's hidden by default
+        if (!text && state.visibility === 'shape') {
+            text = this.addText(state);
+            this.svgTexts[state.clientID] = text;
+            this.updateTextPosition(
+                text,
+                shape,
+            );
+        }
 
         const self = this;
+        this.content.append(shape.node);
         (shape as any).draggable().on('dragstart', (): void => {
             this.mode = Mode.DRAG;
             if (text) {
