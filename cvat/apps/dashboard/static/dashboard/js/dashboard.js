@@ -611,7 +611,7 @@ class DashboardView {
 
             if (!validateBugTracker()) {
                 taskMessage.css('color', 'red');
-                taskMessage.text('Bad bag tracker link');
+                taskMessage.text('Bad bug tracker link');
                 return;
             }
 
