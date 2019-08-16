@@ -14,7 +14,6 @@
     "antd": "^3.19.1",
     "babel-plugin-import": "^1.11.2",
     "customize-cra": "^0.2.12",
-    "cvat-core.js": "file:../cvat-core",
     "less": "^3.9.0",
     "less-loader": "^5.0.0",
     "node-sass": "^4.12.0",

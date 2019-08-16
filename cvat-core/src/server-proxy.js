@@ -105,6 +105,31 @@
                 return response.data;
             }
 
+            async function register(username, firstName, lastName, email, password1, password2) {
+                let response = null;
+                try {
+                    const data = JSON.stringify({
+                        username,
+                        first_name: firstName,
+                        last_name: lastName,
+                        email,
+                        password1,
+                        password2,
+                    });
+                    response = await Axios.post(`${config.backendAPI}/auth/register`, data, {
+                        proxy: config.proxy,
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not register `{0}` user on the server'.format(username),
+                        code,
+                    );
+                }
+
+                return response.data;
+            }
+
             async function login(username, password) {
                 const authenticationData = ([
                     `${encodeURIComponent('username')}=${encodeURIComponent(username)}`,
@@ -152,7 +177,7 @@
 
             async function logout() {
                 try {
-                    await Axios.get(`${config.backendAPI}/auth/logout`, {
+                    await Axios.post(`${config.backendAPI}/auth/logout`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
@@ -578,6 +603,7 @@
                         login,
                         logout,
                         authorized,
+                        register,
                     }),
                     writable: false,
                 },
