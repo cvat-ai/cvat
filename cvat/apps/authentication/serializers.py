@@ -1,5 +1,4 @@
 from rest_auth.registration.serializers import RegisterSerializer
-from rest_auth.registration.views import RegisterView
 from rest_framework import serializers
 
 
@@ -13,3 +12,5 @@ class RegisterSerializerEx(RegisterSerializer):
         'first_name': self.validated_data.get('first_name', ''),
         'last_name': self.validated_data.get('last_name', ''),
     })
+
+    return data
