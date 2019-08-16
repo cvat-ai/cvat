@@ -14,6 +14,9 @@ import 'svg.resize.js';
 import 'svg.select.js';
 
 import { CanvasController } from './canvasController';
+import { Listener, Master } from './master';
+import { DrawHandler, DrawHandlerImpl } from './drawHandler';
+import consts from './consts';
 import {
     CanvasModel,
     Geometry,
@@ -22,12 +25,13 @@ import {
     FocusData,
     FrameZoom,
     ActiveElement,
+    DrawData,
 } from './canvasModel';
-import { Listener, Master } from './master';
 
 export interface CanvasView {
     html(): HTMLDivElement;
 }
+
 
 interface ShapeDict {
     [index: number]: SVG.Shape;
@@ -41,6 +45,7 @@ enum Mode {
     IDLE = 'idle',
     DRAG = 'drag',
     RESIZE = 'resize',
+    DRAW = 'draw',
 }
 
 // Translate point array from the client coordinate system
@@ -103,19 +108,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private controller: CanvasController;
     private svgShapes: ShapeDict;
     private svgTexts: TextDict;
+    private drawHandler: DrawHandler;
     private activeElement: {
         state: any;
         attributeID: number;
     };
 
     private mode: Mode;
-    private readonly BASE_STROKE_WIDTH: number;
-    private readonly BASE_POINT_SIZE: number;
+
+
+    private onNewShape(): void {
+        // this.html().dispatchEvent
+    }
 
     public constructor(model: CanvasModel & Master, controller: CanvasController) {
         this.controller = controller;
-        this.BASE_STROKE_WIDTH = 2;
-        this.BASE_POINT_SIZE = 8;
         this.svgShapes = {};
         this.svgTexts = {};
         this.activeElement = null;
@@ -134,6 +141,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.content = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedContent = (SVG.adopt((this.content as any as HTMLElement)) as SVG.Container);
+        this.drawHandler = new DrawHandlerImpl(this.onNewShape.bind(this), this.adoptedContent);
         this.canvas = window.document.createElement('div');
 
         const loadingCircle: SVGCircleElement = window.document
@@ -255,17 +263,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             // Transform grid
-            this.gridPath.setAttribute('stroke-width', `${this.BASE_STROKE_WIDTH / (2 * geometry.scale)}px`);
+            this.gridPath.setAttribute('stroke-width', `${consts.BASE_STROKE_WIDTH / (2 * geometry.scale)}px`);
 
             // Transform all shape points
             for (const element of window.document.getElementsByClassName('svg_select_points')) {
                 element.setAttribute(
                     'stroke-width',
-                    `${this.BASE_STROKE_WIDTH / (3 * geometry.scale)}`,
+                    `${consts.BASE_STROKE_WIDTH / (3 * geometry.scale)}`,
                 );
                 element.setAttribute(
                     'r',
-                    `${this.BASE_POINT_SIZE / (2 * geometry.scale)}`,
+                    `${consts.BASE_POINT_SIZE / (2 * geometry.scale)}`,
                 );
             }
 
@@ -283,7 +291,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const object = this.svgShapes[key];
                     if (object.attr('stroke-width')) {
                         object.attr({
-                            'stroke-width': this.BASE_STROKE_WIDTH / (geometry.scale),
+                            'stroke-width': consts.BASE_STROKE_WIDTH / (geometry.scale),
                         });
                     }
                 }
@@ -299,6 +307,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     );
                 }
             }
+
+            // Transform handlers
+            this.drawHandler.transform(geometry);
         }
 
         function resize(geometry: Geometry): void {
@@ -412,6 +423,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
             computeFocus.call(this, this.controller.focusData, geometry);
         } else if (reason === UpdateReasons.ACTIVATE) {
             this.activate(geometry, this.controller.activeElement);
+        } else if (reason === UpdateReasons.DRAW) {
+            const data: DrawData = this.controller.drawData;
+            if (data.enabled) {
+                this.mode = Mode.DRAW;
+                this.deactivate();
+            } else {
+                this.mode = Mode.IDLE;
+            }
+            this.drawHandler.draw(data, geometry);
         }
     }
 
@@ -544,7 +564,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         (shape as any).selectize({
             deepSelect: true,
-            pointSize: this.BASE_POINT_SIZE / geometry.scale,
+            pointSize: consts.BASE_POINT_SIZE / geometry.scale,
             rotationPoint: false,
             pointType(cx: number, cy: number): SVG.Circle {
                 const circle: SVG.Circle = this.nested
@@ -553,7 +573,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     .fill(shape.node.getAttribute('fill'))
                     .center(cx, cy)
                     .attr({
-                        'stroke-width': self.BASE_STROKE_WIDTH / (3 * geometry.scale),
+                        'stroke-width': consts.BASE_STROKE_WIDTH / (3 * geometry.scale),
                     });
 
                 circle.node.addEventListener('mouseenter', (): void => {
@@ -659,7 +679,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             fill: state.color,
             'shape-rendering': 'geometricprecision',
             stroke: darker(state.color, 50),
-            'stroke-width': this.BASE_STROKE_WIDTH / geometry.scale,
+            'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             zOrder: state.zOrder,
         }).move(xtl, ytl)
             .addClass('cvat_canvas_shape');
@@ -672,7 +692,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             fill: state.color,
             'shape-rendering': 'geometricprecision',
             stroke: darker(state.color, 50),
-            'stroke-width': this.BASE_STROKE_WIDTH / geometry.scale,
+            'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');
     }
@@ -684,7 +704,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             fill: state.color,
             'shape-rendering': 'geometricprecision',
             stroke: darker(state.color, 50),
-            'stroke-width': this.BASE_STROKE_WIDTH / geometry.scale,
+            'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');
     }
@@ -697,7 +717,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             opacity: 0,
             'shape-rendering': 'geometricprecision',
             stroke: darker(state.color, 50),
-            'stroke-width': this.BASE_STROKE_WIDTH / geometry.scale,
+            'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');
     }

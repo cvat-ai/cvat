@@ -9,12 +9,15 @@ import {
     Position,
     FocusData,
     ActiveElement,
+    DrawData,
 } from './canvasModel';
 
 export interface CanvasController {
     readonly objects: any[];
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
+    readonly objectStateClass: any;
+    readonly drawData: DrawData;
     geometry: Geometry;
 
     zoom(x: number, y: number, direction: number): void;
@@ -84,5 +87,13 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get activeElement(): ActiveElement {
         return this.model.activeElement;
+    }
+
+    public get objectStateClass(): any {
+        return this.model.objectStateClass;
+    }
+
+    public get drawData(): DrawData {
+        return this.model.drawData;
     }
 }

@@ -26,7 +26,7 @@ Canvas is created by using constructor:
 
 ```js
     const { Canvas } = require('./canvas');
-    const canvas = new Canvas();
+    const canvas = new Canvas(ObjectStateClass);
 ```
 
 - Canvas has transparent background
@@ -45,6 +45,14 @@ Canvas itself handles:
 All methods are sync.
 
 ```ts
+    interface DrawData {
+        enabled: boolean;
+        shapeType?: string;
+        numberOfPoints?: number;
+        initialState?: any;
+        aim?: boolean;
+    }
+
     html(): HTMLDivElement;
     setup(frameData: FrameData, objectStates: ObjectState): void;
     activate(clientID: number, attributeID?: number): void;
@@ -53,10 +61,10 @@ All methods are sync.
     fit(): void;
     grid(stepX: number, stepY: number): void;
 
-    draw(enabled?: boolean, shapeType?: string, numberOfPoints?: number, initialState?: any): void | ObjectState;
-    split(enabled?: boolean): void | ObjectState;
-    group(enabled?: boolean): void | ObjectState;
-    merge(enabled?: boolean): void | ObjectState;
+    draw(drawData: DrawData): void;
+    split(enabled?: boolean): void;
+    group(enabled?: boolean): void;
+    merge(enabled?: boolean): void;
 
     cancel(): any;
 ```

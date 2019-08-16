@@ -39,6 +39,14 @@ export interface ActiveElement {
     attributeID: number;
 }
 
+export interface DrawData {
+    enabled: boolean;
+    shapeType?: string;
+    numberOfPoints?: number;
+    initialState?: any;
+    aim?: boolean;
+}
+
 export enum FrameZoom {
     MIN = 0.1,
     MAX = 10,
@@ -58,6 +66,7 @@ export enum UpdateReasons {
     GRID = 'grid',
     FOCUS = 'focus',
     ACTIVATE = 'activate',
+    DRAW = 'draw',
 }
 
 export interface CanvasModel extends MasterImpl {
@@ -66,6 +75,8 @@ export interface CanvasModel extends MasterImpl {
     readonly gridSize: Size;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
+    readonly objectStateClass: any;
+    readonly drawData: DrawData;
     geometry: Geometry;
 
     zoom(x: number, y: number, direction: number): void;
@@ -78,19 +89,21 @@ export interface CanvasModel extends MasterImpl {
     fit(): void;
     grid(stepX: number, stepY: number): void;
 
-    draw(enabled: boolean, shapeType: string, numberOfPoints: number, initialState: any): any;
-    split(enabled: boolean): any;
-    group(enabled: boolean): any;
-    merge(enabled: boolean): any;
+    draw(drawData: DrawData): void;
+    split(enabled: boolean): void;
+    group(enabled: boolean): void;
+    merge(enabled: boolean): void;
 
     cancel(): void;
 }
 
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
+    private ObjectStateClass: any;
     private data: {
         activeElement: ActiveElement;
         angle: number;
         canvasSize: Size;
+        drawData: DrawData;
         image: string;
         imageOffset: number;
         imageSize: Size;
@@ -103,9 +116,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         top: number;
     };
 
-    public constructor() {
+    public constructor(ObjectStateClass: any) {
         super();
 
+        this.ObjectStateClass = ObjectStateClass;
         this.data = {
             activeElement: {
                 clientID: null,
@@ -115,6 +129,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             canvasSize: {
                 height: 0,
                 width: 0,
+            },
+            drawData: {
+                enabled: false,
+                shapeType: null,
+                numberOfPoints: null,
+                initialState: null,
             },
             image: '',
             imageOffset: 0,
@@ -261,14 +281,21 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.GRID);
     }
 
-    public draw(enabled: boolean, shapeType: string,
-        numberOfPoints: number, initialState: any): any {
-        return {
-            enabled,
-            initialState,
-            numberOfPoints,
-            shapeType,
-        };
+    public draw(drawData: DrawData): void {
+        if (drawData.enabled && this.data.drawData.enabled) {
+            return;
+        }
+
+        if (!drawData.enabled && !this.data.drawData.enabled) {
+            return;
+        }
+
+        if (drawData.enabled && !drawData.shapeType) {
+            return;
+        }
+
+        this.data.drawData = Object.assign({}, drawData);
+        this.notify(UpdateReasons.DRAW);
     }
 
     public split(enabled: boolean): any {
@@ -334,5 +361,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get activeElement(): ActiveElement {
         return Object.assign({}, this.data.activeElement);
+    }
+
+    public get objectStateClass(): any {
+        return this.objectStateClass;
+    }
+
+    public get drawData(): DrawData {
+        return Object.assign({}, this.data.drawData);
     }
 }

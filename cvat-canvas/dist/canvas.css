@@ -23,6 +23,10 @@ polyline.cvat_canvas_shape {
     pointer-events: none;
 }
 
+.cvat_canvas_aim {
+    stroke: red;
+}
+
 .cvat_canvas_shape_activated {
 
 }
