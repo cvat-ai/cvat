@@ -313,7 +313,7 @@ def run_inference_engine_annotation(data, model_file, weights_file,
     def add_shapes(shapes, target_container):
         for shape in shapes:
             if shape["label"] not in labels_mapping:
-                    continue
+                continue
             db_label = labels_mapping[shape["label"]]
 
             target_container.append({
