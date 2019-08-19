@@ -85,10 +85,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private mode: Mode;
 
-    private onNewShape(points): void {
-        // create and return element
-        // this.html().dispatchEvent
-        this.drawHandler.draw({
+    private onDrawDone(data: Record<string, any>): void {
+        if (data) {
+            const event: CustomEvent = new CustomEvent('canvas.drawn', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    // eslint-disable-next-line new-cap
+                    state: new this.controller.objectStateClass(data),
+                },
+            });
+
+            this.canvas.dispatchEvent(event);
+        }
+
+        this.controller.draw({
             enabled: false,
         });
     }
@@ -113,7 +124,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.content = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedContent = (SVG.adopt((this.content as any as HTMLElement)) as SVG.Container);
-        this.drawHandler = new DrawHandlerImpl(this.onNewShape.bind(this), this.adoptedContent);
+        this.drawHandler = new DrawHandlerImpl(this.onDrawDone.bind(this), this.adoptedContent);
         this.canvas = window.document.createElement('div');
 
         const loadingCircle: SVGCircleElement = window.document
@@ -589,7 +600,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     // Update text position after corresponding box has been moved, resized, etc.
     private updateTextPosition(text: SVG.Text, shape: SVG.Shape): void {
-        const margin = 10;
         let box = (shape.node as any).getBBox();
 
         // Translate the whole box to the client coordinate system
@@ -610,13 +620,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // Find the best place for a text
         let [clientX, clientY]: number[] = [box.x + box.width, box.y];
         if (clientX + (text.node as any as SVGTextElement)
-            .getBBox().width + margin > this.canvas.offsetWidth) {
+            .getBBox().width + consts.TEXT_MARGIN > this.canvas.offsetWidth) {
             ([clientX, clientY] = [box.x, box.y]);
         }
 
         // Translate back to text SVG
         const [x, y]: number[] = translateToSVG(this.text, [
-            clientX + margin,
+            clientX + consts.TEXT_MARGIN,
             clientY,
         ]);
 

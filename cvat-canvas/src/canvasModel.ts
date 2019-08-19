@@ -98,8 +98,8 @@ export interface CanvasModel extends MasterImpl {
 }
 
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
-    private ObjectStateClass: any;
     private data: {
+        ObjectStateClass: any;
         activeElement: ActiveElement;
         angle: number;
         canvasSize: Size;
@@ -119,7 +119,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public constructor(ObjectStateClass: any) {
         super();
 
-        this.ObjectStateClass = ObjectStateClass;
         this.data = {
             activeElement: {
                 clientID: null,
@@ -152,6 +151,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             left: 0,
             objects: [],
+            ObjectStateClass,
             rememberAngle: false,
             scale: 1,
             top: 0,
@@ -295,6 +295,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         // TODO: check shape types
+        // TODO: check number of points for shapes
         this.data.drawData = Object.assign({}, drawData);
         this.notify(UpdateReasons.DRAW);
     }
@@ -365,7 +366,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public get objectStateClass(): any {
-        return this.objectStateClass;
+        return this.data.ObjectStateClass;
     }
 
     public get drawData(): DrawData {

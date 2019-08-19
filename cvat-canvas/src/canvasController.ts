@@ -21,6 +21,7 @@ export interface CanvasController {
     geometry: Geometry;
 
     zoom(x: number, y: number, direction: number): void;
+    draw(drawData: DrawData): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
@@ -67,6 +68,10 @@ export class CanvasControllerImpl implements CanvasController {
 
     public disableDrag(): void {
         this.isDragging = false;
+    }
+
+    public draw(drawData: DrawData): void {
+        this.model.draw(drawData);
     }
 
     public get geometry(): Geometry {
