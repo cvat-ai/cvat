@@ -122,7 +122,7 @@
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new ServerError(
-                        'Could not register `{0}` user on the server'.format(username),
+                        `Could not register '${username}' user on the server`,
                         code,
                     );
                 }
@@ -140,27 +140,17 @@
                 try {
                     authenticationResponse = await Axios.post(
                         `${config.backendAPI}/auth/login`,
-                        authenticationData,
-                        {
-                            'Content-Type': 'application/x-www-form-urlencoded',
+                        authenticationData, {
                             proxy: config.proxy,
-                            // do not redirect to a dashboard,
-                            // otherwise we don't get a session id in a response
-                            maxRedirects: 0,
                         },
                     );
                 } catch (errorData) {
-                    if (errorData.response.status === 302) {
-                        // Redirection code expected
-                        authenticationResponse = errorData.response;
-                    } else {
-                        const code = errorData.response
-                            ? errorData.response.status : errorData.code;
-                        throw new ServerError(
-                            'Could not login on a server',
-                            code,
-                        );
-                    }
+                    const code = errorData.response
+                        ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not login on a server',
+                        code,
+                    );
                 }
 
                 if (authenticationResponse.headers['set-cookie']) {
