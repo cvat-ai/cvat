@@ -192,9 +192,26 @@ class JobAnnotation:
         self.logger = slogger.job[self.db_job.id]
         self.db_labels = {db_label.id:db_label
             for db_label in db_segment.task.label_set.all()}
-        self.db_attributes = {db_attr.id:db_attr
-            for db_attr in models.AttributeSpec.objects.filter(
-                label__task__id=db_segment.task.id)}
+
+        self.db_attributes_splitted = {}
+        for db_label in self.db_labels.values():
+            self.db_attributes_splitted[db_label.id] = {
+                'mutable': {},
+                'immutable': {},
+            }
+            for db_attr in db_label.attributespec_set.all():
+                value = {
+                    'spec_id': db_attr.id,
+                    'value': db_attr.default_value,
+                }
+
+                if db_attr.mutable:
+                    self.db_attributes_splitted[db_label.id]['mutable'][db_attr.id] = value
+                else:
+                    self.db_attributes_splitted[db_label.id]['immutable'][db_attr.id] = value
+
+        self.db_attributes = {label_id: {**db_attr['mutable'], **db_attr['immutable']}
+                                  for label_id, db_attr in self.db_attributes_splitted.items()}
 
     def reset(self):
         self.ir_data.reset()
@@ -206,30 +223,32 @@ class JobAnnotation:
         db_shape_attrvals = []
 
         for track in tracks:
-            track_attributes = track.pop("attributes", [])
+            track_attributes = { attr['spec_id']: attr for attr in track.pop("attributes", []) }
             shapes = track.pop("shapes")
             db_track = models.LabeledTrack(job=self.db_job, **track)
             if db_track.label_id not in self.db_labels:
                 raise AttributeError("label_id `{}` is invalid".format(db_track.label_id))
 
-            for attr in track_attributes:
-                db_attrval = models.LabeledTrackAttributeVal(**attr)
-                if db_attrval.spec_id not in self.db_attributes:
-                    raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
+            for db_attr_id, db_attr in self.db_attributes_splitted[db_track.label_id]['immutable'].items():
+                if db_attr_id in track_attributes:
+                    db_attrval = models.LabeledTrackAttributeVal(**track_attributes[db_attr_id])
+                else:
+                    db_attrval = models.LabeledTrackAttributeVal(**db_attr)
                 db_attrval.track_id = len(db_tracks)
                 db_track_attrvals.append(db_attrval)
 
             for shape in shapes:
-                shape_attributes = shape.pop("attributes", [])
+                shape_attributes = { attr['spec_id']: attr for attr in shape.pop("attributes", []) }
                 # FIXME: need to clamp points (be sure that all of them inside the image)
                 # Should we check here or implement a validator?
                 db_shape = models.TrackedShape(**shape)
                 db_shape.track_id = len(db_tracks)
 
-                for attr in shape_attributes:
-                    db_attrval = models.TrackedShapeAttributeVal(**attr)
-                    if db_attrval.spec_id not in self.db_attributes:
-                        raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
+                for db_attr_id, db_attr in self.db_attributes_splitted[db_track.label_id]['mutable'].items():
+                    if db_attr_id in shape_attributes:
+                        db_attrval = models.TrackedShapeAttributeVal(**shape_attributes[db_attr_id])
+                    else:
+                        db_attrval = models.TrackedShapeAttributeVal(**db_attr)
                     db_attrval.shape_id = len(db_shapes)
                     db_shape_attrvals.append(db_attrval)
 
@@ -286,17 +305,19 @@ class JobAnnotation:
         db_attrvals = []
 
         for shape in shapes:
-            attributes = shape.pop("attributes", [])
+            attributes = { attr['spec_id']: attr for attr in shape.pop("attributes", []) }
             # FIXME: need to clamp points (be sure that all of them inside the image)
             # Should we check here or implement a validator?
             db_shape = models.LabeledShape(job=self.db_job, **shape)
             if db_shape.label_id not in self.db_labels:
                 raise AttributeError("label_id `{}` is invalid".format(db_shape.label_id))
 
-            for attr in attributes:
-                db_attrval = models.LabeledShapeAttributeVal(**attr)
-                if db_attrval.spec_id not in self.db_attributes:
-                    raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
+
+            for db_attr_id, db_attr in self.db_attributes[db_shape.label_id].items():
+                if db_attr_id in attributes:
+                    db_attrval = models.LabeledShapeAttributeVal(**attributes[db_attr_id])
+                else:
+                    db_attrval = models.LabeledShapeAttributeVal(**db_attr)
                 db_attrval.shape_id = len(db_shapes)
                 db_attrvals.append(db_attrval)
 
@@ -328,16 +349,17 @@ class JobAnnotation:
         db_attrvals = []
 
         for tag in tags:
-            attributes = tag.pop("attributes", [])
+            attributes = { attr['spec_id']: attr for attr in tag.pop("attributes", []) }
             db_tag = models.LabeledImage(job=self.db_job, **tag)
             if db_tag.label_id not in self.db_labels:
                 raise AttributeError("label_id `{}` is invalid".format(db_tag.label_id))
 
-            for attr in attributes:
-                db_attrval = models.LabeledImageAttributeVal(**attr)
-                if db_attrval.spec_id not in self.db_attributes:
-                    raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
-                db_attrval.tag_id = len(db_tags)
+            for db_attr_id, db_attr in self.db_attributes[db_tag.label_id].items():
+                if db_attr_id in attributes:
+                    db_attrval = models.LabeledImageAttributeVal(**attributes[db_attr_id])
+                else:
+                    db_attrval = models.LabeledImageAttributeVal(**db_attr)
+                db_attrval.shape_id = len(db_tags)
                 db_attrvals.append(db_attrval)
 
             db_tags.append(db_tag)
