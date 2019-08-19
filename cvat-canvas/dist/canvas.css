@@ -43,6 +43,7 @@ polyline.cvat_canvas_shape {
     fill-opacity: 0.1;
     stroke-opacity: 1;
     fill: white;
+    stroke: black;
 }
 
 .svg_select_boundingRect {

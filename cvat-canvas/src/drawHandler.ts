@@ -62,6 +62,16 @@ export class DrawHandlerImpl implements DrawHandler {
         if (this.crosshair) {
             this.removeCrosshair();
         }
+
+        if (this.drawInstance) {
+            if (this.drawData.shapeType === 'rectangle') {
+                this.drawInstance.draw('cancel');
+            } else {
+                this.drawInstance.draw('done');
+            }
+            this.drawInstance.remove();
+            this.drawInstance = null;
+        }
     }
 
     private drawBox(): void {
@@ -216,7 +226,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private drawPolygon(): void {
         this.drawInstance = (this.canvas as any).polygon().draw({
             snapToGrid: 0.1,
-        }).addClass('cvat_canvas_shape_drawing').attr({
+        }).addClass('cvat_canvas_shape_drawing').style({
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
         });
 
@@ -226,8 +236,9 @@ export class DrawHandlerImpl implements DrawHandler {
     private drawPolyline(): void {
         this.drawInstance = (this.canvas as any).polyline().draw({
             snapToGrid: 0.1,
-        }).addClass('cvat_canvas_shape_drawing').attr({
+        }).addClass('cvat_canvas_shape_drawing').style({
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+            'fill-opacity': 0,
         });
 
         this.drawPolyshape();
@@ -236,8 +247,9 @@ export class DrawHandlerImpl implements DrawHandler {
     private drawPoints(): void {
         this.drawInstance = (this.canvas as any).polygon().draw({
             snapToGrid: 0.1,
-        }).addClass('cvat_canvas_shape_drawing').attr({
+        }).addClass('cvat_canvas_shape_drawing').style({
             'stroke-width': 0,
+            opacity: 0,
         });
 
         this.drawPolyshape();
@@ -295,17 +307,37 @@ export class DrawHandlerImpl implements DrawHandler {
                 'stroke-width': consts.BASE_STROKE_WIDTH / (2 * geometry.scale),
             });
         }
+
+        if (this.drawInstance) {
+            this.drawInstance.attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
+            });
+
+            const PaintHandler = Object.values(this.drawInstance.memory())[0];
+
+            for (const point of (PaintHandler as any).set.members) {
+                point.attr(
+                    'stroke-width',
+                    `${consts.BASE_STROKE_WIDTH / (3 * geometry.scale)}`,
+                );
+                point.attr(
+                    'r',
+                    `${consts.BASE_POINT_SIZE / (2 * geometry.scale)}`,
+                );
+            }
+        }
     }
 
     public draw(drawData: DrawData, geometry: Geometry): void {
-        this.drawData = drawData;
         this.geometry = geometry;
 
-        if (this.drawData.enabled) {
+        if (drawData.enabled) {
+            this.drawData = drawData;
             this.initDrawing();
             this.startDraw();
         } else {
             this.closeDrawing();
+            this.drawData = drawData;
         }
     }
 }

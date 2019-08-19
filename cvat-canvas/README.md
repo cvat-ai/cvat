@@ -96,6 +96,7 @@ Standard JS events are used.
     - canvas.splitted => ObjectState
     - canvas.groupped => [ObjectState]
     - canvas.merged => [ObjectState]
+    - canvas.canceled
 ```
 
 ## States
