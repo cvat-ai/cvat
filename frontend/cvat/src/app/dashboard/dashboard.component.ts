@@ -27,7 +27,8 @@ export class DashboardComponent implements OnInit {
   ngAfterViewInit() {
       // DASHBOARD ENTRYPOINT
 
-      this.startupService.get('.../../../../../backend/dashboard/meta').subscribe(
+    //  this.startupService.get('.../../../../../backend/dashboard/meta').subscribe(
+        this.startupService.get('/dashboard/meta').subscribe(
         metaData => this.metaData=metaData,
         errorData => console.log('HTTP Error', errorData)
         /*errorData =>{
@@ -38,8 +39,9 @@ export class DashboardComponent implements OnInit {
         }*/
       );
 
-
-      this.startupService.get('.../../../../../backend/api/v1/tasks${window.location.search}').subscribe(
+/*
+    //  this.startupService.get('.../../../../../backend/api/v1/tasks${window.location.search}').subscribe(
+    this.startupService.get('/api/v1/tasks${window.location.search}').subscribe(
         taskData => this.taskData=taskData,
         errorData => console.log('HTTP Error', errorData)
         /*errorData =>{
@@ -48,7 +50,7 @@ export class DashboardComponent implements OnInit {
                 `Message: ${errorData.responseText || errorData.statusText}`;
             showMessage(message);
         }*/
-      );
+//      );
 
 
 
