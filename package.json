@@ -1,0 +1,46 @@
+{
+  "name": "cvat",
+  "version": "1.0.0",
+  "description": "Eslint && remarklint dependencies",
+  "main": ".eslintrc.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^6.1.0",
+    "eslint-config-airbnb": "^18.0.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-no-unsafe-innerhtml": "^1.0.16",
+    "eslint-plugin-no-unsanitized": "^3.0.2",
+    "eslint-plugin-react": "^7.14.3",
+    "eslint-plugin-react-hooks": "^1.7.0",
+    "eslint-plugin-security": "^1.4.0",
+    "remark-lint-emphasis-marker": "^1.0.3",
+    "remark-lint-list-item-spacing": "^1.1.3",
+    "remark-lint-maximum-heading-length": "^1.0.3",
+    "remark-lint-maximum-line-length": "^1.2.1",
+    "remark-lint-no-dead-urls": "^0.5.0",
+    "remark-lint-no-file-name-irregular-characters": "^1.0.3",
+    "remark-lint-ordered-list-marker-style": "^1.0.3",
+    "remark-lint-strong-marker": "^1.0.3",
+    "remark-lint-unordered-list-marker-style": "^1.0.3",
+    "remark-preset-lint-consistent": "^2.0.3",
+    "remark-preset-lint-markdown-style-guide": "^2.1.3",
+    "remark-preset-lint-recommended": "^3.0.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opencv/cvat.git"
+  },
+  "author": "Intel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/opencv/cvat/issues"
+  },
+  "homepage": "https://github.com/opencv/cvat#readme"
+}
