@@ -33,8 +33,8 @@
               "src/assets/engine/js/base.js",
               "src/assets/engine/js/checkPlatform.js",
               "src/assets/engine/js/userConfig.js",
-              "src/assets/dashboard/js/3rdparty/jstree/jstree.min.js",
-              "src/assets/dashboard/js/3rdparty/pagination/pagination.min.js"
+
+
               ]
           },
           "configurations": {
