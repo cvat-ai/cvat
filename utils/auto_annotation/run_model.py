@@ -1,18 +1,19 @@
 import os
+import sys
 import json
 import argparse
 import random
 import logging
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'cvat.settings.production'
-
-import django
-django.setup()
-
 import numpy as np
 import cv2
 
-from cvat.apps.auto_annotation.model_manager import run_inference_engine_annotation
+work_dir = os.path.dirname(os.path.abspath(__file__))
+cvat_dir = os.path.join(work_dir, '..', '..')
+
+sys.path.insert(0, cvat_dir)
+
+from cvat.apps.auto_annotation.inference import run_inference_engine_annotation
 
 
 def _get_kwargs():
