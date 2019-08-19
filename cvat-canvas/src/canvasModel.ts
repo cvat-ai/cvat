@@ -44,7 +44,7 @@ export interface DrawData {
     shapeType?: string;
     numberOfPoints?: number;
     initialState?: any;
-    aim?: boolean;
+    crosshair?: boolean;
 }
 
 export enum FrameZoom {

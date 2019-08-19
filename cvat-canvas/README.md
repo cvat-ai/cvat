@@ -50,7 +50,7 @@ All methods are sync.
         shapeType?: string;
         numberOfPoints?: number;
         initialState?: any;
-        aim?: boolean;
+        crosshair?: boolean;
     }
 
     html(): HTMLDivElement;
@@ -81,6 +81,7 @@ All methods are sync.
 - Tags have the class ```cvat_canvas_tag```
 - Canvas image has ID ```cvat_canvas_image```
 - Grid on the canvas has ID ```cvat_canvas_grid_pattern```
+- Crosshair during a draw has class ```cvat_canvas_crosshair```
 
 ### Events
 

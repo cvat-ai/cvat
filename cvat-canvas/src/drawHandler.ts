@@ -24,7 +24,7 @@ export interface DrawHandler {
 export class DrawHandlerImpl implements DrawHandler {
     private onDrawDone: any; // callback is used to notify about creating new shape
     private canvas: SVG.Container;
-    private aim: {
+    private crosshair: {
         x: SVG.Line;
         y: SVG.Line;
     };
@@ -33,34 +33,34 @@ export class DrawHandlerImpl implements DrawHandler {
     private drawInstance: any;
 
 
-    private addAim(): void {
-        this.aim = {
+    private addCrosshair(): void {
+        this.crosshair = {
             x: this.canvas.line(0, 0, this.canvas.node.clientWidth, 0).attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / (2 * this.geometry.scale),
                 zOrder: Number.MAX_SAFE_INTEGER,
-            }).addClass('cvat_canvas_aim'),
+            }).addClass('cvat_canvas_crosshair'),
             y: this.canvas.line(0, 0, 0, this.canvas.node.clientHeight).attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / (2 * this.geometry.scale),
                 zOrder: Number.MAX_SAFE_INTEGER,
-            }).addClass('cvat_canvas_aim'),
+            }).addClass('cvat_canvas_crosshair'),
         };
     }
 
-    private removeAim(): void {
-        this.aim.x.remove();
-        this.aim.y.remove();
-        this.aim = null;
+    private removeCrosshair(): void {
+        this.crosshair.x.remove();
+        this.crosshair.y.remove();
+        this.crosshair = null;
     }
 
     private initDrawing(): void {
-        if (this.drawData.aim) {
-            this.addAim();
+        if (this.drawData.crosshair) {
+            this.addCrosshair();
         }
     }
 
     private closeDrawing(): void {
-        if (this.aim) {
-            this.removeAim();
+        if (this.crosshair) {
+            this.removeCrosshair();
         }
     }
 
@@ -92,8 +92,6 @@ export class DrawHandlerImpl implements DrawHandler {
             } else {
                 this.onDrawDone(null);
             }
-
-            this.closeDrawing();
         });
     }
 
@@ -212,8 +210,6 @@ export class DrawHandlerImpl implements DrawHandler {
             } else {
                 this.onDrawDone(null);
             }
-
-            this.closeDrawing();
         });
     }
 
@@ -265,22 +261,22 @@ export class DrawHandlerImpl implements DrawHandler {
         this.canvas = canvas;
         this.drawData = null;
         this.geometry = null;
-        this.aim = null;
+        this.crosshair = null;
         this.drawInstance = null;
 
         this.canvas.node.addEventListener('mousemove', (e): void => {
-            if (this.aim) {
+            if (this.crosshair) {
                 const [x, y] = translateToSVG(
                     this.canvas.node as any as SVGSVGElement,
                     [e.clientX, e.clientY],
                 );
 
-                this.aim.x.attr({
+                this.crosshair.x.attr({
                     y1: y,
                     y2: y,
                 });
 
-                this.aim.y.attr({
+                this.crosshair.y.attr({
                     x1: x,
                     x2: x,
                 });
@@ -291,11 +287,11 @@ export class DrawHandlerImpl implements DrawHandler {
     public transform(geometry: Geometry): void {
         this.geometry = geometry;
 
-        if (this.aim) {
-            this.aim.x.attr({
+        if (this.crosshair) {
+            this.crosshair.x.attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / (2 * geometry.scale),
             });
-            this.aim.y.attr({
+            this.crosshair.y.attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / (2 * geometry.scale),
             });
         }

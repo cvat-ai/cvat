@@ -23,7 +23,7 @@ polyline.cvat_canvas_shape {
     pointer-events: none;
 }
 
-.cvat_canvas_aim {
+.cvat_canvas_crosshair {
     stroke: red;
 }
 
