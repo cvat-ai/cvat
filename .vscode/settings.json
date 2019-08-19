@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": ".env/bin/python",
+    "python.pythonPath": "python",
     "eslint.enable": true,
     "eslint.validate": [
         "javascript",
@@ -18,5 +18,6 @@
             "directory":  ".",
             "changeProcessCWD": true
         }
-    ]
+    ],
+    "python.linting.pylintEnabled": true
 }

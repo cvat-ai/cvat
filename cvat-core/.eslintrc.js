@@ -26,7 +26,7 @@
         "eslint:recommended",
         "plugin:security/recommended",
         "plugin:no-unsanitized/DOM",
-        "airbnb",
+        "airbnb-base",
     ],
     "rules": {
         "no-await-in-loop": [0],

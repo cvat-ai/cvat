@@ -196,9 +196,9 @@ class JobGetAPITestCase(APITestCase):
 
     def test_api_v1_jobs_id_no_auth(self):
         response = self._run_api_v1_jobs_id(self.job.id, None)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         response = self._run_api_v1_jobs_id(self.job.id + 10, None)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class JobUpdateAPITestCase(APITestCase):
@@ -266,9 +266,9 @@ class JobUpdateAPITestCase(APITestCase):
     def test_api_v1_jobs_id_no_auth(self):
         data = {"status": StatusChoice.ANNOTATION, "assignee": self.user.id}
         response = self._run_api_v1_jobs_id(self.job.id, None, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         response = self._run_api_v1_jobs_id(self.job.id + 10, None, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class JobPartialUpdateAPITestCase(JobUpdateAPITestCase):
     def _run_api_v1_jobs_id(self, jid, user, data):
@@ -317,7 +317,7 @@ class ServerAboutAPITestCase(APITestCase):
 
     def test_api_v1_server_about_no_auth(self):
         response = self._run_api_v1_server_about(None)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class ServerExceptionAPITestCase(APITestCase):
     def setUp(self):
@@ -360,7 +360,7 @@ class ServerExceptionAPITestCase(APITestCase):
 
     def test_api_v1_server_exception_no_auth(self):
         response = self._run_api_v1_server_exception(None)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class ServerLogsAPITestCase(APITestCase):
@@ -408,7 +408,7 @@ class ServerLogsAPITestCase(APITestCase):
 
     def test_api_v1_server_logs_no_auth(self):
         response = self._run_api_v1_server_logs(None)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class UserListAPITestCase(APITestCase):
@@ -438,7 +438,7 @@ class UserListAPITestCase(APITestCase):
 
     def test_api_v1_users_no_auth(self):
         response = self._run_api_v1_users(None)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class UserSelfAPITestCase(APITestCase):
     def setUp(self):
@@ -473,7 +473,7 @@ class UserSelfAPITestCase(APITestCase):
 
     def test_api_v1_users_self_no_auth(self):
         response = self._run_api_v1_users_self(None)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class UserGetAPITestCase(APITestCase):
     def setUp(self):
@@ -520,7 +520,7 @@ class UserGetAPITestCase(APITestCase):
 
     def test_api_v1_users_id_no_auth(self):
         response = self._run_api_v1_users_id(None, self.user.id)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class UserUpdateAPITestCase(APITestCase):
     def setUp(self):
@@ -559,7 +559,7 @@ class UserUpdateAPITestCase(APITestCase):
         data = {"username": "user12", "groups": ["user", "observer"],
             "first_name": "my name"}
         response = self._run_api_v1_users_id(None, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class UserPartialUpdateAPITestCase(UserUpdateAPITestCase):
     def _run_api_v1_users_id(self, user, user_id, data):
@@ -585,7 +585,7 @@ class UserPartialUpdateAPITestCase(UserUpdateAPITestCase):
     def test_api_v1_users_id_no_auth_partial(self):
         data = {"username": "user12"}
         response = self._run_api_v1_users_id(None, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class TaskListAPITestCase(APITestCase):
     def setUp(self):
@@ -626,7 +626,7 @@ class TaskListAPITestCase(APITestCase):
 
     def test_api_v1_tasks_no_auth(self):
         response = self._run_api_v1_tasks(None)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class TaskGetAPITestCase(APITestCase):
     def setUp(self):
@@ -667,8 +667,10 @@ class TaskGetAPITestCase(APITestCase):
             response = self._run_api_v1_tasks_id(db_task.id, user)
             if user and user.has_perm("engine.task.access", db_task):
                 self._check_response(response, db_task)
-            else:
+            elif user:
                 self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_api_v1_tasks_id_admin(self):
         self._check_api_v1_tasks_id(self.admin)
@@ -702,8 +704,10 @@ class TaskDeleteAPITestCase(APITestCase):
             response = self._run_api_v1_tasks_id(db_task.id, user)
             if user and user.has_perm("engine.task.delete", db_task):
                 self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-            else:
+            elif user:
                 self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_api_v1_tasks_id_admin(self):
         self._check_api_v1_tasks_id(self.admin)
@@ -769,8 +773,10 @@ class TaskUpdateAPITestCase(APITestCase):
             response = self._run_api_v1_tasks_id(db_task.id, user, data)
             if user and user.has_perm("engine.task.change", db_task):
                 self._check_response(response, db_task, data)
-            else:
+            elif user:
                 self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_api_v1_tasks_id_admin(self):
         data = {
@@ -921,8 +927,10 @@ class TaskCreateAPITestCase(APITestCase):
         response = self._run_api_v1_tasks(user, data)
         if user and user.has_perm("engine.task.create"):
             self._check_response(response, user, data)
-        else:
+        elif user:
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        else:
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_api_v1_tasks_admin(self):
         data = {
@@ -1126,7 +1134,7 @@ class TaskDataAPITestCase(APITestCase):
             ]
         }
         response = self._create_task(None, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 def compare_objects(self, obj1, obj2, ignore_keys):
     if isinstance(obj1, dict):
@@ -1233,7 +1241,8 @@ class JobAnnotationAPITestCase(APITestCase):
         return response
 
     def _check_response(self, response, data):
-        if response.status_code != status.HTTP_403_FORBIDDEN:
+        if not response.status_code in [
+            status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED]:
             compare_objects(self, data, response.data, ignore_keys=["id"])
 
     def _run_api_v1_jobs_id_annotations(self, owner, assignee, annotator):
@@ -1243,9 +1252,9 @@ class JobAnnotationAPITestCase(APITestCase):
             HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
             HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
         else:
-            HTTP_200_OK = status.HTTP_403_FORBIDDEN
-            HTTP_204_NO_CONTENT = status.HTTP_403_FORBIDDEN
-            HTTP_400_BAD_REQUEST = status.HTTP_403_FORBIDDEN
+            HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
+            HTTP_204_NO_CONTENT = status.HTTP_401_UNAUTHORIZED
+            HTTP_400_BAD_REQUEST = status.HTTP_401_UNAUTHORIZED
 
         job = jobs[0]
         data = {
@@ -1473,7 +1482,8 @@ class JobAnnotationAPITestCase(APITestCase):
         self._check_response(response, data)
 
         data = response.data
-        if response.status_code != status.HTTP_403_FORBIDDEN:
+        if not response.status_code in [
+            status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED]:
             data["tags"][0]["label_id"] = task["labels"][0]["id"]
             data["shapes"][0]["points"] = [1, 2, 3.0, 100, 120, 1, 2, 4.0]
             data["shapes"][0]["type"] = "polygon"
@@ -1650,7 +1660,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         return response
 
     def _check_response(self, response, data):
-        if response.status_code != status.HTTP_403_FORBIDDEN:
+        if not response.status_code in [
+            status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]:
             compare_objects(self, data, response.data, ignore_keys=["id"])
 
     def _run_api_v1_tasks_id_annotations(self, owner, assignee, annotator):
@@ -1662,11 +1673,11 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
             HTTP_201_CREATED = status.HTTP_201_CREATED
         else:
-            HTTP_200_OK = status.HTTP_403_FORBIDDEN
-            HTTP_204_NO_CONTENT = status.HTTP_403_FORBIDDEN
-            HTTP_400_BAD_REQUEST = status.HTTP_403_FORBIDDEN
-            HTTP_202_ACCEPTED = status.HTTP_403_FORBIDDEN
-            HTTP_201_CREATED = status.HTTP_403_FORBIDDEN
+            HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
+            HTTP_204_NO_CONTENT = status.HTTP_401_UNAUTHORIZED
+            HTTP_400_BAD_REQUEST = status.HTTP_401_UNAUTHORIZED
+            HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
+            HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
 
         data = {
             "version": 0,
@@ -1894,7 +1905,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         self._check_response(response, data)
 
         data = response.data
-        if response.status_code != status.HTTP_403_FORBIDDEN:
+        if not response.status_code in [
+            status.HTTP_403_FORBIDDEN, status.HTTP_401_UNAUTHORIZED]:
             data["tags"][0]["label_id"] = task["labels"][0]["id"]
             data["shapes"][0]["points"] = [1, 2, 3.0, 100, 120, 1, 2, 4.0]
             data["shapes"][0]["type"] = "polygon"
@@ -2197,4 +2209,4 @@ class ServerShareAPITestCase(APITestCase):
 
     def test_api_v1_server_share_no_auth(self):
         response = self._run_api_v1_server_share(None, "/")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

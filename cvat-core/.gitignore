@@ -2,3 +2,5 @@ docs
 node_modules
 reports
 package-lock.json
+yarn.lock
+dist

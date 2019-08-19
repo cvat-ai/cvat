@@ -15,7 +15,6 @@ urlpatterns = [
         template_name='login.html', extra_context={'note': settings.AUTH_LOGIN_NOTE}),
         name='login'),
     path('logout', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
-    path('csrf', views.get_csrf, name='csrf')
 ]
 
 if settings.DJANGO_AUTH_TYPE == 'BASIC':

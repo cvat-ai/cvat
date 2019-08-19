@@ -12,24 +12,20 @@
     const FormData = require('form-data');
     const {
         ServerError,
-        ScriptingError,
     } = require('./exceptions');
-
+    const store = require('store');
     const config = require('./config');
 
     class ServerProxy {
         constructor() {
-            const Cookie = require('js-cookie');
             const Axios = require('axios');
+            Axios.defaults.withCredentials = true;
+            Axios.defaults.xsrfHeaderName = 'X-CSRFTOKEN';
+            Axios.defaults.xsrfCookieName = 'csrftoken';
 
-            function setCSRFHeader(header) {
-                Axios.defaults.headers.delete['X-CSRFToken'] = header;
-                Axios.defaults.headers.patch['X-CSRFToken'] = header;
-                Axios.defaults.headers.post['X-CSRFToken'] = header;
-                Axios.defaults.headers.put['X-CSRFToken'] = header;
-
-                // Allows to move authentification headers to backend
-                Axios.defaults.withCredentials = true;
+            let token = store.get('token');
+            if (token) {
+                Axios.defaults.headers.common.Authorization = `Token ${token}`;
             }
 
             async function about() {
@@ -109,108 +105,69 @@
                 return response.data;
             }
 
-            async function login(username, password) {
-                function setCookie(response) {
-                    if (response.headers['set-cookie']) {
-                        // Browser itself setup cookie and header is none
-                        // In NodeJS we need do it manually
-                        let cookies = '';
-                        for (let cookie of response.headers['set-cookie']) {
-                            [cookie] = cookie.split(';'); // truncate extra information
-                            const name = cookie.split('=')[0];
-                            const value = cookie.split('=')[1];
-                            if (name === 'csrftoken') {
-                                setCSRFHeader(value);
-                            }
-                            Cookie.set(name, value);
-                            cookies += `${cookie};`;
-                        }
-
-                        Axios.defaults.headers.common.Cookie = cookies;
-                    } else {
-                        // Browser code. We need set additinal header for authentification
-                        let csrftoken = response.data.csrf;
-                        if (csrftoken) {
-                            setCSRFHeader(csrftoken);
-                            Cookie.set('csrftoken', csrftoken);
-                        } else {
-                            csrftoken = Cookie.get('csrftoken');
-                            if (csrftoken) {
-                                setCSRFHeader(csrftoken);
-                            } else {
-                                throw new ScriptingError(
-                                    'An environment has been detected as a browser'
-                                    + ', but CSRF token has not been found in cookies',
-                                );
-                            }
-                        }
-                    }
-                }
-
-                const host = config.backendAPI.slice(0, -7);
-                let csrf = null;
+            async function register(username, firstName, lastName, email, password1, password2) {
+                let response = null;
                 try {
-                    csrf = await Axios.get(`${host}/auth/csrf`, {
+                    const data = JSON.stringify({
+                        username,
+                        first_name: firstName,
+                        last_name: lastName,
+                        email,
+                        password1,
+                        password2,
+                    });
+                    response = await Axios.post(`${config.backendAPI}/auth/register`, data, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new ServerError(
-                        'Could not get CSRF token from a server',
+                        `Could not register '${username}' user on the server`,
                         code,
                     );
                 }
 
-                setCookie(csrf);
+                return response.data;
+            }
 
-                const authentificationData = ([
+            async function login(username, password) {
+                const authenticationData = ([
                     `${encodeURIComponent('username')}=${encodeURIComponent(username)}`,
                     `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
                 ]).join('&').replace(/%20/g, '+');
 
-                let authentificationResponse = null;
+                let authenticationResponse = null;
                 try {
-                    authentificationResponse = await Axios.post(
-                        `${host}/auth/login`,
-                        authentificationData,
-                        {
-                            'Content-Type': 'application/x-www-form-urlencoded',
+                    authenticationResponse = await Axios.post(
+                        `${config.backendAPI}/auth/login`,
+                        authenticationData, {
                             proxy: config.proxy,
-                            // do not redirect to a dashboard,
-                            // otherwise we don't get a session id in a response
-                            maxRedirects: 0,
                         },
                     );
                 } catch (errorData) {
-                    if (errorData.response.status === 302) {
-                        // Redirection code expected
-                        authentificationResponse = errorData.response;
-                    } else {
-                        const code = errorData.response
-                            ? errorData.response.status : errorData.code;
-                        throw new ServerError(
-                            'Could not login on a server',
-                            code,
-                        );
-                    }
-                }
-
-                // TODO: Perhaps we should redesign the authorization method on the server.
-                if (authentificationResponse.data.includes('didn\'t match')) {
+                    const code = errorData.response
+                        ? errorData.response.status : errorData.code;
                     throw new ServerError(
-                        'The pair login/password is invalid',
-                        403,
+                        'Could not login on a server',
+                        code,
                     );
                 }
 
-                setCookie(authentificationResponse);
+                if (authenticationResponse.headers['set-cookie']) {
+                    // Browser itself setup cookie and header is none
+                    // In NodeJS we need do it manually
+                    const cookies = authenticationResponse.headers['set-cookie'].join(';');
+                    Axios.defaults.headers.common.Cookie = cookies;
+                }
+
+                token = authenticationResponse.data.key;
+                store.set('token', token);
+                Axios.defaults.headers.common.Authorization = `Token ${token}`;
             }
 
             async function logout() {
-                const host = config.backendAPI.slice(0, -7);
-
                 try {
-                    await Axios.get(`${host}/auth/logout`, {
+                    await Axios.post(`${config.backendAPI}/auth/logout`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
@@ -220,13 +177,16 @@
                         code,
                     );
                 }
+
+                store.remove('token');
+                Axios.defaults.headers.common.Authorization = '';
             }
 
             async function authorized() {
                 try {
                     await module.exports.users.getSelf();
                 } catch (serverError) {
-                    if (serverError.code === 403) {
+                    if (serverError.code === 401) {
                         return false;
                     }
 
@@ -315,7 +275,7 @@
                                     // If server has another status, it is unexpected
                                     // Therefore it is server error and we can pass code 500
                                     reject(new ServerError(
-                                        `Unknown task state has been recieved: ${response.data.state}`,
+                                        `Unknown task state has been received: ${response.data.state}`,
                                         500,
                                     ));
                                 }
@@ -324,7 +284,7 @@
                                     ? errorData.response.status : errorData.code;
 
                                 reject(new ServerError(
-                                    'Data uploading error occured',
+                                    'Data uploading error occurred',
                                     code,
                                 ));
                             }
@@ -623,14 +583,6 @@
                 });
             }
 
-            // Set csrftoken header from browser cookies if it exists
-            // NodeJS env returns 'undefined'
-            // So in NodeJS we need login after each run
-            const csrftoken = Cookie.get('csrftoken');
-            if (csrftoken) {
-                setCSRFHeader(csrftoken);
-            }
-
             Object.defineProperties(this, Object.freeze({
                 server: {
                     value: Object.freeze({
@@ -641,6 +593,7 @@
                         login,
                         logout,
                         authorized,
+                        register,
                     }),
                     writable: false,
                 },
