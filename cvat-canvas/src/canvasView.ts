@@ -16,6 +16,7 @@ import 'svg.select.js';
 import { CanvasController } from './canvasController';
 import { Listener, Master } from './master';
 import { DrawHandler, DrawHandlerImpl } from './drawHandler';
+import { translateToSVG, translateFromSVG } from './shared';
 import consts from './consts';
 import {
     CanvasModel,
@@ -46,38 +47,6 @@ enum Mode {
     DRAG = 'drag',
     RESIZE = 'resize',
     DRAW = 'draw',
-}
-
-// Translate point array from the client coordinate system
-// to a coordinate system of a canvas
-function translateFromSVG(svg: SVGSVGElement, points: number[]): number[] {
-    const output = [];
-    const transformationMatrix = svg.getScreenCTM();
-    let pt = svg.createSVGPoint();
-    for (let i = 0; i < points.length - 1; i += 2) {
-        pt.x = points[i];
-        pt.y = points[i + 1];
-        pt = pt.matrixTransform(transformationMatrix);
-        output.push(pt.x, pt.y);
-    }
-
-    return output;
-}
-
-// Translate point array from a coordinate system of a canvas
-// to the client coordinate system
-function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
-    const output = [];
-    const transformationMatrix = svg.getScreenCTM().inverse();
-    let pt = svg.createSVGPoint();
-    for (let i = 0; i < points.length; i += 2) {
-        pt.x = points[i];
-        pt.y = points[i + 1];
-        pt = pt.matrixTransform(transformationMatrix);
-        output.push(pt.x, pt.y);
-    }
-
-    return output;
 }
 
 function darker(color: string, percentage: number): string {
@@ -116,9 +85,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private mode: Mode;
 
-
-    private onNewShape(): void {
+    private onNewShape(points): void {
+        // create and return element
         // this.html().dispatchEvent
+        this.drawHandler.draw({
+            enabled: false,
+        });
     }
 
     public constructor(model: CanvasModel & Master, controller: CanvasController) {
@@ -218,15 +190,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.content.addEventListener('mousedown', (event): void => {
-            self.controller.enableDrag(event.clientX, event.clientY);
+            if ((event.which === 1 && this.mode === Mode.IDLE) || (event.which === 2)) {
+                self.controller.enableDrag(event.clientX, event.clientY);
+            }
         });
 
         this.content.addEventListener('mousemove', (event): void => {
             self.controller.drag(event.clientX, event.clientY);
         });
 
-        window.document.addEventListener('mouseup', (): void => {
-            self.controller.disableDrag();
+        window.document.addEventListener('mouseup', (event): void => {
+            if (event.which === 1 || event.which === 2) {
+                self.controller.disableDrag();
+            }
         });
 
         this.content.addEventListener('wheel', (event): void => {

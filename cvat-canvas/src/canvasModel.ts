@@ -294,6 +294,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             return;
         }
 
+        // TODO: check shape types
         this.data.drawData = Object.assign({}, drawData);
         this.notify(UpdateReasons.DRAW);
     }

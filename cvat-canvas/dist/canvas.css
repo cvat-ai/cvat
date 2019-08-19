@@ -40,7 +40,9 @@ polyline.cvat_canvas_shape {
 }
 
 .cvat_canvas_shape_drawing {
-
+    fill-opacity: 0.1;
+    stroke-opacity: 1;
+    color: white;
 }
 
 .svg_select_boundingRect {
