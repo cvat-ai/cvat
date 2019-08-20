@@ -6,6 +6,7 @@
 import * as SVG from 'svg.js';
 import consts from './consts';
 import 'svg.draw.js';
+import './svg.patch';
 
 import {
     DrawData,
@@ -126,6 +127,8 @@ export class DrawHandlerImpl implements DrawHandler {
         // Add ability to cancel the latest drawn point
         const handleUndo = function handleUndo(e: MouseEvent): void {
             if (e.which === 3) {
+                e.stopPropagation();
+                e.preventDefault();
                 this.drawInstance.draw('undo');
             }
         }.bind(this);
@@ -170,8 +173,8 @@ export class DrawHandlerImpl implements DrawHandler {
         });
 
         this.drawInstance.on('drawstop', (): void => {
-            this.canvas.node.removeEventListener('mousedown', handleUndo);
-            this.canvas.node.removeEventListener('mousemove', handleSlide);
+            self.canvas.node.removeEventListener('mousedown', handleUndo);
+            self.canvas.node.removeEventListener('mousemove', handleSlide);
         });
 
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
@@ -309,18 +312,18 @@ export class DrawHandlerImpl implements DrawHandler {
         }
 
         if (this.drawInstance) {
-            this.drawInstance.attr({
+            this.drawInstance.style({
                 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             });
 
             const PaintHandler = Object.values(this.drawInstance.memory())[0];
 
             for (const point of (PaintHandler as any).set.members) {
-                point.attr(
+                point.style(
                     'stroke-width',
                     `${consts.BASE_STROKE_WIDTH / (3 * geometry.scale)}`,
                 );
-                point.attr(
+                point.style(
                     'r',
                     `${consts.BASE_POINT_SIZE / (2 * geometry.scale)}`,
                 );

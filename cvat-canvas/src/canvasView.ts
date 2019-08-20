@@ -246,6 +246,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.canvas.dispatchEvent(event);
         });
 
+        this.content.oncontextmenu = (): boolean => false;
         model.subscribe(this);
     }
 

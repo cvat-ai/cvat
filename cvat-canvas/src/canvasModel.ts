@@ -282,20 +282,24 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public draw(drawData: DrawData): void {
-        if (drawData.enabled && this.data.drawData.enabled) {
-            return;
+        if (drawData.enabled) {
+            if (this.data.drawData.enabled) {
+                throw new Error('Drawing has been already started');
+            } else if (!drawData.shapeType) {
+                throw new Error('A shape type is not specified');
+            } else if (typeof (drawData.numberOfPoints) !== 'undefined') {
+                if (drawData.shapeType === 'polygon' && drawData.numberOfPoints < 3) {
+                    throw new Error('A polygon consists of at least 3 points');
+                } else if (drawData.shapeType === 'polyline' && drawData.numberOfPoints < 2) {
+                    throw new Error('A polyline consists of at least 2 points');
+                }
+            }
         }
 
         if (!drawData.enabled && !this.data.drawData.enabled) {
-            return;
+            throw new Error('Drawing has been already closed');
         }
 
-        if (drawData.enabled && !drawData.shapeType) {
-            return;
-        }
-
-        // TODO: check shape types
-        // TODO: check number of points for shapes
         this.data.drawData = Object.assign({}, drawData);
         this.notify(UpdateReasons.DRAW);
     }
