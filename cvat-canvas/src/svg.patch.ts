@@ -146,8 +146,8 @@ SVG.Element.prototype.draggable = function constructor(...args: any): any {
 
     return this;
 };
-for (const key of Object.keys(originalDraw)) {
-    SVG.Element.prototype.draggable[key] = originalDraw[key];
+for (const key of Object.keys(originalDraggable)) {
+    SVG.Element.prototype.draggable[key] = originalDraggable[key];
 }
 
 // Fix method resize
@@ -162,11 +162,11 @@ SVG.Element.prototype.resize = function constructor(...args: any): any {
             handler.constructor.prototype.update.call(this, e);
         }
     } else {
-        originalDraggable.call(this, ...args);
+        originalResize.call(this, ...args);
     }
 
     return this;
 };
-for (const key of Object.keys(originalDraw)) {
-    SVG.Element.prototype.resize[key] = originalDraw[key];
+for (const key of Object.keys(originalResize)) {
+    SVG.Element.prototype.resize[key] = originalResize[key];
 }
