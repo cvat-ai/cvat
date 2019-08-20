@@ -1212,6 +1212,26 @@ class JobAnnotationAPITestCase(APITestCase):
 
         return (task, jobs)
 
+    def _get_default_attr_values(self, task):
+        default_attr_values = {}
+        for label in task["labels"]:
+            default_attr_values[label["id"]] = {
+                "mutable": [],
+                "immutable": [],
+                "all": [],
+            }
+            for attr in label["attributes"]:
+                default_value = {
+                    "spec_id": attr["id"],
+                    "value": attr["default_value"],
+                }
+                if attr["mutable"]:
+                    default_attr_values[label["id"]]["mutable"].append(default_value)
+                else:
+                    default_attr_values[label["id"]]["immutable"].append(default_value)
+                default_attr_values[label["id"]]["all"].append(default_value)
+        return default_attr_values
+
     def _put_api_v1_jobs_id_data(self, jid, user, data):
         with ForceLogin(user, self.client):
             response = self.client.put("/api/v1/jobs/{}/annotations".format(jid),
@@ -1310,7 +1330,12 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "attributes": [],
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                    ],
                     "shapes": [
                         {
                             "frame": 0,
@@ -1319,10 +1344,6 @@ class JobAnnotationAPITestCase(APITestCase):
                             "occluded": False,
                             "outside": False,
                             "attributes": [
-                                {
-                                    "spec_id": task["labels"][0]["attributes"][0]["id"],
-                                    "value": task["labels"][0]["attributes"][0]["values"][0]
-                                },
                                 {
                                     "spec_id": task["labels"][0]["attributes"][1]["id"],
                                     "value": task["labels"][0]["attributes"][1]["default_value"]
@@ -1357,6 +1378,8 @@ class JobAnnotationAPITestCase(APITestCase):
                 },
             ]
         }
+
+        default_attr_values = self._get_default_attr_values(task)
         response = self._put_api_v1_jobs_id_data(job["id"], annotator, data)
         data["version"] += 1 # need to update the version
         self.assertEqual(response.status_code, HTTP_200_OK)
@@ -1364,6 +1387,8 @@ class JobAnnotationAPITestCase(APITestCase):
 
         response = self._get_api_v1_jobs_id_data(job["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
+        data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
+        data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[data["tracks"][0]["label_id"]]["mutable"]
         self._check_response(response, data)
 
         response = self._delete_api_v1_jobs_id_data(job["id"], annotator)
@@ -1402,7 +1427,7 @@ class JobAnnotationAPITestCase(APITestCase):
                         },
                         {
                             "spec_id": task["labels"][0]["attributes"][1]["id"],
-                            "value": task["labels"][0]["attributes"][0]["default_value"]
+                            "value": task["labels"][0]["attributes"][1]["default_value"]
                         }
                     ],
                     "points": [1.0, 2.1, 100, 300.222],
@@ -1424,7 +1449,12 @@ class JobAnnotationAPITestCase(APITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "attributes": [],
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                    ],
                     "shapes": [
                         {
                             "frame": 0,
@@ -1434,13 +1464,9 @@ class JobAnnotationAPITestCase(APITestCase):
                             "outside": False,
                             "attributes": [
                                 {
-                                    "spec_id": task["labels"][0]["attributes"][0]["id"],
-                                    "value": task["labels"][0]["attributes"][0]["values"][0]
-                                },
-                                {
                                     "spec_id": task["labels"][0]["attributes"][1]["id"],
-                                    "value": task["labels"][0]["attributes"][0]["default_value"]
-                                }
+                                    "value": task["labels"][0]["attributes"][1]["default_value"]
+                                },
                             ]
                         },
                         {
@@ -1479,6 +1505,8 @@ class JobAnnotationAPITestCase(APITestCase):
 
         response = self._get_api_v1_jobs_id_data(job["id"], annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
+        data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
+        data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[data["tracks"][0]["label_id"]]["mutable"]
         self._check_response(response, data)
 
         data = response.data
@@ -1576,7 +1604,7 @@ class JobAnnotationAPITestCase(APITestCase):
                                 },
                                 {
                                     "spec_id": task["labels"][0]["attributes"][1]["id"],
-                                    "value": task["labels"][0]["attributes"][0]["default_value"]
+                                    "value": task["labels"][0]["attributes"][1]["default_value"]
                                 }
                             ]
                         },
@@ -1733,7 +1761,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "attributes": [],
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                    ],
                     "shapes": [
                         {
                             "frame": 0,
@@ -1743,12 +1776,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                             "outside": False,
                             "attributes": [
                                 {
-                                    "spec_id": task["labels"][0]["attributes"][0]["id"],
-                                    "value": task["labels"][0]["attributes"][0]["values"][0]
-                                },
-                                {
                                     "spec_id": task["labels"][0]["attributes"][1]["id"],
-                                    "value": task["labels"][0]["attributes"][0]["default_value"]
+                                    "value": task["labels"][0]["attributes"][1]["default_value"]
                                 }
                             ]
                         },
@@ -1782,10 +1811,14 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         }
         response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
         data["version"] += 1
+
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
+        default_attr_values = self._get_default_attr_values(task)
         response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
+        data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[data["tracks"][0]["label_id"]]["mutable"]
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 
@@ -1847,7 +1880,12 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     "frame": 0,
                     "label_id": task["labels"][0]["id"],
                     "group": None,
-                    "attributes": [],
+                    "attributes": [
+                        {
+                            "spec_id": task["labels"][0]["attributes"][0]["id"],
+                            "value": task["labels"][0]["attributes"][0]["values"][0]
+                        },
+                    ],
                     "shapes": [
                         {
                             "frame": 0,
@@ -1857,12 +1895,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                             "outside": False,
                             "attributes": [
                                 {
-                                    "spec_id": task["labels"][0]["attributes"][0]["id"],
-                                    "value": task["labels"][0]["attributes"][0]["values"][0]
-                                },
-                                {
                                     "spec_id": task["labels"][0]["attributes"][1]["id"],
-                                    "value": task["labels"][0]["attributes"][0]["default_value"]
+                                    "value": task["labels"][0]["attributes"][1]["default_value"]
                                 }
                             ]
                         },
@@ -1901,6 +1935,8 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         self._check_response(response, data)
 
         response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
+        data["tags"][0]["attributes"] = default_attr_values[data["tags"][0]["label_id"]]["all"]
+        data["tracks"][0]["shapes"][1]["attributes"] = default_attr_values[data["tracks"][0]["label_id"]]["mutable"]
         self.assertEqual(response.status_code, HTTP_200_OK)
         self._check_response(response, data)
 

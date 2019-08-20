@@ -248,10 +248,10 @@ class JobAnnotation:
                     db_shape_attrvals.append(db_attrval)
 
                 db_shapes.append(db_shape)
-                shape["attributes"] = serializers.AttributeValSerializer(db_shape_attrvals, many=True).data
+                shape["attributes"] = shape_attributes
 
             db_tracks.append(db_track)
-            track["attributes"] = serializers.AttributeValSerializer(db_track_attrvals, many=True).data
+            track["attributes"] = track_attributes
             track["shapes"] = shapes
 
         db_tracks = bulk_create(
