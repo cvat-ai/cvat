@@ -329,6 +329,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 obj.style.top = `${geometry.top - geometry.offset}px`;
                 obj.style.left = `${geometry.left - geometry.offset}px`;
             }
+
+            // Transform handlers
+            this.drawHandler.transform(geometry);
         }
 
         function computeFocus(focusData: FocusData, geometry: Geometry): void {
@@ -491,12 +494,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private deactivate(): void {
         if (this.activeElement) {
             const { state } = this.activeElement;
+            const shape = this.svgShapes[this.activeElement.state.clientID];
+            (shape as any).draggable(false);
 
-            (this.svgShapes[this.activeElement.state.clientID] as any)
-                .draggable(false)
-                .selectize(false, {
-                    deepSelect: true,
-                }).resize(false);
+            if (state.shapeType !== 'points') {
+                this.selectize(false, shape, null);
+            }
+
+            (shape as any).resize(false);
 
             // Hide text only if it is hidden by settings
             const text = this.svgTexts[state.clientID];
@@ -505,6 +510,48 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 delete this.svgTexts[state.clientID];
             }
             this.activeElement = null;
+        }
+    }
+
+    private selectize(value: boolean, shape: SVG.Element, geometry: Geometry): void {
+        if (value) {
+            (shape as any).selectize(value, {
+                deepSelect: true,
+                pointSize: consts.BASE_POINT_SIZE / geometry.scale,
+                rotationPoint: false,
+                pointType(cx: number, cy: number): SVG.Circle {
+                    const circle: SVG.Circle = this.nested
+                        .circle(this.options.pointSize)
+                        .stroke('black')
+                        .fill(shape.node.getAttribute('fill'))
+                        .center(cx, cy)
+                        .attr({
+                            'stroke-width': consts.BASE_STROKE_WIDTH / (3 * geometry.scale),
+                        });
+
+                    circle.node.addEventListener('mouseenter', (): void => {
+                        circle.attr({
+                            'stroke-width': circle.attr('stroke-width') * 2,
+                        });
+
+                        circle.addClass('cvat_canvas_selected_point');
+                    });
+
+                    circle.node.addEventListener('mouseleave', (): void => {
+                        circle.attr({
+                            'stroke-width': circle.attr('stroke-width') / 2,
+                        });
+
+                        circle.removeClass('cvat_canvas_selected_point');
+                    });
+
+                    return circle;
+                },
+            });
+        } else {
+            (shape as any).selectize(false, {
+                deepSelect: true,
+            });
         }
     }
 
@@ -557,39 +604,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         });
 
-        (shape as any).selectize({
-            deepSelect: true,
-            pointSize: consts.BASE_POINT_SIZE / geometry.scale,
-            rotationPoint: false,
-            pointType(cx: number, cy: number): SVG.Circle {
-                const circle: SVG.Circle = this.nested
-                    .circle(this.options.pointSize)
-                    .stroke('black')
-                    .fill(shape.node.getAttribute('fill'))
-                    .center(cx, cy)
-                    .attr({
-                        'stroke-width': consts.BASE_STROKE_WIDTH / (3 * geometry.scale),
-                    });
+        if (state.shapeType !== 'points') {
+            this.selectize(true, shape, geometry);
+        }
 
-                circle.node.addEventListener('mouseenter', (): void => {
-                    circle.attr({
-                        'stroke-width': circle.attr('stroke-width') * 2,
-                    });
-
-                    circle.addClass('cvat_canvas_selected_point');
-                });
-
-                circle.node.addEventListener('mouseleave', (): void => {
-                    circle.attr({
-                        'stroke-width': circle.attr('stroke-width') / 2,
-                    });
-
-                    circle.removeClass('cvat_canvas_selected_point');
-                });
-
-                return circle;
-            },
-        }).resize().on('resizestart', (): void => {
+        (shape as any).resize().on('resizestart', (): void => {
             this.mode = Mode.RESIZE;
             if (text) {
                 text.addClass('cvat_canvas_hidden');
@@ -703,17 +722,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }).addClass('cvat_canvas_shape');
     }
 
-    private addPoints(points: string, state: any, geometry: Geometry): SVG.Polygon {
-        return this.adoptedContent.polygon(points).attr({
+    private addPoints(points: string, state: any, geometry: Geometry): SVG.PolyLine {
+        const shape = this.adoptedContent.polyline(points).attr({
             clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
             fill: state.color,
-            opacity: 0,
             'shape-rendering': 'geometricprecision',
-            stroke: darker(state.color, 50),
-            'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');
+
+        this.selectize(true, shape, geometry);
+        shape.attr('fill', 'none');
+
+        return shape;
     }
 
     private addTag(state: any, geometry: Geometry): void {

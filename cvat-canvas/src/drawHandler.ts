@@ -324,7 +324,7 @@ export class DrawHandlerImpl implements DrawHandler {
                     'stroke-width',
                     `${consts.BASE_STROKE_WIDTH / (3 * geometry.scale)}`,
                 );
-                point.style(
+                point.attr(
                     'r',
                     `${consts.BASE_POINT_SIZE / (2 * geometry.scale)}`,
                 );
