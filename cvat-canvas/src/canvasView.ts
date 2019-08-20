@@ -131,7 +131,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.content = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         this.adoptedContent = (SVG.adopt((this.content as any as HTMLElement)) as SVG.Container);
-        this.drawHandler = new DrawHandlerImpl(this.onDrawDone.bind(this), this.adoptedContent);
+        this.drawHandler = new DrawHandlerImpl(
+            this.onDrawDone.bind(this),
+            this.adoptedContent,
+            this.background,
+        );
         this.canvas = window.document.createElement('div');
 
         const loadingCircle: SVGCircleElement = window.document
@@ -383,11 +387,25 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         function setupObjects(objects: any[], geometry: Geometry): void {
-            this.adoptedContent.clear();
             const ctm = this.content.getScreenCTM()
                 .inverse().multiply(this.background.getScreenCTM());
 
+            this.deactivate();
+
             // TODO: Compute difference
+
+            // Instead of simple clearing let's remove all objects properly
+            for (const id of Object.keys(this.svgShapes)) {
+                if (id in this.svgTexts) {
+                    this.svgTexts[id].remove();
+                }
+
+                this.svgShapes[id].remove();
+            }
+
+            this.svgTexts = {};
+            this.svgShapes = {};
+
             this.addObjects(ctm, objects, geometry);
             // TODO: Update objects
             // TODO: Delete objects
@@ -732,6 +750,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }).addClass('cvat_canvas_shape');
 
         this.selectize(true, shape, geometry);
+        shape.remove = function remove(): void {
+            this.selectize(false, shape);
+            shape.constructor.prototype.remove.call(shape);
+        }.bind(this);
         shape.attr('fill', 'none');
 
         return shape;

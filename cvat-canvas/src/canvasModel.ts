@@ -209,7 +209,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS);
         }).catch((exception: any): void => {
-            console.log(exception.toString());
+            throw exception;
         });
 
         console.log(objectStates);
