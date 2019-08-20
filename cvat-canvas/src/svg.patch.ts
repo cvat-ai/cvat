@@ -129,28 +129,17 @@ SVG.Element.prototype.draw.extend('polygon', Object.assign({},
     }
 ));
 
-
+// Fix method drag
 const originalDraggable = SVG.Element.prototype.draggable;
 SVG.Element.prototype.draggable = function constructor(...args: any): any {
-    let handler = this.remember('_paintHandler');
+    let handler = this.remember('_draggable');
     if (!handler) {
         originalDraggable.call(this, ...args);
         handler = this.remember('_draggable');
-        handler.update = function (event: MouseEvent): void {
-            if (!event && this.lastUpdateCall){
-                event = this.lastUpdateCall;
-            }
-
-            this.lastUpdateCall = event;
-
-            // Call the calc-function which calculates the new position and size
-            this.calc(event);
-
+        handler.drag = function(e: any) {
             this.m = this.el.node.getScreenCTM().inverse();
-            this.offset = { x: window.pageXOffset, y: window.pageYOffset };
-            // Fire the `drawupdate`-event
-            this.el.fire('drawupdate', {event:event, p:this.p, m:this.m});
-        };
+            handler.constructor.prototype.drag.call(this, e);
+        }
     } else {
         originalDraggable.call(this, ...args);
     }
@@ -158,5 +147,26 @@ SVG.Element.prototype.draggable = function constructor(...args: any): any {
     return this;
 };
 for (const key of Object.keys(originalDraw)) {
-    SVG.Element.prototype.draw[key] = originalDraw[key];
+    SVG.Element.prototype.draggable[key] = originalDraw[key];
+}
+
+// Fix method resize
+const originalResize = SVG.Element.prototype.resize;
+SVG.Element.prototype.resize = function constructor(...args: any): any {
+    let handler = this.remember('_resizeHandler');
+    if (!handler) {
+        originalResize.call(this, ...args);
+        handler = this.remember('_resizeHandler');
+        handler.update = function(e: any) {
+            this.m = this.el.node.getScreenCTM().inverse();
+            handler.constructor.prototype.update.call(this, e);
+        }
+    } else {
+        originalDraggable.call(this, ...args);
+    }
+
+    return this;
+};
+for (const key of Object.keys(originalDraw)) {
+    SVG.Element.prototype.resize[key] = originalDraw[key];
 }
