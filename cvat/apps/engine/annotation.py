@@ -253,10 +253,10 @@ class JobAnnotation:
                     db_shape_attrvals.append(db_attrval)
 
                 db_shapes.append(db_shape)
-                shape["attributes"] = shape_attributes
+                shape["attributes"] = list(shape_attributes.values())
 
             db_tracks.append(db_track)
-            track["attributes"] = track_attributes
+            track["attributes"] = list(track_attributes.values())
             track["shapes"] = shapes
 
         db_tracks = bulk_create(
@@ -322,7 +322,7 @@ class JobAnnotation:
                 db_attrvals.append(db_attrval)
 
             db_shapes.append(db_shape)
-            shape["attributes"] = attributes
+            shape["attributes"] = list(attributes.values())
 
         db_shapes = bulk_create(
             db_model=models.LabeledShape,
@@ -363,7 +363,7 @@ class JobAnnotation:
                 db_attrvals.append(db_attrval)
 
             db_tags.append(db_tag)
-            tag["attributes"] = attributes
+            tag["attributes"] = list(attributes.values())
 
         db_tags = bulk_create(
             db_model=models.LabeledImage,
