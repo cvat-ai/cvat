@@ -359,7 +359,7 @@ class JobAnnotation:
                     db_attrval = models.LabeledImageAttributeVal(**attributes[db_attr_id])
                 else:
                     db_attrval = models.LabeledImageAttributeVal(**db_attr)
-                db_attrval.shape_id = len(db_tags)
+                db_attrval.tag_id = len(db_tags)
                 db_attrvals.append(db_attrval)
 
             db_tags.append(db_tag)
@@ -372,7 +372,7 @@ class JobAnnotation:
         )
 
         for db_attrval in db_attrvals:
-            db_attrval.tag_id = db_tags[db_attrval.tag_id].id
+            db_attrval.image_id = db_tags[db_attrval.tag_id].id
 
         bulk_create(
             db_model=models.LabeledImageAttributeVal,
