@@ -312,6 +312,7 @@ export class DrawHandlerImpl implements DrawHandler {
         }
 
         if (this.drawInstance) {
+            this.drawInstance.draw('transform');
             this.drawInstance.style({
                 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             });

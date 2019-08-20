@@ -296,10 +296,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             }
         }
 
-        if (!drawData.enabled && !this.data.drawData.enabled) {
-            throw new Error('Drawing has been already closed');
-        }
-
         this.data.drawData = Object.assign({}, drawData);
         this.notify(UpdateReasons.DRAW);
     }
