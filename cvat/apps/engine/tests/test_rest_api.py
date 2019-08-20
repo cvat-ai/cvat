@@ -1177,7 +1177,7 @@ class JobAnnotationAPITestCase(APITestCase):
                             "mutable": False,
                             "input_type": "select",
                             "default_value": "mazda",
-                            "values": ["bmw", "mazda", "reno"]
+                            "values": ["bmw", "mazda", "renault"]
                         },
                         {
                             "name": "parked",
@@ -1288,7 +1288,7 @@ class JobAnnotationAPITestCase(APITestCase):
                         },
                         {
                             "spec_id": task["labels"][0]["attributes"][1]["id"],
-                            "value": task["labels"][0]["attributes"][0]["default_value"]
+                            "value": task["labels"][0]["attributes"][1]["default_value"]
                         }
                     ],
                     "points": [1.0, 2.1, 100, 300.222],
@@ -1325,8 +1325,8 @@ class JobAnnotationAPITestCase(APITestCase):
                                 },
                                 {
                                     "spec_id": task["labels"][0]["attributes"][1]["id"],
-                                    "value": task["labels"][0]["attributes"][0]["default_value"]
-                                }
+                                    "value": task["labels"][0]["attributes"][1]["default_value"]
+                                },
                             ]
                         },
                         {
