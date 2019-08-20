@@ -10,10 +10,11 @@
   "author": "Intel",
   "license": "MIT",
   "dependencies": {
-    "svg.draggable.js": "^2.2.2",
-    "svg.js": "^2.7.1",
-    "svg.resize.js": "^1.4.3",
-    "svg.select.js": "^3.0.1"
+    "svg.draggable.js": "2.2.2",
+    "svg.draw.js": "^2.0.3",
+    "svg.js": "2.7.1",
+    "svg.resize.js": "1.4.3",
+    "svg.select.js": "3.0.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.5.5",

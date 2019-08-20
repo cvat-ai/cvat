@@ -26,7 +26,7 @@ Canvas is created by using constructor:
 
 ```js
     const { Canvas } = require('./canvas');
-    const canvas = new Canvas();
+    const canvas = new Canvas(ObjectStateClass);
 ```
 
 - Canvas has transparent background
@@ -45,6 +45,14 @@ Canvas itself handles:
 All methods are sync.
 
 ```ts
+    interface DrawData {
+        enabled: boolean;
+        shapeType?: string;
+        numberOfPoints?: number;
+        initialState?: any;
+        crosshair?: boolean;
+    }
+
     html(): HTMLDivElement;
     setup(frameData: FrameData, objectStates: ObjectState): void;
     activate(clientID: number, attributeID?: number): void;
@@ -53,25 +61,27 @@ All methods are sync.
     fit(): void;
     grid(stepX: number, stepY: number): void;
 
-    draw(enabled?: boolean, shapeType?: string, numberOfPoints?: number, initialState?: any): void | ObjectState;
-    split(enabled?: boolean): void | ObjectState;
-    group(enabled?: boolean): void | ObjectState;
-    merge(enabled?: boolean): void | ObjectState;
+    draw(drawData: DrawData): void;
+    split(enabled?: boolean): void;
+    group(enabled?: boolean): void;
+    merge(enabled?: boolean): void;
 
     cancel(): any;
 ```
 
 ### CSS Classes/IDs
 
-- Each drawn object (tag, shape, track) has id ```cvat_canvas_object_{objectState.id}```
+- All drawn objects (shapes, tracks) have an id ```cvat_canvas_object_{objectState.id}```
 - Drawn shapes and tracks have classes ```cvat_canvas_shape```,
  ```cvat_canvas_shape_activated```,
  ```cvat_canvas_shape_grouping```,
  ```cvat_canvas_shape_merging```,
  ```cvat_canvas_shape_drawing```
-- Tags has a class ```cvat_canvas_tag```
+- Drawn texts have the class ```cvat_canvas_text```
+- Tags have the class ```cvat_canvas_tag```
 - Canvas image has ID ```cvat_canvas_image```
 - Grid on the canvas has ID ```cvat_canvas_grid_pattern```
+- Crosshair during a draw has class ```cvat_canvas_crosshair```
 
 ### Events
 
@@ -86,6 +96,7 @@ Standard JS events are used.
     - canvas.splitted => ObjectState
     - canvas.groupped => [ObjectState]
     - canvas.merged => [ObjectState]
+    - canvas.canceled
 ```
 
 ## States
@@ -94,7 +105,7 @@ Standard JS events are used.
 
 ## API Reaction
 
-|            | FREE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING |
+|            | IDLE | GROUPING | SPLITTING | DRAWING | MERGING | EDITING |
 |------------|------|----------|-----------|---------|---------|---------|
 | html()     | +    | +        | +         | +       | +       | +       |
 | setup()    | +    | +        | +         | +       | +       | -       |
