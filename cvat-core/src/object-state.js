@@ -39,6 +39,7 @@
                 zOrder: null,
                 lock: null,
                 color: null,
+                visibility: null,
 
                 clientID: serialized.clientID,
                 serverID: serialized.serverID,
@@ -64,6 +65,7 @@
                     this.zOrder = false;
                     this.lock = false;
                     this.color = false;
+                    this.visibility = false;
                 },
                 writable: false,
             });
@@ -147,6 +149,19 @@
                     set: (color) => {
                         data.updateFlags.color = true;
                         data.color = color;
+                    },
+                },
+                visibility: {
+                    /**
+                        * @name visibility
+                        * @type {module:API.cvat.enums.VisibleState}
+                        * @memberof module:API.cvat.classes.ObjectState
+                        * @instance
+                    */
+                    get: () => data.visibility,
+                    set: (visibility) => {
+                        data.updateFlags.visibility = true;
+                        data.visibility = visibility;
                     },
                 },
                 points: {
@@ -285,6 +300,7 @@
             this.occluded = serialized.occluded;
             this.color = serialized.color;
             this.lock = serialized.lock;
+            this.visibility = serialized.visibility;
 
             // It can be undefined in a constructor and it can be defined later
             if (typeof (serialized.points) !== 'undefined') {

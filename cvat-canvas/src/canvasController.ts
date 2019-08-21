@@ -7,15 +7,21 @@ import {
     CanvasModel,
     Geometry,
     Position,
-    Size,
+    FocusData,
+    ActiveElement,
+    DrawData,
 } from './canvasModel';
 
 export interface CanvasController {
-    readonly geometry: Geometry;
     readonly objects: any[];
-    canvasSize: Size;
+    readonly focusData: FocusData;
+    readonly activeElement: ActiveElement;
+    readonly objectStateClass: any;
+    readonly drawData: DrawData;
+    geometry: Geometry;
 
     zoom(x: number, y: number, direction: number): void;
+    draw(drawData: DrawData): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
@@ -64,19 +70,35 @@ export class CanvasControllerImpl implements CanvasController {
         this.isDragging = false;
     }
 
+    public draw(drawData: DrawData): void {
+        this.model.draw(drawData);
+    }
+
     public get geometry(): Geometry {
         return this.model.geometry;
+    }
+
+    public set geometry(geometry: Geometry) {
+        this.model.geometry = geometry;
     }
 
     public get objects(): any[] {
         return this.model.objects;
     }
 
-    public set canvasSize(value: Size) {
-        this.model.canvasSize = value;
+    public get focusData(): FocusData {
+        return this.model.focusData;
     }
 
-    public get canvasSize(): Size {
-        return this.model.canvasSize;
+    public get activeElement(): ActiveElement {
+        return this.model.activeElement;
+    }
+
+    public get objectStateClass(): any {
+        return this.model.objectStateClass;
+    }
+
+    public get drawData(): DrawData {
+        return this.model.drawData;
     }
 }

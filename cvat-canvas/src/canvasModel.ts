@@ -21,11 +21,30 @@ export interface Position {
 export interface Geometry {
     image: Size;
     canvas: Size;
+    grid: Size;
     top: number;
     left: number;
     scale: number;
     offset: number;
     angle: number;
+}
+
+export interface FocusData {
+    clientID: number;
+    padding: number;
+}
+
+export interface ActiveElement {
+    clientID: number;
+    attributeID: number;
+}
+
+export interface DrawData {
+    enabled: boolean;
+    shapeType?: string;
+    numberOfPoints?: number;
+    initialState?: any;
+    crosshair?: boolean;
 }
 
 export enum FrameZoom {
@@ -44,14 +63,21 @@ export enum UpdateReasons {
     ZOOM = 'zoom',
     FIT = 'fit',
     MOVE = 'move',
+    GRID = 'grid',
+    FOCUS = 'focus',
+    ACTIVATE = 'activate',
+    DRAW = 'draw',
 }
 
 export interface CanvasModel extends MasterImpl {
     readonly image: string;
     readonly objects: any[];
+    readonly gridSize: Size;
+    readonly focusData: FocusData;
+    readonly activeElement: ActiveElement;
+    readonly objectStateClass: any;
+    readonly drawData: DrawData;
     geometry: Geometry;
-    imageSize: Size;
-    canvasSize: Size;
 
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
@@ -63,36 +89,51 @@ export interface CanvasModel extends MasterImpl {
     fit(): void;
     grid(stepX: number, stepY: number): void;
 
-    draw(enabled: boolean, shapeType: string, numberOfPoints: number, initialState: any): any;
-    split(enabled: boolean): any;
-    group(enabled: boolean): any;
-    merge(enabled: boolean): any;
+    draw(drawData: DrawData): void;
+    split(enabled: boolean): void;
+    group(enabled: boolean): void;
+    merge(enabled: boolean): void;
 
     cancel(): void;
 }
 
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     private data: {
-        image: string;
-        objects: any[];
-        imageSize: Size;
+        ObjectStateClass: any;
+        activeElement: ActiveElement;
+        angle: number;
         canvasSize: Size;
+        drawData: DrawData;
+        image: string;
         imageOffset: number;
+        imageSize: Size;
+        focusData: FocusData;
+        gridSize: Size;
+        left: number;
+        objects: any[];
+        rememberAngle: boolean;
         scale: number;
         top: number;
-        left: number;
-        angle: number;
-        rememberAngle: boolean;
     };
 
-    public constructor() {
+    public constructor(ObjectStateClass: any) {
         super();
 
         this.data = {
+            activeElement: {
+                clientID: null,
+                attributeID: null,
+            },
             angle: 0,
             canvasSize: {
                 height: 0,
                 width: 0,
+            },
+            drawData: {
+                enabled: false,
+                shapeType: null,
+                numberOfPoints: null,
+                initialState: null,
             },
             image: '',
             imageOffset: 0,
@@ -100,8 +141,17 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 height: 0,
                 width: 0,
             },
+            focusData: {
+                clientID: 0,
+                padding: 0,
+            },
+            gridSize: {
+                height: 100,
+                width: 100,
+            },
             left: 0,
             objects: [],
+            ObjectStateClass,
             rememberAngle: false,
             scale: 1,
             top: 0,
@@ -112,8 +162,22 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         const oldScale: number = this.data.scale;
         const newScale: number = direction > 0 ? oldScale * 6 / 5 : oldScale * 5 / 6;
         this.data.scale = Math.min(Math.max(newScale, FrameZoom.MIN), FrameZoom.MAX);
-        this.data.left += (x * (oldScale / this.data.scale - 1)) * this.data.scale;
-        this.data.top += (y * (oldScale / this.data.scale - 1)) * this.data.scale;
+
+        const { angle } = this.data;
+
+        const mutiplier = Math.sin(angle * Math.PI / 180) + Math.cos(angle * Math.PI / 180);
+        if ((angle / 90) % 2) {
+            // 90, 270, ..
+            this.data.top += mutiplier * ((x - this.data.imageSize.width / 2)
+                * (oldScale / this.data.scale - 1)) * this.data.scale;
+            this.data.left -= mutiplier * ((y - this.data.imageSize.height / 2)
+                * (oldScale / this.data.scale - 1)) * this.data.scale;
+        } else {
+            this.data.left += mutiplier * ((x - this.data.imageSize.width / 2)
+                * (oldScale / this.data.scale - 1)) * this.data.scale;
+            this.data.top += mutiplier * ((y - this.data.imageSize.height / 2)
+                * (oldScale / this.data.scale - 1)) * this.data.scale;
+        }
 
         this.notify(UpdateReasons.ZOOM);
     }
@@ -152,7 +216,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public activate(clientID: number, attributeID: number): void {
-        console.log(clientID, attributeID);
+        this.data.activeElement = {
+            clientID,
+            attributeID,
+        };
+
+        this.notify(UpdateReasons.ACTIVATE);
     }
 
     public rotate(rotation: Rotation, remember: boolean = false): void {
@@ -168,7 +237,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public focus(clientID: number, padding: number): void {
-        console.log(clientID, padding);
+        this.data.focusData = {
+            clientID,
+            padding,
+        };
+
+        this.notify(UpdateReasons.FOCUS);
     }
 
     public fit(): void {
@@ -192,26 +266,38 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             FrameZoom.MAX,
         );
 
-        this.data.top = (this.data.canvasSize.height
-            - this.data.imageSize.height * this.data.scale) / 2;
-        this.data.left = (this.data.canvasSize.width
-            - this.data.imageSize.width * this.data.scale) / 2;
+        this.data.top = (this.data.canvasSize.height / 2 - this.data.imageSize.height / 2);
+        this.data.left = (this.data.canvasSize.width / 2 - this.data.imageSize.width / 2);
 
         this.notify(UpdateReasons.FIT);
     }
 
     public grid(stepX: number, stepY: number): void {
-        console.log(stepX, stepY);
+        this.data.gridSize = {
+            height: stepY,
+            width: stepX,
+        };
+
+        this.notify(UpdateReasons.GRID);
     }
 
-    public draw(enabled: boolean, shapeType: string,
-        numberOfPoints: number, initialState: any): any {
-        return {
-            enabled,
-            initialState,
-            numberOfPoints,
-            shapeType,
-        };
+    public draw(drawData: DrawData): void {
+        if (drawData.enabled) {
+            if (this.data.drawData.enabled) {
+                throw new Error('Drawing has been already started');
+            } else if (!drawData.shapeType) {
+                throw new Error('A shape type is not specified');
+            } else if (typeof (drawData.numberOfPoints) !== 'undefined') {
+                if (drawData.shapeType === 'polygon' && drawData.numberOfPoints < 3) {
+                    throw new Error('A polygon consists of at least 3 points');
+                } else if (drawData.shapeType === 'polyline' && drawData.numberOfPoints < 2) {
+                    throw new Error('A polyline consists of at least 2 points');
+                }
+            }
+        }
+
+        this.data.drawData = Object.assign({}, drawData);
+        this.notify(UpdateReasons.DRAW);
     }
 
     public split(enabled: boolean): any {
@@ -233,19 +319,30 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     public get geometry(): Geometry {
         return {
             angle: this.data.angle,
-            canvas: {
-                height: this.data.canvasSize.height,
-                width: this.data.canvasSize.width,
-            },
-            image: {
-                height: this.data.imageSize.height,
-                width: this.data.imageSize.width,
-            },
+            canvas: Object.assign({}, this.data.canvasSize),
+            image: Object.assign({}, this.data.imageSize),
+            grid: Object.assign({}, this.data.gridSize),
             left: this.data.left,
             offset: this.data.imageOffset,
             scale: this.data.scale,
             top: this.data.top,
         };
+    }
+
+    public set geometry(geometry: Geometry) {
+        this.data.angle = geometry.angle;
+        this.data.canvasSize = Object.assign({}, geometry.canvas);
+        this.data.imageSize = Object.assign({}, geometry.image);
+        this.data.gridSize = Object.assign({}, geometry.grid);
+        this.data.left = geometry.left;
+        this.data.top = geometry.top;
+        this.data.imageOffset = geometry.offset;
+        this.data.scale = geometry.scale;
+
+        this.data.imageOffset = Math.floor(Math.max(
+            this.data.canvasSize.height / FrameZoom.MIN,
+            this.data.canvasSize.width / FrameZoom.MIN,
+        ));
     }
 
     public get image(): string {
@@ -256,36 +353,23 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         return this.data.objects;
     }
 
-    public set imageSize(value: Size) {
-        this.data.imageSize = {
-            height: value.height,
-            width: value.width,
-        };
+    public get gridSize(): Size {
+        return Object.assign({}, this.data.gridSize);
     }
 
-    public get imageSize(): Size {
-        return {
-            height: this.data.imageSize.height,
-            width: this.data.imageSize.width,
-        };
+    public get focusData(): FocusData {
+        return Object.assign({}, this.data.focusData);
     }
 
-    public set canvasSize(value: Size) {
-        this.data.canvasSize = {
-            height: value.height,
-            width: value.width,
-        };
-
-        this.data.imageOffset = Math.floor(Math.max(
-            this.data.canvasSize.height / FrameZoom.MIN,
-            this.data.canvasSize.width / FrameZoom.MIN,
-        ));
+    public get activeElement(): ActiveElement {
+        return Object.assign({}, this.data.activeElement);
     }
 
-    public get canvasSize(): Size {
-        return {
-            height: this.data.canvasSize.height,
-            width: this.data.canvasSize.width,
-        };
+    public get objectStateClass(): any {
+        return this.data.ObjectStateClass;
+    }
+
+    public get drawData(): DrawData {
+        return Object.assign({}, this.data.drawData);
     }
 }

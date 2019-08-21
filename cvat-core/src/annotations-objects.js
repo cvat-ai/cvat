@@ -9,11 +9,15 @@
 
 (() => {
     const ObjectState = require('./object-state');
-    const { checkObjectType } = require('./common');
+    const {
+        checkObjectType,
+        isEnum,
+    } = require('./common');
     const {
         ObjectShape,
         ObjectType,
         AttributeType,
+        VisibleState,
     } = require('./enums');
 
     const {
@@ -169,6 +173,7 @@
 
             this.frameMeta = injection.frameMeta;
             this.collectionZ = injection.collectionZ;
+            this.visibility = VisibleState.SHAPE;
 
             this.color = color;
             this.shapeType = null;
@@ -272,6 +277,7 @@
                 label: this.label,
                 group: this.group,
                 color: this.color,
+                visibility: this.visibility,
             };
         }
 
@@ -371,6 +377,16 @@
                 }
 
                 copy.color = data.color;
+            }
+
+            if (updated.visibility) {
+                if (!isEnum.call(VisibleState, data.visibility)) {
+                    throw new ArgumentError(
+                        `Got invalid visibility value: "${data.visibility}"`,
+                    );
+                }
+
+                copy.visibility = data.visibility;
             }
 
             // Reset flags and commit all changes
@@ -475,6 +491,7 @@
                         serverID: this.serverID,
                         lock: this.lock,
                         color: this.color,
+                        visibility: this.visibility,
                     },
                 );
 
@@ -641,6 +658,16 @@
                 }
 
                 copy.color = data.color;
+            }
+
+            if (updated.visibility) {
+                if (!isEnum.call(VisibleState, data.visibility)) {
+                    throw new ArgumentError(
+                        `Got invalid visibility value: "${data.visibility}"`,
+                    );
+                }
+
+                copy.visibility = data.visibility;
             }
 
             if (updated.keyframe) {

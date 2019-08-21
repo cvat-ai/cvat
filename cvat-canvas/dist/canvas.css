@@ -12,6 +12,21 @@ polyline.cvat_canvas_shape {
     stroke-opacity: 1;
 }
 
+.cvat_canvas_text {
+    font-weight: bold;
+    font-size: 1.2em;
+    fill: white;
+    cursor: default;
+    font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+    text-shadow: 0px 0px 4px black;
+    user-select: none;
+    pointer-events: none;
+}
+
+.cvat_canvas_crosshair {
+    stroke: red;
+}
+
 .cvat_canvas_shape_activated {
 
 }
@@ -25,7 +40,10 @@ polyline.cvat_canvas_shape {
 }
 
 .cvat_canvas_shape_drawing {
-
+    fill-opacity: 0.1;
+    stroke-opacity: 1;
+    fill: white;
+    stroke: black;
 }
 
 .svg_select_boundingRect {
@@ -35,17 +53,10 @@ polyline.cvat_canvas_shape {
 
 #cvat_canvas_wrapper {
     width: 100%;
-    height: 80%;
-    border: 1px black solid;
+    height: 93%;
     border-radius: 5px;
-    background-color: #B0C4DE;
+    background-color: white;
     overflow: hidden;
-    position: relative;
-}
-
-#cvat_canvas_rotation_wrapper {
-    width: 100%;
-    height: 100%;
     position: relative;
 }
 
@@ -54,7 +65,6 @@ polyline.cvat_canvas_shape {
     position: absolute;
     width: 100%;
     height: 100%;
-    transform-origin: top left;
 }
 
 #cvat_canvas_loading_circle {
@@ -68,7 +78,6 @@ polyline.cvat_canvas_shape {
 #cvat_canvas_text_content {
     position: absolute;
     z-index: 3;
-    transform-origin: center center;
     pointer-events: none;
     width: 100%;
     height: 100%;
@@ -79,15 +88,14 @@ polyline.cvat_canvas_shape {
     position: absolute;
     z-index: 0;
     background-repeat: no-repeat;
-    transform-origin: top left;
     width: 100%;
     height: 100%;
+    box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.75);
 }
 
 #cvat_canvas_grid {
     position: absolute;
     z-index: 2;
-    transform-origin: top left;
     pointer-events: none;
     width: 100%;
     height: 100%;
@@ -103,7 +111,6 @@ polyline.cvat_canvas_shape {
     position: absolute;
     z-index: 2;
     outline: 10px solid black;
-    transform-origin: top left;
     width: 100%;
     height: 100%;
 }

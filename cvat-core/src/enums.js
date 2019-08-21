@@ -5,7 +5,7 @@
 
 (() => {
     /**
-        * Enum for type of server files
+        * Share files types
         * @enum {string}
         * @name ShareFileType
         * @memberof module:API.cvat.enums
@@ -19,7 +19,7 @@
     });
 
     /**
-        * Enum for a status of a task
+        * Task statuses
         * @enum {string}
         * @name TaskStatus
         * @memberof module:API.cvat.enums
@@ -35,7 +35,7 @@
     });
 
     /**
-        * Enum for a mode of a task
+        * Task modes
         * @enum {string}
         * @name TaskMode
         * @memberof module:API.cvat.enums
@@ -49,7 +49,7 @@
     });
 
     /**
-        * Enum for type of server files
+        * Attribute types
         * @enum {string}
         * @name AttributeType
         * @memberof module:API.cvat.enums
@@ -69,7 +69,7 @@
     });
 
     /**
-        * Enum for type of an object
+        * Object types
         * @enum {string}
         * @name ObjectType
         * @memberof module:API.cvat.enums
@@ -85,7 +85,7 @@
     });
 
     /**
-        * Enum for type of server files
+        * Object shapes
         * @enum {string}
         * @name ObjectShape
         * @memberof module:API.cvat.enums
@@ -103,7 +103,23 @@
     });
 
     /**
-        * Enum for type of server files
+        * Object visibility states
+        * @enum {string}
+        * @name ObjectShape
+        * @memberof module:API.cvat.enums
+        * @property {string} ALL 'all'
+        * @property {string} SHAPE 'shape'
+        * @property {string} NONE 'none'
+        * @readonly
+    */
+    const VisibleState = Object.freeze({
+        ALL: 'all',
+        SHAPE: 'shape',
+        NONE: 'none',
+    });
+
+    /**
+        * Event types
         * @enum {number}
         * @name LogType
         * @memberof module:API.cvat.enums
@@ -166,18 +182,6 @@
         rotateImage: 26,
     };
 
-    /**
-        * Enum for type of server files
-        * @enum {number}
-        * @name EventType
-        * @memberof module:API.cvat.enums
-        * @property {number} frameDownloaded 0
-        * @readonly
-    */
-    const EventType = Object.freeze({
-        frameDownloaded: 0,
-    });
-
     module.exports = {
         ShareFileType,
         TaskStatus,
@@ -185,7 +189,7 @@
         AttributeType,
         ObjectType,
         ObjectShape,
+        VisibleState,
         LogType,
-        EventType,
     };
 })();
