@@ -57,6 +57,27 @@ services:
       - cvat_logs:/home/django/logs
       - cvat_models:/home/django/models
 
+  cvat_ui:
+    container_name: cvat_ui
+    image: nginx
+    build:
+      context: cvat-ui
+      args:
+        http_proxy:
+        https_proxy:
+        no_proxy:
+        socks_proxy:
+      dockerfile: Dockerfile
+    networks:
+      default:
+        aliases:
+          - ui
+    depends_on:
+      - cvat
+    ports:
+      - "80:3000"
+    entrypoint: nginx
+
 volumes:
   cvat_db:
   cvat_data:
