@@ -10,7 +10,16 @@
             "preLaunchTask": "ui.js: server",
             "name": "ui.js: debug",
             "url": "http://localhost:3000",
-            "webRoot": "${workspaceFolder}/cvat-ui"
+            "webRoot": "${workspaceFolder}/cvat-ui",
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack://cvat/./*": "${workspaceFolder}/cvat-core/*",
+                "webpack:///./*": "${webRoot}/*",
+                "webpack:///src/*": "${webRoot}/*",
+                "webpack:///*": "*",
+                "webpack:///./~/*": "${webRoot}/node_modules/*"
+            },
+            "smartStep": true,
         },
         {
             "name": "server: django",
@@ -157,10 +166,6 @@
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "disableOptimisticBPs": true,
-        },
-        {
-            "type": "chrome",
-
         }
     ],
     "compounds": [
