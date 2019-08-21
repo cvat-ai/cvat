@@ -17,7 +17,7 @@
                 "webpack:///./*": "${webRoot}/*",
                 "webpack:///src/*": "${webRoot}/*",
                 "webpack:///*": "*",
-                "webpack:///./~/*": "${webRoot}/node_modules/*",
+                "webpack:///./~/*": "${webRoot}/node_modules/*"
             },
             "smartStep": true,
         },
