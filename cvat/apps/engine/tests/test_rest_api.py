@@ -1212,7 +1212,8 @@ class JobAnnotationAPITestCase(APITestCase):
 
         return (task, jobs)
 
-    def _get_default_attr_values(self, task):
+    @staticmethod
+    def _get_default_attr_values(task):
         default_attr_values = {}
         for label in task["labels"]:
             default_attr_values[label["id"]] = {
