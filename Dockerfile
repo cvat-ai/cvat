@@ -4,15 +4,16 @@ ARG http_proxy
 ARG https_proxy
 ARG no_proxy
 ARG socks_proxy
+ARG TZ
 
 ENV TERM=xterm \
     http_proxy=${http_proxy}   \
     https_proxy=${https_proxy} \
     no_proxy=${no_proxy} \
-    socks_proxy=${socks_proxy}
-
-ENV LANG='C.UTF-8'  \
-    LC_ALL='C.UTF-8'
+    socks_proxy=${socks_proxy} \
+    LANG='C.UTF-8'  \
+    LC_ALL='C.UTF-8' \
+    TZ=${TZ}
 
 ARG USER
 ARG DJANGO_CONFIGURATION
@@ -38,11 +39,14 @@ RUN apt-get update && \
         libsasl2-dev \
         python3-dev \
         python3-pip \
+        tzdata \
         unzip \
         unrar \
         p7zip-full \
         vim && \
     pip3 install -U setuptools && \
+    ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata && \
     add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \
     add-apt-repository --remove ppa:mc3man/xerus-media -y && \
     rm -rf /var/lib/apt/lists/*
