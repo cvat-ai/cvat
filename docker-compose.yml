@@ -51,6 +51,8 @@ services:
         WITH_TESTS: "no"
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
+      UI_PORT: 9080
+
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
@@ -75,8 +77,7 @@ services:
     depends_on:
       - cvat
     ports:
-      - "80:3000"
-    entrypoint: nginx
+      - "9080:80"
 
 volumes:
   cvat_db:

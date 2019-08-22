@@ -108,7 +108,8 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'allauth',
     'allauth.account',
-    'rest_auth.registration'
+    'rest_auth.registration',
+    'corsheaders',
 ]
 
 SITE_ID = 1
@@ -169,7 +170,17 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+# Cross-Origin Resource Sharing settings for CVAT UI
+UI_SCHEME = os.environ.get('UI_SCHEME', 'http')
+UI_HOST = os.environ.get('UI_HOST', 'localhost')
+UI_PORT = os.environ.get('UI_PORT', '3000')
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [UI_HOST]
+UI_URL = '{}://{}:{}'.format(UI_SCHEME, UI_HOST, UI_PORT)
+CORS_ORIGIN_WHITELIST = [UI_URL]
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
