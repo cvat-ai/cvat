@@ -106,5 +106,4 @@ class CanvasImpl implements Canvas {
 export {
     CanvasImpl as Canvas,
     Rotation,
-    DrawData,
 };
