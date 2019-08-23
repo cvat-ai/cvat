@@ -2,7 +2,7 @@
   "name": "cvat-canvas",
   "version": "0.1.0",
   "description": "Part of Computer Vision Annotation Tool which presents its canvas library",
-  "main": "babel.config.js",
+  "main": "src/canvas.ts",
   "scripts": {
     "build": "tsc && webpack --config ./webpack.config.js",
     "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
@@ -25,6 +25,7 @@
     "@typescript-eslint/eslint-plugin": "^1.13.0",
     "@typescript-eslint/parser": "^1.13.0",
     "babel-loader": "^8.0.6",
+    "dts-bundle-webpack": "^1.0.2",
     "eslint": "^6.1.0",
     "eslint-config-airbnb-typescript": "^4.0.1",
     "eslint-config-typescript-recommended": "^1.4.17",

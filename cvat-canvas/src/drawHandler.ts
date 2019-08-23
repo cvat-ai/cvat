@@ -333,9 +333,9 @@ export class DrawHandlerImpl implements DrawHandler {
                 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             });
 
-            const PaintHandler = Object.values(this.drawInstance.memory())[0];
+            const paintHandler = this.drawInstance.remember('_paintHandler');
 
-            for (const point of (PaintHandler as any).set.members) {
+            for (const point of (paintHandler as any).set.members) {
                 point.style(
                     'stroke-width',
                     `${consts.BASE_STROKE_WIDTH / (3 * geometry.scale)}`,

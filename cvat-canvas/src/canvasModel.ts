@@ -69,7 +69,7 @@ export enum UpdateReasons {
     DRAW = 'draw',
 }
 
-export interface CanvasModel extends MasterImpl {
+export interface CanvasModel {
     readonly image: string;
     readonly objects: any[];
     readonly gridSize: Size;
@@ -211,8 +211,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }).catch((exception: any): void => {
             throw exception;
         });
-
-        console.log(objectStates);
     }
 
     public activate(clientID: number, attributeID: number): void {

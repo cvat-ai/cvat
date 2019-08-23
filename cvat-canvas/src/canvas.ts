@@ -4,11 +4,15 @@
 */
 
 import {
-    CanvasModel,
-    CanvasModelImpl,
     Rotation,
     DrawData,
+    CanvasModel,
+    CanvasModelImpl,
 } from './canvasModel';
+
+import {
+    Master,
+} from './master';
 
 import {
     CanvasController,
@@ -19,6 +23,7 @@ import {
     CanvasView,
     CanvasViewImpl,
 } from './canvasView';
+
 
 interface Canvas {
     html(): HTMLDivElement;
@@ -38,7 +43,7 @@ interface Canvas {
 }
 
 class CanvasImpl implements Canvas {
-    private model: CanvasModel;
+    private model: CanvasModel & Master;
     private controller: CanvasController;
     private view: CanvasView;
 
@@ -60,7 +65,7 @@ class CanvasImpl implements Canvas {
         this.model.activate(clientID, attributeID);
     }
 
-    public rotate(rotation: Rotation, remember: boolean): void {
+    public rotate(rotation: Rotation, remember: boolean = false): void {
         this.model.rotate(rotation, remember);
     }
 
@@ -97,7 +102,9 @@ class CanvasImpl implements Canvas {
     }
 }
 
+
 export {
     CanvasImpl as Canvas,
     Rotation,
+    DrawData,
 };
