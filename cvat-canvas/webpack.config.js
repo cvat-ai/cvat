@@ -53,9 +53,10 @@ const webConfig = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'cvat-canvas.js',
         library: 'canvas',
+        libraryTarget: 'window',
     },
     devServer: {
-        contentBase: path.join(__dirname, 'public'),
+        contentBase: path.join(__dirname, 'dist'),
         compress: false,
         inline: true,
         port: 3000,
