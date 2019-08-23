@@ -8,10 +8,12 @@ from rest_auth.views import (
     LoginView, LogoutView, PasswordChangeView,
     PasswordResetView, PasswordResetConfirmView)
 from rest_auth.registration.views import RegisterView
+from .views import SignatureView
 
 urlpatterns = [
     path('login', LoginView.as_view(), name='rest_login'),
     path('logout', LogoutView.as_view(), name='rest_logout'),
+    path('signature', SignatureView.as_view(), name='signature')
 ]
 
 if settings.DJANGO_AUTH_TYPE == 'BASIC':
