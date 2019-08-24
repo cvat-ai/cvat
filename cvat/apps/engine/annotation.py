@@ -4,6 +4,7 @@
 
 import os
 from enum import Enum
+from collections import OrderedDict
 from django.utils import timezone
 from PIL import Image
 
@@ -192,9 +193,21 @@ class JobAnnotation:
         self.logger = slogger.job[self.db_job.id]
         self.db_labels = {db_label.id:db_label
             for db_label in db_segment.task.label_set.all()}
-        self.db_attributes = {db_attr.id:db_attr
-            for db_attr in models.AttributeSpec.objects.filter(
-                label__task__id=db_segment.task.id)}
+
+        self.db_attributes = {}
+        for db_label in self.db_labels.values():
+            self.db_attributes[db_label.id] = {
+                "mutable": OrderedDict(),
+                "immutable": OrderedDict(),
+                "all": OrderedDict(),
+            }
+            for db_attr in db_label.attributespec_set.all():
+                if db_attr.mutable:
+                    self.db_attributes[db_label.id]["mutable"][db_attr.id] = db_attr
+                else:
+                    self.db_attributes[db_label.id]["immutable"][db_attr.id] = db_attr
+
+                self.db_attributes[db_label.id]["all"][db_attr.id] = db_attr
 
     def reset(self):
         self.ir_data.reset()
@@ -214,7 +227,7 @@ class JobAnnotation:
 
             for attr in track_attributes:
                 db_attrval = models.LabeledTrackAttributeVal(**attr)
-                if db_attrval.spec_id not in self.db_attributes:
+                if db_attrval.spec_id not in self.db_attributes[db_track.label_id]["immutable"]:
                     raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
                 db_attrval.track_id = len(db_tracks)
                 db_track_attrvals.append(db_attrval)
@@ -228,7 +241,7 @@ class JobAnnotation:
 
                 for attr in shape_attributes:
                     db_attrval = models.TrackedShapeAttributeVal(**attr)
-                    if db_attrval.spec_id not in self.db_attributes:
+                    if db_attrval.spec_id not in self.db_attributes[db_track.label_id]["mutable"]:
                         raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
                     db_attrval.shape_id = len(db_shapes)
                     db_shape_attrvals.append(db_attrval)
@@ -295,8 +308,9 @@ class JobAnnotation:
 
             for attr in attributes:
                 db_attrval = models.LabeledShapeAttributeVal(**attr)
-                if db_attrval.spec_id not in self.db_attributes:
+                if db_attrval.spec_id not in self.db_attributes[db_shape.label_id]["all"]:
                     raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
+
                 db_attrval.shape_id = len(db_shapes)
                 db_attrvals.append(db_attrval)
 
@@ -335,7 +349,7 @@ class JobAnnotation:
 
             for attr in attributes:
                 db_attrval = models.LabeledImageAttributeVal(**attr)
-                if db_attrval.spec_id not in self.db_attributes:
+                if db_attrval.spec_id not in self.db_attributes[db_tag.label_id]["all"]:
                     raise AttributeError("spec_id `{}` is invalid".format(db_attrval.spec_id))
                 db_attrval.tag_id = len(db_tags)
                 db_attrvals.append(db_attrval)
@@ -350,7 +364,7 @@ class JobAnnotation:
         )
 
         for db_attrval in db_attrvals:
-            db_attrval.tag_id = db_tags[db_attrval.tag_id].id
+            db_attrval.image_id = db_tags[db_attrval.tag_id].id
 
         bulk_create(
             db_model=models.LabeledImageAttributeVal,
@@ -436,6 +450,16 @@ class JobAnnotation:
         self._delete(data)
         self._commit()
 
+    @staticmethod
+    def _extend_attributes(attributeval_set, attribute_specs):
+        shape_attribute_specs_set = set(attr.spec_id for attr in attributeval_set)
+        for db_attr_spec in attribute_specs:
+            if db_attr_spec.id not in shape_attribute_specs_set:
+                attributeval_set.append(OrderedDict([
+                    ('spec_id', db_attr_spec.id),
+                    ('value', db_attr_spec.default_value),
+                ]))
+
     def _init_tags_from_db(self):
         db_tags = self.db_job.labeledimage_set.prefetch_related(
             "label",
@@ -461,6 +485,11 @@ class JobAnnotation:
             },
             field_id='id',
         )
+
+        for db_tag in db_tags:
+            self._extend_attributes(db_tag.labeledimageattributeval_set,
+                self.db_attributes[db_tag.label_id]["all"].values())
+
         serializer = serializers.LabeledImageSerializer(db_tags, many=True)
         self.ir_data.tags = serializer.data
 
@@ -493,6 +522,9 @@ class JobAnnotation:
             },
             field_id='id',
         )
+        for db_shape in db_shapes:
+            self._extend_attributes(db_shape.labeledshapeattributeval_set,
+                self.db_attributes[db_shape.label_id]["all"].values())
 
         serializer = serializers.LabeledShapeSerializer(db_shapes, many=True)
         self.ir_data.shapes = serializer.data
@@ -558,10 +590,15 @@ class JobAnnotation:
             # A result table can consist many equal rows for track/shape attributes
             # We need filter unique attributes manually
             db_track["labeledtrackattributeval_set"] = list(set(db_track["labeledtrackattributeval_set"]))
+            self._extend_attributes(db_track.labeledtrackattributeval_set,
+                self.db_attributes[db_track.label_id]["immutable"].values())
+
             for db_shape in db_track["trackedshape_set"]:
                 db_shape["trackedshapeattributeval_set"] = list(
                     set(db_shape["trackedshapeattributeval_set"])
                 )
+                self._extend_attributes(db_shape["trackedshapeattributeval_set"],
+                    self.db_attributes[db_track.label_id]["mutable"].values())
 
         serializer = serializers.LabeledTrackSerializer(db_tracks, many=True)
         self.ir_data.tracks = serializer.data
