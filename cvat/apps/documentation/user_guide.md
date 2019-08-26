@@ -189,15 +189,17 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     Each element contains: task name, preview, execution status, buttons, and one or more links.
     Each button is responsible for a specific function:
     - ``Dump Annotation`` — download an annotation file from a task. Several formats are available:
-      -  [CVAT XML 1.1 for video](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#interpolation) is highlighted if a task has the interpolation mode 
-      -  [CVAT XML 1.1 for images](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#annotation) is highlighted if a task has the annotation mode 
+      - [CVAT XML 1.1 for video](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#interpolation)
+      is highlighted if a task has the interpolation mode 
+      - [CVAT XML 1.1 for images](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#annotation)
+      is highlighted if a task has the annotation mode 
       - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
       - [COCO JSON 1.0](http://cocodataset.org/#format-data)
       - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file with the value of each color
       - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records)
     - ``Upload Annotation`` — upload an annotation file to the task. Several formats are available:
-      -  [CVAT XML 1.1](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md)
+      - [CVAT XML 1.1](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md)
       - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
       - [COCO JSON 1.0](http://cocodataset.org/#format-data)
@@ -449,18 +451,19 @@ Usage examples:
     ![](static/documentation/images/image118.jpg)
 
 1.  Choose format dump annotation file. Dump annotation are available in several formats:
-     -  [CVAT XML 1.1 for video](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#interpolation)
-     is highlighted if a task has the interpolation mode
-     -  [CVAT XML 1.1 for images](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#annotation)
-     is highlighted if a task has the annotation mode
+    -  [CVAT XML 1.1 for video](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#interpolation)
+    is highlighted if a task has the interpolation mode
+    -  [CVAT XML 1.1 for images](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#annotation)
+    is highlighted if a task has the annotation mode
 
-        ![](static/documentation/images/image029.jpg "Example XML format") 
+    ![](static/documentation/images/image029.jpg "Example XML format") 
 
-     - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
-     - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
-     - [COCO JSON 1.0](http://cocodataset.org/#format-data)
-     - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file with the value of each color
-     - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records) 
+    -  [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
+    -  [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
+    -  [COCO JSON 1.0](http://cocodataset.org/#format-data)
+    -  ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file with
+    the value of each color
+    -  [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records) 
 
 ### Task synchronization with a repository
 
@@ -972,26 +975,26 @@ You can add/delete points after finishing.
 
 You can create linear interpolation for points to annotate a moving object:
 
-1. Before starting, you have to be sure that ``Points`` is selected. 
-1. Linear interpolation works only with one point, so you need to set ``Poly Shapes Size``: 1. 
-1. After that select the interpolation mode.
+ 1. Before starting, you have to be sure that ``Points`` is selected. 
+ 1. Linear interpolation works only with one point, so you need to set ``Poly Shapes Size``: 1. 
+ 1. After that select the interpolation mode.
 
-   ![](static/documentation/images/image122.jpg)
+      ![](static/documentation/images/image122.jpg)
 
-1. Press ``N`` or click ``Create Shape`` for entering drawing mode.
+ 1. Press ``N`` or click ``Create Shape`` for entering drawing mode.
 Click LMB to create a point and shape will be automatically completed. 
 
-   ![](static/documentation/images/gif011_DETRAC.gif)
+      ![](static/documentation/images/gif011_DETRAC.gif)
 
-1. Move forward a few frames and move the point to the desired position,
+ 1. Move forward a few frames and move the point to the desired position,
 this way you will create a keyframe and intermediate frames will be drawn automatically.
 You can work with this object as with an interpolated track: hide with help of ``Outside``, move around keyframes, etc.
 
-   ![](static/documentation/images/gif012_DETRAC.gif)
+      ![](static/documentation/images/gif012_DETRAC.gif)
 
-1. This way you'll get linear interpolation using `` Points``.
+ 1. This way you'll get linear interpolation using `` Points``.
 
-   ![](static/documentation/images/gif013_DETRAC.gif)
+      ![](static/documentation/images/gif013_DETRAC.gif)
 
 ## Annotation with Auto Segmentation
 
@@ -1012,43 +1015,51 @@ a shape is created and you can work with it as a polygon.
 
 ## Auto annotation
 
-1. First you need to upload deep learning (DL) models using model manager. Only models in OpenVINO™ toolkit format are supported.
-If you would like to annotate a task with a custom model please convert it to the intermediate representation (IR) format via the model optimizer tool.
+ 1. First you need to upload deep learning (DL) models using model manager.
+Only models in OpenVINO™ toolkit format are supported.
+If you would like to annotate a task with a custom model please convert it
+to the intermediate representation (IR) format via the model optimizer tool.
 See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
 
-   ![](static/documentation/images/image099.jpg)
+      ![](static/documentation/images/image099.jpg)
 
-1. Enter model name, and select model file using "Select files" button. To annotate a task with a custom model you need to prepare 4 files:
-   - ``Model config`` (*.xml) - a text file with network configuration. 
-   - ``Model weights`` (*.bin) - a binary file with trained weights. 
-   - ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with string values for label numbers.
-   - ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure which can be processed by CVAT.
+ 1. Enter model name, and select model file using "Select files" button. To annotate a task with a custom model
+you need to prepare 4 files:
+    - ``Model config`` (*.xml) - a text file with network configuration. 
+    - ``Model weights`` (*.bin) - a binary file with trained weights. 
+    - ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with string values
+   for label numbers.
+    - ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure
+   which can be processed by CVAT.
 
-   More about creating model files can be found [here](https://github.com/opencv/cvat/tree/develop/cvat/apps/auto_annotation).
-   
-   ![](static/documentation/images/image104.jpg)
+    More about creating model files can be found [here](https://github.com/opencv/cvat/tree/develop/cvat/apps/auto_annotation).
 
-1. After downloading a model you have to  create a task or find an already created one and click ``Run Auto Annotation`` button.
+    ![](static/documentation/images/image104.jpg)
 
-   ![](static/documentation/images/image119.jpg)
+ 1. After downloading a model you have to  create a task or find an already created one and
+click ``Run Auto Annotation`` button.
 
-1. In dialog window select a model you need. If it's necessary select the ``Delete current annotation`` checkbox.
+    ![](static/documentation/images/image119.jpg)
+
+ 1. In dialog window select a model you need. If it's necessary select the ``Delete current annotation`` checkbox.
 Adjust the labels so that the task labels will correspond to the labels of the DL model.
 Click ``Start`` to begin the auto annotatiton process.
 
-   ![](static/documentation/images/image120.jpg)
+     ![](static/documentation/images/image120.jpg)
 
-1. At runtime, you can see percentage of completion. You can also cancel the auto annotation process by clicking ``Cancel Auto Annotation``
+ 1. At runtime, you can see percentage of completion. You can also cancel the auto annotation
+ process by clicking ``Cancel Auto Annotation``
 
-   ![](static/documentation/images/image121.jpg)
+      ![](static/documentation/images/image121.jpg)
 
-1. As a result, you will get an annotation with separate bounding boxes (or other shapes)
+ 1. As a result, you will get an annotation with separate bounding boxes (or other shapes)
 
-   ![](static/documentation/images/gif014_DETRAC.gif)
+      ![](static/documentation/images/gif014_DETRAC.gif)
 
-1. Separate bounding boxes can be edited by removing false positives, adding unlabeled objects, and merged into tracks using ``Merge Shape``
+ 1. Separate bounding boxes can be edited by removing false positives, adding unlabeled objects, and
+ merged into tracks using ``Merge Shape``
 
-   ![](static/documentation/images/gif015_DETRAC.gif)
+      ![](static/documentation/images/gif015_DETRAC.gif)
 
 Learn more about auto annotations [here](https://github.com/opencv/cvat/tree/develop/cvat/apps/auto_annotation).
 
