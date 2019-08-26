@@ -285,7 +285,7 @@ CACHEOPS_DEGRADE_ON_FAILURE = True
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Europe/Moscow'
+TIME_ZONE = os.getenv('TZ', 'Etc/UTC')
 
 USE_I18N = True
 

@@ -390,6 +390,11 @@ class JobAnnotation:
         db_curr_commit.save()
         self.ir_data.version = db_curr_commit.version
 
+    def _set_updated_date(self):
+        db_task = self.db_job.segment.task
+        db_task.updated_date = timezone.now()
+        db_task.save()
+
     def _save_to_db(self, data):
         self.reset()
         self._save_tags_to_db(data["tags"])
@@ -400,9 +405,7 @@ class JobAnnotation:
 
     def _create(self, data):
         if self._save_to_db(data):
-            db_task = self.db_job.segment.task
-            db_task.updated_date = timezone.now()
-            db_task.save()
+            self._set_updated_date()
             self.db_job.save()
 
     def create(self, data):
@@ -420,10 +423,11 @@ class JobAnnotation:
         self._commit()
 
     def _delete(self, data=None):
+        deleted_shapes = 0
         if data is None:
-            self.db_job.labeledimage_set.all().delete()
-            self.db_job.labeledshape_set.all().delete()
-            self.db_job.labeledtrack_set.all().delete()
+            deleted_shapes += self.db_job.labeledimage_set.all().delete()[0]
+            deleted_shapes += self.db_job.labeledshape_set.all().delete()[0]
+            deleted_shapes += self.db_job.labeledtrack_set.all().delete()[0]
         else:
             labeledimage_ids = [image["id"] for image in data["tags"]]
             labeledshape_ids = [shape["id"] for shape in data["shapes"]]
@@ -442,9 +446,12 @@ class JobAnnotation:
             self.ir_data.shapes = data['shapes']
             self.ir_data.tracks = data['tracks']
 
-            labeledimage_set.delete()
-            labeledshape_set.delete()
-            labeledtrack_set.delete()
+            deleted_shapes += labeledimage_set.delete()[0]
+            deleted_shapes += labeledshape_set.delete()[0]
+            deleted_shapes += labeledtrack_set.delete()[0]
+
+        if deleted_shapes:
+            self._set_updated_date()
 
     def delete(self, data=None):
         self._delete(data)
