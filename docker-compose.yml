@@ -50,6 +50,7 @@ services:
         DJANGO_CONFIGURATION: "production"
         WITH_TESTS: "no"
         TZ: "Etc/UTC"
+        OPENVINO_TOOLKIT: "no"
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
     volumes:
