@@ -1,6 +1,6 @@
 from .model_loader import ModelLoader
 from cvat.apps.engine.utils import import_modules, execute_python_code
-
+import itertools
 
 def _process_detections(detections, path_to_conv_script, restricted=True):
     results = Results()

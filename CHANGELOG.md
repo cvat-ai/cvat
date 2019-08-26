@@ -39,7 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Installation of CVAT with OpenVINO on the Windows platform
 - Background color was always black in utils/mask/converter.py
 - Exception in attribute annotation mode when a label are switched to a value without any attributes
-- Handling of wrong labelamp json file in auto annotation (https://github.com/opencv/cvat/issues/554)
+- Handling of wrong labelamp json file in auto annotation (<https://github.com/opencv/cvat/issues/554>)
+- No default attributes in dumped annotation (<https://github.com/opencv/cvat/issues/601>)
 
 ### Security
 -
