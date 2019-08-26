@@ -444,6 +444,23 @@ class PlayerController {
         };
 
         function setupPlayerShortcuts(playerModel) {
+            const moveUpHandler = Logger.shortkeyLogDecorator((e) => {
+                this.up();
+                e.preventDefault();
+            });
+            const moveDownHandler = Logger.shortkeyLogDecorator((e) => {
+                this.down();
+                e.preventDefault();
+            });
+            const moveLeftHandler = Logger.shortkeyLogDecorator((e) => {
+                this.left();
+                e.preventDefault();
+            });
+            const moveRightHandler = Logger.shortkeyLogDecorator((e) => {
+                this.right();
+                e.preventDefault();
+            });
+
             const nextHandler = Logger.shortkeyLogDecorator((e) => {
                 this.next();
                 e.preventDefault();
@@ -510,6 +527,11 @@ class PlayerController {
             });
 
             const { shortkeys } = window.cvat.config;
+
+            Mousetrap.bind(shortkeys.move_up.value, moveUpHandler, 'keydown');
+            Mousetrap.bind(shortkeys.move_down.value, moveDownHandler, 'keydown');
+            Mousetrap.bind(shortkeys.move_left.value, moveLeftHandler, 'keydown');
+            Mousetrap.bind(shortkeys.move_right.value, moveRightHandler, 'keydown');
 
             Mousetrap.bind(shortkeys.next_frame.value, nextHandler, 'keydown');
             Mousetrap.bind(shortkeys.prev_frame.value, prevHandler, 'keydown');
@@ -648,6 +670,19 @@ class PlayerController {
 
     pause() {
         this._model.pause();
+    }
+
+    up() {
+        this._model.move(30,0);
+    }
+    down() {
+        this._model.move(-30,0);
+    }
+    left() {
+        this._model.move(0,30);
+    }
+    right() {
+        this._model.move(0,-30);
     }
 
     next() {

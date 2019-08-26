@@ -11,8 +11,8 @@ class Config {
         this._username = '_default_';
         this._shortkeys = {
             switch_lock_property: {
-                value: 'l',
-                view_value: 'L',
+                value: 'ctrl+l',
+                view_value: 'ctrl+L',
                 description: 'switch lock property for active shape',
             },
 
@@ -95,8 +95,8 @@ class Config {
             },
 
             switch_active_keyframe: {
-                value: 'k',
-                view_value: 'K',
+                value: 'ctrl+k',
+                view_value: 'ctrl+K',
                 description: 'switch keyframe property for active shape',
             },
 
@@ -124,15 +124,39 @@ class Config {
                 description: 'focus to "go to frame" element',
             },
 
+            move_up: {
+                value: 'w',
+                view_value: 'W',
+                description: '向上移动图片',
+            },
+
+            move_down: {
+                value: 's',
+                view_value: 'S',
+                description: '向下移动图片',
+            },
+
+            move_left: {
+                value: 'a',
+                view_value: 'A',
+                description: '向左移动图片',
+            },
+
+            move_right: {
+                value: 'd',
+                view_value: 'D',
+                description: '向右移动图片',
+            },
+
             next_frame: {
-                value: 'f',
-                view_value: 'F',
+                value: 'l',
+                view_value: 'L',
                 description: 'move to next player frame',
             },
 
             prev_frame: {
-                value: 'd',
-                view_value: 'D',
+                value: 'k',
+                view_value: 'K',
                 description: 'move to previous player frame',
             },
 
