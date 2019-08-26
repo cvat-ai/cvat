@@ -1768,11 +1768,23 @@ class ShapeView extends Listener {
 
 
     _removeShapeText() {
+        // debugger
         if (this._uis.text) {
             this._uis.text.remove();
             SVG.off(this._uis.text.node);
             this._uis.text = null;
         }
+    }
+
+
+    _removePointText() {
+        this._uis.pointsObject&&this._uis.pointsObject.forEach(point => {
+            if (point.textObject) {
+                point.textObject.remove();
+                SVG.off(point.textObject.node);
+                point.textObject = null;
+            }
+        });
     }
 
 
@@ -1792,6 +1804,7 @@ class ShapeView extends Listener {
 
 
     _showShapeText() {
+        // debugger
         if (!this._uis.text) {
             let frame = window.cvat.player.frames.current;
             this._drawShapeText(this._controller.interpolate(frame).attributes);
@@ -1804,7 +1817,23 @@ class ShapeView extends Listener {
     }
 
 
+    _showPointText() {
+        // debugger 
+        this._uis.pointsObject&&this._uis.pointsObject.forEach(point => {
+            if (!point.textObject) {
+                this._drawPointText();
+            }
+            else if (!point.textObject.node.parentElement) {
+                this._scenes.texts.node.appendChild(point.textObject.node);
+            }
+        });
+
+        this.updatePointTextPosition();
+    }
+
+
     _drawShapeText(attributes) {
+        // debugger
         this._removeShapeText();
         if (this._uis.shape) {
             let id = this._controller.id;
@@ -1819,6 +1848,19 @@ class ShapeView extends Listener {
                     add.tspan(`${name}: ${value}`).attr({ dy: '1em', x: 0, attrId: attrId});
                 }
             }).move(0, 0).addClass('shapeText bold');
+        }
+    }
+
+
+    _drawPointText() {
+        // debugger
+        this._removePointText();
+        if (this._uis.pointsObject) {
+            this._uis.pointsObject.forEach(point => {
+                point.textObject = this._scenes.texts.text((add) => {
+                    add.tspan(point.text).style("text-transform", "uppercase");
+                }).move(0, 0).addClass('shapeText');
+            });
         }
     }
 
@@ -2596,6 +2638,52 @@ class ShapeView extends Listener {
         }
     }
 
+    updatePointTextPosition() {
+        // debugger
+        if (this._uis.shape && this._uis.shape.node.parentElement) {
+            let scale = window.cvat.player.geometry.scale;
+            // 计算笔画宽度
+            if (this._appearance.whiteOpacity) {
+                this._uis.shape.attr('stroke-width', 1 / scale);
+            }
+            else {
+                this._uis.shape.attr('stroke-width', STROKE_WIDTH / scale);
+            }
+
+            if (this._uis.pointsObject) {
+                this._uis.pointsObject.forEach(point => {
+                    let shapeBBox = window.cvat.translate.box.canvasToClient(this._scenes.svg.node, this._uis.shape.node.getBBox());
+                    let textBBox = point.textObject.node.getBBox();
+    
+                    let drawPoint = {
+                        x: point.x + TEXT_MARGIN,
+                        y: point.y
+                    };
+    
+                    const textContentScale = 10;
+                    if ((drawPoint.x + textBBox.width * textContentScale) > this._rightBorderFrame) {
+                        drawPoint = {
+                            x: point.x + TEXT_MARGIN,
+                            y: point.y
+                        };
+                    }
+    
+                    let textPoint = window.cvat.translate.point.clientToCanvas(
+                        this._scenes.texts.node,
+                        drawPoint.x,
+                        drawPoint.y
+                    );
+    
+                    point.textObject.move(textPoint.x, textPoint.y);
+    
+                    for (let tspan of point.textObject.lines().members) {
+                        tspan.attr('x', point.textObject.attr('x'));
+                    }
+                });
+            }
+        }
+    }
+
     onShapeUpdate(model) {
         let interpolation = model.interpolate(window.cvat.player.frames.current);
         let activeAttribute = model.activeAttribute;
@@ -3186,6 +3274,7 @@ class PointsView extends PolyShapeView {
 
 
     _drawPointMarkers(position) {
+        // debugger
         if (this._uis.points || position.outside) {
             return;
         }
@@ -3199,13 +3288,26 @@ class PointsView extends PolyShapeView {
 
         this._uis.points.node.setAttribute('z_order', position.z_order);
 
-        let points = PolyShapeModel.convertStringToNumberArray(position.points);
-        for (let point of points) {
+        this._uis.pointsObject = PolyShapeModel.convertStringToNumberArray(position.points);
+        this._uis.pointsObject.forEach((point,index) => {
+        // for (let point of points) {
             let radius = POINT_RADIUS * 2 / window.cvat.player.geometry.scale;
             let scaledStroke = STROKE_WIDTH / window.cvat.player.geometry.scale;
+            console.log('points ------------------',this._uis.points)
             this._uis.points.circle(radius).move(point.x - radius / 2, point.y - radius / 2)
                 .fill('inherit').stroke('black').attr('stroke-width', scaledStroke).addClass('tempMarker');
-        }
+            // collectionModel.selectAllWithLabel(+labelId);
+            //添加序号
+            this._uis.points.text(''+index).move(point.x-5,point.y+5).size(5).fill('white').addClass('controlDisplay');
+            $('.controlDisplay').each((index,element) => {
+                if(window._displayNumberValue){
+                    element.setAttribute('visibility','visible')
+                }else{
+                    element.setAttribute('visibility','hidden')
+                }
+            });
+            // window.x = this._uis.points
+        })
     }
 
 

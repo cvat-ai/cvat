@@ -179,7 +179,8 @@
 }
 
 .points {
-    stroke: none !important;
+    /* stroke: none !important; */
+    visibility: hidden;
     fill: none !important;
 }
 

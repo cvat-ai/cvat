@@ -1131,6 +1131,8 @@ class ShapeCollectionView {
         this._fillOpacityRange = $('#fillOpacityRange');
         this._selectedFillOpacityRange = $('#selectedFillOpacityRange');
         this._blackStrokeCheckbox = $('#blackStrokeCheckbox');
+        this._displayNumber = $('#displayNumber');
+        this._displayPolyline = $('#displayPolyline');
         this._colorByInstanceRadio = $('#colorByInstanceRadio');
         this._colorByGroupRadio = $('#colorByGroupRadio');
         this._colorByLabelRadio = $('#colorByLabelRadio');
@@ -1189,6 +1191,26 @@ class ShapeCollectionView {
             for (let view of this._currentViews) {
                 view.updateColorSettings(this._colorSettings);
             }
+        });
+        this._displayNumber.on('click', (e) => {
+            window._displayNumberValue = e.target.checked
+            $('.controlDisplay').each((index,element) => {
+                if(e.target.checked){
+                    element.style.visibility = 'visible'
+                }else{
+                    element.style.visibility = 'hidden'
+                }
+            });
+        });
+        this._displayPolyline.on('click', (e) => {
+            window._displayPolylineValue = e.target.checked
+            $('.points').each((index,element) => {
+                if(e.target.checked){
+                    element.style.visibility = 'visible'
+                }else{
+                    element.style.visibility = 'hidden'
+                }
+            });
         });
 
         this._colorByInstanceRadio.on('change', () => {
@@ -1534,9 +1556,17 @@ class ShapeCollectionView {
             this.instance.attr('stroke-width', scaledPointStroke);
         });
 
-        $('.tempMarker').each(function() {
-            this.instance.radius(scaledR, scaledR);
-            this.instance.attr('stroke-width', scaledStroke);
+        $('.tempMarker').each((index,element) => {
+            // let scale = window.cvat.player.geometry.scale;
+            // console.log(this)
+            // this._textContent.text((add) => {
+            //     add.tspan(index).style("text-transform", "uppercase");
+            // }).move(element.cx.animVal.value, element.cy.animVal.value).addClass('shapeText');
+            // this._textContent.text((add) => {
+            //     add.tspan(index).style("text-transform", "uppercase");
+            // }).move(element.cx.animVal.value*scale, element.cy.animVal.value*scale).addClass('shapeText');
+            element.instance.radius(scaledR, scaledR);
+            element.instance.attr('stroke-width', scaledStroke);
         });
 
         for (let view of this._currentViews) {
