@@ -10,6 +10,7 @@ import { Layout, Pagination, Row, Col } from 'antd';
 
 import './dashboard-footer.scss';
 
+
 const { Footer } = Layout;
 
 class DashboardFooter extends PureComponent<any, any> {

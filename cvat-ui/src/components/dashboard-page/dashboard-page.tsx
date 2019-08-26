@@ -22,9 +22,13 @@ class Dashboard extends PureComponent<any, any> {
   componentDidMount() {
     this.loadTasks(this.props.location.search);
 
-    this.props.history.listen((location: Location, action: Action) => {
-      this.loadTasks(location.search);
-    });
+    this.props.history.listen(
+      (location: Location, action: Action) => {
+        if (location.pathname.includes('tasks')) {
+          this.loadTasks(location.search);
+        }
+      }
+    );
   }
 
   render() {
@@ -47,7 +51,7 @@ class Dashboard extends PureComponent<any, any> {
 }
 
 const mapStateToProps = (state: any) => {
-  return { ...state.tasks, ...state.tasksFilter };
+  return { ...state.authContext, ...state.tasks, ...state.tasksFilter };
 };
 
 export default connect(mapStateToProps)(Dashboard);

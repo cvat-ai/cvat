@@ -22,6 +22,34 @@ export default (
         isAuthenticated: false,
         error: action.payload,
       });
+    case 'LOGOUT':
+      return Object.assign({}, state, {
+        isFetching: true,
+      });
+    case 'LOGOUT_SUCCESS':
+      return Object.assign({}, state, {
+        isFetching: false,
+        isAuthenticated: false,
+      });
+    case 'LOGOUT_ERROR':
+      return Object.assign({}, state, {
+        isFetching: false,
+        error: action.payload,
+      });
+    case 'IS_AUTHENTICATED':
+      return Object.assign({}, state, {
+        isFetching: true,
+      });
+    case 'IS_AUTHENTICATED_SUCCESS':
+      return Object.assign({}, state, {
+        isFetching: false,
+        isAuthenticated: action.payload,
+      });
+    case 'IS_AUTHENTICATED_ERROR':
+      return Object.assign({}, state, {
+        isFetching: false,
+        error: action.payload,
+      });
     default:
       return state;
   }

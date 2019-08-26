@@ -18,7 +18,7 @@ class RegisterForm extends PureComponent<any, any> {
 
   componentWillMount() {
     if (localStorage.getItem('session')) {
-      this.props.history.push('/dashboard');
+      this.props.history.push('/tasks');
     }
   }
 

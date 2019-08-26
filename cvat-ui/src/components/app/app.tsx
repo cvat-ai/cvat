@@ -38,8 +38,8 @@ class App extends PureComponent<any, any> {
     return(
       <Router>
         <Switch>
-          <Redirect path="/" exact to="/dashboard" />
-          <ProtectedRoute path="/dashboard" component={ DashboardPage } />
+          <Redirect path="/" exact to="/tasks" />
+          <ProtectedRoute path="/tasks" component={ DashboardPage } />
           <Route path="/login" component={ LoginPage } />
           <Route path="/register" component={ RegisterPage } />
           <Route component={ PageNotFound } />

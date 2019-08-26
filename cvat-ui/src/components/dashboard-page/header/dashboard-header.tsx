@@ -19,16 +19,12 @@ const { Header } = Layout;
 const { Search } = Input;
 
 class DashboardHeader extends Component<any, any> {
-  hostUrl: string | undefined;
-
   createFormRef: any;
 
   constructor(props: any) {
     super(props);
 
     this.state = { searchQuery: this.props.searchQuery };
-
-    this.hostUrl = process.env.REACT_APP_API_HOST_URL;
   }
 
   componentDidUpdate(prevProps: any) {
@@ -60,13 +56,6 @@ class DashboardHeader extends Component<any, any> {
               type="primary"
               onClick={ this.onCreateTask }>
               Create task
-            </Button>
-            <Button
-              className="action"
-              type="primary"
-              href={ `${this.hostUrl}/documentation/user_guide.html` }
-              target="blank">
-              User guide
             </Button>
           </Col>
         </Row>
