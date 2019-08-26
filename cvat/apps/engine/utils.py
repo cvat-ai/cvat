@@ -48,6 +48,10 @@ def execute_python_code(source_code, global_vars=None, local_vars=None):
         details = err.args[0]
         line_number = err.lineno
         raise InterpreterError("{} at line {}: {}".format(error_class, line_number, details))
+    except AssertionError as err:
+        # AssertionError doesn't contain any args and line number
+        error_class = err.__class__.__name__
+        raise InterpreterError("{}".format(error_class))
     except Exception as err:
         error_class = err.__class__.__name__
         details = err.args[0]
