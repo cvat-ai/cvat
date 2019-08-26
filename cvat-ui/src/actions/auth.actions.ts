@@ -42,10 +42,15 @@ export const isAuthenticated = () => (dispatch: any) => {
   });
 }
 
-export const isAuthenticatedSuccess = (isAuthenticated: boolean) => (dispatch: any) => {
+export const isAuthenticatedSuccess = () => (dispatch: any) => {
   dispatch({
     type: 'IS_AUTHENTICATED_SUCCESS',
-    payload: isAuthenticated,
+  });
+}
+
+export const isAuthenticatedFail = () => (dispatch: any) => {
+  dispatch({
+    type: 'IS_AUTHENTICATED_FAIL',
   });
 }
 
@@ -56,13 +61,31 @@ export const isAuthenticatedError = (error = {}) => (dispatch: any) => {
   });
 }
 
+export const register = () => (dispatch: any) => {
+  dispatch({
+    type: 'REGISTER',
+  });
+}
+
+export const registerSuccess = () => (dispatch: any) => {
+  dispatch({
+    type: 'REGISTER_SUCCESS',
+  });
+}
+
+export const registerError = (error = {}) => (dispatch: any) => {
+  dispatch({
+    type: 'REGISTER_ERROR',
+    payload: error,
+  });
+}
+
 export const loginAsync = (username: string, password: string, history: any) => {
   return (dispatch: any) => {
     dispatch(login());
 
     return (window as any).cvat.server.login(username, password).then(
       (loggedIn: any) => {
-        localStorage.setItem('session', 'true');
         dispatch(loginSuccess());
         history.push(history.location.state ? history.location.state.from : '/tasks');
       },
@@ -81,7 +104,6 @@ export const logoutAsync = () => {
 
     return (window as any).cvat.server.logout().then(
       (loggedOut: any) => {
-        localStorage.removeItem('session');
         dispatch(logoutSuccess());
       },
       (error: any) => {
@@ -99,10 +121,41 @@ export const isAuthenticatedAsync = () => {
 
     return (window as any).cvat.server.authorized().then(
       (isAuthenticated: any) => {
-        dispatch(isAuthenticatedSuccess(isAuthenticated));
+        isAuthenticated ? dispatch(isAuthenticatedSuccess()) : dispatch(isAuthenticatedFail());
       },
       (error: any) => {
         dispatch(isAuthenticatedError(error));
+
+        throw error;
+      },
+    );
+  };
+}
+
+export const registerAsync = (
+  username: string,
+  firstName: string,
+  lastName: string,
+  email: string,
+  password: string,
+  passwordConfirmation: string,
+) => {
+  return (dispatch: any) => {
+    dispatch(register());
+
+    return (window as any).cvat.server.register(
+      username,
+      firstName,
+      lastName,
+      email,
+      password,
+      passwordConfirmation,
+    ).then(
+      (registered: any) => {
+        dispatch(registerSuccess());
+      },
+      (error: any) => {
+        dispatch(registerError(error));
 
         throw error;
       },

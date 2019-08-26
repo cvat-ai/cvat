@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 
 import { connect } from 'react-redux';
-import { loginAsync } from '../../actions/auth.actions';
+import { loginAsync, isAuthenticatedAsync } from '../../actions/auth.actions';
 
 import { Button, Icon, Input, Form, Col, Row } from 'antd';
 import Title from 'antd/lib/typography/Title';
@@ -11,9 +11,13 @@ import './login-page.scss';
 
 class LoginForm extends PureComponent<any, any> {
   componentWillMount() {
-    if (localStorage.getItem('session')) {
-      this.props.history.push('/tasks');
-    }
+    this.props.dispatch(isAuthenticatedAsync()).then(
+      (isAuthenticated: boolean) => {
+        if (this.props.isAuthenticated) {
+          this.props.history.push('/tasks');
+        }
+      }
+    );
   }
 
   render() {

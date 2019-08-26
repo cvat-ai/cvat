@@ -43,9 +43,27 @@ export default (
     case 'IS_AUTHENTICATED_SUCCESS':
       return Object.assign({}, state, {
         isFetching: false,
-        isAuthenticated: action.payload,
+        isAuthenticated: true,
+      });
+    case 'IS_AUTHENTICATED_FAIL':
+      return Object.assign({}, state, {
+        isFetching: false,
+        isAuthenticated: false,
       });
     case 'IS_AUTHENTICATED_ERROR':
+      return Object.assign({}, state, {
+        isFetching: false,
+        error: action.payload,
+      });
+    case 'REGISTER':
+      return Object.assign({}, state, {
+        isFetching: true,
+      });
+    case 'REGISTER_SUCCESS':
+      return Object.assign({}, state, {
+        isFetching: false,
+      });
+    case 'REGISTER_ERROR':
       return Object.assign({}, state, {
         isFetching: false,
         error: action.payload,

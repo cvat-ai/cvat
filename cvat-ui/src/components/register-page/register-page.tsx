@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 
 import { connect } from 'react-redux';
-// import { registerAsync } from '../../actions/auth.actions';
+import { registerAsync, isAuthenticatedAsync } from '../../actions/auth.actions';
 
 import { Button, Icon, Input, Form, Col, Row } from 'antd';
 import Title from 'antd/lib/typography/Title';
@@ -17,9 +17,13 @@ class RegisterForm extends PureComponent<any, any> {
   }
 
   componentWillMount() {
-    if (localStorage.getItem('session')) {
-      this.props.history.push('/tasks');
-    }
+    this.props.dispatch(isAuthenticatedAsync()).then(
+      (isAuthenticated: boolean) => {
+        if (this.props.isAuthenticated) {
+          this.props.history.push('/tasks');
+        }
+      }
+    );
   }
 
   render() {
@@ -175,7 +179,16 @@ class RegisterForm extends PureComponent<any, any> {
 
     this.props.form.validateFields((error: any, values: any) => {
       if (!error) {
-        // this.props.dispatch(registerAsync(values.username, values.password, this.props.history));
+        this.props.dispatch(
+          registerAsync(
+            values.username,
+            values.firstName,
+            values.lastName,
+            values.email,
+            values.password,
+            values.passwordConfirmation,
+          ),
+        );
       }
     });
   }
