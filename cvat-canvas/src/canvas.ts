@@ -6,6 +6,9 @@
 import {
     Rotation,
     DrawData,
+    MergeData,
+    SplitData,
+    GroupData,
     CanvasModel,
     CanvasModelImpl,
 } from './canvasModel';
@@ -35,9 +38,9 @@ interface Canvas {
     grid(stepX: number, stepY: number): void;
 
     draw(drawData: DrawData): void;
-    split(enabled?: boolean): void;
-    group(enabled?: boolean): void;
-    merge(enabled?: boolean): void;
+    group(groupData: GroupData): void;
+    split(splitData: SplitData): void;
+    merge(mergeData: MergeData): void;
 
     cancel(): void;
 }
@@ -85,16 +88,16 @@ class CanvasImpl implements Canvas {
         this.model.draw(drawData);
     }
 
-    public split(enabled: boolean = false): void {
-        this.model.split(enabled);
+    public split(splitData: SplitData): void {
+        this.model.split(splitData);
     }
 
-    public group(enabled: boolean = false): void {
-        this.model.group(enabled);
+    public group(groupData: GroupData): void {
+        this.model.group(groupData);
     }
 
-    public merge(enabled: boolean = false): void {
-        this.model.merge(enabled);
+    public merge(mergeData: MergeData): void {
+        this.model.merge(mergeData);
     }
 
     public cancel(): void {

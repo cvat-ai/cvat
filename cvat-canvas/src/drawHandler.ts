@@ -23,7 +23,8 @@ export interface DrawHandler {
 }
 
 export class DrawHandlerImpl implements DrawHandler {
-    private onDrawDone: any; // callback is used to notify about creating new shape
+    // callback is used to notify about creating new shape
+    private onDrawDone: (data: object) => void;
     private canvas: SVG.Container;
     private background: SVGSVGElement;
     private crosshair: {

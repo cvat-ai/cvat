@@ -45,6 +45,19 @@ Canvas itself handles:
         crosshair?: boolean;
     }
 
+    interface GroupData {
+        enabled: boolean;
+        resetGroup?: boolean;
+    }
+
+    interface MergeData {
+        enabled: boolean;
+    }
+
+    interface SplitData {
+        enabled: boolean;
+    }
+
     interface Canvas {
         html(): HTMLDivElement;
         setup(frameData: any, objectStates: any[]): void;
@@ -55,9 +68,9 @@ Canvas itself handles:
         grid(stepX: number, stepY: number): void;
 
         draw(drawData: DrawData): void;
-        split(enabled?: boolean): void;
-        group(enabled?: boolean): void;
-        merge(enabled?: boolean): void;
+        group(groupData: GroupData): void;
+        split(splitData: SplitData): void;
+        merge(mergeData: MergeData): void;
 
         cancel(): void;
     }
@@ -84,12 +97,12 @@ Standard JS events are used.
     - canvas.setup
     - canvas.activated => ObjectState
     - canvas.deactivated
-    - canvas.moved => [ObjectState], x, y
-    - canvas.drawn => ObjectState
-    - canvas.edited => ObjectState
-    - canvas.splitted => ObjectState
-    - canvas.groupped => [ObjectState]
-    - canvas.merged => [ObjectState]
+    - canvas.moved => {states: ObjectState[], x: number, y: number}
+    - canvas.drawn => {state: ObjectState}
+    - canvas.edited => {state: ObjectState}
+    - canvas.splitted => {state: ObjectState, frame: number}
+    - canvas.groupped => {states: ObjectState[], reset: boolean}
+    - canvas.merged => {states: ObjectState[]}
     - canvas.canceled
 ```
 
