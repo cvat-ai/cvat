@@ -18,7 +18,7 @@ const ProtectedRoute = ({ component: Component, ...rest }: any) => {
     <Route
       { ...rest }
       render={ (props) => {
-        return localStorage.getItem('token') ? (
+        return rest.isAuthenticated ? (
           <>
             <HeaderLayout />
             <Component { ...props } />
@@ -44,7 +44,7 @@ class App extends PureComponent<any, any> {
       <Router>
         <Switch>
           <Redirect path="/" exact to="/tasks" />
-          <ProtectedRoute path="/tasks" component={ DashboardPage } />
+          <ProtectedRoute isAuthenticated={ this.props.isAuthenticated } path="/tasks" component={ DashboardPage } />
           <Route path="/login" component={ LoginPage } />
           <Route path="/register" component={ RegisterPage } />
           <Route component={ PageNotFound } />
