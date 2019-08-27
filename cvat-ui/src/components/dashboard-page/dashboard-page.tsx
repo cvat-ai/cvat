@@ -9,7 +9,7 @@ import { connect } from 'react-redux';
 import { getTasksAsync } from '../../actions/tasks.actions';
 import { filterTasks } from '../../actions/tasks-filter.actions';
 
-import { Layout } from 'antd';
+import { Layout, Spin } from 'antd';
 
 import DashboardHeader from './header/dashboard-header';
 import DashboardContent from './content/dashboard-content';
@@ -33,11 +33,13 @@ class Dashboard extends PureComponent<any, any> {
 
   render() {
     return (
-      <Layout className="layout">
-        <DashboardHeader />
-        <DashboardContent />
-        <DashboardFooter />
-      </Layout>
+      <Spin wrapperClassName="spinner" size="large" spinning={ this.props.isFetching }>
+        <Layout className="layout">
+          <DashboardHeader />
+          <DashboardContent />
+          <DashboardFooter />
+        </Layout>
+      </Spin>
     );
   }
 

@@ -4,16 +4,26 @@ import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { loginAsync, isAuthenticatedAsync } from '../../actions/auth.actions';
 
-import { Button, Icon, Input, Form, Col, Row } from 'antd';
+import { Button, Icon, Input, Form, Col, Row, Spin } from 'antd';
 import Title from 'antd/lib/typography/Title';
 
 import './login-page.scss';
 
 
 class LoginForm extends PureComponent<any, any> {
-  componentWillMount() {
+  constructor(props: any) {
+    super(props);
+
+    this.state = { loading: false };
+  }
+
+  componentDidMount() {
+    this.setState({ loading: true });
+
     this.props.dispatch(isAuthenticatedAsync()).then(
       (isAuthenticated: boolean) => {
+        this.setState({ loading: false });
+
         if (this.props.isAuthenticated) {
           this.props.history.push('/tasks');
         }
@@ -25,47 +35,49 @@ class LoginForm extends PureComponent<any, any> {
     const { getFieldDecorator } = this.props.form;
 
     return (
-      <Row type="flex" justify="center" align="middle">
-        <Col xs={12} md={10} lg={8} xl={6}>
-          <Form className="login-form" onSubmit={ this.onSubmit }>
-            <Title className="login-form__title">Login</Title>
+      <Spin wrapperClassName="spinner" size="large" spinning={ this.state.loading }>
+        <Row type="flex" justify="center" align="middle">
+          <Col xs={12} md={10} lg={8} xl={6}>
+            <Form className="login-form" onSubmit={ this.onSubmit }>
+              <Title className="login-form__title">Login</Title>
 
-            <Form.Item>
-              {getFieldDecorator('username', {
-                rules: [{ required: true, message: 'Please enter your username!' }],
-              })(
-                <Input
-                  prefix={ <Icon type="user" /> }
-                  type="text"
-                  name="username"
-                  placeholder="Username"
-                />,
-              )}
-            </Form.Item>
+              <Form.Item>
+                {getFieldDecorator('username', {
+                  rules: [{ required: true, message: 'Please enter your username!' }],
+                })(
+                  <Input
+                    prefix={ <Icon type="user" /> }
+                    type="text"
+                    name="username"
+                    placeholder="Username"
+                  />,
+                )}
+              </Form.Item>
 
-            <Form.Item>
-              {getFieldDecorator('password', {
-                rules: [{ required: true, message: 'Please enter your password!' }],
-              })(
-                <Input
-                  prefix={ <Icon type="lock" /> }
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                />,
-              )}
-            </Form.Item>
+              <Form.Item>
+                {getFieldDecorator('password', {
+                  rules: [{ required: true, message: 'Please enter your password!' }],
+                })(
+                  <Input
+                    prefix={ <Icon type="lock" /> }
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                  />,
+                )}
+              </Form.Item>
 
-            <Form.Item>
-              <Button type="primary" htmlType="submit" loading={ this.props.isFetching }>
-                Log in
-              </Button>
-            </Form.Item>
+              <Form.Item>
+                <Button type="primary" htmlType="submit" loading={ this.props.isFetching }>
+                  Log in
+                </Button>
+              </Form.Item>
 
-            Have not registered yet? <Link to="/register">Register here.</Link>
-          </Form>
-        </Col>
-      </Row>
+              Have not registered yet? <Link to="/register">Register here.</Link>
+            </Form>
+          </Col>
+        </Row>
+      </Spin>
     );
   }
 

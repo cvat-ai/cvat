@@ -14,3 +14,10 @@ code {
 .crud-modal {
   width: 90% !important;
 }
+
+.spinner {
+  .ant-spin-spinning {
+    max-height: 100% !important;
+    background: white !important;
+  }
+}
