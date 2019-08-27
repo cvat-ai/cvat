@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Outside and keyframe buttons in the side panel for all interpolation shapes (they were only for boxes before)
+- Improved error messages on client side (#511)
 
 ### Deprecated
 -
