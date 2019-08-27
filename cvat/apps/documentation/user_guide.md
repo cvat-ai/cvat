@@ -1027,17 +1027,12 @@ a shape is created and you can work with it as a polygon.
 
 1.  Enter model name, and select model file using "Select files" button. To annotate a task with a custom model
     you need to prepare 4 files:
-
-      - ``Model config`` (*.xml) - a text file with network configuration. 
-
-      - ``Model weights`` (*.bin) - a binary file with trained weights. 
-
-      - ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with string 
-      values for label numbers.
-
-      - ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
-      which can be processed by CVAT.
-
+    - ``Model config`` (*.xml) - a text file with network configuration. 
+    - ``Model weights`` (*.bin) - a binary file with trained weights. 
+    - ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with 
+    string values for label numbers.
+    - ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
+    which can be processed by CVAT. 
     More about creating model files can be found [here](https://github.com/opencv/cvat/tree/develop/cvat/apps/auto_annotation).
 
     ![](static/documentation/images/image104.jpg)
