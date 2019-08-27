@@ -189,9 +189,9 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     Each element contains: task name, preview, execution status, buttons, and one or more links.
     Each button is responsible for a specific function:
     - ``Dump Annotation`` — download an annotation file from a task. Several formats are available:
-      - [CVAT XML 1.1 for video](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#interpolation)
+      - [CVAT XML 1.1 for video](cvat/apps/documentation/xml_format.md#interpolation)
       is highlighted if a task has the interpolation mode 
-      - [CVAT XML 1.1 for images](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#annotation)
+      - [CVAT XML 1.1 for images](cvat/apps/documentation/xml_format.md#annotation)
       is highlighted if a task has the annotation mode 
       - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
@@ -200,7 +200,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       with the value of each color
       - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records)
     - ``Upload Annotation`` — upload an annotation file to the task. Several formats are available:
-      - [CVAT XML 1.1](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md)
+      - [CVAT XML 1.1](cvat/apps/documentation/xml_format.md)
       - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
       - [COCO JSON 1.0](http://cocodataset.org/#format-data)
@@ -241,7 +241,7 @@ You can "register" a model and "use" it after that to pre annotate your tasks.
 The model manager allows you to manage your deep learning (DL) models uploaded for auto annotation.
 Using the functionality you can upload, update or delete a specific DL model.
 Use "Auto annotation" button to pre annotate a task using one of your DL models.
-[Read more](https://github.com/opencv/cvat/tree/develop/cvat/apps/auto_annotation)
+[Read more](cvat/apps/auto_annotation)
 
 ![](static/documentation/images/image104.jpg)
 
@@ -249,7 +249,7 @@ Use "Auto annotation" button to pre annotate a task using one of your DL models.
 
 There are several options how to use the search.
 
-- Search in all fields (owner, assignee, task name, task status, task mode).
+- Search within all fields (owner, assignee, task name, task status, task mode).
 To execute enter a search string in search field.
 - Search for specific fields. How to perform:
   - ``owner: admin`` - all tasks created by the user who has the substring "admin" in his name
@@ -452,9 +452,9 @@ Usage examples:
     ![](static/documentation/images/image118.jpg)
 
 1.  Choose format dump annotation file. Dump annotation are available in several formats:
-    - [CVAT XML 1.1 for video](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#interpolation)
+    - [CVAT XML 1.1 for video](cvat/apps/documentation/xml_format.md#interpolation)
     is highlighted if a task has the interpolation mode
-    - [CVAT XML 1.1 for images](https://github.com/opencv/cvat/blob/develop/cvat/apps/documentation/xml_format.md#annotation)
+    - [CVAT XML 1.1 for images](cvat/apps/documentation/xml_format.md#annotation)
     is highlighted if a task has the annotation mode
 
     ![](static/documentation/images/image029.jpg "Example XML format") 
@@ -974,7 +974,7 @@ You can add/delete points after finishing.
 
 ### Linear interpolation with one point
 
-You can create linear interpolation for points to annotate a moving object:
+You can use linear interpolation for points to annotate a moving object:
 
 1.  Before starting, you have to be sure that ``Points`` is selected. 
 1.  Linear interpolation works only with one point, so you need to set ``Poly Shapes Size``: 1. 
@@ -1033,7 +1033,7 @@ a shape is created and you can work with it as a polygon.
     string values for label numbers.
     - ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
     which can be processed by CVAT. 
-    More about creating model files can be found [here](https://github.com/opencv/cvat/tree/develop/cvat/apps/auto_annotation).
+    More about creating model files can be found [here](cvat/apps/auto_annotation).
 
     ![](static/documentation/images/image104.jpg)
 
@@ -1057,12 +1057,10 @@ a shape is created and you can work with it as a polygon.
 
     ![](static/documentation/images/gif014_DETRAC.gif)
 
-1.  Separate bounding boxes can be edited by removing false positives, adding unlabeled objects, and
-    merged into tracks using ``Merge Shape``
+1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects, and
+    merging into tracks using ``Merge Shape``
 
     ![](static/documentation/images/gif015_DETRAC.gif)
-
-Learn more about auto annotations [here](https://github.com/opencv/cvat/tree/develop/cvat/apps/auto_annotation).
 
 ## Shape grouping
 
