@@ -200,7 +200,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       with the value of each color
       - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records)
     - ``Upload annotation`` is possible in same format as ``Dump annotation``, with exception of ``MASK ZIP 1.0``
-      format and without choosing whether [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md#interpolation) refers to an image or video.
+      format and without choosing whether [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md)
+      refers to an image or video.
     - ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
     - ``Delete Task`` — delete the task
     - ``Git Repository Sync`` — sync annotation with the dataset repository.
