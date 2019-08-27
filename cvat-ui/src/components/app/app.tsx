@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-d
 
 import { connect } from 'react-redux';
 
+import HeaderLayout from '../header-layout/header-layout';
+
 import DashboardPage from '../dashboard-page/dashboard-page';
 import LoginPage from '../login-page/login-page';
 import RegisterPage from '../register-page/register-page';
@@ -16,8 +18,11 @@ const ProtectedRoute = ({ component: Component, ...rest }: any) => {
     <Route
       { ...rest }
       render={ (props) => {
-        return localStorage.getItem('session') ? (
-          <Component { ...props } />
+        return localStorage.getItem('token') ? (
+          <>
+            <HeaderLayout />
+            <Component { ...props } />
+          </>
         ) : (
           <Redirect
             to={{
