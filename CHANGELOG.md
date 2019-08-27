@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Removed
--
+- "Flip images" has been removed. UI now contains rotation features.
 
 ### Fixed
 - Incorrect width of shapes borders in some cases
@@ -41,6 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exception in attribute annotation mode when a label are switched to a value without any attributes
 - Handling of wrong labelamp json file in auto annotation (<https://github.com/opencv/cvat/issues/554>)
 - No default attributes in dumped annotation (<https://github.com/opencv/cvat/issues/601>)
+- Required field "Frame Filter" on admin page during a task modifying (#666)
+- Dump annotation errors for a task with several segments (#610, #500)
+- Invalid label parsing during a task creating (#628)
+- Button "Open Task" in the annotation view
+- Creating a video task with 0 overlap
 
 ### Security
 -
