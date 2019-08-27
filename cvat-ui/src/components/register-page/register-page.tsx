@@ -1,4 +1,5 @@
 import React, { PureComponent } from 'react';
+import { Link } from 'react-router-dom';
 
 import { connect } from 'react-redux';
 import { registerAsync, isAuthenticatedAsync } from '../../actions/auth.actions';
@@ -142,6 +143,8 @@ class RegisterForm extends PureComponent<any, any> {
                 Register
               </Button>
             </Form.Item>
+
+            Already have an account? <Link to="/login">Login here.</Link>
           </Form>
         </Col>
       </Row>
