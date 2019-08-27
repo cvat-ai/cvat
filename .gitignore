@@ -5,7 +5,6 @@
 /static/
 /db.sqlite3
 /.env
-/.vscode
 /keys
 /logs
 /components/openvino/*.tgz
