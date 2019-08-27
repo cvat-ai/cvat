@@ -650,7 +650,9 @@ class TaskAnnotation:
     def __init__(self, pk, user):
         self.user = user
         self.db_task = models.Task.objects.prefetch_related("image_set").get(id=pk)
-        self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk)
+
+        # Postgres doesn't guarantee an order by default without explicit order_by
+        self.db_jobs = models.Job.objects.select_related("segment").filter(segment__task_id=pk).order_by('id')
         self.ir_data = AnnotationIR()
 
     def reset(self):

@@ -240,9 +240,16 @@ class DashboardView {
 
                 let tasks = null;
                 try {
-                    tasks = await window.cvat.tasks.get(Object.assign({}, {
+                    const id = (new URLSearchParams(window.location.search)).get('id');
+                    const filters = Object.assign({}, {
                         page,
-                    }, this._params));
+                    }, this._params);
+
+                    if (id !== null) {
+                        filters.id = +id;
+                    }
+
+                    tasks = await window.cvat.tasks.get(filters);
                 } catch (exception) {
                     let { message } = exception;
                     if (exception instanceof window.cvat.exceptions.ServerError) {
@@ -316,6 +323,8 @@ class DashboardView {
                 this._params.search = search;
             }
 
+            window.history.replaceState(null, null,
+                `${window.location.origin}${window.location.pathname}`);
             dashboardPagination.twbsPagination('show', 1);
         });
 
