@@ -199,12 +199,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file
       with the value of each color
       - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records)
-    - ``Upload Annotation`` — upload an annotation file to the task. Several formats are available:
-      - [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md)
-      - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
-      - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
-      - [COCO JSON 1.0](http://cocodataset.org/#format-data)
-      - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records)
+    - ``Upload annotation`` is possible in same format as ``Dump annotation``, with exception of ``MASK ZIP 1.0``
+      format and without choosing whether [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md#interpolation) refers to an image or video.
     - ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
     - ``Delete Task`` — delete the task
     - ``Git Repository Sync`` — sync annotation with the dataset repository.
