@@ -15,10 +15,6 @@ const nodeConfig = {
     },
     resolve: {
         extensions: ['.ts', '.js', '.json'],
-        alias: {
-            // CUSTOM PACKAGES:
-           'cvat-canvas.node': path.resolve(__dirname, 'dist/cvat-canvas.node.js'),
-        }
     },
     module: {
         rules: [{
@@ -63,10 +59,6 @@ const webConfig = {
     },
     resolve: {
         extensions: ['.ts', '.js', '.json'],
-        alias: {
-            // CUSTOM PACKAGES:
-           'cvat-canvas.node': path.resolve(__dirname, 'dist/cvat-canvas.node.js'),
-        },
     },
     module: {
         rules: [{
