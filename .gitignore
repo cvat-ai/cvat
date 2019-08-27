@@ -1,9 +1,11 @@
 # Project Specific
 /data/
+/models/
 /share/
 /static/
 /db.sqlite3
 /.env
+/.vscode
 /keys
 /logs
 /components/openvino/*.tgz
