@@ -189,9 +189,9 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     Each element contains: task name, preview, execution status, buttons, and one or more links.
     Each button is responsible for a specific function:
     - ``Dump Annotation`` — download an annotation file from a task. Several formats are available:
-      - [CVAT XML 1.1 for video](cvat/apps/documentation/xml_format.md#interpolation)
+      - [CVAT XML 1.1 for video](/cvat/apps/documentation/xml_format.md#interpolation)
       is highlighted if a task has the interpolation mode 
-      - [CVAT XML 1.1 for images](cvat/apps/documentation/xml_format.md#annotation)
+      - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
       is highlighted if a task has the annotation mode 
       - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
@@ -200,7 +200,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
       with the value of each color
       - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records)
     - ``Upload Annotation`` — upload an annotation file to the task. Several formats are available:
-      - [CVAT XML 1.1](cvat/apps/documentation/xml_format.md)
+      - [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md)
       - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
       - [COCO JSON 1.0](http://cocodataset.org/#format-data)
@@ -241,7 +241,7 @@ You can "register" a model and "use" it after that to pre annotate your tasks.
 The model manager allows you to manage your deep learning (DL) models uploaded for auto annotation.
 Using the functionality you can upload, update or delete a specific DL model.
 Use "Auto annotation" button to pre annotate a task using one of your DL models.
-[Read more](cvat/apps/auto_annotation)
+[Read more](/cvat/apps/auto_annotation)
 
 ![](static/documentation/images/image104.jpg)
 
@@ -452,9 +452,9 @@ Usage examples:
     ![](static/documentation/images/image118.jpg)
 
 1.  Choose format dump annotation file. Dump annotation are available in several formats:
-    - [CVAT XML 1.1 for video](cvat/apps/documentation/xml_format.md#interpolation)
+    - [CVAT XML 1.1 for video](/cvat/apps/documentation/xml_format.md#interpolation)
     is highlighted if a task has the interpolation mode
-    - [CVAT XML 1.1 for images](cvat/apps/documentation/xml_format.md#annotation)
+    - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
     is highlighted if a task has the annotation mode
 
     ![](static/documentation/images/image029.jpg "Example XML format") 
@@ -653,7 +653,7 @@ Button assignment:
 - ``RunReID Merge`` — The ReID application uses deep learning model to perform
   an automatic merging of bounding boxes between neighbor frames. You can use
   "Merge" and "Split" functionality to edit automatically generated annotation
-  [read more](https://github.com/opencv/cvat/tree/develop/cvat/apps/reid).
+  [read more](/cvat/apps/reid).
 - ``Dump Annotation`` — download annotations from the task
 - ``Upload Annotation`` — uploading annotations to the task
 - ``Remove Annotation`` — remove annotations from current task
@@ -1033,7 +1033,7 @@ a shape is created and you can work with it as a polygon.
     string values for label numbers.
     - ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
     which can be processed by CVAT. 
-    More about creating model files can be found [here](cvat/apps/auto_annotation).
+    More about creating model files can be found [here](/cvat/apps/auto_annotation).
 
     ![](static/documentation/images/image104.jpg)
 
