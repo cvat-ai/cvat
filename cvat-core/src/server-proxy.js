@@ -114,6 +114,9 @@
                     });
                     response = await Axios.post(`${config.backendAPI}/auth/register`, data, {
                         proxy: config.proxy,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
                     });
                 } catch (errorData) {
                     throw generateError(errorData, `Could not register '${username}' user on the server`);
