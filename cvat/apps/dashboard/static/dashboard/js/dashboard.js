@@ -28,6 +28,7 @@ class TaskView {
     async _remove() {
         try {
             await this._task.delete();
+            this._disable();
         } catch (exception) {
             let { message } = exception;
             if (exception instanceof window.cvat.exceptions.ServerError) {
@@ -35,8 +36,6 @@ class TaskView {
             }
             showMessage(message);
         }
-
-        this._disable();
     }
 
     _update() {
@@ -49,7 +48,7 @@ class TaskView {
         $('#dashboardCancelUpdate').on('click', () => {
             dashboardUpdateModal.remove();
         });
-        $('#dashboardSubmitUpdate').on('click', () => {
+        $('#dashboardSubmitUpdate').on('click', async () => {
             let jsonLabels = null;
             try {
                 jsonLabels = LabelsInfo.deserialize($('#dashboardNewLabels').prop('value'));
@@ -61,7 +60,7 @@ class TaskView {
             try {
                 const labels = jsonLabels.map(label => new window.cvat.classes.Label(label));
                 this._task.labels = labels;
-                this._task.save();
+                await this._task.save();
                 showMessage('Task has been successfully updated');
             } catch (exception) {
                 let { message } = exception;
