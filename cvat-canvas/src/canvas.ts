@@ -4,11 +4,18 @@
 */
 
 import {
-    CanvasModel,
-    CanvasModelImpl,
     Rotation,
     DrawData,
+    MergeData,
+    SplitData,
+    GroupData,
+    CanvasModel,
+    CanvasModelImpl,
 } from './canvasModel';
+
+import {
+    Master,
+} from './master';
 
 import {
     CanvasController,
@@ -20,6 +27,7 @@ import {
     CanvasViewImpl,
 } from './canvasView';
 
+
 interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[]): void;
@@ -30,15 +38,15 @@ interface Canvas {
     grid(stepX: number, stepY: number): void;
 
     draw(drawData: DrawData): void;
-    split(enabled?: boolean): void;
-    group(enabled?: boolean): void;
-    merge(enabled?: boolean): void;
+    group(groupData: GroupData): void;
+    split(splitData: SplitData): void;
+    merge(mergeData: MergeData): void;
 
     cancel(): void;
 }
 
 class CanvasImpl implements Canvas {
-    private model: CanvasModel;
+    private model: CanvasModel & Master;
     private controller: CanvasController;
     private view: CanvasView;
 
@@ -60,7 +68,7 @@ class CanvasImpl implements Canvas {
         this.model.activate(clientID, attributeID);
     }
 
-    public rotate(rotation: Rotation, remember: boolean): void {
+    public rotate(rotation: Rotation, remember: boolean = false): void {
         this.model.rotate(rotation, remember);
     }
 
@@ -80,22 +88,23 @@ class CanvasImpl implements Canvas {
         this.model.draw(drawData);
     }
 
-    public split(enabled: boolean = false): void {
-        this.model.split(enabled);
+    public split(splitData: SplitData): void {
+        this.model.split(splitData);
     }
 
-    public group(enabled: boolean = false): void {
-        this.model.group(enabled);
+    public group(groupData: GroupData): void {
+        this.model.group(groupData);
     }
 
-    public merge(enabled: boolean = false): void {
-        this.model.merge(enabled);
+    public merge(mergeData: MergeData): void {
+        this.model.merge(mergeData);
     }
 
     public cancel(): void {
         this.model.cancel();
     }
 }
+
 
 export {
     CanvasImpl as Canvas,

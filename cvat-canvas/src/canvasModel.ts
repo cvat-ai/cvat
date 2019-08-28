@@ -47,6 +47,19 @@ export interface DrawData {
     crosshair?: boolean;
 }
 
+export interface GroupData {
+    enabled: boolean;
+    resetGroup: boolean;
+}
+
+export interface MergeData {
+    enabled: boolean;
+}
+
+export interface SplitData {
+    enabled: boolean;
+}
+
 export enum FrameZoom {
     MIN = 0.1,
     MAX = 10,
@@ -67,9 +80,12 @@ export enum UpdateReasons {
     FOCUS = 'focus',
     ACTIVATE = 'activate',
     DRAW = 'draw',
+    MERGE = 'merge',
+    SPLIT = 'split',
+    GROUP = 'group',
 }
 
-export interface CanvasModel extends MasterImpl {
+export interface CanvasModel {
     readonly image: string;
     readonly objects: any[];
     readonly gridSize: Size;
@@ -90,9 +106,9 @@ export interface CanvasModel extends MasterImpl {
     grid(stepX: number, stepY: number): void;
 
     draw(drawData: DrawData): void;
-    split(enabled: boolean): void;
-    group(enabled: boolean): void;
-    merge(enabled: boolean): void;
+    group(groupData: GroupData): void;
+    split(splitData: SplitData): void;
+    merge(mergeData: MergeData): void;
 
     cancel(): void;
 }
@@ -103,7 +119,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         activeElement: ActiveElement;
         angle: number;
         canvasSize: Size;
-        drawData: DrawData;
         image: string;
         imageOffset: number;
         imageSize: Size;
@@ -114,6 +129,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         rememberAngle: boolean;
         scale: number;
         top: number;
+        drawData: DrawData;
+        mergeData: MergeData;
+        groupData: GroupData;
+        splitData: SplitData;
     };
 
     public constructor(ObjectStateClass: any) {
@@ -128,12 +147,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             canvasSize: {
                 height: 0,
                 width: 0,
-            },
-            drawData: {
-                enabled: false,
-                shapeType: null,
-                numberOfPoints: null,
-                initialState: null,
             },
             image: '',
             imageOffset: 0,
@@ -155,6 +168,22 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             rememberAngle: false,
             scale: 1,
             top: 0,
+            drawData: {
+                enabled: false,
+                shapeType: null,
+                numberOfPoints: null,
+                initialState: null,
+            },
+            mergeData: {
+                enabled: false,
+            },
+            groupData: {
+                enabled: false,
+                resetGroup: false,
+            },
+            splitData: {
+                enabled: false,
+            },
         };
     }
 
@@ -209,10 +238,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.objects = objectStates;
             this.notify(UpdateReasons.OBJECTS);
         }).catch((exception: any): void => {
-            console.log(exception.toString());
+            throw exception;
         });
-
-        console.log(objectStates);
     }
 
     public activate(clientID: number, attributeID: number): void {
@@ -300,16 +327,43 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.DRAW);
     }
 
-    public split(enabled: boolean): any {
-        return enabled;
+    public split(splitData: SplitData): void {
+        if (this.data.splitData.enabled && splitData.enabled) {
+            return;
+        }
+
+        if (!this.data.splitData.enabled && !splitData.enabled) {
+            return;
+        }
+
+        this.data.splitData = splitData;
+        this.notify(UpdateReasons.SPLIT);
     }
 
-    public group(enabled: boolean): any {
-        return enabled;
+    public group(groupData: GroupData): void {
+        if (this.data.groupData.enabled && groupData.enabled) {
+            return;
+        }
+
+        if (!this.data.groupData.enabled && !groupData.enabled) {
+            return;
+        }
+
+        this.data.groupData = groupData;
+        this.notify(UpdateReasons.GROUP);
     }
 
-    public merge(enabled: boolean): any {
-        return enabled;
+    public merge(mergeData: MergeData): void {
+        if (this.data.mergeData.enabled && mergeData.enabled) {
+            return;
+        }
+
+        if (!this.data.mergeData.enabled && !mergeData.enabled) {
+            return;
+        }
+
+        this.data.mergeData = mergeData;
+        this.notify(UpdateReasons.MERGE);
     }
 
     public cancel(): void {

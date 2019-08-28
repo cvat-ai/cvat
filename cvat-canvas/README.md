@@ -1,10 +1,8 @@
 # Module CVAT-CANVAS
 
 ## Description
-The CVAT module presents a canvas to viewing, drawing and editing of annotations.
-
-- It has been written on typescript
-- It contains the class ```Canvas``` and the enum ```Rotation```
+The CVAT module written in TypeScript language.
+It presents a canvas to viewing, drawing and editing of annotations.
 
 ## Commands
 - Building of the module from sources in the ```dist``` directory:
@@ -21,15 +19,7 @@ npm version minor   # updated after major changes which don't affect API compati
 npm version major   # updated after major changes which affect API compatibility with previous versions
 ```
 
-## Creation
-Canvas is created by using constructor:
-
-```js
-    const { Canvas } = require('./canvas');
-    const canvas = new Canvas(ObjectStateClass);
-```
-
-- Canvas has transparent background
+## Using
 
 Canvas itself handles:
 - Shape context menu (PKM)
@@ -39,12 +29,14 @@ Canvas itself handles:
 - Remove point (PKM)
 - Polyshape editing (Shift + LKM)
 
-## API
-### Methods
-
-All methods are sync.
+### API Methods
 
 ```ts
+    enum Rotation {
+        ANTICLOCKWISE90,
+        CLOCKWISE90,
+    }
+
     interface DrawData {
         enabled: boolean;
         shapeType?: string;
@@ -53,23 +45,38 @@ All methods are sync.
         crosshair?: boolean;
     }
 
-    html(): HTMLDivElement;
-    setup(frameData: FrameData, objectStates: ObjectState): void;
-    activate(clientID: number, attributeID?: number): void;
-    rotate(rotation: Rotation, remember?: boolean): void;
-    focus(clientID: number, padding?: number): void;
-    fit(): void;
-    grid(stepX: number, stepY: number): void;
+    interface GroupData {
+        enabled: boolean;
+        resetGroup?: boolean;
+    }
 
-    draw(drawData: DrawData): void;
-    split(enabled?: boolean): void;
-    group(enabled?: boolean): void;
-    merge(enabled?: boolean): void;
+    interface MergeData {
+        enabled: boolean;
+    }
 
-    cancel(): any;
+    interface SplitData {
+        enabled: boolean;
+    }
+
+    interface Canvas {
+        html(): HTMLDivElement;
+        setup(frameData: any, objectStates: any[]): void;
+        activate(clientID: number, attributeID?: number): void;
+        rotate(rotation: Rotation, remember?: boolean): void;
+        focus(clientID: number, padding?: number): void;
+        fit(): void;
+        grid(stepX: number, stepY: number): void;
+
+        draw(drawData: DrawData): void;
+        group(groupData: GroupData): void;
+        split(splitData: SplitData): void;
+        merge(mergeData: MergeData): void;
+
+        cancel(): void;
+    }
 ```
 
-### CSS Classes/IDs
+### API CSS
 
 - All drawn objects (shapes, tracks) have an id ```cvat_canvas_object_{objectState.id}```
 - Drawn shapes and tracks have classes ```cvat_canvas_shape```,
@@ -90,13 +97,70 @@ Standard JS events are used.
     - canvas.setup
     - canvas.activated => ObjectState
     - canvas.deactivated
-    - canvas.moved => [ObjectState], x, y
-    - canvas.drawn => ObjectState
-    - canvas.edited => ObjectState
-    - canvas.splitted => ObjectState
-    - canvas.groupped => [ObjectState]
-    - canvas.merged => [ObjectState]
+    - canvas.moved => {states: ObjectState[], x: number, y: number}
+    - canvas.drawn => {state: ObjectState}
+    - canvas.edited => {state: ObjectState}
+    - canvas.splitted => {state: ObjectState, frame: number}
+    - canvas.groupped => {states: ObjectState[], reset: boolean}
+    - canvas.merged => {states: ObjectState[]}
     - canvas.canceled
+```
+
+### WEB
+```js
+    // Create an instance of a canvas
+    const canvas = new window.canvas.Canvas(window.cvat.classes.ObjectState);
+
+    // Put canvas to a html container
+    htmlContainer.appendChild(canvas.html());
+
+    // Next you can use its API methods. For example:
+    canvas.rotate(window.Canvas.Rotation.CLOCKWISE90);
+    canvas.draw({
+        enabled: true,
+        shapeType: 'rectangle',
+        crosshair: true,
+    });
+```
+
+### TypeScript
+- Add to ```tsconfig.json```:
+```json
+    "compilerOptions": {
+        "paths": {
+            "cvat-canvas.node": ["3rdparty/cvat-canvas.node"]
+        }
+    }
+```
+
+- ```3rdparty``` directory contains both ```cvat-canvas.node.js``` and ```cvat-canvas.node.d.ts```.
+- Add alias to ```webpack.config.js```:
+```js
+module.exports = {
+    resolve: {
+        alias: {
+            'cvat-canvas.node': path.resolve(__dirname, '3rdparty/cvat-canvas.node.js'),
+        }
+    }
+}
+```
+
+Than you can use it in TypeScript:
+```ts
+    import * as CANVAS from 'cvat-canvas.node';
+    // Create an instance of a canvas
+    const canvas = new CANVAS.Canvas(null);
+
+    // Put canvas to a html container
+    htmlContainer.appendChild(canvas.html());
+
+    // Next you can use its API methods. For example:
+    canvas.rotate(CANVAS.Rotation.CLOCKWISE90);
+    canvas.draw({
+        enabled: true,
+        shapeType: 'rectangle',
+        crosshair: true,
+    });
 ```
 
 ## States
