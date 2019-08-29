@@ -27,7 +27,7 @@ code {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: calc(100vh - 64px - 64px - 46px);
+  height: calc(100vh - 90px - 64px - 46px);
 
   &.ant-empty {
     font-size: 16px;
@@ -38,6 +38,7 @@ code {
     }
 
     .ant-empty-description {
+      font-size: 20px;
       font-weight: bold;
     }
 

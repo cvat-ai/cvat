@@ -1,14 +1,22 @@
 .tasks-header {
-  min-width: 1024px;
+  display: flex;
+  align-items: center;
+  width: 1024px;
+  height: 90px;
+  line-height: initial;
+  margin: 0 auto;
+  padding: 0;
   background-color: #f0f2f5;
 
   &__logo {
-    height: 64px;
+    font-size: 20px;
 
     .logo {
+      margin: 0;
       color: black;
     }
   }
+
   &__search {
     text-align: center;
 
@@ -16,6 +24,7 @@
       max-width: 300px;
     }
   }
+
   &__actions {
     text-align: right;
 
@@ -24,11 +33,9 @@
     }
 
     .action {
-      width: 100px;
+      width: 180px;
+      font-size: 16px;
+      line-height: 19px;
     }
-  }
-
-  .logo, .search, .action {
-    vertical-align: middle;
   }
 }

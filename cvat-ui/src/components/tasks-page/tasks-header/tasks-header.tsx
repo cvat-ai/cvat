@@ -5,7 +5,7 @@ import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createTaskAsync } from '../../../actions/tasks.actions';
 
-import { Modal, Layout, Row, Col, Button, Input } from 'antd';
+import { Modal, Layout, Col, Button, Input } from 'antd';
 import Title from 'antd/lib/typography/Title';
 
 import TaskCreateForm from '../../modals/task-create/task-create';
@@ -36,29 +36,28 @@ class TasksHeader extends Component<any, any> {
   render() {
     return(
       <Header className="tasks-header">
-        <Row type="flex" gutter={16}>
-          <Col className="tasks-header__logo" span={8}>
-            <Title className="logo">Tasks</Title>
-          </Col>
-          <Col className="tasks-header__search" span={8}>
-            <Search
-              className="search"
-              placeholder="Search for tasks"
-              value={ this.state.searchQuery }
-              onChange={ this.onValueChange }
-              onSearch={ query => this.onSearch(query) }
-              enterButton>
-            </Search>
-          </Col>
-          <Col className="tasks-header__actions" span={8}>
-            <Button
-              className="action"
-              type="primary"
-              onClick={ this.onCreateTask }>
-              Create task
-            </Button>
-          </Col>
-        </Row>
+        <Col className="tasks-header__logo" span={3}>
+          <Title className="logo">Tasks</Title>
+        </Col>
+        <Col className="tasks-header__search" span={6}>
+          <Search
+            className="search"
+            size="large"
+            placeholder="Search"
+            value={ this.state.searchQuery }
+            onChange={ this.onValueChange }
+            onSearch={ query => this.onSearch(query) }>
+          </Search>
+        </Col>
+        <Col className="tasks-header__actions" span={15}>
+          <Button
+            className="action"
+            size="large"
+            type="primary"
+            onClick={ this.onCreateTask }>
+            Create task
+          </Button>
+        </Col>
       </Header>
     );
   }
