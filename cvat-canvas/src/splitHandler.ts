@@ -82,5 +82,8 @@ export class SplitHandlerImpl implements SplitHandler {
     public cancel(): void {
         this.release();
         this.onSplitDone(null);
+        // here is a cycle
+        // onSplitDone => controller => model => view => closeSplitting
+        // one call of closeMerging is unuseful, but it's okey
     }
 }

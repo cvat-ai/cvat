@@ -154,10 +154,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         mode: Mode;
     };
 
-    private busy(): boolean {
-        return this.data.mode !== Mode.IDLE;
-    }
-
     public constructor(ObjectStateClass: any) {
         super();
 
