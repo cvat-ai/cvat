@@ -9,7 +9,6 @@ import { logoutAsync } from '../../actions/auth.actions';
 import { Layout, Row, Col, Menu, Dropdown, Icon } from 'antd';
 import { ClickParam } from 'antd/lib/menu';
 
-
 import './header-layout.scss';
 
 
@@ -43,7 +42,7 @@ class HeaderLayout extends PureComponent<any, any> {
       <Header className="header-layout">
         <Row type="flex" gutter={24}>
           <Col className="header-layout__logo" span={2}>
-            <img src="./cvat-logo.svg" alt="CVAT logo" />
+            <img src="./images/cvat-logo.svg" alt="CVAT logo" />
           </Col>
           <Col className="header-layout__menu" span={18}>
             <Menu onClick={ this.selectMenuItem } selectedKeys={ [this.state.selectedMenuItem] } mode="horizontal">
