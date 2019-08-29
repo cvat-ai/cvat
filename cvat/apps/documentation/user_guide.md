@@ -29,6 +29,7 @@
   - [Annotation with polylines](#annotation-with-polylines)
   - [Annotation with points](#annotation-with-points)
   - [Annotation with Auto Segmentation](#annotation-with-auto-segmentation)
+  - [Auto annotation](#auto-annotation)
   - [Shape grouping](#shape-grouping)
   - [Filter](#filter)
   - [Analytics](#analytics)
@@ -135,7 +136,9 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     **Use LFS**. If the annotation file is large, you can create a repository with
     [LFS](https://git-lfs.github.com/) support.
 
-    **Source**. To create huge tasks please use ``shared`` server directory (choose ``Share`` option in the dialog).
+    **Source**. Choose "Local" if you want to use files from your PC.
+    Choose the "Remote" option if you want to use a one url-adress or a list.
+    To create huge tasks please use shared server directory (choose "Share"). 
 
     **Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
 
@@ -169,18 +172,36 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     The option helps to load high resolution datasets faster.
     Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
 
-    **Select files**. Push this button to select files you want to annotate.
+    **Frame Filter**. Use this option to filter video frames.
+    For example, enter ``step=25`` to leave every twenty fifth frame in the video. Use this option on video files only.
+
+    **Select files or URL list**. If you select `` Remote`` in `` Source``, you'll see a field where you can enter
+    a list of URLs (one URL per line).
+    Press `` Local`` or `` Share`` in the `` source`` field to choose some files
+    for anotation from your local PC or a network folder respectively.
 
     Push ``Submit`` button and it will be added into the list of annotation tasks.
-    Then, the created task will be displayed on dashboard:
+    Then, the created task will be displayed on a dashboard:
 
-    ![](static/documentation/images/image006.jpg)
+    ![](static/documentation/images/image006_DETRAC.jpg)
 
 1.  The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
     Each element contains: task name, preview, execution status, buttons, and one or more links.
     Each button is responsible for a specific function:
-    - ``Dump Annotation`` — download an annotation file from the task (xml format)
-    - ``Upload Annotation`` — upload an annotation file to the task (xml format)
+    - ``Dump Annotation`` — download an annotation file from a task. Several formats are available:
+      - [CVAT XML 1.1 for video](/cvat/apps/documentation/xml_format.md#interpolation)
+      is highlighted if a task has the interpolation mode 
+      - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
+      is highlighted if a task has the annotation mode 
+      - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
+      - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
+      - [COCO JSON 1.0](http://cocodataset.org/#format-data)
+      - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file
+      with the value of each color
+      - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records)
+    - ``Upload annotation`` is possible in same format as ``Dump annotation``, with exception of ``MASK ZIP 1.0``
+      format and without choosing whether [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md)
+      refers to an image or video.
     - ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
     - ``Delete Task`` — delete the task
     - ``Git Repository Sync`` — sync annotation with the dataset repository.
@@ -216,15 +237,28 @@ You can "register" a model and "use" it after that to pre annotate your tasks.
 
 The model manager allows you to manage your deep learning (DL) models uploaded for auto annotation.
 Using the functionality you can upload, update or delete a specific DL model.
-Use "Auto annotation" button to pre annotate a task using one of your DL models. [Read more](/cvat/apps/auto_annotation)
+Use "Auto annotation" button to pre annotate a task using one of your DL models.
+[Read more](/cvat/apps/auto_annotation)
 
 ![](static/documentation/images/image104.jpg)
 
 ### Search
 
 There are several options how to use the search.
-It may be task's name, mode (annotation or interpolation), owner (username), assignee (username),
-status (annotation, validation, completed), id.
+
+- Search within all fields (owner, assignee, task name, task status, task mode).
+To execute enter a search string in search field.
+- Search for specific fields. How to perform:
+  - ``owner: admin`` - all tasks created by the user who has the substring "admin" in his name
+  - ``assignee: employee``  - all tasks which are assigned to a user who has the substring "employee" in his name
+  - ``name: mighty`` - all tasks with the substring "mighty" in their names
+  - ``mode: annotation`` or ``mode: interpolation`` - all tasks with images or videos.
+  - ``status: annotation`` or ``status: validation`` or ``status: completed``  - search by status
+  - ``id: 5`` - task with id = 5.
+- Multiple filters. Filters can be combined (except for the identifier) ​​using the keyword `` AND``:
+  - ``mode: interpolation AND owner: admin``
+  - ``mode: annotation and status: annotation``
+
 The search is case insensitive.
 
 ![](static/documentation/images/image100.jpg)
@@ -274,7 +308,7 @@ And there is how they all look like:
 ![](static/documentation/images/image038.jpg "Box") ![](static/documentation/images/image033.jpg "Polygon")
 
 ![](static/documentation/images/image009.jpg "Polyline") ![](static/documentation/images/image010.jpg "Points")
-![](static/documentation/images/gif009.gif "Auto Segmentation")
+![](static/documentation/images/gif009_DETRAC.gif "Auto Segmentation")
 
 ### Annotation mode (basics)
 Usage examples:
@@ -324,7 +358,7 @@ Usage examples:
     - Annotate a bounding box on the first frame for the object.
     - In ``Interpolation`` mode the bounding box will be interpolated on next frames automatically.
 
-    ![](static/documentation/images/image015.jpg)
+    ![](static/documentation/images/image015_DETRAC.jpg)
 
 1.  If the object starts to change its position, you need to modify bounding
     boxes where it happens. It isn't necessary to change bounding boxes on each
@@ -337,7 +371,7 @@ Usage examples:
 
     -   Let's jump 30 frames forward and adjust boundaries of the object.
 
-        ![](static/documentation/images/image017.jpg)
+        ![](static/documentation/images/image017_DETRAC.jpg)
 
     -   After that, bounding boxes of the object between 630 and 660 frames
         will be changed automatically. For example, frame #645 looks like on the figure below:
@@ -403,18 +437,31 @@ Usage examples:
 ### Downloading annotations
 
 1.  To download the latest annotations, you have to save all changes first.
-    Press ``Open Menu`` and then ``Save Work`` button. There is ``Ctrl+S``
-    shortcut to save annotations quickly.
+    To do this, click ``Open Menu`` button. 
 
-1.  After that, press ``Open Menu`` and then ``Dump Annotation`` button.
+1.  After that, press ``Save Work`` button. There is ``Ctrl+S``
+    shortcut to save annotations quickly.
 
     ![](static/documentation/images/image028.jpg)
 
-1.  The annotation will be written into **.xml** file. To find the annotation
-    file, you should go to the directory where your browser saves downloaded
-    files by default. For more information visit [xml format page](/cvat/apps/documentation/xml_format.md).
+1.  After that, press ``Dump Annotation`` button.
 
-    ![](static/documentation/images/image029.jpg)
+    ![](static/documentation/images/image118.jpg)
+
+1.  Choose format dump annotation file. Dump annotation are available in several formats:
+    - [CVAT XML 1.1 for video](/cvat/apps/documentation/xml_format.md#interpolation)
+    is highlighted if a task has the interpolation mode
+    - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
+    is highlighted if a task has the annotation mode
+
+    ![](static/documentation/images/image029.jpg "Example XML format") 
+
+    - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
+    - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
+    - [COCO JSON 1.0](http://cocodataset.org/#format-data)
+    - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file with
+    the value of each color
+    - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records) 
 
 ### Task synchronization with a repository
 
@@ -900,6 +947,8 @@ automatically. You can adjust the polyline after it has been drawn.
 
 ## Annotation with points
 
+### Points in annotation mode
+
 It is used for face landmarks annotation etc.
 
 Before starting, you have to be sure that ``Points`` is selected.
@@ -920,6 +969,32 @@ You can add/delete points after finishing.
 
 ![](static/documentation/images/image063.jpg)
 
+### Linear interpolation with one point
+
+You can use linear interpolation for points to annotate a moving object:
+
+1.  Before starting, you have to be sure that ``Points`` is selected. 
+1.  Linear interpolation works only with one point, so you need to set ``Poly Shapes Size``: 1. 
+1.  After that select the interpolation mode.
+    
+    ![](static/documentation/images/image122.jpg)
+
+1.  Press ``N`` or click ``Create Shape`` for entering drawing mode.
+    Click LMB to create a point and shape will be automatically completed. 
+
+    ![](static/documentation/images/gif011_DETRAC.gif)
+
+1.  Move forward a few frames and move the point to the desired position,
+    this way you will create a keyframe and intermediate frames will be drawn automatically.
+    You can work with this object as with an interpolated track: hide with help of ``Outside``,
+    move around keyframes, etc.
+
+    ![](static/documentation/images/gif012_DETRAC.gif)
+
+1.  This way you'll get linear interpolation using `` Points``.
+
+    ![](static/documentation/images/gif013_DETRAC.gif)
+
 ## Annotation with Auto Segmentation
 
 Used to create a polygon semi-automatically. Before starting, you have to be
@@ -935,7 +1010,54 @@ in/out (when scrolling the mouse wheel) and move (when clicking the mouse
 wheel and moving the mouse) while drawing. At the end of Auto Segmentation,
 a shape is created and you can work with it as a polygon.
 
-![](static/documentation/images/gif009.gif)
+![](static/documentation/images/gif009_DETRAC.gif)
+
+## Auto annotation
+
+1.  First you need to upload deep learning (DL) models using model manager.
+    Only models in OpenVINO™ toolkit format are supported.
+    If you would like to annotate a task with a custom model please convert it
+    to the intermediate representation (IR) format via the model optimizer tool.
+    See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
+
+    ![](static/documentation/images/image099.jpg)
+
+1.  Enter model name, and select model file using "Select files" button. To annotate a task with a custom model
+    you need to prepare 4 files:
+    - ``Model config`` (*.xml) - a text file with network configuration. 
+    - ``Model weights`` (*.bin) - a binary file with trained weights. 
+    - ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with 
+    string values for label numbers.
+    - ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
+    which can be processed by CVAT. 
+    More about creating model files can be found [here](/cvat/apps/auto_annotation).
+
+    ![](static/documentation/images/image104.jpg)
+
+1.  After downloading a model you have to  create a task or find an already created one and
+    click ``Run Auto Annotation`` button.
+
+    ![](static/documentation/images/image119.jpg)
+
+1.  In dialog window select a model you need. If it's necessary select the ``Delete current annotation`` checkbox.
+    Adjust the labels so that the task labels will correspond to the labels of the DL model.
+    Click ``Start`` to begin the auto annotatiton process.
+
+    ![](static/documentation/images/image120.jpg)
+
+1.  At runtime, you can see percentage of completion. You can also cancel the auto annotation
+    process by clicking ``Cancel Auto Annotation``
+
+    ![](static/documentation/images/image121.jpg)
+
+1.  As a result, you will get an annotation with separate bounding boxes (or other shapes)
+
+    ![](static/documentation/images/gif014_DETRAC.gif)
+
+1.  Separated bounding boxes can be edited by removing false positives, adding unlabeled objects, and
+    merging into tracks using ``Merge Shape``
+
+    ![](static/documentation/images/gif015_DETRAC.gif)
 
 ## Shape grouping
 
@@ -983,7 +1105,7 @@ In the trivial case, the correct filter must match the template: ``label[prop op
 ``prop`` is a property which should be filtered. The following items are available:
 
 - ``id`` — identifier of an object. It helps to find a specific object easily
-in case of huge number of objects and static/documentation/images/frames.
+in case of huge number of objects and images or frames.
 - ``type`` — an annotation type. Possible values: ``annotation``, ``interpolation``
 - ``lock`` accepts ``true`` and ``false`` values. It can be used to hide all locked objects.
 - ``occluded`` accepts ``true`` and ``false`` values. It can be used to hide all occluded objects.
