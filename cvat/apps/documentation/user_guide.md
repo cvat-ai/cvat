@@ -137,7 +137,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     [LFS](https://git-lfs.github.com/) support.
 
     **Source**. Choose "Local" if you want to use files from your PC.
-    Choose the "Remote" option if you want to use a one url-adress or a list of url-adress .
+    Choose the "Remote" option if you want to use a one url-adress or a list.
     To create huge tasks please use shared server directory (choose "Share"). 
 
     **Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
@@ -176,7 +176,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     For example, enter ``step=25`` to leave every twenty fifth frame in the video. Use this option on video files only.
 
     **Select files or URL list**. If you select `` Remote`` in `` Source``, you'll see a field where you can enter
-    an URL adrresses (one URL per line).
+    a list of URLs (one URL per line).
     Press `` Local`` or `` Share`` in the `` source`` field to choose some files
     for anotation from your local PC or a network folder respectively.
 
