@@ -196,6 +196,7 @@ class RegisterForm extends PureComponent<any, any> {
             values.email,
             values.password,
             values.passwordConfirmation,
+            this.props.history,
           ),
         );
       }
