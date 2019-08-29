@@ -68,17 +68,23 @@ class TasksContent extends Component<any, any> {
   render() {
     return(
       <>
-        { this.props.tasks.length ? this.renderTasks() : this.renderPlaceholder() }
+        { this.props.tasks.length ? this.renderTasks() : this.renderEmpty() }
       </>
     );
   }
 
-  private renderPlaceholder() {
+  private renderEmpty() {
     return (
-      <Empty className="empty" description="No tasks found...">
-        <Button type="primary" onClick={ this.onCreateTask }>
-          Create task
+      <Empty
+        className="empty"
+        description="No tasks created yet..."
+        image="./images/empty-tasks-icon.svg">
+        <span>To get started with your annotation project</span>
+        <Button type="link" onClick={ this.onCreateTask }>
+          create a new task
         </Button>
+        {/* // TODO: uncomment when modals -> pages */}
+        {/* <Link to="/tasks">create a new task</Link> */}
       </Empty>
     )
   }

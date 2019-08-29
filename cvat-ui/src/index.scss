@@ -11,7 +11,7 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-// TODO: remove when models -> pages
+// TODO: remove when modals -> pages
 .crud-modal {
   width: 90% !important;
 }
@@ -20,5 +20,37 @@ code {
   .ant-spin-spinning {
     max-height: 100% !important;
     background: white !important;
+  }
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: calc(100vh - 64px - 64px - 46px);
+
+  &.ant-empty {
+    font-size: 16px;
+    line-height: 19px;
+
+    .ant-empty-image {
+      margin-bottom: 30px;
+    }
+
+    .ant-empty-description {
+      font-weight: bold;
+    }
+
+    .ant-empty-footer {
+      margin-top: 10px;
+
+      .ant-btn {
+        display: block;
+        margin: auto;
+        height: auto;
+        font-size: 16px;
+        line-height: 19px;
+      }
+    }
   }
 }

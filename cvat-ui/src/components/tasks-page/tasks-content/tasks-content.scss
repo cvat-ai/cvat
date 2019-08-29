@@ -1,6 +1,6 @@
 .tasks-content {
   width: 1024px;
-  min-height: calc(100vh - 64px - 64px);
+  min-height: calc(100vh - 64px - 64px - 46px);
   margin: 0 auto;
 
   .tasks-content-сard {
@@ -42,11 +42,4 @@
       }
     }
   }
-}
-
-.empty {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: calc(100vh - 64px - 64px);
 }
