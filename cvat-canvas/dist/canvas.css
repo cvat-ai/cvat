@@ -46,6 +46,16 @@ polyline.cvat_canvas_shape_grouping {
     fill-opacity: 0.5;
 }
 
+polyline.cvat_canvas_shape_splitting {
+    stroke: dodgerblue;
+    stroke-opacity: 1;
+}
+
+.cvat_canvas_shape_splitting {
+    fill: dodgerblue;
+    fill-opacity: 0.5;
+}
+
 polyline.cvat_canvas_shape_merging {
     stroke: blue;
     stroke-opacity: 1;

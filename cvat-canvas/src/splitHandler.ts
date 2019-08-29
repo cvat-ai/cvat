@@ -12,17 +12,27 @@ export class SplitHandlerImpl implements SplitHandler {
     private onSplitDone: (object: any) => void;
     private onFindObject: (event: MouseEvent) => void;
     private canvas: SVG.Container;
+    private highlightedShape: SVG.Shape;
     private initialized: boolean;
+
+    private resetShape(): void {
+        if (this.highlightedShape) {
+            this.highlightedShape.removeClass('cvat_canvas_shape_splitting');
+            this.highlightedShape.off('click.split');
+            this.highlightedShape = null;
+        }
+    }
 
     private release(): void {
         if (this.initialized) {
-            this.canvas.node.removeEventListener('click', this.onFindObject);
+            this.resetShape();
+            this.canvas.node.removeEventListener('mousemove', this.onFindObject);
             this.initialized = false;
         }
     }
 
     private initSplitting(): void {
-        this.canvas.node.addEventListener('click', this.onFindObject);
+        this.canvas.node.addEventListener('mousemove', this.onFindObject);
         this.initialized = true;
     }
 
@@ -38,6 +48,7 @@ export class SplitHandlerImpl implements SplitHandler {
         this.onSplitDone = onSplitDone;
         this.onFindObject = onFindObject;
         this.canvas = canvas;
+        this.highlightedShape = null;
         this.initialized = false;
     }
 
@@ -50,7 +61,22 @@ export class SplitHandlerImpl implements SplitHandler {
     }
 
     public select(state: any): void {
-        this.onSplitDone(state);
+        if (state.objectType === 'track') {
+            const shape = this.canvas.select(`#cvat_canvas_shape_${state.clientID}`).first();
+            if (shape && shape !== this.highlightedShape) {
+                this.resetShape();
+                this.highlightedShape = shape;
+                this.highlightedShape.addClass('cvat_canvas_shape_splitting');
+                this.canvas.node.append(this.highlightedShape.node);
+                this.highlightedShape.on('click.split', (): void => {
+                    this.onSplitDone(state);
+                }, {
+                    once: true,
+                });
+            }
+        } else {
+            this.resetShape();
+        }
     }
 
     public cancel(): void {

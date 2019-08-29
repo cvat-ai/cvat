@@ -247,7 +247,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private onFindObject(e: MouseEvent): void {
-        if (e.which === 1) {
+        if (e.which === 1 || e.which === 0) {
             const [x, y] = translateToSVG(this.background, [e.clientX, e.clientY]);
             const event: CustomEvent = new CustomEvent('canvas.find', {
                 bubbles: false,
@@ -395,10 +395,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         });
 
-        this.content.addEventListener('mousemove', (event): void => {
-            self.controller.drag(event.clientX, event.clientY);
-        });
-
         window.document.addEventListener('mouseup', (event): void => {
             if (event.which === 1 || event.which === 2) {
                 self.controller.disableDrag();
@@ -412,6 +408,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
 
         this.content.addEventListener('mousemove', (e): void => {
+            self.controller.drag(e.clientX, e.clientY);
+
             if (this.mode !== Mode.IDLE) return;
 
             const [x, y] = translateToSVG(this.background, [e.clientX, e.clientY]);
