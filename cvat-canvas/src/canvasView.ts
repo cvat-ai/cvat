@@ -30,12 +30,12 @@ import {
     MergeData,
     SplitData,
     GroupData,
+    Mode,
 } from './canvasModel';
 
 export interface CanvasView {
     html(): HTMLDivElement;
 }
-
 
 interface ShapeDict {
     [index: number]: SVG.Shape;
@@ -43,16 +43,6 @@ interface ShapeDict {
 
 interface TextDict {
     [index: number]: SVG.Text;
-}
-
-enum Mode {
-    IDLE = 'idle',
-    DRAG = 'drag',
-    RESIZE = 'resize',
-    DRAW = 'draw',
-    MERGE = 'merge',
-    SPLIT = 'split',
-    GROUP = 'group',
 }
 
 function selectize(value: boolean, shape: SVG.Element, geometry: Geometry): void {
@@ -134,7 +124,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         attributeID: number;
     };
 
-    private mode: Mode;
+    private set mode(value: Mode) {
+        this.controller.mode = value;
+    }
+
+    private get mode(): Mode {
+        return this.controller.mode;
+    }
 
     private onDrawDone(data: object): void {
         if (data) {

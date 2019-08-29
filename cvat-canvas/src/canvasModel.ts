@@ -86,6 +86,16 @@ export enum UpdateReasons {
     CANCEL = 'cancel',
 }
 
+export enum Mode {
+    IDLE = 'idle',
+    DRAG = 'drag',
+    RESIZE = 'resize',
+    DRAW = 'draw',
+    MERGE = 'merge',
+    SPLIT = 'split',
+    GROUP = 'group',
+}
+
 export interface CanvasModel {
     readonly image: string;
     readonly objects: any[];
@@ -99,6 +109,7 @@ export interface CanvasModel {
     readonly groupData: GroupData;
     readonly selected: any;
     geometry: Geometry;
+    mode: Mode;
 
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
@@ -140,7 +151,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         groupData: GroupData;
         splitData: SplitData;
         selected: any;
+        mode: Mode;
     };
+
+    private busy(): boolean {
+        return this.data.mode !== Mode.IDLE;
+    }
 
     public constructor(ObjectStateClass: any) {
         super();
@@ -191,6 +207,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 enabled: false,
             },
             selected: null,
+            mode: null,
         };
     }
 
@@ -250,6 +267,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public activate(clientID: number, attributeID: number): void {
+        if (this.data.mode !== Mode.IDLE) {
+            // Exception or just return?
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
         this.data.activeElement = {
             clientID,
             attributeID,
@@ -316,6 +338,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public draw(drawData: DrawData): void {
+        if (![Mode.IDLE, Mode.DRAW].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
         if (drawData.enabled) {
             if (this.data.drawData.enabled) {
                 throw new Error('Drawing has been already started');
@@ -335,6 +361,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public split(splitData: SplitData): void {
+        if (![Mode.IDLE, Mode.SPLIT].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
         if (this.data.splitData.enabled && splitData.enabled) {
             return;
         }
@@ -348,6 +378,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public group(groupData: GroupData): void {
+        if (![Mode.IDLE, Mode.GROUP].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
         if (this.data.groupData.enabled && groupData.enabled) {
             return;
         }
@@ -361,6 +395,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public merge(mergeData: MergeData): void {
+        if (![Mode.IDLE, Mode.MERGE].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
         if (this.data.mergeData.enabled && mergeData.enabled) {
             return;
         }
@@ -454,5 +492,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get selected(): any {
         return this.data.selected;
+    }
+
+    public set mode(value: Mode) {
+        this.data.mode = value;
+    }
+
+    public get mode(): Mode {
+        return this.data.mode;
     }
 }

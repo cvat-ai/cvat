@@ -37,7 +37,7 @@ export class SplitHandlerImpl implements SplitHandler {
     }
 
     private closeSplitting(): void {
-        this.release();
+        this.cancel(); // the same implementation in this case
     }
 
     public constructor(

@@ -13,6 +13,7 @@ import {
     MergeData,
     SplitData,
     GroupData,
+    Mode,
 } from './canvasModel';
 
 export interface CanvasController {
@@ -25,6 +26,7 @@ export interface CanvasController {
     readonly splitData: SplitData;
     readonly groupData: GroupData;
     readonly selected: any;
+    mode: Mode;
     geometry: Geometry;
 
     zoom(x: number, y: number, direction: number): void;
@@ -138,5 +140,13 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get selected(): any {
         return this.model.selected;
+    }
+
+    public set mode(value: Mode) {
+        this.model.mode = value;
+    }
+
+    public get mode(): Mode {
+        return this.model.mode;
     }
 }
