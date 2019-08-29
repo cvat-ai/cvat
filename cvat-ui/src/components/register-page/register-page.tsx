@@ -25,7 +25,7 @@ class RegisterForm extends PureComponent<any, any> {
         this.setState({ loading: false });
 
         if (this.props.isAuthenticated) {
-          this.props.history.push('/tasks');
+          this.props.history.replace('/tasks');
         }
       }
     );
