@@ -3308,37 +3308,40 @@ class PointsView extends PolyShapeView {
 
 function buildShapeModel(data, type, clientID, color) {
     switch (type) {
-    case 'interpolation_box':
-    case 'annotation_box':
-        return new BoxModel(data, type, clientID, color);
-    case 'interpolation_points':
-    case 'annotation_points':
-        return new PointsModel(data, type, clientID, color);
-    case 'interpolation_polyline':
-    case 'annotation_polyline':
-        return new PolylineModel(data, type, clientID, color);
-    case 'interpolation_polygon':
-    case 'annotation_polygon':
-        return new PolygonModel(data, type, clientID, color);
+        case 'interpolation_box':
+        case 'annotation_box':
+            return new BoxModel(data, type, clientID, color);
+        case 'interpolation_points':
+        case 'annotation_points':
+            return new PointsModel(data, type, clientID, color);
+        case 'interpolation_polyline':
+        case 'annotation_polyline':
+            return new PolylineModel(data, type, clientID, color);
+        case 'interpolation_polygon':
+        case 'annotation_polygon':
+            return new PolygonModel(data, type, clientID, color);
+        case 'annotation_cuboid':
+            return new CuboidModel(data, type, clientID, color);
     }
     throw Error('Unreacheable code was reached.');
 }
 
-
 function buildShapeController(shapeModel) {
     switch (shapeModel.type) {
-    case 'interpolation_box':
-    case 'annotation_box':
-        return new BoxController(shapeModel);
-    case 'interpolation_points':
-    case 'annotation_points':
-        return new PointsController(shapeModel);
-    case 'interpolation_polyline':
-    case 'annotation_polyline':
-        return new PolylineController(shapeModel);
-    case 'interpolation_polygon':
-    case 'annotation_polygon':
-        return new PolygonController(shapeModel);
+        case 'interpolation_box':
+        case 'annotation_box':
+            return new BoxController(shapeModel);
+        case 'interpolation_points':
+        case 'annotation_points':
+            return new PointsController(shapeModel);
+        case 'interpolation_polyline':
+        case 'annotation_polyline':
+            return new PolylineController(shapeModel);
+        case 'interpolation_polygon':
+        case 'annotation_polygon':
+            return new PolygonController(shapeModel);
+        case 'annotation_cuboid':
+            return new CuboidController(shapeModel);
     }
     throw Error('Unreacheable code was reached.');
 }
@@ -3346,18 +3349,20 @@ function buildShapeController(shapeModel) {
 
 function buildShapeView(shapeModel, shapeController, svgContent, UIContent, textsContent) {
     switch (shapeModel.type) {
-    case 'interpolation_box':
-    case 'annotation_box':
-        return new BoxView(shapeModel, shapeController, svgContent, UIContent, textsContent);
-    case 'interpolation_points':
-    case 'annotation_points':
-        return new PointsView(shapeModel, shapeController, svgContent, UIContent, textsContent);
-    case 'interpolation_polyline':
-    case 'annotation_polyline':
-        return new PolylineView(shapeModel, shapeController, svgContent, UIContent, textsContent);
-    case 'interpolation_polygon':
-    case 'annotation_polygon':
-        return new PolygonView(shapeModel, shapeController, svgContent, UIContent, textsContent);
+        case 'interpolation_box':
+        case 'annotation_box':
+            return new BoxView(shapeModel, shapeController, svgContent, UIContent, textsContent);
+        case 'interpolation_points':
+        case 'annotation_points':
+            return new PointsView(shapeModel, shapeController, svgContent, UIContent, textsContent);
+        case 'interpolation_polyline':
+        case 'annotation_polyline':
+            return new PolylineView(shapeModel, shapeController, svgContent, UIContent, textsContent);
+        case 'interpolation_polygon':
+        case 'annotation_polygon':
+            return new PolygonView(shapeModel, shapeController, svgContent, UIContent, textsContent);
+        case 'annotation_cuboid':
+            return new CuboidView(shapeModel, shapeController, svgContent, UIContent, textsContent);
     }
     throw Error('Unreacheable code was reached.');
 }

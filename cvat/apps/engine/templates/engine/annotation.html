@@ -26,6 +26,7 @@
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/jquery-3.3.1.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/js.cookie.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/jquery.fullscreen.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/3rdparty/math.js' %}"></script>
     {% for js_file in js_3rdparty %}
         <script type="text/javascript" src="{% static js_file %}"></script>
     {% endfor %}
@@ -49,6 +50,7 @@
         <script type="text/javascript" src="{% static 'engine/js/bootstrap.js' %}"></script>
 
         <script type="text/javascript" src="{% static 'engine/js/shapes.js' %}"></script>
+        <script type="text/javascript" src="{% static 'engine/js/cuboidShape.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/shapeCollection.js' %}"></script>
 
         <script type="text/javascript" src="{% static 'engine/js/player.js' %}"></script>
@@ -173,6 +175,10 @@
                     <td style="width: auto;">
                         <div style="float: left;"> <label class="semiBold"> Black Stroke: </label> </div>
                         <div style="float: left; margin-left: 1em;"> <input type="checkbox" id="blackStrokeCheckbox" class="settingsBox"/> </div>
+                    </td>
+                    <td style="width: auto;">
+                        <div style="float: left;"> <label class="semiBold"> Cuboid Projection Lines: </label> </div>
+                        <div style="float: left; margin-left: 1em;"> <input type="checkbox" id="projectionLineEnable" class="settingsBox"/> </div>
                     </td>
                     <td style="width: auto;">
                         <div style="float: left;"> <label class="semiBold"> Color by: </label> </div>
@@ -384,12 +390,15 @@
                         <td colspan="2"> Polygons </td>
                         <td colspan="2"> Polylines </td>
                         <td colspan="2"> Points </td>
+                        <td colspan="2"> Cuboids </td>
                         <td> Manually </td>
                         <td> Interpolated </td>
                         <td> Total </td>
                     </tr>
                     <tr>
                         <td> </td> <!-- Empty -->
+                        <td> S </td>
+                        <td> T </td>
                         <td> S </td>
                         <td> T </td>
                         <td> S </td>
@@ -429,6 +438,7 @@
             <option value="polygon" class="regular"> Polygon </option>
             <option value="polyline" class="regular"> Polyline </option>
             <option value="points" class="regular"> Points </option>
+            <option value="cuboid" class="regular"> Cuboid </option>
         </select>
         <div id="polyShapeSizeWrapper">
             <label for="polyShapeSize" class="regular h2"> Poly Shape Size: </label>

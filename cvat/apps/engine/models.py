@@ -10,6 +10,7 @@ import os
 
 from django.db import models
 from django.conf import settings
+from django.core.validators import MaxValueValidator
 
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
@@ -224,6 +225,7 @@ class ShapeType(str, Enum):
     POLYGON = 'polygon'     # (x0, y0, ..., xn, yn)
     POLYLINE = 'polyline'   # (x0, y0, ..., xn, yn)
     POINTS = 'points'       # (x0, y0, ..., xn, yn)
+    CUBOID = 'cuboid'
 
     @classmethod
     def choices(self):

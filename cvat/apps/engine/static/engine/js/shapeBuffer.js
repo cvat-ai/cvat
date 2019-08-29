@@ -389,6 +389,7 @@ class ShapeBufferView {
                 'stroke-width': STROKE_WIDTH / scale,
             });
             break;
+        case 'cuboid':
         case 'polyline':
             this._shapeView = this._frameContent.polyline(points).addClass('shapeCreation').attr({
                 'stroke-width': STROKE_WIDTH / scale,

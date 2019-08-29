@@ -118,7 +118,7 @@ class ShapeCreatorModel extends Listener {
     }
 
     set defaultType(type) {
-        if (!['box', 'points', 'polygon', 'polyline'].includes(type)) {
+        if (!['box', 'points', 'polygon', 'polyline', 'cuboid'].includes(type)) {
             throw Error(`Unknown shape type found ${type}`);
         }
         this._defaultType = type;
@@ -263,6 +263,58 @@ class ShapeCreatorView {
         });
     }
 
+    _createCuboidEvent() {
+        let sizeUI = null;
+        const backFaceOffset = 20;
+        this._drawInstance = this._frameContent.rect().draw({ snapToGrid: 0.1 }).addClass('shapeCreation').attr({
+            'stroke-width': STROKE_WIDTH / this._scale,
+        })
+            .on('drawstop', (e) => {
+                if (this._cancel) return;
+                if (sizeUI) {
+                    sizeUI.rm();
+                    sizeUI = null;
+                }
+
+                const { frameWidth } = window.cvat.player.geometry;
+                const { frameHeight } = window.cvat.player.geometry;
+                const rect = window.cvat.translate.box.canvasToActual(e.target.getBBox());
+
+                const p1 = { x: Math.clamp(rect.x, 0, frameWidth), y: Math.clamp(rect.y + 1, 0, frameHeight) };
+                const p2 = { x: Math.clamp(rect.x, 0, frameWidth), y: Math.clamp(rect.y - 1 + rect.height, 0, frameHeight) };
+                const p3 = { x: Math.clamp(rect.x + rect.width, 0, frameWidth), y: Math.clamp(rect.y, 0, frameHeight) };
+                const p4 = { x: Math.clamp(rect.x + rect.width, 0, frameWidth), y: Math.clamp(rect.y + rect.height, 0, frameHeight) };
+
+                const p5 = { x: p3.x + backFaceOffset, y: p3.y - backFaceOffset + 1 };
+                const p6 = { x: p3.x + backFaceOffset, y: p4.y - backFaceOffset - 1 };
+
+                let points = [p1, p2, p3, p4, p5, p6];
+
+                const viewModel = new Cuboid2PointViewModel(points);
+                points = viewModel.getPoints();
+
+                for (let idx = 0; idx < points.length; idx += 1) {
+                    const point = points[idx];
+                    point.x = Math.clamp(point.x, 0, frameWidth);
+                    point.y = Math.clamp(point.y, 0, frameHeight);
+                }
+
+                points = PolyShapeModel.convertNumberArrayToString(points);
+                e.target.setAttribute('points',
+                    window.cvat.translate.points.actualToCanvas(points));
+                this._controller.finish({ points }, this._type);
+                this._controller.switchCreateMode(true);
+            })
+            .on('drawupdate', (e) => {
+                sizeUI = drawBoxSize.call(sizeUI, this._frameContent, this._frameText, e.target.getBBox());
+            })
+            .on('drawcancel', () => {
+                if (sizeUI) {
+                    sizeUI.rm();
+                    sizeUI = null;
+                }
+            });
+    }
 
     _createPolyEvents() {
         // If number of points for poly shape specified, use it.
@@ -372,11 +424,11 @@ class ShapeCreatorView {
 
                     // Update points in a view in order to get an updated box
                     e.target.setAttribute('points', window.cvat.translate.points.actualToCanvas(actualPoints));
-                    let polybox = e.target.getBBox();
-                    let w = polybox.width;
-                    let h = polybox.height;
-                    let area = w * h;
-                    let type = this._type;
+                    const polybox = e.target.getBBox();
+                    const w = polybox.width;
+                    const h = polybox.height;
+                    const area = w * h;
+                    const type = this._type;
 
                     if (area >= AREA_TRESHOLD || type === 'points' && numberOfPoints || type === 'polyline' && (w >= AREA_TRESHOLD || h >= AREA_TRESHOLD)) {
                         this._controller.finish({points: actualPoints}, type);
@@ -395,12 +447,13 @@ class ShapeCreatorView {
         case 'box':
             this._drawInstance = this._frameContent.rect().draw({snapToGrid: 0.1}).addClass('shapeCreation').attr({
                 'stroke-width': STROKE_WIDTH / this._scale,
-            }).on('drawstop', function(e) {
-                if (this._cancel) return;
-                if (sizeUI) {
-                    sizeUI.rm();
-                    sizeUI = null;
-                }
+            })
+                .on('drawstop', (e) => {
+                    if (this._cancel) return;
+                    if (sizeUI) {
+                        sizeUI.rm();
+                        sizeUI = null;
+                    }
 
                 const frameWidth = window.cvat.player.geometry.frameWidth;
                 const frameHeight = window.cvat.player.geometry.frameHeight;
@@ -425,15 +478,17 @@ class ShapeCreatorView {
                     this._controller.finish(box, this._type);
                 }
 
-                this._controller.switchCreateMode(true);
-            }.bind(this)).on('drawupdate', (e) => {
-                sizeUI = drawBoxSize.call(sizeUI, this._frameContent, this._frameText, e.target.getBBox());
-            }).on('drawcancel', () => {
-                if (sizeUI) {
-                    sizeUI.rm();
-                    sizeUI = null;
-                }
-            });
+                    this._controller.switchCreateMode(true);
+                })
+                .on('drawupdate', (e) => {
+                    sizeUI = drawBoxSize.call(sizeUI, this._frameContent, this._frameText, e.target.getBBox());
+                })
+                .on('drawcancel', () => {
+                    if (sizeUI) {
+                        sizeUI.rm();
+                        sizeUI = null;
+                    }
+                });
             break;
         case 'points':
             this._drawInstance = this._frameContent.polyline().draw({snapToGrid: 0.1}).addClass('shapeCreation').attr({
@@ -466,6 +521,9 @@ class ShapeCreatorView {
                 'stroke-width':  STROKE_WIDTH / this._scale,
             });
             this._createPolyEvents();
+            break;
+        case 'cuboid':
+            this._createCuboidEvent();
             break;
         default:
             throw Error(`Bad type found ${this._type}`);

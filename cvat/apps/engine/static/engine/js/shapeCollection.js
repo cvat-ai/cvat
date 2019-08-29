@@ -422,6 +422,7 @@ class ShapeCollectionModel extends Listener {
             switch (shape.model.type.split('_')[1]) {
             case 'box':
             case 'polygon':
+            case 'cuboid':
                 if (shape.model.contain(pos, this._frame)) {
                     let distance = shape.model.distance(pos, this._frame);
                     if (distance < closedShape.minDistance) {
@@ -573,6 +574,10 @@ class ShapeCollectionModel extends Listener {
                     annotation: 0,
                     interpolation: 0,
                 },
+                cuboids: {
+                    annotation: 0,
+                    interpolation: 0,
+                },
                 manually: 0,
                 interpolated: 0,
                 total: 0,
@@ -593,6 +598,10 @@ class ShapeCollectionModel extends Listener {
                 interpolation: 0,
             },
             points: {
+                annotation: 0,
+                interpolation: 0,
+            },
+            cuboids: {
                 annotation: 0,
                 interpolation: 0,
             },
@@ -620,6 +629,9 @@ class ShapeCollectionModel extends Listener {
             case 'points':
                 statistic[statShape.labelId].points[statShape.mode] ++;
                 break;
+            case 'cuboid':
+                statistic[statShape.labelId].cuboids[statShape.mode]++;
+                break;
             default:
                 throw Error(`Unknown shape type found: ${statShape.type}`);
             }
@@ -634,6 +646,10 @@ class ShapeCollectionModel extends Listener {
             totalForLabels.polylines.interpolation += statistic[labelId].polylines.interpolation;
             totalForLabels.points.annotation += statistic[labelId].points.annotation;
             totalForLabels.points.interpolation += statistic[labelId].points.interpolation;
+            totalForLabels.cuboids.annotation += statistic[labelId].cuboids.annotation;
+            totalForLabels.cuboids.interpolation += statistic[labelId].cuboids.interpolation;
+            totalForLabels.cuboids.annotation += statistic[labelId].cuboids.annotation;
+            totalForLabels.cuboids.interpolation += statistic[labelId].cuboids.interpolation;
             totalForLabels.manually += statistic[labelId].manually;
             totalForLabels.interpolated += statistic[labelId].interpolated;
             totalForLabels.total += statistic[labelId].total;
@@ -1136,6 +1152,7 @@ class ShapeCollectionView {
         this._colorByLabelRadio = $('#colorByLabelRadio');
         this._colorByGroupCheckbox = $('#colorByGroupCheckbox');
         this._filterView = new FilterView(this._controller.filterController);
+        this._enabledProjectionCheckbox = $('#projectionLineEnable')
         this._currentViews = [];
 
         this._currentModels = [];
@@ -1145,7 +1162,8 @@ class ShapeCollectionView {
         this._scale = 1;
         this._rotation = 0;
         this._colorSettings = {
-            "fill-opacity": 0
+            'fill-opacity': 0,
+            'projection-lines':false,
         };
 
         this._showAllInterpolationBox.on('change', (e) => {
@@ -1216,6 +1234,13 @@ class ShapeCollectionView {
 
             this._colorSettings['colors-by-label'] = this._controller.colorsByGroup.bind(this._controller);
 
+            for (const view of this._currentViews) {
+                view.updateColorSettings(this._colorSettings);
+            }
+        });
+
+        this._enabledProjectionCheckbox.on('change', e => {
+            this._colorSettings['projection-lines'] = e.target.checked;
             for (let view of this._currentViews) {
                 view.updateColorSettings(this._colorSettings);
             }
