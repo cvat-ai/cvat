@@ -235,17 +235,20 @@ export class DrawHandlerImpl implements DrawHandler {
             }
 
             if (this.drawData.shapeType === 'polygon'
-                && ((bbox.xbr - bbox.xtl) * (bbox.ybr - bbox.ytl) >= consts.AREA_THRESHOLD)) {
+                && ((bbox.xbr - bbox.xtl) * (bbox.ybr - bbox.ytl) >= consts.AREA_THRESHOLD)
+                && points.length >= 3 * 2) {
                 this.onDrawDone({
                     points,
                 });
             } else if (this.drawData.shapeType === 'polyline'
                 && ((bbox.xbr - bbox.xtl) >= consts.SIZE_THRESHOLD
-                || (bbox.ybr - bbox.ytl) >= consts.SIZE_THRESHOLD)) {
+                || (bbox.ybr - bbox.ytl) >= consts.SIZE_THRESHOLD)
+                && points.length >= 2 * 2) {
                 this.onDrawDone({
                     points,
                 });
-            } else if (this.drawData.shapeType === 'points') {
+            } else if (this.drawData.shapeType === 'points'
+                && (e.target as any).getAttribute('points') !== '0,0') {
                 this.onDrawDone({
                     points,
                 });
