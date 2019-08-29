@@ -41,6 +41,7 @@ interface Canvas {
     group(groupData: GroupData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
+    select(objectState: any): void;
 
     cancel(): void;
 }
@@ -98,6 +99,10 @@ class CanvasImpl implements Canvas {
 
     public merge(mergeData: MergeData): void {
         this.model.merge(mergeData);
+    }
+
+    public select(objectState: any): void {
+        this.model.select(objectState);
     }
 
     public cancel(): void {

@@ -27,6 +27,9 @@ import {
     FrameZoom,
     ActiveElement,
     DrawData,
+    MergeData,
+    SplitData,
+    GroupData,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -47,6 +50,9 @@ enum Mode {
     DRAG = 'drag',
     RESIZE = 'resize',
     DRAW = 'draw',
+    MERGE = 'merge',
+    SPLIT = 'split',
+    GROUP = 'group',
 }
 
 function selectize(value: boolean, shape: SVG.Element, geometry: Geometry): void {
@@ -59,7 +65,7 @@ function selectize(value: boolean, shape: SVG.Element, geometry: Geometry): void
                 const circle: SVG.Circle = this.nested
                     .circle(this.options.pointSize)
                     .stroke('black')
-                    .fill(shape.node.getAttribute('fill'))
+                    .fill(shape.node.getAttribute('fill') || 'inherit')
                     .center(cx, cy)
                     .attr({
                         'stroke-width': consts.BASE_STROKE_WIDTH / (3 * geometry.scale),
@@ -154,6 +160,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.controller.draw({
             enabled: false,
         });
+
+        this.mode = Mode.IDLE;
     }
 
     private onMergeDone(objects: any[]): void {
@@ -175,6 +183,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             this.canvas.dispatchEvent(event);
         }
+
+        this.controller.merge({
+            enabled: false,
+        });
+
+        this.mode = Mode.IDLE;
     }
 
     private onSplitDone(object: any): void {
@@ -184,6 +198,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 cancelable: true,
                 detail: {
                     state: object,
+                    frame: object.frame,
                 },
             });
 
@@ -196,16 +211,21 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
             this.canvas.dispatchEvent(event);
         }
+
+        this.controller.split({
+            enabled: false,
+        });
+
+        this.mode = Mode.IDLE;
     }
 
-    private onGroupDone(objects: any[], reset: boolean): void {
+    private onGroupDone(objects: any[]): void {
         if (objects) {
             const event: CustomEvent = new CustomEvent('canvas.groupped', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
                     states: objects,
-                    reset,
                 },
             });
 
@@ -217,6 +237,31 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
 
             this.canvas.dispatchEvent(event);
+        }
+
+        this.controller.group({
+            enabled: false,
+        });
+
+        this.mode = Mode.IDLE;
+    }
+
+    private onFindObject(e: MouseEvent): void {
+        if (e.which === 1) {
+            const [x, y] = translateToSVG(this.background, [e.clientX, e.clientY]);
+            const event: CustomEvent = new CustomEvent('canvas.find', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    x,
+                    y,
+                    states: this.controller.objects,
+                },
+            });
+
+            this.canvas.dispatchEvent(event);
+
+            e.preventDefault();
         }
     }
 
@@ -320,23 +365,33 @@ export class CanvasViewImpl implements CanvasView, Listener {
         );
         this.mergeHandler = new MergeHandlerImpl(
             this.onMergeDone.bind(this),
+            this.onFindObject.bind(this),
+            this.adoptedContent,
         );
         this.splitHandler = new SplitHandlerImpl(
             this.onSplitDone.bind(this),
+            this.onFindObject.bind(this),
+            this.adoptedContent,
         );
         this.groupHandler = new GroupHandlerImpl(
             this.onGroupDone.bind(this),
+            (): any[] => this.controller.objects,
+            this.onFindObject.bind(this),
+            this.adoptedContent,
         );
 
 
         // Setup event handlers
-        this.content.addEventListener('dblclick', (): void => {
+        this.content.addEventListener('dblclick', (e: MouseEvent): void => {
             self.controller.fit();
+            e.preventDefault();
         });
 
         this.content.addEventListener('mousedown', (event): void => {
             if ((event.which === 1 && this.mode === Mode.IDLE) || (event.which === 2)) {
                 self.controller.enableDrag(event.clientX, event.clientY);
+
+                event.preventDefault();
             }
         });
 
@@ -532,9 +587,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.addObjects(ctm, objects, geometry);
             // TODO: Update objects
             // TODO: Delete objects
-            this.mergeHandler.updateObjects(objects);
-            this.groupHandler.updateObjects(objects);
-            this.splitHandler.updateObjects(objects);
         }
 
         const { geometry } = this.controller;
@@ -570,10 +622,47 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (data.enabled) {
                 this.mode = Mode.DRAW;
                 this.deactivate();
-            } else {
-                this.mode = Mode.IDLE;
             }
             this.drawHandler.draw(data, geometry);
+        } else if (reason === UpdateReasons.MERGE) {
+            const data: MergeData = this.controller.mergeData;
+            if (data.enabled) {
+                this.mode = Mode.MERGE;
+                this.deactivate();
+            }
+            this.mergeHandler.merge(data);
+        } else if (reason === UpdateReasons.SPLIT) {
+            const data: SplitData = this.controller.splitData;
+            if (data.enabled) {
+                this.mode = Mode.SPLIT;
+                this.deactivate();
+            }
+            this.splitHandler.split(data);
+        } else if (reason === UpdateReasons.GROUP) {
+            const data: GroupData = this.controller.groupData;
+            if (data.enabled) {
+                this.mode = Mode.GROUP;
+                this.deactivate();
+            }
+            this.groupHandler.group(data);
+        } else if (reason === UpdateReasons.SELECT) {
+            if (this.mode === Mode.MERGE) {
+                this.mergeHandler.select(this.controller.selected);
+            } else if (this.mode === Mode.SPLIT) {
+                this.splitHandler.select(this.controller.selected);
+            } else if (this.mode === Mode.GROUP) {
+                this.groupHandler.select(this.controller.selected);
+            }
+        } else if (reason === UpdateReasons.CANCEL) {
+            if (this.mode === Mode.DRAW) {
+                this.drawHandler.cancel();
+            } else if (this.mode === Mode.MERGE) {
+                this.mergeHandler.cancel();
+            } else if (this.mode === Mode.SPLIT) {
+                this.splitHandler.cancel();
+            } else if (this.mode === Mode.GROUP) {
+                this.groupHandler.cancel();
+            }
         }
     }
 
@@ -639,6 +728,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (this.activeElement) {
             const { state } = this.activeElement;
             const shape = this.svgShapes[this.activeElement.state.clientID];
+            shape.removeClass('cvat_canvas_shape_activated');
+
             (shape as any).draggable(false);
 
             if (state.shapeType !== 'points') {
@@ -677,6 +768,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         const shape = this.svgShapes[activeElement.clientID];
+        shape.addClass('cvat_canvas_shape_activated');
         let text = this.svgTexts[activeElement.clientID];
         // Draw text if it's hidden by default
         if (!text && state.visibility === 'shape') {
@@ -791,6 +883,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.adoptedContent.rect().size(xbr - xtl, ybr - ytl).attr({
             clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
+            id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
             stroke: darker(state.color, 50),
@@ -804,6 +897,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.adoptedContent.polygon(points).attr({
             clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
+            id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
             stroke: darker(state.color, 50),
@@ -816,6 +910,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.adoptedContent.polyline(points).attr({
             clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
+            id: `cvat_canvas_shape_${state.clientID}`,
             fill: state.color,
             'shape-rendering': 'geometricprecision',
             stroke: darker(state.color, 50),
@@ -826,19 +921,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addPoints(points: string, state: any, geometry: Geometry): SVG.PolyLine {
         const shape = this.adoptedContent.polyline(points).attr({
-            clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
-            fill: state.color,
+            'pointer-events': 'none',
             'shape-rendering': 'geometricprecision',
-            zOrder: state.zOrder,
-        }).addClass('cvat_canvas_shape');
+            'stroke-width': 0,
+        }).style({
+            opacity: 0,
+        });
 
         selectize(true, shape, geometry);
-        shape.remove = function remove(): void {
-            this.selectize(false, shape);
+
+        shape.remember('_selectHandler').nested.addClass('cvat_canvas_shape').attr({
+            clientID: state.clientID,
+            zOrder: state.zOrder,
+            id: `cvat_canvas_shape_${state.clientID}`,
+            fill: state.color,
+        }).style({
+            'fill-opacity': 1,
+        }).bbox = shape.bbox.bind(shape);
+
+        shape.remove = function remove(): SVG.PolyLine {
+            selectize(false, shape, null);
             shape.constructor.prototype.remove.call(shape);
-        }.bind(this);
-        shape.attr('fill', 'none');
+            return shape;
+        };
 
         return shape;
     }

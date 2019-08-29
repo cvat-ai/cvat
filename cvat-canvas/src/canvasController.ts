@@ -10,6 +10,9 @@ import {
     FocusData,
     ActiveElement,
     DrawData,
+    MergeData,
+    SplitData,
+    GroupData,
 } from './canvasModel';
 
 export interface CanvasController {
@@ -18,10 +21,17 @@ export interface CanvasController {
     readonly activeElement: ActiveElement;
     readonly objectStateClass: any;
     readonly drawData: DrawData;
+    readonly mergeData: MergeData;
+    readonly splitData: SplitData;
+    readonly groupData: GroupData;
+    readonly selected: any;
     geometry: Geometry;
 
     zoom(x: number, y: number, direction: number): void;
     draw(drawData: DrawData): void;
+    merge(mergeData: MergeData): void;
+    split(splitData: SplitData): void;
+    group(groupData: GroupData): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
@@ -74,6 +84,18 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.draw(drawData);
     }
 
+    public merge(mergeData: MergeData): void {
+        this.model.merge(mergeData);
+    }
+
+    public split(splitData: SplitData): void {
+        this.model.split(splitData);
+    }
+
+    public group(groupData: GroupData): void {
+        this.model.group(groupData);
+    }
+
     public get geometry(): Geometry {
         return this.model.geometry;
     }
@@ -100,5 +122,21 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get drawData(): DrawData {
         return this.model.drawData;
+    }
+
+    public get mergeData(): MergeData {
+        return this.model.mergeData;
+    }
+
+    public get splitData(): SplitData {
+        return this.model.splitData;
+    }
+
+    public get groupData(): GroupData {
+        return this.model.groupData;
+    }
+
+    public get selected(): any {
+        return this.model.selected;
     }
 }

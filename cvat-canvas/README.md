@@ -71,6 +71,7 @@ Canvas itself handles:
         group(groupData: GroupData): void;
         split(splitData: SplitData): void;
         merge(mergeData: MergeData): void;
+        select(objectState: any): void;
 
         cancel(): void;
     }
@@ -78,7 +79,7 @@ Canvas itself handles:
 
 ### API CSS
 
-- All drawn objects (shapes, tracks) have an id ```cvat_canvas_object_{objectState.id}```
+- All drawn objects (shapes, tracks) have an id ```cvat_canvas_shape_{objectState.clientID}```
 - Drawn shapes and tracks have classes ```cvat_canvas_shape```,
  ```cvat_canvas_shape_activated```,
  ```cvat_canvas_shape_grouping```,
@@ -98,10 +99,11 @@ Standard JS events are used.
     - canvas.activated => ObjectState
     - canvas.deactivated
     - canvas.moved => {states: ObjectState[], x: number, y: number}
+    - canvas.find => {states: ObjectState[], x: number, y: number}
     - canvas.drawn => {state: ObjectState}
     - canvas.edited => {state: ObjectState}
-    - canvas.splitted => {state: ObjectState, frame: number}
-    - canvas.groupped => {states: ObjectState[], reset: boolean}
+    - canvas.splitted => {state: ObjectState}
+    - canvas.groupped => {states: ObjectState[]}
     - canvas.merged => {states: ObjectState[]}
     - canvas.canceled
 ```

@@ -20,6 +20,7 @@ import {
 
 export interface DrawHandler {
     draw(drawData: DrawData, geometry: Geometry): void;
+    cancel(): void;
 }
 
 export class DrawHandlerImpl implements DrawHandler {
@@ -55,6 +56,20 @@ export class DrawHandlerImpl implements DrawHandler {
         this.crosshair = null;
     }
 
+    private release(): void {
+        if (this.drawInstance) {
+            this.drawInstance.off('drawdone');
+            this.drawInstance.off('drawstop');
+            this.drawInstance.draw('stop');
+            this.drawInstance.remove();
+            this.drawInstance = null;
+        }
+
+        if (this.crosshair) {
+            this.removeCrosshair();
+        }
+    }
+
     private initDrawing(): void {
         if (this.drawData.crosshair) {
             this.addCrosshair();
@@ -62,22 +77,20 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private closeDrawing(): void {
-        if (this.crosshair) {
-            this.removeCrosshair();
-        }
-
         if (this.drawInstance) {
+            const { drawInstance } = this;
+            this.drawInstance = null;
             if (this.drawData.shapeType === 'rectangle') {
-                this.drawInstance.draw('cancel');
+                drawInstance.draw('cancel');
             } else {
-                this.drawInstance.draw('done');
+                drawInstance.draw('done');
+                // here is a cycle
+                // onDrawDone => controller => model => view => closeDrawing
+                // one call of closeDrawing is unuseful, but it's okey
             }
 
-            // We should check again because state can be changed in 'cancel' and 'done'
-            if (this.drawInstance) {
-                this.drawInstance.remove();
-                this.drawInstance = null;
-            }
+            this.drawInstance = drawInstance;
+            this.release();
         }
     }
 
@@ -360,6 +373,14 @@ export class DrawHandlerImpl implements DrawHandler {
             this.closeDrawing();
             this.drawData = drawData;
         }
+    }
+
+    public cancel(): void {
+        this.release();
+        this.onDrawDone(null);
+        // here is a cycle
+        // onDrawDone => controller => model => view => closeDrawing
+        // one call of closeDrawing is unuseful, but it's okey
     }
 }
 

@@ -49,7 +49,6 @@ export interface DrawData {
 
 export interface GroupData {
     enabled: boolean;
-    resetGroup: boolean;
 }
 
 export interface MergeData {
@@ -83,6 +82,8 @@ export enum UpdateReasons {
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
+    SELECT = 'select',
+    CANCEL = 'cancel',
 }
 
 export interface CanvasModel {
@@ -93,6 +94,10 @@ export interface CanvasModel {
     readonly activeElement: ActiveElement;
     readonly objectStateClass: any;
     readonly drawData: DrawData;
+    readonly mergeData: MergeData;
+    readonly splitData: SplitData;
+    readonly groupData: GroupData;
+    readonly selected: any;
     geometry: Geometry;
 
     zoom(x: number, y: number, direction: number): void;
@@ -109,6 +114,7 @@ export interface CanvasModel {
     group(groupData: GroupData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
+    select(objectState: any): void;
 
     cancel(): void;
 }
@@ -133,6 +139,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         mergeData: MergeData;
         groupData: GroupData;
         splitData: SplitData;
+        selected: any;
     };
 
     public constructor(ObjectStateClass: any) {
@@ -179,11 +186,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             groupData: {
                 enabled: false,
-                resetGroup: false,
             },
             splitData: {
                 enabled: false,
             },
+            selected: null,
         };
     }
 
@@ -336,7 +343,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             return;
         }
 
-        this.data.splitData = splitData;
+        this.data.splitData = Object.assign({}, splitData);
         this.notify(UpdateReasons.SPLIT);
     }
 
@@ -349,7 +356,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             return;
         }
 
-        this.data.groupData = groupData;
+        this.data.groupData = Object.assign({}, groupData);
         this.notify(UpdateReasons.GROUP);
     }
 
@@ -362,12 +369,18 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             return;
         }
 
-        this.data.mergeData = mergeData;
+        this.data.mergeData = Object.assign({}, mergeData);
         this.notify(UpdateReasons.MERGE);
     }
 
+    public select(objectState: any): void {
+        this.data.selected = objectState;
+        this.notify(UpdateReasons.SELECT);
+        this.data.selected = null;
+    }
+
     public cancel(): void {
-        console.log('hello');
+        this.notify(UpdateReasons.CANCEL);
     }
 
     public get geometry(): Geometry {
@@ -425,5 +438,21 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get drawData(): DrawData {
         return Object.assign({}, this.data.drawData);
+    }
+
+    public get mergeData(): MergeData {
+        return Object.assign({}, this.data.mergeData);
+    }
+
+    public get splitData(): SplitData {
+        return Object.assign({}, this.data.splitData);
+    }
+
+    public get groupData(): GroupData {
+        return Object.assign({}, this.data.groupData);
+    }
+
+    public get selected(): any {
+        return this.data.selected;
     }
 }
