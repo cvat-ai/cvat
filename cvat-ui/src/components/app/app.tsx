@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 
 import HeaderLayout from '../header-layout/header-layout';
 
-import DashboardPage from '../dashboard-page/dashboard-page';
+import TasksPage from '../tasks-page/tasks-page';
 import LoginPage from '../login-page/login-page';
 import RegisterPage from '../register-page/register-page';
 import PageNotFound from '../page-not-found/page-not-found';
@@ -44,7 +44,7 @@ class App extends PureComponent<any, any> {
       <Router>
         <Switch>
           <Redirect path="/" exact to="/tasks" />
-          <ProtectedRoute isAuthenticated={ this.props.isAuthenticated } path="/tasks" component={ DashboardPage } />
+          <ProtectedRoute isAuthenticated={ this.props.isAuthenticated } path="/tasks" component={ TasksPage } />
           <Route path="/login" component={ LoginPage } />
           <Route path="/register" component={ RegisterPage } />
           <Route component={ PageNotFound } />

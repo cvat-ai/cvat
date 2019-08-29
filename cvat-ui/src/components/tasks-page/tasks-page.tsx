@@ -11,14 +11,14 @@ import { filterTasks } from '../../actions/tasks-filter.actions';
 
 import { Layout, Spin } from 'antd';
 
-import DashboardHeader from './header/dashboard-header';
-import DashboardContent from './content/dashboard-content';
-import DashboardFooter from './footer/dashboard-footer';
+import TasksHeader from './tasks-header/tasks-header';
+import TasksContent from './tasks-content/tasks-content';
+import TasksFooter from './tasks-footer/tasks-footer';
 
-import './dashboard-page.scss';
+import './tasks-page.scss';
 
 
-class Dashboard extends PureComponent<any, any> {
+class TasksPage extends PureComponent<any, any> {
   componentDidMount() {
     this.loadTasks(this.props.location.search);
 
@@ -35,9 +35,9 @@ class Dashboard extends PureComponent<any, any> {
     return (
       <Spin wrapperClassName="spinner" size="large" spinning={ this.props.isFetching }>
         <Layout className="layout">
-          <DashboardHeader />
-          <DashboardContent />
-          <DashboardFooter />
+          <TasksHeader />
+          <TasksContent />
+          <TasksFooter />
         </Layout>
       </Spin>
     );
@@ -56,4 +56,4 @@ const mapStateToProps = (state: any) => {
   return { ...state.authContext, ...state.tasks, ...state.tasksFilter };
 };
 
-export default connect(mapStateToProps)(Dashboard);
+export default connect(mapStateToProps)(TasksPage);

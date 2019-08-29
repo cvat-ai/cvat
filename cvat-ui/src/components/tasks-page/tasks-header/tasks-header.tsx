@@ -12,13 +12,13 @@ import TaskCreateForm from '../../modals/task-create/task-create';
 
 import { taskDTO } from '../../../utils/tasks-dto';
 
-import './dashboard-header.scss';
+import './tasks-header.scss';
 
 
 const { Header } = Layout;
 const { Search } = Input;
 
-class DashboardHeader extends Component<any, any> {
+class TasksHeader extends Component<any, any> {
   createFormRef: any;
 
   constructor(props: any) {
@@ -35,12 +35,12 @@ class DashboardHeader extends Component<any, any> {
 
   render() {
     return(
-      <Header className="dashboard-header">
+      <Header className="tasks-header">
         <Row type="flex" gutter={16}>
-          <Col className="dashboard-header__logo" span={8}>
+          <Col className="tasks-header__logo" span={8}>
             <Title className="logo">Tasks</Title>
           </Col>
-          <Col className="dashboard-header__search" span={8}>
+          <Col className="tasks-header__search" span={8}>
             <Search
               className="search"
               placeholder="Search for tasks"
@@ -50,7 +50,7 @@ class DashboardHeader extends Component<any, any> {
               enterButton>
             </Search>
           </Col>
-          <Col className="dashboard-header__actions" span={8}>
+          <Col className="tasks-header__actions" span={8}>
             <Button
               className="action"
               type="primary"
@@ -118,4 +118,4 @@ const mapStateToProps = (state: any) => {
   return { ...state.tasks, ...state.tasksFilter };
 };
 
-export default withRouter(connect(mapStateToProps)(DashboardHeader) as any);
+export default withRouter(connect(mapStateToProps)(TasksHeader) as any);
