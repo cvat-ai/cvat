@@ -27,7 +27,7 @@ def register_user(request):
         form = forms.NewUserForm()
     return render(request, 'register.html', {'form': form})
 
-class SignatureView(views.APIView):
+class SigningView(views.APIView):
     def post(self, request):
         url = request.data.get('url')
         if not url:
@@ -37,4 +37,5 @@ class SignatureView(views.APIView):
         url = self.request.build_absolute_uri(url)
         sign = signer.sign(self.request.user, url)
 
-        return Response(furl(url).add({signature.QUERY_PARAM: sign}).url)
+        url = furl(url).add({signature.QUERY_PARAM: sign}).url
+        return Response(url)

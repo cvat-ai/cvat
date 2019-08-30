@@ -1,37 +1,38 @@
 from django.contrib.auth import get_user_model
 from django.core import signing
 from furl import furl
+import hashlib
 
 QUERY_PARAM = 'sign'
 MAX_AGE = 30
 
 # Got implementation ideas in https://github.com/marcgibbons/drf_signed_auth
 class Signer:
+    @classmethod
+    def get_salt(cls, url):
+        normalized_url = furl(url).remove(QUERY_PARAM).url.encode('utf-8')
+        salt = hashlib.sha256(normalized_url).hexdigest()
+        return salt
+
     def sign(self, user, url):
         """
         Create a signature for a user object.
         """
-        signer = signing.TimestampSigner()
         data = {
             'user_id': user.pk,
-            'username': user.get_username(),
-            'url': url
+            'username': user.get_username()
         }
 
-        return signer.sign(signing.dumps(data))
+        return signing.dumps(data, salt=self.get_salt(url))
 
     def unsign(self, signature, url):
         """
         Return a user object for a valid signature.
         """
         User = get_user_model()
-        signer = signing.TimestampSigner()
-        data = signing.loads(signer.unsign(signature, MAX_AGE))
+        data = signing.loads(signature, salt=self.get_salt(url), max_age=MAX_AGE)
 
         if not isinstance(data, dict):
-            raise signing.BadSignature()
-
-        if not furl(url).remove(QUERY_PARAM) != url:
             raise signing.BadSignature()
 
         try:
