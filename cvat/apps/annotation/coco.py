@@ -195,7 +195,7 @@ def dump(file_object, annotations):
             # Sort labels by its names to make the same order of ids for different annotations
             if sort:
                 names.sort()
-            cat_id = 0
+            cat_id = 1
             for name in names:
                 category_map[name] = cat_id
                 categories.append(OrderedDict([
@@ -264,6 +264,7 @@ def dump(file_object, annotations):
     insert_info_data(annotations, result_annotation)
     category_map = insert_categories_data(annotations, result_annotation)
 
+    segm_id = 0
     for img in annotations.group_by_frame():
         polygons = []
 
@@ -310,8 +311,9 @@ def dump(file_object, annotations):
         polygons = ungrouped_poligons + [poly for group in grouped_poligons.values() for poly in group.values()]
 
         # Create new annotation for this image
-        for segm_id, poly in enumerate(polygons):
+        for poly in polygons:
             insert_annotation_data(img, category_map, segm_id, poly, result_annotation)
+            segm_id += 1
 
     file_object.write(json.dumps(result_annotation, indent=2).encode())
     file_object.flush()
