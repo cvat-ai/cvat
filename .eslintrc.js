@@ -43,5 +43,11 @@
         // This rule actual for user input data on the node.js environment mainly.
         "security/detect-object-injection": 0,
         "indent": ["warn", 4],
+        // recently added to airbnb
+        "max-classes-per-file": [0],
+        // it was opposite before and our code has been written according to previous rule
+        "arrow-parens": [0],
+        // object spread is a modern ECMA standard. Let's do not use it without babel
+        "prefer-object-spread": [0],
     },
 };

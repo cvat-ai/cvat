@@ -23,8 +23,10 @@ export interface DrawHandler {
 }
 
 export class DrawHandlerImpl implements DrawHandler {
-    private onDrawDone: any; // callback is used to notify about creating new shape
+    // callback is used to notify about creating new shape
+    private onDrawDone: (data: object) => void;
     private canvas: SVG.Container;
+    private background: SVGSVGElement;
     private crosshair: {
         x: SVG.Line;
         y: SVG.Line;
@@ -70,8 +72,12 @@ export class DrawHandlerImpl implements DrawHandler {
             } else {
                 this.drawInstance.draw('done');
             }
-            this.drawInstance.remove();
-            this.drawInstance = null;
+
+            // We should check again because state can be changed in 'cancel' and 'done'
+            if (this.drawInstance) {
+                this.drawInstance.remove();
+                this.drawInstance = null;
+            }
         }
     }
 
@@ -90,6 +96,11 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.canvas.node as any as SVGSVGElement,
                 [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height],
             );
+
+            ([xtl, ytl, xbr, ybr] = translateToSVG(
+                this.background,
+                [xtl, ytl, xbr, ybr],
+            ));
 
             xtl = Math.min(Math.max(xtl, 0), frameWidth);
             xbr = Math.min(Math.max(xbr, 0), frameWidth);
@@ -178,12 +189,17 @@ export class DrawHandlerImpl implements DrawHandler {
         });
 
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
-            const points = translateFromSVG(
+            let points = translateFromSVG(
                 this.canvas.node as any as SVGSVGElement,
                 (e.target as SVGElement)
                     .getAttribute('points')
                     .split(/[,\s]/g)
                     .map((coord): number => +coord),
+            );
+
+            points = translateToSVG(
+                this.background,
+                points,
             );
 
             const bbox = {
@@ -271,9 +287,10 @@ export class DrawHandlerImpl implements DrawHandler {
         }
     }
 
-    public constructor(onDrawDone: any, canvas: SVG.Container) {
+    public constructor(onDrawDone: any, canvas: SVG.Container, background: SVGSVGElement) {
         this.onDrawDone = onDrawDone;
         this.canvas = canvas;
+        this.background = background;
         this.drawData = null;
         this.geometry = null;
         this.crosshair = null;
@@ -317,9 +334,9 @@ export class DrawHandlerImpl implements DrawHandler {
                 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             });
 
-            const PaintHandler = Object.values(this.drawInstance.memory())[0];
+            const paintHandler = this.drawInstance.remember('_paintHandler');
 
-            for (const point of (PaintHandler as any).set.members) {
+            for (const point of (paintHandler as any).set.members) {
                 point.style(
                     'stroke-width',
                     `${consts.BASE_STROKE_WIDTH / (3 * geometry.scale)}`,

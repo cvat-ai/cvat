@@ -28,6 +28,7 @@ class TaskView {
     async _remove() {
         try {
             await this._task.delete();
+            this._disable();
         } catch (exception) {
             let { message } = exception;
             if (exception instanceof window.cvat.exceptions.ServerError) {
@@ -35,8 +36,6 @@ class TaskView {
             }
             showMessage(message);
         }
-
-        this._disable();
     }
 
     _update() {
@@ -49,7 +48,7 @@ class TaskView {
         $('#dashboardCancelUpdate').on('click', () => {
             dashboardUpdateModal.remove();
         });
-        $('#dashboardSubmitUpdate').on('click', () => {
+        $('#dashboardSubmitUpdate').on('click', async () => {
             let jsonLabels = null;
             try {
                 jsonLabels = LabelsInfo.deserialize($('#dashboardNewLabels').prop('value'));
@@ -61,7 +60,7 @@ class TaskView {
             try {
                 const labels = jsonLabels.map(label => new window.cvat.classes.Label(label));
                 this._task.labels = labels;
-                this._task.save();
+                await this._task.save();
                 showMessage('Task has been successfully updated');
             } catch (exception) {
                 let { message } = exception;
@@ -240,9 +239,16 @@ class DashboardView {
 
                 let tasks = null;
                 try {
-                    tasks = await window.cvat.tasks.get(Object.assign({}, {
+                    const id = (new URLSearchParams(window.location.search)).get('id');
+                    const filters = Object.assign({}, {
                         page,
-                    }, this._params));
+                    }, this._params);
+
+                    if (id !== null) {
+                        filters.id = +id;
+                    }
+
+                    tasks = await window.cvat.tasks.get(filters);
                 } catch (exception) {
                     let { message } = exception;
                     if (exception instanceof window.cvat.exceptions.ServerError) {
@@ -316,6 +322,8 @@ class DashboardView {
                 this._params.search = search;
             }
 
+            window.history.replaceState(null, null,
+                `${window.location.origin}${window.location.pathname}`);
             dashboardPagination.twbsPagination('show', 1);
         });
 

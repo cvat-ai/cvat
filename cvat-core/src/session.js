@@ -1307,22 +1307,22 @@
             z_order: Boolean(this.zOrder),
         };
 
-        if (this.bugTracker) {
+        if (typeof (this.bugTracker) !== 'undefined') {
             taskData.bug_tracker = this.bugTracker;
         }
-        if (this.segmentSize) {
+        if (typeof (this.segmentSize) !== 'undefined') {
             taskData.segment_size = this.segmentSize;
         }
-        if (this.overlap) {
+        if (typeof (this.overlap) !== 'undefined') {
             taskData.overlap = this.overlap;
         }
-        if (this.startFrame) {
+        if (typeof (this.startFrame) !== 'undefined') {
             taskData.start_frame = this.startFrame;
         }
-        if (this.stopFrame) {
+        if (typeof (this.stopFrame) !== 'undefined') {
             taskData.stop_frame = this.stopFrame;
         }
-        if (this.frameFilter) {
+        if (typeof (this.frameFilter) !== 'undefined') {
             taskData.frame_filter = this.frameFilter;
         }
 

@@ -78,13 +78,12 @@ def process_cvat_xml(xml_file, image_dir, output_dir,username,password,ilabels):
     basename = os.path.splitext( os.path.basename( xml_file ) )[0]
     current_labels = {}
     traintxt = ""
-    auto_lbl_count = 0
 
     if (ilabels is not None):
         vlabels=ilabels.split(',')
-        for _label in vlabels:
-            current_labels[_label]=auto_lbl_count
-            auto_lbl_count+=1
+        current_labels = {label: idx for idx, label in enumerate(vlabels)}
+    else:
+        current_labels = {label.text: idx for idx, label in enumerate(cvat_xml.findall('meta/task/labels/label/name'))}
 
     tracks= cvat_xml.findall( './/track' )
 
@@ -179,8 +178,7 @@ def process_cvat_xml(xml_file, image_dir, output_dir,username,password,ilabels):
                 ymax = float(box.get('ybr'))
 
                 if not label in current_labels:
-                    current_labels[label] = auto_lbl_count
-                    auto_lbl_count+=1
+                    raise Exception('Unexpected label name {}'.format(label))
 
                 labelid=current_labels[label]
                 yolo_x= (xmin + ((xmax-xmin)/2))/width
@@ -228,8 +226,7 @@ def process_cvat_xml(xml_file, image_dir, output_dir,username,password,ilabels):
                 ymax = float(box.get('ybr'))
 
                 if not label in current_labels:
-                    current_labels[label] = auto_lbl_count
-                    auto_lbl_count += 1
+                    raise Exception('Unexpected label name {}'.format(label))
 
                 labelid = current_labels[label]
                 yolo_x = (xmin + ((xmax-xmin)/2))/width

@@ -1,5 +1,6 @@
 {
     "compilerOptions": {
+        "baseUrl": ".",
         "emitDeclarationOnly": true,
         "module": "es6",
         "target": "es6",
@@ -7,9 +8,12 @@
         "preserveConstEnums": true,
         "declaration": true,
         "moduleResolution": "node",
-        "declarationDir": "dist/declaration"
+        "declarationDir": "dist/declaration",
+        "paths": {
+            "cvat-canvas.node": ["dist/cvat-canvas.node"]
+        }
     },
     "include": [
         "src/*.ts"
-    ],
+    ]
 }

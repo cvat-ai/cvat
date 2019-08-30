@@ -156,7 +156,7 @@ class LabelsInfo {
 
 
     static deserialize(serialized) {
-        const normalized = serialized.replace(/'+/g, '\'').replace(/"+/g, '"').replace(/\s+/g, ' ').trim();
+        const normalized = serialized.replace(/'+/g, '\'').replace(/\s+/g, ' ').trim();
         const fragments = String.customSplit(normalized, ' ');
 
         const deserialized = [];

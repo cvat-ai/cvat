@@ -1,5 +1,6 @@
 # Project Specific
 /data/
+/models/
 /share/
 /static/
 /db.sqlite3

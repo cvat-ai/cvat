@@ -51,7 +51,7 @@ class Task(models.Model):
     image_quality = models.PositiveSmallIntegerField(default=50)
     start_frame = models.PositiveIntegerField(default=0)
     stop_frame = models.PositiveIntegerField(default=0)
-    frame_filter = models.CharField(max_length=256, default="")
+    frame_filter = models.CharField(max_length=256, default="", blank=True)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
 
