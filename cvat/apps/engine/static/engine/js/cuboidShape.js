@@ -332,10 +332,25 @@ class CuboidModel extends PolyShapeModel {
     constructor(data, type, cliendID, color) {
         super(data, type, cliendID, color);
         this._minPoints = 6;
+        this._clipToFrame = false;
+    }
+
+        static isWithinFrame(points) {
+        // Ensure at least one point is within the frame
+        const { frameWidth, frameHeight } = window.cvat.player.geometry;
+        return points.some(point => {
+            return point.x >= 0 && point.x <= frameWidth && point.y >= 0 && point.y <= frameHeight
+        });
     }
 
     _verifyArea(box) {
-        return ((box.xbr - box.xtl) * (box.ybr - box.ytl) >= AREA_TRESHOLD);
+        const withinFrame = CuboidModel.isWithinFrame([
+            {x: box.xtl, y: box.ytl},
+            {x: box.xbr, y: box.ytl},
+            {x: box.xtl, y: box.ybr},
+            {x: box.xbr, y: box.ybr},
+        ]);
+        return withinFrame && ((box.xbr - box.xtl) * (box.ybr - box.ytl) >= AREA_TRESHOLD);
     }
 
     contain(mousePos, frame) {

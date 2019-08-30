@@ -50,6 +50,7 @@ class ShapeModel extends Listener {
         this._hiddenShape = false;
         this._hiddenText = true;
         this._updateReason = null;
+        this._clipToFrame = true;
         this._importAttributes(data.attributes, positions);
     }
 
@@ -607,6 +608,10 @@ class ShapeModel extends Listener {
     get selected() {
         return this._selected;
     }
+
+    get clipToFrame() {
+        return this._clipToFrame;
+    }
 }
 
 
@@ -930,8 +935,10 @@ class PolyShapeModel extends ShapeModel {
 
         let points = PolyShapeModel.convertStringToNumberArray(position.points);
         for (let point of points) {
-            point.x = Math.clamp(point.x, 0, window.cvat.player.geometry.frameWidth);
-            point.y = Math.clamp(point.y, 0, window.cvat.player.geometry.frameHeight);
+            if (this.clipToFrame) {
+                point.x = Math.clamp(point.x, 0, window.cvat.player.geometry.frameWidth);
+                point.y = Math.clamp(point.y, 0, window.cvat.player.geometry.frameHeight);
+            }
 
             box.xtl = Math.min(box.xtl, point.x);
             box.ytl = Math.min(box.ytl, point.y);

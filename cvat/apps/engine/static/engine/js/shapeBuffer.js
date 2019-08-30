@@ -148,6 +148,11 @@ class ShapeBufferModel extends Listener  {
         let object = this._makeObject(box, polyPoints, this._shape.mode === 'interpolation');
 
         if (object) {
+            if (this._shape.type === 'cuboid'
+                && !CuboidModel.isWithinFrame(PolyShapeModel.convertStringToNumberArray(polyPoints))) {
+                return
+            }
+
             Logger.addEvent(Logger.EventType.pasteObject);
             if (this._shape.type === 'box') {
                 this._collection.add(object, `${this._shape.mode}_${this._shape.type}`);
@@ -450,12 +455,14 @@ class ShapeBufferView {
                 let frameWidth = window.cvat.player.geometry.frameWidth;
                 let frameHeight = window.cvat.player.geometry.frameHeight;
 
-                actualPoints = PolyShapeModel.convertStringToNumberArray(actualPoints);
-                for (let point of actualPoints) {
-                    point.x = Math.clamp(point.x, 0, frameWidth);
-                    point.y = Math.clamp(point.y, 0, frameHeight);
+                if (this.clipToFrame) {
+                    actualPoints = PolyShapeModel.convertStringToNumberArray(actualPoints);
+                    for (let point of actualPoints) {
+                        point.x = Math.clamp(point.x, 0, frameWidth);
+                        point.y = Math.clamp(point.y, 0, frameHeight);
+                    }
+                    actualPoints = PolyShapeModel.convertNumberArrayToString(actualPoints);
                 }
-                actualPoints = PolyShapeModel.convertNumberArrayToString(actualPoints);
 
                 // Set clamped points to a view in order to get an updated bounding box for a poly shape
                 this._shapeView.attr('points', window.cvat.translate.points.actualToCanvas(actualPoints));

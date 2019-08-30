@@ -276,28 +276,25 @@ class ShapeCreatorView {
                     sizeUI = null;
                 }
 
-                const { frameWidth } = window.cvat.player.geometry;
-                const { frameHeight } = window.cvat.player.geometry;
                 const rect = window.cvat.translate.box.canvasToActual(e.target.getBBox());
 
-                const p1 = { x: Math.clamp(rect.x, 0, frameWidth), y: Math.clamp(rect.y + 1, 0, frameHeight) };
-                const p2 = { x: Math.clamp(rect.x, 0, frameWidth), y: Math.clamp(rect.y - 1 + rect.height, 0, frameHeight) };
-                const p3 = { x: Math.clamp(rect.x + rect.width, 0, frameWidth), y: Math.clamp(rect.y, 0, frameHeight) };
-                const p4 = { x: Math.clamp(rect.x + rect.width, 0, frameWidth), y: Math.clamp(rect.y + rect.height, 0, frameHeight) };
+                const p1 = { x: rect.x, y: rect.y + 1 };
+                const p2 = {x:rect.x, y: rect.y - 1 + rect.height};
+                const p3 = {x:rect.x + rect.width, y:rect.y};
+                const p4 = { x:rect.x + rect.width, y: rect.y + rect.height };
 
                 const p5 = { x: p3.x + backFaceOffset, y: p3.y - backFaceOffset + 1 };
                 const p6 = { x: p3.x + backFaceOffset, y: p4.y - backFaceOffset - 1 };
 
                 let points = [p1, p2, p3, p4, p5, p6];
 
+                if (!CuboidModel.isWithinFrame(points)) {
+                    this._controller.switchCreateMode(true);
+                    return;
+                }
+
                 const viewModel = new Cuboid2PointViewModel(points);
                 points = viewModel.getPoints();
-
-                for (let idx = 0; idx < points.length; idx += 1) {
-                    const point = points[idx];
-                    point.x = Math.clamp(point.x, 0, frameWidth);
-                    point.y = Math.clamp(point.y, 0, frameHeight);
-                }
 
                 points = PolyShapeModel.convertNumberArrayToString(points);
                 e.target.setAttribute('points',
