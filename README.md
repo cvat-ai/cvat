@@ -13,6 +13,7 @@ CVAT is free, online, interactive video and image annotation tool for computer v
 
 - [Installation guide](cvat/apps/documentation/installation.md)
 - [User's guide](cvat/apps/documentation/user_guide.md)
+- [Django REST API documentation](#rest-api)
 - [XML annotation format](cvat/apps/documentation/xml_format.md)
 - [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
 - [Questions](#questions)
@@ -56,6 +57,11 @@ After you click the link above:
 - The environment is backed by a K80 GPU
 
 If you have any questions, please contact Onepanel directly at support@onepanel.io. If you are in the Onepanel application, you can also use the chat icon in the bottom right corner.
+
+## REST API
+
+Automatically generated Swagger documentation for Django REST API is
+available on ``<cvat_origin>/api/swagger`` (default: ``localhost:8080/api/swagger``).
 
 ## LICENSE
 
