@@ -16,6 +16,7 @@ CVAT is free, online, interactive video and image annotation tool for computer v
 - [XML annotation format](cvat/apps/documentation/xml_format.md)
 - [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
 - [Questions](#questions)
+- Django REST API Documentation is available on ``<cvat_origin>/api/swagger``
 
 ## Screencasts
 
