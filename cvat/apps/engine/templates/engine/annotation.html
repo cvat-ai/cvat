@@ -35,6 +35,7 @@
 
 {% block head_js_cvat %}
     {{ block.super }}
+        <script type="text/javascript" src="{% static 'engine/js/utils.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/logger.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/server.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/listener.js' %}"></script>

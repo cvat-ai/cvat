@@ -10,6 +10,10 @@
     ShapeView:false
     STROKE_WIDTH:false
     AREA_TRESHOLD:false
+    POINT_RADIUS:false
+    SELECT_POINT_STROKE_WIDTH:false
+    convertToArray:false
+    convertPlainArrayToActual:false``
 */
 
 class CuboidController extends PolyShapeController {
@@ -30,21 +34,6 @@ class CuboidController extends PolyShapeController {
 
     get draggable() {
         return this._model.draggable;
-    }
-
-    updateViewModel() {
-        let { points } = this._model._interpolatePosition(window.cvat.player.frames.current);
-        points = PolylineModel.convertStringToNumberArray(points);
-        this.viewModel.setPoints(points);
-        this.viewModel.updatePoints();
-    }
-
-    updatePointsByIndex(face) {
-        const newPoints = this.viewModel.getPoints();
-        face.forEach((point) => {
-            newPoints[point.index] = { x: point.x, y: point.y };
-        });
-        this.viewModel.setPoints(newPoints);
     }
 
     addEventsToCube() {
@@ -108,6 +97,7 @@ class CuboidController extends PolyShapeController {
         this.makeResizable();
     }
 
+    // computes new position of points given an initial position and a current position
     translatePoints(startPoint, startPosition, currentPosition) {
         const dx = currentPosition.x - startPoint.x;
         const dy = currentPosition.y - startPoint.y;
@@ -135,13 +125,15 @@ class CuboidController extends PolyShapeController {
         })
             .on('dragend', () => {
                 controller.updateModel();
-                controller.updateViewModel();
+                controller.updateViewModel(); // We update the view model because some clipping may happen after passing it to the model
             });
 
+
+        // Controllable vertical edges
         view.front_left_edge.draggable(function (x) {
             return { x, y: this.attr('y1') };
         }).on('dragmove', function () {
-            const position = CuboidController.convertPlainArrayToActual([this.attr('x1'), this.attr('y1')])[0];
+            const position = convertPlainArrayToActual([this.attr('x1'), this.attr('y1')])[0];
             const { x } = position;
 
             const y1 = viewModel.ft.getEquation().getY(x);
@@ -150,18 +142,14 @@ class CuboidController extends PolyShapeController {
             const top_point = { x, y: y1 };
             const bot_point = { x, y: y2 };
 
-            top_point.index = 0;
-            bot_point.index = 1;
-
-            const points_array = [top_point, bot_point];
-            const indices_array = [0, 1];
-            controller.updateViewAndVM(points_array, indices_array);
+            viewModel.fl.points = [top_point, bot_point];
+            controller.updateViewAndVM();
         });
 
         view.dorsal_right_edge.draggable(function (x) {
             return { x, y: this.attr('y1') };
         }).on('dragmove', function () {
-            const position = CuboidController.convertPlainArrayToActual([this.attr('x1'), this.attr('y1')])[0];
+            const position = convertPlainArrayToActual([this.attr('x1'), this.attr('y1')])[0];
             const { x } = position;
 
             const y1 = viewModel.rt.getEquation().getY(x);
@@ -170,142 +158,110 @@ class CuboidController extends PolyShapeController {
             const top_point = { x, y: y1 };
             const bot_point = { x, y: y2 };
 
-            const points_array = [top_point, bot_point];
-            const indices_array = [4, 5];
-            controller.updateViewAndVM(points_array, indices_array);
+            viewModel.dr.points = [top_point, bot_point];
+            controller.updateViewAndVM();
         });
 
+
+        // Controllable "horizontal" edges
         view.front_top_edge.draggable(function (x, y) {
             return { x: this.attr('x1'), y };
         }).on('dragmove', function () {
-            const midPoints = CuboidController.convertPlainArrayToActual([this.attr('x2'), this.attr('y2')])[0];
-
-            const newPoints = controller.edgeIntersections(midPoints);
-
-            const leftPoints = newPoints[0];
-            const rightPoints = newPoints[1];
-
-            const points_array = [leftPoints, midPoints, rightPoints];
-            const indices_array = [0, 2, 4];
-            controller.updateViewAndVM(points_array, indices_array);
+            controller.horizontalEdgeControl(viewModel.top, this.attr('x2'), this.attr('y2'));
         });
 
         view.right_top_edge.draggable(function (x, y) {
             return { x: this.attr('x1'), y };
         }).on('dragmove', function () {
-            const midPoints = CuboidController.convertPlainArrayToActual([this.attr('x1'), this.attr('y1')])[0];
-
-            const newPoints = controller.edgeIntersections(midPoints);
-
-            const leftPoints = newPoints[0];
-            const rightPoints = newPoints[1];
-
-            const points_array = [leftPoints, midPoints, rightPoints];
-            const indices_array = [0, 2, 4];
-            controller.updateViewAndVM(points_array, indices_array);
+            controller.horizontalEdgeControl(viewModel.top, this.attr('x1'), this.attr('y1'));
         });
+
         view.front_bot_edge.draggable(function (x, y) {
             return { x: this.attr('x1'), y };
         }).on('dragmove', function () {
-            const midPoints = CuboidController.convertPlainArrayToActual([this.attr('x2'), this.attr('y2')])[0];
-
-            const newPoints = controller.edgeIntersections(midPoints);
-
-            const leftPoints = newPoints[0];
-            const rightPoints = newPoints[1];
-
-            const points_array = [leftPoints, midPoints, rightPoints];
-            const indices_array = [1, 3, 5];
-            controller.updateViewAndVM(points_array, indices_array);
+            controller.horizontalEdgeControl(viewModel.bot, this.attr('x2'), this.attr('y2'));
         });
 
         view.right_bot_edge.draggable(function (x, y) {
             return { x: this.attr('x1'), y };
         }).on('dragmove', function () {
-            const midPoints = CuboidController.convertPlainArrayToActual([this.attr('x1'), this.attr('y1')])[0];
-
-            const newPoints = controller.edgeIntersections(midPoints);
-
-            const leftPoints = newPoints[0];
-            const rightPoints = newPoints[1];
-
-            const points_array = [leftPoints, midPoints, rightPoints];
-            const indices_array = [1, 3, 5];
-            controller.updateViewAndVM(points_array, indices_array);
+            controller.horizontalEdgeControl(viewModel.bot, this.attr('x1'), this.attr('y1'));
         });
+
+        // Controllable faces
         view.left.draggable().on('dragmove', function () {
-            let points = this.attr('points');
-            points = window.cvat.translate.points.canvasToActual(points);
-            points = PolylineModel.convertStringToNumberArray(points);
-
-            const p0 = points[2];
-            const p1 = points[3];
-
-            const points_array = [p0, p1];
-            const indices_array = [1, 0];
-            controller.updateViewAndVM(points_array, indices_array);
+            controller.faceDragControl(viewModel.left, this.attr('points'));
         });
         view.dorsal.draggable().on('dragmove', function () {
-            let points = this.attr('points');
-            points = window.cvat.translate.points.canvasToActual(points);
-            points = PolylineModel.convertStringToNumberArray(points);
-
-            const p0 = points[0];
-            const p1 = points[1];
-
-            const points_array = [p0, p1];
-            const indices_array = [4, 5];
-            controller.updateViewAndVM(points_array, indices_array);
+            controller.faceDragControl(viewModel.dorsal, this.attr('points'));
         });
+    }
+
+    // Drag controls for the faces
+    faceDragControl(face, points) {
+        points = window.cvat.translate.points.canvasToActual(points);
+        points = PolylineModel.convertStringToNumberArray(points);
+
+        face.points = points;
+        this.updateViewAndVM();
+    }
+
+    // Drag controls for the non-vertical edges
+    horizontalEdgeControl(updating_face, mid_x, mid_y) {
+        const midPoints = convertPlainArrayToActual([mid_x, mid_y])[0];
+        const newPoints = this.edgeIntersections(midPoints);
+        const leftPoints = newPoints[0];
+        const rightPoints = newPoints[1];
+
+        updating_face.points = [leftPoints, midPoints, rightPoints, null];
+        this.updateViewAndVM();
     }
 
     makeResizable() {
         const controller = this;
         const view = this.cuboidView._uis.shape;
+        const { viewModel } = this;
 
         view.front_left_edge.selectize({
             points: 't,b',
             rotationPoint: false,
         }).resize().on('resizing', function () {
-            const top_point = CuboidController.convertPlainArrayToActual([this.attr('x1'), this.attr('y1')])[0];
-            const bot_point = CuboidController.convertPlainArrayToActual([this.attr('x2'), this.attr('y2')])[0];
-
-            const points_array = [top_point, bot_point];
-            const indices_array = [0, 1];
-            controller.updateViewAndVM(points_array, indices_array);
+            controller.resizeControl(viewModel.fl, this);
         });
 
         view.front_right_edge.selectize({
             points: 't,b',
             rotationPoint: false,
         }).resize().on('resizing', function () {
-            const top_point = CuboidController.convertPlainArrayToActual([this.attr('x1'), this.attr('y1')])[0];
-            const bot_point = CuboidController.convertPlainArrayToActual([this.attr('x2'), this.attr('y2')])[0];
-
-            const points_array = [top_point, bot_point];
-            const indices_array = [2, 3];
-            controller.updateViewAndVM(points_array, indices_array);
+            controller.resizeControl(viewModel.fr, this);
         });
-
 
         view.dorsal_right_edge.selectize({
             points: 't,b',
             rotationPoint: false,
         }).resize().on('resizing', function () {
-            const top_point = CuboidController.convertPlainArrayToActual([this.attr('x1'), this.attr('y1')])[0];
-            const bot_point = CuboidController.convertPlainArrayToActual([this.attr('x2'), this.attr('y2')])[0];
-
-            const points_array = [top_point, bot_point];
-            const indices_array = [4, 5];
-            controller.updateViewAndVM(points_array, indices_array);
+            controller.resizeControl(viewModel.dr, this);
         });
     }
 
-    updateViewAndVM(pointsArray, indicesArray) {
-        for (let i = 0; i < pointsArray.length; i++) {
-            pointsArray[i].index = indicesArray[i];
-        }
-        this.updatePointsByIndex(pointsArray);
+    resizeControl(vm_edge, updated_edge) {
+        const top_point = convertPlainArrayToActual([updated_edge.attr('x1'), updated_edge.attr('y1')])[0];
+        const bot_point = convertPlainArrayToActual([updated_edge.attr('x2'), updated_edge.attr('y2')])[0];
+
+        vm_edge.points = [top_point, bot_point];
+        this.updateViewAndVM();
+    }
+
+    // updates the view model with the actual position of the points on screen
+    updateViewModel() {
+        let { points } = this._model._interpolatePosition(window.cvat.player.frames.current);
+        points = PolylineModel.convertStringToNumberArray(points);
+        this.viewModel.setPoints(points);
+        this.viewModel.updatePoints();
+    }
+
+    // refreshes the view and updates the viewmodel
+    updateViewAndVM() {
         this.viewModel.buildBackEdge();
         this.refreshView(this.cuboidView._uis.shape);
     }
@@ -327,6 +283,22 @@ class CuboidController extends PolyShapeController {
         return [left_point, right_point];
     }
 
+    // updates the model with the viewModel points
+    updateModel() {
+        const frame = window.cvat.player.frames.current;
+        const position = this._model._interpolatePosition(frame);
+
+        const viewModelpoints = this.viewModel.getPoints();
+        this.viewModel.sortEdges();
+        position.points = PolylineModel.convertNumberArrayToString(viewModelpoints);
+
+        this.updatePosition(frame, position);
+    }
+
+    refreshView() {
+        this.cuboidView._uis.shape.updateView(this.viewModel);
+    }
+
     static removeEventsFromCube(view) {
         const edges = view.getEdges();
         view.off('dragmove').off('dragend').off('dragstart').off('mousedown');
@@ -345,34 +317,8 @@ class CuboidController extends PolyShapeController {
         edge.off().draggable(false);
     }
 
-    updateModel() {
-        const frame = window.cvat.player.frames.current;
-        const position = this._model._interpolatePosition(frame);
-
-        const viewModelpoints = this.viewModel.getPoints();
-
-        this.viewModel.sortEdges();
-
-        position.points = PolylineModel.convertNumberArrayToString(viewModelpoints);
-
-        this.updatePosition(frame, position);
-    }
-
-
-    refreshView() {
-        this.cuboidView._uis.shape.updateView(this.viewModel);
-    }
-
     static createEquation(p1, p2) {
         return new Equation(p1, p2);
-    }
-
-    static convertPlainArrayToActual(arr) {
-        let actual = [{ x: arr[0], y: arr[1] }];
-        actual = PolylineModel.convertNumberArrayToString(actual);
-        actual = window.cvat.translate.points.canvasToActual(actual);
-        actual = PolylineModel.convertStringToNumberArray(actual);
-        return actual;
     }
 }
 
@@ -518,18 +464,27 @@ class Equation {
         this.c_canvas = this.b * p1_canvas.y + this.a * p1_canvas.x;
     }
 
+    // get the line equation in actual coordinates
     getY(x) {
         return (this.c - this.a * x) / this.b;
     }
 
+    // get the line equation in canvas coordinates
     getYCanvas(x) {
         return (this.c_canvas - this.a * x) / this.b;
     }
 }
 
-class BaseCuboidViewModel {
+class Cuboid2PointViewModel {
     constructor(points) {
         this.points = points;
+        this._initEdges();
+        this._initFaces();
+        this.topIsClockwise = false;
+        this.botIsClockwise = false;
+        this.updatePoints();
+        this.buildBackEdge();
+        this._updateRotations();
     }
 
     getPoints() {
@@ -538,27 +493,6 @@ class BaseCuboidViewModel {
 
     setPoints(points) {
         this.points = points;
-    }
-
-    static convertToArray(points) {
-        const arr = [];
-        points.forEach((point) => {
-            arr.push([point.x, point.y]);
-        });
-        return arr;
-    }
-}
-
-class Cuboid2PointViewModel extends BaseCuboidViewModel {
-    constructor(points) {
-        super(points);
-        this._Edges();
-        this._Faces();
-        this.topIsClockwise = false;
-        this.botIsClockwise = false;
-        this.updatePoints();
-        this.buildBackEdge();
-        this._updateRotations();
     }
 
     updatePoints() {
@@ -571,10 +505,11 @@ class Cuboid2PointViewModel extends BaseCuboidViewModel {
         this.botIsClockwise = rotations.botRotation;
     }
 
+    // Computes the vanishing points with current geometry of the cuboid
     _updateVanishingPoints() {
-        const leftEdge = BaseCuboidViewModel.convertToArray(this.fl.points);
-        const rightEdge = BaseCuboidViewModel.convertToArray(this.dr.points);
-        const midEdge = BaseCuboidViewModel.convertToArray(this.fr.points);
+        const leftEdge = convertToArray(this.fl.points);
+        const rightEdge = convertToArray(this.dr.points);
+        const midEdge = convertToArray(this.fr.points);
 
         this.vpl = math.intersect(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
         this.vpr = math.intersect(rightEdge[0], midEdge[0], rightEdge[1], midEdge[1]);
@@ -602,6 +537,7 @@ class Cuboid2PointViewModel extends BaseCuboidViewModel {
         return { topRotation: this._isClockwise(top_points), botRotation: this._isClockwise(bot_points) };
     }
 
+    // Sorts the points such that the ordering remains consistent
     sortEdges() {
         const rotations = this._getRotations();
 
@@ -612,6 +548,7 @@ class Cuboid2PointViewModel extends BaseCuboidViewModel {
             swap(6, 7, this.points);
         }
 
+        // The cuboid is considered badly oriented if both the rotation of the bottom face and the top face have changed
         if (rotations.botRotation !== this.botIsClockwise && rotations.topRotation !== this.topIsClockwise) {
             swap(0, 6, this.points);
             swap(1, 7, this.points);
@@ -632,11 +569,12 @@ class Cuboid2PointViewModel extends BaseCuboidViewModel {
             [arr[a], arr[b]] = [arr[b], arr[a]];
         }
 
+        // simple function to rotate arrays
         function rotate(count, array) {
             const len = array.length;
             // convert count to value in range [0, len)
             count = ((count % len) + len) % len;
-            // use splice.call() instead of this.splice() to make function generic
+
             Array.prototype.push.apply(array, Array.prototype.splice.call(array, 0, count));
             return array;
         }
@@ -656,7 +594,7 @@ class Cuboid2PointViewModel extends BaseCuboidViewModel {
         return sum < 0;
     }
 
-    _Edges() {
+    _initEdges() {
         this.fl = new Edge([0, 1], this);
         this.fr = new Edge([2, 3], this);
         this.dr = new Edge([4, 5], this);
@@ -672,32 +610,19 @@ class Cuboid2PointViewModel extends BaseCuboidViewModel {
         this.rb = new Edge([3, 5], this);
         this.db = new Edge([7, 5], this);
 
-        this.edgeList = [];
-        this.edgeList.push(this.fl);
-        this.edgeList.push(this.fr);
-        this.edgeList.push(this.dl);
-        this.edgeList.push(this.dr);
-        this.edgeList.push(this.ft);
-        this.edgeList.push(this.lt);
-        this.edgeList.push(this.rt);
-        this.edgeList.push(this.dt);
-        this.edgeList.push(this.fb);
-        this.edgeList.push(this.lb);
-        this.edgeList.push(this.rb);
-        this.edgeList.push(this.db);
+        this.edgeList = [this.fl, this.fr, this.dl, this.dr, this.ft, this.lt,
+            this.rt, this.dt, this.fb, this.lb, this.rb, this.db];
     }
 
-    _Faces() {
+    _initFaces() {
         this.front = new Figure([0, 1, 3, 2], this);
         this.right = new Figure([2, 3, 5, 4], this);
         this.dorsal = new Figure([4, 5, 7, 6], this);
         this.left = new Figure([6, 7, 1, 0], this);
+        this.top = new Figure([0, 2, 4, 6], this);
+        this.bot = new Figure([1, 3, 5, 7], this);
 
-        this.facesList = [];
-        this.facesList.push(this.front);
-        this.facesList.push(this.right);
-        this.facesList.push(this.dorsal);
-        this.facesList.push(this.left);
+        this.facesList = [this.front, this.right, this.dorsal, this.left];
     }
 
     buildBackEdge() {
@@ -708,8 +633,8 @@ class Cuboid2PointViewModel extends BaseCuboidViewModel {
         let leftPoints = this.dr.points;
         let rightPoints = this.fl.points;
 
-        leftPoints = BaseCuboidViewModel.convertToArray(leftPoints);
-        rightPoints = BaseCuboidViewModel.convertToArray(rightPoints);
+        leftPoints = convertToArray(leftPoints);
+        rightPoints = convertToArray(rightPoints);
 
         let p1 = math.intersect(vp_left, leftPoints[0], vp_right, rightPoints[0]);
         let p2 = math.intersect(vp_left, leftPoints[1], vp_right, rightPoints[1]);
@@ -755,8 +680,15 @@ class Figure {
         return points;
     }
 
-    set points(value) {
-        return 0;
+    // sets the point for a given edge, points must be given in array form in the same ordering as the getter
+    // if you only need to update a subset of the points, simply put null for the points you want to keep
+    set points(newPoints) {
+        const oldPoints = this.viewmodel.points;
+        for (let i = 0; i < newPoints.length; i++) {
+            if (newPoints[i] !== null) {
+                oldPoints[this.indices[i]] = { x: newPoints[i].x, y: newPoints[i].y };
+            }
+        }
     }
 
     get canvasPoints() {
@@ -769,7 +701,7 @@ class Figure {
 class Edge extends Figure {
     getEquation() {
         let { points } = this;
-        points = BaseCuboidViewModel.convertToArray(points);
+        points = convertToArray(points);
         return CuboidController.createEquation(points[0], points[1]);
     }
 }
@@ -781,6 +713,7 @@ class CuboidView extends PolyShapeView {
         cuboidController.setView(this);
     }
 
+    // runs every time the UI is redrawn
     _drawShapeUI(position) {
         let { points } = position;
         points = PolyShapeModel.convertStringToNumberArray(points);
@@ -797,6 +730,7 @@ class CuboidView extends PolyShapeView {
         this._uis.shape.projectionLineEnable = this._appearance.projectionLineEnable;
         this._controller.updateViewModel();
         this._uis.shape.addMouseOverEvents();
+        this._uis.shape.paintOrientationLines()
         ShapeView.prototype._drawShapeUI.call(this);
     }
 
@@ -819,9 +753,15 @@ class CuboidView extends PolyShapeView {
 
     _makeEditable() {
         if (this._uis.shape) {
-            this._controller.addEventsToCube();
-            PolyShapeView.prototype._makeEditable.call(this);
+            ShapeView.prototype._makeEditable.call(this);
             this._uis.shape.selectize(false);
+            this._controller.addEventsToCube();
+            const scaledR = POINT_RADIUS / window.cvat.player.geometry.scale;
+            const scaledPointStroke = SELECT_POINT_STROKE_WIDTH / window.cvat.player.geometry.scale;
+            $('.svg_select_points').each(function () {
+                this.instance.radius(scaledR);
+                this.instance.attr('stroke-width', scaledPointStroke);
+            });
         }
     }
 
@@ -837,6 +777,7 @@ class CuboidView extends PolyShapeView {
         if (this._uis.shape) {
             this._appearance.projectionLineEnable = settings['projection-lines'];
             this.switchProjectionLine(settings['projection-lines']);
+            this._uis.shape.paintOrientationLines();
         }
     }
 
@@ -853,6 +794,7 @@ class CuboidView extends PolyShapeView {
 
 }
 
+// Definition of the svg object
 SVG.Cube = SVG.invent({
     create: 'g',
     inherit: SVG.G,
@@ -900,7 +842,6 @@ SVG.Cube = SVG.invent({
             this.front_bot_edge = this.line(viewModel.fb.canvasPoints);
             this.right_bot_edge = this.line(viewModel.rb.canvasPoints);
 
-            this.paintOrientationLines()
         },
 
         showProjections() {
