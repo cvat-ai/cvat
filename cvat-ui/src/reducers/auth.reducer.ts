@@ -22,6 +22,7 @@ export default (
         isAuthenticated: false,
         error: action.payload,
       });
+
     case 'LOGOUT':
       return Object.assign({}, state, {
         isFetching: true,
@@ -36,6 +37,7 @@ export default (
         isFetching: false,
         error: action.payload,
       });
+
     case 'IS_AUTHENTICATED':
       return Object.assign({}, state, {
         isFetching: true,
@@ -50,6 +52,7 @@ export default (
         isFetching: false,
         isAuthenticated: false,
       });
+
     case 'IS_AUTHENTICATED_ERROR':
       return Object.assign({}, state, {
         isFetching: false,

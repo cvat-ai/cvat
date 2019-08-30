@@ -56,12 +56,10 @@ export default (
       return Object.assign({}, state, {
         isFetching: true,
       });
-
     case 'DELETE_TASK_SUCCESS':
       return Object.assign({}, state, {
         isFetching: false,
       });
-
     case 'DELETE_TASK_ERROR':
       return Object.assign({}, state, {
         isFetching: false,

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { connect } from 'react-redux';
 import { loginAsync, isAuthenticatedAsync } from '../../actions/auth.actions';
+import { getUsersAsync } from '../../actions/users.actions';
 
 import { Button, Icon, Input, Form, Col, Row, Spin } from 'antd';
 import Title from 'antd/lib/typography/Title';
@@ -25,6 +26,7 @@ class LoginForm extends PureComponent<any, any> {
         this.setState({ loading: false });
 
         if (this.props.isAuthenticated) {
+          this.props.dispatch(getUsersAsync({ self: true }));
           this.props.history.replace(this.props.location.state ? this.props.location.state.from : '/tasks');
         }
       }
@@ -86,7 +88,11 @@ class LoginForm extends PureComponent<any, any> {
 
     this.props.form.validateFields((error: any, values: any) => {
       if (!error) {
-        this.props.dispatch(loginAsync(values.username, values.password, this.props.history));
+        this.props.dispatch(loginAsync(values.username, values.password, this.props.history)).then(
+          (loggedIn: any) => {
+            this.props.dispatch(getUsersAsync({ self: true }));
+          },
+        );
       }
     });
   }

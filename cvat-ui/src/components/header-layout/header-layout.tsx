@@ -62,7 +62,7 @@ class HeaderLayout extends PureComponent<any, any> {
           <Dropdown className="header-layout__dropdown" overlay={ dropdownMenu } trigger={ ['click'] }>
             <Col span={4}>
               <Icon type="user" />
-              <span>Username</span>
+              { this.props.currentUser ? <span>{ this.props.currentUser.username }</span> : null }
               <Icon type="caret-down" />
             </Col>
           </Dropdown>
@@ -81,7 +81,7 @@ class HeaderLayout extends PureComponent<any, any> {
 }
 
 const mapStateToProps = (state: any) => {
-  return state.authContext;
+  return { ...state.authContext, ...state.users };
 };
 
 export default withRouter(connect(mapStateToProps)(HeaderLayout) as any);

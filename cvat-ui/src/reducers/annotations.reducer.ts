@@ -21,6 +21,7 @@ export default (
         isFetching: false,
         error: action.payload,
       });
+
     case 'UPLOAD_ANNOTATION':
       return Object.assign({}, state, {
         isFetching: true,

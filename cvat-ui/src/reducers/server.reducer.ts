@@ -23,6 +23,7 @@ export default (
         isFetching: false,
         error: action.payload,
       });
+
     case 'GET_SHARE_FILES':
       return Object.assign({}, state, {
         isFetching: true,
@@ -37,6 +38,7 @@ export default (
         isFetching: false,
         error: action.payload,
       });
+
     case 'GET_ANNOTATION_FORMATS':
       return Object.assign({}, state, {
         isFetching: true,
