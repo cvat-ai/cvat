@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": ".env/bin/python",
+    "python.pythonPath": "/home/tritin.truong/.virtualenvs/eat-2.0/bin/python",
     "eslint.enable": true,
     "eslint.validate": [
         "javascript",

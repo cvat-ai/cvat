@@ -13,7 +13,7 @@
     POINT_RADIUS:false
     SELECT_POINT_STROKE_WIDTH:false
     convertToArray:false
-    convertPlainArrayToActual:false``
+    convertPlainArrayToActual:false
 */
 
 class CuboidController extends PolyShapeController {
@@ -511,21 +511,21 @@ class Cuboid2PointViewModel {
         const rightEdge = convertToArray(this.dr.points);
         const midEdge = convertToArray(this.fr.points);
 
-        this.vpl = math.intersect(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
-        this.vpr = math.intersect(rightEdge[0], midEdge[0], rightEdge[1], midEdge[1]);
+        this.vpl = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
+        this.vpr = intersection(rightEdge[0], midEdge[0], rightEdge[1], midEdge[1]);
         if (this.vpl === null) {
             // shift the edge slightly to avoid edge case
             leftEdge[0][1] -= 0.001;
             leftEdge[0][0] += 0.001;
             leftEdge[1][0] += 0.001;
-            this.vpl = math.intersect(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
+            this.vpl = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
         }
         if (this.vpr === null) {
             // shift the edge slightly to avoid edge case
             rightEdge[0][1] -= 0.001;
             rightEdge[0][0] -= 0.001;
             rightEdge[1][0] -= 0.001;
-            this.vpr = math.intersect(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
+            this.vpr = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
         }
     }
 
@@ -636,8 +636,8 @@ class Cuboid2PointViewModel {
         leftPoints = convertToArray(leftPoints);
         rightPoints = convertToArray(rightPoints);
 
-        let p1 = math.intersect(vp_left, leftPoints[0], vp_right, rightPoints[0]);
-        let p2 = math.intersect(vp_left, leftPoints[1], vp_right, rightPoints[1]);
+        let p1 = intersection(vp_left, leftPoints[0], vp_right, rightPoints[0]);
+        let p2 = intersection(vp_left, leftPoints[1], vp_right, rightPoints[1]);
 
         if (p1 === null) {
             p1 = [];
