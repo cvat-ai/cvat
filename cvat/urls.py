@@ -54,3 +54,6 @@ if apps.is_installed('cvat.apps.log_viewer'):
 
 if apps.is_installed('silk'):
     urlpatterns.append(path('profiler/', include('silk.urls')))
+
+# new feature by Mohammad
+urlpatterns.append(path('tensorflow/segmentation/', include('cvat.apps.auto_segmentation.urls')))
