@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import DashboardHeader from './dashboard-header';
+import TasksPage from './tasks-page';
 
 
 it('renders without crashing', () => {
   const div = document.createElement('div');
-  ReactDOM.render(<DashboardHeader />, div);
+  ReactDOM.render(<TasksPage />, div);
   ReactDOM.unmountComponentAtNode(div);
 });

@@ -18,12 +18,12 @@ import TaskCreateForm from '../../modals/task-create/task-create';
 
 import { deserializeLabels, taskDTO } from '../../../utils/tasks-dto';
 
-import './dashboard-content.scss';
+import './tasks-content.scss';
 
 
 const { Content } = Layout;
 
-class DashboardContent extends Component<any, any> {
+class TasksContent extends Component<any, any> {
   hostUrl: string | undefined;
   apiUrl: string | undefined;
 
@@ -68,35 +68,41 @@ class DashboardContent extends Component<any, any> {
   render() {
     return(
       <>
-        { this.props.tasks.length ? this.renderTasks() : this.renderPlaceholder() }
+        { this.props.tasks.length ? this.renderTasks() : this.renderEmpty() }
       </>
     );
   }
 
-  private renderPlaceholder() {
+  private renderEmpty() {
     return (
-      <Empty className="empty" description="No tasks found...">
-        <Button type="primary" onClick={ this.onCreateTask }>
-          Create task
+      <Empty
+        className="empty"
+        description="No tasks created yet..."
+        image="./images/empty-tasks-icon.svg">
+        <span>To get started with your annotation project</span>
+        <Button type="link" onClick={ this.onCreateTask }>
+          create a new task
         </Button>
+        {/* // TODO: uncomment when modals -> pages */}
+        {/* <Link to="/tasks">create a new task</Link> */}
       </Empty>
     )
   }
 
   private renderTasks() {
     return (
-      <Content className="dashboard-content">
+      <Content className="tasks-content">
         {
           this.props.tasks.map(
             (task: any) => (
-              <div className="dashboard-content-сard" key={ task.id }>
-                <Row className="dashboard-content-сard__header" type="flex">
+              <div className="tasks-content-сard" key={ task.id }>
+                <Row className="tasks-content-сard__header" type="flex">
                   <Col span={24}>
                     <Title level={2}>{ `${task.name}: ${task.mode}` }</Title>
                   </Col>
                 </Row>
 
-                <Row className="dashboard-content-сard__content" type="flex">
+                <Row className="tasks-content-сard__content" type="flex">
                   <Col className="card-cover" span={8}>
                     <img alt="Task cover" src={ `${this.apiUrl}/tasks/${task.id}/frames/0` } />
                   </Col>
@@ -301,7 +307,7 @@ class DashboardContent extends Component<any, any> {
     });
   }
 
-  private onDumpAnnotation = (task: any, event: any, component: DashboardContent) => {
+  private onDumpAnnotation = (task: any, event: any, component: TasksContent) => {
     const dumper = component.state.dumpers.find((dumper: any) => dumper.name === event.key);
 
     component.setState({ activeTaskId: task.id });
@@ -352,4 +358,4 @@ const mapStateToProps = (state: any) => {
   return { ...state.tasks, ...state.server, ...state.annotations };
 };
 
-export default withRouter(connect(mapStateToProps)(DashboardContent) as any);
+export default withRouter(connect(mapStateToProps)(TasksContent) as any);

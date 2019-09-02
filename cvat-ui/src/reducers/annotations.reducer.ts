@@ -1,39 +1,28 @@
+import { AnyAction } from 'redux';
+
+
 export default (
   state = {
     downloadLink: null,
     isFetching: false,
     error: null,
   },
-  action: any,
+  action: AnyAction,
 ) => {
   switch (action.type) {
     case 'DUMP_ANNOTATION':
-      return Object.assign({}, state, {
-        isFetching: true,
-      });
+      return { ...state, isFetching: true };
     case 'DUMP_ANNOTATION_SUCCESS':
-      return Object.assign({}, state, {
-        isFetching: false,
-        downloadLink: action.payload,
-      });
+      return { ...state, isFetching: false, downloadLink: action.payload };
     case 'DUMP_ANNOTATION_ERROR':
-      return Object.assign({}, state, {
-        isFetching: false,
-        error: action.payload,
-      });
+      return { ...state, isFetching: false, error: action.payload };
+
     case 'UPLOAD_ANNOTATION':
-      return Object.assign({}, state, {
-        isFetching: true,
-      });
+      return { ...state, isFetching: true };
     case 'UPLOAD_ANNOTATION_SUCCESS':
-      return Object.assign({}, state, {
-        isFetching: false,
-      });
+      return { ...state, isFetching: false };
     case 'UPLOAD_ANNOTATION_ERROR':
-      return Object.assign({}, state, {
-        isFetching: false,
-        error: action.payload,
-      });
+      return { ...state, isFetching: false, error: action.payload };
     default:
       return state;
   }

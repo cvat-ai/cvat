@@ -8,18 +8,19 @@ import { connect } from 'react-redux';
 
 import { Layout, Pagination, Row, Col } from 'antd';
 
-import './dashboard-footer.scss';
+import './tasks-footer.scss';
+
 
 const { Footer } = Layout;
 
-class DashboardFooter extends PureComponent<any, any> {
+class TasksFooter extends PureComponent<any, any> {
   render() {
     return(
-      <Footer className="dashboard-footer">
+      <Footer className="tasks-footer">
         <Row type="flex" gutter={16}>
           <Col span={24}>
             <Pagination
-              className="dashboard-footer__pagination"
+              className="tasks-footer__pagination"
               current={ this.props.currentPage || 1 }
               hideOnSinglePage
               onChange={ this.onPageChange }
@@ -42,4 +43,4 @@ const mapStateToProps = (state: any) => {
   return { ...state.tasks, ...state.tasksFilter };
 };
 
-export default withRouter(connect(mapStateToProps)(DashboardFooter) as any);
+export default withRouter(connect(mapStateToProps)(TasksFooter) as any);

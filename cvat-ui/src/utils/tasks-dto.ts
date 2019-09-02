@@ -77,7 +77,7 @@ export function serializeLabels(task: any) {
 }
 
 export function deserializeLabels(serialized: string) {
-  const normalized = serialized.replace(/'+/g, '\'').replace(/"+/g, '"').replace(/\s+/g, ' ').trim();
+  const normalized = serialized.replace(/'+/g, '\'').replace(/\s+/g, ' ').trim();
   const fragments = customSplit(normalized, ' ');
   const deserialized = [];
 

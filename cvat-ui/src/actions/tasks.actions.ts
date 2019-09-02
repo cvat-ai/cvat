@@ -1,79 +1,82 @@
+import { History } from 'history';
+import { Dispatch, ActionCreator } from 'redux';
+
 import queryString from 'query-string';
 
 import setQueryObject from '../utils/tasks-filter'
 
 
-export const getTasks = () => (dispatch: any) => {
+export const getTasks = () => (dispatch: Dispatch) => {
   dispatch({
     type: 'GET_TASKS',
   });
 }
 
-export const getTasksSuccess = (tasks: []) => (dispatch: any) => {
+export const getTasksSuccess = (tasks: []) => (dispatch: Dispatch) => {
   dispatch({
     type: 'GET_TASKS_SUCCESS',
     payload: tasks,
   });
 }
 
-export const getTasksError = (error: {}) => (dispatch: any) => {
+export const getTasksError = (error: {}) => (dispatch: Dispatch) => {
   dispatch({
     type: 'GET_TASKS_ERROR',
     payload: error,
   });
 }
 
-export const createTask = () => (dispatch: any) => {
+export const createTask = () => (dispatch: Dispatch) => {
   dispatch({
     type: 'CREATE_TASK',
   });
 }
 
-export const createTaskSuccess = () => (dispatch: any) => {
+export const createTaskSuccess = () => (dispatch: Dispatch) => {
   dispatch({
     type: 'CREATE_TASK_SUCCESS',
   });
 }
 
-export const createTaskError = (error: {}) => (dispatch: any) => {
+export const createTaskError = (error: {}) => (dispatch: Dispatch) => {
   dispatch({
     type: 'CREATE_TASK_ERROR',
     payload: error,
   });
 }
 
-export const updateTask = () => (dispatch: any) => {
+export const updateTask = () => (dispatch: Dispatch) => {
   dispatch({
     type: 'UPDATE_TASK',
   });
 }
 
-export const updateTaskSuccess = () => (dispatch: any) => {
+export const updateTaskSuccess = () => (dispatch: Dispatch) => {
   dispatch({
     type: 'UPDATE_TASK_SUCCESS',
   });
 }
 
-export const updateTaskError = (error: {}) => (dispatch: any) => {
+export const updateTaskError = (error: {}) => (dispatch: Dispatch) => {
   dispatch({
     type: 'UPDATE_TASK_ERROR',
     payload: error,
   });
 }
 
-export const deleteTask = () => (dispatch: any) => {
+export const deleteTask = () => (dispatch: Dispatch) => {
   dispatch({
     type: 'DELETE_TASK',
   });
 }
 
-export const deleteTaskSuccess = () => (dispatch: any) => {
+export const deleteTaskSuccess = () => (dispatch: Dispatch) => {
   dispatch({
     type: 'DELETE_TASK_SUCCESS',
   });
 }
 
-export const deleteTaskError = (error: {}) => (dispatch: any) => {
+export const deleteTaskError = (error: {}) => (dispatch: Dispatch) => {
   dispatch({
     type: 'DELETE_TASK_ERROR',
     payload: error,
@@ -81,7 +84,7 @@ export const deleteTaskError = (error: {}) => (dispatch: any) => {
 }
 
 export const getTasksAsync = (queryObject = {}) => {
-  return (dispatch: any) => {
+  return (dispatch: ActionCreator<Dispatch>) => {
     dispatch(getTasks());
 
     return (window as any).cvat.tasks.get(queryObject).then(
@@ -98,7 +101,7 @@ export const getTasksAsync = (queryObject = {}) => {
 }
 
 export const createTaskAsync = (task: any) => {
-  return (dispatch: any) => {
+  return (dispatch: ActionCreator<Dispatch>) => {
     dispatch(createTask());
 
     return task.save().then(
@@ -117,7 +120,7 @@ export const createTaskAsync = (task: any) => {
 }
 
 export const updateTaskAsync = (task: any) => {
-  return (dispatch: any) => {
+  return (dispatch: ActionCreator<Dispatch>) => {
     dispatch(updateTask());
 
     return task.save().then(
@@ -135,8 +138,8 @@ export const updateTaskAsync = (task: any) => {
   };
 }
 
-export const deleteTaskAsync = (task: any, history: any) => {
-  return (dispatch: any, getState: any) => {
+export const deleteTaskAsync = (task: any, history: History) => {
+  return (dispatch: ActionCreator<Dispatch>, getState: any) => {
     dispatch(deleteTask());
 
     return task.delete().then(
