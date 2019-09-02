@@ -160,6 +160,9 @@ if 'yes' == os.environ.get('WITH_DEXTR', 'no'):
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
+# new feature by Mohammad
+INSTALLED_APPS += ['cvat.apps.auto_segmentation'] # TODO add conditions
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
