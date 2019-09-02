@@ -125,7 +125,7 @@ export const isAuthenticatedAsync = () => {
     dispatch(isAuthenticated());
 
     return (window as any).cvat.server.authorized().then(
-      (isAuthenticated: any) => {
+      (isAuthenticated: boolean) => {
         isAuthenticated ? dispatch(isAuthenticatedSuccess()) : dispatch(isAuthenticatedFail());
       },
       (error: any) => {
