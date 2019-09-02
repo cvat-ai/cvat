@@ -7,10 +7,7 @@ export default (
 ) => {
   switch (action.type) {
     case 'FILTER_TASKS':
-      return Object.assign({}, state, {
-        searchQuery: action.payload.search,
-        currentPage: action.payload.page,
-      });
+      return { ...state, searchQuery: action.payload.search, currentPage: action.payload.page };
     default:
       return state;
   }
