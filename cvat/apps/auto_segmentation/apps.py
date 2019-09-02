@@ -6,6 +6,6 @@
 from django.apps import AppConfig
 
 
-class TFAnnotationConfig(AppConfig):
-    name = 'tf_annotation'
+class AutoSegmentationConfig(AppConfig):
+    name = 'auto_segmentation'
 
