@@ -189,18 +189,6 @@ class TaskCreateForm extends PureComponent<any, any> {
           )}
         </Form.Item>
 
-        <Form.Item { ...formItemLayout } label="Use LFS">
-          {getFieldDecorator('useLFS', {
-            rules: [],
-            initialValue: true,
-          })(
-            <Checkbox
-              defaultChecked
-              name="use-lfs"
-            />
-          )}
-        </Form.Item>
-
         <Form.Item { ...formItemLayout } label="Source">
           {getFieldDecorator('source', {
             rules: [],

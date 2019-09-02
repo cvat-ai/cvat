@@ -1,16 +1,16 @@
+import { AnyAction } from 'redux';
+
+
 export default (
   state = {
     searchQuery: '',
     currentPage: 1
   },
-  action: any,
+  action: AnyAction,
 ) => {
   switch (action.type) {
     case 'FILTER_TASKS':
-      return Object.assign({}, state, {
-        searchQuery: action.payload.search,
-        currentPage: action.payload.page,
-      });
+      return { ...state, searchQuery: action.payload.search, currentPage: action.payload.page };
     default:
       return state;
   }
