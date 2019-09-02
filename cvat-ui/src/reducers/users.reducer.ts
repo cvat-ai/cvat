@@ -1,3 +1,6 @@
+import { AnyAction } from 'redux';
+
+
 export default (
   state: any = {
     users: [],
@@ -5,7 +8,7 @@ export default (
     isFetching: false,
     error: null,
   },
-  action: any,
+  action: AnyAction,
 ) => {
   switch (action.type) {
     case 'GET_USERS':

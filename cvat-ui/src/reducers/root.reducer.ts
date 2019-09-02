@@ -7,6 +7,7 @@ import tasksFilter from './tasks-filter.reducer';
 import server from './server.reducer';
 import annotations from './annotations.reducer';
 
+
 // TODO: investigate a better way to handle
 // INFO: global errors handler reducer
 const errorMessage = (state = null, action: AnyAction) => {

@@ -1,10 +1,13 @@
+import { AnyAction } from 'redux';
+
+
 export default (
   state = {
     isAuthenticated: false,
     isFetching: false,
     error: null,
   },
-  action: any,
+  action: AnyAction,
 ) => {
   switch (action.type) {
     case 'LOGIN':

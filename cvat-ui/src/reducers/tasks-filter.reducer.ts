@@ -1,9 +1,12 @@
+import { AnyAction } from 'redux';
+
+
 export default (
   state = {
     searchQuery: '',
     currentPage: 1
   },
-  action: any,
+  action: AnyAction,
 ) => {
   switch (action.type) {
     case 'FILTER_TASKS':

@@ -1,10 +1,13 @@
+import { AnyAction } from 'redux';
+
+
 export default (
   state = {
     downloadLink: null,
     isFetching: false,
     error: null,
   },
-  action: any,
+  action: AnyAction,
 ) => {
   switch (action.type) {
     case 'DUMP_ANNOTATION':
