@@ -26,6 +26,12 @@ import numpy as np
 from PIL import Image
 from cvat.apps.engine.log import slogger
 
+import sys
+import math
+import skimage.io
+from pycocotools import mask
+from skimage.measure import find_contours, approximate_polygon
+
 
 def load_image_into_numpy(image):
     (im_width, im_height) = image.size
@@ -43,7 +49,7 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
         return xmin, ymin, xmax, ymax
 
     result = {}
-    MODEL_PATH = os.environ.get('TF_ANNOTATION_MODEL_PATH')
+    MODEL_PATH = os.environ.get('Auto_Segmentation_MODEL_PATH')
     if MODEL_PATH is None:
         raise OSError('Model path env not found in the system.')
 
@@ -100,7 +106,7 @@ def run_tensorflow_annotation(image_list, labels_mapping, treshold):
         return xmin, ymin, xmax, ymax
 
     result = {}
-    model_path = os.environ.get('TF_ANNOTATION_MODEL_PATH')
+    model_path = os.environ.get('Auto_Segmentation_MODEL_PATH')
     if model_path is None:
         raise OSError('Model path env not found in the system.')
     job = rq.get_current_job()
@@ -204,13 +210,13 @@ def create_thread(tid, labels_mapping, user):
         # Get image list
         image_list = make_image_list(db_task.get_data_dirname())
 
-        # Run auto annotation by tf
+        # Run auto segmentation by tf
         result = None
-        slogger.glob.info("tf annotation with tensorflow framework for task {}".format(tid))
+        slogger.glob.info("auto segmentation with tensorflow framework for task {}".format(tid))
         result = run_tensorflow_annotation(image_list, labels_mapping, TRESHOLD)
 
         if result is None:
-            slogger.glob.info('tf annotation for task {} canceled by user'.format(tid))
+            slogger.glob.info('auto segmentation for task {} canceled by user'.format(tid))
             return
 
         # Modify data format and save
@@ -218,12 +224,12 @@ def create_thread(tid, labels_mapping, user):
         serializer = LabeledDataSerializer(data = result)
         if serializer.is_valid(raise_exception=True):
             put_task_data(tid, user, result)
-        slogger.glob.info('tf annotation for task {} done'.format(tid))
+        slogger.glob.info('auto segmentation for task {} done'.format(tid))
     except Exception as ex:
         try:
-            slogger.task[tid].exception('exception was occured during tf annotation of the task', exc_info=True)
+            slogger.task[tid].exception('exception was occured during auto segmentation of the task', exc_info=True)
         except:
-            slogger.glob.exception('exception was occured during tf annotation of the task {}'.format(tid), exc_into=True)
+            slogger.glob.exception('exception was occured during auto segmentation of the task {}'.format(tid), exc_into=True)
         raise ex
 
 @login_required
@@ -233,7 +239,7 @@ def get_meta_info(request):
         tids = json.loads(request.body.decode('utf-8'))
         result = {}
         for tid in tids:
-            job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
+            job = queue.fetch_job('auto_segmentation.create/{}'.format(tid))
             if job is not None:
                 result[tid] = {
                     "active": job.is_queued or job.is_started,
@@ -250,18 +256,19 @@ def get_meta_info(request):
 @permission_required(perm=['engine.task.change'],
     fn=objectgetter(TaskModel, 'tid'), raise_exception=True)
 def create(request, tid):
-    slogger.glob.info('tf annotation create request for task {}'.format(tid))
+    slogger.glob.info('auto segmentation create request for task {}'.format(tid))
     try:
         db_task = TaskModel.objects.get(pk=tid)
         queue = django_rq.get_queue('low')
-        job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
+        job = queue.fetch_job('auto_segmentation.create/{}'.format(tid))
         if job is not None and (job.is_started or job.is_queued):
             raise Exception("The process is already running")
 
         db_labels = db_task.label_set.prefetch_related('attributespec_set').all()
         db_labels = {db_label.id:db_label.name for db_label in db_labels}
 
-        tf_annotation_labels = {
+        # COCO Labels
+        auto_segmentation_labels = { "BG": 0,
             "person": 1, "bicycle": 2, "car": 3, "motorcycle": 4, "airplane": 5,
             "bus": 6, "train": 7, "truck": 8, "boat": 9, "traffic_light": 10,
             "fire_hydrant": 11, "stop_sign": 13, "parking_meter": 14, "bench": 15,
@@ -282,23 +289,23 @@ def create(request, tid):
 
         labels_mapping = {}
         for key, labels in db_labels.items():
-            if labels in tf_annotation_labels.keys():
-                labels_mapping[tf_annotation_labels[labels]] = key
+            if labels in auto_segmentation_labels.keys():
+                labels_mapping[auto_segmentation_labels[labels]] = key
 
         if not len(labels_mapping.values()):
-            raise Exception('No labels found for tf annotation')
+            raise Exception('No labels found for auto segmentation')
 
-        # Run tf annotation job
+        # Run auto segmentation job
         queue.enqueue_call(func=create_thread,
             args=(tid, labels_mapping, request.user),
-            job_id='tf_annotation.create/{}'.format(tid),
+            job_id='auto_segmentation.create/{}'.format(tid),
             timeout=604800)     # 7 days
 
-        slogger.task[tid].info('tensorflow annotation job enqueued with labels {}'.format(labels_mapping))
+        slogger.task[tid].info('tensorflow segmentation job enqueued with labels {}'.format(labels_mapping))
 
     except Exception as ex:
         try:
-            slogger.task[tid].exception("exception was occured during tensorflow annotation request", exc_info=True)
+            slogger.task[tid].exception("exception was occured during tensorflow segmentation request", exc_info=True)
         except:
             pass
         return HttpResponseBadRequest(str(ex))
@@ -311,7 +318,7 @@ def create(request, tid):
 def check(request, tid):
     try:
         queue = django_rq.get_queue('low')
-        job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
+        job = queue.fetch_job('auto_segmentation.create/{}'.format(tid))
         if job is not None and 'cancel' in job.meta:
             return JsonResponse({'status': 'finished'})
         data = {}
@@ -342,16 +349,16 @@ def check(request, tid):
 def cancel(request, tid):
     try:
         queue = django_rq.get_queue('low')
-        job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
+        job = queue.fetch_job('auto_segmentation.create/{}'.format(tid))
         if job is None or job.is_finished or job.is_failed:
-            raise Exception('Task is not being annotated currently')
+            raise Exception('Task is not being segmented currently')
         elif 'cancel' not in job.meta:
             job.meta['cancel'] = True
             job.save()
 
     except Exception as ex:
         try:
-            slogger.task[tid].exception("cannot cancel tensorflow annotation for task #{}".format(tid), exc_info=True)
+            slogger.task[tid].exception("cannot cancel tensorflow segmentation for task #{}".format(tid), exc_info=True)
         except:
             pass
         return HttpResponseBadRequest(str(ex))
