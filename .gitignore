@@ -12,7 +12,7 @@
 /ssh/*
 !/ssh/README.md
 node_modules
-/components/auto_segmentation/
+/Mask_RCNN/
 
 # Ignore temporary files
 docker-compose.override.yml
