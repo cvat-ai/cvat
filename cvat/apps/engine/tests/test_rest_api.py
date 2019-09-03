@@ -843,15 +843,17 @@ class TaskPartialUpdateAPITestCase(TaskUpdateAPITestCase):
 
     def test_api_v1_tasks_id_admin_partial(self):
         data = {
-            "name": "new name for the task",
-            "owner": self.owner.id
+            "name": "new name for the task #2",
         }
         self._check_api_v1_tasks_id(self.admin, data)
 
         data = {
-            "name": "new name for the task #2",
+            "name": "new name for the task",
+            "owner": self.owner.id
         }
         self._check_api_v1_tasks_id(self.admin, data)
+        # Now owner is updated, but self.db_tasks are obsolete
+        # We can't do any tests without owner in data below
 
 
     def test_api_v1_tasks_id_user_partial(self):
