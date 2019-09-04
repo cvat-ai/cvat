@@ -168,8 +168,15 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
         job.meta['progress'] = image_num * 100 / len(image_list)
         job.save_meta()
 
-        # for multiple image detection, "batch size" must be equal to number of images
         image = skimage.io.imread(image_path)
+        # image = Image.open(image_path)
+        # width, height = image.size
+        # if width > 1920 or height > 1080:
+        #     image = image.resize(
+        #         (width // 2, height // 2), Image.ANTIALIAS)
+        # image_np = load_image_into_numpy(image)
+
+        # for multiple image detection, "batch size" must be equal to number of images
         r = model.detect([image], verbose=1)
 
         r = r[0]
@@ -186,7 +193,6 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
                         result[label] = []
                     result[label].append(
                         [image_num, segmentation])
-        # break  # remove
 
     return result
 
@@ -244,7 +250,8 @@ def run_tensorflow_annotation(image_list, labels_mapping, treshold):
                 for i in range(len(classes[0])):
                     if classes[0][i] in labels_mapping.keys():
                         if scores[0][i] >= treshold:
-                            xmin, ymin, xmax, ymax = _normalize_box(boxes[0][i], width, height)
+                            
+                            xmin, ymin, xmax, ymax = _normalize_box(boxes[0][i], width, height) #int(box[1]), int(box[0]), int(box[3]), int(box[2])
                             label = labels_mapping[classes[0][i]]
                             if label not in result:
                                 result[label] = []
