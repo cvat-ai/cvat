@@ -20,7 +20,9 @@
             * @param {Object} serialized - is an dictionary which contains
             * initial information about an ObjectState;
             * Necessary fields: objectType, shapeType
+            * (don't have setters)
             * Necessary fields for objects which haven't been added to collection yet: frame
+            * (doesn't have setters)
             * Optional fields: points, group, zOrder, outside, occluded,
             * attributes, lock, label, mode, color, keyframe, clientID, serverID
             * These fields can be set later via setters
@@ -378,7 +380,7 @@
         }
     }
 
-    // Default implementation saves element in collection
+    // Updates element in collection which contains it
     ObjectState.prototype.save.implementation = async function () {
         if (this.hidden && this.hidden.save) {
             return this.hidden.save();
@@ -387,7 +389,7 @@
         return this;
     };
 
-    // Default implementation do nothing
+    // Delete element from a collection which contains it
     ObjectState.prototype.delete.implementation = async function (force) {
         if (this.hidden && this.hidden.delete) {
             return this.hidden.delete(force);
