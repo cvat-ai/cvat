@@ -38,65 +38,6 @@ def load_image_into_numpy(image):
     return np.array(image.getdata()).reshape((im_height, im_width, 3)).astype(np.uint8)
 
 
-def run_inference_engine_annotation(image_list, labels_mapping, treshold):
-    from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network
-
-    def _normalize_box(box, w, h, dw, dh):
-        xmin = min(int(box[0] * dw * w), w)
-        ymin = min(int(box[1] * dh * h), h)
-        xmax = min(int(box[2] * dw * w), w)
-        ymax = min(int(box[3] * dh * h), h)
-        return xmin, ymin, xmax, ymax
-
-    result = {}
-    MODEL_PATH = os.environ.get('Auto_Segmentation_MODEL_PATH')
-    if MODEL_PATH is None:
-        raise OSError('Model path env not found in the system.')
-
-    plugin = make_plugin()
-    network = make_network('{}.xml'.format(MODEL_PATH), '{}.bin'.format(MODEL_PATH))
-    input_blob_name = next(iter(network.inputs))
-    output_blob_name = next(iter(network.outputs))
-    executable_network = plugin.load(network=network)
-    job = rq.get_current_job()
-
-    del network
-
-    try:
-        for image_num, im_name in enumerate(image_list):
-
-            job.refresh()
-            if 'cancel' in job.meta:
-                del job.meta['cancel']
-                job.save()
-                return None
-            job.meta['progress'] = image_num * 100 / len(image_list)
-            job.save_meta()
-
-            image = Image.open(im_name)
-            width, height = image.size
-            image.thumbnail((600, 600), Image.ANTIALIAS)
-            dwidth, dheight = 600 / image.size[0], 600 / image.size[1]
-            image = image.crop((0, 0, 600, 600))
-            image_np = load_image_into_numpy(image)
-            image_np = np.transpose(image_np, (2, 0, 1))
-            prediction = executable_network.infer(inputs={input_blob_name: image_np[np.newaxis, ...]})[output_blob_name][0][0]
-            for obj in prediction:
-                obj_class = int(obj[1])
-                obj_value = obj[2]
-                if obj_class and obj_class in labels_mapping and obj_value >= treshold:
-                    label = labels_mapping[obj_class]
-                    if label not in result:
-                        result[label] = []
-                    xmin, ymin, xmax, ymax = _normalize_box(obj[3:7], width, height, dwidth, dheight)
-                    result[label].append([image_num, xmin, ymin, xmax, ymax])
-    finally:
-        del executable_network
-        del plugin
-
-    return result
-
-
 def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
     def _convert_to_int(boolean_mask):
         return boolean_mask.astype(np.uint8)
