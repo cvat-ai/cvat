@@ -110,7 +110,7 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
         contour = approximate_polygon(contour, tolerance=2.5)
         segmentation = contour.ravel().tolist()
         return segmentation
-    
+
     ## INITIALIZATION
 
     # Root directory of the project
@@ -269,8 +269,6 @@ def make_image_list(path_to_data):
 
 
 def convert_to_cvat_format(data):
-    ## CONVERT NN OUTPUT MASK
-    ## CREATE FORMAT AND APPROXIMATE POINTS TO BE SAVED
     result = {
         "tracks": [],
         "shapes": [],
@@ -279,13 +277,13 @@ def convert_to_cvat_format(data):
     }
 
     for label in data:
-        boxes = data[label]
-        for box in boxes:
+        segments = data[label]
+        for segment in segments:
             result['shapes'].append({
-                "type": "rectangle",
+                "type": "polygon",
                 "label_id": label,
-                "frame": box[0],
-                "points": [box[1], box[2], box[3], box[4]],
+                "frame": segment[0],
+                "points": segment[1],
                 "z_order": 0,
                 "group": None,
                 "occluded": False,
@@ -297,7 +295,7 @@ def convert_to_cvat_format(data):
 def create_thread(tid, labels_mapping, user):
     try:
         # If detected object accuracy bigger than threshold it will returend
-        TRESHOLD = 0.5 
+        TRESHOLD = 0.5
         # Init rq job
         job = rq.get_current_job()
         job.meta['progress'] = 0
