@@ -3,33 +3,32 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest, QueryDict
-from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest#, QueryDict
+#from django.core.exceptions import ObjectDoesNotExist
+#from django.shortcuts import render
 from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.models import Task as TaskModel
-from cvat.apps.engine import annotation, task
+#from cvat.apps.engine import annotation, task
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data
 
 import django_rq
 import fnmatch
-import logging
+#import logging
 import json
 import os
 import rq
 
-import tensorflow as tf
 import numpy as np
 
-from PIL import Image
+#from PIL import Image
 from cvat.apps.engine.log import slogger
 
 import sys
-import math
+#import math
 import skimage.io
-from pycocotools import mask
+#from pycocotools import mask
 from skimage.measure import find_contours, approximate_polygon
 
 
