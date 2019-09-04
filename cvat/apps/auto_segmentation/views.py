@@ -97,6 +97,100 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
     return result
 
 
+def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
+    def _convert_to_int(boolean_mask):
+        return boolean_mask.astype(np.uint8)
+
+    def _convert_to_segmentation(mask):
+        contours = find_contours(mask, 0.5)
+        # only one contour exist in our case
+        contour = contours[0]
+        contour = np.flip(contour, axis=1)
+        # Approximate the contour and reduce the number of points
+        contour = approximate_polygon(contour, tolerance=2.5)
+        segmentation = contour.ravel().tolist()
+        return segmentation
+    
+    ## INITIALIZATION
+
+    # Root directory of the project
+    ROOT_DIR = os.environ.get('AUTO_SEGMENTATIONL_PATH')
+    # Import Mask RCNN
+    sys.path.append(ROOT_DIR)  # To find local version of the library
+    from mrcnn import utils
+    import mrcnn.model as modellib
+
+    # Import COCO config
+    sys.path.append(os.path.join(ROOT_DIR, "samples/coco/"))  # To find local version
+    import coco
+
+    # Directory to save logs and trained model
+    MODEL_DIR = os.path.join(ROOT_DIR, "logs")
+
+    # Local path to trained weights file
+    COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
+    if COCO_MODEL_PATH is None:
+        raise OSError('Model path env not found in the system.')
+    job = rq.get_current_job()
+
+    # Download COCO trained weights from Releases if needed
+    if not os.path.exists(COCO_MODEL_PATH):
+        utils.download_trained_weights(COCO_MODEL_PATH)
+    job = rq.get_current_job()
+
+    ## CONFIGURATION
+
+    class InferenceConfig(coco.CocoConfig):
+        # Set batch size to 1 since we'll be running inference on
+        # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
+        GPU_COUNT = 1
+        IMAGES_PER_GPU = 1
+
+    # Print config details
+    config = InferenceConfig()
+    config.display()
+
+    ## CREATE MODEL AND LOAD TRAINED WEIGHTS
+
+    # Create model object in inference mode.
+    model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR, config=config)
+    # Load weights trained on MS-COCO
+    model.load_weights(COCO_MODEL_PATH, by_name=True)
+
+    ## RUN OBJECT DETECTION
+    result = {}
+    for image_num, image_path in enumerate(image_list):
+        job.refresh()
+        if 'cancel' in job.meta:
+            del job.meta['cancel']
+            job.save()
+            return None
+        job.meta['progress'] = image_num * 100 / len(image_list)
+        job.save_meta()
+
+        # for multiple image detection, "batch size" must be equal to number of images
+        image = skimage.io.imread(image_path)
+        r = model.detect([image], verbose=1)
+
+        r = r[0]
+        # "r['rois'][i]" gives bounding box around the object
+        for i in range(len(r['class_ids'])):
+            if r['class_ids'][i] in labels_mapping.keys():
+                if r['scores'][i] >= treshold:
+                    # xmin, ymin, xmax, ymax = _normalize_box(
+                    #     boxes[0][i], width, height)
+                    mask = _convert_to_int(r['masks'][:,:,i])
+                    segmentation = _convert_to_segmentation(mask)
+                    label = labels_mapping[r['class_ids'][i]]
+                    if label not in result:
+                        result[label] = []
+                    result[label].append(
+                        [image_num, segmentation])
+        # break  # remove
+
+    return result
+
+
 def run_tensorflow_annotation(image_list, labels_mapping, treshold):
     def _normalize_box(box, w, h):
         xmin = int(box[1] * w)
@@ -175,6 +269,8 @@ def make_image_list(path_to_data):
 
 
 def convert_to_cvat_format(data):
+    ## CONVERT NN OUTPUT MASK
+    ## CREATE FORMAT AND APPROXIMATE POINTS TO BE SAVED
     result = {
         "tracks": [],
         "shapes": [],
@@ -200,7 +296,8 @@ def convert_to_cvat_format(data):
 
 def create_thread(tid, labels_mapping, user):
     try:
-        TRESHOLD = 0.5
+        # If detected object accuracy bigger than threshold it will returend
+        TRESHOLD = 0.5 
         # Init rq job
         job = rq.get_current_job()
         job.meta['progress'] = 0
@@ -213,7 +310,7 @@ def create_thread(tid, labels_mapping, user):
         # Run auto segmentation by tf
         result = None
         slogger.glob.info("auto segmentation with tensorflow framework for task {}".format(tid))
-        result = run_tensorflow_annotation(image_list, labels_mapping, TRESHOLD)
+        result = run_tensorflow_auto_segmentation(image_list, labels_mapping, TRESHOLD)
 
         if result is None:
             slogger.glob.info('auto segmentation for task {} canceled by user'.format(tid))
