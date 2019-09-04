@@ -16,12 +16,16 @@ import { DrawHandler, DrawHandlerImpl } from './drawHandler';
 import { MergeHandler, MergeHandlerImpl } from './mergeHandler';
 import { SplitHandler, SplitHandlerImpl } from './splitHandler';
 import { GroupHandler, GroupHandlerImpl } from './groupHandler';
-import { translateToSVG, translateFromSVG } from './shared';
 import consts from './consts';
+import {
+    translateToSVG,
+    translateFromSVG,
+    displayShapeSize,
+    ShapeSizeElement,
+} from './shared';
 import {
     CanvasModel,
     Geometry,
-    Size,
     UpdateReasons,
     FocusData,
     FrameZoom,
@@ -31,6 +35,7 @@ import {
     SplitData,
     GroupData,
     Mode,
+    Size,
 } from './canvasModel';
 
 export interface CanvasView {
@@ -357,6 +362,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.drawHandler = new DrawHandlerImpl(
             this.onDrawDone.bind(this),
             this.adoptedContent,
+            this.adoptedText,
             this.background,
         );
         this.mergeHandler = new MergeHandlerImpl(
@@ -796,12 +802,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
             selectize(true, shape, geometry);
         }
 
+        let shapeSizeElement: ShapeSizeElement = null;
         (shape as any).resize().on('resizestart', (): void => {
+            shapeSizeElement = displayShapeSize(this.adoptedContent, this.adoptedText);
             this.mode = Mode.RESIZE;
             if (text) {
                 text.addClass('cvat_canvas_hidden');
             }
+        }).on('resizing', (): void => {
+            shapeSizeElement.update(shape);
         }).on('resizedone', (): void => {
+            shapeSizeElement.rm();
             this.mode = Mode.IDLE;
             if (text) {
                 text.removeClass('cvat_canvas_hidden');

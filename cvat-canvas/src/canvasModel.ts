@@ -8,6 +8,7 @@
 
 import { MasterImpl } from './master';
 
+
 export interface Size {
     width: number;
     height: number;

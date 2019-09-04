@@ -3,6 +3,15 @@
 * SPDX-License-Identifier: MIT
 */
 
+import * as SVG from 'svg.js';
+import consts from './consts';
+
+export interface ShapeSizeElement {
+    sizeElement: any;
+    update(shape: SVG.Shape): void;
+    rm(): void;
+}
+
 // Translate point array from the client coordinate system
 // to a coordinate system of a canvas
 export function translateFromSVG(svg: SVGSVGElement, points: number[]): number[] {
@@ -33,4 +42,34 @@ export function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
     }
 
     return output;
+}
+
+
+export function displayShapeSize(
+    shapesContainer: SVG.Container,
+    textContainer: SVG.Container,
+): ShapeSizeElement {
+    const shapeSize: ShapeSizeElement = {
+        sizeElement: textContainer.text('').font({
+            weight: 'bolder',
+        }).fill('white').addClass('cvat_canvas_text'),
+        update(shape: SVG.Shape): void{
+            const bbox = shape.bbox();
+            const text = `${bbox.width.toFixed(1)}x${bbox.height.toFixed(1)}`;
+            const [x, y]: number[] = translateToSVG(
+                textContainer.node as any as SVGSVGElement,
+                translateFromSVG((shapesContainer.node as any as SVGSVGElement), [bbox.x, bbox.y]),
+            );
+            this.sizeElement.clear().plain(text)
+                .move(x + consts.TEXT_MARGIN, y + consts.TEXT_MARGIN);
+        },
+        rm(): void {
+            if (this.sizeElement) {
+                this.sizeElement.remove();
+                this.sizeElement = null;
+            }
+        },
+    };
+
+    return shapeSize;
 }

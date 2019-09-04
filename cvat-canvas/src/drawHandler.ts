@@ -16,6 +16,8 @@ import {
 import {
     translateToSVG,
     translateFromSVG,
+    displayShapeSize,
+    ShapeSizeElement,
 } from './shared';
 
 export interface DrawHandler {
@@ -27,6 +29,7 @@ export class DrawHandlerImpl implements DrawHandler {
     // callback is used to notify about creating new shape
     private onDrawDone: (data: object) => void;
     private canvas: SVG.Container;
+    private text: SVG.Container;
     private background: SVGSVGElement;
     private crosshair: {
         x: SVG.Line;
@@ -34,7 +37,11 @@ export class DrawHandlerImpl implements DrawHandler {
     };
     private drawData: DrawData;
     private geometry: Geometry;
+
+    // we should use any instead of SVG.Shape because svg plugins cannot change declared interface
+    // so, methods like draw() just undefined for SVG.Shape, but nevertheless they exist
     private drawInstance: any;
+    private shapeSizeElement: ShapeSizeElement;
 
 
     private addCrosshair(): void {
@@ -63,6 +70,11 @@ export class DrawHandlerImpl implements DrawHandler {
             this.drawInstance.draw('stop');
             this.drawInstance.remove();
             this.drawInstance = null;
+        }
+
+        if (this.shapeSizeElement) {
+            this.shapeSizeElement.rm();
+            this.shapeSizeElement = null;
         }
 
         if (this.crosshair) {
@@ -100,6 +112,8 @@ export class DrawHandlerImpl implements DrawHandler {
             snapToGrid: 0.1,
         }).addClass('cvat_canvas_shape_drawing').attr({
             'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+        }).on('drawupdate', (): void => {
+            this.shapeSizeElement.update(this.drawInstance);
         }).on('drawstop', (e: Event): void => {
             const frameWidth = this.geometry.image.width;
             const frameHeight = this.geometry.image.height;
@@ -294,6 +308,9 @@ export class DrawHandlerImpl implements DrawHandler {
         // TODO: Use enums after typification cvat-core
         if (this.drawData.shapeType === 'rectangle') {
             this.drawBox();
+
+            // Draw instance was initialized after drawBox();
+            this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
         } else if (this.drawData.shapeType === 'polygon') {
             this.drawPolygon();
         } else if (this.drawData.shapeType === 'polyline') {
@@ -303,9 +320,15 @@ export class DrawHandlerImpl implements DrawHandler {
         }
     }
 
-    public constructor(onDrawDone: any, canvas: SVG.Container, background: SVGSVGElement) {
+    public constructor(
+        onDrawDone: any,
+        canvas: SVG.Container,
+        text: SVG.Container,
+        background: SVGSVGElement,
+    ) {
         this.onDrawDone = onDrawDone;
         this.canvas = canvas;
+        this.text = text;
         this.background = background;
         this.drawData = null;
         this.geometry = null;
@@ -334,6 +357,10 @@ export class DrawHandlerImpl implements DrawHandler {
 
     public transform(geometry: Geometry): void {
         this.geometry = geometry;
+
+        if (this.shapeSizeElement && this.drawInstance && this.drawData.shapeType === 'rectangle') {
+            this.shapeSizeElement.update(this.drawInstance);
+        }
 
         if (this.crosshair) {
             this.crosshair.x.attr({
