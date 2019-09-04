@@ -20,7 +20,6 @@ export interface CanvasController {
     readonly objects: any[];
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
-    readonly objectStateClass: any;
     readonly drawData: DrawData;
     readonly mergeData: MergeData;
     readonly splitData: SplitData;
@@ -116,10 +115,6 @@ export class CanvasControllerImpl implements CanvasController {
 
     public get activeElement(): ActiveElement {
         return this.model.activeElement;
-    }
-
-    public get objectStateClass(): any {
-        return this.model.objectStateClass;
     }
 
     public get drawData(): DrawData {

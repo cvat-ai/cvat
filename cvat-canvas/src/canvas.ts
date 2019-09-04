@@ -51,8 +51,8 @@ class CanvasImpl implements Canvas {
     private controller: CanvasController;
     private view: CanvasView;
 
-    public constructor(ObjectStateClass: any) {
-        this.model = new CanvasModelImpl(ObjectStateClass);
+    public constructor() {
+        this.model = new CanvasModelImpl();
         this.controller = new CanvasControllerImpl(this.model);
         this.view = new CanvasViewImpl(this.model, this.controller);
     }

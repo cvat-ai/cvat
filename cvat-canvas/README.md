@@ -58,6 +58,16 @@ Canvas itself handles:
         enabled: boolean;
     }
 
+    interface DrawnData {
+        shapeType: string;
+        points: number[];
+        objectType?: string;
+        occluded?: boolean;
+        attributes?: [index: number]: string;
+        label?: Label;
+        color?: string;
+    }
+
     interface Canvas {
         html(): HTMLDivElement;
         setup(frameData: any, objectStates: any[]): void;
@@ -100,7 +110,7 @@ Standard JS events are used.
     - canvas.deactivated
     - canvas.moved => {states: ObjectState[], x: number, y: number}
     - canvas.find => {states: ObjectState[], x: number, y: number}
-    - canvas.drawn => {state: ObjectState}
+    - canvas.drawn => {state: DrawnData}
     - canvas.edited => {state: ObjectState}
     - canvas.splitted => {state: ObjectState}
     - canvas.groupped => {states: ObjectState[]}
@@ -111,7 +121,7 @@ Standard JS events are used.
 ### WEB
 ```js
     // Create an instance of a canvas
-    const canvas = new window.canvas.Canvas(window.cvat.classes.ObjectState);
+    const canvas = new window.canvas.Canvas();
 
     // Put canvas to a html container
     htmlContainer.appendChild(canvas.html());
@@ -151,7 +161,7 @@ Than you can use it in TypeScript:
 ```ts
     import * as CANVAS from 'cvat-canvas.node';
     // Create an instance of a canvas
-    const canvas = new CANVAS.Canvas(null);
+    const canvas = new CANVAS.Canvas();
 
     // Put canvas to a html container
     htmlContainer.appendChild(canvas.html());

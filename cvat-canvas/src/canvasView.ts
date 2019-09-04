@@ -144,7 +144,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 cancelable: true,
                 detail: {
                     // eslint-disable-next-line new-cap
-                    state: new this.controller.objectStateClass(data),
+                    state: data,
                 },
             });
 

@@ -12,6 +12,20 @@ export interface ShapeSizeElement {
     rm(): void;
 }
 
+export interface Box {
+    xtl: number;
+    ytl: number;
+    xbr: number;
+    ybr: number;
+}
+
+export interface BBox {
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+}
+
 // Translate point array from the client coordinate system
 // to a coordinate system of a canvas
 export function translateFromSVG(svg: SVGSVGElement, points: number[]): number[] {
