@@ -11,6 +11,7 @@ from django.contrib.auth.models import User, Group
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
+from django.conf import settings
 
 
 class AttributeSerializer(serializers.ModelSerializer):
@@ -116,10 +117,11 @@ class TaskDataSerializer(serializers.ModelSerializer):
         default=[])
     remote_files = RemoteFileSerializer(many=True, source='remotefile_set',
         default=[])
+    prepared_data = serializers.BooleanField(default=False)
 
     class Meta:
         model = models.Task
-        fields = ('client_files', 'server_files', 'remote_files')
+        fields = ('client_files', 'server_files', 'remote_files', 'prepared_data')
 
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
@@ -196,7 +198,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         fields = ('url', 'id', 'name', 'size', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'z_order', 'status', 'labels', 'segments',
-            'image_quality', 'start_frame', 'stop_frame', 'frame_filter')
+            'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
+            'data_chunk_size')
         read_only_fields = ('size', 'mode', 'created_date', 'updated_date',
             'status')
         write_once_fields = ('overlap', 'segment_size', 'image_quality')
@@ -215,6 +218,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         db_task.start_frame = validated_data.get('start_frame', 0)
         db_task.stop_frame = validated_data.get('stop_frame', 0)
         db_task.frame_filter = validated_data.get('frame_filter', '')
+        db_task.data_chunk_size = validated_data.get('data_chunk_size', settings.DATA_CHUNK_SIZE)
         for label in labels:
             attributes = label.pop('attributespec_set')
             db_label = models.Label.objects.create(task=db_task, **label)
@@ -245,6 +249,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.start_frame = validated_data.get('start_frame', instance.start_frame)
         instance.stop_frame = validated_data.get('stop_frame', instance.stop_frame)
         instance.frame_filter = validated_data.get('frame_filter', instance.frame_filter)
+        instance.data_chunk_size = validated_data.get('data_chunk_size', instance.data_chunk_size)
         labels = validated_data.get('label_set', [])
         for label in labels:
             attributes = label.pop('attributespec_set', [])

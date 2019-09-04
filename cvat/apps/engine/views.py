@@ -7,9 +7,11 @@ import re
 import traceback
 from ast import literal_eval
 import shutil
+import tarfile
 from datetime import datetime
-from tempfile import mkstemp
+from tempfile import mkstemp, NamedTemporaryFile
 
+from ffmpy import FFmpeg
 from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.conf import settings
@@ -380,6 +382,76 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         except Exception as e:
             slogger.task[pk].error(
                 "cannot get frame #{}".format(frame), exc_info=True)
+            return HttpResponseBadRequest(str(e))
+
+    @action(detail=True, methods=['GET'], serializer_class=None,
+        url_path='frames/batch/(?P<batch>\d+)')
+    def batch(self, request, pk, batch):
+        """Get a batch of frames for the task"""
+
+        try:
+            db_task = self.get_object()
+            # Follow symbol links if the batch is a link on a real image otherwise
+            # mimetype detection inside sendfile will work incorrectly.
+            path = os.path.realpath(db_task.get_chunk_path(batch))
+            if not os.path.exists(path):
+                dirname = os.path.dirname(path)
+                if not os.path.exists(dirname):
+                    os.makedirs(dirname)
+                chunk_size = db_task.data_chunk_size
+                start_frame = int(batch) * chunk_size
+                if start_frame >= db_task.size:
+                    raise Exception('Requested batch doesnt exist')
+                stop_frame = min(start_frame + chunk_size, db_task.size)
+                if db_task.mode == 'annotation':
+                    with tarfile.open(path, 'w') as tar:
+                        for frame in range(start_frame, stop_frame):
+                            tar.add(db_task.get_frame_path(frame))
+                else:
+                    image_list = None
+                    if chunk_size == 1:
+                        input_options = '-f image2 -framerate 25'
+                        input_images = db_task.get_frame_path(start_frame)
+                    else:
+                        input_options = '-f concat -safe 0 -r 25'
+                        image_list = NamedTemporaryFile(mode='w+')
+                        for idx in range(start_frame, stop_frame):
+                            image_list.write('file \'{}\'\n'.format(db_task.get_frame_path(idx)))
+                        image_list.flush()
+                        input_images = image_list.name
+
+                    output_options = '-q:v 0'
+
+                    ff = FFmpeg(
+                        inputs  = {input_images: input_options},
+                        outputs = {path: output_options},
+                    )
+
+                    slogger.glob.info("FFMpeg cmd: {} ".format(ff.cmd))
+                    ff.run()
+
+                    if image_list:
+                        image_list.close()
+
+            return sendfile(request, path)
+        except Exception as e:
+            slogger.task[pk].error(
+                "cannot get batch #{}".format(batch), exc_info=True)
+            return HttpResponseBadRequest(str(e))
+
+    @action(detail=True, methods=['GET'], serializer_class=None,
+        url_path='frames/preview')
+    def preview(self, request, pk):
+        """Get a peview image of the task"""
+        try:
+            # Follow symbol links if the frame is a link on a real image otherwise
+            # mimetype detection inside sendfile will work incorrectly.
+            db_task = self.get_object()
+            path = os.path.realpath(os.path.join(db_task.get_data_dirname(), 'preview.jpg'))
+            return sendfile(request, path)
+        except Exception as e:
+            slogger.task[pk].error(
+                "cannot get preview image", exc_info=True)
             return HttpResponseBadRequest(str(e))
 
 class JobViewSet(viewsets.GenericViewSet,

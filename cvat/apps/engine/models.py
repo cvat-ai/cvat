@@ -54,17 +54,28 @@ class Task(models.Model):
     frame_filter = models.CharField(max_length=256, default="", blank=True)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
+    data_chunk_size = models.PositiveIntegerField(default=1)
 
     # Extend default permission model
     class Meta:
         default_permissions = ()
 
+    @staticmethod
+    def _get_dest_dir(index):
+        return str(int(index) // 10000), str(int(index) // 100)
+
     def get_frame_path(self, frame):
-        d1 = str(int(frame) // 10000)
-        d2 = str(int(frame) // 100)
+        d1, d2 = self._get_dest_dir(frame)
         path = os.path.join(self.get_data_dirname(), d1, d2,
             str(frame) + '.jpg')
 
+        return path
+
+    def get_chunk_path(self, chunk):
+        d1, d2 = self._get_dest_dir(chunk)
+        ext = 'ts' if self.mode == 'interpolation' else 'tar'
+        path = os.path.join(self.get_data_dirname(), d1, d2,
+            '{}.{}'.format(chunk, ext))
         return path
 
     def get_frame_step(self):
