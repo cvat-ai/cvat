@@ -3,7 +3,9 @@ import { BrowserRouter as Router, Route, Switch, Redirect } from 'react-router-d
 
 import { connect } from 'react-redux';
 
-import DashboardPage from '../dashboard-page/dashboard-page';
+import HeaderLayout from '../header-layout/header-layout';
+
+import TasksPage from '../tasks-page/tasks-page';
 import LoginPage from '../login-page/login-page';
 import RegisterPage from '../register-page/register-page';
 import PageNotFound from '../page-not-found/page-not-found';
@@ -16,12 +18,15 @@ const ProtectedRoute = ({ component: Component, ...rest }: any) => {
     <Route
       { ...rest }
       render={ (props) => {
-        return localStorage.getItem('session') ? (
-          <Component { ...props } />
+        return rest.isAuthenticated ? (
+          <>
+            <HeaderLayout />
+            <Component { ...props } />
+          </>
         ) : (
           <Redirect
             to={{
-              pathname: "/login",
+              pathname: '/login',
               state: {
                 from: props.location,
               },
@@ -38,8 +43,8 @@ class App extends PureComponent<any, any> {
     return(
       <Router>
         <Switch>
-          <Redirect path="/" exact to="/dashboard" />
-          <ProtectedRoute path="/dashboard" component={ DashboardPage } />
+          <Redirect path="/" exact to="/tasks" />
+          <ProtectedRoute isAuthenticated={ this.props.isAuthenticated } path="/tasks" component={ TasksPage } />
           <Route path="/login" component={ LoginPage } />
           <Route path="/register" component={ RegisterPage } />
           <Route component={ PageNotFound } />
