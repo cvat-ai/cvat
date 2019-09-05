@@ -28,6 +28,9 @@ import {
 } from './canvasView';
 
 
+import '../css/canvas.css';
+
+
 interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[]): void;
