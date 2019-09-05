@@ -884,8 +884,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private addRect(points: number[], state: any, geometry: Geometry): SVG.Rect {
         const [xtl, ytl, xbr, ybr] = points;
-
-        return this.adoptedContent.rect().size(xbr - xtl, ybr - ytl).attr({
+        const rect = this.adoptedContent.rect().size(xbr - xtl, ybr - ytl).attr({
             clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
             id: `cvat_canvas_shape_${state.clientID}`,
@@ -896,10 +895,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
             zOrder: state.zOrder,
         }).move(xtl, ytl)
             .addClass('cvat_canvas_shape');
+
+        if (state.occluded) {
+            rect.addClass('cvat_canvas_shape_occluded');
+        }
+
+        return rect;
     }
 
     private addPolygon(points: string, state: any, geometry: Geometry): SVG.Polygon {
-        return this.adoptedContent.polygon(points).attr({
+        const polygon = this.adoptedContent.polygon(points).attr({
             clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
             id: `cvat_canvas_shape_${state.clientID}`,
@@ -909,10 +914,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
             'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             zOrder: state.zOrder,
         }).addClass('cvat_canvas_shape');
+
+        if (state.occluded) {
+            polygon.addClass('cvat_canvas_shape_occluded');
+        }
+
+        return polygon;
     }
 
     private addPolyline(points: string, state: any, geometry: Geometry): SVG.PolyLine {
-        return this.adoptedContent.polyline(points).attr({
+        const polyline = this.adoptedContent.polyline(points).attr({
             clientID: state.clientID,
             'color-rendering': 'optimizeQuality',
             id: `cvat_canvas_shape_${state.clientID}`,
@@ -921,7 +932,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             stroke: darker(state.color, 50),
             'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             zOrder: state.zOrder,
-        }).addClass('cvat_canvas_shape');
+        }).addClass(state.occluded ? 'cvat_canvas_shape_occludedcvat_canvas_shape' : 'cvat_canvas_shape');
+
+        if (state.occluded) {
+            polyline.addClass('cvat_canvas_shape_occluded');
+        }
+
+        return polyline;
     }
 
     private addPoints(points: string, state: any, geometry: Geometry): SVG.PolyLine {

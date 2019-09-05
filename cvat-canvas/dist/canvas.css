@@ -68,6 +68,10 @@ polyline.cvat_canvas_shape_merging {
     stroke: black;
 }
 
+.cvat_canvas_shape_occluded {
+    stroke-dasharray: 5;
+}
+
 .svg_select_boundingRect {
     opacity: 0;
     pointer-events: none;

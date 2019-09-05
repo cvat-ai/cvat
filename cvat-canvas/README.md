@@ -94,7 +94,8 @@ Canvas itself handles:
  ```cvat_canvas_shape_activated```,
  ```cvat_canvas_shape_grouping```,
  ```cvat_canvas_shape_merging```,
- ```cvat_canvas_shape_drawing```
+ ```cvat_canvas_shape_drawing```,
+ ```cvat_canvas_shape_occluded```
 - Drawn texts have the class ```cvat_canvas_text```
 - Tags have the class ```cvat_canvas_tag```
 - Canvas image has ID ```cvat_canvas_image```
