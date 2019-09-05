@@ -124,9 +124,9 @@
 
             // Now find deleted objects
             const indexes = {
-                shapes: exported.shapes.map((object) => object.id),
-                tracks: exported.tracks.map((object) => object.id),
-                tags: exported.tags.map((object) => object.id),
+                shapes: exported.shapes.map((object) => +object.id),
+                tracks: exported.tracks.map((object) => +object.id),
+                tags: exported.tags.map((object) => +object.id),
             };
 
             for (const type of Object.keys(this.initialObjects)) {
