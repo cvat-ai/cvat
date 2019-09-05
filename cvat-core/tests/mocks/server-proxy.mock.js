@@ -287,11 +287,12 @@ class ServerProxy {
             },
 
             annotations: {
-                value: Object.freeze({
+                value: {
                     updateAnnotations,
                     getAnnotations,
-                }),
-                writable: false,
+                },
+                // To implement on of important tests
+                writable: true,
             },
         }));
     }
