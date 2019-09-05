@@ -78,6 +78,14 @@ RUN if [ "$TF_ANNOTATION" = "yes" ]; then \
         bash -i /tmp/components/tf_annotation/install.sh; \
     fi
 
+# Auto segmentation support. by Mohammad
+ARG AUTO_SEGMENTATION
+ENV AUTO_SEGMENTATION=${AUTO_SEGMENTATION}
+ENV AUTO_SEGMENTATION_PATH=${HOME}/Mask_RCNN
+RUN if [ "$AUTO_SEGMENTATION" = "yes" ]; then \
+    bash -i /tmp/components/auto_segmentation/install.sh; \
+    fi
+
 ARG WITH_TESTS
 RUN if [ "$WITH_TESTS" = "yes" ]; then \
         wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \

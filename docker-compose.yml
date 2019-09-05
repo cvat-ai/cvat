@@ -46,6 +46,7 @@ services:
         no_proxy:
         socks_proxy:
         TF_ANNOTATION: "no"
+        AUTO_SEGMENTATION: "no"
         USER: "django"
         DJANGO_CONFIGURATION: "production"
         WITH_TESTS: "no"
