@@ -210,7 +210,7 @@
                     onUpdate('Initial state is being updated');
 
                     this._resetState();
-                    for (const type of ['shapes', 'tracks', 'tags']) {
+                    for (const type of Object.keys(this.initialObjects)) {
                         for (const object of savedData[type]) {
                             this.initialObjects[type][object.id] = object;
                         }
@@ -231,7 +231,7 @@
                     this._updateCreatedObjects(createdData, indexes);
 
                     onUpdate('Initial state is being updated');
-                    for (const type of ['shapes', 'tracks', 'tags']) {
+                    for (const type of Object.keys(this.initialObjects)) {
                         for (const object of createdData[type]) {
                             this.initialObjects[type][object.id] = object;
                         }
@@ -243,7 +243,7 @@
                     this.version = updatedData.version;
 
                     onUpdate('Initial state is being updated');
-                    for (const type of ['shapes', 'tracks', 'tags']) {
+                    for (const type of Object.keys(this.initialObjects)) {
                         for (const object of updatedData[type]) {
                             this.initialObjects[type][object.id] = object;
                         }
@@ -255,7 +255,7 @@
                     this._version = deletedData.version;
 
                     onUpdate('Initial state is being updated');
-                    for (const type of ['shapes', 'tracks', 'tags']) {
+                    for (const type of Object.keys(this.initialObjects)) {
                         for (const object of deletedData[type]) {
                             delete this.initialObjects[type][object.id];
                         }

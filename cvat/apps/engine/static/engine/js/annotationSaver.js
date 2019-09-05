@@ -153,7 +153,7 @@ class AnnotationSaverModel extends Listener {
 
         // Compare initial state objects and export state objects
         // in order to get updated and created objects
-        for (const type of ['shapes', 'tracks']) {
+        for (const type of Object.keys(this._initialObjects)) {
             for (const obj of exported[type]) {
                 if (obj.id in this._initialObjects[type]) {
                     const exportedHash = JSON.stringify(obj);
@@ -241,7 +241,7 @@ class AnnotationSaverModel extends Listener {
                 this._shapeCollection.flush = false;
                 this._version = savedObjects.version;
                 this._resetState();
-                for (const type of ['shapes', 'tracks']) {
+                for (const type of Object.keys(this._initialObjects)) {
                     for (const object of savedObjects[type]) {
                         this._initialObjects[type][object.id] = object;
                     }
@@ -253,7 +253,7 @@ class AnnotationSaverModel extends Listener {
                 const savedCreated = await this._create(created);
                 this._updateCreatedObjects(created, savedCreated, mapping);
                 this._version = savedCreated.version;
-                for (const type of ['shapes', 'tracks']) {
+                for (const type of Object.keys(this._initialObjects)) {
                     for (const object of savedCreated[type]) {
                         this._initialObjects[type][object.id] = object;
                     }
@@ -262,7 +262,7 @@ class AnnotationSaverModel extends Listener {
                 this.notify('saveUpdated');
                 const savedUpdated = await this._update(updated);
                 this._version = savedUpdated.version;
-                for (const type of ['shapes', 'tracks']) {
+                for (const type of Object.keys(this._initialObjects)) {
                     for (const object of savedUpdated[type]) {
                         this._initialObjects[type][object.id] = object;
                     }
@@ -271,7 +271,7 @@ class AnnotationSaverModel extends Listener {
                 this.notify('saveDeleted');
                 const savedDeleted = await this._delete(deleted);
                 this._version = savedDeleted.version;
-                for (const type of ['shapes', 'tracks']) {
+                for (const type of Object.keys(this._initialObjects)) {
                     for (const object of savedDeleted[type]) {
                         delete this._initialObjects[type][object.id];
                     }
