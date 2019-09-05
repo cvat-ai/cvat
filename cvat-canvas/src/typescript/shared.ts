@@ -58,6 +58,30 @@ export function translateToSVG(svg: SVGSVGElement, points: number[]): number[] {
     return output;
 }
 
+// Translate point array from the first canvas coordinate system
+// to another
+export function translateBetweenSVG(
+    from: SVGSVGElement,
+    to: SVGSVGElement,
+    points: number[],
+): number[] {
+    return translateToSVG(to, translateFromSVG(from, points));
+}
+
+export function pointsToString(points: number[]): string {
+    return points.reduce((acc, val, idx): string => {
+        if (idx % 2) {
+            return `${acc},${val}`;
+        }
+
+        return `${acc} ${val}`;
+    }, '');
+}
+
+export function pointsToArray(points: string): number[] {
+    return points.split(/[,\s]/g)
+        .map((coord: string): number => +coord);
+}
 
 export function displayShapeSize(
     shapesContainer: SVG.Container,

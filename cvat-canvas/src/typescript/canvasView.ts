@@ -20,6 +20,8 @@ import consts from './consts';
 import {
     translateToSVG,
     translateFromSVG,
+    translateBetweenSVG,
+    pointsToArray,
     displayShapeSize,
     ShapeSizeElement,
 } from './shared';
@@ -789,6 +791,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         }).on('dragend', (): void => {
             this.mode = Mode.IDLE;
+
+            const points = pointsToArray(
+                shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} `
+                    + `${shape.attr('x') + shape.attr('width')},`
+                    + `${shape.attr('y') + shape.attr('height')}`,
+            );
+
+            const event: CustomEvent = new CustomEvent('canvas.edited', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    state,
+                    points: translateBetweenSVG(this.content, this.background, points),
+                },
+            });
+
+            this.canvas.dispatchEvent(event);
+
             if (text) {
                 text.removeClass('cvat_canvas_hidden');
                 self.updateTextPosition(
@@ -814,6 +834,24 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }).on('resizedone', (): void => {
             shapeSizeElement.rm();
             this.mode = Mode.IDLE;
+
+            const points = pointsToArray(
+                shape.attr('points') || `${shape.attr('x')},${shape.attr('y')} `
+                    + `${shape.attr('x') + shape.attr('width')},`
+                    + `${shape.attr('y') + shape.attr('height')}`,
+            );
+
+            const event: CustomEvent = new CustomEvent('canvas.edited', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    state,
+                    points: translateBetweenSVG(this.content, this.background, points),
+                },
+            });
+
+            this.canvas.dispatchEvent(event);
+
             if (text) {
                 text.removeClass('cvat_canvas_hidden');
                 self.updateTextPosition(

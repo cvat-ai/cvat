@@ -15,9 +15,11 @@ import {
 
 import {
     translateToSVG,
-    translateFromSVG,
+    translateBetweenSVG,
     displayShapeSize,
     ShapeSizeElement,
+    pointsToString,
+    pointsToArray,
     BBox,
     Box,
 } from './shared';
@@ -49,15 +51,11 @@ export class DrawHandlerImpl implements DrawHandler {
         const frameWidth = this.geometry.image.width;
         const frameHeight = this.geometry.image.height;
 
-        let [xtl, ytl, xbr, ybr] = translateFromSVG(
+        let [xtl, ytl, xbr, ybr] = translateBetweenSVG(
             this.canvas.node as any as SVGSVGElement,
+            this.background,
             [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height],
         );
-
-        ([xtl, ytl, xbr, ybr] = translateToSVG(
-            this.background,
-            [xtl, ytl, xbr, ybr],
-        ));
 
         xtl = Math.min(Math.max(xtl, 0), frameWidth);
         xbr = Math.min(Math.max(xbr, 0), frameWidth);
@@ -71,14 +69,10 @@ export class DrawHandlerImpl implements DrawHandler {
         points: number[];
         box: Box;
     } {
-        let points = translateFromSVG(
+        const points = translateBetweenSVG(
             this.canvas.node as any as SVGSVGElement,
-            targetPoints,
-        );
-
-        points = translateToSVG(
             this.background,
-            points,
+            targetPoints,
         );
 
         const box = {
@@ -279,10 +273,7 @@ export class DrawHandlerImpl implements DrawHandler {
         });
 
         this.drawInstance.on('drawdone', (e: CustomEvent): void => {
-            const targetPoints = (e.target as SVGElement)
-                .getAttribute('points')
-                .split(/[,\s]/g)
-                .map((coord): number => +coord);
+            const targetPoints = pointsToArray((e.target as SVGElement).getAttribute('points'));
 
             const {
                 points,
@@ -440,15 +431,11 @@ export class DrawHandlerImpl implements DrawHandler {
         // TODO: Use enums after typification cvat-core
         if (this.drawData.initialState) {
             if (this.drawData.shapeType === 'rectangle') {
-                let [xtl, ytl, xbr, ybr] = translateFromSVG(
+                const [xtl, ytl, xbr, ybr] = translateBetweenSVG(
                     this.background,
+                    this.canvas.node as any as SVGSVGElement,
                     this.drawData.initialState.points,
                 );
-
-                ([xtl, ytl, xbr, ybr] = translateToSVG(
-                    this.canvas.node as any as SVGSVGElement,
-                    [xtl, ytl, xbr, ybr],
-                ));
 
                 this.pasteBox({
                     x: xtl,
@@ -457,23 +444,13 @@ export class DrawHandlerImpl implements DrawHandler {
                     height: ybr - ytl,
                 });
             } else {
-                let points = translateFromSVG(
+                const points = translateBetweenSVG(
                     this.background,
+                    this.canvas.node as any as SVGSVGElement,
                     this.drawData.initialState.points,
                 );
 
-                (points = translateToSVG(
-                    this.canvas.node as any as SVGSVGElement,
-                    points,
-                ));
-
-                const stringifiedPoints = points.reduce((acc, val, idx): string => {
-                    if (idx % 2) {
-                        return `${acc},${val}`;
-                    }
-
-                    return `${acc} ${val}`;
-                }, '');
+                const stringifiedPoints = pointsToString(points);
 
                 if (this.drawData.shapeType === 'polygon') {
                     this.pastePolygon(stringifiedPoints);

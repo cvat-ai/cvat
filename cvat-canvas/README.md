@@ -112,7 +112,7 @@ Standard JS events are used.
     - canvas.moved => {states: ObjectState[], x: number, y: number}
     - canvas.find => {states: ObjectState[], x: number, y: number}
     - canvas.drawn => {state: DrawnData}
-    - canvas.edited => {state: ObjectState}
+    - canvas.edited => {state: ObjectState, points: number[]}
     - canvas.splitted => {state: ObjectState}
     - canvas.groupped => {states: ObjectState[]}
     - canvas.merged => {states: ObjectState[]}
