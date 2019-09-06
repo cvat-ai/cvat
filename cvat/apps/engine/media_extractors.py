@@ -106,7 +106,7 @@ class ImageListExtractor(MediaExtractor):
                         'name': image_file,
                         'size': (w, h),
                     })
-                    tarinfo = tarfile.TarInfo(name='{:06d}.{}'.format(idx, 'jpg'))
+                    tarinfo = tarfile.TarInfo(name='{:06d}.jpg'.format(idx))
                     tarinfo.size = len(image_buf.getbuffer())
                     tar_chunk.addfile(
                         tarinfo=tarinfo,
