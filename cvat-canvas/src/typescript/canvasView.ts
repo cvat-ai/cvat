@@ -476,7 +476,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             self.controller.drag(e.clientX, e.clientY);
 
             if (this.mode !== Mode.IDLE) return;
-            if (e.ctrlKey) return;
+            if (e.ctrlKey || e.shiftKey) return;
 
             const [x, y] = translateToSVG(this.background, [e.clientX, e.clientY]);
             const event: CustomEvent = new CustomEvent('canvas.moved', {
