@@ -474,7 +474,7 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     public constructor(
-        onDrawDone: any,
+        onDrawDone: (data: object) => void,
         canvas: SVG.Container,
         text: SVG.Container,
         background: SVGSVGElement,
@@ -535,11 +535,11 @@ export class DrawHandlerImpl implements DrawHandler {
             for (const point of (paintHandler as any).set.members) {
                 point.style(
                     'stroke-width',
-                    `${consts.BASE_STROKE_WIDTH / (3 * geometry.scale)}`,
+                    `${consts.POINTS_STROKE_WIDTH / geometry.scale}`,
                 );
                 point.attr(
                     'r',
-                    `${consts.BASE_POINT_SIZE / (2 * geometry.scale)}`,
+                    `${consts.BASE_POINT_SIZE / geometry.scale}`,
                 );
             }
         }
@@ -566,5 +566,3 @@ export class DrawHandlerImpl implements DrawHandler {
         // one call of closeDrawing is unuseful, but it's okey
     }
 }
-
-// TODO: handle initial state

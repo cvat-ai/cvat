@@ -48,6 +48,12 @@ export interface DrawData {
     crosshair?: boolean;
 }
 
+export interface EditData {
+    enabled: boolean;
+    state: any;
+    pointID: number;
+}
+
 export interface GroupData {
     enabled: boolean;
 }
@@ -92,6 +98,7 @@ export enum Mode {
     DRAG = 'drag',
     RESIZE = 'resize',
     DRAW = 'draw',
+    EDIT = 'edit',
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',

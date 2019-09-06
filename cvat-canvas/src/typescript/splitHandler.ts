@@ -14,6 +14,7 @@ export class SplitHandlerImpl implements SplitHandler {
     private canvas: SVG.Container;
     private highlightedShape: SVG.Shape;
     private initialized: boolean;
+    private splitDone: boolean;
 
     private resetShape(): void {
         if (this.highlightedShape) {
@@ -34,9 +35,15 @@ export class SplitHandlerImpl implements SplitHandler {
     private initSplitting(): void {
         this.canvas.node.addEventListener('mousemove', this.onFindObject);
         this.initialized = true;
+        this.splitDone = false;
     }
 
     private closeSplitting(): void {
+        // Split done is true if an object was splitted
+        // Split also can be called with { enabled: false } without splitting an object
+        if (!this.splitDone) {
+            this.onSplitDone(null);
+        }
         this.release();
     }
 
@@ -50,6 +57,7 @@ export class SplitHandlerImpl implements SplitHandler {
         this.canvas = canvas;
         this.highlightedShape = null;
         this.initialized = false;
+        this.splitDone = false;
     }
 
     public split(splitData: SplitData): void {
@@ -69,6 +77,7 @@ export class SplitHandlerImpl implements SplitHandler {
                 this.highlightedShape.addClass('cvat_canvas_shape_splitting');
                 this.canvas.node.append(this.highlightedShape.node);
                 this.highlightedShape.on('click.split', (): void => {
+                    this.splitDone = true;
                     this.onSplitDone(state);
                 }, {
                     once: true,

@@ -3,7 +3,7 @@
 }
 
 .cvat_canvas_shape {
-    fill-opacity: 0.25;
+    fill-opacity: 0.05;
     stroke-opacity: 1;
 }
 
@@ -28,7 +28,7 @@ polyline.cvat_canvas_shape {
 }
 
 .cvat_canvas_shape_activated {
-    fill-opacity: 0.1;
+    fill-opacity: 0.3;
 }
 
 .cvat_canvas_shape_grouping {

@@ -79,7 +79,7 @@ export function pointsToString(points: number[]): string {
 }
 
 export function pointsToArray(points: string): number[] {
-    return points.split(/[,\s]/g)
+    return points.trim().split(/[,\s]+/g)
         .map((coord: string): number => +coord);
 }
 
