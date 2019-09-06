@@ -368,24 +368,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data)
 
-    # Just for test. Method should be deleted
-    @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='frames/(?P<frame>\d+)')
-    def frame(self, request, pk, frame):
-        """Get a frame for the task"""
-
-        try:
-            # Follow symbol links if the frame is a link on a real image otherwise
-            # mimetype detection inside sendfile will work incorrectly.
-            db_task = self.get_object()
-            frame_provider = FrameProvider(db_task)
-            path = os.path.realpath(frame_provider.get_frame(int(frame)))
-            return sendfile(request, path)
-        except Exception as e:
-            slogger.task[pk].error(
-                "cannot get frame #{}".format(frame), exc_info=True)
-            return HttpResponseBadRequest(str(e))
-
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='frames/batch/(?P<batch>\d+)')
     def batch(self, request, pk, batch):
