@@ -256,7 +256,7 @@ class VideoExtractor(DirectoryExtractor):
         image = Image.open(self[0])
         width, height = image.size
         image.close()
-        return [{'name': self._source_path, 'size': (width, height)}], len(self._source_path)
+        return [{'name': self._video_source, 'size': (width, height)}], len(self._source_path)
 
 class PreparedDataExtractor(MediaExtractor):
     def __init__(self, source_path, image_quality, step, start, stop):
