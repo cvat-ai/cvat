@@ -287,7 +287,6 @@ def _create_thread(tid, data):
         ))
     db_task.mode = task_mode
 
-    chunk_size = 300
     def update_progress(progress):
         job.meta['status'] = 'Images are being compressed... {}%'.format(round(progress * 100))
         job.save_meta()
@@ -295,7 +294,7 @@ def _create_thread(tid, data):
     frame_counter = 0
     for extractor in extractors:
         media_meta, image_count = extractor.save_as_chunks(
-            chunk_size=chunk_size,
+            chunk_size=db_task.data_chunk_size,
             task=db_task,
             progress_callback=update_progress,
         )

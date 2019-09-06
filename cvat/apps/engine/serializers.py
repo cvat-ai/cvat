@@ -233,6 +233,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         os.makedirs(upload_dir)
         output_dir = db_task.get_data_dirname()
         os.makedirs(output_dir)
+        db_task.save()
 
         return db_task
 
