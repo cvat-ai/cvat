@@ -313,28 +313,6 @@ def _create_thread(tid, data):
                 ))
                 frame_counter += 1
     extractors[0].save_preview(os.path.join(db_task.get_data_dirname(), 'preview.jpg'))
-    #should remove
-    # db_task.size = 0
-    # for extractor in extractors:
-    #     for frame, image_orig_path in enumerate(extractor):
-    #         image_dest_path = db_task.get_frame_path(db_task.size)
-    #         dirname = os.path.dirname(image_dest_path)
-
-    #         if not os.path.exists(dirname):
-    #             os.makedirs(dirname)
-
-    #         if db_task.mode == 'interpolation':
-    #             extractor.save_image(frame, image_dest_path)
-    #         else:
-    #             width, height = extractor.save_image(frame, image_dest_path)
-    #             # db_images.append(models.Image(
-    #             #     task=db_task,
-    #             #     path=image_orig_path,
-    #             #     frame=frame,
-    #             #     width=width, height=height))
-
-    #         db_task.size += 1
-
     if db_task.mode == 'interpolation':
         models.Video.objects.create(
             task=db_task,
