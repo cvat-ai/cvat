@@ -138,7 +138,7 @@ SVG.Element.prototype.draggable = function constructor(...args: any): any {
         handler = this.remember('_draggable');
         handler.drag = function(e: any) {
             this.m = this.el.node.getScreenCTM().inverse();
-            handler.constructor.prototype.drag.call(this, e);
+            return handler.constructor.prototype.drag.call(this, e);
         }
     } else {
         originalDraggable.call(this, ...args);
@@ -159,7 +159,7 @@ SVG.Element.prototype.resize = function constructor(...args: any): any {
         handler = this.remember('_resizeHandler');
         handler.update = function(e: any) {
             this.m = this.el.node.getScreenCTM().inverse();
-            handler.constructor.prototype.update.call(this, e);
+            return handler.constructor.prototype.update.call(this, e);
         }
     } else {
         originalResize.call(this, ...args);

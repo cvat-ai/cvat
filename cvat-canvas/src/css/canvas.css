@@ -3,7 +3,7 @@
 }
 
 .cvat_canvas_shape {
-    fill-opacity: 0.1;
+    fill-opacity: 0.05;
     stroke-opacity: 1;
 }
 
@@ -28,15 +28,37 @@ polyline.cvat_canvas_shape {
 }
 
 .cvat_canvas_shape_activated {
-
+    fill-opacity: 0.3;
 }
 
 .cvat_canvas_shape_grouping {
+    fill: darkmagenta;
+    fill-opacity: 0.5;
+}
 
+polyline.cvat_canvas_shape_grouping {
+    stroke: darkmagenta;
+    stroke-opacity: 1;
 }
 
 .cvat_canvas_shape_merging {
+    fill: blue;
+    fill-opacity: 0.5;
+}
 
+polyline.cvat_canvas_shape_splitting {
+    stroke: dodgerblue;
+    stroke-opacity: 1;
+}
+
+.cvat_canvas_shape_splitting {
+    fill: dodgerblue;
+    fill-opacity: 0.5;
+}
+
+polyline.cvat_canvas_shape_merging {
+    stroke: blue;
+    stroke-opacity: 1;
 }
 
 .cvat_canvas_shape_drawing {
@@ -44,6 +66,10 @@ polyline.cvat_canvas_shape {
     stroke-opacity: 1;
     fill: white;
     stroke: black;
+}
+
+.cvat_canvas_shape_occluded {
+    stroke-dasharray: 5;
 }
 
 .svg_select_boundingRect {

@@ -8,6 +8,7 @@
 
 import { MasterImpl } from './master';
 
+
 export interface Size {
     width: number;
     height: number;
@@ -47,9 +48,14 @@ export interface DrawData {
     crosshair?: boolean;
 }
 
+export interface EditData {
+    enabled: boolean;
+    state: any;
+    pointID: number;
+}
+
 export interface GroupData {
     enabled: boolean;
-    resetGroup: boolean;
 }
 
 export interface MergeData {
@@ -83,6 +89,19 @@ export enum UpdateReasons {
     MERGE = 'merge',
     SPLIT = 'split',
     GROUP = 'group',
+    SELECT = 'select',
+    CANCEL = 'cancel',
+}
+
+export enum Mode {
+    IDLE = 'idle',
+    DRAG = 'drag',
+    RESIZE = 'resize',
+    DRAW = 'draw',
+    EDIT = 'edit',
+    MERGE = 'merge',
+    SPLIT = 'split',
+    GROUP = 'group',
 }
 
 export interface CanvasModel {
@@ -91,9 +110,13 @@ export interface CanvasModel {
     readonly gridSize: Size;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
-    readonly objectStateClass: any;
     readonly drawData: DrawData;
+    readonly mergeData: MergeData;
+    readonly splitData: SplitData;
+    readonly groupData: GroupData;
+    readonly selected: any;
     geometry: Geometry;
+    mode: Mode;
 
     zoom(x: number, y: number, direction: number): void;
     move(topOffset: number, leftOffset: number): void;
@@ -109,13 +132,13 @@ export interface CanvasModel {
     group(groupData: GroupData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
+    select(objectState: any): void;
 
     cancel(): void;
 }
 
 export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     private data: {
-        ObjectStateClass: any;
         activeElement: ActiveElement;
         angle: number;
         canvasSize: Size;
@@ -133,9 +156,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         mergeData: MergeData;
         groupData: GroupData;
         splitData: SplitData;
+        selected: any;
+        mode: Mode;
     };
 
-    public constructor(ObjectStateClass: any) {
+    public constructor() {
         super();
 
         this.data = {
@@ -164,7 +189,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             left: 0,
             objects: [],
-            ObjectStateClass,
             rememberAngle: false,
             scale: 1,
             top: 0,
@@ -179,11 +203,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             },
             groupData: {
                 enabled: false,
-                resetGroup: false,
             },
             splitData: {
                 enabled: false,
             },
+            selected: null,
+            mode: null,
         };
     }
 
@@ -243,6 +268,11 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public activate(clientID: number, attributeID: number): void {
+        if (this.data.mode !== Mode.IDLE) {
+            // Exception or just return?
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
         this.data.activeElement = {
             clientID,
             attributeID,
@@ -309,10 +339,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public draw(drawData: DrawData): void {
+        if (![Mode.IDLE, Mode.DRAW].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
         if (drawData.enabled) {
             if (this.data.drawData.enabled) {
                 throw new Error('Drawing has been already started');
-            } else if (!drawData.shapeType) {
+            } else if (!drawData.shapeType && !drawData.initialState) {
                 throw new Error('A shape type is not specified');
             } else if (typeof (drawData.numberOfPoints) !== 'undefined') {
                 if (drawData.shapeType === 'polygon' && drawData.numberOfPoints < 3) {
@@ -323,11 +357,18 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             }
         }
 
-        this.data.drawData = Object.assign({}, drawData);
+        this.data.drawData = { ...drawData };
+        if (this.data.drawData.initialState) {
+            this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
+        }
         this.notify(UpdateReasons.DRAW);
     }
 
     public split(splitData: SplitData): void {
+        if (![Mode.IDLE, Mode.SPLIT].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
         if (this.data.splitData.enabled && splitData.enabled) {
             return;
         }
@@ -336,11 +377,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             return;
         }
 
-        this.data.splitData = splitData;
+        this.data.splitData = { ...splitData };
         this.notify(UpdateReasons.SPLIT);
     }
 
     public group(groupData: GroupData): void {
+        if (![Mode.IDLE, Mode.GROUP].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
         if (this.data.groupData.enabled && groupData.enabled) {
             return;
         }
@@ -349,11 +394,15 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             return;
         }
 
-        this.data.groupData = groupData;
+        this.data.groupData = { ...groupData };
         this.notify(UpdateReasons.GROUP);
     }
 
     public merge(mergeData: MergeData): void {
+        if (![Mode.IDLE, Mode.MERGE].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
         if (this.data.mergeData.enabled && mergeData.enabled) {
             return;
         }
@@ -362,20 +411,26 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             return;
         }
 
-        this.data.mergeData = mergeData;
+        this.data.mergeData = { ...mergeData };
         this.notify(UpdateReasons.MERGE);
     }
 
+    public select(objectState: any): void {
+        this.data.selected = objectState;
+        this.notify(UpdateReasons.SELECT);
+        this.data.selected = null;
+    }
+
     public cancel(): void {
-        console.log('hello');
+        this.notify(UpdateReasons.CANCEL);
     }
 
     public get geometry(): Geometry {
         return {
             angle: this.data.angle,
-            canvas: Object.assign({}, this.data.canvasSize),
-            image: Object.assign({}, this.data.imageSize),
-            grid: Object.assign({}, this.data.gridSize),
+            canvas: { ...this.data.canvasSize },
+            image: { ...this.data.imageSize },
+            grid: { ...this.data.gridSize },
             left: this.data.left,
             offset: this.data.imageOffset,
             scale: this.data.scale,
@@ -385,9 +440,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public set geometry(geometry: Geometry) {
         this.data.angle = geometry.angle;
-        this.data.canvasSize = Object.assign({}, geometry.canvas);
-        this.data.imageSize = Object.assign({}, geometry.image);
-        this.data.gridSize = Object.assign({}, geometry.grid);
+        this.data.canvasSize = { ...geometry.canvas };
+        this.data.imageSize = { ...geometry.image };
+        this.data.gridSize = { ...geometry.grid };
         this.data.left = geometry.left;
         this.data.top = geometry.top;
         this.data.imageOffset = geometry.offset;
@@ -408,22 +463,42 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public get gridSize(): Size {
-        return Object.assign({}, this.data.gridSize);
+        return { ...this.data.gridSize };
     }
 
     public get focusData(): FocusData {
-        return Object.assign({}, this.data.focusData);
+        return { ...this.data.focusData };
     }
 
     public get activeElement(): ActiveElement {
-        return Object.assign({}, this.data.activeElement);
-    }
-
-    public get objectStateClass(): any {
-        return this.data.ObjectStateClass;
+        return { ...this.data.activeElement };
     }
 
     public get drawData(): DrawData {
-        return Object.assign({}, this.data.drawData);
+        return { ...this.data.drawData };
+    }
+
+    public get mergeData(): MergeData {
+        return { ...this.data.mergeData };
+    }
+
+    public get splitData(): SplitData {
+        return { ...this.data.splitData };
+    }
+
+    public get groupData(): GroupData {
+        return { ...this.data.groupData };
+    }
+
+    public get selected(): any {
+        return this.data.selected;
+    }
+
+    public set mode(value: Mode) {
+        this.data.mode = value;
+    }
+
+    public get mode(): Mode {
+        return this.data.mode;
     }
 }

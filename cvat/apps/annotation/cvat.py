@@ -203,7 +203,7 @@ def dump_as_cvat_annotation(file_object, annotations):
 
             if annotations.meta["task"]["z_order"] != "False":
                 dump_data['z_order'] = str(shape.z_order)
-            if "group" in shape and shape.group:
+            if shape.group:
                 dump_data['group_id'] = str(shape.group)
 
             if shape.type == "rectangle":
