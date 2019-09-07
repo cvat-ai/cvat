@@ -28,6 +28,9 @@ import {
 } from './canvasView';
 
 
+import '../css/canvas.css';
+
+
 interface Canvas {
     html(): HTMLDivElement;
     setup(frameData: any, objectStates: any[]): void;
@@ -41,6 +44,7 @@ interface Canvas {
     group(groupData: GroupData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
+    select(objectState: any): void;
 
     cancel(): void;
 }
@@ -50,8 +54,8 @@ class CanvasImpl implements Canvas {
     private controller: CanvasController;
     private view: CanvasView;
 
-    public constructor(ObjectStateClass: any) {
-        this.model = new CanvasModelImpl(ObjectStateClass);
+    public constructor() {
+        this.model = new CanvasModelImpl();
         this.controller = new CanvasControllerImpl(this.model);
         this.view = new CanvasViewImpl(this.model, this.controller);
     }
@@ -98,6 +102,10 @@ class CanvasImpl implements Canvas {
 
     public merge(mergeData: MergeData): void {
         this.model.merge(mergeData);
+    }
+
+    public select(objectState: any): void {
+        this.model.select(objectState);
     }
 
     public cancel(): void {

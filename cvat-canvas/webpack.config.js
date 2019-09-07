@@ -6,7 +6,7 @@ const nodeConfig = {
     target: 'node',
     mode: 'production',
     devtool: 'source-map',
-    entry: './src/canvas.ts',
+    entry: './src/typescript/canvas.ts',
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'cvat-canvas.node.js',
@@ -29,6 +29,9 @@ const nodeConfig = {
                     sourceType: 'unambiguous',
                 },
             },
+        }, {
+            test: /\.css$/,
+            use: ['style-loader', 'css-loader']
         }],
     },
     plugins: [
@@ -44,7 +47,7 @@ const webConfig = {
     target: 'web',
     mode: 'production',
     devtool: 'source-map',
-    entry: './src/canvas.ts',
+    entry: './src/typescript/canvas.ts',
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'cvat-canvas.js',
@@ -73,6 +76,9 @@ const webConfig = {
                     sourceType: 'unambiguous',
                 },
             },
+        }, {
+            test: /\.css$/,
+            use: ['style-loader', 'css-loader']
         }],
     },
     plugins: [

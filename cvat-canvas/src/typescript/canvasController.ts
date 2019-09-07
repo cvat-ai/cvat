@@ -10,18 +10,29 @@ import {
     FocusData,
     ActiveElement,
     DrawData,
+    MergeData,
+    SplitData,
+    GroupData,
+    Mode,
 } from './canvasModel';
 
 export interface CanvasController {
     readonly objects: any[];
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
-    readonly objectStateClass: any;
     readonly drawData: DrawData;
+    readonly mergeData: MergeData;
+    readonly splitData: SplitData;
+    readonly groupData: GroupData;
+    readonly selected: any;
+    mode: Mode;
     geometry: Geometry;
 
     zoom(x: number, y: number, direction: number): void;
     draw(drawData: DrawData): void;
+    merge(mergeData: MergeData): void;
+    split(splitData: SplitData): void;
+    group(groupData: GroupData): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
@@ -74,6 +85,18 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.draw(drawData);
     }
 
+    public merge(mergeData: MergeData): void {
+        this.model.merge(mergeData);
+    }
+
+    public split(splitData: SplitData): void {
+        this.model.split(splitData);
+    }
+
+    public group(groupData: GroupData): void {
+        this.model.group(groupData);
+    }
+
     public get geometry(): Geometry {
         return this.model.geometry;
     }
@@ -94,11 +117,31 @@ export class CanvasControllerImpl implements CanvasController {
         return this.model.activeElement;
     }
 
-    public get objectStateClass(): any {
-        return this.model.objectStateClass;
-    }
-
     public get drawData(): DrawData {
         return this.model.drawData;
+    }
+
+    public get mergeData(): MergeData {
+        return this.model.mergeData;
+    }
+
+    public get splitData(): SplitData {
+        return this.model.splitData;
+    }
+
+    public get groupData(): GroupData {
+        return this.model.groupData;
+    }
+
+    public get selected(): any {
+        return this.model.selected;
+    }
+
+    public set mode(value: Mode) {
+        this.model.mode = value;
+    }
+
+    public get mode(): Mode {
+        return this.model.mode;
     }
 }
