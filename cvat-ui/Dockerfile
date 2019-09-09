@@ -23,7 +23,7 @@ RUN mkdir /tmp/cvat-ui
 WORKDIR /tmp/cvat-ui/
 
 # Install dependencies
-COPY package.json /tmp/cvat-ui/
+COPY package*.json /tmp/cvat-ui/
 RUN npm install
 
 # Build source code
