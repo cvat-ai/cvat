@@ -39,6 +39,10 @@ const ProtectedRoute = ({ component: Component, ...rest }: any) => {
 };
 
 class App extends PureComponent<any, any> {
+  componentDidMount() {
+    (window as any).cvat.config.backendAPI = process.env.REACT_APP_API_FULL_URL;
+  }
+
   render() {
     return(
       <Router>

@@ -7,7 +7,10 @@ from django.conf import settings
 from django.db.models import Q
 import rules
 from . import AUTH_ROLE
+from . import signature
 from rest_framework.permissions import BasePermission
+from django.core import signing
+from rest_framework import authentication, exceptions
 
 def register_signals():
     from django.db.models.signals import post_migrate, post_save
@@ -29,6 +32,30 @@ def register_signals():
         from .auth_ldap import create_user
 
         django_auth_ldap.backend.populate_user.connect(create_user)
+
+class SignatureAuthentication(authentication.BaseAuthentication):
+    """
+    Authentication backend for signed URLs.
+    """
+    def authenticate(self, request):
+        """
+        Returns authenticated user if URL signature is valid.
+        """
+        signer = signature.Signer()
+        sign = request.query_params.get(signature.QUERY_PARAM)
+        if not sign:
+            return
+
+        try:
+            user = signer.unsign(sign, request.build_absolute_uri())
+        except signing.SignatureExpired:
+            raise exceptions.AuthenticationFailed('This URL has expired.')
+        except signing.BadSignature:
+            raise exceptions.AuthenticationFailed('Invalid signature.')
+        if not user.is_active:
+            raise exceptions.AuthenticationFailed('User inactive or deleted.')
+
+        return (user, None)
 
 # AUTH PREDICATES
 has_admin_role = rules.is_group_member(str(AUTH_ROLE.ADMIN))

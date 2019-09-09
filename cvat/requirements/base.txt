@@ -40,3 +40,5 @@ cython==0.29.13
 matplotlib==3.0.3
 scikit-image>=0.14.0
 tensorflow==1.12.3
+django-cors-headers==3.0.2
+furl==2.0.0
