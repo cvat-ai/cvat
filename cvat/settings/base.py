@@ -33,7 +33,10 @@ try:
     from keys.secret_key import SECRET_KEY
 except ImportError:
     from django.utils.crypto import get_random_string
-    with open(os.path.join(BASE_DIR, 'keys', 'secret_key.py'), 'w') as f:
+    keys_dir = os.path.join(BASE_DIR, 'keys')
+    if not os.path.isdir(keys_dir):
+        os.mkdir(keys_dir)
+    with open(os.path.join(keys_dir, 'secret_key.py'), 'w') as f:
         chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
         f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
     from keys.secret_key import SECRET_KEY
