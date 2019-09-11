@@ -93,9 +93,6 @@ class Task(models.Model):
     def get_client_log_path(self):
         return os.path.join(self.get_task_dirname(), "client.log")
 
-    def get_image_meta_cache_path(self):
-        return os.path.join(self.get_task_dirname(), "image_meta.cache")
-
     def get_task_dirname(self):
         return os.path.join(settings.DATA_ROOT, str(self.id))
 

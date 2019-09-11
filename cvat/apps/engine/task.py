@@ -43,47 +43,6 @@ def rq_handler(job, exc_type, exc_value, traceback):
 
 ############################# Internal implementation for server API
 
-def make_image_meta_cache(db_task):
-    with open(db_task.get_image_meta_cache_path(), 'w') as meta_file:
-        cache = {
-            'original_size': []
-        }
-
-        if db_task.mode == 'interpolation':
-            image = Image.open(db_task.get_frame_path(0))
-            cache['original_size'].append({
-                'width': image.size[0],
-                'height': image.size[1]
-            })
-            image.close()
-        else:
-            filenames = []
-            for root, _, files in os.walk(db_task.get_upload_dirname()):
-                fullnames = map(lambda f: os.path.join(root, f), files)
-                images = filter(lambda x: get_mime(x) == 'image', fullnames)
-                filenames.extend(images)
-            filenames.sort()
-
-            for image_path in filenames:
-                image = Image.open(image_path)
-                cache['original_size'].append({
-                    'width': image.size[0],
-                    'height': image.size[1]
-                })
-                image.close()
-
-        meta_file.write(str(cache))
-
-
-def get_image_meta_cache(db_task):
-    try:
-        with open(db_task.get_image_meta_cache_path()) as meta_cache_file:
-            return literal_eval(meta_cache_file.read())
-    except Exception:
-        make_image_meta_cache(db_task)
-        with open(db_task.get_image_meta_cache_path()) as meta_cache_file:
-            return literal_eval(meta_cache_file.read())
-
 def _copy_data_from_share(server_files, upload_dir):
     job = rq.get_current_job()
     job.meta['status'] = 'Data are being copied from share..'
