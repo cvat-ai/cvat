@@ -13,8 +13,7 @@
     PolyShapeController:false
     PolyShapeModel:false
     PolyShapeView:false
-    ShapeView:false
-    STROKE_WIDTH:false
+    ShapeView:false STROKE_WIDTH:false
     AREA_TRESHOLD:false
     POINT_RADIUS:false
     SELECT_POINT_STROKE_WIDTH:false
@@ -137,7 +136,8 @@ class CuboidController extends PolyShapeController {
 
         // Controllable vertical edges
         view.front_left_edge.draggable(function (x) {
-            return { x, y: this.attr('y1') };
+            return { x:x<viewModel.fr.canvasPoints[0].x, y: this.attr('y1') };
+
         }).on('dragmove', function () {
             const position = convertPlainArrayToActual([this.attr('x1'), this.attr('y1')])[0];
             const { x } = position;
@@ -153,7 +153,7 @@ class CuboidController extends PolyShapeController {
         });
 
         view.dorsal_right_edge.draggable(function (x) {
-            return { x, y: this.attr('y1') };
+            return { x:x>viewModel.fr.canvasPoints[0].x, y: this.attr('y1') };
         }).on('dragmove', function () {
             const position = convertPlainArrayToActual([this.attr('x1'), this.attr('y1')])[0];
             const { x } = position;
@@ -227,11 +227,10 @@ class CuboidController extends PolyShapeController {
         const controller = this;
         const view = this.cuboidView._uis.shape;
         const { viewModel } = this;
-
         view.front_left_edge.selectize({
             points: 't,b',
             rotationPoint: false,
-        }).resize().on('resizing', function () {
+        }).resize(viewModel.computeLeftConstraints()).on('resizing', function () {
             controller.resizeControl(viewModel.fl, this);
         });
 
@@ -245,7 +244,7 @@ class CuboidController extends PolyShapeController {
         view.dorsal_right_edge.selectize({
             points: 't,b',
             rotationPoint: false,
-        }).resize().on('resizing', function () {
+        }).resize(viewModel.computeRightConstraints()).on('resizing', function () {
             controller.resizeControl(viewModel.dr, this);
         });
     }
@@ -259,6 +258,7 @@ class CuboidController extends PolyShapeController {
     }
 
     // updates the view model with the actual position of the points on screen
+    // for the case where points are updated when updating the model
     updateViewModel() {
         let { points } = this._model._interpolatePosition(window.cvat.player.frames.current);
         points = PolylineModel.convertStringToNumberArray(points);
@@ -505,6 +505,28 @@ class Cuboid2PointViewModel {
         this._updateVanishingPoints();
     }
 
+    computeLeftConstraints(){
+        let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y
+        let minY = this.fl.canvasPoints[1].y-mid_length;
+        let maxY = this.fl.canvasPoints[0].y+mid_length;
+        return{
+            constraint: {
+	    	    minY: minY,
+    		    maxY: maxY,
+	        }
+        }
+    }
+    computeRightConstraints(){
+        let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y
+        let minY = this.dr.canvasPoints[1].y-mid_length;
+        let maxY = this.dr.canvasPoints[0].y+mid_length;
+        return{
+            constraint: {
+	    	    minY: minY,
+    		    maxY: maxY,
+	        }
+        }
+    }
     _updateRotations() {
         const rotations = this._getRotations();
         this.topIsClockwise = rotations.topRotation;
