@@ -14,7 +14,7 @@ from urllib import error as urlerror
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
-from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, PreparedDataExtractor
+from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES
 
 import django_rq
 from django.conf import settings
@@ -182,7 +182,7 @@ def _count_files(data):
 
     return counter
 
-def _validate_unprepared_data(counter):
+def _validate_data(counter):
     unique_entries = 0
     multiple_entries = 0
     for media_type, media_config in MEDIA_TYPES.items():
@@ -208,11 +208,6 @@ def _validate_unprepared_data(counter):
         raise Exception('Could not combine different task modes for data')
 
     return counter, task_modes[0]
-
-def _validate_prepared_data(counter):
-    # Some validations (e.g. chunk_size) will be performed at the extraction stage
-    task_mode = 'interpolation' if counter['video'] else 'annotation'
-    return counter, task_mode
 
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
@@ -255,10 +250,7 @@ def _create_thread(tid, data):
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
     media = _count_files(data)
-    if not data['prepared_data']:
-        media, task_mode = _validate_unprepared_data(media)
-    else:
-        media, task_mode = _validate_prepared_data(media)
+    media, task_mode = _validate_data(media)
 
     if data['server_files']:
         _copy_data_from_share(data['server_files'], upload_dir)
@@ -273,12 +265,7 @@ def _create_thread(tid, data):
     for media_type, media_files in media.items():
         if not media_files:
             continue
-        if not data['prepared_data']:
-            extractor_class = MEDIA_TYPES[media_type]['extractor']
-        else:
-            extractor_class = PreparedDataExtractor
-
-        extractors.append(extractor_class(
+        extractors.append(MEDIA_TYPES[media_type]['extractor'](
             source_path=[os.path.join(upload_dir, f) for f in media_files],
             image_quality=db_task.image_quality,
             step=db_task.get_frame_step(),
@@ -300,9 +287,7 @@ def _create_thread(tid, data):
         )
         db_task.size += image_count
 
-        if db_task.mode == 'interpolation':
-            pass
-        else:
+        if db_task.mode == 'annotation':
             for image_meta in media_meta:
                 db_images.append(models.Image(
                     task=db_task,

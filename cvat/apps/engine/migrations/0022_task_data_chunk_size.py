@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='task',
             name='data_chunk_size',
-            field=models.PositiveIntegerField(default=1),
+            field=models.PositiveIntegerField(default=300),
         ),
     ]

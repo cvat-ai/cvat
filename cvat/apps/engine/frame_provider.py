@@ -1,13 +1,6 @@
 import os
 from enum import Enum
-import shutil
-import tarfile
-from ffmpy import FFmpeg
-from tempfile import NamedTemporaryFile
-
-
 from cvat.apps.engine.media_extractors import ArchiveExtractor, VideoExtractor
-from .log import slogger
 
 class FrameProvider():
     class ChunkType(Enum):
@@ -41,54 +34,7 @@ class FrameProvider():
         return self._chunk_extractor[frame_offset]
 
     def get_chunk(self, chunk_number):
-        path = self._db_task.get_chunk_path(chunk_number)
-        if not os.path.exists(path):
-            dirname = os.path.dirname(path)
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
-            chunk_size = self._db_task.data_chunk_size
-            start_frame = int(chunk_number) * chunk_size
-            if start_frame >= self._db_task.size:
-                raise Exception('Requested batch doesnt exist')
-            stop_frame = min(start_frame + chunk_size, self._db_task.size)
-            if self._chunk_type == self.ChunkType.IMAGE:
-                with tarfile.open(path, 'w') as tar:
-                    for frame in range(start_frame, stop_frame):
-                        tar.add(
-                            name=self._db_task.get_frame_path(frame),
-                            arcname='{:06d}.jpg'.format(frame),
-                        )
-            else:
-                image_list = None
-                if chunk_size == 1:
-                    input_options = '-f image2 -framerate 25'
-                    input_images = self._db_task.get_frame_path(start_frame)
-                else:
-                    input_options = '-f concat -safe 0 -r 25'
-                    image_list = NamedTemporaryFile(mode='w+')
-                    for idx in range(start_frame, stop_frame):
-                        image_list.write('file \'{}\'\n'.format(self._db_task.get_frame_path(idx)))
-                    image_list.flush()
-                    input_images = image_list.name
-
-                output_options = '-q:v 0'
-
-                ff = FFmpeg(
-                    inputs  = {input_images: input_options},
-                    outputs = {path: output_options},
-                )
-
-                slogger.glob.info("FFMpeg cmd: {} ".format(ff.cmd))
-                ff.run()
-
-                if image_list:
-                    image_list.close()
-        return path
+        return self._db_task.get_chunk_path(chunk_number)
 
     def get_preview(self):
-        preview_path = os.path.join(self._db_task.get_data_dirname(), 'preview.jpg')
-
-        if not os.path.exists(preview_path): # old task, lets create preview image
-            shutil.copyfile(self._db_task.get_frame_path(0), preview_path)
-
-        return preview_path
+        return os.path.join(self._db_task.get_data_dirname(), 'preview.jpg')

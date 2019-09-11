@@ -11,7 +11,6 @@ from django.contrib.auth.models import User, Group
 
 from cvat.apps.engine import models
 from cvat.apps.engine.log import slogger
-from django.conf import settings
 
 
 class AttributeSerializer(serializers.ModelSerializer):
@@ -117,11 +116,10 @@ class TaskDataSerializer(serializers.ModelSerializer):
         default=[])
     remote_files = RemoteFileSerializer(many=True, source='remotefile_set',
         default=[])
-    prepared_data = serializers.BooleanField(default=False)
 
     class Meta:
         model = models.Task
-        fields = ('client_files', 'server_files', 'remote_files', 'prepared_data')
+        fields = ('client_files', 'server_files', 'remote_files')
 
     # pylint: disable=no-self-use
     def update(self, instance, validated_data):
@@ -218,7 +216,6 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         db_task.start_frame = validated_data.get('start_frame', 0)
         db_task.stop_frame = validated_data.get('stop_frame', 0)
         db_task.frame_filter = validated_data.get('frame_filter', '')
-        db_task.data_chunk_size = validated_data.get('data_chunk_size', settings.DATA_CHUNK_SIZE)
         for label in labels:
             attributes = label.pop('attributespec_set')
             db_label = models.Label.objects.create(task=db_task, **label)

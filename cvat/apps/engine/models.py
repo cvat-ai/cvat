@@ -54,7 +54,7 @@ class Task(models.Model):
     frame_filter = models.CharField(max_length=256, default="", blank=True)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
-    data_chunk_size = models.PositiveIntegerField(default=1)
+    data_chunk_size = models.PositiveIntegerField(default=300)
 
     # Extend default permission model
     class Meta:
@@ -72,9 +72,8 @@ class Task(models.Model):
         return path
 
     def get_chunk_path(self, chunk):
-        d1, d2 = self._get_dest_dir(chunk)
         ext = 'ts' if self.mode == 'interpolation' else 'tar'
-        path = os.path.join(self.get_data_dirname(), d1, d2,
+        path = os.path.join(self.get_data_dirname(),
             '{}.{}'.format(chunk, ext))
         return path
 

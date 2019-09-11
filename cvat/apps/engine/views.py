@@ -378,21 +378,21 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             return Response(serializer.data)
 
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='frames/batch/(?P<batch>\d+)')
-    def batch(self, request, pk, batch):
-        """Get a batch of frames for the task"""
+        url_path='frames/chunk/(?P<chunk>\d+)')
+    def chunk(self, request, pk, chunk):
+        """Get a chunk of frames for the task"""
 
         try:
             db_task = self.get_object()
-            # Follow symbol links if the batch is a link on a real image otherwise
+            # Follow symbol links if the chunk is a link on a real image otherwise
             # mimetype detection inside sendfile will work incorrectly.
             frame_provider = FrameProvider(db_task)
-            path = os.path.realpath(frame_provider.get_chunk(batch))
+            path = os.path.realpath(frame_provider.get_chunk(chunk))
 
             return sendfile(request, path)
         except Exception as e:
             slogger.task[pk].error(
-                "cannot get batch #{}".format(batch), exc_info=True)
+                "cannot get chunk #{}".format(chunk), exc_info=True)
             return HttpResponseBadRequest(str(e))
 
     @action(detail=True, methods=['GET'], serializer_class=None,
