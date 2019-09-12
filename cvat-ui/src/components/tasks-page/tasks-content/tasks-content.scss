@@ -1,0 +1,45 @@
+.tasks-content {
+  width: 1024px;
+  min-height: calc(100vh - 90px - 64px - 46px);
+  margin: 0 auto;
+
+  .tasks-content-сard {
+    margin-bottom: 20px;
+    padding: 20px;
+    border: 1px solid #001529;
+    border-radius: 3px;
+    background: white;
+
+    &__header {
+      text-align: center;
+
+      h2 {
+        margin-bottom: 20px;
+      }
+    }
+
+    &__content {
+
+      .card-cover {
+
+        img {
+          max-width: 300px;
+        }
+      }
+
+      .card-actions {
+        display: flex;
+        flex-flow: column wrap;
+
+        button {
+          min-width: 200px;
+          margin-bottom: 1px;
+        }
+      }
+
+      .card-jobs {
+
+      }
+    }
+  }
+}

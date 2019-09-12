@@ -16,7 +16,7 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'dashboard/stylesheet.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/jstree/themes/default/style.min.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/pagination/pagination.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/pagination/bootstrap.css' %}">
     {% for css_file in css_3rdparty %}
         <link rel="stylesheet" type="text/css" href="{% static css_file %}">
     {% endfor %}
@@ -25,7 +25,7 @@
 {% block head_js_3rdparty %}
     {{ block.super }}
     <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/jstree/jstree.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/pagination/pagination.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/pagination/jquery.twbsPagination.js' %}"></script>
     {% for js_file in js_3rdparty %}
         <script type="text/javascript" src="{% static js_file %}" defer></script>
     {% endfor %}
@@ -33,6 +33,7 @@
 
 {% block head_js_cvat %}
     {{ block.super }}
+    <script type="text/javascript" src="{% static 'engine/js/cvat-core.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'dashboard/js/dashboard.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/listener.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/labelsInfo.js' %}"></script>
@@ -57,9 +58,8 @@
             <div style="width: 50%; display: flex;"> </div>
         </div>
 
-        <div id="dashboardPagination">
-            <div id="dashboardList" style="float: left; width: 100%"> </div>
-        </div>
+        <div id="dashboardList" style="float: left; width: 100%"> </div>
+        <ul id="dashboardPagination" class="pagination-sm"></ul>
     </div>
 
     <div id="dashboardCreateModal" class="modal hidden">
@@ -105,6 +105,7 @@ Example: @select=race:__undefined__,skip,asian,black,caucasian,other'/>
                     <td> <label class="regular h2"> Source: </label> </td>
                     <td>
                         <input id="dashboardLocalSource" type="radio" name="sourceType" value="local" checked=true/> <label for="dashboardLocalSource" class="regular h2" for="localSource"> Local </label>
+                        <br> <input id="dashboardRemoteSource" type="radio" name="sourceType" value="remote"/> <label for="dashboardRemoteSource" class="regular h2"> Remote </label>
                         <br> <input id="dashboardShareSource" type="radio" name="sourceType" value="share"/> <label for="dashboardShareSource" class="regular h2" for="shareSource"> Share </label>
                     </td>
                 </tr>
@@ -143,6 +144,33 @@ Example: @select=race:__undefined__,skip,asian,black,caucasian,other'/>
                             <input type="checkbox" id="dashboardCustomQuality" title="Custom image quality"/>
                         </td>
                     </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Start Frame </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardStartFrame" class="regular" style="width: 4.5em;" min="0" value=0 disabled=true/>
+                            <input type="checkbox" id="dashboardCustomStart" title="Custom start frame"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Stop Frame </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardStopFrame" class="regular" style="width: 4.5em;" min="0" value=0 disabled=true/>
+                            <input type="checkbox" id="dashboardCustomStop" title="Custom stop frame"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Frame Filter </label>
+                        </td>
+                        <td>
+                            <input type="text" id="dashboardFrameFilter" class="regular" style="width: 4.5em;" title="Currently only support 'step=K' filter expression." disabled=true/>
+                            <input type="checkbox" id="dashboardCustomFilter" title="Custom frame filter"/>
+                        </td>
+                    </tr>
             </table>
 
 
@@ -151,6 +179,10 @@ Example: @select=race:__undefined__,skip,asian,black,caucasian,other'/>
                     <button id="dashboardSelectFiles" class="regular h2"> Select Files </button>
                     <label id="dashboardFilesLabel" class="regular h2" style="margin-left: 10px"> No Files </label>
                     <input id="dashboardLocalFileSelector" type="file" style="display: none" multiple/>
+                </div>
+                <div class="hidden">
+                    <label for="dashboardRemoteFileInput" class="regular h2"> URLs: </label><br>
+                    <textarea id="dashboardRemoteFileInput" rows="5" placeholder="One URL per line" style="width: 100%;"></textarea>
                 </div>
             </div>
             <div style="width: 100%; height: 14%; padding-top: 10px;">

@@ -49,13 +49,37 @@ services:
         USER: "django"
         DJANGO_CONFIGURATION: "production"
         WITH_TESTS: "no"
+        TZ: "Etc/UTC"
+        OPENVINO_TOOLKIT: "no"
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
+      UI_PORT: 9080
+
     volumes:
       - cvat_data:/home/django/data
       - cvat_keys:/home/django/keys
       - cvat_logs:/home/django/logs
       - cvat_models:/home/django/models
+
+  cvat_ui:
+    container_name: cvat_ui
+    image: nginx
+    build:
+      context: cvat-ui
+      args:
+        http_proxy:
+        https_proxy:
+        no_proxy:
+        socks_proxy:
+      dockerfile: Dockerfile
+    networks:
+      default:
+        aliases:
+          - ui
+    depends_on:
+      - cvat
+    ports:
+      - "9080:80"
 
 volumes:
   cvat_db:

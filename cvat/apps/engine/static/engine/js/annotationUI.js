@@ -43,9 +43,10 @@
     ShapeMergerModel:false
     ShapeMergerView:false
     showMessage:false
-    showOverlay:false
     buildAnnotationSaver:false
     LabelsInfo:false
+    uploadJobAnnotationRequest:false
+    isDefaultFormat:false
 */
 
 async function initLogger(jobID) {
@@ -64,52 +65,29 @@ function blurAllElements() {
     document.activeElement.blur();
 }
 
-
-function uploadAnnotation(shapeCollectionModel, historyModel,
-    annotationParser, uploadAnnotationButton) {
-    $('#annotationFileSelector').one('change', (changedFileEvent) => {
+function uploadAnnotation(jobId, shapeCollectionModel, historyModel, annotationSaverModel,
+    uploadAnnotationButton, format) {
+    $('#annotationFileSelector').attr('accept', `.${format.format}`);
+    $('#annotationFileSelector').one('change', async (changedFileEvent) => {
         const file = changedFileEvent.target.files['0'];
         changedFileEvent.target.value = '';
-        if (!file || file.type !== 'text/xml') return;
-        uploadAnnotationButton.text('Preparing..');
+        if (!file) return;
         uploadAnnotationButton.prop('disabled', true);
-        const overlay = showOverlay('File is being uploaded..');
-
-        const fileReader = new FileReader();
-        fileReader.onload = (loadedFileEvent) => {
-            let data = null;
-
-            const asyncParse = () => {
-                try {
-                    data = annotationParser.parse(loadedFileEvent.target.result);
-                } catch (err) {
-                    overlay.remove();
-                    showMessage(err.message);
-                    return;
-                } finally {
-                    uploadAnnotationButton.text('Upload Annotation');
-                    uploadAnnotationButton.prop('disabled', false);
-                }
-
-                const asyncImport = () => {
-                    try {
-                        historyModel.empty();
-                        shapeCollectionModel.empty();
-                        shapeCollectionModel.import(data);
-                        shapeCollectionModel.update();
-                    } finally {
-                        overlay.remove();
-                    }
-                };
-
-                overlay.setMessage('Data are being imported..');
-                setTimeout(asyncImport);
-            };
-
-            overlay.setMessage('File is being parsed..');
-            setTimeout(asyncParse);
-        };
-        fileReader.readAsText(file);
+        const annotationData = new FormData();
+        annotationData.append('annotation_file', file);
+        try {
+            await uploadJobAnnotationRequest(jobId, annotationData, format.display_name);
+            historyModel.empty();
+            shapeCollectionModel.empty();
+            const data = await $.get(`/api/v1/jobs/${jobId}/annotations`);
+            shapeCollectionModel.import(data);
+            shapeCollectionModel.update();
+            annotationSaverModel.update();
+        } catch (error) {
+            showMessage(error.message);
+        } finally {
+            uploadAnnotationButton.prop('disabled', false);
+        }
     }).click();
 }
 
@@ -287,12 +265,15 @@ function setupSettingsWindow() {
 
 
 function setupMenu(job, task, shapeCollectionModel,
-    annotationParser, aamModel, playerModel, historyModel) {
+    annotationParser, aamModel, playerModel, historyModel,
+    annotationFormats, annotationSaverModel) {
     const annotationMenu = $('#annotationMenu');
     const menuButton = $('#menuButton');
+    const downloadDropdownMenu = $('#downloadDropdownMenu');
 
     function hide() {
         annotationMenu.addClass('hidden');
+        downloadDropdownMenu.addClass('hidden');
     }
 
     function setupVisibility() {
@@ -371,7 +352,6 @@ function setupMenu(job, task, shapeCollectionModel,
     $('#statFrames').text(`[${window.cvat.player.frames.start}-${window.cvat.player.frames.stop}]`);
     $('#statOverlap').text(task.overlap);
     $('#statZOrder').text(task.z_order);
-    $('#statFlipped').text(task.flipped);
     $('#statTaskStatus').prop('value', job.status).on('change', async (e) => {
         try {
             const jobCopy = JSON.parse(JSON.stringify(job));
@@ -407,22 +387,58 @@ function setupMenu(job, task, shapeCollectionModel,
     $('#settingsButton').attr('title', `
         ${shortkeys.open_settings.view_value} - ${shortkeys.open_settings.description}`);
 
-    $('#downloadAnnotationButton').on('click', async (e) => {
-        e.target.disabled = true;
+    const downloadButton = $('#downloadAnnotationButton');
+    const uploadButton = $('#uploadAnnotationButton');
+
+    const loaders = {};
+
+    for (const format of annotationFormats) {
+        for (const dumper of format.dumpers) {
+            const item = $(`<option>${dumper.display_name}</li>`);
+
+            if (!isDefaultFormat(dumper.display_name, window.cvat.job.mode)) {
+                item.addClass('regular');
+            }
+
+            item.appendTo(downloadButton);
+        }
+
+        for (const loader of format.loaders) {
+            loaders[loader.display_name] = loader;
+            $(`<option class="regular">${loader.display_name}</li>`).appendTo(uploadButton);
+        }
+    }
+
+    downloadButton.on('change', async (e) => {
+        const dumper = e.target.value;
+        downloadButton.prop('value', 'Dump Annotation');
         try {
-            await dumpAnnotationRequest(task.id, task.name);
+            downloadButton.prop('disabled', true);
+            await dumpAnnotationRequest(task.id, task.name, dumper);
         } catch (error) {
             showMessage(error.message);
         } finally {
-            e.target.disabled = false;
+            downloadButton.prop('disabled', false);
         }
     });
 
-    $('#uploadAnnotationButton').on('click', () => {
-        hide();
+    uploadButton.on('change', (e) => {
+        const loader = loaders[e.target.value];
+        uploadButton.prop('value', 'Upload Annotation');
         userConfirm('Current annotation will be removed from the client. Continue?',
-            () => {
-                uploadAnnotation(shapeCollectionModel, historyModel, annotationParser, $('#uploadAnnotationButton'));
+            async () => {
+                try {
+                    await uploadAnnotation(
+                        job.id,
+                        shapeCollectionModel,
+                        historyModel,
+                        annotationSaverModel,
+                        $('#uploadAnnotationButton'),
+                        loader,
+                    );
+                } catch (error) {
+                    showMessage(error.message);
+                }
             });
     });
 
@@ -461,7 +477,8 @@ function setupMenu(job, task, shapeCollectionModel,
 }
 
 
-function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loadJobEvent) {
+function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, annotationFormats,
+    loadJobEvent) {
     // Setup some API
     window.cvat = {
         labelsInfo: new LabelsInfo(taskData.labels),
@@ -481,6 +498,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
             z_order: taskData.z_order,
             id: jobData.id,
             task_id: taskData.id,
+            mode: taskData.mode,
             images: imageMetaData,
         },
         search: {
@@ -538,7 +556,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
     const shapeCollectionView = new ShapeCollectionView(shapeCollectionModel,
         shapeCollectionController);
 
-    buildAnnotationSaver(annotationData, shapeCollectionModel);
+    const annotationSaverModel = buildAnnotationSaver(annotationData, shapeCollectionModel);
 
     window.cvat.data = {
         get: () => shapeCollectionModel.export()[0],
@@ -621,7 +639,8 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, loa
     setupHelpWindow(shortkeys);
     setupSettingsWindow();
     setupMenu(jobData, taskData, shapeCollectionModel,
-        annotationParser, aamModel, playerModel, historyModel);
+        annotationParser, aamModel, playerModel, historyModel,
+        annotationFormats, annotationSaverModel);
     setupFrameFilters();
     setupShortkeys(shortkeys, {
         aam: aamModel,
@@ -678,11 +697,12 @@ function callAnnotationUI(jid) {
             $.get(`/api/v1/tasks/${jobData.task_id}`),
             $.get(`/api/v1/tasks/${jobData.task_id}/frames/meta`),
             $.get(`/api/v1/jobs/${jid}/annotations`),
-        ).then((taskData, imageMetaData, annotationData) => {
+            $.get('/api/v1/server/annotation/formats'),
+        ).then((taskData, imageMetaData, annotationData, annotationFormats) => {
             $('#loadingOverlay').remove();
             setTimeout(() => {
                 buildAnnotationUI(jobData, taskData[0],
-                    imageMetaData[0], annotationData[0], loadJobEvent);
+                    imageMetaData[0], annotationData[0], annotationFormats[0], loadJobEvent);
             });
         }).fail(onError);
     }).fail(onError);

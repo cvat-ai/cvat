@@ -26,6 +26,7 @@ apt-get update && apt-get install -y sudo cpio && \
  if [ -f "install_cv_sdk_dependencies.sh" ]; then ./install_cv_sdk_dependencies.sh; \
  else ./install_openvino_dependencies.sh; fi && SUDO_FORCE_REMOVE=yes apt-get remove -y sudo
 
+
 cat ../eula.cfg >> silent.cfg
 ./install.sh -s silent.cfg
 

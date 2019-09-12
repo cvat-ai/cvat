@@ -330,8 +330,14 @@
 
     <div id="annotationMenu" class="hidden regular">
         <center style="float:left; width: 28%; height: 100%;" id="engineMenuButtons">
-            <button id="downloadAnnotationButton" class="menuButton semiBold h2"> Dump Annotation </button>
-            <button id="uploadAnnotationButton" class="menuButton semiBold h2"> Upload Annotation </button>
+            <select id="downloadAnnotationButton" class="menuButton semiBold h2" style="text-align-last: center;">
+                <option selected disabled> Dump Annotation </option>
+            </select>
+
+            <select id="uploadAnnotationButton" class="menuButton semiBold h2" style="text-align-last: center;">
+                    <option selected disabled> Upload Annotation </option>
+            </select>
+
             <button id="removeAnnotationButton" class="menuButton semiBold h2"> Remove Annotation </button>
             <button id="settingsButton" class="menuButton semiBold h2"> Settings </button>
             <button id="fullScreenButton" class="menuButton semiBold h2"> Fullscreen Player </button>
@@ -354,21 +360,17 @@
             <center>
                 <table style="width: 100%">
                     <tr>
-                        <td style="width: 20%;">
+                        <td style="width: 30%;">
                             <label class="regular h2"> Frames: </label>
                             <label id="statFrames" class="regular h2"> </label>
                         </td>
-                        <td style="width: 15%;">
+                        <td style="width: 30%;">
                             <label class="regular h2"> Overlap: </label>
                             <label id="statOverlap" class="regular h2"> </label>
                         </td>
-                        <td style="width: 15%;">
+                        <td style="width: 30%;">
                             <label class="regular h2"> Z-Order: </label>
                             <label id="statZOrder" class="regular h2"> </label>
-                        </td>
-                        <td style="width: 15%;">
-                            <label class="regular h2"> Flipped: </label>
-                            <label id="statFlipped" class="regular h2"> </label>
                         </td>
                     </tr>
                 </table>

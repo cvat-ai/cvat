@@ -5,7 +5,24 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "server",
+            "type": "chrome",
+            "request": "launch",
+            "preLaunchTask": "ui.js: server",
+            "name": "ui.js: debug",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/cvat-ui",
+            "sourceMaps": true,
+            "sourceMapPathOverrides": {
+                "webpack://cvat/./*": "${workspaceFolder}/cvat-core/*",
+                "webpack:///./*": "${webRoot}/*",
+                "webpack:///src/*": "${webRoot}/*",
+                "webpack:///*": "*",
+                "webpack:///./~/*": "${webRoot}/node_modules/*"
+            },
+            "smartStep": true,
+        },
+        {
+            "name": "server: django",
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
@@ -19,10 +36,11 @@
                 "127.0.0.1:7000"
             ],
             "django": true,
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole"
         },
         {
-            "name": "client",
+            "name": "server: chrome",
             "type": "chrome",
             "request": "launch",
             "url": "http://localhost:7000/",
@@ -35,7 +53,7 @@
             }
         },
         {
-            "name": "RQ - default",
+            "name": "server: RQ - default",
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
@@ -50,10 +68,11 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {}
+            "env": {},
+            "console": "internalConsole"
         },
         {
-            "name": "RQ - low",
+            "name": "server: RQ - low",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -68,10 +87,11 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {}
+            "env": {},
+            "console": "internalConsole"
         },
         {
-            "name": "git",
+            "name": "server: git",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -83,10 +103,11 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {}
+            "env": {},
+            "console": "internalConsole"
         },
         {
-            "name": "migrate",
+            "name": "server: migrate",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -98,10 +119,11 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {}
+            "env": {},
+            "console": "internalConsole"
         },
         {
-            "name": "tests",
+            "name": "server: tests",
             "type": "python",
             "request": "launch",
             "justMyCode": false,
@@ -116,18 +138,45 @@
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
-            "env": {}
+            "env": {},
+            "console": "internalConsole"
         },
+        {
+            "name": "core.js: debug",
+            "type": "node",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/cvat-core",
+            "runtimeExecutable": "node",
+            "runtimeArgs": [
+                "--nolazy",
+                "--inspect-brk=9230",
+                "src/api.js"
+            ],
+            "port": 9230
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "jest debug",
+            "program": "${workspaceFolder}/cvat-core/node_modules/.bin/jest",
+            "args": [
+              "--config",
+              "${workspaceFolder}/cvat-core/jest.config.js"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "disableOptimisticBPs": true,
+        }
     ],
     "compounds": [
         {
-            "name": "debugging",
+            "name": "server: debug",
             "configurations": [
-                "client",
-                "server",
-                "RQ - default",
-                "RQ - low",
-                "git",
+                "server: chrome",
+                "server: django",
+                "server: RQ - default",
+                "server: RQ - low",
+                "server: git",
             ]
         }
     ]

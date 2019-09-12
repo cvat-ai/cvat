@@ -6,6 +6,7 @@ from openvino.inference_engine import IENetwork, IEPlugin
 
 import subprocess
 import os
+import platform
 
 _IE_PLUGINS_PATH = os.getenv("IE_PLUGINS_PATH", None)
 
@@ -27,6 +28,8 @@ def make_plugin():
         plugin.add_cpu_extension(os.path.join(_IE_PLUGINS_PATH, 'libcpu_extension_avx2.so'))
     elif (_check_instruction('sse4')):
         plugin.add_cpu_extension(os.path.join(_IE_PLUGINS_PATH, 'libcpu_extension_sse4.so'))
+    elif platform.system() == 'Darwin':
+        plugin.add_cpu_extension(os.path.join(_IE_PLUGINS_PATH, 'libcpu_extension.dylib'))
     else:
         raise Exception('Inference engine requires a support of avx2 or sse4.')
 

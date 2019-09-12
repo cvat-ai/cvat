@@ -33,7 +33,10 @@ try:
     from keys.secret_key import SECRET_KEY
 except ImportError:
     from django.utils.crypto import get_random_string
-    with open(os.path.join(BASE_DIR, 'keys', 'secret_key.py'), 'w') as f:
+    keys_dir = os.path.join(BASE_DIR, 'keys')
+    if not os.path.isdir(keys_dir):
+        os.mkdir(keys_dir)
+    with open(os.path.join(keys_dir, 'secret_key.py'), 'w') as f:
         chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
         f.write("SECRET_KEY = '{}'\n".format(get_random_string(50, chars)))
     from keys.secret_key import SECRET_KEY
@@ -92,6 +95,7 @@ INSTALLED_APPS = [
     'cvat.apps.authentication',
     'cvat.apps.documentation',
     'cvat.apps.git',
+    'cvat.apps.annotation',
     'django_rq',
     'compressor',
     'cacheops',
@@ -100,13 +104,29 @@ INSTALLED_APPS = [
     'revproxy',
     'rules',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_filters',
     'drf_yasg',
+    'rest_auth',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'corsheaders',
+    'allauth.socialaccount',
+    'rest_auth.registration'
 ]
+
+SITE_ID = 1
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'cvat.apps.authentication.auth.SignatureAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication'
     ],
     'DEFAULT_VERSIONING_CLASS':
         # Don't try to use URLPathVersioning. It will give you /api/{version}
@@ -121,7 +141,14 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'rest_framework.filters.SearchFilter',
         'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.OrderingFilter')
+        'rest_framework.filters.OrderingFilter'),
+
+    # Disable default handling of the 'format' query parameter by REST framework
+    'URL_FORMAT_OVERRIDE': None,
+}
+
+REST_AUTH_REGISTER_SERIALIZERS = {
+    'REGISTER_SERIALIZER': 'cvat.apps.authentication.serializers.RegisterSerializerEx'
 }
 
 if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
@@ -148,7 +175,17 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+# Cross-Origin Resource Sharing settings for CVAT UI
+UI_SCHEME = os.environ.get('UI_SCHEME', 'http')
+UI_HOST = os.environ.get('UI_HOST', 'localhost')
+UI_PORT = os.environ.get('UI_PORT', '3000')
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [UI_HOST]
+UI_URL = '{}://{}:{}'.format(UI_SCHEME, UI_HOST, UI_PORT)
+CORS_ORIGIN_WHITELIST = [UI_URL]
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -187,6 +224,8 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend'
 ]
 
+# https://github.com/pennersr/django-allauth
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 
 # Django-RQ
 # https://github.com/rq/django-rq
@@ -262,13 +301,15 @@ CACHEOPS_DEGRADE_ON_FAILURE = True
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Europe/Moscow'
+TIME_ZONE = os.getenv('TZ', 'Etc/UTC')
 
 USE_I18N = True
 
 USE_L10N = True
 
 USE_TZ = True
+
+CSRF_COOKIE_NAME = "csrftoken"
 
 LOGGING = {
     'version': 1,
@@ -334,11 +375,14 @@ if os.getenv('DJANGO_LOG_SERVER_HOST'):
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 os.makedirs(STATIC_ROOT, exist_ok=True)
+
 DATA_ROOT = os.path.join(BASE_DIR, 'data')
 os.makedirs(DATA_ROOT, exist_ok=True)
+
 SHARE_ROOT = os.path.join(BASE_DIR, 'share')
 os.makedirs(SHARE_ROOT, exist_ok=True)
-MODELS_ROOT=os.path.join(BASE_DIR, 'models')
+
+MODELS_ROOT = os.path.join(BASE_DIR, 'models')
 os.makedirs(MODELS_ROOT, exist_ok=True)
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100 MB

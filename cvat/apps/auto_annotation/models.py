@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
 from enum import Enum
 
 from django.db import models
@@ -13,7 +14,7 @@ from django.core.files.storage import FileSystemStorage
 fs = FileSystemStorage()
 
 def upload_path_handler(instance, filename):
-    return "{models_root}/{id}/{file}".format(models_root=settings.MODELS_ROOT, id=instance.id, file=filename)
+    return os.path.join(settings.MODELS_ROOT, str(instance.id), filename)
 
 class FrameworkChoice(Enum):
     OPENVINO = 'openvino'

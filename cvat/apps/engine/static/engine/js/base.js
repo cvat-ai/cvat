@@ -9,6 +9,9 @@
     dumpAnnotationRequest
     showMessage
     showOverlay
+    uploadJobAnnotationRequest
+    uploadTaskAnnotationRequest
+    isDefaultFormat
 */
 
 /* global
@@ -127,18 +130,24 @@ function showOverlay(message) {
     return overlayWindow[0];
 }
 
-async function dumpAnnotationRequest(tid, taskName) {
+async function dumpAnnotationRequest(tid, taskName, format) {
+    // URL Router on the server doesn't work correctly with slashes.
+    // So, we have to replace them on the client side
+    taskName = taskName.replace(/\//g, '_');
     const name = encodeURIComponent(`${tid}_${taskName}`);
     return new Promise((resolve, reject) => {
         const url = `/api/v1/tasks/${tid}/annotations/${name}`;
+        let queryString = `format=${format}`;
+
         async function request() {
-            $.get(url)
+            $.get(`${url}?${queryString}`)
                 .done((...args) => {
                     if (args[2].status === 202) {
                         setTimeout(request, 3000);
                     } else {
                         const a = document.createElement('a');
-                        a.href = `${url}?action=download`;
+                        queryString = `${queryString}&action=download`;
+                        a.href = `${url}?${queryString}`;
                         document.body.appendChild(a);
                         a.click();
                         a.remove();
@@ -155,6 +164,42 @@ async function dumpAnnotationRequest(tid, taskName) {
     });
 }
 
+async function uploadAnnoRequest(url, formData, format) {
+    return new Promise((resolve, reject) => {
+        const queryString = `format=${format}`;
+        async function request(data) {
+            try {
+                await $.ajax({
+                    url: `${url}?${queryString}`,
+                    type: 'PUT',
+                    data,
+                    contentType: false,
+                    processData: false,
+                }).done((...args) => {
+                    if (args[2].status === 202) {
+                        setTimeout(() => request(''), 3000);
+                    } else {
+                        resolve();
+                    }
+                });
+            } catch (errorData) {
+                const message = `Can not upload annotations for the job. Code: ${errorData.status}. `
+                    + `Message: ${errorData.responseText || errorData.statusText}`;
+                reject(new Error(message));
+            }
+        }
+
+        setTimeout(() => request(formData));
+    });
+}
+
+async function uploadJobAnnotationRequest(jid, formData, format) {
+    return uploadAnnoRequest(`/api/v1/jobs/${jid}/annotations`, formData, format);
+}
+
+async function uploadTaskAnnotationRequest(tid, formData, format) {
+    return uploadAnnoRequest(`/api/v1/tasks/${tid}/annotations`, formData, format);
+}
 
 /* These HTTP methods do not require CSRF protection */
 function csrfSafeMethod(method) {
@@ -177,3 +222,8 @@ $(document).ready(() => {
         height: `${window.screen.height * 0.95}px`,
     });
 });
+
+function isDefaultFormat(dumperName, taskMode) {
+    return (dumperName === 'CVAT XML 1.1 for videos' && taskMode === 'interpolation')
+    || (dumperName === 'CVAT XML 1.1 for images' && taskMode === 'annotation');
+}

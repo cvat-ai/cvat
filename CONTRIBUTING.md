@@ -53,7 +53,7 @@ $ code .
 
 - Reload Visual Studio Code
 
-- Select `CVAT Debugging` configuration and start debugging (F5)
+- Select `server: debug` configuration and start debugging (F5)
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 
