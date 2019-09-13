@@ -50,6 +50,8 @@ def load(file_object, annotations):
         import xml.etree.ElementTree as ET
         root = ET.parse(annotation_file).getroot()
         frame_number = match_frame(annotations.frame_info, root.find('filename').text)
+        with open('/tmp/fff.txt', 'w+') as fff:
+            fff.write(root.find('filename').text + '\n')
 
         for obj_tag in root.iter('object'):
             bbox_tag = obj_tag.find("bndbox")
@@ -58,6 +60,10 @@ def load(file_object, annotations):
             ymin = float(bbox_tag.find('ymin').text)
             xmax = float(bbox_tag.find('xmax').text)
             ymax = float(bbox_tag.find('ymax').text)
+            truncated = obj_tag.find('truncated')
+            truncated = truncated.text if truncated is not None else 0
+            difficult = obj_tag.find('difficult')
+            difficult = difficult.text if difficult is not None else 0
 
             annotations.add_shape(annotations.LabeledShape(
                 type='rectangle',
@@ -65,7 +71,10 @@ def load(file_object, annotations):
                 label=label,
                 points=[xmin, ymin, xmax, ymax],
                 occluded=False,
-                attributes=[],
+                attributes=[
+                    annotations.Attribute('truncated', truncated),
+                    annotations.Attribute('difficult', difficult),
+                ],
             ))
 
     archive_file = getattr(file_object, 'name')
@@ -97,12 +106,30 @@ def dump(file_object, annotations):
                 for shape in frame_annotation.labeled_shapes:
                     if shape.type != "rectangle":
                         continue
+
                     label = shape.label
                     xtl = shape.points[0]
                     ytl = shape.points[1]
                     xbr = shape.points[2]
                     ybr = shape.points[3]
-                    writer.addObject(label, xtl, ytl, xbr, ybr)
+
+                    difficult = 0
+                    truncated = 0
+                    for attribute in shape.attributes:
+                        if attribute.name == 'truncated' and 'true' == attribute.value.lower():
+                            truncated = 1
+                        elif attribute.name == 'difficult' and 'true' == attribute.value.lower():
+                            difficult = 1
+
+                    writer.addObject(
+                        name=label,
+                        xmin=xtl,
+                        ymin=ytl,
+                        xmax=xbr,
+                        ymax=ybr,
+                        truncated=truncated,
+                        difficult=difficult,
+                    )
 
                 anno_name = os.path.basename('{}.{}'.format(os.path.splitext(image_name)[0], 'xml'))
                 anno_file = os.path.join(out_dir, anno_name)
