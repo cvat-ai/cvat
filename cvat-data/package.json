@@ -1,0 +1,30 @@
+{
+  "name": "cvat-data",
+  "version": "0.1.0",
+  "description": "",
+  "main": "src/js/cvat-data.js",
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.4",
+    "@babel/preset-env": "^7.4.4",
+    "babel": "^5.8.23",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.0.6",
+    "core-js": "^3.2.1",
+    "exports-loader": "^0.7.0",
+    "imports-loader": "^0.8.0",
+    "nodemon": "^1.19.2",
+    "webpack": "^4.39.3",
+    "webpack-cli": "^3.3.7",
+    "webpack-dev-server": "^3.8.0"
+  },
+  "dependencies": {
+    "js-untar": "2.0.0"
+  },
+  "scripts": {
+    "build": "webpack --config ./webpack.config.js",
+    "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
+  },
+  "author": "Intel",
+  "license": "MIT"
+}
