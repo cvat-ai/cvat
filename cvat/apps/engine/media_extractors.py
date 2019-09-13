@@ -106,7 +106,7 @@ class ImageListExtractor(MediaExtractor):
                         'name': image_file,
                         'size': (w, h),
                     })
-                    tarinfo = tarfile.TarInfo(name='{:06d}.jpg'.format(idx))
+                    tarinfo = tarfile.TarInfo(name='{:06d}.jpeg'.format(idx))
                     tarinfo.size = len(image_buf.getbuffer())
                     tar_chunk.addfile(
                         tarinfo=tarinfo,
@@ -182,6 +182,7 @@ class VideoExtractor(DirectoryExtractor):
     def __init__(self, source_path, image_quality, step=1, start=0, stop=0):
         self._tmp_dir = self.create_tmp_dir()
         self._video_source = source_path[0]
+        self._imagename_pattern = '%09d.jpeg'
         self.extract_video(
             video_source=self._video_source,
             output_dir=self._tmp_dir,
@@ -189,6 +190,7 @@ class VideoExtractor(DirectoryExtractor):
             step=step,
             start=start,
             stop=stop,
+            imagename_pattern=self._imagename_pattern,
         )
 
         super().__init__(
@@ -200,11 +202,11 @@ class VideoExtractor(DirectoryExtractor):
         )
 
     @staticmethod
-    def extract_video(video_source, output_dir, quality, step=1, start=0, stop=0):
+    def extract_video(video_source, output_dir, quality, step=1, start=0, stop=0, imagename_pattern='%09d.jpeg'):
         # translate inversed range 1:95 to 2:32
         translated_quality = 96 - quality
         translated_quality = round((((translated_quality - 1) * (31 - 2)) / (95 - 1)) + 2)
-        target_path = os.path.join(output_dir, '%09d.png')
+        target_path = os.path.join(output_dir, imagename_pattern)
         output_opts = '-start_number 0 -b:v 10000k -vsync 0 -an -y -q:v {}'.format(translated_quality)
         filters = ''
         if stop > 0:
@@ -238,11 +240,11 @@ class VideoExtractor(DirectoryExtractor):
 
         for i in range(math.ceil(len(self._source_path) / chunk_size)):
             start_frame = i * chunk_size
-            input_images = os.path.join(self._tmp_dir, '%09d.png')
+            input_images = os.path.join(self._tmp_dir, self._imagename_pattern)
             input_options = '-f image2 -framerate 25 -start_number {}'.format(start_frame)
             output_chunk = task.get_chunk_path(i)
             self.prepare_dirs(output_chunk)
-            output_options = '-vframes {} -q:v 1'.format(chunk_size)
+            output_options = '-vframes {} -q:v 0'.format(chunk_size)
 
             ff = FFmpeg(
                 inputs  = {input_images: input_options},
