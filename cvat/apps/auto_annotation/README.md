@@ -75,13 +75,15 @@ builtin functions like __str, int, float, max, min, range__.
      add_polyline(self, points, label, frame_number, attributes=None)
      ```
 
-### Testing Script
+### Testing script
 
-Cvat comes prepackaged with a small command line helper script to help develop interpret scripts.
+CVAT comes prepackaged with a small command line helper script to help develop interpretation scripts.
 
-It includes a small user interface which allows users to feed in images and see the results using the user interfaces provided by OpenCV.
+It includes a small user interface which allows users to feed in images and see the results using
+the user interfaces provided by OpenCV.
 
-See the script and the documentation in the [Auto Annotation directory](https://github.com/opencv/cvat/tree/develop/utils/auto_annotation) of Cvat
+See the script and the documentation in the
+[auto_annotation directory](https://github.com/opencv/cvat/tree/develop/utils/auto_annotation)
 
 ### Examples
 
@@ -172,7 +174,7 @@ for frame_results in detections:
       )
 ```
 
-### Cvat Packaged Interpret Scripts
+### Available interpretation scripts
 
-Cvat comes prepackaged with several out of the box Interpret scripts.
+CVAT comes prepackaged with several out of the box interpretation scripts.
 See them in the [open model zoo directory](https://github.com/opencv/cvat/tree/develop/utils/open_model_zoo)
