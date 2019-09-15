@@ -774,8 +774,10 @@ class CuboidView extends PolyShapeView {
     _select() {
         if (this._uis.shape) {
             PolyShapeView.prototype._select.call(this);
-            this._uis.shape.addMouseOverEvents();
-            this._uis.shape.showProjections();
+               if(!this._controller.lock){
+                   this._uis.shape.addMouseOverEvents();
+                   this._uis.shape.showProjections();
+               }
         }
     }
 
@@ -811,7 +813,7 @@ class CuboidView extends PolyShapeView {
 
     updateShapeTextPosition() {
         super.updateShapeTextPosition();
-        if (this._uis.shape) {
+        if (this._uis.shape && !this._controller.lock) {
             this._uis.shape.updateThickness();
         }
     }
