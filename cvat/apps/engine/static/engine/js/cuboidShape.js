@@ -795,6 +795,15 @@ class CuboidView extends PolyShapeView {
         }
     }
 
+    _setupOccludedUI(occluded) {
+        if(occluded){
+            this._uis.shape.addOccluded();
+        }
+        else{
+            this._uis.shape.removeOccluded();
+        }
+    }
+
     _makeNotEditable() {
         if (this._uis.shape && this._flags.editable) {
             CuboidController.removeEventsFromCube(this._uis.shape);
@@ -1002,6 +1011,20 @@ SVG.Cube = SVG.invent({
             const group = this;
             this.left.attr({ 'fill-opacity': group.attr('fill-opacity') });
             this.dorsal.attr({ 'fill-opacity': group.attr('fill-opacity') });
+        },
+
+        addOccluded(){
+            let edges = this.getEdges();
+            edges.forEach((edge)=> {
+                edge.node.classList.add('occludedShape');
+            })
+        },
+
+        removeOccluded(){
+            let edges = this.getEdges();
+            edges.forEach((edge)=> {
+                edge.node.classList.remove('occludedShape');
+            })
         },
     },
     construct: {
