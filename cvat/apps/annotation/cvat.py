@@ -201,6 +201,25 @@ def dump_as_cvat_annotation(file_object, annotations):
                     ("xbr", "{:.2f}".format(shape.points[2])),
                     ("ybr", "{:.2f}".format(shape.points[3]))
                 ]))
+            elif shape.type == "cuboid":
+                dump_data.update(OrderedDict([
+                    ("xtl1", "{:.2f}".format(shape.points[0])),
+                    ("ytl1", "{:.2f}".format(shape.points[1])),
+                    ("xbl1", "{:.2f}".format(shape.points[2])),
+                    ("ybl1", "{:.2f}".format(shape.points[3])),
+                    ("xtr1", "{:.2f}".format(shape.points[4])),
+                    ("ytr1", "{:.2f}".format(shape.points[5])),
+                    ("xbr1", "{:.2f}".format(shape.points[6])),
+                    ("ybr1", "{:.2f}".format(shape.points[7])),
+                    ("xtl2", "{:.2f}".format(shape.points[8])),
+                    ("ytl2", "{:.2f}".format(shape.points[9])),
+                    ("xbl2", "{:.2f}".format(shape.points[10])),
+                    ("ybl2", "{:.2f}".format(shape.points[11])),
+                    ("xtr2", "{:.2f}".format(shape.points[12])),
+                    ("ytr2", "{:.2f}".format(shape.points[13])),
+                    ("xbr2", "{:.2f}".format(shape.points[14])),
+                    ("ybr2", "{:.2f}".format(shape.points[15]))
+                ]))
             else:
                 dump_data.update(OrderedDict([
                     ("points", ';'.join((
