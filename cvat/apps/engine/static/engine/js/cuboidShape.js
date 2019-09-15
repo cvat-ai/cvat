@@ -780,7 +780,7 @@ class CuboidView extends PolyShapeView {
     }
 
     _makeEditable() {
-        if (this._uis.shape) {
+        if (this._uis.shape && !this._controller.lock) {
             ShapeView.prototype._makeEditable.call(this);
             this._uis.shape.selectize(false);
             this._controller.addEventsToCube();
