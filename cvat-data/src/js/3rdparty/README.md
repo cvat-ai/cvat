@@ -25,3 +25,18 @@ So, we have solved to write patch file for this library. It modifies source code
     diff -u 3rdparty 3rdparty_edited/ > 3rdparty_patch.diff
     patch -p0 < 3rdparty_patch.diff # apply patch from cvat-data/src/js
 ```
+
+
+Also these files have been added to ignore for git in all future revisions:
+```bash
+    # from cvat-data dir
+    git update-index --skip-worktree src/js/3rdparty/*.js
+```
+
+This behaviour can be reset with:
+```bash
+    # from cvat-data dir
+    git update-index --no-skip-worktree src/js/3rdparty/*.js
+```
+
+[Stackoverflow issue](https://stackoverflow.com/questions/4348590/how-can-i-make-git-ignore-future-revisions-to-a-file)
