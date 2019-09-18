@@ -125,7 +125,7 @@ class TaskView {
             </center>`),
         ).append(
             $('<div class="dashboardTaskIntro"> </div>').css({
-                'background-image': `url("/api/v1/tasks/${this._task.id}/frames/0")`,
+                'background-image': `url("/api/v1/tasks/${this._task.id}/frames/preview")`,
             }),
         );
 

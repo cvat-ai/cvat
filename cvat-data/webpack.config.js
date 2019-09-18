@@ -1,6 +1,11 @@
+/* global
+    require:true,
+    __dirname:true,
+*/
+
 const path = require('path');
 
-module.exports = {
+const webConfig = {
     target: 'web',
     mode: 'production',
     entry: './src/js/cvat-data.js',
@@ -10,6 +15,7 @@ module.exports = {
         library: 'cvatData',
         libraryTarget: 'window',
     },
+    devtool: 'source-map',
     devServer: {
         contentBase: path.join(__dirname, 'dist'),
         compress: false,
@@ -43,3 +49,21 @@ module.exports = {
         }],
     },
 };
+
+const nodeConfig = {
+    target: 'node',
+    mode: 'development',
+    devtool: 'source-map',
+    entry: './src/js/cvat-data.js',
+    output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: 'cvat-data.node.js',
+        library: 'cvatData',
+        libraryTarget: 'commonjs',
+    },
+    stats: {
+        warnings: false,
+    },
+};
+
+module.exports = [webConfig, nodeConfig];

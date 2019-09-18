@@ -11,19 +11,22 @@
     "babel-core": "^6.26.3",
     "babel-loader": "^8.0.6",
     "core-js": "^3.2.1",
-    "exports-loader": "^0.7.0",
-    "imports-loader": "^0.8.0",
+    "eslint": "^6.4.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-no-unsafe-innerhtml": "^1.0.16",
+    "eslint-plugin-no-unsanitized": "^3.0.2",
+    "eslint-plugin-security": "^1.4.0",
     "nodemon": "^1.19.2",
     "webpack": "^4.39.3",
     "webpack-cli": "^3.3.7",
     "webpack-dev-server": "^3.8.0"
   },
-  "dependencies": {
-    "js-untar": "2.0.0"
-  },
+  "dependencies": {},
   "scripts": {
-    "build": "webpack --config ./webpack.config.js",
-    "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
+    "patch": "cd src/js && patch --dry-run --forward -p0 < 3rdparty_patch.diff >> /dev/null && patch -p0 < 3rdparty_patch.diff; true",
+    "build": "npm run patch; webpack --config ./webpack.config.js",
+    "server": "npm run patch; nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
   },
   "author": "Intel",
   "license": "MIT"

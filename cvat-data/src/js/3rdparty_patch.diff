@@ -1,4 +1,4 @@
-diff -aur 3rdparty/buffer.js 3rdparty_edited/buffer.js
+diff -u 3rdparty/buffer.js 3rdparty_edited/buffer.js
 --- 3rdparty/buffer.js	2019-09-16 13:40:39.797780000 +0300
 +++ 3rdparty_edited/buffer.js	2019-09-16 14:06:11.377803000 +0300
 @@ -1,15 +1,15 @@
@@ -67,7 +67,7 @@ diff -aur 3rdparty/buffer.js 3rdparty_edited/buffer.js
  			this.bytes[i+1] == 0x00 &&
  			this.bytes[i+2] == 0x01
  		)
-diff -aur 3rdparty/decoder.js 3rdparty_edited/decoder.js
+diff -u 3rdparty/decoder.js 3rdparty_edited/decoder.js
 --- 3rdparty/decoder.js	2019-09-16 13:40:52.813780000 +0300
 +++ 3rdparty_edited/decoder.js	2019-09-16 14:13:43.357810000 +0300
 @@ -1,4 +1,4 @@
@@ -85,7 +85,7 @@ diff -aur 3rdparty/decoder.js 3rdparty_edited/decoder.js
  			newTimestampIndex !== this.timestampIndex
  		) {
  			this.timestampIndex = newTimestampIndex;
-diff -aur 3rdparty/jsmpeg.js 3rdparty_edited/jsmpeg.js
+diff -u 3rdparty/jsmpeg.js 3rdparty_edited/jsmpeg.js
 --- 3rdparty/jsmpeg.js	2019-09-16 13:40:58.645781000 +0300
 +++ 3rdparty_edited/jsmpeg.js	2019-09-16 14:07:41.681805000 +0300
 @@ -3,7 +3,7 @@
@@ -168,9 +168,9 @@ diff -aur 3rdparty/jsmpeg.js 3rdparty_edited/jsmpeg.js
 -}
 -
 -
-diff -aur 3rdparty/mpeg1.js 3rdparty_edited/mpeg1.js
+diff -u 3rdparty/mpeg1.js 3rdparty_edited/mpeg1.js
 --- 3rdparty/mpeg1.js	2019-09-16 13:41:04.889781000 +0300
-+++ 3rdparty_edited/mpeg1.js	2019-09-17 11:12:42.762952000 +0300
++++ 3rdparty_edited/mpeg1.js	2019-09-18 13:09:34.921018429 +0300
 @@ -1,19 +1,24 @@
 -JSMpeg.Decoder.MPEG1Video = (function(){ "use strict";
 +const BaseDecoder = require('./decoder');
@@ -263,7 +263,7 @@ diff -aur 3rdparty/mpeg1.js 3rdparty_edited/mpeg1.js
  		this.currentCb32 = tmpCb32;
  	}
 +
-+	return [this.currentY, this.currentCr, this.currentCb];
++	return [this.currentY, this.currentCr, this.currentCb, this.codedWidth, this.codedHeight];
  };
  
  
@@ -285,7 +285,7 @@ diff -aur 3rdparty/mpeg1.js 3rdparty_edited/mpeg1.js
  		}
  	}
  
-diff -aur 3rdparty/ts.js 3rdparty_edited/ts.js
+diff -u 3rdparty/ts.js 3rdparty_edited/ts.js
 --- 3rdparty/ts.js	2019-09-10 11:58:32.265852000 +0300
 +++ 3rdparty_edited/ts.js	2019-09-16 14:19:38.941816000 +0300
 @@ -1,4 +1,6 @@
