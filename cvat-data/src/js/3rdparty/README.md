@@ -2,12 +2,26 @@
 
 These files are from the [FMpeg JS](https://github.com/phoboslab/jsmpeg) repository:
 - buffer.js
-- canvas2d.js
 - decoder.js
 - jsmpeg.js
 - mpeg1.js
 - ts.js
 
+### Why do we store them here?
+
 Authors don't provide an npm package, so we need to store these components in our repository.
 We use this dependency to decode video chunks from a server and split them to frames on client side.
-Webpack plugins ``exports-loader`` and ``imports-loader`` are used to make bundle with these files.
+
+We need to run this package in node environent (for example for debug, or for running unit tests).
+But there aren't any ways to do that (even with syntetic environment, provided for example by the package ``browser-env``).
+For example there are issues with canvas using (webpack doesn't work with binary canvas package for node-js) and others.
+So, we have solved to write patch file for this library. It modifies source code a little to support our scenario of using.
+
+### How work with a patch file:
+```bash
+    # from cvat-data/src/js
+    cp -r 3rdparty 3rdparty_edited
+    # change 3rdparty edited as we need
+    diff -u 3rdparty 3rdparty_edited/ > 3rdparty_patch.diff
+    patch -p0 < 3rdparty_patch.diff # apply patch from cvat-data/src/js
+```

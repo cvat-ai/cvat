@@ -9,7 +9,9 @@ var MPEG1 = function(options) {
 	this.onDecodeCallback = options.onVideoDecode;
 
 	var bufferSize = options.videoBufferSize || 512*1024;
-	var bufferMode = JSMpeg.BitBuffer.MODE.EXPAND;
+	var bufferMode = options.streaming
+		? JSMpeg.BitBuffer.MODE.EVICT
+		: JSMpeg.BitBuffer.MODE.EXPAND;
 
 	this.bits = new JSMpeg.BitBuffer(bufferSize, bufferMode);
 
@@ -18,7 +20,7 @@ var MPEG1 = function(options) {
 	this.blockData = new Int32Array(64);
 
 	this.currentFrame = 0;
-	this.decodeFirstFrame =  false;
+	this.decodeFirstFrame = options.decodeFirstFrame !== false;
 };
 
 MPEG1.prototype = Object.create(JSMpeg.Decoder.Base.prototype);
@@ -51,7 +53,14 @@ MPEG1.prototype.decode = function() {
 		return false;
 	}
 
-	return this.decodePicture();
+	this.decodePicture();
+	this.advanceDecodedTime(1/this.frameRate);
+
+	var elapsedTime = JSMpeg.Now() - startTime;
+	if (this.onDecodeCallback) {
+		this.onDecodeCallback(this, elapsedTime);
+	}
+	return true;
 };
 
 MPEG1.prototype.readHuffman = function(codeTable) {
@@ -65,7 +74,7 @@ MPEG1.prototype.readHuffman = function(codeTable) {
 
 // Sequence Layer
 
-MPEG1.prototype.frameRate = 29.97;
+MPEG1.prototype.frameRate = 30;
 MPEG1.prototype.decodeSequenceHeader = function() {
 	var newWidth = this.bits.read(12),
 		newHeight = this.bits.read(12);
@@ -74,6 +83,8 @@ MPEG1.prototype.decodeSequenceHeader = function() {
 	this.bits.skip(4);
 
 	this.frameRate = MPEG1.PICTURE_RATE[this.bits.read(4)];
+
+	// skip bitRate, marker, bufferSize and constrained bit
 	this.bits.skip(18 + 1 + 10 + 1);
 
 	if (newWidth !== this.width || newHeight !== this.height) {
@@ -161,7 +172,7 @@ MPEG1.prototype.forwardRSize = 0;
 MPEG1.prototype.forwardF = 0;
 
 MPEG1.prototype.decodePicture = function(skipOutput) {
-	this.currentFrame ++;
+	this.currentFrame++;
 
 	this.bits.skip(10); // skip temporalReference
 	this.pictureType = this.bits.read(3);
@@ -201,10 +212,9 @@ MPEG1.prototype.decodePicture = function(skipOutput) {
 		this.bits.rewind(32);
 	}
 
-	var image = null;
 	// Invoke decode callbacks
 	if (this.destination) {
-		image = this.destination.render(this.currentY, this.currentCr, this.currentCb, true);
+		this.destination.render(this.currentY, this.currentCr, this.currentCb, true);
 	}
 
 	// If this is a reference picutre then rotate the prediction pointers
@@ -234,7 +244,6 @@ MPEG1.prototype.decodePicture = function(skipOutput) {
 		this.currentCb = tmpCb;
 		this.currentCb32 = tmpCb32;
 	}
-	return image;
 };
 
 
