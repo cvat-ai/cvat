@@ -677,6 +677,7 @@
                 start_frame: undefined,
                 stop_frame: undefined,
                 frame_filter: undefined,
+                data_chunk_size: undefined,
             };
 
             for (const property in data) {
@@ -1099,6 +1100,18 @@
                         data.frame_filter = filter;
                     },
                 },
+                dataChunkSize: {
+                    get: () => data.data_chunk_size,
+                    set: (chunkSize) => {
+                        if (typeof (chunkSize) !== 'number' || chunkSize < 1) {
+                            throw new ArgumentError(
+                                `Chink size value must be a positive number. But value ${chunkSize} has been got.`,
+                            );
+                        }
+
+                        data.data_chunk_size = chunkSize;
+                    },
+                },
             }));
 
             // When we call a function, for example: task.annotations.get()
@@ -1214,7 +1227,7 @@
             );
         }
 
-        const frameData = await getFrame(this.task.id, this.task.mode, frame);
+        const frameData = await getFrame(this.task.id, this.task.dataChunkSize, this.task.mode, frame);
         return frameData;
     };
 
@@ -1293,7 +1306,7 @@
                 name: this.name,
                 bug_tracker: this.bugTracker,
                 z_order: this.zOrder,
-                labels: [...this.labels.map(el => el.toJSON())],
+                labels: [...this.labels.map((el) => el.toJSON())],
             };
 
             await serverProxy.tasks.saveTask(this.id, taskData);
@@ -1302,7 +1315,7 @@
 
         const taskData = {
             name: this.name,
-            labels: this.labels.map(el => el.toJSON()),
+            labels: this.labels.map((el) => el.toJSON()),
             image_quality: this.imageQuality,
             z_order: Boolean(this.zOrder),
         };
@@ -1354,7 +1367,7 @@
             );
         }
 
-        const result = await getFrame(this.id, this.mode, frame);
+        const result = await getFrame(this.id, this.dataChunkSize, this.mode, frame);
         return result;
     };
 

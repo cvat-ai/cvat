@@ -5,7 +5,6 @@
 
 /* global
     require:false
-    encodeURIComponent:false
 */
 
 (() => {
@@ -423,19 +422,39 @@
                 return response.data;
             }
 
-            async function getData(tid, frame) {
+            async function getPreview(tid) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/${frame}`, {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/preview`, {
                         proxy: config.proxy,
                         responseType: 'blob',
                     });
                 } catch (errorData) {
                     const code = errorData.response ? errorData.response.status : errorData.code;
                     throw new ServerError(
-                        `Could not get frame ${frame} for the task ${tid} from the server`,
+                        `Could not get preview frame for the task ${tid} from the server`,
+                        code,
+                    );
+                }
+
+                return response.data;
+            }
+
+            async function getData(tid, chunk) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/chunk/${chunk}`, {
+                        proxy: config.proxy,
+                        responseType: 'arraybuffer',
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        `Could not get chunk ${chunk} for the task ${tid} from the server`,
                         code,
                     );
                 }
@@ -626,6 +645,7 @@
 
                 frames: {
                     value: Object.freeze({
+                        getPreview,
                         getData,
                         getMeta,
                     }),

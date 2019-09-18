@@ -480,6 +480,7 @@ function setupMenu(job, task, shapeCollectionModel,
 function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, annotationFormats,
     loadJobEvent) {
     // Setup some API
+    window.cvatCore = window.cvat;
     window.cvat = {
         labelsInfo: new LabelsInfo(taskData.labels),
         translate: new CoordinateTranslator(),

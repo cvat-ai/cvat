@@ -18,7 +18,7 @@ const BlockType = Object.freeze({
     which converts an image from YCbCr space to RGBA space
 */
 function YCbCrToRGBA(y, cb, cr, width, height) {
-    const rgba = new Uint8ClampedArray(1280 * 720 * 4);
+    const rgba = new Uint8ClampedArray(1280 * 720 * 4).fill(255);
     const w = ((width + 15) >> 4) << 4;
     const w2 = w >> 1;
 
@@ -81,6 +81,8 @@ function YCbCrToRGBA(y, cb, cr, width, height) {
         rgbaIndex2 += rgbaNext2Lines;
         cIndex += cNextLine;
     }
+
+    return rgba;
 }
 
 class FrameProvider {
@@ -138,14 +140,20 @@ class FrameProvider {
 
                 this._cleanup();
 
-                if (this._blockType === BlockType.VIDEO) {
+                if (this._blockType === BlockType.TSVIDEO) {
                     this._demuxer.write(block);
                     for (let i = start; i < end; i++) {
                         const result = this._videoDecoder.decode();
-                        this._frames[+i] = YCbCrToRGBA(...result);
+                        if (!Array.isArray(result)) {
+                            const message = 'Result must be an array.'
+                                + `Got ${result}. Possible reasons: `
+                                + 'bad video file, unpached jsmpeg';
+                            throw Error(message);
+                        }
+                        this._frames[i] = YCbCrToRGBA(...result);
                     }
                     resolve();
-                } else if (this._blockType === BlockType.IMAGES) {
+                } else if (this._blockType === BlockType.ARCHIVE) {
                     // to do with any npm dearchiver
                 }
             } catch (error) {

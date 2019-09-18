@@ -22,9 +22,6 @@ const nodeConfig = {
             exclude: /node_modules/,
         }],
     },
-    externals: {
-        canvas: 'commonjs canvas',
-    },
     stats: {
         warnings: false,
     },

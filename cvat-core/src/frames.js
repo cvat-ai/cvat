@@ -5,14 +5,17 @@
 
 /* global
     require:false
-    global:false
 */
 
 (() => {
+    const cvatData = require('../../cvat-data');
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
-    const { ArgumentError } = require('./exceptions');
-    const { isBrowser, isNode } = require('browser-or-node');
+    const {
+        Exception,
+        ArgumentError,
+        ScriptingError,
+    } = require('./exceptions');
 
     // This is the frames storage
     const frameDataCache = {};
@@ -79,36 +82,44 @@
     }
 
     FrameData.prototype.data.implementation = async function (onServerRequest) {
-        return new Promise(async (resolve, reject) => {
+        async function getFrameData(resolve, reject) {
             try {
-                if (this.number in frameCache[this.tid]) {
-                    resolve(frameCache[this.tid][this.number]);
-                } else {
+                const { provider } = frameDataCache[this.tid];
+                let frame = provider.frame(this.number);
+                if (frame === null) {
                     onServerRequest();
-                    const frame = await serverProxy.frames.getData(this.tid, this.number);
+                    const { chunkSize } = frameDataCache[this.tid];
+                    const start = parseInt(this.number / chunkSize, 10) * chunkSize;
+                    const stop = (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1;
+                    const chunkNumber = Math.floor(this.number / chunkSize);
+                    const chunk = await serverProxy.frames.getData(this.tid, chunkNumber);
 
-                    if (isNode) {
-                        frameCache[this.tid][this.number] = global.Buffer.from(frame, 'binary').toString('base64');
-                        resolve(frameCache[this.tid][this.number]);
-                    } else if (isBrowser) {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            frameCache[this.tid][this.number] = reader.result;
-                            resolve(frameCache[this.tid][this.number]);
-                        };
-                        reader.readAsDataURL(frame);
-                    }
+                    await provider.decode(chunk, start, stop);
+                    frame = provider.frame(this.number);
                 }
+
+                resolve(frame);
             } catch (exception) {
-                reject(exception);
+                if (exception instanceof Exception) {
+                    reject(exception);
+                } else {
+                    reject(new ScriptingError(exception.message));
+                }
             }
-        });
+        }
+
+        return new Promise(getFrameData.bind(this));
     };
 
-    async function getFrame(taskID, mode, frame) {
+    async function getFrame(taskID, chunkSize, mode, frame) {
         if (!(taskID in frameDataCache)) {
+            const blockType = mode === 'interpolation' ? cvatData.BlockType.TSVIDEO
+                : cvatData.BlockType.ARCHIVE;
+
             frameDataCache[taskID] = {};
             frameDataCache[taskID].meta = await serverProxy.frames.getMeta(taskID);
+            frameDataCache[taskID].chunkSize = chunkSize;
+            frameDataCache[taskID].provider = new cvatData.FrameProvider(3, blockType);
 
             frameCache[taskID] = {};
         }
