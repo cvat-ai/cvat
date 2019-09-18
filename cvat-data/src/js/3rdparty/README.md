@@ -1,6 +1,6 @@
 ## 3rdparty components
 
-These files are from the [FMpeg JS](https://github.com/phoboslab/jsmpeg) repository:
+These files are from the [JSMpeg](https://github.com/phoboslab/jsmpeg) repository:
 - buffer.js
 - decoder.js
 - jsmpeg.js
