@@ -15,9 +15,10 @@ We use this dependency to decode video chunks from a server and split them to fr
 We need to run this package in node environent (for example for debug, or for running unit tests).
 But there aren't any ways to do that (even with syntetic environment, provided for example by the package ``browser-env``).
 For example there are issues with canvas using (webpack doesn't work with binary canvas package for node-js) and others.
-So, we have solved to write patch file for this library. It modifies source code a little to support our scenario of using.
+So, we have solved to write patch file for this library.
+It modifies source code a little to support our scenario of using.
 
-### How work with a patch file:
+### How work with a patch file
 ```bash
     # from cvat-data/src/js
     cp -r 3rdparty 3rdparty_edited
@@ -25,7 +26,6 @@ So, we have solved to write patch file for this library. It modifies source code
     diff -u 3rdparty 3rdparty_edited/ > 3rdparty_patch.diff
     patch -p0 < 3rdparty_patch.diff # apply patch from cvat-data/src/js
 ```
-
 
 Also these files have been added to ignore for git in all future revisions:
 ```bash
