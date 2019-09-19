@@ -133,7 +133,7 @@ class FrameProvider {
 
     */
 
-    StartDecode(block, start, end, needed_frame, callback)
+    startDecode(block, start, end, callback)
     {
          if (this._blockType === BlockType.TSVIDEO){
             if (this._running) {
@@ -151,17 +151,23 @@ class FrameProvider {
             this._decode_id = setTimeout(this.decode.bind(this, start, end, callback), 10);
            
         }else{
-            let zip = new JSZip();
+            const zip = new JSZip();
             let that = this;
             zip.loadAsync(block).then(function(_zip){
                 let index = start;
                
                 _zip.forEach(function (relativePath, zipEntry) { 
                     
-                   _zip.file(relativePath).async('ArrayBuffer').then(function (fileData){                             
-                          that._frames[index] = jpeg.decode(fileData); 
+                   _zip.file(relativePath).async('blob').then(function (fileData){                             
+                          const reader = new FileReader();
+                          reader._index = index;
+                          reader.onload = function(e){
+                               that._frames[e.target._index] = reader.result;
+                               callback(index - 1);
+                          };
+                          reader.readAsDataURL(fileData);
                           index ++;
-                          callback(index - 1);
+                          
                     });
                 });
             });
@@ -196,15 +202,10 @@ class FrameProvider {
             if (this._currFrame != end)
             {
                 this._decode_id = setTimeout(this.decode.bind(this, end, callback), 10);
-            } else {
-                clearTimeout(this._decode_id);
-            }
+            } 
         } catch(error) {
-            clearTimeout(this._decode_id);
             throw(error);
-        } finally {
-            clearTimeout(this._decode_id);
-        }
+        } 
 
           
     }    
