@@ -108,7 +108,7 @@ class FrameProvider {
             const [start, end] = shifted.split(':').map((el) => +el);
 
             // remove all frames within this block
-            for (let i = start; i < end; i++) {
+            for (let i = start; i <= end; i++) {
                 delete this._frames[i];
             }
         }
@@ -129,12 +129,11 @@ class FrameProvider {
         @param block - is a data from a server as is (ts file or archive)
         @param start {number} - is the first frame of a block
         @param end {number} - is the last frame of a block + 1
-        @param needed_frame {number} - number of frame that should be returned as soon as
         @param callback - callback)
 
     */
 
-    start_decode(block, start, end, needed_frame, callback)
+    StartDecode(block, start, end, needed_frame, callback)
     {
          if (this._blockType === BlockType.TSVIDEO){
             if (this._running) {
@@ -144,31 +143,25 @@ class FrameProvider {
             this._blocks.push(`${start}:${end}`);
             this._cleanup();
             this._currFrame = start;
-            for (var i = start; i < end; i++)
+            for (let i = start; i <= end; i++)
             {
                 this._frames[i] = "loading";
             }
             this._running = true;
-            this._decode_id = setInterval(this.decode.bind(this), this, start, end, needed_frame, callback, 10);
+            this._decode_id = setTimeout(this.decode.bind(this, start, end, callback), 10);
            
         }else{
-            var zip = new JSZip();
-            var that = this;
+            let zip = new JSZip();
+            let that = this;
             zip.loadAsync(block).then(function(_zip){
-                var index = start;
+                let index = start;
                
                 _zip.forEach(function (relativePath, zipEntry) { 
                     
-                   _zip.file(relativePath).async('ArrayBuffer').then(function (fileData){     
-                          // let u8 = new Uint8Array(fileData);
-                          // let b64encoded = btoa([].reduce.call(new Uint8Array(fileData),function(p,c){return p+String.fromCharCode(c)},''));
-                          // let mimetype="image/jpeg";
-                          that._frames[index] = jpeg.decode(fileData); //"data:"+mimetype+";base64,"+b64encoded;
+                   _zip.file(relativePath).async('ArrayBuffer').then(function (fileData){                             
+                          that._frames[index] = jpeg.decode(fileData); 
                           index ++;
-                          if (index - 1 == needed_frame)
-                          {
-                            callback();
-                          }
+                          callback(index - 1);
                     });
                 });
             });
@@ -181,15 +174,16 @@ class FrameProvider {
 
         @param start {number} - is the first frame of a block
         @param end {number} - is the last frame of a block + 1
-        @param needed_frame {number} - number of frame that should be returned as soon as
         @param callback - callback)
 
     */
-    decode(start, end, needed_frame, callback) {
-    
+    decode(end, callback) {
+
+        try{
             
             const result = this._videoDecoder.decode();
             if (!Array.isArray(result)) {
+                clearTimeout(this._decode_id);
                 const message = 'Result must be an array.'
                     + `Got ${result}. Possible reasons: `
                     + 'bad video file, unpached jsmpeg';
@@ -197,17 +191,23 @@ class FrameProvider {
             }
             this._frames[this._currFrame] = YCbCrToRGBA(...result);
             this._currFrame ++;            
-            if (this._currFrame - 1 == needed_frame)
+            callback(this._currFrame - 1);
+           
+            if (this._currFrame != end)
             {
-                callback();
+                this._decode_id = setTimeout(this.decode.bind(this, end, callback), 10);
+            } else {
+                clearTimeout(this._decode_id);
             }
-            if (this._currFrame == end)
-            {
-                clearInterval(this._decode_id);
-            }
+        } catch(error) {
+            clearTimeout(this._decode_id);
+            throw(error);
+        } finally {
+            clearTimeout(this._decode_id);
+        }
 
           
-        }    
+    }    
 
     /*
         Method returns a list of cached ranges
