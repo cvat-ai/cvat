@@ -10,7 +10,7 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
-    const { getFrame } = require('./frames');
+    const { getFrame, getRanges } = require('./frames');
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
@@ -107,6 +107,11 @@
                     async get(frame) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.frames.get, frame);
+                        return result;
+                    },
+                    async ranges() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.frames.ranges);
                         return result;
                     },
                 },
@@ -380,6 +385,15 @@
                 * @throws {module:API.cvat.exceptions.ServerError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
             */
+            /**
+                * Returns the ranges of cached frames
+                * @method ranges
+                * @memberof Session.frames
+                * @returns {module:API.cvat.classes.FrameData}
+                * @instance
+                * @async
+                * @throws {module:API.cvat.exceptions.PluginError}
+            */
 
             /**
                 * Namespace is used for an interaction with logs
@@ -619,6 +633,7 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
             };
         }
 
@@ -1135,6 +1150,7 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
             };
         }
 
@@ -1227,8 +1243,20 @@
             );
         }
 
-        const frameData = await getFrame(this.task.id, this.task.dataChunkSize, this.task.mode, frame);
+        const frameData = await getFrame(
+            this.task.id,
+            this.task.dataChunkSize,
+            this.task.mode,
+            frame,
+        );
         return frameData;
+    };
+
+    Job.prototype.frames.ranges.implementation = async function () {
+        const rangesData = await getRanges(
+            this.task.id,
+        );
+        return rangesData;
     };
 
     // TODO: Check filter for annotations
@@ -1367,8 +1395,20 @@
             );
         }
 
-        const result = await getFrame(this.id, this.dataChunkSize, this.mode, frame);
+        const result = await getFrame(
+            this.id,
+            this.dataChunkSize,
+            this.mode,
+            frame,
+        );
         return result;
+    };
+
+    Task.prototype.frames.ranges.implementation = async function () {
+        const rangesData = await getRanges(
+            this.id,
+        );
+        return rangesData;
     };
 
     // TODO: Check filter for annotations

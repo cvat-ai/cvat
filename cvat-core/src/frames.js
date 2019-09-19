@@ -116,12 +116,14 @@
             const blockType = mode === 'interpolation' ? cvatData.BlockType.TSVIDEO
                 : cvatData.BlockType.ARCHIVE;
 
-            frameDataCache[taskID] = {};
-            frameDataCache[taskID].meta = await serverProxy.frames.getMeta(taskID);
-            frameDataCache[taskID].chunkSize = chunkSize;
-            frameDataCache[taskID].provider = new cvatData.FrameProvider(3, blockType);
+            const value = {
+                meta: await serverProxy.frames.getMeta(taskID),
+                chunkSize,
+                provider: new cvatData.FrameProvider(3, blockType),
+            };
 
             frameCache[taskID] = {};
+            frameDataCache[taskID] = value;
         }
 
         if (!(frame in frameDataCache[taskID])) {
@@ -148,8 +150,17 @@
         return frameDataCache[taskID][frame];
     }
 
+    function getRanges(taskID) {
+        if (!(taskID in frameDataCache)) {
+            return [];
+        }
+
+        return frameDataCache[taskID].provider.cachedFrames;
+    }
+
     module.exports = {
         FrameData,
         getFrame,
+        getRanges,
     };
 })();
