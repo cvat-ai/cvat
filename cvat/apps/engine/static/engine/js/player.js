@@ -14,121 +14,48 @@
     Mousetrap:false
 */
 
-'use strict';
-
-class FrameProvider extends Listener {
-    constructor(stop, tid) {
+class FrameProviderWrapper extends Listener {
+    constructor(stop) {
         super('onFrameLoad', () => this._loaded);
-        this._MAX_LOAD = 500;
 
-        this._stack = [];
-        this._loadInterval = null;
-        this._required = null;
-        this._loaded = null;
-        this._loadAllowed = true;
-        this._preloadRunned = false;
-        this._loadCounter = this._MAX_LOAD;
-        this._frameCollection = {};
         this._stop = stop;
-        this._tid = tid;
+        this._loaded = null;
+        this._result = null;
     }
 
-    require(frame) {
-        if (frame in this._frameCollection) {
-            this._preload(frame);
-            return this._frameCollection[frame];
+    async require(frameNumber) {
+        const frameData = await window.cvatTask.frames.get(frameNumber);
+        const ranges = await window.cvatTask.frames.ranges();
+        for (const range of ranges) {
+            const [start, stop] = range.split(':').map((el) => +el);
+            if (frameNumber >= start && frameNumber <= stop) {
+                const data = await frameData.data();
+                this._loaded = frameNumber;
+                this._result = new ImageData(data, frameData.width, frameData.height);
+                return this._result;
+            }
         }
-        this._required = frame;
-        this._loadCounter = this._MAX_LOAD;
-        this._load();
+
+        // fetching from server
+        // we don't want to wait it
+        // but we promise to notify the player when frame is loaded
+        frameData.data().then((data) => {
+            this._loaded = frameNumber;
+            this._result = new ImageData(data, frameData.width, frameData.height);
+            this.notify();
+        });
+
         return null;
     }
 
-    _onImageLoad(image, frame) {
-        const next = frame + 1;
-        if (next <= this._stop && this._loadCounter > 0) {
-            this._stack.push(next);
-        }
-        this._loadCounter--;
-        this._loaded = frame;
-        this._frameCollection[frame] = image;
-        this._loadAllowed = true;
-        image.onload = null;
-        image.onerror = null;
-        this.notify();
+    get loaded() {
+        return this._loaded;
     }
 
-    _preload(frame) {
-        if (this._preloadRunned) {
-            return;
-        }
-
-        const last = Math.min(this._stop, frame + Math.ceil(this._MAX_LOAD / 2));
-        if (!(last in this._frameCollection)) {
-            for (let idx = frame + 1; idx <= last; idx++) {
-                if (!(idx in this._frameCollection)) {
-                    this._loadCounter = this._MAX_LOAD - (idx - frame);
-                    this._stack.push(idx);
-                    this._preloadRunned = true;
-                    this._load();
-                    return;
-                }
-            }
-        }
-    }
-
-    _load() {
-        if (!this._loadInterval) {
-            this._loadInterval = setInterval(() => {
-                if (!this._loadAllowed) {
-                    return;
-                }
-
-                if (this._loadCounter <= 0) {
-                    this._stack = [];
-                }
-
-                if (!this._stack.length && this._required == null) {
-                    clearInterval(this._loadInterval);
-                    this._preloadRunned = false;
-                    this._loadInterval = null;
-                    return;
-                }
-
-                if (this._required != null) {
-                    this._stack.push(this._required);
-                    this._required = null;
-                }
-
-                const frame = this._stack.pop();
-                if (frame in this._frameCollection) {
-                    this._loadCounter--;
-                    const next = frame + 1;
-                    if (next <= this._stop && this._loadCounter > 0) {
-                        this._stack.push(frame + 1);
-                    }
-                    return;
-                }
-
-                // If load up to last frame, no need to load previous frames from stack
-                if (frame === this._stop) {
-                    this._stack = [];
-                }
-
-                this._loadAllowed = false;
-                const image = new Image();
-                image.onload = this._onImageLoad.bind(this, image, frame);
-                image.onerror = () => {
-                    this._loadAllowed = true;
-                    image.onload = null;
-                    image.onerror = null;
-                };
-                image.src = `/api/v1/tasks/${this._tid}/frames/${frame}`;
-            }, 25);
-        }
+    get result() {
+        return this._result;
     }
 }
-
 
 const MAX_PLAYER_SCALE = 10;
 const MIN_PLAYER_SCALE = 0.1;
@@ -152,9 +79,10 @@ class PlayerModel extends Listener {
 
         this._playInterval = null;
         this._pauseFlag = null;
-        this._frameProvider = new FrameProvider(this._frame.stop, task.id);
+        this._frameProvider = new FrameProviderWrapper(this._frame.stop);
         this._continueAfterLoad = false;
         this._continueTimeout = null;
+        this._image = null;
 
         this._geometry = {
             scale: 1,
@@ -196,7 +124,7 @@ class PlayerModel extends Listener {
     }
 
     get image() {
-        return this._frameProvider.require(this._frame.current);
+        return this._image;
     }
 
     get resetZoom() {
@@ -239,7 +167,7 @@ class PlayerModel extends Listener {
         return this._frame.previous === this._frame.current;
     }
 
-    onFrameLoad(last) { // callback for FrameProvider instance
+    async onFrameLoad(last) { // callback for FrameProvider instance
         if (last === this._frame.current) {
             if (this._continueTimeout) {
                 clearTimeout(this._continueTimeout);
@@ -248,25 +176,25 @@ class PlayerModel extends Listener {
 
             // If need continue playing after load, set timeout for additional frame download
             if (this._continueAfterLoad) {
-                this._continueTimeout = setTimeout(() => {
+                this._continueTimeout = setTimeout(async () => {
                     // If you still need to play, start it
                     this._continueTimeout = null;
                     if (this._continueAfterLoad) {
                         this._continueAfterLoad = false;
                         this.play();
                     } else { // Else update the frame
-                        this.shift(0);
+                        await this.shift(0);
                     }
                 }, 5000);
             } else { // Just update frame if no need to play
-                this.shift(0);
+                await this.shift(0);
             }
         }
     }
 
     play() {
         this._pauseFlag = false;
-        this._playInterval = setInterval(() => {
+        this._playInterval = setInterval(async () => {
             if (this._pauseFlag) { // pause method without notify (for frame downloading)
                 if (this._playInterval) {
                     clearInterval(this._playInterval);
@@ -276,7 +204,7 @@ class PlayerModel extends Listener {
             }
 
             const skip = Math.max(Math.floor(this._settings.fps / 25), 1);
-            if (!this.shift(skip)) this.pause(); // if not changed, pause
+            if (!this.shift(skip)) await this.pause(); // if not changed, pause
         }, 1000 / this._settings.fps);
     }
 
@@ -289,12 +217,7 @@ class PlayerModel extends Listener {
         }
     }
 
-    updateGeometry(geometry) {
-        this._geometry.width = geometry.width;
-        this._geometry.height = geometry.height;
-    }
-
-    shift(delta, absolute) {
+    async shift(delta, absolute) {
         if (['resize', 'drag'].indexOf(window.cvat.mode) !== -1) {
             return false;
         }
@@ -303,8 +226,9 @@ class PlayerModel extends Listener {
         this._frame.current = Math.clamp(absolute ? delta : this._frame.current + delta,
             this._frame.start,
             this._frame.stop);
-        const frame = this._frameProvider.require(this._frame.current);
+        const frame = await this._frameProvider.require(this._frame.current);
         if (!frame) {
+            this._image = null;
             this._continueAfterLoad = this.playing;
             this._pauseFlag = true;
             this.notify();
@@ -314,6 +238,7 @@ class PlayerModel extends Listener {
         window.cvat.player.frames.current = this._frame.current;
         window.cvat.player.geometry.frameWidth = frame.width;
         window.cvat.player.geometry.frameHeight = frame.height;
+        this._image = frame;
 
         Logger.addEvent(Logger.EventType.changeFrame, {
             from: this._frame.previous,
@@ -336,24 +261,27 @@ class PlayerModel extends Listener {
         return changed;
     }
 
-    fit() {
-        const img = this._frameProvider.require(this._frame.current);
-        if (!img) return;
+    updateGeometry(geometry) {
+        this._geometry.width = geometry.width;
+        this._geometry.height = geometry.height;
+    }
 
+    fit() {
+        if (!this._image) return;
         const { rotation } = this.geometry;
 
         if ((rotation / 90) % 2) {
             // 90, 270, ..
-            this._geometry.scale = Math.min(this._geometry.width / img.height,
-                this._geometry.height / img.width);
+            this._geometry.scale = Math.min(this._geometry.width / this._image.height,
+                this._geometry.height / this._image.width);
         } else {
             // 0, 180, ..
-            this._geometry.scale = Math.min(this._geometry.width / img.width,
-                this._geometry.height / img.height);
+            this._geometry.scale = Math.min(this._geometry.width / this._image.width,
+                this._geometry.height / this._image.height);
         }
 
-        this._geometry.top = (this._geometry.height - img.height * this._geometry.scale) / 2;
-        this._geometry.left = (this._geometry.width - img.width * this._geometry.scale) / 2;
+        this._geometry.top = (this._geometry.height - this._image.height * this._geometry.scale) / 2;
+        this._geometry.left = (this._geometry.width - this._image.width * this._geometry.scale) / 2;
 
         window.cvat.player.rotation = rotation;
         window.cvat.player.geometry.scale = this._geometry.scale;
@@ -361,10 +289,9 @@ class PlayerModel extends Listener {
     }
 
     focus(xtl, xbr, ytl, ybr) {
-        const img = this._frameProvider.require(this._frame.current);
-        if (!img) return;
-        const fittedScale = Math.min(this._geometry.width / img.width,
-            this._geometry.height / img.height);
+        if (!this._image) return;
+        const fittedScale = Math.min(this._geometry.width / this._image.width,
+            this._geometry.height / this._image.height);
 
         const boxWidth = xbr - xtl;
         const boxHeight = ybr - ytl;
@@ -376,8 +303,8 @@ class PlayerModel extends Listener {
 
         if (this._geometry.scale < fittedScale) {
             this._geometry.scale = fittedScale;
-            this._geometry.top = (this._geometry.height - img.height * this._geometry.scale) / 2;
-            this._geometry.left = (this._geometry.width - img.width * this._geometry.scale) / 2;
+            this._geometry.top = (this._geometry.height - this._image.height * this._geometry.scale) / 2;
+            this._geometry.left = (this._geometry.width - this._image.width * this._geometry.scale) / 2;
         } else {
             this._geometry.left = (this._geometry.width / this._geometry.scale - xtl * 2 - boxWidth) * this._geometry.scale / 2;
             this._geometry.top = (this._geometry.height / this._geometry.scale - ytl * 2 - boxHeight) * this._geometry.scale / 2;
@@ -388,7 +315,7 @@ class PlayerModel extends Listener {
     }
 
     scale(point, value) {
-        if (!this._frameProvider.require(this._frame.current)) return;
+        if (!this._image) return;
 
         const oldScale = this._geometry.scale;
         const newScale = value > 0 ? this._geometry.scale * 6 / 5 : this._geometry.scale * 5 / 6;
@@ -423,6 +350,7 @@ class PlayerModel extends Listener {
         }
 
         this.fit();
+        return true;
     }
 }
 
@@ -650,34 +578,34 @@ class PlayerController {
         this._model.pause();
     }
 
-    next() {
-        this._model.shift(1);
-        this._model.pause();
+    async next() {
+        await this._model.shift(1);
+        await this._model.pause();
     }
 
-    previous() {
-        this._model.shift(-1);
-        this._model.pause();
+    async previous() {
+        await this._model.shift(-1);
+        await this._model.pause();
     }
 
-    first() {
-        this._model.shift(this._model.frames.start, true);
-        this._model.pause();
+    async first() {
+        await this._model.shift(this._model.frames.start, true);
+        await this._model.pause();
     }
 
-    last() {
-        this._model.shift(this._model.frames.stop, true);
-        this._model.pause();
+    async last() {
+        await this._model.shift(this._model.frames.stop, true);
+        await this._model.pause();
     }
 
-    forward() {
-        this._model.shift(this._model.multipleStep);
-        this._model.pause();
+    async forward() {
+        await this._model.shift(this._model.multipleStep);
+        await this._model.pause();
     }
 
-    backward() {
-        this._model.shift(-this._model.multipleStep);
-        this._model.pause();
+    async backward() {
+        await this._model.shift(-this._model.multipleStep);
+        await this._model.pause();
     }
 
     seek(frame) {
@@ -704,6 +632,7 @@ class PlayerView {
         this._controller = playerController;
         this._playerUI = $('#playerFrame');
         this._playerBackgroundUI = $('#frameBackground');
+        this._playerCanvasBackground = $('#canvasBackground');
         this._playerContentUI = $('#frameContent');
         this._playerGridUI = $('#frameGrid');
         this._playerTextUI = $('#frameText');
@@ -729,6 +658,7 @@ class PlayerView {
         this._rotationWrapperUI = $('#rotationWrapper');
         this._rotatateAllImagesUI = $('#rotateAllImages');
 
+        this._latestDrawnImage = null;
         this._clockwiseRotationButtonUI.on('click', () => {
             this._controller.rotate(90);
         });
@@ -928,8 +858,21 @@ class PlayerView {
         }
 
         this._loadingUI.addClass('hidden');
-        if (this._playerBackgroundUI.css('background-image').slice(5, -2) !== image.src) {
-            this._playerBackgroundUI.css('background-image', `url("${image.src}")`);
+        if (this._latestDrawnImage !== image) {
+            this._latestDrawnImage = image;
+            this._playerCanvasBackground.attr('width', image.width);
+            this._playerCanvasBackground.attr('height', image.height);
+
+            if (window.cvatTask.mode === 'interpolation') {
+                const ctx = this._playerCanvasBackground[0].getContext('2d');
+                const imageData = ctx.createImageData(image.width, image.height);
+                imageData.data.set(image.data);
+                ctx.putImageData(imageData, 0, 0);
+            } else {
+                const uiImage = new Image(image.width, image.height);
+                uiImage.src = image.data;
+                this._playerCanvasBackground.drawImage(uiImage, 0, 0);
+            }
         }
 
         if (model.playing) {
@@ -980,6 +923,10 @@ class PlayerView {
             obj.css('top', geometry.top - geometry.frameOffset * geometry.scale);
             obj.css('left', geometry.left - geometry.frameOffset * geometry.scale);
         }
+
+        this._playerCanvasBackground.css('top', geometry.top);
+        this._playerCanvasBackground.css('left', geometry.left);
+        this._playerCanvasBackground.css('transform', `scale(${geometry.scale})`);
 
         this._playerContentUI.css('transform', `scale(${geometry.scale})`);
         this._playerTextUI.css('transform', `scale(10) rotate(${-geometry.rotation}deg)`);

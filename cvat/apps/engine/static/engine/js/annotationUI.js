@@ -480,7 +480,6 @@ function setupMenu(job, task, shapeCollectionModel,
 function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, annotationFormats,
     loadJobEvent) {
     // Setup some API
-    window.cvatCore = window.cvat;
     window.cvat = {
         labelsInfo: new LabelsInfo(taskData.labels),
         translate: new CoordinateTranslator(),
@@ -701,7 +700,8 @@ function callAnnotationUI(jid) {
             $.get('/api/v1/server/annotation/formats'),
         ).then((taskData, imageMetaData, annotationData, annotationFormats) => {
             $('#loadingOverlay').remove();
-            setTimeout(() => {
+            setTimeout(async () => {
+                [window.cvatTask] = (await window.cvat.tasks.get({ id: taskData[0].id }));
                 buildAnnotationUI(jobData, taskData[0],
                     imageMetaData[0], annotationData[0], annotationFormats[0], loadJobEvent);
             });

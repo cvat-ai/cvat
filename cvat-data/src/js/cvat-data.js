@@ -88,7 +88,7 @@ function YCbCrToRGBA(y, cb, cr, width, height) {
 class FrameProvider {
     constructor(memory, blockType) {
         this._frames = {};
-        this._memory = Math.min(1, memory); // number of stored blocks
+        this._memory = Math.max(1, memory); // number of stored blocks
         this._blocks = [];
         this._running = false;
         this._blockType = blockType;
