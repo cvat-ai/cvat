@@ -129,6 +129,9 @@ class FrameProvider {
         @param block - is a data from a server as is (ts file or archive)
         @param start {number} - is the first frame of a block
         @param end {number} - is the last frame of a block + 1
+        @param needed_frame {number} - number of frame that should be returned as soon as
+        @param callback - callback)
+
     */
 
     start_decode(block, start, end, needed_frame, callback)
@@ -176,9 +179,11 @@ class FrameProvider {
     /*
         Method decodes a block of data
 
-        @param block - is a data from a server as is (ts file or archive)
         @param start {number} - is the first frame of a block
         @param end {number} - is the last frame of a block + 1
+        @param needed_frame {number} - number of frame that should be returned as soon as
+        @param callback - callback)
+
     */
     decode(start, end, needed_frame, callback) {
     
