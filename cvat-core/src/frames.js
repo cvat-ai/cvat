@@ -14,7 +14,6 @@
     const {
         Exception,
         ArgumentError,
-        ScriptingError,
     } = require('./exceptions');
 
     // This is the frames storage
@@ -109,8 +108,13 @@
                         provider.startDecode(chunk, start, stop, onDecode.bind(this, provider));
                     } catch (error) {
                         if (error.donePromise) {
-                            await error.donePromise;
-                            provider.startDecode(chunk, start, stop, onDecode.bind(this, provider));
+                            try {
+                                await error.donePromise;
+                                provider.startDecode(chunk, start,
+                                    stop, onDecode.bind(this, provider));
+                            } catch (_) {
+                                reject(this.number);
+                            }
                         }
                     }
                 } else {
