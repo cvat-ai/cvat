@@ -6,9 +6,8 @@
 /* global
     require:true
 */
-const jpeg = require('jpeg-js');
-const JSZip  = require("jszip");
 const JSMpeg = require('./jsmpeg');
+const JSZip = require('jszip')
 
 const BlockType = Object.freeze({
     TSVIDEO: 'tsvideo',
@@ -150,9 +149,9 @@ class FrameProvider {
             this._running = true;
             this._decode_id = setTimeout(this.decode.bind(this, start, end, callback), 10);
            
-        }else{
+        } else {
             const zip = new JSZip();
-            let that = this;
+            const that = this;
             zip.loadAsync(block).then(function(_zip){
                 let index = start;
                
@@ -198,11 +197,13 @@ class FrameProvider {
             this._frames[this._currFrame] = YCbCrToRGBA(...result);
             this._currFrame ++;            
             callback(this._currFrame - 1);
-           
-            if (this._currFrame != end)
+            this._running = this._currFrame != end; 
+            if (this._running)
             {
                 this._decode_id = setTimeout(this.decode.bind(this, end, callback), 10);
-            } 
+            }
+           
+
         } catch(error) {
             throw(error);
         } 
