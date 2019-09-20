@@ -21,9 +21,11 @@ class FrameProviderWrapper extends Listener {
         this._stop = stop;
         this._loaded = null;
         this._result = null;
+        this._required = null;
     }
 
     async require(frameNumber) {
+        this._required = frameNumber;
         const frameData = await window.cvatTask.frames.get(frameNumber);
         const ranges = await window.cvatTask.frames.ranges();
         for (const range of ranges) {
@@ -43,6 +45,16 @@ class FrameProviderWrapper extends Listener {
             this._loaded = frameNumber;
             this._result = new ImageData(data, frameData.width, frameData.height);
             this.notify();
+        }).catch((error) => {
+            if (typeof (error) === 'number') {
+                if (this._required === error) {
+                    console.log('Unexpecter error. Requested frame was rejected');
+                } else {
+                    console.log(`${error} rejected - ok`);
+                }
+            } else {
+                console.log(error);
+            }
         });
 
         return null;
