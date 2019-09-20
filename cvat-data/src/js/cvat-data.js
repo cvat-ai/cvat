@@ -144,8 +144,15 @@ class FrameProvider {
     startDecode(block, start, end, callback) {
         if (this._running) {
             const error = new Error('Decoding has already running');
-            const promise = new Promise((resolve) => {
-                this._resolvePromise = resolve;
+            const promise = new Promise((resolve, reject) => {
+                if (this._promise) {
+                    this._promise.reject();
+                }
+
+                this._promise = {
+                    resolve,
+                    reject,
+                };
             });
             error.donePromise = promise;
             throw error;
