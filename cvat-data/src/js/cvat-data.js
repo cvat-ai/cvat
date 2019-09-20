@@ -6,8 +6,8 @@
 /* global
     require:true
 */
-
 const JSMpeg = require('./jsmpeg');
+const JSZip = require('jszip')
 
 const BlockType = Object.freeze({
     TSVIDEO: 'tsvideo',
@@ -96,6 +96,8 @@ class FrameProvider {
         this._videoDecoder = new JSMpeg.Decoder.MPEG1Video({});
         this._demuxer = new JSMpeg.Demuxer.TS({});
         this._demuxer.connect(JSMpeg.Demuxer.TS.STREAM.VIDEO_1, this._videoDecoder);
+
+        this._currFrame = -1;
     }
 
     /* This method removes extra data from a cache when memory overflow */
@@ -105,7 +107,7 @@ class FrameProvider {
             const [start, end] = shifted.split(':').map((el) => +el);
 
             // remove all frames within this block
-            for (let i = start; i < end; i++) {
+            for (let i = start; i <= end; i++) {
                 delete this._frames[i];
             }
         }
@@ -116,55 +118,98 @@ class FrameProvider {
         if (frameNumber in this._frames) {
             return this._frames[frameNumber];
         }
-
         return null;
+    }
+
+
+    /*
+        Method start asynchronic decode a block of data
+
+        @param block - is a data from a server as is (ts file or archive)
+        @param start {number} - is the first frame of a block
+        @param end {number} - is the last frame of a block + 1
+        @param callback - callback)
+
+    */
+
+    startDecode(block, start, end, callback)
+    {
+         if (this._blockType === BlockType.TSVIDEO){
+            if (this._running) {
+                throw new Error('Decoding has already running');
+            }
+            this._demuxer.write(block);
+            this._blocks.push(`${start}:${end}`);
+            this._cleanup();
+            this._currFrame = start;
+            for (let i = start; i <= end; i++)
+            {
+                this._frames[i] = "loading";
+            }
+            this._running = true;
+            this._decode_id = setTimeout(this.decode.bind(this, start, end, callback), 10);
+           
+        } else {
+            const zip = new JSZip();
+            const that = this;
+            zip.loadAsync(block).then(function(_zip){
+                let index = start;
+               
+                _zip.forEach(function (relativePath, zipEntry) { 
+                    
+                   _zip.file(relativePath).async('blob').then(function (fileData){                             
+                          const reader = new FileReader();
+                          reader._index = index;
+                          reader.onload = function(e){
+                               that._frames[e.target._index] = reader.result;
+                               callback(index - 1);
+                          };
+                          reader.readAsDataURL(fileData);
+                          index ++;
+                          
+                    });
+                });
+            });
+
+        }
     }
 
     /*
         Method decodes a block of data
 
-        @param block - is a data from a server as is (ts file or archive)
         @param start {number} - is the first frame of a block
         @param end {number} - is the last frame of a block + 1
+        @param callback - callback)
+
     */
-    decode(block, start, end) {
-        async function decode(resolve, reject) {
-            // no more requests possible during one is running
-            if (this._running) {
-                throw new Error('Decoding has already running');
+    decode(end, callback) {
+
+        try{
+            
+            const result = this._videoDecoder.decode();
+            if (!Array.isArray(result)) {
+                clearTimeout(this._decode_id);
+                const message = 'Result must be an array.'
+                    + `Got ${result}. Possible reasons: `
+                    + 'bad video file, unpached jsmpeg';
+                throw Error(message);
             }
-
-            try {
-                this._running = true;
-                this._blocks.push(`${start}:${end}`);
-
-                this._cleanup();
-
-                if (this._blockType === BlockType.TSVIDEO) {
-                    this._demuxer.write(block);
-                    for (let i = start; i < end; i++) {
-                        const result = this._videoDecoder.decode();
-                        if (!Array.isArray(result)) {
-                            const message = 'Result must be an array.'
-                                + `Got ${result}. Possible reasons: `
-                                + 'bad video file, unpached jsmpeg';
-                            throw Error(message);
-                        }
-                        this._frames[i] = YCbCrToRGBA(...result);
-                    }
-                    resolve();
-                } else if (this._blockType === BlockType.ARCHIVE) {
-                    // to do with any npm dearchiver
-                }
-            } catch (error) {
-                reject(error);
-            } finally {
-                this._running = false;
+            this._frames[this._currFrame] = YCbCrToRGBA(...result);
+            this._currFrame ++;            
+            callback(this._currFrame - 1);
+            this._running = this._currFrame != end; 
+            if (this._running)
+            {
+                this._decode_id = setTimeout(this.decode.bind(this, end, callback), 10);
             }
-        }
+           
 
-        return new Promise(decode.bind(this));
-    }
+        } catch(error) {
+            throw(error);
+        } 
+
+          
+    }    
 
     /*
         Method returns a list of cached ranges
