@@ -6,8 +6,8 @@
 /* global
     require:true
 */
+const JSZip = require('jszip');
 const JSMpeg = require('./jsmpeg');
-const JSZip = require('jszip')
 
 const BlockType = Object.freeze({
     TSVIDEO: 'tsvideo',
@@ -113,6 +113,15 @@ class FrameProvider {
         }
     }
 
+    _doneDecode() {
+        this._running = false;
+        if (this._resolvePromise) {
+            const copy = this._resolvePromise;
+            this._resolvePromise = null;
+            copy();
+        }
+    }
+
     /* Method returns frame from collection. Else method returns 0 */
     frame(frameNumber) {
         if (frameNumber in this._frames) {
@@ -132,45 +141,54 @@ class FrameProvider {
 
     */
 
-    startDecode(block, start, end, callback)
-    {
-         if (this._blockType === BlockType.TSVIDEO){
-            if (this._running) {
-                throw new Error('Decoding has already running');
-            }
+    startDecode(block, start, end, callback) {
+        if (this._running) {
+            const error = new Error('Decoding has already running');
+            const promise = new Promise((resolve) => {
+                this._resolvePromise = resolve;
+            });
+            error.donePromise = promise;
+            throw error;
+        }
+
+        this._running = true;
+        this._blocks.push('-1:-1');
+
+        if (this._blockType === BlockType.TSVIDEO) {
             this._demuxer.write(block);
-            this._blocks.push(`${start}:${end}`);
             this._cleanup();
             this._currFrame = start;
-            for (let i = start; i <= end; i++)
-            {
-                this._frames[i] = "loading";
+            for (let i = start; i <= end; i++) {
+                this._frames[i] = 'loading';
             }
-            this._running = true;
-            this._decode_id = setTimeout(this.decode.bind(this, start, end, callback), 10);
-           
+            this._decode_id = setTimeout(
+                this.decode.bind(this, start, end, callback),
+                10,
+            );
         } else {
             const zip = new JSZip();
-            const that = this;
-            zip.loadAsync(block).then(function(_zip){
+            zip.loadAsync(block).then((_zip) => {
                 let index = start;
-               
-                _zip.forEach(function (relativePath, zipEntry) { 
-                    
-                   _zip.file(relativePath).async('blob').then(function (fileData){                             
-                          const reader = new FileReader();
-                          reader._index = index;
-                          reader.onload = function(e){
-                               that._frames[e.target._index] = reader.result;
-                               callback(index - 1);
-                          };
-                          reader.readAsDataURL(fileData);
-                          index ++;
-                          
+                _zip.forEach((relativePath) => {
+                    const fileIndex = index++;
+                    _zip.file(relativePath).async('blob').then((fileData) => {
+                        // Need to be sure that files
+                        // are extracted one by one
+                        // and don't break an order
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            this._frames[fileIndex] = reader.result;
+                            this._blocks.pop().split(':');
+                            this._blocks.push(`${start}:${fileIndex}`);
+                            callback(fileIndex);
+                            if (fileIndex > end) {
+                                this._doneDecode();
+                            }
+                        };
+                        reader.readAsDataURL(fileData);
                     });
                 });
             });
-
         }
     }
 
@@ -182,34 +200,29 @@ class FrameProvider {
         @param callback - callback)
 
     */
-    decode(end, callback) {
-
-        try{
-            
-            const result = this._videoDecoder.decode();
-            if (!Array.isArray(result)) {
-                clearTimeout(this._decode_id);
-                const message = 'Result must be an array.'
-                    + `Got ${result}. Possible reasons: `
-                    + 'bad video file, unpached jsmpeg';
-                throw Error(message);
-            }
-            this._frames[this._currFrame] = YCbCrToRGBA(...result);
-            this._currFrame ++;            
-            callback(this._currFrame - 1);
-            this._running = this._currFrame != end; 
-            if (this._running)
-            {
-                this._decode_id = setTimeout(this.decode.bind(this, end, callback), 10);
-            }
-           
-
-        } catch(error) {
-            throw(error);
-        } 
-
-          
-    }    
+    decode(start, end, callback) {
+        const result = this._videoDecoder.decode();
+        if (!Array.isArray(result)) {
+            this._doneDecode(); // we should reset flag and resolve promise if it exist
+            const message = 'Result must be an array.'
+                + `Got ${result}. Possible reasons: `
+                + 'bad video file, unpached jsmpeg';
+            throw Error(message);
+        }
+        this._frames[this._currFrame] = YCbCrToRGBA(...result);
+        this._blocks.pop().split(':');
+        this._blocks.push(`${start}:${this._currFrame}`);
+        callback(this._currFrame);
+        this._currFrame++;
+        if (this._currFrame > end) {
+            this._doneDecode();
+        } else {
+            this._decode_id = setTimeout(
+                this.decode.bind(this, start, end, callback),
+                10,
+            );
+        }
+    }
 
     /*
         Method returns a list of cached ranges
