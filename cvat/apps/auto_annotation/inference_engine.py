@@ -37,4 +37,4 @@ def make_plugin():
 
 
 def make_network(model, weights):
-    return IENetwork.from_ir(model = model, weights = weights)
+    return IENetwork(model = model, weights = weights)
