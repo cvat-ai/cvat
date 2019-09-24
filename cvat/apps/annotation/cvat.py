@@ -398,7 +398,8 @@ def load(file_object, annotations):
                         shape['points'].extend(map(float, pair.split(',')))
 
                 if track is not None:
-                    track.shapes.append(annotations.TrackedShape(**shape))
+                    if shape["keyframe"]:
+                        track.shapes.append(annotations.TrackedShape(**shape))
                 else:
                     annotations.add_shape(annotations.LabeledShape(**shape))
                 shape = None
