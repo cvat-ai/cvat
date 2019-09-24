@@ -244,7 +244,7 @@ class VideoExtractor(DirectoryExtractor):
             input_options = '-f image2 -framerate 25 -start_number {}'.format(start_frame)
             output_chunk = task.get_chunk_path(i)
             self.prepare_dirs(output_chunk)
-            output_options = '-vframes {} -q:v 0'.format(chunk_size)
+            output_options = '-vframes {} -codec:v mpeg1video -q:v 0'.format(chunk_size)
 
             ff = FFmpeg(
                 inputs  = {input_images: input_options},

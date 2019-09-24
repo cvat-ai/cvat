@@ -93,7 +93,7 @@ class FrameProvider {
         this._running = false;
         this._blockType = blockType;
 
-        this._videoDecoder = new JSMpeg.Decoder.MPEG1Video({});
+        this._videoDecoder = new JSMpeg.Decoder.MPEG1Video({decodeFirstFrame : false});
         this._demuxer = new JSMpeg.Demuxer.TS({});
         this._demuxer.connect(JSMpeg.Demuxer.TS.STREAM.VIDEO_1, this._videoDecoder);
 
