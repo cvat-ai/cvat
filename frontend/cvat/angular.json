@@ -33,8 +33,6 @@
               "src/assets/engine/js/base.js",
               "src/assets/engine/js/checkPlatform.js",
               "src/assets/engine/js/userConfig.js",
-
-
               ]
           },
           "configurations": {

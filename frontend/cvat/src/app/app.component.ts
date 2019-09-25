@@ -10,4 +10,6 @@ enableProdMode();
 })
 export class AppComponent {
   title = 'cvat';
+  user=localStorage.getItem('user');
+
 }

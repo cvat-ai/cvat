@@ -13,7 +13,8 @@ export class StartupService {
 
   get(endpoint: string){
     //console.log(API_URL+endpoint);
-    return this.http.get(API_URL+endpoint, {reponseType: 'text'});
+    return this.http.get(API_URL+endpoint);
+    //return this.http.get(API_URL+endpoint, {reponseType: 'text'});
   }
 
 

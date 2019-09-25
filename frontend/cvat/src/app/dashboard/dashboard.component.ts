@@ -28,16 +28,20 @@ export class DashboardComponent implements OnInit {
       // DASHBOARD ENTRYPOINT
 
     //  this.startupService.get('.../../../../../backend/dashboard/meta').subscribe(
-        this.startupService.get('/dashboard/meta').subscribe(
-        metaData => this.metaData=metaData,
-        errorData => console.log('HTTP Error', errorData)
+    //    this.startupService.get('/api/v1/tasks').subscribe(
+    //    taskData => this.taskData=taskData,
+    //    errorData => console.log('HTTP Error', errorData)
+
+      //this.startupService.get('/dashboard/meta').subscribe(
+      //metaData => this.metaData=metaData,
+      //errorData => console.log('HTTP Error', this.metaData)
         /*errorData =>{
             $('#content').empty();
             const message = `Can not build CVAT dashboard. Code: ${errorData.status}. ` +
                 `Message: ${errorData.responseText || errorData.statusText}`;
             showMessage(message);
         }*/
-      );
+    //  );
 
 /*
     //  this.startupService.get('.../../../../../backend/api/v1/tasks${window.location.search}').subscribe(

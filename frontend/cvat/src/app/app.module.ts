@@ -6,13 +6,15 @@ import { AppComponent } from './app.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { TaskConfigurationComponent } from './task-configuration/task-configuration.component';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
-import { BasicAuthInterceptor } from './_helpers/basic-auth.interceptor';
+import { LoginComponent } from './login/login.component';
+//import { BasicAuthInterceptor } from './_helpers/basic-auth.interceptor';
 
 @NgModule({
   declarations: [
     AppComponent,
     DashboardComponent,
-    TaskConfigurationComponent
+    TaskConfigurationComponent,
+    LoginComponent
   ],
   imports: [
     BrowserModule,
@@ -20,9 +22,9 @@ import { BasicAuthInterceptor } from './_helpers/basic-auth.interceptor';
     HttpClientModule
 
   ],
-  providers: [{ provide: HTTP_INTERCEPTORS, useClass: BasicAuthInterceptor, multi: true } ],
+  providers: [],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
 
-//
+//providers: [{ provide: HTTP_INTERCEPTORS, useClass: BasicAuthInterceptor, multi: true } ],
