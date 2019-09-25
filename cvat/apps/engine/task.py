@@ -158,8 +158,9 @@ def _validate_data(data):
     # following order: 'a/b/c/d/2.txt', 'a/b/c/d/1.txt', 'a/b/c/d', 'a/b/c'
     # Let's keep all items which aren't substrings of the previous item. In
     # the example above only 2.txt and 1.txt files will be in the final list.
+    # Also need to correctly handle 'a/b/c0', 'a/b/c' case.
     data['server_files'] = [v[1] for v in zip([""] + server_files, server_files)
-        if not v[0].startswith(v[1])]
+        if not os.path.dirname(v[0]).startswith(v[1])]
 
     def count_files(file_mapping, counter):
         for rel_path, full_path in file_mapping.items():
