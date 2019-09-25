@@ -70,7 +70,11 @@ def main():
         return
 
     with open(mapping_file) as json_file:
-        mapping = json.load(json_file)
+        try:
+            mapping = json.load(json_file)
+        except json.decoder.JSONDecodeError:
+            logging.critical('JSON file not able to be parsed! Check file')
+            return
 
     try:
         mapping = mapping['label_map']
@@ -119,15 +123,17 @@ def main():
                 if not detection['frame'] == index:
                     continue
                 points = detection['points']
-                # Cv2 doesn't like floats for drawing
-                points = [int(p) for p in points]
+                if not isinstance(points[0], (np.ndarray, np.generic)):
+                    # Cv2 doesn't like floats for drawing
+                    points = [int(p) for p in points]
+                    points = [points,]
                 color = random_color()
                 if detection['type'] == 'rectangle':
                     cv2.rectangle(data, (points[0], points[1]), (points[2], points[3]), color, 3)
                 elif detection['type'] in ('polygon', 'polyline'):
                     # polylines is picky about datatypes
                     points = pairwise(points)
-                    cv2.polylines(data, [points], 1, color)
+                    cv2.polylines(data, points, 1, color)
             cv2.imshow(str(index), data)
             cv2.waitKey(show_image_delay)
             cv2.destroyWindow(str(index))
