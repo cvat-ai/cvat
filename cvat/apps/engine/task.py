@@ -166,7 +166,12 @@ def _validate_data(data):
     def count_files(file_mapping, counter):
         for rel_path, full_path in file_mapping.items():
             mime = get_mime(full_path)
-            counter[mime].append(rel_path)
+            if mime in counter:
+                counter[mime].append(rel_path)
+            else:
+                slogger.glob.warn("Skip '{}' file (its mime type doesn't "
+                    "correspond to a video or an image file)".format(full_path))
+
 
     counter = { media_type: [] for media_type in MEDIA_TYPES.keys() }
 
