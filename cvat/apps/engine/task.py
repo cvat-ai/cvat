@@ -142,26 +142,25 @@ def _save_task_to_db(db_task):
 
 def _validate_data(data):
     share_root = settings.SHARE_ROOT
-    server_files = {
-        'dirs': [],
-        'files': [],
-    }
+    server_files = []
 
     for path in data["server_files"]:
         path = os.path.normpath(path).lstrip('/')
         if '..' in path.split(os.path.sep):
             raise ValueError("Don't use '..' inside file paths")
         full_path = os.path.abspath(os.path.join(share_root, path))
-        if 'directory' == get_mime(full_path):
-            server_files['dirs'].append(path)
-        else:
-            server_files['files'].append(path)
         if os.path.commonprefix([share_root, full_path]) != share_root:
             raise ValueError("Bad file path: " + path)
+        server_files.append(path)
 
-    # Remove directories if other files from them exists in server files
-    data['server_files'] = server_files['files'] + [ dir_name for dir_name in server_files['dirs']
-        if not [ f_name for f_name in server_files['files'] if f_name.startswith(dir_name)]]
+    server_files.sort(reverse=True)
+    # The idea of the code is trivial. After sort we will have files in the
+    # following order: 'a/b/c/d/2.txt', 'a/b/c/d/1.txt', 'a/b/c/d', 'a/b/c'
+    # Let's keep all items which aren't substrings of the previous item. In
+    # the example above only 2.txt and 1.txt files will be in the final list.
+    # Also need to correctly handle 'a/b/c0', 'a/b/c' case.
+    data['server_files'] = [v[1] for v in zip([""] + server_files, server_files)
+        if not os.path.dirname(v[0]).startswith(v[1])]
 
     def count_files(file_mapping, counter):
         for rel_path, full_path in file_mapping.items():
