@@ -37,16 +37,26 @@ export default (state = defaultState, action: AnyAction): AuthState => {
         case AuthActionTypes.LOGIN_SUCCESS:
             return {
                 ...state,
-                initialized: true,
                 user: action.payload.user,
                 loginError: null,
             };
         case AuthActionTypes.LOGIN_FAILED:
             return {
                 ...state,
-                initialized: true,
                 user: null,
                 loginError: action.payload.loginError,
+            };
+        case AuthActionTypes.REGISTER_SUCCESS:
+            return {
+                ...state,
+                user: action.payload.user,
+                registerError: null,
+            };
+        case AuthActionTypes.REGISTER_FAILED:
+            return {
+                ...state,
+                user: null,
+                registerError: action.payload.registerError,
             };
         default:
             return state;

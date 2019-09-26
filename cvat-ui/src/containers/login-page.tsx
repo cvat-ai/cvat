@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps } from 'react-router';
-import { Redirect, Link, withRouter } from 'react-router-dom';
+import { Link, withRouter } from 'react-router-dom';
 
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
@@ -10,36 +10,35 @@ import {
     Row
 } from 'antd';
 
-import LoginForm from '../components/login-form';
+import LoginForm, { LoginData } from '../components/login-form';
 
 import { loginAsync } from '../actions/auth-actions';
 import { AuthState } from '../reducers/auth-reducer';
 
-interface LoginPageProps {
+interface StateToProps {
     auth: AuthState;
 }
 
-interface LoginPageActions {
-    login(login: string, password: string): void;
+interface DispatchToProps {
+    login(loginData: LoginData): void;
 }
 
-function mapStateToProps(state: any): LoginPageProps {
+function mapStateToProps(state: any): StateToProps {
     return {
         auth: state.auth,
     };
 }
 
-function mapDispatchToProps(dispatch: any): LoginPageActions {
+function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        login: (login: string, password: string) => dispatch(loginAsync(login, password)),
+        login: (loginData: LoginData) => dispatch(loginAsync(loginData)),
     }
 }
 
-class LoginPage extends React.PureComponent<
-    LoginPageProps &
-    LoginPageActions &
-    RouteComponentProps> {
-    constructor(props: any) {
+type LoginPageProps = StateToProps & DispatchToProps & RouteComponentProps;
+
+class LoginPage extends React.PureComponent<LoginPageProps> {
+    constructor(props: LoginPageProps) {
         super(props);
     }
 
@@ -55,7 +54,6 @@ class LoginPage extends React.PureComponent<
         return (
             <Row type='flex' justify='center' align='middle'>
                 <Col {...sizes}>
-                    <Redirect to='/auth/login'/>
                     <Title level={2}> Login </Title>
                     <LoginForm onSubmit={this.props.login}/>
                     { loginError &&
