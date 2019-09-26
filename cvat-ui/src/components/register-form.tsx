@@ -141,6 +141,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
                             validator: this.validateToNextPassword.bind(this),
                         }],
                     })(<Input.Password
+                        autoComplete='new-password'
                         prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)'}} />}
                         placeholder='Password'
                     />)}
@@ -154,6 +155,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
                             validator: this.compareToFirstPassword.bind(this),
                         }],
                     })(<Input.Password
+                        autoComplete='new-password'
                         prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)'}} />}
                         placeholder='Confirm password'
                     />)}
