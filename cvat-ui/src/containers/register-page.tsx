@@ -66,7 +66,7 @@ class RegisterPage extends React.PureComponent<RegisterPageProps> {
                     <Row type='flex' justify='start' align='top'>
                         <Col>
                             <Text strong>
-                                Have you been already registered? <Link to="/auth/login"> Login </Link>
+                                Already have an account? <Link to="/auth/login"> Login </Link>
                             </Text>
                         </Col>
                     </Row>
