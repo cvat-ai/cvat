@@ -1,26 +1,20 @@
-/* global
-    require:true,
-    __dirname:true,
-*/
-
 const path = require('path');
 
-const webConfig = {
+const cvat_data = {
     target: 'web',
     mode: 'production',
     entry: './src/js/cvat-data.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'cvat-data.min.js',
+        filename: 'cvat-data.min.js',      
         library: 'cvatData',
         libraryTarget: 'window',
     },
-    devtool: 'source-map',
     devServer: {
         contentBase: path.join(__dirname, 'dist'),
         compress: false,
         inline: true,
-        port: 3000,
+        port: 3001,
     },
     module: {
         rules: [{
@@ -50,20 +44,89 @@ const webConfig = {
     },
 };
 
-const nodeConfig = {
-    target: 'node',
-    mode: 'development',
-    devtool: 'source-map',
-    entry: './src/js/cvat-data.js',
+
+const worker_img = {
+    target: 'web',
+    mode: 'production',
+    entry: './src/js/unzip_imgs.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'cvat-data.node.js',
-        library: 'cvatData',
-        libraryTarget: 'commonjs',
+        filename: 'unzip_imgs.js',      
     },
-    stats: {
-        warnings: false,
+    devServer: {
+        contentBase: path.join(__dirname, 'dist'),
+        compress: false,
+        inline: true,
+        port: 3001,
     },
-};
+    module: {
+        rules: [{
+            test: /.js?$/,
+            exclude: /node_modules/,
+            use: {
+                loader: 'babel-loader',
+                options: {
+                    presets: [
+                        ['@babel/preset-env', {
+                            targets: {
+                                chrome: 58,
+                            },
+                            useBuiltIns: 'usage',
+                            corejs: 3,
+                            loose: false,
+                            spec: false,
+                            debug: true,
+                            include: [],
+                            exclude: [],
+                        }],
+                    ],
+                    sourceType: 'unambiguous',
+                },
+            },
+        }],
+    },
+}
 
-module.exports = [webConfig, nodeConfig];
+const worker_video = {
+    target: 'web',
+    mode: 'production',
+    entry: './src/js/decode_video.js',
+    output: {
+        path: path.resolve(__dirname, 'dist'),
+        filename: 'decode_video.js',      
+    },
+    devServer: {
+        contentBase: path.join(__dirname, 'dist'),
+        compress: false,
+        inline: true,
+        port: 3001,
+    },
+    module: {
+        rules: [{
+            test: /.js?$/,
+            exclude: /node_modules/,
+            use: {
+                loader: 'babel-loader',
+                options: {
+                    presets: [
+                        ['@babel/preset-env', {
+                            targets: {
+                                chrome: 58,
+                            },
+                            useBuiltIns: 'usage',
+                            corejs: 3,
+                            loose: false,
+                            spec: false,
+                            debug: true,
+                            include: [],
+                            exclude: [],
+                        }],
+                    ],
+                    sourceType: 'unambiguous',
+                },
+            },
+        }],
+    },
+}
+
+module.exports = [cvat_data, worker_img, worker_video]
