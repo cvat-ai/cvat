@@ -1,4 +1,3 @@
-  
 import numpy as np
 import cv2
 
@@ -45,10 +44,10 @@ for detection in detections:
     width = detection['frame_width']
     detection = detection['detections']
 
-    blob_height = detection['blob_height']
-    blob_width = detection['blob_width']
+    blob_height = 480
+    blob_width = 480
 
-    scale = min(blob_height / height, blob_width/ width)
+    scale = min(blob_height / height, blob_width / width)
 
     boxes = detection['boxes'] / scale
     scores = detection['scores']
@@ -67,5 +66,12 @@ for detection in detections:
     masks = list(segm for segm, is_valid in zip(masks, detections_filter) if is_valid)
     for mask, label in zip(masks, classes):
         # contours, hierarchy
-        contour, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contour, _ = cv2.findContours(mask,
+                                      cv2.RETR_EXTERNAL,
+                                      cv2.CHAIN_APPROX_TC89_KCOS)
+
+        contour = contour[0]
+        contour = contour.tolist()
+        contour = [x[0] for x in contour]
+
         results.add_polygon(contour, label, frame_number)
