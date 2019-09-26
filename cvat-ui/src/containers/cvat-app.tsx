@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { BrowserRouter, Switch, Route } from 'react-router-dom';
+import { Switch, Route, Redirect } from 'react-router';
+import { BrowserRouter } from 'react-router-dom';
 
 import { Spin } from 'antd';
 import 'antd/dist/antd.css';
@@ -16,27 +17,29 @@ import LoginPage from './login-page';
 import RegisterPage from './register-page';
 
 
-export interface CVATProps {
+export interface CVATAppProps {
     auth: AuthState;
 }
 
-export interface CVATActProps {
+export interface CVATAppActions {
     verifyAuthorized: () => void;
 }
 
-function mapStateToProps(state: any): CVATProps {
+function mapStateToProps(state: any): CVATAppProps {
     return {
         auth: state.auth,
     };
 }
 
-function mapDispatchToProps(dispatch: any): CVATActProps {
+function mapDispatchToProps(dispatch: any): CVATAppActions {
     return {
         verifyAuthorized: (): void => dispatch(authorizedAsync())
     };
 }
 
-class CVATApplication extends React.PureComponent<CVATProps & CVATActProps> {
+class CVATApplication extends React.PureComponent<
+CVATAppProps &
+CVATAppActions> {
     constructor(props: any) {
         super(props);
     }
@@ -52,18 +55,23 @@ class CVATApplication extends React.PureComponent<CVATProps & CVATActProps> {
                 return (
                     <BrowserRouter>
                         <Switch>
-                            <Route exact path='/auth/register' component={RegisterPage}/>
-                            <Route exact path='/auth/login' component={LoginPage}/>
                             <Route exact path='/tasks' component={TasksPage}/>
                             <Route path='/tasks/create' component={CreateTaskPage}/>
                             <Route path='/tasks/:number' component={TaskPage}/>
                             <Route path='/tasks/:number/jobs/:number' component={AnnotationPage}/>
+                            <Redirect to='/tasks'/>
                         </Switch>
                     </BrowserRouter>
                 );
             } else {
                 return (
-                    <LoginPage />
+                    <BrowserRouter>
+                            <Switch>
+                                <Route exact path='/auth/register' component={RegisterPage}/>
+                                <Route exact path='/auth/login' component={LoginPage}/>
+                                <Redirect to='/auth/login'/>
+                            </Switch>
+                    </BrowserRouter>
                 );
             }
         } else {

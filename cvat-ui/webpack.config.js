@@ -21,6 +21,7 @@ module.exports = {
         compress: false,
         inline: true,
         port: 3000,
+        historyApiFallback: true,
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
@@ -51,7 +52,8 @@ module.exports = {
     },
     plugins: [
         new HtmlWebpackPlugin({
-          template: "./src/index.html"
+          template: "./src/index.html",
+          inject: false,
         }),
     ],
     node: { fs: 'empty' },
