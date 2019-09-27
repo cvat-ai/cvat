@@ -5,8 +5,6 @@ import {
     Icon,
     Input,
     Form,
-    Row,
-    Col
 } from 'antd';
 
 export interface LoginData {

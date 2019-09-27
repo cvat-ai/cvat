@@ -3,7 +3,8 @@ import { connect } from 'react-redux';
 import { Switch, Route, Redirect } from 'react-router';
 import { BrowserRouter } from 'react-router-dom';
 
-import { Spin } from 'antd';
+import { Spin, Layout } from 'antd';
+
 import 'antd/dist/antd.css';
 
 import { authorizedAsync } from '../actions/auth-actions';
@@ -53,15 +54,21 @@ CVATAppActions> {
         if (this.props.auth.initialized) {
             if (this.props.auth.user) {
                 return (
-                    <BrowserRouter>
-                        <Switch>
-                            <Route exact path='/tasks' component={TasksPage}/>
-                            <Route path='/tasks/create' component={CreateTaskPage}/>
-                            <Route path='/tasks/:number' component={TaskPage}/>
-                            <Route path='/tasks/:number/jobs/:number' component={AnnotationPage}/>
-                            <Redirect to='/tasks'/>
-                        </Switch>
-                    </BrowserRouter>
+                    <Layout>
+                        <Layout.Header> </Layout.Header>
+                        <Layout.Content>
+                            <BrowserRouter>
+                                <Switch>
+                                    <Route exact path='/tasks' component={TasksPage}/>
+                                    <Route path='/tasks/create' component={CreateTaskPage}/>
+                                    <Route path='/tasks/:number' component={TaskPage}/>
+                                    <Route path='/tasks/:number/jobs/:number' component={AnnotationPage}/>
+                                    <Redirect to='/tasks'/>
+                                </Switch>
+                            </BrowserRouter>
+                        </Layout.Content>
+                        <Layout.Footer> </Layout.Footer>
+                    </Layout>
                 );
             } else {
                 return (

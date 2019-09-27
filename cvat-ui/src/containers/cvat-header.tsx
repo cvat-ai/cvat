@@ -7,9 +7,7 @@ export default class CVATHeader extends React.PureComponent {
 
     public render() {
         return (
-            <div>
-                "Cvat HEADER"
-            </div>
+            <
         );
     }
 }

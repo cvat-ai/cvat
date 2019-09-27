@@ -5,8 +5,6 @@ import {
     Icon,
     Input,
     Form,
-    Row,
-    Col
 } from 'antd';
 
 export interface RegisterData {
@@ -127,6 +125,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
                         }],
                     })(
                         <Input
+                            autoComplete='email'
                             prefix={<Icon type='mail' style={{ color: 'rgba(0,0,0,.25)'}} />}
                             placeholder='Email address'
                         />
