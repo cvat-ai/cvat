@@ -45,7 +45,7 @@ const cvat_data = {
 };
 
 
-const worker_img = {
+const workerImg = {
     target: 'web',
     mode: 'production',
     entry: './src/js/unzip_imgs.js',
@@ -53,12 +53,6 @@ const worker_img = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'unzip_imgs.js',      
     },
-    devServer: {
-        contentBase: path.join(__dirname, 'dist'),
-        compress: false,
-        inline: true,
-        port: 3001,
-    },
     module: {
         rules: [{
             test: /.js?$/,
@@ -87,7 +81,7 @@ const worker_img = {
     },
 }
 
-const worker_video = {
+const workerVideo = {
     target: 'web',
     mode: 'production',
     entry: './src/js/decode_video.js',
@@ -95,12 +89,6 @@ const worker_video = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'decode_video.js',      
     },
-    devServer: {
-        contentBase: path.join(__dirname, 'dist'),
-        compress: false,
-        inline: true,
-        port: 3001,
-    },
     module: {
         rules: [{
             test: /.js?$/,
@@ -129,4 +117,4 @@ const worker_video = {
     },
 }
 
-module.exports = [cvat_data, worker_img, worker_video]
+module.exports = [cvat_data, workerImg, workerVideo]

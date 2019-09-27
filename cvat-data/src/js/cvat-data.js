@@ -12,14 +12,10 @@ const BlockType = Object.freeze({
     ARCHIVE: 'archive',
 });
 
-/* This function is a modified version of function from jsmpeg
-    which converts an image from YCbCr space to RGBA space
-*/
-
 class FrameProvider {
     constructor(memory, blockType) {
         this._frames = {};
-        this._memory = Math.min(1, memory); // number of stored blocks
+        this._memory = Math.max(1, memory); // number of stored blocks
         this._blocks = [];
         this._running = false;
         this._blockType = blockType;
@@ -69,13 +65,15 @@ class FrameProvider {
             this._cleanup();            
 
             const worker = new Worker('decode_video.js');
+
+            worker.onerror(function (event) {
+                console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
+            });
+
             worker.postMessage({block : block, 
                                 start : start, 
                                   end : end });
             
-            worker.onerror(function (event) {
-                console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
-            });
 
             worker.onmessage = (function (event){
                 this._frames[event.data.index] = event.data.data;
@@ -84,14 +82,16 @@ class FrameProvider {
            
         } else {
             const worker = new Worker('unzip_imgs.js');
-            worker.postMessage({block : block, 
-                                start : start, 
-                                  end : end });
 
             worker.onerror(function (event) {
                 console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
             });
 
+            worker.postMessage({block : block, 
+                                start : start, 
+                                  end : end });
+
+            
             worker.onmessage = (function (event){
                 this._frames[event.data.index] = event.data.data;
                 callback(event.data.index);
