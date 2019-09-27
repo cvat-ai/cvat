@@ -1,5 +1,33 @@
 const path = require('path');
 
+
+const _module = {
+        rules: [{
+            test: /.js?$/,
+            exclude: /node_modules/,
+            use: {
+                loader: 'babel-loader',
+                options: {
+                    presets: [
+                        ['@babel/preset-env', {
+                            targets: {
+                                chrome: 58,
+                            },
+                            useBuiltIns: 'usage',
+                            corejs: 3,
+                            loose: false,
+                            spec: false,
+                            debug: true,
+                            include: [],
+                            exclude: [],
+                        }],
+                    ],
+                    sourceType: 'unambiguous',
+                },
+            },
+        }],
+    }
+
 const cvat_data = {
     target: 'web',
     mode: 'production',
@@ -16,32 +44,7 @@ const cvat_data = {
         inline: true,
         port: 3001,
     },
-    module: {
-        rules: [{
-            test: /.js?$/,
-            exclude: /node_modules/,
-            use: {
-                loader: 'babel-loader',
-                options: {
-                    presets: [
-                        ['@babel/preset-env', {
-                            targets: {
-                                chrome: 58,
-                            },
-                            useBuiltIns: 'usage',
-                            corejs: 3,
-                            loose: false,
-                            spec: false,
-                            debug: false,
-                            include: [],
-                            exclude: [],
-                        }],
-                    ],
-                    sourceType: 'unambiguous',
-                },
-            },
-        }],
-    },
+    module: _module
 };
 
 
@@ -53,32 +56,7 @@ const workerImg = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'unzip_imgs.js',      
     },
-    module: {
-        rules: [{
-            test: /.js?$/,
-            exclude: /node_modules/,
-            use: {
-                loader: 'babel-loader',
-                options: {
-                    presets: [
-                        ['@babel/preset-env', {
-                            targets: {
-                                chrome: 58,
-                            },
-                            useBuiltIns: 'usage',
-                            corejs: 3,
-                            loose: false,
-                            spec: false,
-                            debug: true,
-                            include: [],
-                            exclude: [],
-                        }],
-                    ],
-                    sourceType: 'unambiguous',
-                },
-            },
-        }],
-    },
+    module: _module
 }
 
 const workerVideo = {
@@ -89,32 +67,7 @@ const workerVideo = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'decode_video.js',      
     },
-    module: {
-        rules: [{
-            test: /.js?$/,
-            exclude: /node_modules/,
-            use: {
-                loader: 'babel-loader',
-                options: {
-                    presets: [
-                        ['@babel/preset-env', {
-                            targets: {
-                                chrome: 58,
-                            },
-                            useBuiltIns: 'usage',
-                            corejs: 3,
-                            loose: false,
-                            spec: false,
-                            debug: true,
-                            include: [],
-                            exclude: [],
-                        }],
-                    ],
-                    sourceType: 'unambiguous',
-                },
-            },
-        }],
-    },
+    module: _module
 }
 
 module.exports = [cvat_data, workerImg, workerVideo]
