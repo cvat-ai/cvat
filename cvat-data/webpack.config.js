@@ -17,7 +17,7 @@ const _module = {
                             corejs: 3,
                             loose: false,
                             spec: false,
-                            debug: true,
+                            debug: false,
                             include: [],
                             exclude: [],
                         }],
