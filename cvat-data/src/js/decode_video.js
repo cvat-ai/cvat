@@ -1,6 +1,8 @@
 const JSMpeg = require('./jsmpeg');
 
-
+/* This function is a modified version of function from jsmpeg
+    which converts an image from YCbCr space to RGBA space
+*/
 function YCbCrToRGBA(y, cb, cr, width, height) {
     const rgba = new Uint8ClampedArray(1280 * 720 * 4).fill(255);
     const w = ((width + 15) >> 4) << 4;
