@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 import argparse
 import getpass
 import json
@@ -95,10 +96,9 @@ task_create_parser = task_subparser.add_parser(
     description='Create a new CVAT task.'
 )
 task_create_parser.add_argument(
-    '--name',
-    default='new task',
+    'name',
     type=str,
-    help='name of the task (default: %(default)s)'
+    help='name of the task'
 )
 task_create_parser.add_argument(
     '--labels',
@@ -175,6 +175,12 @@ frames_parser.add_argument(
     type=int,
     help='list of frame IDs to download',
     nargs='+'
+)
+frames_parser.add_argument(
+    '--outdir',
+    type=str,
+    default='',
+    help='directory to save images'
 )
 
 #######################################################################
