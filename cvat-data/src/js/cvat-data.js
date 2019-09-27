@@ -66,7 +66,7 @@ class FrameProvider {
 
             const worker = new Worker('decode_video.js');
 
-            worker.onerror(function (event) {
+            worker.onerror = (function (event) {
                 console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
             });
 
@@ -83,7 +83,7 @@ class FrameProvider {
         } else {
             const worker = new Worker('unzip_imgs.js');
 
-            worker.onerror(function (event) {
+            worker.onerror = (function (event) {
                 console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
             });
 
