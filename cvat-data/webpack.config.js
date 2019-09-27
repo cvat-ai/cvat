@@ -28,7 +28,7 @@ const _module = {
         }],
     }
 
-const cvatdata = {
+const cvatData = {
     target: 'web',
     mode: 'production',
     entry: './src/js/cvat-data.js',
@@ -70,4 +70,4 @@ const workerVideo = {
     module: _module
 }
 
-module.exports = [cvatdata, workerImg, workerVideo]
+module.exports = [cvatData, workerImg, workerVideo]
