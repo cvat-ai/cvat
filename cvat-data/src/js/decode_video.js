@@ -91,7 +91,16 @@ self.onmessage = function (e) {
                 + 'bad video file, unpached jsmpeg';
             throw Error(message);
         }
-        postMessage({fileName : null, index : i, data: YCbCrToRGBA(...result)});
+        const rawImageData = {
+              data: YCbCrToRGBA(...result),
+              width: result[3],
+              height: result[4]
+            };
+        
+        const jpegImageData = jpeg.encode(rawImageData, 50);
+        
+        
+        postMessage({fileName : null, index : i, data: jpegImageData});
     }
 
     self.close();
