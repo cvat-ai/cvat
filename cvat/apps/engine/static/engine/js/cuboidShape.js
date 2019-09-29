@@ -21,6 +21,8 @@
     convertPlainArrayToActual:false
 */
 
+const MIN_EDGE_LENGTH = 10
+
 class CuboidController extends PolyShapeController {
     constructor(cuboidModel) {
         super(cuboidModel);
@@ -230,28 +232,31 @@ class CuboidController extends PolyShapeController {
         view.front_left_edge.selectize({
             points: 't,b',
             rotationPoint: false,
-        }).resize(viewModel.computeLeftConstraints()).on('resizing', function () {
-            controller.resizeControl(viewModel.fl, this);
+        }).resize(viewModel.computeSideEdgeConstraints(viewModel.fl)).on('resizing', function () {
+            controller.resizeControl(viewModel.fl, this, viewModel.computeSideEdgeConstraints(viewModel.fl));
         });
 
         view.front_right_edge.selectize({
             points: 't,b',
             rotationPoint: false,
         }).resize().on('resizing', function () {
-            controller.resizeControl(viewModel.fr, this);
+            controller.resizeControl(viewModel.fr, this, viewModel.computeMidConstraints());
         });
 
         view.dorsal_right_edge.selectize({
             points: 't,b',
             rotationPoint: false,
-        }).resize(viewModel.computeRightConstraints()).on('resizing', function () {
-            controller.resizeControl(viewModel.dr, this);
+        }).resize(viewModel.computeSideEdgeConstraints(viewModel.dr)).on('resizing', function () {
+            controller.resizeControl(viewModel.dr, this, viewModel.computeSideEdgeConstraints(viewModel.dr));
         });
     }
 
-    resizeControl(vm_edge, updated_edge) {
+    resizeControl(vm_edge, updated_edge, constraints) {
         const top_point = convertPlainArrayToActual([updated_edge.attr('x1'), updated_edge.attr('y1')])[0];
         const bot_point = convertPlainArrayToActual([updated_edge.attr('x2'), updated_edge.attr('y2')])[0];
+
+        top_point.y = Math.clamp(top_point.y, constraints.y1_range.min, constraints.y1_range.max);
+        bot_point.y = Math.clamp(bot_point.y, constraints.y2_range.min, constraints.y2_range.max);
 
         vm_edge.points = [top_point, bot_point];
         this.updateViewAndVM();
@@ -520,27 +525,69 @@ class Cuboid2PointViewModel {
         this._updateVanishingPoints();
     }
 
-    computeLeftConstraints(){
+    computeSideEdgeConstraints(edge) {
         let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y
-        let minY = this.fl.canvasPoints[1].y-mid_length;
-        let maxY = this.fl.canvasPoints[0].y+mid_length;
+
+        let minY = edge.canvasPoints[1].y-mid_length;
+        let maxY = edge.canvasPoints[0].y+mid_length;
+
+        const y1 = edge.points[0].y;
+        const y2 = edge.points[1].y;
+
+        const miny1 = y2 - mid_length
+        const maxy1 = y2 - MIN_EDGE_LENGTH;
+
+        const miny2 = y1 + MIN_EDGE_LENGTH;
+        const maxy2 = y1 + mid_length;
+
         return{
             constraint: {
 	    	    minY: minY,
     		    maxY: maxY,
-	        }
+	        },
+	        y1_range:{
+                max:maxy1,
+                min:miny1,
+            },
+            y2_range:{
+                max:maxy2,
+                min:miny2,
+            }
         }
     }
-    computeRightConstraints(){
-        let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y
-        let minY = this.dr.canvasPoints[1].y-mid_length;
-        let maxY = this.dr.canvasPoints[0].y+mid_length;
+
+    computeMidConstraints(){
+        let left_length = this.fl.canvasPoints[1].y-this.fl.canvasPoints[0].y;
+        let right_length = this.dr.canvasPoints[1].y-this.dr.canvasPoints[0].y;
+        let minimum_length = Math.max(left_length,right_length);
+
+        let minY = this.fr.canvasPoints[1].y-minimum_length;
+        let maxY = this.fr.canvasPoints[0].y+minimum_length;
+
+        const y1 = this.fl.points[0].y;
+        const y2 = this.fl.points[1].y;
+
+        const miny1 = y2 - 1000
+        const maxy1 = y2 - minimum_length;
+
+        const miny2 = y1 + minimum_length;
+        const maxy2 = y1 + 1000;
+
         return{
             constraint: {
 	    	    minY: minY,
     		    maxY: maxY,
-	        }
+	        },
+	        y1_range:{
+                max:maxy1,
+                min:miny1,
+            },
+            y2_range:{
+                max:maxy2,
+                min:miny2,
+            }
         }
+
     }
     _updateRotations() {
         const rotations = this._getRotations();
