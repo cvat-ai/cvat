@@ -7,22 +7,29 @@
 <body>
   <div class="login">
     	<h1>Login</h1>
+      <form method="post" action="http://localhost:8080/auth/login?next=/" id="form1">
 
+        <input type="text" name="username" value="username" onfocus="if (this.value=='username') this.value='';">
+        <input type="text" name="password" value="password" onfocus="if (this.value=='password') this.value='';">
+      </form>
+      <button type="submit" form="form1" class="btn btn-primary btn-block btn-large">Login</button>
 	</div>
-
-	<div class="note">
-		{% block note %} {% endblock %}
-	</div>
-<body>
+</body>
+</html>
+<!--
 </html>
 
 
+
+	<div class="note">
+		{% block note %} {% endblock %}
+	</div> -->
 
   <!--
       Copyright (C) 2018 Intel Corporation
 
       SPDX-License-Identifier: MIT
-  -->
+
   {% extends "auth_base.html" %}
 
   {% block title %}Login{% endblock %}
@@ -51,3 +58,4 @@
   	{{ note }}
       {% endautoescape %}
   {% endblock %}
+  -->

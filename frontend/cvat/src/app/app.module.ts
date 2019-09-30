@@ -5,8 +5,10 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { TaskConfigurationComponent } from './task-configuration/task-configuration.component';
-import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+
 import { LoginComponent } from './login/login.component';
+//import { ReactiveFormsModule } from '@angular/forms';
 //import { BasicAuthInterceptor } from './_helpers/basic-auth.interceptor';
 
 @NgModule({
@@ -19,8 +21,8 @@ import { LoginComponent } from './login/login.component';
   imports: [
     BrowserModule,
     AppRoutingModule,
-    HttpClientModule
-
+    HttpClientModule,
+    HttpClientXsrfModule.withOptions({ cookieName: 'csrftoken', headerName: 'X-CSRFToken' })
   ],
   providers: [],
   bootstrap: [AppComponent]
