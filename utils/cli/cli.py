@@ -35,7 +35,7 @@ def main():
         except (requests.exceptions.HTTPError,
                 requests.exceptions.ConnectionError,
                 requests.exceptions.RequestException) as e:
-            log.info(e)
+            log.critical(e)
 
 
 if __name__ == '__main__':

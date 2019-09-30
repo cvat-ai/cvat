@@ -135,6 +135,7 @@
                 "--settings",
                 "cvat.settings.testing",
                 "cvat/apps/engine",
+                "utils/cli"
             ],
             "django": true,
             "cwd": "${workspaceFolder}",
