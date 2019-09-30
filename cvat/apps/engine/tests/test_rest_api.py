@@ -1653,6 +1653,29 @@ class JobAnnotationAPITestCase(APITestCase):
         self._run_api_v1_jobs_id_annotations(self.user, self.assignee,
             self.assignee)
 
+    def test_api_v1_jobs_id_annotations_observer(self):
+        _, jobs = self._create_task(self.user, self.assignee)
+        job = jobs[0]
+        data = {
+            "version": 0,
+            "tags": [],
+            "shapes": [],
+            "tracks": []
+        }
+
+        response = self._get_api_v1_jobs_id_data(job["id"], self.observer)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self._put_api_v1_jobs_id_data(job["id"], self.observer, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self._patch_api_v1_jobs_id_data(job["id"], self.observer, "create", data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self._delete_api_v1_jobs_id_data(job["id"], self.observer)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
     def test_api_v1_jobs_id_annotations_no_auth(self):
         self._run_api_v1_jobs_id_annotations(self.user, self.assignee, None)
 
