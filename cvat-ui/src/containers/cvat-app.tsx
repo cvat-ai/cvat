@@ -6,6 +6,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { Spin, Layout } from 'antd';
 
 import 'antd/dist/antd.css';
+import '../stylesheet.css';
 
 import { authorizedAsync } from '../actions/auth-actions';
 import { AuthState } from '../reducers/auth-reducer';
@@ -16,6 +17,7 @@ import TaskPage from './task-page';
 import AnnotationPage from './annotation-page/annotation-page';
 import LoginPage from './login-page';
 import RegisterPage from './register-page';
+import Header from './cvat-header';
 
 
 export interface CVATAppProps {
@@ -55,7 +57,7 @@ CVATAppActions> {
             if (this.props.auth.user) {
                 return (
                     <Layout>
-                        <Layout.Header> </Layout.Header>
+                        <Header> </Header>
                         <Layout.Content>
                             <BrowserRouter>
                                 <Switch>

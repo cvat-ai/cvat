@@ -8,7 +8,7 @@ export default class TasksPage extends React.PureComponent {
     public render() {
         return (
             <div>
-                "Tasks Page"
+                "Tasks page"
             </div>
         );
     }
