@@ -97,7 +97,7 @@ self.onmessage = function (e) {
               height: result[4]
             };
         
-        const jpegImageData = jpeg.encode(rawImageData, 50);
+        const jpegImageData = jpeg.encode(rawImageData, 100);
         
         
         postMessage({fileName : null, index : i, data: jpegImageData});
