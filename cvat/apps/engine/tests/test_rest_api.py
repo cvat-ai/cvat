@@ -1654,7 +1654,7 @@ class JobAnnotationAPITestCase(APITestCase):
             self.assignee)
 
     def test_api_v1_jobs_id_annotations_observer(self):
-        task, jobs = self._create_task(self.user, self.assignee)
+        _, jobs = self._create_task(self.user, self.assignee)
         job = jobs[0]
         data = {
             "version": 0,
