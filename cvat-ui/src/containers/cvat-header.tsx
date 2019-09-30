@@ -1,5 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { RouteComponentProps } from 'react-router';
+import { withRouter } from 'react-router-dom';
 
 import {
     Layout,
@@ -33,9 +35,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     }
 }
 
-type HeaderProps = StateToProps & DispatchToProps;
+type HeaderProps = StateToProps & DispatchToProps & RouteComponentProps;
 
-class Header extends React.PureComponent<HeaderProps> {
+class CVATHeader extends React.PureComponent<HeaderProps> {
     constructor(props: any) {
         super(props);
     }
@@ -45,20 +47,37 @@ class Header extends React.PureComponent<HeaderProps> {
         const backLogo = () => (<img src="/assets/icon-playcontrol-previous.svg"/>);
         const userLogo = () => (<img src="/assets/icon-account.svg" />);
         const { username } = this.props.auth.user;
+        const { pathname } = this.props.location;
+        let activeTab = 'tasks';
+
+        if (pathname === '/tasks') {
+            activeTab = 'tasks';
+        } else if (pathname === '/models') {
+            activeTab = 'models';
+        }
+
         return (
             <Layout.Header className='cvat-header'>
                 <div className='left-header'>
                     <Icon className='cvat-logo-icon' component={cvatLogo}/>
                     <Icon className='cvat-back-icon' component={backLogo}/>
 
-                    <Radio.Group size='default' defaultValue='tasks' className='cvat-header-buttons'>
-                        <Radio.Button value='tasks'> Tasks </Radio.Button>
-                        <Radio.Button value='models'> Models </Radio.Button>
-                        <Button className='header-button' type='link'> Analytics </Button>
+                    <Radio.Group size='default' defaultValue={activeTab} className='cvat-header-buttons'>
+                        <Radio.Button value='tasks'onChange={
+                            () => this.props.history.push('/tasks')
+                        }> Tasks </Radio.Button>
+                        <Radio.Button value='models' onChange={
+                            () => this.props.history.push('/models')
+                        }> Models </Radio.Button>
+                        <Button className='header-button' type='link' onClick={
+                            () => window.open('/analytics/app/kibana', '_blank')
+                        }> Analytics </Button>
                     </Radio.Group>
                 </div>
                 <div className='right-header'>
-                    <Button className='header-button' type='link'> Help </Button>
+                    <Button className='header-button' type='link' onClick={
+                            () => window.open('/documentation/user_guide.html', '_blank')
+                    }> Help </Button>
                     <Menu className='cvat-header-menu' subMenuCloseDelay={0.1} mode='horizontal'>
                         <Menu.SubMenu title={
                             <span>
@@ -78,7 +97,7 @@ class Header extends React.PureComponent<HeaderProps> {
     }
 }
 
-export default connect(
+export default withRouter(connect(
     mapStateToProps,
     mapDispatchToProps,
-)(Header);
+)(CVATHeader));

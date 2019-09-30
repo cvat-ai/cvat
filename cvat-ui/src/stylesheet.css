@@ -1,0 +1,127 @@
+.cvat-header.ant-layout-header {
+    display: flex;
+    padding-left: 0px;
+    padding-right: 0px;
+    line-height: 0px;
+    height: 44px;
+    background: #D8D8D8;
+}
+
+.left-header {
+    width: 50%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.right-header {
+    width: 50%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.cvat-header-buttons.ant-radio-group {
+    height: 100%;
+    display: flex;
+}
+
+.cvat-header-buttons.ant-radio-group > label {
+    height: 100%;
+    background: rgba(255, 255, 255, 0);
+    border-radius: 0px;
+    display: flex;
+    align-items: center;
+
+    /* Important here is used in order to redefine all states :hover, :active, :focus-within, etc */
+    user-select: none !important;
+    border: none !important;
+    border-color: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: black !important;
+}
+
+.cvat-header-buttons.ant-radio-group > label::before {
+    background-color: unset !important;
+}
+
+.cvat-header-buttons.ant-radio-group > label.ant-radio-button-wrapper-checked {
+    height: 100%;
+    background: #C3C3C3;
+}
+.anticon.cvat-logo-icon {
+    display: flex;
+    align-items: center;
+}
+
+.anticon.cvat-back-icon {
+    display: flex;
+    align-items: center;
+}
+
+.anticon.cvat-logo-icon > img {
+    display: flex;
+    height: 15.8px;
+    margin-left: 18px;
+}
+
+.anticon.cvat-back-icon > img {
+    display: flex;
+    height: 15.8px;
+    margin-left: 18px;
+    margin-right: 18px;
+}
+
+.anticon.cvat-back-icon:hover > img {
+    filter: invert(0.4);
+}
+
+.ant-btn.header-button {
+    height: 100%;
+    background: rgba(255, 255, 255, 0);
+    border-radius: 0px;
+    color: black !important;
+    transition: color 0.5s;
+}
+
+.ant-btn.header-button:active {
+    background: #C3C3C3;
+}
+
+.ant-menu.cvat-header-menu {
+    width: fit-content;
+    align-items: center;
+    border: 0px;
+    height: 100%;
+    background: rgba(255,255,255,0);
+}
+
+.ant-menu.cvat-header-menu > li.ant-menu-submenu {
+    border-bottom: unset !important;
+}
+
+
+.ant-menu.cvat-header-menu > li > div {
+    margin-top: 0px;
+}
+
+.anticon.cvat-header-user-icon {
+    display: contents;
+}
+
+.anticon.cvat-header-user-icon > img {
+    width: 17px;
+    margin: 16px;
+}
+
+.anticon.cvat-header-menu-icon {
+    display: contents;
+}
+
+.anticon.cvat-header-menu-icon > img {
+    width: 14px;
+    margin: 10px;
+    transform: rotate(-90deg);
+}
+
