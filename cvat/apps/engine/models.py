@@ -10,7 +10,6 @@ import os
 
 from django.db import models
 from django.conf import settings
-from django.core.validators import MaxValueValidator
 
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
