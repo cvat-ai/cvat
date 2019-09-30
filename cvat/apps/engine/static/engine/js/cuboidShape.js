@@ -21,7 +21,8 @@
     convertPlainArrayToActual:false
 */
 
-const MIN_EDGE_LENGTH = 10
+const MIN_EDGE_LENGTH = 5;
+const EDGE_MARGIN = 0.5;
 
 class CuboidController extends PolyShapeController {
     constructor(cuboidModel) {
@@ -526,7 +527,7 @@ class Cuboid2PointViewModel {
     }
 
     computeSideEdgeConstraints(edge) {
-        let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y
+        let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y - EDGE_MARGIN;
 
         let minY = edge.canvasPoints[1].y-mid_length;
         let maxY = edge.canvasPoints[0].y+mid_length;
@@ -559,7 +560,7 @@ class Cuboid2PointViewModel {
     computeMidConstraints(){
         let left_length = this.fl.canvasPoints[1].y-this.fl.canvasPoints[0].y;
         let right_length = this.dr.canvasPoints[1].y-this.dr.canvasPoints[0].y;
-        let minimum_length = Math.max(left_length,right_length);
+        let minimum_length = Math.max(left_length,right_length) - EDGE_MARGIN;
 
         let minY = this.fr.canvasPoints[1].y-minimum_length;
         let maxY = this.fr.canvasPoints[0].y+minimum_length;
