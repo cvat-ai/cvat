@@ -187,7 +187,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             permissions.append(auth.TaskAccessPermission)
         elif http_method in ["POST"]:
             permissions.append(auth.TaskCreatePermission)
-        elif http_method in ["PATCH", "PUT"]:
+        elif self.action == 'annotations' or http_method in ["PATCH", "PUT"]:
             permissions.append(auth.TaskChangePermission)
         elif http_method in ["DELETE"]:
             permissions.append(auth.TaskDeletePermission)
@@ -207,9 +207,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         super().perform_destroy(instance)
         shutil.rmtree(task_dirname, ignore_errors=True)
 
-    @staticmethod
     @action(detail=True, methods=['GET'], serializer_class=JobSerializer)
-    def jobs(request, pk):
+    def jobs(self, request, pk):
+        self.get_object() # force to call check_object_permissions
         queryset = Job.objects.filter(segment__task_id=pk)
         serializer = JobSerializer(queryset, many=True,
             context={"request": request})
@@ -218,7 +218,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['POST'], serializer_class=TaskDataSerializer)
     def data(self, request, pk):
-        db_task = self.get_object()
+        db_task = self.get_object() # call check_object_permissions as well
         serializer = TaskDataSerializer(db_task, data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
@@ -228,6 +228,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
+        self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
             data = annotation.get_task_data(pk, request.user)
             serializer = LabeledDataSerializer(data=data)
@@ -267,7 +268,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     def dump(self, request, pk, filename):
         filename = re.sub(r'[\\/*?:"<>|]', '_', filename)
         username = request.user.username
-        db_task = self.get_object()
+        db_task = self.get_object() # call check_object_permissions as well
         timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         action = request.query_params.get("action")
         if action not in [None, "download"]:
@@ -325,6 +326,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
+        self.get_object() # force to call check_object_permissions
         response = self._get_rq_response(queue="default",
             job_id="/api/{}/tasks/{}".format(request.version, pk))
         serializer = RqStatusSerializer(data=response)
@@ -350,12 +352,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return response
 
-    @staticmethod
     @action(detail=True, methods=['GET'], serializer_class=ImageMetaSerializer,
         url_path='frames/meta')
-    def data_info(request, pk):
+    def data_info(self, request, pk):
         try:
-            db_task = models.Task.objects.get(pk=pk)
+            db_task = self.get_object() # call check_object_permissions as well
             meta_cache_file = open(db_task.get_image_meta_cache_path())
         except OSError:
             task.make_image_meta_cache(db_task)
@@ -404,6 +405,7 @@ class JobViewSet(viewsets.GenericViewSet,
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
+        self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
             data = annotation.get_job_data(pk, request.user)
             return Response(data)
