@@ -7,6 +7,7 @@ export interface AuthState {
     initialized: boolean;
     authError: any;
     loginError: any;
+    logoutError: any;
     registerError: any;
     user: any;
 }
@@ -15,6 +16,7 @@ const defaultState: AuthState = {
     initialized: false,
     authError: null,
     loginError: null,
+    logoutError: null,
     registerError: null,
     user: null,
 };
@@ -45,6 +47,17 @@ export default (state = defaultState, action: AnyAction): AuthState => {
                 ...state,
                 user: null,
                 loginError: action.payload.loginError,
+            };
+        case AuthActionTypes.LOGOUT_SUCCESS:
+            return {
+                ...state,
+                user: null,
+                logoutError: null,
+            };
+        case AuthActionTypes.LOGOUT_FAILED:
+            return {
+                ...state,
+                logoutError: action.payload.logoutError,
             };
         case AuthActionTypes.REGISTER_SUCCESS:
             return {
