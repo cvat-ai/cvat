@@ -21,11 +21,11 @@ class CLI():
         data = None
         files = None
         if resource_type == ResourceType.LOCAL:
-            files = {f'client_files[{i}]': open(f, 'rb') for i, f in enumerate(resources)}
+            files = {'client_files[{}]'.format(i): open(f, 'rb') for i, f in enumerate(resources)}
         elif resource_type == ResourceType.REMOTE:
-            data = {f'remote_files[{i}]': f for i, f in enumerate(resources)}
+            data = {'remote_files[{}]'.format(i): f for i, f in enumerate(resources)}
         elif resource_type == ResourceType.SHARE:
-            data = {f'server_files[{i}]': f for i, f in enumerate(resources)}
+            data = {'server_files[{}]'.format(i): f for i, f in enumerate(resources)}
         response = self.session.post(url, data=data, files=files)
         response.raise_for_status()
 
@@ -41,7 +41,7 @@ class CLI():
                 if use_json_output:
                     log.info(json.dumps(r, indent=4))
                 else:
-                    log.info(f'{r["id"]},{r["name"]},{r["status"]}')
+                    log.info('{id},{name},{status}'.format(**r))
             if not response_json['next']:
                 return
             page += 1
@@ -60,8 +60,7 @@ class CLI():
         response = self.session.post(url, json=data)
         response.raise_for_status()
         response_json = response.json()
-        log.info(f'Created task ID: {response_json["id"]} '
-                 f'NAME: {response_json["name"]}')
+        log.info('Created task ID: {id} NAME: {name}'.format(**response_json))
         self.tasks_data(response_json['id'], resource_type, resources)
 
     def tasks_delete(self, task_ids, **kwargs):
@@ -71,10 +70,10 @@ class CLI():
             response = self.session.delete(url)
             try:
                 response.raise_for_status()
-                log.info(f'Task ID {task_id} deleted')
+                log.info('Task ID {} deleted'.format(task_id))
             except requests.exceptions.HTTPError as e:
                 if response.status_code == 404:
-                    log.info(f'Task ID {task_id} not found')
+                    log.info('Task ID {} not found'.format(task_id))
                 else:
                     raise e
 
@@ -86,7 +85,7 @@ class CLI():
             response = self.session.get(url)
             response.raise_for_status()
             im = Image.open(BytesIO(response.content))
-            outfile = f'task_{task_id}_frame_{frame_id:06d}.jpg'
+            outfile = 'task_{}_frame_{:06d}.jpg'.format(task_id, frame_id)
             im.save(os.path.join(outdir, outfile))
 
     def tasks_dump(self, task_id, fileformat, filename, **kwargs):
@@ -103,7 +102,7 @@ class CLI():
         while True:
             response = self.session.get(url)
             response.raise_for_status()
-            log.info(f'STATUS {response.status_code}')
+            log.info('STATUS {}'.format(response.status_code))
             if response.status_code == 201:
                 break
 
@@ -118,23 +117,24 @@ class CVAT_API_V1():
     """ Build parameterized API URLs """
 
     def __init__(self, host, port):
-        self.base = f'http://{host}:{port}/api/v1/'
+        self.base = 'http://{}:{}/api/v1/'.format(host, port)
 
     @property
     def tasks(self):
-        return f'{self.base}tasks'
+        return self.base + 'tasks'
 
     def tasks_page(self, page_id):
-        return f'{self.tasks}?page={page_id}'
+        return self.tasks + '?page={page_id}'
 
     def tasks_id(self, task_id):
-        return f'{self.tasks}/{task_id}'
+        return self.tasks + '/{}'.format(task_id)
 
     def tasks_id_data(self, task_id):
-        return f'{self.tasks}/{task_id}/data'
+        return self.tasks_id(task_id) + '/data'
 
     def tasks_id_frame_id(self, task_id, frame_id):
-        return f'{self.tasks}/{task_id}/frames/{frame_id}'
+        return self.tasks_id(task_id) + '/frames/{}'.format(frame_id)
 
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
-        return f'{self.tasks}/{task_id}/annotations/{name}?format={fileformat}'
+        return self.tasks_id(task_id) + '/annotations/{}?format={}' \
+            .format(name, fileformat)
