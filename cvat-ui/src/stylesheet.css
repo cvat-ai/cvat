@@ -32,6 +32,7 @@
     border-radius: 0px;
     display: flex;
     align-items: center;
+    padding: 0 30px;
 
     /* Important here is used in order to redefine all states :hover, :active, :focus-within, etc */
     user-select: none !important;
@@ -83,6 +84,7 @@
     border-radius: 0px;
     color: black !important;
     transition: color 0.5s;
+    padding: 0 30px;
 }
 
 .ant-btn.header-button:active {
@@ -125,3 +127,58 @@
     transform: rotate(-90deg);
 }
 
+.anticon.empty-tasks-icon > img {
+    width: 90px;
+}
+
+.cvat-title {
+    font-weight: 400;
+    font-size: 23px;
+    color: black;
+    padding-top: 5px;
+}
+
+.task-page {
+    padding-top: 30px;
+}
+
+.task-page > div:nth-child(1) {
+    margin-bottom: 10px;
+}
+
+.task-page > div:nth-child(1) > div > span {
+    color: black;
+}
+
+.task-page > div:nth-child(2) > div:nth-child(1) {
+    display: flex;
+}
+
+.task-page > div:nth-child(2) > div:nth-child(1) > span:nth-child(2) {
+    width: 200px;
+    margin-left: 10px;
+}
+
+/* empty-tasks icon */
+.empty-task-list > div:nth-child(1) {
+    margin-top: 100px;
+}
+
+.empty-task-list > div:nth-child(2) > div {
+    margin-top: 20px;
+}
+
+/* No tasks created yet */
+.empty-task-list > div:nth-child(2) > div > span {
+    font-size: 20px;
+    color: #4A4A4A;
+}
+
+/* To get started with your annotation project .. */
+.empty-task-list > div:nth-child(3) {
+    margin-top: 10px;
+}
+
+#create-task-button {
+    padding: 0 30px;
+}

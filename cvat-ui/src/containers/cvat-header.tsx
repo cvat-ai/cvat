@@ -48,7 +48,7 @@ class CVATHeader extends React.PureComponent<HeaderProps> {
         const userLogo = () => (<img src="/assets/icon-account.svg" />);
         const { username } = this.props.auth.user;
         const { pathname } = this.props.location;
-        let activeTab = 'tasks';
+        let activeTab = null;
 
         if (pathname === '/tasks') {
             activeTab = 'tasks';
@@ -62,7 +62,7 @@ class CVATHeader extends React.PureComponent<HeaderProps> {
                     <Icon className='cvat-logo-icon' component={cvatLogo}/>
                     <Icon className='cvat-back-icon' component={backLogo}/>
 
-                    <Radio.Group size='default' defaultValue={activeTab} className='cvat-header-buttons'>
+                    <Radio.Group size='default' value={activeTab} className='cvat-header-buttons'>
                         <Radio.Button value='tasks'onChange={
                             () => this.props.history.push('/tasks')
                         }> Tasks </Radio.Button>

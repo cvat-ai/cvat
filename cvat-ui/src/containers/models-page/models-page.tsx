@@ -7,9 +7,7 @@ export default class ModelsPage extends React.PureComponent {
 
     public render() {
         return (
-            <div>
-                "Models page"
-            </div>
-        );
+            <div> Models page </div>
+        )
     }
 }
