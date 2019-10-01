@@ -51,12 +51,12 @@ class TestCLI(APITestCase):
 
     def test_tasks_list(self):
         self.cli.tasks_list(False)
-        self.assertRegex(self.mock_stdout.getvalue(), f'.*{self.taskname}.*')
+        self.assertRegex(self.mock_stdout.getvalue(), '.*{}.*'.format(self.taskname))
 
     def test_tasks_delete(self):
         self.cli.tasks_delete([1])
         self.cli.tasks_list(False)
-        self.assertNotRegex(self.mock_stdout.getvalue(), f'.*{self.taskname}.*')
+        self.assertNotRegex(self.mock_stdout.getvalue(), '.*{}.*'.format(self.taskname))
 
     def test_tasks_dump(self):
         path = os.path.join(settings.SHARE_ROOT, 'test_cli.xml')
