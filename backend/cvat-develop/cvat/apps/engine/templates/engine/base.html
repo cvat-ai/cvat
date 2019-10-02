@@ -1,0 +1,90 @@
+<!--
+    Copyright (C) 2018 Intel Corporation
+
+    SPDX-License-Identifier: MIT
+-->
+<!DOCTYPE html>
+{% load static compress %}
+
+
+<html>
+    <head>
+        <title>
+            {% block head_title %}
+                Computer Vision Annotation Tool (CVAT)
+            {% endblock %}
+        </title>
+
+        {% compress css %}
+            {% block head_css %}
+                <link rel="stylesheet" type="text/css" href="{% static 'engine/base.css' %}">
+            {% endblock %}
+        {% endcompress %}
+
+        {% compress js file platformchecker %}
+            <script type="text/javascript" src="{% static 'engine/js/3rdparty/platform.js' %}"></script>
+            <script type="text/javascript" src="{% static 'engine/js/checkPlatform.js' %}"></script>
+        {% endcompress %}
+
+        {% compress js file thirdparty %}
+            {% block head_js_3rdparty %}
+                <script type="text/javascript" src="{% static 'engine/js/3rdparty/jquery-3.3.1.js' %}"></script>
+                <script type="text/javascript" src="{% static 'engine/js/3rdparty/js.cookie.js' %}"></script>
+                <script type="text/javascript" src="{% static 'engine/js/3rdparty/mousetrap.js' %}"></script>
+            {% endblock %}
+        {% endcompress %}
+
+        {% compress js file cvat %}
+            {% block head_js_cvat %}
+                <script type="text/javascript" src="{% static 'engine/js/base.js' %}"></script>
+                <script type="text/javascript" src="{% static 'engine/js/userConfig.js' %}"></script>
+            {% endblock %}
+        {% endcompress %}
+    </head>
+    <body>
+        {% block header %}
+        {% endblock %}
+
+        {% block content %}
+        {% endblock %}
+
+        {% block footer %}
+        {% endblock %}
+
+        <svg class="overlay" id="loadingOverlay" style="display: block;">
+            <text class="semiBold" font-size="50" fill="#09c" x="44%" y="46%"> LOADING </text>
+        </svg>
+    </body>
+
+    <template id="confirmTemplate">
+        <div class="modal">
+            <div class="modal-content" style="width: 400px; height: auto; max-height: 600px; overflow: auto;">
+                <label class="regular templateMessage selectable"> </label>
+                <center>
+                    <button class="regular h2 templateDisagreeButton" style="margin-top: 20px"> Cancel </button>
+                    <button class="regular h2 templateAgreeButton" style="margin-top: 20px"> Ok </button>
+                </center>
+            </div>
+        </div>
+    </template>
+
+
+    <template id="messageTemplate">
+        <div class="modal">
+            <div class="modal-content"  style="width: 400px; height: auto; max-height: 600px; overflow: auto;">
+                <label class="regular templateMessage selectable" style="word-break: break-word;"> </label>
+                <center>
+                    <button class="regular h2 templateOKButton" style="margin-top: 20px"> Ok </button>
+                </center>
+            </div>
+        </div>
+    </template>
+
+    <template id="overlayTemplate">
+        <div class="modal" style="display: block !important;">
+            <div class="modal-content"  style="width: 400px; height: auto; max-height: 600px; overflow: auto;">
+                <label class="regular templateMessage selectable"> </label>
+            </div>
+        </div>
+    </template>
+</html>

@@ -1,0 +1,3 @@
+exclude_paths:
+ - '**/3rdparty/**'
+ - '**/engine/js/cvat-core.min.js'

@@ -1,0 +1,21 @@
+<!--
+    Copyright (C) 2018 Intel Corporation
+
+    SPDX-License-Identifier: MIT
+-->
+<div class='userProfile'>
+  {% if user.is_authenticated %}
+    {% if user.ldap_user and 'thumbnailPhoto' in user.ldap_user.attrs %}
+        {# TODO insert photo from ldap #}
+    {% endif %}
+
+    {% if user.first_name and user.last_name %}
+      <p>{{ user.first_name }} {{ user.last_name }}</p>
+    {% else %}
+      <p>{{ user.username }}</p>
+    {% endif %}
+    <form action="{% url 'logout' %}">
+      <input type="submit" class="menuButton semiBold h2" value="Logout">
+    </form>
+  {% endif %}
+</div>
