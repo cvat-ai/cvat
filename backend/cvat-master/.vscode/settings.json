@@ -1,0 +1,23 @@
+{
+    "python.pythonPath": ".env/bin/python",
+    "eslint.enable": true,
+    "eslint.validate": [
+        "javascript",
+        "typescript"
+    ],
+    "eslint.workingDirectories": [
+        {
+            "directory":  "./cvat-core",
+            "changeProcessCWD": true
+        },
+        {
+            "directory":  "./cvat-canvas",
+            "changeProcessCWD": true
+        },
+        {
+            "directory":  ".",
+            "changeProcessCWD": true
+        }
+    ],
+    "python.linting.pylintEnabled": true
+}

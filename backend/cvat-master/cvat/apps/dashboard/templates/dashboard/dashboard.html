@@ -1,0 +1,223 @@
+<!--
+    Copyright (C) 2018 Intel Corporation
+
+    SPDX-License-Identifier: MIT
+-->
+
+{% extends 'engine/base.html' %}
+{% load static %}
+{% load pagination_tags %}
+
+{% block head_title %}
+    CVAT Dashboard
+{% endblock %}
+
+{% block head_css %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/stylesheet.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/jstree/themes/default/style.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'dashboard/js/3rdparty/pagination/bootstrap.css' %}">
+    {% for css_file in css_3rdparty %}
+        <link rel="stylesheet" type="text/css" href="{% static css_file %}">
+    {% endfor %}
+{% endblock %}
+
+{% block head_js_3rdparty %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/jstree/jstree.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dashboard/js/3rdparty/pagination/jquery.twbsPagination.js' %}"></script>
+    {% for js_file in js_3rdparty %}
+        <script type="text/javascript" src="{% static js_file %}" defer></script>
+    {% endfor %}
+{% endblock %}
+
+{% block head_js_cvat %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'engine/js/cvat-core.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'dashboard/js/dashboard.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/listener.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/labelsInfo.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/shapes.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/annotationParser.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/server.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <div id="content">
+        <div style="width: 100%; display: flex;">
+            <div style="width: 50%; display: flex;"> </div>
+            <div style="width: 100%; display: flex;">
+                <div id="dashboardManageButtons" style="display: flex;">
+                    <button id="dashboardCreateTaskButton" class="regular h1" style="padding: 7px;"> Create New Task </button>
+                </div>
+                <div style="width: 300px; display: flex; margin-left: 4px;">
+                    <input type="text" id="dashboardSearchInput" class="regular h3" placeholder="Search.." name="search">
+                    <button id="dashboardSearchSubmit" class="regular h3"> &#x1F50D; </button>
+                </div>
+            </div>
+            <div style="width: 50%; display: flex;"> </div>
+        </div>
+
+        <div id="dashboardList" style="float: left; width: 100%"> </div>
+        <ul id="dashboardPagination" class="pagination-sm"></ul>
+    </div>
+
+    <div id="dashboardCreateModal" class="modal hidden">
+        <form id="dashboardCreateContent" class="modal-content" autocomplete="on" onsubmit="return false">
+            <center>
+                <label class="semiBold h1"> Task Configuration </label>
+            </center>
+
+            <table style="width: 100%; text-align: left;">
+                <tr>
+                    <td style="width: 25%"> <label class="regular h2"> Name: </label> </td>
+                    <td> <input type="text" id="dashboardNameInput" class="regular" style="width: 90%"/> </td>
+                </tr>
+                <tr>
+                    <td> <label class="regular h2"> Labels: </label> </td>
+                    <td> <input type="text" id="dashboardLabelsInput" class="regular" style="width: 90%" title='
+Example:
+car @select=color:blue,red,black ~checkbox=parked:true
+@text=plate:"" @select=model:volvo,mazda,bmw
+~radio=quality:good,bad
+
+Specification:
+<prefix>checkbox=id:true/false
+<prefix>radio=id:name1,name2,...
+<prefix>number=id:min,max,step
+<prefix>text=id:"default value"
+<prefix>select=id:value1,value2,...
+
+<prefix> can be @ for unique properties and ~ for properties
+which can change its value during lifetime of the object.
+Default value for all elements is the first value after ":".
+
+For "select" and "radio" types the special value is available: "__undefined__".
+Specify the value FIRST if the attribute should be annotated explicitly.
+Example: @select=race:__undefined__,skip,asian,black,caucasian,other'/>
+                </td>
+                </tr>
+                <tr>
+                    <td> <label class="regular h2"> Bug Tracker: </label> </td>
+                    <td> <input type="text" id="dashboardBugTrackerInput" class="regular" style="width: 90%", placeholder="Please specify full URL"/> </td>
+                </tr>
+                <tr>
+                    <td> <label class="regular h2"> Source: </label> </td>
+                    <td>
+                        <input id="dashboardLocalSource" type="radio" name="sourceType" value="local" checked=true/> <label for="dashboardLocalSource" class="regular h2" for="localSource"> Local </label>
+                        <br> <input id="dashboardRemoteSource" type="radio" name="sourceType" value="remote"/> <label for="dashboardRemoteSource" class="regular h2"> Remote </label>
+                        <br> <input id="dashboardShareSource" type="radio" name="sourceType" value="share"/> <label for="dashboardShareSource" class="regular h2" for="shareSource"> Share </label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label class="regular h2"> Z-Order </label>
+                    </td>
+                    <td>
+                        <input type="checkbox" id="dashboardZOrder"/>
+                    </td>
+                </tr>
+                <tr>
+                        <td>
+                            <label class="regular h2"> Overlap Size </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardOverlap" class="regular" max="50000" min="0" value="0" disabled=true/>
+                            <input type="checkbox" id="dashboardCustomOverlap" title="Custom overlap size"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Segment Size </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardSegmentSize" class="regular" max="50000" min="100" value="5000" disabled=true/>
+                            <input type="checkbox" id="dashboardCustomSegment" title="Custom segment size"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Image Quality </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardImageQuality" class="regular" style="width: 4.5em;" max="95" min="1" value="50" disabled=true/>
+                            <input type="checkbox" id="dashboardCustomQuality" title="Custom image quality"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Start Frame </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardStartFrame" class="regular" style="width: 4.5em;" min="0" value=0 disabled=true/>
+                            <input type="checkbox" id="dashboardCustomStart" title="Custom start frame"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Stop Frame </label>
+                        </td>
+                        <td>
+                            <input type="number" id="dashboardStopFrame" class="regular" style="width: 4.5em;" min="0" value=0 disabled=true/>
+                            <input type="checkbox" id="dashboardCustomStop" title="Custom stop frame"/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="regular h2"> Frame Filter </label>
+                        </td>
+                        <td>
+                            <input type="text" id="dashboardFrameFilter" class="regular" style="width: 4.5em;" title="Currently only support 'step=K' filter expression." disabled=true/>
+                            <input type="checkbox" id="dashboardCustomFilter" title="Custom frame filter"/>
+                        </td>
+                    </tr>
+            </table>
+
+
+            <div style="text-align: left;">
+                <div>
+                    <button id="dashboardSelectFiles" class="regular h2"> Select Files </button>
+                    <label id="dashboardFilesLabel" class="regular h2" style="margin-left: 10px"> No Files </label>
+                    <input id="dashboardLocalFileSelector" type="file" style="display: none" multiple/>
+                </div>
+                <div class="hidden">
+                    <label for="dashboardRemoteFileInput" class="regular h2"> URLs: </label><br>
+                    <textarea id="dashboardRemoteFileInput" rows="5" placeholder="One URL per line" style="width: 100%;"></textarea>
+                </div>
+            </div>
+            <div style="width: 100%; height: 14%; padding-top: 10px;">
+                <div style="float: right; width: 35%; height: 50px;">
+                    <button id="dashboardCancelTask" class="regular h2"> Cancel </button>
+                    <button id="dashboardSubmitTask" class="regular h2"> Submit </button>
+                </div>
+                <div style="float: left; height: 50px;  overflow: auto; width: 100%; height: auto; word-break: break-word;">
+                    <label id="dashboardCreateTaskMessage" class="regular h2 selectable" style="float:left;">  </label>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div id="dashboardShareBrowseModal" class="modal hidden">
+        <div style="width: 600px; height: 400px;" class="modal-content noSelect">
+            <center> <label id="dashboardShareBasePath" class="regular h1"> </label> </center>
+            <div id="dashboardShareBrowser"> </div>
+            <center>
+                <button id="dashboardCancelBrowseServer" class="regular h2" style="margin: 0px 10px"> Cancel </button>
+                <button id="dashboardSubmitBrowseServer" class="regular h2" style="margin: 0px 10px"> Submit </button>
+            </center>
+        </div>
+    </div>
+
+    <template id="dashboardUpdateTemplate">
+        <div id="dashboardUpdateModal" class="modal">
+            <div id="dashboardUpdateContent" class="modal-content">
+                <input id="dashboardOldLabels" type="text" readonly=true class="regular h2">
+                <input id="dashboardNewLabels" type="text" placeholder="expand the specification here" class="regular h2">
+                <center>
+                    <button id="dashboardCancelUpdate" class="regular h2"> Cancel </button>
+                    <button id="dashboardSubmitUpdate" class="regular h2"> Update </button>
+                </center>
+            </div>
+        </div>
+    </template>
+{% endblock %}

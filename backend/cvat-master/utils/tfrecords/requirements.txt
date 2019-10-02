@@ -1,0 +1,3 @@
+argparse==1.1
+tensorflow==1.13.1
+pathlib==1.0.1
