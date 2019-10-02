@@ -13,6 +13,16 @@ from furl import furl
 from . import forms
 from . import signature
 
+def sign_in_user(request):
+    if request.method == 'POST':
+        username=request.POST['username']
+        password=request.POST['password']
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            return redirect(settings.LOGIN_REDIRECT_URL)
+
 def register_user(request):
     if request.method == 'POST':
         form = forms.NewUserForm(request.POST)
