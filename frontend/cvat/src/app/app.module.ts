@@ -5,7 +5,9 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { TaskConfigurationComponent } from './task-configuration/task-configuration.component';
+import { CookieService } from 'ngx-cookie-service';
 import { HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { HttpXsrfModule } from '@angular/common/http';
 
 import { LoginComponent } from './login/login.component';
 //import { ReactiveFormsModule } from '@angular/forms';
@@ -22,9 +24,10 @@ import { LoginComponent } from './login/login.component';
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    HttpClientXsrfModule.withOptions({ cookieName: 'csrftoken', headerName: 'X-CSRFToken' })
+    HttpClientXsrfModule.withOptions({ cookieName: 'csrftoken', headerName: 'x-csrftoken' })
   ],
-  providers: [],
+  providers: [
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
