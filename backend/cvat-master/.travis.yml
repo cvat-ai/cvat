@@ -1,0 +1,16 @@
+sudo: required
+
+language: python
+
+python:
+  - "3.5"
+
+services:
+  - docker
+  
+before_script:
+  - docker-compose -f docker-compose.yml -f docker-compose.ci.yml up --build -d
+
+script:
+  - docker exec -it cvat /bin/bash -c 'python3 manage.py test cvat/apps/engine'
+  - docker exec -it cvat /bin/bash -c 'cd cvat-core && npm install && npm run test && npm run coveralls'

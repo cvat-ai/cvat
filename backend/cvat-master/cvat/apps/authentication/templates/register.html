@@ -1,0 +1,32 @@
+<!--
+    Copyright (C) 2018 Intel Corporation
+
+    SPDX-License-Identifier: MIT
+-->
+{% extends "auth_base.html" %}
+
+{% block title %}Create user{% endblock %}
+
+{% block content %}
+	<div class="login">
+		<h1>Create user</h1>
+		<form method="post" action="{% url 'register' %}">
+            {% csrf_token %}
+            {% for field in form %}
+                {{ field }}
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        <small>{{ error }}<small>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+
+			<input type="hidden" name="next" value="{{ next }}" />
+			<button type="submit" class="btn btn-primary btn-block btn-large">Register</button>
+		</form>
+	</div>
+
+	<div class="note">
+
+	</div>
+{% endblock %}

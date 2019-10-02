@@ -1,0 +1,15 @@
+version: "2.3"
+
+services:
+  cvat:
+    build:
+      args:
+        DJANGO_CONFIGURATION: "testing"
+        WITH_TESTS: "yes"
+      network: host
+    environment:
+      COVERALLS_REPO_TOKEN:
+      TRAVIS:
+      TRAVIS_JOB_ID:
+      TRAVIS_BRANCH:
+      TRAVIS_PULL_REQUEST:
