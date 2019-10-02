@@ -21,6 +21,8 @@ import shutil
 import subprocess
 
 from pathlib import Path
+from corsheaders.defaults import default_headers
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
@@ -165,6 +167,8 @@ if 'yes' == os.environ.get('WITH_DEXTR', 'no'):
 
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
+
+SESSION_COOKIE_DOMAIN='.localhost:3000'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
