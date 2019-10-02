@@ -1,17 +1,14 @@
 import React from 'react';
 
-import { Link, withRouter } from 'react-router-dom';
-import Title from 'antd/lib/typography/Title';
+import { Link } from 'react-router-dom';
 import Text from 'antd/lib/typography/Text';
 import {
     Col,
     Row,
-    Button,
     Icon,
-    Input,
 } from 'antd';
 
-export default class ModelsPage extends React.PureComponent {
+export default class EmptyList extends React.PureComponent {
     constructor(props: any) {
         super(props);
     }

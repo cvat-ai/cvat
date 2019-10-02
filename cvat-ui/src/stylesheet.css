@@ -154,9 +154,18 @@
     display: flex;
 }
 
+.task-page > div:nth-child(2) > div:nth-child(2) {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .task-page > div:nth-child(2) > div:nth-child(1) > span:nth-child(2) {
     width: 200px;
     margin-left: 10px;
+}
+
+.task-page > span.ant-typography {
+    user-select: none;
 }
 
 /* empty-tasks icon */
@@ -177,6 +186,33 @@
 /* To get started with your annotation project .. */
 .empty-task-list > div:nth-child(3) {
     margin-top: 10px;
+}
+
+.ant-pagination.tasks-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.task-list {
+    height: 100%;
+    overflow-y: scroll;
+}
+
+.task-list-item {
+    width: 100%;
+    height: 120px;
+    border: 1px solid black;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.task-page {
+    height: 100%;
+}
+
+.task-page > div:nth-child(3) {
+    height: 80%;
+    margin-top: 28px;
 }
 
 #create-task-button {

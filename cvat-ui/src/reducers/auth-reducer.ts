@@ -1,16 +1,7 @@
 import { AnyAction } from 'redux';
-
 import { AuthActionTypes } from '../actions/auth-actions';
 
-
-export interface AuthState {
-    initialized: boolean;
-    authError: any;
-    loginError: any;
-    logoutError: any;
-    registerError: any;
-    user: any;
-}
+import { AuthState } from './interfaces';
 
 const defaultState: AuthState = {
     initialized: false,
