@@ -21,7 +21,7 @@ import shutil
 import subprocess
 
 from pathlib import Path
-
+from corsheaders.defaults import default_headers
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = str(Path(__file__).parents[2])
 
@@ -166,16 +166,19 @@ if 'yes' == os.environ.get('WITH_DEXTR', 'no'):
 if os.getenv('DJANGO_LOG_VIEWER_HOST'):
     INSTALLED_APPS += ['cvat.apps.log_viewer']
 
+SESSION_COOKIE_DOMAIN='.localhost:3000'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+
 ]
 
 # Cross-Origin Resource Sharing settings for CVAT UI
@@ -183,7 +186,7 @@ UI_SCHEME = os.environ.get('UI_SCHEME', 'http')
 UI_HOST = os.environ.get('UI_HOST', 'localhost')
 UI_PORT = os.environ.get('UI_PORT', '3000')
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = [UI_HOST]
+CSRF_TRUSTED_ORIGINS = ['localhost:3000']
 UI_URL = '{}://{}:{}'.format(UI_SCHEME, UI_HOST, UI_PORT)
 CORS_ORIGIN_WHITELIST = [UI_URL]
 
