@@ -195,24 +195,47 @@
 
 .task-list {
     height: 100%;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 .task-list-item {
     width: 100%;
     height: 120px;
-    border: 1px solid black;
-    border-radius: 5px;
+    border: 1px solid #c3c3c3;
+    border-radius: 3px;
     margin-bottom: 15px;
+    background: white;
 }
 
 .task-page {
     height: 100%;
 }
 
-.task-page > div:nth-child(3) {
-    height: 80%;
+
+.task-page > div:nth-child(4) {
     margin-top: 28px;
+}
+
+.task-page > div:nth-child(3) {
+    margin-top: 28px;
+}
+
+@media only screen and (max-height: 1280px) {
+    .task-page > div:nth-child(3) {
+        height: 85%;
+    }
+}
+
+@media only screen and (max-height: 1024px) {
+    .task-page > div:nth-child(3) {
+        height: 80%;
+    }
+}
+
+@media only screen and (max-height: 768px) {
+    .task-page > div:nth-child(3) {
+        height: 70%;
+    }
 }
 
 #create-task-button {
