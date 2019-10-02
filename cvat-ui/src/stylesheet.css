@@ -220,18 +220,21 @@
     margin-top: 28px;
 }
 
-@media only screen and (max-height: 1280px) {
-    .task-page > div:nth-child(3) {
-        height: 85%;
-    }
-}
-
-@media only screen and (max-height: 1024px) {
+/* > 1280 */
+@media only screen and (min-height: 1280px) {
     .task-page > div:nth-child(3) {
         height: 80%;
     }
 }
 
+/* 769 => 1280 */
+@media only screen and (max-height: 1280px) {
+    .task-page > div:nth-child(3) {
+        height: 80%;
+    }
+}
+
+/* 0 => 768 */
 @media only screen and (max-height: 768px) {
     .task-page > div:nth-child(3) {
         height: 70%;
