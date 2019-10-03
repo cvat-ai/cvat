@@ -7,13 +7,14 @@ import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import {
     Col,
-    Row
+    Row,
+    Modal,
 } from 'antd';
 
 
 import { registerAsync } from '../actions/auth-actions';
 import RegisterForm, { RegisterData } from '../components/register-form';
-import { AuthState } from '../reducers/auth-reducer';
+import { AuthState } from '../reducers/interfaces';
 
 interface StateToProps {
     auth: AuthState;
@@ -51,18 +52,18 @@ class RegisterPage extends React.PureComponent<RegisterPageProps> {
             xl: { span: 4 },
         }
 
+        if (registerError) {
+            Modal.error({
+                title: 'Could not login',
+                content: `${registerError.toString()}`,
+            });
+        }
+
         return (
             <Row type='flex' justify='center' align='middle'>
                 <Col {...sizes}>
                     <Title level={2}> Create an account </Title>
                     <RegisterForm onSubmit={this.props.register}/>
-                    { registerError &&
-                        <Row>
-                            <Col>
-                                <Text type="danger"> { registerError.message } </Text>
-                            </Col>
-                        </Row>
-                    }
                     <Row type='flex' justify='start' align='top'>
                         <Col>
                             <Text strong>

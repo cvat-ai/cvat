@@ -9,11 +9,12 @@ import {
     Icon,
     Button,
     Menu,
+    Modal,
 } from 'antd';
 import Text from 'antd/lib/typography/Text';
 
 import { logoutAsync } from '../actions/auth-actions';
-import { AuthState } from '../reducers/auth-reducer';
+import { AuthState } from '../reducers/interfaces';
 
 interface StateToProps {
     auth: AuthState;
@@ -48,6 +49,15 @@ class CVATHeader extends React.PureComponent<HeaderProps> {
         const userLogo = () => (<img src="/assets/icon-account.svg" />);
         const { username } = this.props.auth.user;
         const { pathname } = this.props.location;
+        const { logoutError } = this.props.auth;
+
+        if (logoutError) {
+            Modal.error({
+                title: 'Could not logout',
+                content: `${logoutError.toString()}`,
+            });
+        }
+
         let activeTab = null;
 
         if (pathname === '/tasks') {

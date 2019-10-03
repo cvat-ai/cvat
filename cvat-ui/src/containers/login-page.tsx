@@ -7,13 +7,14 @@ import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import {
     Col,
-    Row
+    Row,
+    Modal,
 } from 'antd';
 
 import LoginForm, { LoginData } from '../components/login-form';
 
 import { loginAsync } from '../actions/auth-actions';
-import { AuthState } from '../reducers/auth-reducer';
+import { AuthState } from '../reducers/interfaces';
 
 interface StateToProps {
     auth: AuthState;
@@ -51,18 +52,19 @@ class LoginPage extends React.PureComponent<LoginPageProps> {
             lg: { span: 4 },
             xl: { span: 4 },
         }
+
+        if (loginError) {
+            Modal.error({
+                title: 'Could not login',
+                content: `${loginError.toString()}`,
+            });
+        }
+
         return (
             <Row type='flex' justify='center' align='middle'>
                 <Col {...sizes}>
                     <Title level={2}> Login </Title>
                     <LoginForm onSubmit={this.props.login}/>
-                    { loginError &&
-                        <Row>
-                            <Col>
-                                <Text type="danger"> { loginError.message } </Text>
-                            </Col>
-                        </Row>
-                    }
                     <Row type='flex' justify='start' align='top'>
                         <Col>
                             <Text strong>

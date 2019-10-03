@@ -25,7 +25,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
         super(props);
     }
 
-    private compareToFirstPassword(rule: any, value: any, callback: any) {
+    private validateConfirmation(rule: any, value: any, callback: any) {
         const { form } = this.props;
         if (value && value !== form.getFieldValue('password1')) {
           callback('Two passwords that you enter is inconsistent!');
@@ -34,7 +34,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
         }
       };
 
-    private validateToNextPassword(rule: any, value: any, callback: any) {
+    private validatePassword(rule: any, value: any, callback: any) {
         const { form } = this.props;
         if (!/(?=.{8,})/.test(value)) {
             callback('Password must have at least 8 characters');
@@ -55,6 +55,18 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
         if (value) {
           form.validateFields(['password2'], { force: true });
         }
+        callback();
+    };
+
+    private validateUsername(rule: any, value: any, callback: any) {
+        if (!/(?=.{5,})/.test(value)) {
+            callback('Username must have at least 5 characters');
+        }
+
+        if (!/^[a-zA-Z0-9_-]{5,}$/.test(value)) {
+            callback('Only characters (a-z), (A-Z), (0-9), -, _ are available');
+        }
+
         callback();
     };
 
@@ -105,7 +117,8 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
                         rules: [{
                             required: true,
                             message: 'Please specify a username',
-                            pattern: /^[a-zA-Z0-9_]{5,}$/,
+                        }, {
+                            validator: this.validateUsername,
                         }],
                     })(
                         <Input
@@ -137,7 +150,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
                             required: true,
                             message: 'Please input your password!',
                         }, {
-                            validator: this.validateToNextPassword.bind(this),
+                            validator: this.validatePassword.bind(this),
                         }],
                     })(<Input.Password
                         autoComplete='new-password'
@@ -151,7 +164,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
                             required: true,
                             message: 'Please confirm your password!',
                         }, {
-                            validator: this.compareToFirstPassword.bind(this),
+                            validator: this.validateConfirmation.bind(this),
                         }],
                     })(<Input.Password
                         autoComplete='new-password'

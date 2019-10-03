@@ -3,13 +3,13 @@ import { connect } from 'react-redux';
 import { Switch, Route, Redirect } from 'react-router';
 import { BrowserRouter } from 'react-router-dom';
 
-import { Spin, Layout } from 'antd';
+import { Spin, Layout, Modal } from 'antd';
 
 import 'antd/dist/antd.css';
 import '../stylesheet.css';
 
 import { authorizedAsync } from '../actions/auth-actions';
-import { AuthState } from '../reducers/auth-reducer';
+import { AuthState } from '../reducers/interfaces';
 
 import TasksPage from './tasks-page/tasks-page';
 import CreateTaskPage from './create-task-page';
@@ -73,6 +73,12 @@ CVATAppActions> {
                         </Layout>
                     </BrowserRouter>
                 );
+            } else if (this.props.auth.authError) {
+                Modal.error({
+                    title: 'Could not authorize',
+                    content: `${this.props.auth.authError.toString()}`,
+                });
+                return <div/>;
             } else {
                 return (
                     <BrowserRouter>

@@ -8,6 +8,7 @@ import {
     Button,
     Input,
     Spin,
+    Modal,
 } from 'antd';
 
 import { TasksState, TasksQuery } from '../../reducers/interfaces';
@@ -57,6 +58,20 @@ class TasksPage extends React.PureComponent<TasksPageProps> {
     public render() {
         //this.props.tasks.array.length = 0;
         if (this.props.tasks.initialized) {
+            const List = this.props.tasks.array.length ? <TaskList
+                tasks={this.props.tasks.array}
+                page={this.props.tasks.query.page}
+                count={this.props.tasks.count}
+                goToPage={(page) => {console.log(page)}}
+            /> : <EmptyList/>
+
+            if (this.props.tasks.query.error) {
+                Modal.error({
+                    title: 'Could not receive tasks',
+                    content: `${this.props.tasks.query.error.toString()}`,
+                });
+            }
+
             return (
                 <div className='tasks-page'>
                     <Row type='flex' justify='center' align='middle'>
@@ -79,13 +94,7 @@ class TasksPage extends React.PureComponent<TasksPageProps> {
                             }> Create new task </Button>
                         </Col>
                     </Row>
-                    {this.props.tasks.array.length ? <TaskList
-                        tasks={this.props.tasks.array}
-                        page={this.props.tasks.query.page}
-                        count={this.props.tasks.count}
-                        goToPage={(page) => {console.log(page)}}
-                        // TODO: implement async events: go to page, dump, run tf annotation, run auto annotation, upload, open bug tracker
-                    /> : <EmptyList/>}
+                    {List}
                 </div>
             )
         } else {

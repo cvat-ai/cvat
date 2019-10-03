@@ -86,7 +86,7 @@ export default class TaskItem extends React.PureComponent<TaskItemProps, TaskIte
                     <Row type='flex' justify='space-between' align='top'>
                         <Col>
                             <svg height="8" width="8" className={className}>
-                                <circle cx="4" cy="4" r="4" stroke-width="0"/>
+                                <circle cx="4" cy="4" r="4" strokeWidth="0"/>
                             </svg>
                             { numOfCompleted === numOfJobs ?
                                 <Text strong className={className}> Completed </Text>
