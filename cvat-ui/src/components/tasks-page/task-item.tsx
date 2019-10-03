@@ -49,7 +49,7 @@ export default class TaskItem extends React.PureComponent<TaskItemProps, TaskIte
         ).length;
 
         // Progress appearence depends on number of jobs
-        const className = numOfCompleted === numOfJobs ? 'cvat-task-completed-progress':
+        const progressColor = numOfCompleted === numOfJobs ? 'cvat-task-completed-progress':
             numOfCompleted ? 'cvat-task-progress-progress' : 'cvat-task-pending-progress';
 
         const subMenuIcon = () => (<img src='/assets/icon-sub-menu.svg'/>);
@@ -85,14 +85,14 @@ export default class TaskItem extends React.PureComponent<TaskItemProps, TaskIte
                 <Col span={6}>
                     <Row type='flex' justify='space-between' align='top'>
                         <Col>
-                            <svg height="8" width="8" className={className}>
+                            <svg height="8" width="8" className={progressColor}>
                                 <circle cx="4" cy="4" r="4" strokeWidth="0"/>
                             </svg>
                             { numOfCompleted === numOfJobs ?
-                                <Text strong className={className}> Completed </Text>
+                                <Text strong className={progressColor}> Completed </Text>
                                 : numOfCompleted ?
-                                <Text strong className={className}> In Progress </Text>
-                                : <Text strong className={className}> Pending </Text>
+                                <Text strong className={progressColor}> In Progress </Text>
+                                : <Text strong className={progressColor}> Pending </Text>
                             }
                         </Col>
                         <Col>
@@ -101,7 +101,7 @@ export default class TaskItem extends React.PureComponent<TaskItemProps, TaskIte
                     </Row>
                     <Row>
                         <Progress
-                                className='cvat-task-progress'
+                                className={`${progressColor} cvat-task-progress`}
                                 percent={numOfCompleted * 100 / numOfJobs}
                                 strokeColor='#1890FF'
                                 showInfo={false}

@@ -294,6 +294,10 @@
     margin-right: 5px;
 }
 
+.cvat-task-completed-progress > div > div > div > div {
+    background: #52c41a !important;
+}
+
 .cvat-task-progress-progress {
     color: #1890FF;
     fill: #1890FF;
