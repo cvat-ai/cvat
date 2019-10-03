@@ -7,6 +7,8 @@ import {
     Button,
     Icon,
     Progress,
+    Menu,
+    Dropdown,
 } from 'antd';
 
 import moment from 'moment';
@@ -52,8 +54,22 @@ export default class TaskItem extends React.PureComponent<TaskItemProps, TaskIte
 
         const subMenuIcon = () => (<img src='/assets/icon-sub-menu.svg'/>);
 
+        // Menu
+        const menu = (
+            <Menu className='cvat-task-item-menu'>
+                <Menu.Item key='dump'>Dump annotations</Menu.Item>
+                <Menu.Item key='upload'>Upload annotations</Menu.Item>
+                <Menu.Item key='tracker'>Open bug tracker</Menu.Item>
+                <Menu.Item key='auto'>Run auto annotation</Menu.Item>
+                <Menu.Item key='tf'>Run TF annotation</Menu.Item>
+                <hr/>
+                <Menu.Item key='update'>Update</Menu.Item>
+                <Menu.Item key='delete'>Delete</Menu.Item>
+            </Menu>
+          );
+
         return (
-            <Row className='task-list-item' type='flex' justify='center' align='top'>
+            <Row className='cvat-tasks-list-item' type='flex' justify='center' align='top'>
                 <Col span={4}>
                     <div className='cvat-task-preview-wrapper'>
                         {this.state ?
@@ -103,7 +119,9 @@ export default class TaskItem extends React.PureComponent<TaskItemProps, TaskIte
                     <Row type='flex' justify='end'>
                         <Col>
                             <Text style={{color: 'black'}}> Actions </Text>
-                            <Icon className='sub-menu-icon' component={subMenuIcon}/>
+                            <Dropdown overlay={menu}>
+                                <Icon className='cvat-task-item-menu-icon' component={subMenuIcon}/>
+                            </Dropdown>
                         </Col>
                     </Row>
                 </Col>

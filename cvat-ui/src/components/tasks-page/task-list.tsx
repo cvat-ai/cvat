@@ -32,14 +32,14 @@ export default class TaskList extends React.PureComponent<ContentListProps> {
         return (
             <>
                 <Row type='flex' justify='center' align='middle'>
-                    <Col className='task-list' md={22} lg={18} xl={16} xxl={14}>
+                    <Col className='cvat-task-list' md={22} lg={18} xl={16} xxl={14}>
                         { taskViews }
                     </Col>
                 </Row>
                 <Row type='flex' justify='center' align='middle'>
                     <Col md={22} lg={18} xl={16} xxl={14}>
                         <Pagination
-                            className='tasks-pagination'
+                            className='cvat-tasks-pagination'
                             current={this.props.page}
                             total={this.props.count}
                             pageSize={20}

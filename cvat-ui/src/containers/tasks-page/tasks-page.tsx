@@ -74,7 +74,7 @@ class TasksPage extends React.PureComponent<TasksPageProps> {
                             lg={{span: 9}}
                             xl={{span: 8}}
                             xxl={{span: 7}}>
-                            <Button size='large' id='create-task-button' type='primary' onClick={
+                            <Button size='large' id='cvat-create-task-button' type='primary' onClick={
                                 () => window.open('/tasks/create', '_blank')
                             }> Create new task </Button>
                         </Col>

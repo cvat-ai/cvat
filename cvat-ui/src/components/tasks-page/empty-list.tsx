@@ -17,10 +17,10 @@ export default class EmptyList extends React.PureComponent {
         const emptyTasksIcon = () => (<img src='/assets/empty-tasks-icon.svg'/>);
 
         return (
-            <div className='empty-task-list'>
+            <div className='cvat-empty-task-list'>
                 <Row type='flex' justify='center' align='middle'>
                     <Col>
-                        <Icon className='empty-tasks-icon' component={emptyTasksIcon}/>
+                        <Icon className='cvat-empty-tasks-icon' component={emptyTasksIcon}/>
                     </Col>
                 </Row>
                 <Row type='flex' justify='center' align='middle'>

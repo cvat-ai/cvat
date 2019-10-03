@@ -128,7 +128,7 @@
     transform: rotate(-90deg);
 }
 
-.anticon.empty-tasks-icon > img {
+.anticon.cvat-empty-tasks-icon > img {
     width: 90px;
 }
 
@@ -203,36 +203,36 @@
 }
 
 /* empty-tasks icon */
-.empty-task-list > div:nth-child(1) {
+.cvat-empty-task-list > div:nth-child(1) {
     margin-top: 100px;
 }
 
-.empty-task-list > div:nth-child(2) > div {
+.cvat-empty-task-list > div:nth-child(2) > div {
     margin-top: 20px;
 }
 
 /* No tasks created yet */
-.empty-task-list > div:nth-child(2) > div > span {
+.cvat-empty-task-list > div:nth-child(2) > div > span {
     font-size: 20px;
     color: #4A4A4A;
 }
 
 /* To get started with your annotation project .. */
-.empty-task-list > div:nth-child(3) {
+.cvat-empty-task-list > div:nth-child(3) {
     margin-top: 10px;
 }
 
-.ant-pagination.tasks-pagination {
+.ant-pagination.cvat-tasks-pagination {
     display: flex;
     justify-content: center;
 }
 
-.task-list {
+.cvat-task-list {
     height: 100%;
     overflow-y: auto;
 }
 
-.task-list-item {
+.cvat-tasks-list-item {
     width: 100%;
     height: 120px;
     border: 1px solid #c3c3c3;
@@ -242,25 +242,33 @@
     background: white;
 }
 
-.task-list-item:hover {
+.cvat-tasks-list-item:hover {
     border: 1px solid #40a9ff;
 }
 
-.task-list-item > div:nth-child(4) > div {
+.cvat-tasks-list-item > div:nth-child(4) > div {
     margin-right: 20px;
 }
 
-.task-list-item > div:nth-child(4) > div:nth-child(2) {
+.cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) {
     margin-right: 20px;
     margin-top: 20px;
 }
 
-.task-list-item > div:nth-child(4) > div:nth-child(2) > div {
+.cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) > div {
     display: flex;
 }
 
-.sub-menu-icon > img {
+.cvat-task-item-menu-icon > img {
     height: 20px;
+}
+
+.cvat-task-item-menu-icon > img:hover {
+    filter: invert(0.5);
+}
+
+.cvat-task-item-menu > hr {
+    border: 0.5px solid #D6D6D6;
 }
 
 .cvat-task-preview {
@@ -298,6 +306,6 @@
     margin-right: 5px;
 }
 
-#create-task-button {
+#cvat-create-task-button {
     padding: 0 30px;
 }
