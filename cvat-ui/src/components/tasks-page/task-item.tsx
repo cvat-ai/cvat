@@ -6,6 +6,7 @@ import {
     Row,
     Button,
     Icon,
+    Progress,
 } from 'antd';
 
 import moment from 'moment';
@@ -14,7 +15,12 @@ export interface TaskItemProps {
     task: any;
 }
 
-export default class TaskItem extends React.PureComponent<TaskItemProps> {
+export interface TaskItemState {
+    // Should we put it into redux state?
+    preview: string;
+}
+
+export default class TaskItem extends React.PureComponent<TaskItemProps, TaskItemState> {
     public componentDidMount() {
         this.props.task.frames.preview().then((data: string) => {
             this.setState({preview: data});
@@ -24,18 +30,30 @@ export default class TaskItem extends React.PureComponent<TaskItemProps> {
     }
 
     render() {
+        // Task info
         const id = this.props.task.id;
         const owner = this.props.task.owner;
         const updated = moment(this.props.task.updatedDate).fromNow();
         const created = moment(this.props.task.createdDate).format('MMMM Do YYYY');
 
+        // Get and truncate a task name
         let name = this.props.task.name;
-        name = `${name.substring(0, 100)}${name.length > 100 ? '...' : ''}`;
+        name = `${name.substring(0, 70)}${name.length > 70 ? '...' : ''}`;
+
+        // Count number of jobs and performed jobs
+        const numOfJobs = this.props.task.jobs.length;
+        const numOfCompleted = this.props.task.jobs.filter(
+            (job: any) => job.status === 'completed'
+        ).length;
+
+        // Progress appearence depends on number of jobs
+        const className = numOfCompleted === numOfJobs ? 'cvat-task-completed-progress':
+            numOfCompleted ? 'cvat-task-progress-progress' : 'cvat-task-pending-progress';
 
         const subMenuIcon = () => (<img src='/assets/icon-sub-menu.svg'/>);
 
         return (
-            <Row className='task-list-item' type='flex' justify='center' align='middle'>
+            <Row className='task-list-item' type='flex' justify='center' align='top'>
                 <Col span={4}>
                     <div className='cvat-task-preview-wrapper'>
                         {this.state ?
@@ -43,35 +61,46 @@ export default class TaskItem extends React.PureComponent<TaskItemProps> {
                         : null}
                     </div>
                 </Col>
-                <Col span={9}>
-                    <Row>
+                <Col span={10}>
+                    <Text strong> {id} {name} </Text> <br/>
+                    <Text type='secondary'> Created by { owner } on {created} </Text> <br/>
+                    <Text type='secondary'> Last updated {updated} </Text>
+                </Col>
+                <Col span={6}>
+                    <Row type='flex' justify='space-between' align='top'>
                         <Col>
-                            <Text strong>
-                                {id} {name}
-                            </Text>
+                            <svg height="8" width="8" className={className}>
+                                <circle cx="4" cy="4" r="4" stroke-width="0"/>
+                            </svg>
+                            { numOfCompleted === numOfJobs ?
+                                <Text strong className={className}> Completed </Text>
+                                : numOfCompleted ?
+                                <Text strong className={className}> In Progress </Text>
+                                : <Text strong className={className}> Pending </Text>
+                            }
+                        </Col>
+                        <Col>
+                            <Text type='secondary'> {numOfCompleted} of {numOfJobs} jobs </Text>
                         </Col>
                     </Row>
                     <Row>
-                        <Col>
-                            <Text type='secondary'> Created by { owner } on {created} </Text> <br/>
-                            <Text type='secondary'> Last updated {updated} </Text>
-                        </Col>
+                        <Progress
+                                className='cvat-task-progress'
+                                percent={numOfCompleted * 100 / numOfJobs}
+                                strokeColor='#1890FF'
+                                showInfo={false}
+                                strokeWidth={5}
+                                size='small'
+                            />
                     </Row>
                 </Col>
-                <Col span={8}>
-                    <Row>
+                <Col span={4}>
+                    <Row type='flex' justify='end'>
                         <Col>
-                            // progress bar
+                            <Button type='primary' size='large' ghost> Open </Button>
                         </Col>
                     </Row>
-                </Col>
-                <Col span={3}>
-                    <Row>
-                        <Col>
-                            <Button type="primary" ghost> Open </Button>
-                        </Col>
-                    </Row>
-                    <Row>
+                    <Row type='flex' justify='end'>
                         <Col>
                             <Text style={{color: 'black'}}> Actions </Text>
                             <Icon className='sub-menu-icon' component={subMenuIcon}/>

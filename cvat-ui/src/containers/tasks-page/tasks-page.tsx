@@ -58,7 +58,7 @@ class TasksPage extends React.PureComponent<TasksPageProps> {
         //this.props.tasks.array.length = 0;
         if (this.props.tasks.initialized) {
             return (
-                <div className='task-page'>
+                <div className='tasks-page'>
                     <Row type='flex' justify='center' align='middle'>
                         <Col md={22} lg={18} xl={16} xxl={14}>
                             <Text strong> Default project </Text>
