@@ -95,6 +95,7 @@
     width: fit-content;
     align-items: center;
     border: 0px;
+    border-left: 1px solid #c3c3c3;
     height: 100%;
     background: rgba(255,255,255,0);
 }
@@ -207,10 +208,13 @@
     background: white;
 }
 
+.task-list-item:hover {
+    border: 1px solid #40a9ff;
+}
+
 .task-page {
     height: 100%;
 }
-
 
 .task-page > div:nth-child(4) {
     margin-top: 28px;
@@ -239,6 +243,21 @@
     .task-page > div:nth-child(3) {
         height: 70%;
     }
+}
+
+.sub-menu-icon > img {
+    height: 20px;
+}
+
+.cvat-task-preview {
+    margin: 20px;
+    max-width: 140px;
+    max-height: 80px;
+}
+
+.cvat-task-preview-wrapper {
+    display: flex;
+    justify-content: center;
 }
 
 #create-task-button {

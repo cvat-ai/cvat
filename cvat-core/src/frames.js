@@ -105,6 +105,28 @@
         });
     };
 
+    async function getPreview(taskID) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Just go to server and get preview (no any cache)
+                const result = await serverProxy.frames.getPreview(taskID);
+                if (isNode) {
+                    frameCache[this.tid][this.number] = global.Buffer.from(result, 'binary').toString('base64');
+                    resolve(frameCache[this.tid][this.number]);
+                } else if (isBrowser) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        resolve(reader.result);
+                    };
+                    reader.readAsDataURL(result);
+                }
+            } catch (error) {
+                reject(error);
+            }
+        });
+
+    }
+
     async function getFrame(taskID, mode, frame) {
         if (!(taskID in frameDataCache)) {
             frameDataCache[taskID] = {};
@@ -140,5 +162,6 @@
     module.exports = {
         FrameData,
         getFrame,
+        getPreview,
     };
 })();

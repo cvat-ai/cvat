@@ -372,6 +372,27 @@
                 return response.data;
             }
 
+            async function getPreview(tid) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    // TODO: change 0 frame to preview
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/0`, {
+                        proxy: config.proxy,
+                        responseType: 'blob',
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        `Could not get preview frame for the task ${tid} from the server`,
+                        code,
+                    );
+                }
+
+                return response.data;
+            }
+
             async function getData(tid, frame) {
                 const { backendAPI } = config;
 
@@ -567,6 +588,7 @@
                     value: Object.freeze({
                         getData,
                         getMeta,
+                        getPreview,
                     }),
                     writable: false,
                 },
