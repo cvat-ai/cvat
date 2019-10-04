@@ -40,10 +40,9 @@ export default class TaskList extends React.PureComponent<ContentListProps> {
                     <Col md={22} lg={18} xl={16} xxl={14}>
                         <Pagination
                             className='cvat-tasks-pagination'
-                            current={this.props.page}
                             onChange={this.props.goToPage}
                             total={this.props.count}
-                            pageSize={20}
+                            pageSize={10}
                             showQuickJumper
                         />
                     </Col>

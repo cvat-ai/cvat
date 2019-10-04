@@ -29,7 +29,7 @@ export default (state = defaultState, action: AnyAction): TasksState => {
                 count: action.payload.count,
                 array: action.payload.array,
                 error: null,
-                query: { ...state.query },
+                query: { ...action.payload.query },
             };
         case TasksActionTypes.GET_TASKS_FAILED:
             return {
@@ -38,7 +38,7 @@ export default (state = defaultState, action: AnyAction): TasksState => {
                 array: [],
                 count: 0,
                 error: action.payload.error,
-                query: { ...state.query },
+                query: { ...action.payload.query },
             };
         default:
             return state;

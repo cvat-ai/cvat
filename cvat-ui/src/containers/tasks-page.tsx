@@ -68,16 +68,26 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
         for (const field of Object.keys(query)) {
 
             if (query[field] != null && field !== 'page') {
-                searchString += `${field}${query[field]} AND`;
+                if (typeof (query[field] === 'number')) {
+                    searchString += `${field}:${query[field]} AND `;
+                } else {
+                    searchString += `${field}:"${query[field]}" AND `;
+                }
             }
         }
 
-        return searchString.slice(0, -4);
+        return searchString.slice(0, -5);
     }
 
     private handlePagination(page: number): void {
         const query = { ...this.props.tasks.query };
+
         query.page = page;
+        for (const field of Object.keys(query)) {
+            if (!query[field]) {
+                delete query[field];
+            }
+        }
 
         this.updateURL(query);
         this.props.getTasks(query);
@@ -88,6 +98,11 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
         const search = value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim();
 
         const fields = ['name', 'mode', 'owner', 'assignee', 'status', 'id'];
+        for (const field of fields) {
+            delete query[field];
+        }
+        delete query.search;
+
         for (const param of search.split(/[\s]+and[\s]+|[\s]+AND[\s]+/)) {
             if (param.includes(':')) {
                 const [name, value] = param.split(':');
@@ -103,7 +118,6 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
             }
         }
 
-
         query.page = 1;
         for (const field of Object.keys(query)) {
             if (!query[field]) {
@@ -111,7 +125,7 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
             }
         }
 
-        if (Object.keys(query).length === 1) { // only id
+        if (Object.keys(query).length === 1 && value) { // only id
             query.search = value;
         }
 
