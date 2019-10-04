@@ -2,9 +2,9 @@ import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import { TasksQuery } from '../reducers/interfaces';
 
-import _cvat from '../../../cvat-core/dist/cvat-core.node';
+import getCore from '../core';
 
-const cvat: any = _cvat;
+const cvat = getCore();
 
 export enum TasksActionTypes {
     GET_TASKS_SUCCESS = 'GET_TASKS_SUCCESS',

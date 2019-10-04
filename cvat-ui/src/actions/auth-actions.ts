@@ -1,9 +1,9 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 
-import _cvat from '../../../cvat-core/dist/cvat-core.node';
+import getCore from '../core';
 
-const cvat: any = _cvat;
+const cvat = getCore();
 
 export enum AuthActionTypes {
     AUTHORIZED_SUCCESS = 'AUTHORIZED_SUCCESS',
