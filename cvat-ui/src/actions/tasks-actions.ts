@@ -47,8 +47,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         let result = null;
         try {
-            // todo: request according to query
-            result = await cvat.tasks.get();
+            result = await cvat.tasks.get(query);
         } catch (error) {
             dispatch(getTasksFailed(error, query));
             return;

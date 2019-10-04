@@ -8,7 +8,6 @@ export interface AuthState {
 }
 
 export interface TasksQuery {
-    error: any;
     page: number;
     id: number | null;
     search: string | null;
@@ -16,11 +15,14 @@ export interface TasksQuery {
     assignee: string | null;
     name: string | null;
     status: string | null;
+    mode: string | null;
+    [key: string]: string | number | null;
 }
 
 export interface TasksState {
     initialized: boolean;
     count: number;
     array: any[];
+    error: any;
     query: TasksQuery;
 }

@@ -11,7 +11,7 @@ import '../stylesheet.css';
 import { authorizedAsync } from '../actions/auth-actions';
 import { AuthState } from '../reducers/interfaces';
 
-import TasksPage from './tasks-page/tasks-page';
+import TasksPage from './tasks-page';
 import CreateTaskPage from './create-task-page';
 import TaskPage from './task-page';
 import ModelsPage from './models-page/models-page';

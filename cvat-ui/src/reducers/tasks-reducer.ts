@@ -7,8 +7,8 @@ const defaultState: TasksState = {
     initialized: false,
     count: 0,
     array: [],
+    error: null,
     query: {
-        error: null,
         page: 1,
         id: null,
         search: null,
@@ -16,6 +16,7 @@ const defaultState: TasksState = {
         assignee: null,
         name: null,
         status: null,
+        mode: null,
     },
 };
 
@@ -27,7 +28,8 @@ export default (state = defaultState, action: AnyAction): TasksState => {
                 initialized: true,
                 count: action.payload.count,
                 array: action.payload.array,
-                query: { ...state.query, error: null },
+                error: null,
+                query: { ...state.query },
             };
         case TasksActionTypes.GET_TASKS_FAILED:
             return {
@@ -35,7 +37,8 @@ export default (state = defaultState, action: AnyAction): TasksState => {
                 initialized: true,
                 array: [],
                 count: 0,
-                query: { ...state.query, error: action.payload.error },
+                error: action.payload.error,
+                query: { ...state.query },
             };
         default:
             return state;
