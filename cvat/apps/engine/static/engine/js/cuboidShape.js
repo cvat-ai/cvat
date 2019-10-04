@@ -918,8 +918,6 @@ SVG.Cube = SVG.invent({
             this.right = this.polygon(viewModel.right.canvasPoints);
             this.dorsal = this.polygon(viewModel.dorsal.canvasPoints);
             this.left = this.polygon(viewModel.left.canvasPoints);
-            this.dorsal.node.classList.add('occludedShape');
-            this.left.node.classList.add('occludedShape');
         },
 
         setupProjections(viewModel) {
@@ -1081,6 +1079,10 @@ SVG.Cube = SVG.invent({
             edges.forEach((edge)=> {
                 edge.node.classList.add('occludedShape');
             })
+            this.face.hide()
+            this.right.hide()
+            this.left.node.classList.add('occludedShape')
+            this.dorsal.node.classList.add('occludedShape')
         },
 
         removeOccluded(){
@@ -1088,6 +1090,10 @@ SVG.Cube = SVG.invent({
             edges.forEach((edge)=> {
                 edge.node.classList.remove('occludedShape');
             })
+            this.face.show()
+            this.right.show()
+            this.left.node.classList.remove('occludedShape')
+            this.dorsal.node.classList.remove('occludedShape')
         },
     },
     construct: {
