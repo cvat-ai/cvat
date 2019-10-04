@@ -36,7 +36,8 @@ from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
 from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
    RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
-   PluginSerializer, FileInfoSerializer, LogEventSerializer)
+   PluginSerializer, FileInfoSerializer, LogEventSerializer,
+   ProjectSerializer)
 from cvat.apps.annotation.serializers import AnnotationFileSerializer
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
@@ -158,7 +159,58 @@ class ServerViewSet(viewsets.ViewSet):
         data = get_annotation_formats()
         return Response(data)
 
+class ProjectFilter(filters.FilterSet):
+    name = filters.CharFilter(field_name="name", lookup_expr="icontains")
+    owner = filters.CharFilter(field_name="owner__username", lookup_expr="icontains")
+    status = filters.CharFilter(field_name="status", lookup_expr="icontains")
+    assignee = filters.CharFilter(field_name="assignee__username", lookup_expr="icontains")
+
+    class Meta:
+        model = models.Project
+        fields = ("id", "name", "owner", "status", "assignee")
+
+class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
+    queryset = models.Project.objects.all().order_by('-id')
+    serializer_class = ProjectSerializer
+    search_fields = ("name", "owner__username", "assignee__username", "status")
+    filterset_class = ProjectFilter
+    ordering_fields = ("id", "name", "owner", "status", "assignee")
+
+    def get_permissions(self):
+        http_method = self.request.method
+        permissions = [IsAuthenticated]
+
+        if http_method in SAFE_METHODS:
+            permissions.append(auth.ProjectAccessPermission)
+        elif http_method in ["POST"]:
+            permissions.append(auth.ProjectCreatePermission)
+        elif http_method in ["PATCH"]:
+            permissions.append(auth.ProjectChangePermission)
+        elif http_method in ["DELETE"]:
+            permissions.append(auth.ProjectDeletePermission)
+        else:
+            permissions.append(auth.AdminRolePermission)
+
+        return [perm() for perm in permissions]
+
+    def perform_create(self, serializer):
+        if self.request.data.get('owner', None):
+            serializer.save()
+        else:
+            serializer.save(owner=self.request.user)
+
+    @action(detail=True, methods=['GET'], serializer_class=TaskSerializer)
+    def tasks(self, request, pk):
+        self.get_object() # force to call check_object_permissions
+        queryset = Task.objects.filter(project_id=pk)
+        serializer = TaskSerializer(queryset, many=True,
+            context={"request": request})
+
+        return Response(serializer.data)
+
+
 class TaskFilter(filters.FilterSet):
+    project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
     name = filters.CharFilter(field_name="name", lookup_expr="icontains")
     owner = filters.CharFilter(field_name="owner__username", lookup_expr="icontains")
     mode = filters.CharFilter(field_name="mode", lookup_expr="icontains")
@@ -167,7 +219,8 @@ class TaskFilter(filters.FilterSet):
 
     class Meta:
         model = Task
-        fields = ("id", "name", "owner", "mode", "status", "assignee")
+        fields = ("id", "project_id", "project", "name", "owner", "mode", "status",
+            "assignee")
 
 class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = Task.objects.all().prefetch_related(
