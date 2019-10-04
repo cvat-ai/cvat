@@ -725,6 +725,126 @@ class ProjectGetAPITestCase(APITestCase):
     def test_api_v1_projects_id_no_auth(self):
         self._check_api_v1_projects_id(None)
 
+class ProjectDeleteAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.projects = create_dummy_db_projects(cls)
+
+    def _run_api_v1_projects_id(self, pid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.delete('/api/v1/projects/{}'.format(pid), format="json")
+
+        return response
+
+    def _check_api_v1_projects_id(self, user):
+        for db_project in self.projects:
+            response = self._run_api_v1_projects_id(db_project.id, user)
+            if user and user.has_perm("engine.project.delete", db_project):
+                self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+            elif user:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v1_projects_id_admin(self):
+        self._check_api_v1_projects_id(self.admin)
+
+    def test_api_v1_projects_id_user(self):
+        self._check_api_v1_projects_id(self.user)
+
+    def test_api_v1_projects_id_observer(self):
+        self._check_api_v1_projects_id(self.observer)
+
+    def test_api_v1_projects_id_no_auth(self):
+        self._check_api_v1_projects_id(None)
+
+class ProjectCreateAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def _run_api_v1_projects(self, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/projects', data=data, format="json")
+
+        return response
+
+    def _check_response(self, response, user, data):
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["name"], data["name"])
+        self.assertEqual(response.data["owner"], data.get("owner", user.id))
+        self.assertEqual(response.data["assignee"], data.get("assignee"))
+        self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", ""))
+        self.assertEqual(response.data["status"], StatusChoice.ANNOTATION)
+
+    def _check_api_v1_projects(self, user, data):
+        response = self._run_api_v1_projects(user, data)
+        if user and user.has_perm("engine.project.create"):
+            self._check_response(response, user, data)
+        elif user:
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        else:
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v1_projects_admin(self):
+        data = {
+            "name": "new name for the project",
+            "bug_tracker": "http://example.com"
+        }
+        self._check_api_v1_projects(self.admin, data)
+
+        data = {
+            "owner": self.owner.id,
+            "assignee": self.assignee.id,
+            "name": "new name for the project"
+        }
+        self._check_api_v1_projects(self.admin, data)
+
+        data = {
+            "owner": self.admin.id,
+            "name": "2"
+        }
+        self._check_api_v1_projects(self.admin, data)
+
+
+    def test_api_v1_projects_user(self):
+        data = {
+            "name": "Dummy name",
+            "bug_tracker": "it is just text"
+        }
+        self._check_api_v1_projects(self.user, data)
+
+        data = {
+            "owner": self.owner.id,
+            "assignee": self.assignee.id,
+            "name": "My import project with data"
+        }
+        self._check_api_v1_projects(self.user, data)
+
+
+    def test_api_v1_projects_observer(self):
+        data = {
+            "name": "My Project #1",
+            "owner": self.owner.id,
+            "assignee": self.assignee.id
+        }
+        self._check_api_v1_projects(self.observer, data)
+
+    def test_api_v1_projects_no_auth(self):
+        data = {
+            "name": "My Project #2",
+            "owner": self.admin.id,
+        }
+        self._check_api_v1_projects(None, data)
+
+
 class TaskListAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
