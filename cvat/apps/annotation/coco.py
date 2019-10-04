@@ -264,7 +264,7 @@ def dump(file_object, annotations):
     insert_info_data(annotations, result_annotation)
     category_map = insert_categories_data(annotations, result_annotation)
 
-    segm_id = 0
+    segm_id = 1
     for img in annotations.group_by_frame():
         polygons = []
 
