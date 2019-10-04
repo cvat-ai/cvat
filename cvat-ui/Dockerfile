@@ -33,4 +33,4 @@ RUN mv .env.production .env && npm run build
 FROM nginx
 # Replace default.conf configuration to remove unnecessary rules
 COPY react_nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=cvat-ui /tmp/cvat-ui/build /usr/share/nginx/html/
+COPY --from=cvat-ui /tmp/cvat-ui/dist /usr/share/nginx/html/
