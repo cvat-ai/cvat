@@ -1,4 +1,4 @@
-import _cvat from '../../cvat-core/dist/cvat-core.node';
+import _cvat from '../public/cvat-core.node';
 
 const cvat: any = _cvat;
 
