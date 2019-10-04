@@ -6,6 +6,7 @@
 /* eslint-disable */
 const path = require('path');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const Dotenv = require('dotenv-webpack');
 
 module.exports = {
     target: 'web',
@@ -55,6 +56,7 @@ module.exports = {
           template: "./src/index.html",
           inject: false,
         }),
+        new Dotenv(),
     ],
     node: { fs: 'empty' },
 };
