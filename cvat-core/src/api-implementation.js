@@ -47,7 +47,7 @@
 
         cvat.server.formats.implementation = async () => {
             const result = await serverProxy.server.formats();
-            return result.map(el => new AnnotationFormat(el));
+            return result.map((el) => new AnnotationFormat(el));
         };
 
         cvat.server.register.implementation = async (username, firstName, lastName,
@@ -82,7 +82,7 @@
                 users = await serverProxy.users.getUsers();
             }
 
-            users = users.map(user => new User(user));
+            users = users.map((user) => new User(user));
             return users;
         };
 
@@ -117,7 +117,8 @@
             // If task was found by its id, then create task instance and get Job instance from it
             if (tasks !== null && tasks.length) {
                 const task = new Task(tasks[0]);
-                return filter.jobID ? task.jobs.filter(job => job.id === filter.jobID) : task.jobs;
+                return filter.jobID ? task.jobs
+                    .filter((job) => job.id === filter.jobID) : task.jobs;
             }
 
             return [];
@@ -159,7 +160,7 @@
             }
 
             const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
-            const tasks = tasksData.map(task => new Task(task));
+            const tasks = tasksData.map((task) => new Task(task));
             tasks.count = tasksData.count;
 
             return tasks;
