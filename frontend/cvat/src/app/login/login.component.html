@@ -7,10 +7,12 @@
 <body>
   <div class="login">
     	<h1>Login</h1>
-      <form method="post" action="localhost:8080/auth/login1" id="form1">
+      <small>Your username and password didn't match. Please try again.</small>
+      <form method="post" action="http://localhost:8080/auth/login1" id="form1">
 
         <input type="text" name='username' value='username' onfocus="if (this.value=='username') this.value='';">
         <input type="text" name='password' value='password' onfocus="if (this.value=='password') this.value='';">
+        <input type="hidden" name="csrfmiddlewaretoken" value={{cookieValue}} />
       </form>
       <button type="submit" form="form1" class="btn btn-primary btn-block btn-large">Login</button>
 	</div>
