@@ -10,18 +10,26 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from furl import furl
 
+from django.views.decorators.clickjacking import xframe_options_exempt
+from django.http import HttpResponse
+
 from . import forms
 from . import signature
 
+@xframe_options_exempt
 def sign_in_user(request):
     if request.method == 'POST':
         username=request.POST['username']
         password=request.POST['password']
         user = authenticate(request, username=username, password=password)
-
         if user is not None:
             login(request, user)
             return redirect(settings.LOGIN_REDIRECT_URL)
+        else:
+            return HttpResponse("login failed")
+    if request.method=='GET':
+           return HttpResponse("get request")
+
 
 def register_user(request):
     if request.method == 'POST':
