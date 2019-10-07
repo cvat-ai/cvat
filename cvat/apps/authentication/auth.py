@@ -183,6 +183,7 @@ class TaskAccessPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm("engine.task.access", obj)
 
+
 class ProjectGetQuerySetMixin(object):
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -195,16 +196,23 @@ class ProjectGetQuerySetMixin(object):
                 Q(task__owner=user) | Q(task__assignee=user) |
                 Q(task__segment__job__assignee=user)).distinct()
 
+def filter_task_queryset(queryset, user):
+    # Don't filter queryset for admin, observer
+    if has_admin_role(user) or has_observer_role(user):
+        return queryset
+    else:
+        return queryset.filter(Q(owner=user) | Q(assignee=user) |
+            Q(segment__job__assignee=user) | Q(assignee=None)).distinct()
+
 class TaskGetQuerySetMixin(object):
     def get_queryset(self):
         queryset = super().get_queryset()
         user = self.request.user
-        # Don't filter queryset for admin, observer and detail methods
-        if has_admin_role(user) or has_observer_role(user) or self.detail:
+        # Don't filter queryset for detail methods
+        if self.detail:
             return queryset
         else:
-            return queryset.filter(Q(owner=user) | Q(assignee=user) |
-                Q(segment__job__assignee=user) | Q(assignee=None)).distinct()
+            return filter_task_queryset(queryset, user)
 
 class TaskChangePermission(BasePermission):
     # pylint: disable=no-self-use

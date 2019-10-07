@@ -175,6 +175,7 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     search_fields = ("name", "owner__username", "assignee__username", "status")
     filterset_class = ProjectFilter
     ordering_fields = ("id", "name", "owner", "status", "assignee")
+    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
 
     def get_permissions(self):
         http_method = self.request.method
@@ -202,12 +203,18 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], serializer_class=TaskSerializer)
     def tasks(self, request, pk):
         self.get_object() # force to call check_object_permissions
-        queryset = Task.objects.filter(project_id=pk)
-        serializer = TaskSerializer(queryset, many=True,
+        queryset = Task.objects.filter(project_id=pk).order_by('-id')
+        queryset = auth.filter_task_queryset(queryset, request.user)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True,
+                context={"request": request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True,
             context={"request": request})
-
         return Response(serializer.data)
-
 
 class TaskFilter(filters.FilterSet):
     project = filters.CharFilter(field_name="project__name", lookup_expr="icontains")
