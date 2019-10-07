@@ -12,7 +12,7 @@ from rest_framework import status
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
-    AttributeType)
+    AttributeType, Project)
 from cvat.apps.annotation.models import AnnotationFormat
 from unittest import mock
 import io
@@ -68,7 +68,7 @@ def create_db_task(data):
 
     return db_task
 
-def create_dummy_db_tasks(obj):
+def create_dummy_db_tasks(obj, project=None):
     tasks = []
 
     data = {
@@ -79,7 +79,8 @@ def create_dummy_db_tasks(obj):
         "segment_size": 100,
         "z_order": False,
         "image_quality": 75,
-        "size": 100
+        "size": 100,
+        "project": project
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
@@ -91,7 +92,8 @@ def create_dummy_db_tasks(obj):
         "segment_size": 100,
         "z_order": True,
         "image_quality": 50,
-        "size": 200
+        "size": 200,
+        "project": project
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
@@ -104,7 +106,8 @@ def create_dummy_db_tasks(obj):
         "segment_size": 100,
         "z_order": False,
         "image_quality": 75,
-        "size": 100
+        "size": 100,
+        "project": project
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
@@ -116,12 +119,60 @@ def create_dummy_db_tasks(obj):
         "segment_size": 50,
         "z_order": False,
         "image_quality": 95,
-        "size": 50
+        "size": 50,
+        "project": project
     }
     db_task = create_db_task(data)
     tasks.append(db_task)
 
     return tasks
+
+def create_dummy_db_projects(obj):
+    projects = []
+
+    data = {
+        "name": "my empty project",
+        "owner": obj.owner,
+        "assignee": obj.assignee,
+    }
+    db_project = Project.objects.create(**data)
+    projects.append(db_project)
+
+    data = {
+        "name": "my project without assignee",
+        "owner": obj.user,
+    }
+    db_project = Project.objects.create(**data)
+    create_dummy_db_tasks(obj, db_project)
+    projects.append(db_project)
+
+    data = {
+        "name": "my big project",
+        "owner": obj.owner,
+        "assignee": obj.assignee,
+    }
+    db_project = Project.objects.create(**data)
+    create_dummy_db_tasks(obj, db_project)
+    projects.append(db_project)
+
+    data = {
+        "name": "public project",
+    }
+    db_project = Project.objects.create(**data)
+    create_dummy_db_tasks(obj, db_project)
+    projects.append(db_project)
+
+    data = {
+        "name": "super project",
+        "owner": obj.admin,
+        "assignee": obj.assignee,
+    }
+    db_project = Project.objects.create(**data)
+    create_dummy_db_tasks(obj, db_project)
+    projects.append(db_project)
+
+    return projects
+
 
 class ForceLogin:
     def __init__(self, user, client):
@@ -586,6 +637,323 @@ class UserPartialUpdateAPITestCase(UserUpdateAPITestCase):
         data = {"username": "user12"}
         response = self._run_api_v1_users_id(None, self.user.id, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class ProjectListAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.projects = create_dummy_db_projects(cls)
+
+    def _run_api_v1_projects(self, user, params=""):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/projects{}'.format(params))
+
+        return response
+
+    def test_api_v1_projects_admin(self):
+        response = self._run_api_v1_projects(self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            sorted([project.name for project in self.projects]),
+            sorted([res["name"] for res in response.data["results"]]))
+
+    def test_api_v1_projects_user(self):
+        response = self._run_api_v1_projects(self.user)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            sorted([project.name for project in self.projects
+                if 'my empty project' != project.name]),
+            sorted([res["name"] for res in response.data["results"]]))
+
+    def test_api_v1_projects_observer(self):
+        response = self._run_api_v1_projects(self.observer)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            sorted([project.name for project in self.projects]),
+            sorted([res["name"] for res in response.data["results"]]))
+
+    def test_api_v1_projects_no_auth(self):
+        response = self._run_api_v1_projects(None)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class ProjectGetAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.projects = create_dummy_db_projects(cls)
+
+    def _run_api_v1_projects_id(self, pid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/projects/{}'.format(pid))
+
+        return response
+
+    def _check_response(self, response, db_project):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["name"], db_project.name)
+        owner = db_project.owner.id if db_project.owner else None
+        self.assertEqual(response.data["owner"], owner)
+        assignee = db_project.assignee.id if db_project.assignee else None
+        self.assertEqual(response.data["assignee"], assignee)
+        self.assertEqual(response.data["status"], db_project.status)
+
+    def _check_api_v1_projects_id(self, user):
+        for db_project in self.projects:
+            response = self._run_api_v1_projects_id(db_project.id, user)
+            if user and user.has_perm("engine.project.access", db_project):
+                self._check_response(response, db_project)
+            elif user:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v1_projects_id_admin(self):
+        self._check_api_v1_projects_id(self.admin)
+
+    def test_api_v1_projects_id_user(self):
+        self._check_api_v1_projects_id(self.user)
+
+    def test_api_v1_projects_id_observer(self):
+        self._check_api_v1_projects_id(self.observer)
+
+    def test_api_v1_projects_id_no_auth(self):
+        self._check_api_v1_projects_id(None)
+
+class ProjectDeleteAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.projects = create_dummy_db_projects(cls)
+
+    def _run_api_v1_projects_id(self, pid, user):
+        with ForceLogin(user, self.client):
+            response = self.client.delete('/api/v1/projects/{}'.format(pid), format="json")
+
+        return response
+
+    def _check_api_v1_projects_id(self, user):
+        for db_project in self.projects:
+            response = self._run_api_v1_projects_id(db_project.id, user)
+            if user and user.has_perm("engine.project.delete", db_project):
+                self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+            elif user:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v1_projects_id_admin(self):
+        self._check_api_v1_projects_id(self.admin)
+
+    def test_api_v1_projects_id_user(self):
+        self._check_api_v1_projects_id(self.user)
+
+    def test_api_v1_projects_id_observer(self):
+        self._check_api_v1_projects_id(self.observer)
+
+    def test_api_v1_projects_id_no_auth(self):
+        self._check_api_v1_projects_id(None)
+
+class ProjectCreateAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def _run_api_v1_projects(self, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.post('/api/v1/projects', data=data, format="json")
+
+        return response
+
+    def _check_response(self, response, user, data):
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["name"], data["name"])
+        self.assertEqual(response.data["owner"], data.get("owner", user.id))
+        self.assertEqual(response.data["assignee"], data.get("assignee"))
+        self.assertEqual(response.data["bug_tracker"], data.get("bug_tracker", ""))
+        self.assertEqual(response.data["status"], StatusChoice.ANNOTATION)
+
+    def _check_api_v1_projects(self, user, data):
+        response = self._run_api_v1_projects(user, data)
+        if user and user.has_perm("engine.project.create"):
+            self._check_response(response, user, data)
+        elif user:
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        else:
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v1_projects_admin(self):
+        data = {
+            "name": "new name for the project",
+            "bug_tracker": "http://example.com"
+        }
+        self._check_api_v1_projects(self.admin, data)
+
+        data = {
+            "owner": self.owner.id,
+            "assignee": self.assignee.id,
+            "name": "new name for the project"
+        }
+        self._check_api_v1_projects(self.admin, data)
+
+        data = {
+            "owner": self.admin.id,
+            "name": "2"
+        }
+        self._check_api_v1_projects(self.admin, data)
+
+
+    def test_api_v1_projects_user(self):
+        data = {
+            "name": "Dummy name",
+            "bug_tracker": "it is just text"
+        }
+        self._check_api_v1_projects(self.user, data)
+
+        data = {
+            "owner": self.owner.id,
+            "assignee": self.assignee.id,
+            "name": "My import project with data"
+        }
+        self._check_api_v1_projects(self.user, data)
+
+
+    def test_api_v1_projects_observer(self):
+        data = {
+            "name": "My Project #1",
+            "owner": self.owner.id,
+            "assignee": self.assignee.id
+        }
+        self._check_api_v1_projects(self.observer, data)
+
+    def test_api_v1_projects_no_auth(self):
+        data = {
+            "name": "My Project #2",
+            "owner": self.admin.id,
+        }
+        self._check_api_v1_projects(None, data)
+
+class ProjectPartialUpdateAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.projects = create_dummy_db_projects(cls)
+
+    def _run_api_v1_projects_id(self, pid, user, data):
+        with ForceLogin(user, self.client):
+            response = self.client.patch('/api/v1/projects/{}'.format(pid),
+                data=data, format="json")
+
+        return response
+
+    def _check_response(self, response, db_project, data):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        name = data.get("name", db_project.name)
+        self.assertEqual(response.data["name"], name)
+        owner = db_project.owner.id if db_project.owner else None
+        owner = data.get("owner", owner)
+        self.assertEqual(response.data["owner"], owner)
+        assignee = db_project.assignee.id if db_project.assignee else None
+        assignee = data.get("assignee", assignee)
+        self.assertEqual(response.data["assignee"], assignee)
+        self.assertEqual(response.data["status"], db_project.status)
+
+    def _check_api_v1_projects_id(self, user, data):
+        for db_project in self.projects:
+            response = self._run_api_v1_projects_id(db_project.id, user, data)
+            if user and user.has_perm("engine.project.change", db_project):
+                self._check_response(response, db_project, data)
+            elif user:
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+            else:
+                self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v1_projects_id_admin(self):
+        data = {
+            "name": "new name for the project",
+            "owner": self.owner.id,
+        }
+        self._check_api_v1_projects_id(self.admin, data)
+
+    def test_api_v1_projects_id_user(self):
+        data = {
+            "name": "new name for the project",
+            "owner": self.assignee.id,
+        }
+        self._check_api_v1_projects_id(self.user, data)
+
+    def test_api_v1_projects_id_observer(self):
+        data = {
+            "name": "new name for the project",
+        }
+        self._check_api_v1_projects_id(self.observer, data)
+
+    def test_api_v1_projects_id_no_auth(self):
+        data = {
+            "name": "new name for the project",
+        }
+        self._check_api_v1_projects_id(None, data)
+
+class ProjectListOfTasksAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.projects = create_dummy_db_projects(cls)
+
+    def _run_api_v1_projects_id_tasks(self, user, pid):
+        with ForceLogin(user, self.client):
+            response = self.client.get('/api/v1/projects/{}/tasks'.format(pid))
+
+        return response
+
+    def test_api_v1_projects_id_tasks_admin(self):
+        project = self.projects[1]
+        response = self._run_api_v1_projects_id_tasks(self.admin, project.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            sorted([task.name for task in project.tasks.all()]),
+            sorted([res["name"] for res in response.data["results"]]))
+
+    def test_api_v1_projects_id_tasks_user(self):
+        project = self.projects[1]
+        response = self._run_api_v1_projects_id_tasks(self.user, project.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            sorted([task.name for task in project.tasks.all()
+                if  task.owner in [None, self.user] or
+                    task.assignee in [None, self.user]]),
+            sorted([res["name"] for res in response.data["results"]]))
+
+    def test_api_v1_projects_id_tasks_observer(self):
+        project = self.projects[1]
+        response = self._run_api_v1_projects_id_tasks(self.observer, project.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertListEqual(
+            sorted([task.name for task in project.tasks.all()]),
+            sorted([res["name"] for res in response.data["results"]]))
+
+    def test_api_v1_projects_id_tasks_no_auth(self):
+        project = self.projects[1]
+        response = self._run_api_v1_projects_id_tasks(None, project.id)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class TaskListAPITestCase(APITestCase):
     def setUp(self):
