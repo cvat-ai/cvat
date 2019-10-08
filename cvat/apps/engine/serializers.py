@@ -197,7 +197,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'z_order', 'status', 'labels', 'segments',
             'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
-            'project')
+            'data_chunk_size')
         read_only_fields = ('size', 'mode', 'created_date', 'updated_date',
             'status')
         write_once_fields = ('overlap', 'segment_size', 'image_quality')
@@ -230,6 +230,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         os.makedirs(upload_dir)
         output_dir = db_task.get_data_dirname()
         os.makedirs(output_dir)
+        db_task.save()
 
         return db_task
 
@@ -246,7 +247,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.start_frame = validated_data.get('start_frame', instance.start_frame)
         instance.stop_frame = validated_data.get('stop_frame', instance.stop_frame)
         instance.frame_filter = validated_data.get('frame_filter', instance.frame_filter)
-        instance.project = validated_data.get('project', instance.project)
+        instance.data_chunk_size = validated_data.get('data_chunk_size', instance.data_chunk_size)
         labels = validated_data.get('label_set', [])
         for label in labels:
             attributes = label.pop('attributespec_set', [])
@@ -275,16 +276,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     db_attr.values = attr.get('values', db_attr.values)
                     db_attr.save()
 
-        instance.save()
         return instance
-
-class ProjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Project
-        fields = ('url', 'id', 'name', 'owner', 'assignee', 'bug_tracker',
-            'created_date', 'updated_date', 'status')
-        read_only_fields = ('created_date', 'updated_date', 'status')
-        ordering = ['-id']
 
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True,

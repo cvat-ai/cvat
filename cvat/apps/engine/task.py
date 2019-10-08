@@ -43,47 +43,6 @@ def rq_handler(job, exc_type, exc_value, traceback):
 
 ############################# Internal implementation for server API
 
-def make_image_meta_cache(db_task):
-    with open(db_task.get_image_meta_cache_path(), 'w') as meta_file:
-        cache = {
-            'original_size': []
-        }
-
-        if db_task.mode == 'interpolation':
-            image = Image.open(db_task.get_frame_path(0))
-            cache['original_size'].append({
-                'width': image.size[0],
-                'height': image.size[1]
-            })
-            image.close()
-        else:
-            filenames = []
-            for root, _, files in os.walk(db_task.get_upload_dirname()):
-                fullnames = map(lambda f: os.path.join(root, f), files)
-                images = filter(lambda x: get_mime(x) == 'image', fullnames)
-                filenames.extend(images)
-            filenames.sort()
-
-            for image_path in filenames:
-                image = Image.open(image_path)
-                cache['original_size'].append({
-                    'width': image.size[0],
-                    'height': image.size[1]
-                })
-                image.close()
-
-        meta_file.write(str(cache))
-
-
-def get_image_meta_cache(db_task):
-    try:
-        with open(db_task.get_image_meta_cache_path()) as meta_cache_file:
-            return literal_eval(meta_cache_file.read())
-    except Exception:
-        make_image_meta_cache(db_task)
-        with open(db_task.get_image_meta_cache_path()) as meta_cache_file:
-            return literal_eval(meta_cache_file.read())
-
 def _copy_data_from_share(server_files, upload_dir):
     job = rq.get_current_job()
     job.meta['status'] = 'Data are being copied from share..'
@@ -140,37 +99,33 @@ def _save_task_to_db(db_task):
 
     db_task.save()
 
-def _validate_data(data):
+def _count_files(data):
     share_root = settings.SHARE_ROOT
-    server_files = []
+    server_files = {
+        'dirs': [],
+        'files': [],
+    }
 
     for path in data["server_files"]:
         path = os.path.normpath(path).lstrip('/')
         if '..' in path.split(os.path.sep):
             raise ValueError("Don't use '..' inside file paths")
         full_path = os.path.abspath(os.path.join(share_root, path))
+        if 'directory' == get_mime(full_path):
+            server_files['dirs'].append(path)
+        else:
+            server_files['files'].append(path)
         if os.path.commonprefix([share_root, full_path]) != share_root:
             raise ValueError("Bad file path: " + path)
-        server_files.append(path)
 
-    server_files.sort(reverse=True)
-    # The idea of the code is trivial. After sort we will have files in the
-    # following order: 'a/b/c/d/2.txt', 'a/b/c/d/1.txt', 'a/b/c/d', 'a/b/c'
-    # Let's keep all items which aren't substrings of the previous item. In
-    # the example above only 2.txt and 1.txt files will be in the final list.
-    # Also need to correctly handle 'a/b/c0', 'a/b/c' case.
-    data['server_files'] = [v[1] for v in zip([""] + server_files, server_files)
-        if not os.path.dirname(v[0]).startswith(v[1])]
+    # Remove directories if other files from them exists in server files
+    data['server_files'] = server_files['files'] + [ dir_name for dir_name in server_files['dirs']
+        if not [ f_name for f_name in server_files['files'] if f_name.startswith(dir_name)]]
 
     def count_files(file_mapping, counter):
         for rel_path, full_path in file_mapping.items():
             mime = get_mime(full_path)
-            if mime in counter:
-                counter[mime].append(rel_path)
-            else:
-                slogger.glob.warn("Skip '{}' file (its mime type doesn't "
-                    "correspond to a video or an image file)".format(full_path))
-
+            counter[mime].append(rel_path)
 
     counter = { media_type: [] for media_type in MEDIA_TYPES.keys() }
 
@@ -184,6 +139,9 @@ def _validate_data(data):
         counter=counter,
     )
 
+    return counter
+
+def _validate_data(counter):
     unique_entries = 0
     multiple_entries = 0
     for media_type, media_config in MEDIA_TYPES.items():
@@ -203,7 +161,12 @@ def _validate_data(data):
     if unique_entries == 0 and multiple_entries == 0:
         raise ValueError('No media data found')
 
-    return counter
+    task_modes = [MEDIA_TYPES[media_type]['mode'] for media_type, media_files in counter.items() if media_files]
+
+    if not all(mode == task_modes[0] for mode in task_modes):
+        raise Exception('Could not combine different task modes for data')
+
+    return counter, task_modes[0]
 
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
@@ -245,7 +208,8 @@ def _create_thread(tid, data):
     if data['remote_files']:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
 
-    media = _validate_data(data)
+    media = _count_files(data)
+    media, task_mode = _validate_data(media)
 
     if data['server_files']:
         _copy_data_from_share(data['server_files'], upload_dir)
@@ -256,53 +220,47 @@ def _create_thread(tid, data):
 
     db_images = []
     extractors = []
-    length = 0
+
     for media_type, media_files in media.items():
         if not media_files:
             continue
-
-        extractor = MEDIA_TYPES[media_type]['extractor'](
+        extractors.append(MEDIA_TYPES[media_type]['extractor'](
             source_path=[os.path.join(upload_dir, f) for f in media_files],
-            dest_path=upload_dir,
             image_quality=db_task.image_quality,
             step=db_task.get_frame_step(),
             start=db_task.start_frame,
             stop=db_task.stop_frame,
-        )
-        length += len(extractor)
-        db_task.mode = MEDIA_TYPES[media_type]['mode']
-        extractors.append(extractor)
+        ))
+    db_task.mode = task_mode
 
+    def update_progress(progress):
+        job.meta['status'] = 'Images are being compressed... {}%'.format(round(progress * 100))
+        job.save_meta()
+
+    frame_counter = 0
     for extractor in extractors:
-        for frame, image_orig_path in enumerate(extractor):
-            image_dest_path = db_task.get_frame_path(db_task.size)
-            dirname = os.path.dirname(image_dest_path)
+        media_meta, image_count = extractor.save_as_chunks(
+            chunk_size=db_task.data_chunk_size,
+            task=db_task,
+            progress_callback=update_progress,
+        )
+        db_task.size += image_count
 
-            if not os.path.exists(dirname):
-                os.makedirs(dirname)
-
-            if db_task.mode == 'interpolation':
-                extractor.save_image(frame, image_dest_path)
-            else:
-                width, height = extractor.save_image(frame, image_dest_path)
+        if db_task.mode == 'annotation':
+            for image_meta in media_meta:
                 db_images.append(models.Image(
                     task=db_task,
-                    path=image_orig_path,
-                    frame=db_task.size,
-                    width=width, height=height))
-
-            db_task.size += 1
-            progress = frame * 100 // length
-            job.meta['status'] = 'Images are being compressed... {}%'.format(progress)
-            job.save_meta()
-
+                    path=image_meta['name'],
+                    frame=frame_counter,
+                    width=image_meta['size'][0], height=image_meta['size'][1],
+                ))
+                frame_counter += 1
+    extractors[0].save_preview(os.path.join(db_task.get_data_dirname(), 'preview.jpg'))
     if db_task.mode == 'interpolation':
-        image = Image.open(db_task.get_frame_path(0))
         models.Video.objects.create(
             task=db_task,
-            path=extractors[0].get_source_name(),
-            width=image.width, height=image.height)
-        image.close()
+            path=media_meta[0]['name'],
+            width=media_meta[0]['size'][0], height=media_meta[0]['size'][1])
         if db_task.stop_frame == 0:
             db_task.stop_frame = db_task.start_frame + (db_task.size - 1) * db_task.get_frame_step()
     else:

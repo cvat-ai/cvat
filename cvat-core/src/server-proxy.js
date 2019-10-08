@@ -49,7 +49,11 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get "about" information from the server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not get "about" information from the server',
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -65,7 +69,11 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get "share" information from the server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not get "share" information from the server',
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -82,7 +90,11 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not send an exception to the server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not send an exception to the server',
+                        code,
+                    );
                 }
             }
 
@@ -95,7 +107,11 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get annotation formats from the server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not get annotation formats from the server',
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -119,7 +135,11 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, `Could not register '${username}' user on the server`);
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        `Could not register '${username}' user on the server`,
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -140,7 +160,12 @@
                         },
                     );
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not login on a server');
+                    const code = errorData.response
+                        ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not login on a server',
+                        code,
+                    );
                 }
 
                 if (authenticationResponse.headers['set-cookie']) {
@@ -161,7 +186,11 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not logout from the server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not logout from the server',
+                        code,
+                    );
                 }
 
                 store.remove('token');
@@ -191,7 +220,11 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get tasks from a server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not get tasks from a server',
+                        code,
+                    );
                 }
 
                 response.data.results.count = response.data.count;
@@ -209,7 +242,11 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not save the task on the server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not save the task on the server',
+                        code,
+                    );
                 }
             }
 
@@ -219,7 +256,11 @@
                 try {
                     await Axios.delete(`${backendAPI}/tasks/${id}`);
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not delete the task from the server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not delete the task from the server',
+                        code,
+                    );
                 }
             }
 
@@ -241,9 +282,10 @@
                                 } else if (response.data.state === 'Failed') {
                                     // If request has been successful, but task hasn't been created
                                     // Then passed data is wrong and we can pass code 400
-                                    const message = 'Could not create the task on the server. '
-                                        + `${response.data.message}.`;
-                                    reject(new ServerError(message, 400));
+                                    reject(new ServerError(
+                                        'Could not create the task on the server',
+                                        400,
+                                    ));
                                 } else {
                                     // If server has another status, it is unexpected
                                     // Therefore it is server error and we can pass code 500
@@ -253,9 +295,13 @@
                                     ));
                                 }
                             } catch (errorData) {
-                                reject(
-                                    generateError(errorData, 'Could not put task to the server'),
-                                );
+                                const code = errorData.response
+                                    ? errorData.response.status : errorData.code;
+
+                                reject(new ServerError(
+                                    'Data uploading error occurred',
+                                    code,
+                                ));
                             }
                         }
 
@@ -283,7 +329,11 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not put task to the server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not put task to the server',
+                        code,
+                    );
                 }
 
                 onUpdate('The data is being uploaded to the server..');
@@ -292,13 +342,12 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    try {
-                        await deleteTask(response.data.id);
-                    } catch (_) {
-                        // ignore
-                    }
-
-                    throw generateError(errorData, 'Could not put data to the server');
+                    await deleteTask(response.data.id);
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not put data to the server',
+                        code,
+                    );
                 }
 
                 try {
@@ -321,7 +370,11 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get jobs from a server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not get jobs from a server',
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -338,7 +391,11 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not save the job on the server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not save the job on the server',
+                        code,
+                    );
                 }
             }
 
@@ -351,7 +408,11 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get users from the server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not get users from the server',
+                        code,
+                    );
                 }
 
                 return response.data.results;
@@ -366,25 +427,50 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get user data from the server');
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        'Could not get user data from the server',
+                        code,
+                    );
                 }
 
                 return response.data;
             }
 
-            async function getData(tid, frame) {
+            async function getPreview(tid) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/${frame}`, {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/preview`, {
                         proxy: config.proxy,
                         responseType: 'blob',
                     });
                 } catch (errorData) {
-                    throw generateError(
-                        errorData,
-                        `Could not get frame ${frame} for the task ${tid} from the server`,
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        `Could not get preview frame for the task ${tid} from the server`,
+                        code,
+                    );
+                }
+
+                return response.data;
+            }
+
+            async function getData(tid, chunk) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/chunk/${chunk}`, {
+                        proxy: config.proxy,
+                        responseType: 'arraybuffer',
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        `Could not get chunk ${chunk} for the task ${tid} from the server`,
+                        code,
                     );
                 }
 
@@ -400,9 +486,10 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(
-                        errorData,
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
                         `Could not get frame meta info for the task ${tid} from the server`,
+                        code,
                     );
                 }
 
@@ -419,9 +506,10 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(
-                        errorData,
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
                         `Could not get annotations for the ${session} ${id} from the server`,
+                        code,
                     );
                 }
 
@@ -450,9 +538,10 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(
-                        errorData,
-                        `Could not ${action} annotations for the ${session} ${id} on the server`,
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        `Could not updated annotations for the ${session} ${id} on the server`,
+                        code,
                     );
                 }
 
@@ -480,10 +569,13 @@
                                 resolve();
                             }
                         } catch (errorData) {
-                            reject(generateError(
-                                errorData,
+                            const code = errorData.response
+                                ? errorData.response.status : errorData.code;
+                            const error = new ServerError(
                                 `Could not upload annotations for the ${session} ${id}`,
-                            ));
+                                code,
+                            );
+                            reject(error);
                         }
                     }
 
@@ -511,10 +603,13 @@
                                 resolve(url);
                             }
                         } catch (errorData) {
-                            reject(generateError(
-                                errorData,
+                            const code = errorData.response
+                                ? errorData.response.status : errorData.code;
+                            const error = new ServerError(
                                 `Could not dump annotations for the task ${id} from the server`,
-                            ));
+                                code,
+                            );
+                            reject(error);
                         }
                     }
 
@@ -565,6 +660,7 @@
 
                 frames: {
                     value: Object.freeze({
+                        getPreview,
                         getData,
                         getMeta,
                     }),

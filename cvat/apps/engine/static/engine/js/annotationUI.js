@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Intel Corporation
+ * Copyright (C) 2018-2019 Intel Corporation
  *
  * SPDX-License-Identifier: MIT
  */
@@ -700,7 +700,8 @@ function callAnnotationUI(jid) {
             $.get('/api/v1/server/annotation/formats'),
         ).then((taskData, imageMetaData, annotationData, annotationFormats) => {
             $('#loadingOverlay').remove();
-            setTimeout(() => {
+            setTimeout(async () => {
+                [window.cvatTask] = (await window.cvat.tasks.get({ id: taskData[0].id }));
                 buildAnnotationUI(jobData, taskData[0],
                     imageMetaData[0], annotationData[0], annotationFormats[0], loadJobEvent);
             });
