@@ -286,6 +286,24 @@ class ProjectSerializer(serializers.ModelSerializer):
         read_only_fields = ('created_date', 'updated_date', 'status')
         ordering = ['-id']
 
+class BasicUserSerializer(serializers.ModelSerializer):
+    def validate(self, data):
+        if hasattr(self, 'initial_data'):
+            unknown_keys = set(self.initial_data.keys()) - set(self.fields.keys())
+            if unknown_keys:
+                if set(['is_staff', 'is_superuser', 'groups']) & unknown_keys:
+                    message = 'You do not have permissions to access some of' + \
+                        ' these fields: {}'.format(unknown_keys)
+                else:
+                    message = 'Got unknown fields: {}'.format(unknown_keys)
+                raise serializers.ValidationError(message)
+        return data
+
+    class Meta:
+        model = User
+        fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email')
+        ordering = ['-id']
+
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True,
         slug_field='name', queryset=Group.objects.all())
@@ -294,7 +312,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email',
             'groups', 'is_staff', 'is_superuser', 'is_active', 'last_login',
-            'date_joined', 'groups')
+            'date_joined')
         read_only_fields = ('last_login', 'date_joined')
         write_only_fields = ('password', )
         ordering = ['-id']

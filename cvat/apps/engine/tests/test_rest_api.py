@@ -40,11 +40,11 @@ def create_db_users(cls):
     user_dummy.groups.add(group_user)
 
     cls.admin = user_admin
-    cls.owner = user_owner
-    cls.assignee = user_assignee
-    cls.annotator = user_annotator
-    cls.observer = user_observer
-    cls.user = user_dummy
+    cls.owner = cls.user1 = user_owner
+    cls.assignee = cls.user2 = user_assignee
+    cls.annotator = cls.user3 = user_annotator
+    cls.observer = cls.user4 = user_observer
+    cls.user = cls.user5 = user_dummy
 
 def create_db_task(data):
     db_task = Task.objects.create(**data)
@@ -462,52 +462,68 @@ class ServerLogsAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class UserListAPITestCase(APITestCase):
+class UserAPITestCase(APITestCase):
     def setUp(self):
         self.client = APIClient()
+        create_db_users(self)
 
-    @classmethod
-    def setUpTestData(cls):
-        create_db_users(cls)
+    def _check_response(self, user, response, is_full=True):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self._check_data(user, response.data, is_full)
 
+    def _check_data(self, user, data, is_full):
+        self.assertEqual(data["id"], user.id)
+        self.assertEqual(data["username"], user.username)
+        self.assertEqual(data["first_name"], user.first_name)
+        self.assertEqual(data["last_name"], user.last_name)
+        self.assertEqual(data["email"], user.email)
+        extra_check = self.assertIn if is_full else self.assertNotIn
+        extra_check("groups", data)
+        extra_check("is_staff", data)
+        extra_check("is_superuser", data)
+        extra_check("is_active", data)
+        extra_check("last_login", data)
+        extra_check("date_joined", data)
+
+class UserListAPITestCase(UserAPITestCase):
     def _run_api_v1_users(self, user):
         with ForceLogin(user, self.client):
             response = self.client.get('/api/v1/users')
 
         return response
 
+    def _check_response(self, user, response, is_full):
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for user_info in response.data['results']:
+            db_user = getattr(self, user_info['username'])
+            self._check_data(db_user, user_info, is_full)
+
     def test_api_v1_users_admin(self):
         response = self._run_api_v1_users(self.admin)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertListEqual(
-            ["admin", "user1", "user2", "user3", "user4", "user5"],
-            [res["username"] for res in response.data["results"]])
+        self._check_response(self.admin, response, True)
 
     def test_api_v1_users_user(self):
         response = self._run_api_v1_users(self.user)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self._check_response(self.user, response, False)
+
+    def test_api_v1_users_annotator(self):
+        response = self._run_api_v1_users(self.annotator)
+        self._check_response(self.annotator, response, False)
+
+    def test_api_v1_users_observer(self):
+        response = self._run_api_v1_users(self.observer)
+        self._check_response(self.observer, response, False)
 
     def test_api_v1_users_no_auth(self):
         response = self._run_api_v1_users(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class UserSelfAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
-    @classmethod
-    def setUpTestData(cls):
-        create_db_users(cls)
-
+class UserSelfAPITestCase(UserAPITestCase):
     def _run_api_v1_users_self(self, user):
         with ForceLogin(user, self.client):
             response = self.client.get('/api/v1/users/self')
 
         return response
-
-    def _check_response(self, user, response):
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["username"], user.username)
 
     def test_api_v1_users_self_admin(self):
         response = self._run_api_v1_users_self(self.admin)
@@ -521,121 +537,139 @@ class UserSelfAPITestCase(APITestCase):
         response = self._run_api_v1_users_self(self.annotator)
         self._check_response(self.annotator, response)
 
+    def test_api_v1_users_self_observer(self):
+        response = self._run_api_v1_users_self(self.observer)
+        self._check_response(self.observer, response)
 
     def test_api_v1_users_self_no_auth(self):
         response = self._run_api_v1_users_self(None)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class UserGetAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-
-    @classmethod
-    def setUpTestData(cls):
-        create_db_users(cls)
-
+class UserGetAPITestCase(UserAPITestCase):
     def _run_api_v1_users_id(self, user, user_id):
         with ForceLogin(user, self.client):
             response = self.client.get('/api/v1/users/{}'.format(user_id))
 
         return response
 
-    def _check_response(self, user, response):
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], user.id)
-        self.assertEqual(response.data["username"], user.username)
-
     def test_api_v1_users_id_admin(self):
         response = self._run_api_v1_users_id(self.admin, self.user.id)
-        self._check_response(self.user, response)
+        self._check_response(self.user, response, True)
 
         response = self._run_api_v1_users_id(self.admin, self.admin.id)
-        self._check_response(self.admin, response)
+        self._check_response(self.admin, response, True)
 
         response = self._run_api_v1_users_id(self.admin, self.owner.id)
-        self._check_response(self.owner, response)
+        self._check_response(self.owner, response, True)
 
     def test_api_v1_users_id_user(self):
         response = self._run_api_v1_users_id(self.user, self.user.id)
-        self._check_response(self.user, response)
+        self._check_response(self.user, response, True)
 
         response = self._run_api_v1_users_id(self.user, self.owner.id)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self._check_response(self.owner, response, False)
 
     def test_api_v1_users_id_annotator(self):
         response = self._run_api_v1_users_id(self.annotator, self.annotator.id)
-        self._check_response(self.annotator, response)
+        self._check_response(self.annotator, response, True)
 
         response = self._run_api_v1_users_id(self.annotator, self.user.id)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self._check_response(self.user, response, False)
+
+    def test_api_v1_users_id_observer(self):
+        response = self._run_api_v1_users_id(self.observer, self.observer.id)
+        self._check_response(self.observer, response, True)
+
+        response = self._run_api_v1_users_id(self.observer, self.user.id)
+        self._check_response(self.user, response, False)
 
     def test_api_v1_users_id_no_auth(self):
         response = self._run_api_v1_users_id(None, self.user.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-class UserUpdateAPITestCase(APITestCase):
-    def setUp(self):
-        self.client = APIClient()
-        create_db_users(self)
-
-    def _run_api_v1_users_id(self, user, user_id, data):
-        with ForceLogin(user, self.client):
-            response = self.client.put('/api/v1/users/{}'.format(user_id), data=data)
-
-        return response
-
-    def test_api_v1_users_id_admin(self):
-        data = {"username": "user09", "groups": ["user", "admin"],
-            "first_name": "my name"}
-        response = self._run_api_v1_users_id(self.admin, self.user.id, data)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        user09 = User.objects.get(id=self.user.id)
-        self.assertEqual(user09.username, data["username"])
-        self.assertEqual(user09.first_name, data["first_name"])
-
-    def test_api_v1_users_id_user(self):
-        data = {"username": "user10", "groups": ["user", "annotator"],
-            "first_name": "my name"}
-        response = self._run_api_v1_users_id(self.user, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_api_v1_users_id_annotator(self):
-        data = {"username": "user11", "groups": ["annotator"],
-            "first_name": "my name"}
-        response = self._run_api_v1_users_id(self.annotator, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_api_v1_users_id_no_auth(self):
-        data = {"username": "user12", "groups": ["user", "observer"],
-            "first_name": "my name"}
-        response = self._run_api_v1_users_id(None, self.user.id, data)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-class UserPartialUpdateAPITestCase(UserUpdateAPITestCase):
+class UserPartialUpdateAPITestCase(UserAPITestCase):
     def _run_api_v1_users_id(self, user, user_id, data):
         with ForceLogin(user, self.client):
             response = self.client.patch('/api/v1/users/{}'.format(user_id), data=data)
 
         return response
 
+    def _check_response_with_data(self, user, response, data, is_full):
+        # refresh information about the user from DB
+        user = User.objects.get(id=user.id)
+        for k,v in data.items():
+            self.assertEqual(response.data[k], v)
+        self._check_response(user, response, is_full)
+
     def test_api_v1_users_id_admin_partial(self):
         data = {"username": "user09", "last_name": "my last name"}
         response = self._run_api_v1_users_id(self.admin, self.user.id, data)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        user09 = User.objects.get(id=self.user.id)
-        self.assertEqual(user09.username, data["username"])
-        self.assertEqual(user09.last_name, data["last_name"])
+        self._check_response_with_data(self.user, response, data, True)
 
     def test_api_v1_users_id_user_partial(self):
         data = {"username": "user10", "first_name": "my name"}
         response = self._run_api_v1_users_id(self.user, self.user.id, data)
+        self._check_response_with_data(self.user, response, data, False)
+
+        data = {"is_staff": True}
+        response = self._run_api_v1_users_id(self.user, self.user.id, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data = {"username": "admin", "is_superuser": True}
+        response = self._run_api_v1_users_id(self.user, self.user.id, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data = {"username": "non_active", "is_active": False}
+        response = self._run_api_v1_users_id(self.user, self.user.id, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data = {"username": "annotator01", "first_name": "slave"}
+        response = self._run_api_v1_users_id(self.user, self.annotator.id, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_api_v1_users_id_no_auth_partial(self):
         data = {"username": "user12"}
         response = self._run_api_v1_users_id(None, self.user.id, data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class UserDeleteAPITestCase(UserAPITestCase):
+    def _run_api_v1_users_id(self, user, user_id):
+        with ForceLogin(user, self.client):
+            response = self.client.delete('/api/v1/users/{}'.format(user_id))
+
+        return response
+
+    def test_api_v1_users_id_admin(self):
+        response = self._run_api_v1_users_id(self.admin, self.user.id)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        response = self._run_api_v1_users_id(self.admin, self.admin.id)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_api_v1_users_id_user(self):
+        response = self._run_api_v1_users_id(self.user, self.owner.id)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self._run_api_v1_users_id(self.user, self.user.id)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_api_v1_users_id_annotator(self):
+        response = self._run_api_v1_users_id(self.annotator, self.user.id)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self._run_api_v1_users_id(self.annotator, self.annotator.id)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_api_v1_users_id_observer(self):
+        response = self._run_api_v1_users_id(self.observer, self.user.id)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        response = self._run_api_v1_users_id(self.observer, self.observer.id)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_api_v1_users_id_no_auth(self):
+        response = self._run_api_v1_users_id(None, self.user.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class ProjectListAPITestCase(APITestCase):
