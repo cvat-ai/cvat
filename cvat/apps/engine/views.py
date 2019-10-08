@@ -37,7 +37,7 @@ from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
    RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
    PluginSerializer, FileInfoSerializer, LogEventSerializer,
-   ProjectSerializer)
+   ProjectSerializer, BasicUserSerializer)
 from cvat.apps.annotation.serializers import AnnotationFileSerializer
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
@@ -503,23 +503,37 @@ class JobViewSet(viewsets.GenericViewSet,
                 return Response(data)
 
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
-    mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
+    mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.all().order_by('id')
-    serializer_class = UserSerializer
+    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        user = self.request.user
+        if user.is_staff:
+            return UserSerializer
+        else:
+            is_self = int(self.kwargs.get("pk", 0)) == user.id or \
+                self.action == "self"
+            if is_self and self.request.method in SAFE_METHODS:
+                return UserSerializer
+            else:
+                return BasicUserSerializer
 
     def get_permissions(self):
         permissions = [IsAuthenticated]
-        if not self.action in ["self"]:
-            user = self.request.user
-            if self.action != "retrieve" or int(self.kwargs.get("pk", 0)) != user.id:
+        user = self.request.user
+
+        if not self.request.method in SAFE_METHODS:
+            is_self = int(self.kwargs.get("pk", 0)) == user.id
+            if not is_self:
                 permissions.append(auth.AdminRolePermission)
 
         return [perm() for perm in permissions]
 
-    @staticmethod
-    @action(detail=False, methods=['GET'], serializer_class=UserSerializer)
-    def self(request):
-        serializer = UserSerializer(request.user, context={ "request": request })
+    @action(detail=False, methods=['GET'])
+    def self(self, request):
+        serializer_class = self.get_serializer_class()
+        serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
 
 class PluginViewSet(viewsets.ModelViewSet):
