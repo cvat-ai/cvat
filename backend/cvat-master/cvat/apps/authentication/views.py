@@ -26,7 +26,7 @@ def sign_in_user(request):
             login(request, user)
             return redirect(settings.LOGIN_REDIRECT_URL)
         else:
-            return HttpResponse("login failed")
+            return HttpResponse("Your username and password didn't match. Please try again.")
     if request.method=='GET':
            return HttpResponse("get request")
 
