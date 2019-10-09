@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { StartupService } from '../startup.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -11,7 +10,7 @@ export class DashboardComponent implements OnInit {
   metaData: Object; //SHOULD THIS BE PRIVATE?
   taskData: Object;
   constructor(
-    private startupService: StartupService
+
 /* NOT SURE IF THIS SHOULD BE A PRIVATE INSTANCE VARIABLE OR NAH
     ,
     private metaData: Object,

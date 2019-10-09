@@ -7,9 +7,9 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { TaskConfigurationComponent } from './task-configuration/task-configuration.component';
 import { HttpClientModule, HttpClientXsrfModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { CookieService } from 'ngx-cookie-service';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { LoginComponent } from './login/login.component';
-//import { ReactiveFormsModule } from '@angular/forms';
 //import { BasicAuthInterceptor } from './_helpers/basic-auth.interceptor';
 
 @NgModule({
@@ -23,7 +23,9 @@ import { LoginComponent } from './login/login.component';
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    HttpClientXsrfModule.withOptions({ cookieName: 'csrftoken', headerName: 'x-csrftoken' })
+    HttpClientXsrfModule.withOptions({ cookieName: 'csrftoken', headerName: 'x-csrftoken' }),
+    FormsModule,
+    ReactiveFormsModule
   ],
   providers: [CookieService],
   bootstrap: [AppComponent]
