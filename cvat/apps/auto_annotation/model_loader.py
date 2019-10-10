@@ -31,14 +31,19 @@ class ModelLoader():
 
         iter_inputs = iter(network.inputs)
         self._input_blob_name = next(iter_inputs)
+        self._input_info_name = ''
         self._output_blob_name = next(iter(network.outputs))
 
         self._require_image_info = False
 
+        info_names = ('image_info', 'im_info')
+
         # NOTE: handeling for the inclusion of `image_info` in OpenVino2019
-        if 'image_info' in network.inputs:
+        if any(s in network.inputs for s in info_names):
             self._require_image_info = True
-        if self._input_blob_name == 'image_info':
+            self._input_info_name = set(network.inputs).intersection(info_names)
+            self._input_info_name = self._input_info_name.pop()
+        if self._input_blob_name in info_names:
             self._input_blob_name = next(iter_inputs)
 
         self._net = plugin.load(network=network, num_requests=2)
@@ -47,22 +52,31 @@ class ModelLoader():
 
     def infer(self, image):
         _, _, h, w = self._input_layout
-        in_frame = image if image.shape[:-1] == (h, w) else cv2.resize(image, (w, h))
+        scale = min(h / image.shape[0], w / image.shape[1])
+        in_frame = image if image.shape[:-1] == (h, w) else cv2.resize(image, None, fx=scale, fy=scale)
+
+        in_frame_size = in_frame.shape[:2]
+        in_frame = np.pad(in_frame, ((0, h - in_frame_size[0]),
+                                     (0, w - in_frame_size[1]),
+                                     (0, 0)),
+                          mode='constant', constant_values=0)
+
         in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
         inputs = {self._input_blob_name: in_frame}
         if self._require_image_info:
-            info = np.zeros([1, 3])
-            info[0, 0] = h
-            info[0, 1] = w
-            # frame number
-            info[0, 2] = 1
-            inputs['image_info'] = info
+            info = np.asarray([[in_frame_size[0],
+                                in_frame_size[1],
+                                scale]],
+                              dtype=np.float32)
+
+            inputs[self._input_info_name] = info
 
         results = self._net.infer(inputs)
+
         if len(results) == 1:
             return results[self._output_blob_name].copy()
         else:
-            return results.copy()
+            return results
 
 
 def load_labelmap(labels_path):
