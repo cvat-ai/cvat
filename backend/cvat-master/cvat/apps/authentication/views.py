@@ -24,7 +24,7 @@ def sign_in_user(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return redirect(settings.LOGIN_REDIRECT_URL)
+            return HttpResponse(user.id)
         else:
             return HttpResponse("Your username and password didn't match. Please try again.")
     if request.method=='GET':
