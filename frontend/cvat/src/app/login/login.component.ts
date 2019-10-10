@@ -3,6 +3,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { environment } from '../../environments/environment';
 import { NgForm, FormBuilder, FormGroup, FormControl} from '@angular/forms';
 import { LoginService } from '../login.service';
+import { Router } from "@angular/router";
 
 @Component({
   selector: 'app-login',
@@ -18,7 +19,7 @@ export class LoginComponent implements OnInit {
   loginUrl=environment.apiUrl+'auth/login1';
   loginForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private cookieService: CookieService, private loginService: LoginService) {}
+  constructor(private router: Router, private fb: FormBuilder, private cookieService: CookieService, private loginService: LoginService) {}
 
   ngOnInit() {
     this.cookieValue=this.cookieService.get('csrftoken');
@@ -35,9 +36,13 @@ export class LoginComponent implements OnInit {
     loginData.append('csrfmiddlewaretoken',this.cookieValue);
 
 
-    this.loginService.signIn(loginData).subscribe(response => this.response = response);  
-    console.log("yeetaroni");
-
+    this.loginService.signIn(loginData).subscribe(response => this.response = response);
+  //  localStorage.clear();
+    if(this.response!="Your username and password didn't match. Please try again."){
+      this.router.navigate(['./dashboard']);
+      //localStorage.setItem('user', this.response.text());
+    }
+    //console.log(localStorage.getItem('user').text());
   }
 
 
