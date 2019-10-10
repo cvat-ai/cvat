@@ -290,16 +290,11 @@ def dump(file_object, annotations):
 
         # Create new image
         insert_image_data(img, result_annotation)
-        # polygons = fix_segments_intersections(polygons, img.height, img.width, img.name)
-        empty_polygon = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        for i, _ in enumerate(polygons):
-            polygons[i]['points'] = [polygons[i]['points']]
-        output_polygons = []
-        for polygon in polygons:
-            poly_len = len(polygon['points'])
-            if poly_len != 0 and polygon['points'] != [empty_polygon]:
-                output_polygons.append(polygon)
-        polygons = output_polygons
+        if annotations.meta['task']['z_order'] == 'True':
+            polygons = fix_segments_intersections(polygons, img.height, img.width, img.name)
+        else:
+            for polygon in polygons:
+                polygon['points'] = [polygon['points']]
 
         # combine grouped polygons with the same label
         grouped_poligons = OrderedDict()
