@@ -157,108 +157,128 @@ It allows to download and upload annotations in different formats and easily add
 This is native CVAT annotation format.
 [Detailed format description](cvat/apps/documentation/xml_format.md)
 
-##### CVAT XML for images
-downloaded file: Single unpacked XML
-supported shapes - Rectangles, Polygons, Polylines, Points
+#### CVAT XML for images dumper
+- downloaded file: Single unpacked XML
+- supported shapes - Rectangles, Polygons, Polylines, Points
 
-##### CVAT XML for videos
-downloaded file: Single unpacked XML
-supported shapes - Rectangles, Polygons, Polylines, Points
+#### CVAT XML for videos dumper
+- downloaded file: Single unpacked XML
+- supported shapes - Rectangles, Polygons, Polylines, Points
 
 #### CVAT XML Loader
-uploaded file: Single unpacked XML
-supported shapes - Rectangles, Polygons, Polylines, Points
-
+- uploaded file: Single unpacked XML
+- supported shapes - Rectangles, Polygons, Polylines, Points
 
 ### [Pascal VOC](http://host.robots.ox.ac.uk/pascal/VOC/)
 
-#### Dumper description
+#### Pascal dumper description
 - downloaded file: a zip archive with following structure:
-  ```
+  ```bash
   taskname.zip
   ├── frame000001.xml
   ├── frame000002.xml
   ├── frame000003.xml
   └── ...
   ```
-  Each *.xml file contains annotations for a frame with the same name as annotation file. Detailed structure specification of the *.xml file can be found [here](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf)
+  Each \*.xml file contains annotations for a frame with the same name as annotation file.
+  Detailed structure specification of the \*.xml file can be found
+  [here](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf).
 - supported shapes - Rectangles
-- additional comments: If you plan to use 'truncated' and 'difficult' attributes please add to CVAT labels attributes the corresponding items:
+- additional comments: If you plan to use 'truncated' and 'difficult' attributes please add to CVAT
+  labels attributes the corresponding items:
   `~checkbox=difficult:false ~checkbox=truncated:false`
 
-#### Loader description
-- uploaded file: a zip archive with following structure:
-  ```
-  taskname.zip
-  ├── frame000001.xml
-  ├── frame000002.xml
-  ├── frame000003.xml
-  └── ...
-  ```
-  Each *.xml file contains annotations for a frame with the same name as annotation file. Note: it should be possible to match the CVAT frame(imagename) and image filename from the annotation *.xml file(tag filename, e.g. `<filename>2008_004457.jpg</filename>`). There are 2 options:
-  1. full match between image name and filename form annotation *.xml file (in case of a task was created from images or archive of images).
-  2. match by frame number (if CVAT cannot match by name). If filename tag contains a number CVAT will interpret it as frame number.
+#### Pascal loader description
+-   uploaded file: a zip archive with following structure:
+    ```bash
+    taskname.zip
+    ├── frame000001.xml
+    ├── frame000002.xml
+    ├── frame000003.xml
+    └── ...
+    ```
+    Each \*.xml file contains annotations for a frame with the same name as annotation file.
+    Note: it should be possible to match the CVAT frame(imagename) and image filename from the annotation \*.xml
+    file(tag filename, e.g. `<filename>2008_004457.jpg</filename>`). There are 2 options:
+    1. full match between image name and filename form annotation *.xml
+      file (in case of a task was created from images or archive of images).
+    1. match by frame number (if CVAT cannot match by name).
+      If filename tag contains a number CVAT will interpret it as frame number.
 
-- supported shapes: Rectangles
-- limitations: Support of Pascal VOC object detection format
-- additional comments: the CVAT task should be created with the full label set that may be in the annotation files
+-   supported shapes: Rectangles
+-   limitations: Support of Pascal VOC object detection format
+-   additional comments: the CVAT task should be created with the full label set that may be in the annotation files
 
 #### How to create a task from Pascal VOC dataset
-1. Download the Pascal Voc dataset
-1. Create the CVAT task with the following labels:
-   ```
-   aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog horse motorbike person pottedplant sheep sofa train tvmonitor
-   ```
-   You can add `~checkbox=difficult:false ~checkbox=truncated:false` attributes if you want to use it.
+1.  Download the Pascal Voc dataset
+1.  Create the CVAT task with the following labels:
+    ```bash
+    aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog horse motorbike person pottedplant sheep sofa train tvmonitor
+    ```
+    You can add `~checkbox=difficult:false ~checkbox=truncated:false` attributes if you want to use it.
 
-   Select interesting image files (See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task) guide for details)
-1. zip the corresponding annotation files
-1. click `Upload annotation` button, choose `Pascal VOC ZIP 1.0` and select the *.zip file with annotations from previous step. It may take some time.
+    Select interesting image files
+    (See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task)
+    guide for details)
+1.  zip the corresponding annotation files
+1.  click `Upload annotation` button, choose `Pascal VOC ZIP 1.0`
+and select the *.zip file with annotations from previous step.
+It may take some time.
 
 ### [YOLO](https://pjreddie.com/darknet/yolo/)
-#### Dumper description
+#### Yolo dumper description
 - downloaded file: a zip archive with following structure:
-  ```
+  ```bash
   taskname.zip
   ├── frame000001.txt
   ├── frame000002.txt
   ├── ...
   └── obj.names
   ```
-  Each `*.txt` file contains annotations for a frame with the same name as annotation file. Short description of  `*.txt` file structure: each line describes label and bounding box in the following format `label_id cx cy w h`.
+  Each `*.txt` file contains annotations for a frame with the same name as annotation file.
+  Short description of  `*.txt` file structure: each line describes label and bounding box
+  in the following format `label_id cx cy w h`.
   `obj.names` contains the ordered list of label names.
 - supported shapes - Rectangles
 
-#### Loader description
-- uploaded file: a zip archive with following structure:
-  ```
-  taskname.zip
-  ├── frame000001.txt
-  ├── frame000002.txt
-  ├── frame000003.txt
-  ├── ...
-  └──obj.names
-  ```
-  Each `*.txt` file contains annotations for a frame with the same name as annotation file. Note: it should be possible to match the CVAT frame(imagename) and annotation filename. There are 2 options:
-  1. full match between image name and filename form annotation `*.txt` file (in case of a task was created from images or archive of images).
-  2. match by frame number (if CVAT cannot match by name). If name of the *.txt annotation file contains a number CVAT will interpret it as frame number.
+#### Yolo loader description
+-   uploaded file: a zip archive with following structure:
+    ```bash
+    taskname.zip
+    ├── frame000001.txt
+    ├── frame000002.txt
+    ├── frame000003.txt
+    ├── ...
+    └──obj.names
+    ```
+    Each `*.txt` file contains annotations for a frame with the same name as annotation file.
+    Note: it should be possible to match the CVAT frame(imagename) and annotation filename.
+    There are 2 options:
+    1. full match between image name and filename form annotation `*.txt` file
+       (in case of a task was created from images or archive of images).
+    1. match by frame number (if CVAT cannot match by name).
+       If name of the *.txt annotation file contains a number CVAT will interpret it as frame number.
 
-- supported shapes: Rectangles
-- additional comments: the CVAT task should be created with the full label set that may be in the annotation files
+-   supported shapes: Rectangles
+-   additional comments: the CVAT task should be created with the full label set that may be in the annotation files
 
-#### How to create a task from YOLO formated dataset (from VOC for example)
-1. Follow the official [guide](https://pjreddie.com/darknet/yolo/)(see Training YOLO on VOC section) and prepare the YOLO formatted annotation.
+#### How to create a task from YOLO formatted dataset (from VOC for example)
+1. Follow the official [guide](https://pjreddie.com/darknet/yolo/)(see Training YOLO on VOC section)
+   and prepare the YOLO formatted annotation.
 1. Zip train images
-   ```
+   ```bash
    zip images.zip -j -@ < train.txt
    ```
 1. Create a CVAT task with the following labels:
-   ```
+   ```bash
    aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog horse motorbike person pottedplant sheep sofa train tvmonitor
    ```
-   Select images.zip as data. Most likely you should use `share` functionality because size of images.zip is more then 500Mb. See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task) guide for details.
+   Select images.zip as data. Most likely you should use `share`
+   functionality because size of images.zip is more than 500Mb.
+   See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task)
+   guide for details.
 1. Create `obj.names` with the following content:
-   ```
+   ```bash
    aeroplane
    bicycle
    bird
@@ -281,36 +301,44 @@ supported shapes - Rectangles, Polygons, Polylines, Points
    tvmonitor
    ```
 1. Zip all label files together (we need add only label files that correspond train subset)
-   ```
+   ```bash
    cat train.txt | while read p; do echo ${p%/*/*}/labels/${${p##*/}%%.*}.txt; done | zip labels.zip -j -@ obj.names
    ```
-1. Click `Upload annotation` button, choose `YOLO ZIP 1.0` and select the *.zip file with labels from previous step. It may take some time.
+1. Click `Upload annotation` button, choose `YOLO ZIP 1.0` and select the *.zip file with labels from previous step.
+   It may take some time.
 
 ### [MS COCO Object Detection](http://cocodataset.org/#format-data)
-#### Dumper description
+#### COCO dumper description
 - downloaded file: single unpacked `json`. Detailed description of the MS COCO format can be found [here](http://cocodataset.org/#format-data)
 - supported shapes - Polygons, Rectangles (interpreted as polygons)
 
-#### Loader description
+#### COCO loader description
 - uploaded file: single unpacked `*.json`.
 - supported shapes: Polygons
 - additional comments: the CVAT task should be created with the full label set that may be in the annotation files
 
 #### How to create a task from MS COCO dataset
-1. Download the [MS COCO dataset](http://cocodataset.org/#download). For example [2017 Val images](http://images.cocodataset.org/zips/val2017.zip) and [2017 Train/Val annotations](http://images.cocodataset.org/annotations/annotations_trainval2017.zip).
-1. Create a CVAT task with the following labels:
-   ```
-   person bicycle car motorcycle airplane bus train truck boat "traffic light" "fire hydrant" "stop sign" "parking meter" bench bird cat dog horse sheep cow elephant bear zebra giraffe backpack umbrella handbag tie suitcase frisbee skis snowboard "sports ball" kite "baseball bat" "baseball glove" skateboard surfboard "tennis racket" bottle "wine glass" cup fork knife spoon bowl banana apple sandwich orange broccoli carrot "hot dog" pizza donut cake chair couch "potted plant" bed "dining table" toilet tv laptop mouse remote keyboard "cell phone" microwave oven toaster sink refrigerator book clock vase scissors "teddy bear" "hair drier" toothbrush
-   ```
+1.  Download the [MS COCO dataset](http://cocodataset.org/#download).
+    For example [2017 Val images](http://images.cocodataset.org/zips/val2017.zip)
+    and [2017 Train/Val annotations](http://images.cocodataset.org/annotations/annotations_trainval2017.zip).
+1.  Create a CVAT task with the following labels:
+      ```bash
+      person bicycle car motorcycle airplane bus train truck boat "traffic light" "fire hydrant" "stop sign" "parking meter" bench bird cat dog horse sheep cow elephant bear zebra giraffe backpack umbrella handbag tie suitcase frisbee skis snowboard "sports ball" kite "baseball bat" "baseball glove" skateboard surfboard "tennis racket" bottle "wine glass" cup fork knife spoon bowl banana apple sandwich orange broccoli carrot "hot dog" pizza donut cake chair couch "potted plant" bed "dining table" toilet tv laptop mouse remote keyboard "cell phone" microwave oven toaster sink refrigerator book clock vase scissors "teddy bear" "hair drier" toothbrush
+      ```
 
-   Select val2017.zip as data (See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task) guide for details)
-1. unpack annotations_trainval2017.zip
-1. click `Upload annotation` button, choose `COCO JSON 1.0` and select `instances_val2017.json.json` annotation file. It may take some time.
+      Select val2017.zip as data
+      (See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task)
+      guide for details)
+1.  unpack annotations_trainval2017.zip
+1.  click `Upload annotation` button,
+    choose `COCO JSON 1.0` and select `instances_val2017.json.json` annotation file. It may take some time.
 
 ### [TFRecord](https://www.tensorflow.org/tutorials/load_data/tf_records)
-TFRecord is a very flexible format, but we try to correspond the format that used in [TF object detection](https://github.com/tensorflow/models/tree/master/research/object_detection) with minimal modifications.
+TFRecord is a very flexible format, but we try to correspond the format that used in
+[TF object detection](https://github.com/tensorflow/models/tree/master/research/object_detection)
+with minimal modifications.
 Used feature description:
-```
+```python
 image_feature_description = {
     'image/filename': tf.io.FixedLenFeature([], tf.string),
     'image/source_id': tf.io.FixedLenFeature([], tf.string),
@@ -325,18 +353,18 @@ image_feature_description = {
     'image/object/class/text': tf.io.VarLenFeature(tf.string),
 }
 ```
-#### Dumper description
+#### TFRecord dumper description
 - downloaded file: a zip archive with following structure:
-  ```
+  ```bash
   taskname.zip
   ├── task2.tfrecord
   └── label_map.pbtxt
   ```
 - supported shapes - Rectangles
 
-#### Loader description
+#### TFRecord loader description
 - uploaded file: a zip archive with following structure:
-  ```
+  ```bash
   taskname.zip
   └── task2.tfrecord
   ```
@@ -345,7 +373,7 @@ image_feature_description = {
 
 #### How to create a task from TFRecord dataset (from VOC2007 for example)
 1. Create label_map.pbtxt file with the following content:
-```
+```js
 item {
 	id: 1
 	name: 'aeroplane'
@@ -427,31 +455,34 @@ item {
 	name: 'tvmonitor'
 }
 ```
-1. Use [create_pascal_tf_record.py](https://github.com/tensorflow/models/blob/master/research/object_detection/dataset_tools/create_pascal_tf_record.py) to convert VOC2007 dataset to TFRecord format.
+1. Use [create_pascal_tf_record.py](https://github.com/tensorflow/models/blob/master/research/object_detection/dataset_tools/create_pascal_tf_record.py)
+to convert VOC2007 dataset to TFRecord format.
 As example:
-```
+```bash
 python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --year VOC2007 --output_path pascal.tfrecord --label_map_path label_map.pbtxt
 ```
 1. Zip train images
-   ```
+   ```bash
    cat <path to VOCdevkit>/VOC2007/ImageSets/Main/train.txt | while read p; do echo <path to VOCdevkit>/VOC2007/JPEGImages/${p}.jpg  ; done | zip images.zip -j -@
    ```
 1. Create a CVAT task with the following labels:
-   ```
+   ```bash
    aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog horse motorbike person pottedplant sheep sofa train tvmonitor
    ```
-   Select images.zip as data. See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task) guide for details.
+   Select images.zip as data.
+   See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task)
+   guide for details.
 1. Zip pascal.tfrecord and label_map.pbtxt files together
-   ```
+   ```bash
    zip anno.zip -j <path to pascal.tfrecord> <path to label_map.pbtxt>
    ```
-1. Click `Upload annotation` button, choose `TFRecord ZIP 1.0` and select the *.zip file with labels from previous step. It may take some time.
-
+1. Click `Upload annotation` button, choose `TFRecord ZIP 1.0` and select the      *.zip file
+   with labels from previous step. It may take some time.
 
 ### PNG mask
-#### Dumper description
+#### Mask dumper description
 - downloaded file: a zip archive with following structure:
-  ```
+  ```bash
   taskname.zip
   ├── frame000001.png
   ├── frame000002.png
@@ -459,9 +490,12 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   ├── ...
   └── colormap.txt
   ```
-  Mask is a png image with several (RGB) channels where each pixel has own color which corresponds to a label. Color generation correspond to the Pascal VOC color generation [algorithm](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/devkit_doc.html#sec:voclabelcolormap). (0, 0, 0) is used for background.
+  Mask is a png image with several (RGB) channels where each pixel has own color which corresponds to a label.
+  Color generation correspond to the Pascal VOC color generation
+  [algorithm](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/devkit_doc.html#sec:voclabelcolormap).
+  (0, 0, 0) is used for background.
   colormap.txt file contains the values of used colors in RGB format.
 - supported shapes - Rectangles, Polygons
 
-#### Loader description
+#### Mask loader description
 Not supported
