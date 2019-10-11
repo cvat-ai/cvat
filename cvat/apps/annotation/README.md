@@ -246,6 +246,46 @@ supported shapes - Rectangles, Polygons, Polylines, Points
 - supported shapes: Rectangles
 - additional comments: the CVAT task should be created with the full label set that may be in the annotation files
 
+#### How to create a task from YOLO formated dataset (from VOC for example)
+1. Follow the official [guide](https://pjreddie.com/darknet/yolo/)(see Training YOLO on VOC section) and prepare the YOLO formatted annotation.
+1. Zip train images
+   ```
+   zip images.zip -j -@ < train.txt
+   ```
+1. Create a CVAT task with the following labels:
+   ```
+   aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog horse motorbike person pottedplant sheep sofa train tvmonitor
+   ```
+   Select images.zip as data. Most likely you should use `share` functionality because size of images.zip is more then 500Mb. See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task) guide for details.
+1. Create `obj.names` with the following content:
+   ```
+   aeroplane
+   bicycle
+   bird
+   boat
+   bottle
+   bus
+   car
+   cat
+   chair
+   cow
+   diningtable
+   dog
+   horse
+   motorbike
+   person
+   pottedplant
+   sheep
+   sofa
+   train
+   tvmonitor
+   ```
+1. Zip all label files together (we need add only label files that correspond train subset)
+   ```
+   cat train.txt | while read p; do echo ${p%/*/*}/labels/${${p##*/}%%.*}.txt; done | zip labels.zip -j -@ obj.names
+   ```
+1. Click `Upload annotation` button, choose `YOLO ZIP 1.0` and select the *.zip file with labels from previous step. It may take some time.
+
 ### [MS COCO Object Detection](http://cocodataset.org/#format-data)
 #### Dumper description
 - downloaded file: single unpacked `json`. Detailed description of the MS COCO format can be found [here](http://cocodataset.org/#format-data)
@@ -256,7 +296,7 @@ supported shapes - Rectangles, Polygons, Polylines, Points
 - supported shapes: Polygons
 - additional comments: the CVAT task should be created with the full label set that may be in the annotation files
 
-#### How to create a task from PMS COCO dataset
+#### How to create a task from MS COCO dataset
 1. Download the [MS COCO dataset](http://cocodataset.org/#download). For example [2017 Val images](http://images.cocodataset.org/zips/val2017.zip) and [2017 Train/Val annotations](http://images.cocodataset.org/annotations/annotations_trainval2017.zip).
 1. Create a CVAT task with the following labels:
    ```
