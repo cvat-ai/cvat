@@ -33,7 +33,7 @@ class FrameProviderWrapper extends Listener {
             if (frameNumber >= start && frameNumber <= stop) {
                 const data = await frameData.data();
                 this._loaded = frameNumber;
-                this._result = new ImageData(data, frameData.width, frameData.height);
+                this._result = {data : data, height : frameData.height, width : frameData.width};
                 return this._result;
             }
         }
@@ -43,7 +43,7 @@ class FrameProviderWrapper extends Listener {
         // but we promise to notify the player when frame is loaded
         frameData.data().then((data) => {
             this._loaded = frameNumber;
-            this._result = new ImageData(data, frameData.width, frameData.height);
+            this._result = data;
             this.notify();
         }).catch((error) => {
             if (typeof (error) === 'number') {
@@ -875,16 +875,19 @@ class PlayerView {
             this._playerCanvasBackground.attr('width', image.width);
             this._playerCanvasBackground.attr('height', image.height);
 
-            if (window.cvatTask.mode === 'interpolation') {
+            // if (window.cvatTask.mode === 'interpolation') {
+            //     const ctx = this._playerCanvasBackground[0].getContext('2d');
+            //     const imageData = ctx.createImageData(image.width, image.height);
+            //     imageData.data.set(image.data);
+            //     ctx.putImageData(imageData, 0, 0);
+            // } else {
                 const ctx = this._playerCanvasBackground[0].getContext('2d');
-                const imageData = ctx.createImageData(image.width, image.height);
-                imageData.data.set(image.data);
-                ctx.putImageData(imageData, 0, 0);
-            } else {
-                const uiImage = new Image(image.width, image.height);
-                uiImage.src = image.data;
-                this._playerCanvasBackground.drawImage(uiImage, 0, 0);
-            }
+                
+                var img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = image.data;
         }
 
         if (model.playing) {
