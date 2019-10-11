@@ -343,6 +343,111 @@ image_feature_description = {
 - supported shapes: Rectangles
 - additional comments: the CVAT task should be created with the full label set that may be in the annotation files
 
+#### How to create a task from TFRecord dataset (from VOC2007 for example)
+1. Create label_map.pbtxt file with the following content:
+```
+item {
+	id: 1
+	name: 'aeroplane'
+}
+item {
+	id: 2
+	name: 'bicycle'
+}
+item {
+	id: 3
+	name: 'bird'
+}
+item {
+	id: 4
+	name: 'boat'
+}
+item {
+	id: 5
+	name: 'bottle'
+}
+item {
+	id: 6
+	name: 'bus'
+}
+item {
+	id: 7
+	name: 'car'
+}
+item {
+	id: 8
+	name: 'cat'
+}
+item {
+	id: 9
+	name: 'chair'
+}
+item {
+	id: 10
+	name: 'cow'
+}
+item {
+	id: 11
+	name: 'diningtable'
+}
+item {
+	id: 12
+	name: 'dog'
+}
+item {
+	id: 13
+	name: 'horse'
+}
+item {
+	id: 14
+	name: 'motorbike'
+}
+item {
+	id: 15
+	name: 'person'
+}
+item {
+	id: 16
+	name: 'pottedplant'
+}
+item {
+	id: 17
+	name: 'sheep'
+}
+item {
+	id: 18
+	name: 'sofa'
+}
+item {
+	id: 19
+	name: 'train'
+}
+item {
+	id: 20
+	name: 'tvmonitor'
+}
+```
+1. Use [create_pascal_tf_record.py](https://github.com/tensorflow/models/blob/master/research/object_detection/dataset_tools/create_pascal_tf_record.py) to convert VOC2007 dataset to TFRecord format.
+As example:
+```
+python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --year VOC2007 --output_path pascal.tfrecord --label_map_path label_map.pbtxt
+```
+1. Zip train images
+   ```
+   cat <path to VOCdevkit>/VOC2007/ImageSets/Main/train.txt | while read p; do echo <path to VOCdevkit>/VOC2007/JPEGImages/${p}.jpg  ; done | zip images.zip -j -@
+   ```
+1. Create a CVAT task with the following labels:
+   ```
+   aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog horse motorbike person pottedplant sheep sofa train tvmonitor
+   ```
+   Select images.zip as data. See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task) guide for details.
+1. Zip pascal.tfrecord and label_map.pbtxt files together
+   ```
+   zip anno.zip -j <path to pascal.tfrecord> <path to label_map.pbtxt>
+   ```
+1. Click `Upload annotation` button, choose `TFRecord ZIP 1.0` and select the *.zip file with labels from previous step. It may take some time.
+
+
 ### PNG mask
 #### Dumper description
 - downloaded file: a zip archive with following structure:
