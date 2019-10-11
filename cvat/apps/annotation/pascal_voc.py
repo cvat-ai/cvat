@@ -50,8 +50,6 @@ def load(file_object, annotations):
         import xml.etree.ElementTree as ET
         root = ET.parse(annotation_file).getroot()
         frame_number = match_frame(annotations.frame_info, root.find('filename').text)
-        with open('/tmp/fff.txt', 'w+') as fff:
-            fff.write(root.find('filename').text + '\n')
 
         for obj_tag in root.iter('object'):
             bbox_tag = obj_tag.find("bndbox")
