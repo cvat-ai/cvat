@@ -25,31 +25,12 @@ format_spec = {
 def load(file_object, annotations):
     from pyunpack import Archive
     import os
-    import re
     from tempfile import TemporaryDirectory
-
-    def match_frame(frame_info, filename):
-        def get_filename(path):
-            return os.path.splitext(os.path.basename(path))[0]
-
-        # try to match by filename
-        pascal_filename = get_filename(filename)
-        for frame_number, info in frame_info.items():
-            cvat_filename = get_filename(info['path'])
-            if cvat_filename == pascal_filename:
-                return frame_number
-
-        # try to extract framenumber from filename
-        numbers = re.findall(r'\d+', filename)
-        if numbers and len(numbers) == 1:
-            return int(numbers[0])
-
-        raise Exception('Cannot match filename or determinate framenumber for {} filename'.format(filename))
 
     def parse_xml_file(annotation_file):
         import xml.etree.ElementTree as ET
         root = ET.parse(annotation_file).getroot()
-        frame_number = match_frame(annotations.frame_info, root.find('filename').text)
+        frame_number = annotations.match_frame(root.find('filename').text)
 
         for obj_tag in root.iter('object'):
             bbox_tag = obj_tag.find("bndbox")

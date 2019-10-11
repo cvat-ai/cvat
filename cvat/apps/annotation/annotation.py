@@ -424,3 +424,23 @@ class Annotation:
     @property
     def frame_info(self):
         return self._frame_info
+
+    def match_frame(self, filename):
+        import re
+
+        def get_filename(path):
+            return os.path.splitext(os.path.basename(path))[0]
+
+        # try to match by filename
+        _filename = get_filename(filename)
+        for frame_number, info in self.frame_info.items():
+            cvat_filename = get_filename(info["path"])
+            if cvat_filename == _filename:
+                return frame_number
+
+        # try to extract frame number from filename
+        numbers = re.findall(r"\d+", filename)
+        if numbers and len(numbers) == 1:
+            return int(numbers[0])
+
+        raise Exception("Cannot match filename or determinate framenumber for {} filename".format(filename))

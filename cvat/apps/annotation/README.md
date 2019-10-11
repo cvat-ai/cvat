@@ -313,7 +313,7 @@ Used feature description:
 ```
 image_feature_description = {
     'image/filename': tf.io.FixedLenFeature([], tf.string),
-    'image/source_id': tf.io.FixedLenFeature([], tf.int64),
+    'image/source_id': tf.io.FixedLenFeature([], tf.string),
     'image/height': tf.io.FixedLenFeature([], tf.int64),
     'image/width': tf.io.FixedLenFeature([], tf.int64),
     # Object boxes and classes.
