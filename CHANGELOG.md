@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0.alpha] - 2020-02-XX
 ### Added
 - Server only support for projects. Extend REST API v1 (/api/v1/projects*).
-- Ability to get basic information about users without admin permissions (#750).
-Changed REST API: removed PUT and added DELETE methods for /api/v1/users/ID.
+- Ability to [get basic information about users without admin permissions](
+https://github.com/opencv/cvat/issues/750).
+- Changed REST API: removed PUT and added DELETE methods for /api/v1/users/ID.
 
 ### Changed
 -
@@ -20,7 +21,7 @@ Changed REST API: removed PUT and added DELETE methods for /api/v1/users/ID.
 -
 
 ### Fixed
--
+- [Mask problem on coco json style](https://github.com/opencv/cvat/issues/718)
 
 ### Security
 -
