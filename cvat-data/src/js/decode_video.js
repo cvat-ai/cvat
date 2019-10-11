@@ -1,5 +1,5 @@
 const JSMpeg = require('./jsmpeg');
-const jpeg = require('jpeg-js')
+const jpeg = require('./pttjpeg')
 /* This function is a modified version of function from jsmpeg
     which converts an image from YCbCr space to RGBA space
 */
@@ -74,52 +74,6 @@ function YCbCrToRGBA(y, cb, cr) {
 }
 
 
-decode = function(start, end, block)
-{
-    videoDecoder = new JSMpeg.Decoder.MPEG1Video({decodeFirstFrame : false});
-    demuxer = new JSMpeg.Demuxer.TS({});
-    demuxer.connect(JSMpeg.Demuxer.TS.STREAM.VIDEO_1, videoDecoder);
-    demuxer.write(block);
-
-    for (let i = start; i <= end; i++){
-        const result = videoDecoder.decode();
-
-        if (!Array.isArray(result)) {
-            const message = 'Result must be an array.'
-                + `Got ${result}. Possible reasons: `
-                + 'bad video file, unpached jsmpeg';
-            throw Error(message);
-        }
-        // const rawImageData = {
-        //       data: YCbCrToRGBA(...result),
-        //       width: result[3],
-        //       height: result[4]
-        //     };
-
-        // console.log(result);
-        const res =  YCbCrToRGBA(...result);
-        
-        
-        
-        // this.console.log(res);
-        // const jpegImageData = jpeg.encode(rawImageData, 100);
-        postMessage({fileName : null, index : i, data: res});
-        // const blob = new Blob([jpegImageData.data],{type:'application/octet-binary'});
-        // const reader = new FileReader();
-        // reader.index = i;
-        // reader.onload = (function(i, event){
-           
-           
-        // });
-                
-        // reader.readAsDataURL(blob);
-        
-        
-       
-    }
-}
-
-
 self.onmessage = function (e) {
     
     const block = e.data.block;
@@ -140,32 +94,15 @@ self.onmessage = function (e) {
                 + 'bad video file, unpached jsmpeg';
             throw Error(message);
         }
-        // const rawImageData = {
-        //       data: YCbCrToRGBA(...result),
-        //       width: result[3],
-        //       height: result[4]
-        //     };
+              
+        var encoder = new jpeg.pttJPEG();
+        var bw = new encoder.ByteWriter();
+        var inImage = new encoder.pttImage({data : YCbCrToRGBA(...result), width : 1920, height : 1080});
 
-        // console.log(result);
-        const res =  YCbCrToRGBA(...result);
-        
-        
-        
-        // this.console.log(res);
-        // const jpegImageData = jpeg.encode(rawImageData, 100);
-        postMessage({fileName : null, index : i, data: res});
-        // const blob = new Blob([jpegImageData.data],{type:'application/octet-binary'});
-        // const reader = new FileReader();
-        // reader.index = i;
-        // reader.onload = (function(i, event){
-           
-           
-        // });
-                
-        // reader.readAsDataURL(blob);
-        
-        
-       
+
+        encoder.encode( 99, inImage, bw );
+        var url = bw.getImgUrl();
+        postMessage({fileName : null, index : i, data:url});
     }
 
     self.close();
