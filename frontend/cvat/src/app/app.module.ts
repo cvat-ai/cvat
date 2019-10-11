@@ -10,8 +10,6 @@ import { CookieService } from 'ngx-cookie-service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { LoginComponent } from './login/login.component';
-import { MatDialogModule } from '@angular/material';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 //import { BasicAuthInterceptor } from './_helpers/basic-auth.interceptor';
 
 @NgModule({
@@ -27,13 +25,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     HttpClientModule,
     HttpClientXsrfModule.withOptions({ cookieName: 'csrftoken', headerName: 'x-csrftoken' }),
     FormsModule,
-    ReactiveFormsModule,
-    MatDialogModule,
-    BrowserAnimationsModule
+    ReactiveFormsModule
   ],
   providers: [CookieService],
-  bootstrap: [AppComponent],
-  entryComponents: [TaskConfigurationComponent]
+  bootstrap: [AppComponent]
 })
 export class AppModule { }
 
