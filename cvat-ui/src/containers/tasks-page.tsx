@@ -168,6 +168,7 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
         if (this.props.tasks.initialized) {
             const List = this.props.tasks.array.length ? <TaskList
                 tasks={this.props.tasks.array}
+                previews={this.props.tasks.previews}
                 page={this.props.tasks.query.page}
                 count={this.props.tasks.count}
                 goToPage={this.handlePagination.bind(this)}

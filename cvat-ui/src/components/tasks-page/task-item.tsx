@@ -15,28 +15,17 @@ import moment from 'moment';
 
 export interface TaskItemProps {
     task: any;
-}
-
-export interface TaskItemState {
-    // Should we put it into redux state?
     preview: string;
 }
 
-export default class TaskItem extends React.PureComponent<TaskItemProps, TaskItemState> {
-    public componentDidMount() {
-        this.props.task.frames.preview().then((data: string) => {
-            this.setState({preview: data});
-        }).catch((error: any) => {
-            console.log(error);
-        })
-    }
-
-    render() {
+export default class TaskItem extends React.PureComponent<TaskItemProps> {
+    public render() {
         // Task info
         const id = this.props.task.id;
         const owner = this.props.task.owner.username;
         const updated = moment(this.props.task.updatedDate).fromNow();
         const created = moment(this.props.task.createdDate).format('MMMM Do YYYY');
+        const preview = this.props.preview;
 
         // Get and truncate a task name
         let name = this.props.task.name;
@@ -72,9 +61,7 @@ export default class TaskItem extends React.PureComponent<TaskItemProps, TaskIte
             <Row className='cvat-tasks-list-item' type='flex' justify='center' align='top'>
                 <Col span={4}>
                     <div className='cvat-task-preview-wrapper'>
-                        {this.state ?
-                            <img alt='Preview' className='cvat-task-preview' src={this.state.preview}/>
-                        : null}
+                        <img alt='Preview' className='cvat-task-preview' src={preview}/>
                     </div>
                 </Col>
                 <Col span={10}>
@@ -85,8 +72,8 @@ export default class TaskItem extends React.PureComponent<TaskItemProps, TaskIte
                 <Col span={6}>
                     <Row type='flex' justify='space-between' align='top'>
                         <Col>
-                            <svg height="8" width="8" className={progressColor}>
-                                <circle cx="4" cy="4" r="4" strokeWidth="0"/>
+                            <svg height='8' width='8' className={progressColor}>
+                                <circle cx='4' cy='4' r='4' strokeWidth='0'/>
                             </svg>
                             { numOfCompleted === numOfJobs ?
                                 <Text strong className={progressColor}> Completed </Text>

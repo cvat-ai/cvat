@@ -27,6 +27,7 @@ module.exports = {
     'rules': {
         '@typescript-eslint/indent': ['warn', 4],
         '@typescript-eslint/no-explicit-any': [0],
+        'no-restricted-syntax': [0, {'selector': 'ForOfStatement'}],
     },
     'settings': {
         'import/resolver': {

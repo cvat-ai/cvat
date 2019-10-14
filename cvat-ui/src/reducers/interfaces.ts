@@ -23,6 +23,7 @@ export interface TasksState {
     initialized: boolean;
     count: number;
     array: any[];
+    previews: string[];
     error: any;
     query: TasksQuery;
 }

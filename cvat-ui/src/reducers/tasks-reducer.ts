@@ -7,6 +7,7 @@ const defaultState: TasksState = {
     initialized: false,
     count: 0,
     array: [],
+    previews: [],
     error: null,
     query: {
         page: 1,
@@ -28,6 +29,7 @@ export default (state = defaultState, action: AnyAction): TasksState => {
                 initialized: true,
                 count: action.payload.count,
                 array: action.payload.array,
+                previews: action.payload.previews,
                 error: null,
                 query: { ...action.payload.query },
             };
@@ -36,6 +38,7 @@ export default (state = defaultState, action: AnyAction): TasksState => {
                 ...state,
                 initialized: true,
                 array: [],
+                previews: [],
                 count: 0,
                 error: action.payload.error,
                 query: { ...action.payload.query },

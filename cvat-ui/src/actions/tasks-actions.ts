@@ -11,10 +11,12 @@ export enum TasksActionTypes {
     GET_TASKS_FAILED = 'GET_TASKS_FAILED',
 }
 
-export function getTasksSuccess(array: any[], count: number, query: any): AnyAction {
+export function getTasksSuccess(array: any[], previews: string[],
+    count: number, query: any): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
         payload: {
+            previews,
             array,
             count,
         },
@@ -54,6 +56,23 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
 
         const array = Array.from(result);
-        dispatch(getTasksSuccess(array, result.count, query));
+        const previews = [];
+        const promises = array
+            .map((task): string => (task as any).frames.preview());
+
+        for (const promise of promises) {
+            try {
+                // a tricky moment
+                // await is okay in loop in this case, there aren't any performance bottleneck
+                // because all server requests have been already sent in parallel
+
+                // eslint-disable-next-line no-await-in-loop
+                previews.push(await promise);
+            } catch (error) {
+                previews.push('');
+            }
+        }
+
+        dispatch(getTasksSuccess(array, previews, result.count, query));
     };
 }

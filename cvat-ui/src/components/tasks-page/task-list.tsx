@@ -11,6 +11,7 @@ import TaskItem from './task-item'
 export interface ContentListProps {
     goToPage(page: number): void;
     tasks: any[];
+    previews: string[];
     page: number;
     count: number;
 }
@@ -23,10 +24,15 @@ export default class TaskList extends React.PureComponent<ContentListProps> {
     public render() {
         const taskViews = [];
 
-        for (const task of this.props.tasks) {
+        for (let i = 0; i < this.props.tasks.length; i++) {
+            const task = this.props.tasks[i];
+            const preview = this.props.previews[i];
             taskViews.push(
-                <TaskItem key={task.id} task={task}></TaskItem>
+                <TaskItem key={task.id} task={task} preview={preview}></TaskItem>
             )
+        }
+        for (const task of this.props.tasks) {
+
         }
 
         return (
