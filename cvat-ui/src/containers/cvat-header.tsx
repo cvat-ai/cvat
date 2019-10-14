@@ -38,73 +38,67 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type HeaderProps = StateToProps & DispatchToProps & RouteComponentProps;
 
-class CVATHeader extends React.PureComponent<HeaderProps> {
-    constructor(props: any) {
-        super(props);
+function CVATHeader(props: HeaderProps) {
+    const cvatLogo = () => (<img src="/assets/cvat-logo.svg"/>);
+    const backLogo = () => (<img src="/assets/icon-playcontrol-previous.svg"/>);
+    const userLogo = () => (<img src="/assets/icon-account.svg" />);
+    const { username } = props.auth.user;
+    const { pathname } = props.location;
+    const { logoutError } = props.auth;
+
+    if (logoutError) {
+        Modal.error({
+            title: 'Could not logout',
+            content: `${logoutError.toString()}`,
+        });
     }
 
-    public render() {
-        const cvatLogo = () => (<img src="/assets/cvat-logo.svg"/>);
-        const backLogo = () => (<img src="/assets/icon-playcontrol-previous.svg"/>);
-        const userLogo = () => (<img src="/assets/icon-account.svg" />);
-        const { username } = this.props.auth.user;
-        const { pathname } = this.props.location;
-        const { logoutError } = this.props.auth;
+    let activeTab = null;
 
-        if (logoutError) {
-            Modal.error({
-                title: 'Could not logout',
-                content: `${logoutError.toString()}`,
-            });
-        }
+    if (pathname === '/tasks') {
+        activeTab = 'tasks';
+    } else if (pathname === '/models') {
+        activeTab = 'models';
+    }
 
-        let activeTab = null;
+    return (
+        <Layout.Header className='cvat-header'>
+            <div className='left-header'>
+                <Icon className='cvat-logo-icon' component={cvatLogo}/>
+                <Icon className='cvat-back-icon' component={backLogo}/>
 
-        if (pathname === '/tasks') {
-            activeTab = 'tasks';
-        } else if (pathname === '/models') {
-            activeTab = 'models';
-        }
-
-        return (
-            <Layout.Header className='cvat-header'>
-                <div className='left-header'>
-                    <Icon className='cvat-logo-icon' component={cvatLogo}/>
-                    <Icon className='cvat-back-icon' component={backLogo}/>
-
-                    <Radio.Group size='default' value={activeTab} className='cvat-header-buttons'>
-                        <Radio.Button value='tasks'onChange={
-                            () => this.props.history.push('/tasks')
-                        }> Tasks </Radio.Button>
-                        <Radio.Button value='models' onChange={
-                            () => this.props.history.push('/models')
-                        }> Models </Radio.Button>
-                        <Button className='header-button' type='link' onClick={
-                            () => window.open('/analytics/app/kibana', '_blank')
-                        }> Analytics </Button>
-                    </Radio.Group>
-                </div>
-                <div className='right-header'>
+                <Radio.Group size='default' value={activeTab} className='cvat-header-buttons'>
+                    <Radio.Button value='tasks'onChange={
+                        () => props.history.push('/tasks')
+                    }> Tasks </Radio.Button>
+                    <Radio.Button value='models' onChange={
+                        () => props.history.push('/models')
+                    }> Models </Radio.Button>
                     <Button className='header-button' type='link' onClick={
-                            () => window.open('/documentation/user_guide.html', '_blank')
-                    }> Help </Button>
-                    <Menu className='cvat-header-menu' subMenuCloseDelay={0.1} mode='horizontal'>
-                        <Menu.SubMenu title={
+                        () => window.open('/analytics/app/kibana', '_blank')
+                    }> Analytics </Button>
+                </Radio.Group>
+            </div>
+            <div className='right-header'>
+                <Button className='header-button' type='link' onClick={
+                        () => window.open('/documentation/user_guide.html', '_blank')
+                }> Help </Button>
+                <Menu className='cvat-header-menu' subMenuCloseDelay={0.1} mode='horizontal'>
+                    <Menu.SubMenu title={
+                        <span>
+                            <Icon className='cvat-header-user-icon' component={userLogo} />
                             <span>
-                                <Icon className='cvat-header-user-icon' component={userLogo} />
-                                <span>
-                                    <Text strong> {username} </Text>
-                                    <Icon className='cvat-header-menu-icon' component={backLogo} />
-                                </span>
+                                <Text strong> {username} </Text>
+                                <Icon className='cvat-header-menu-icon' component={backLogo} />
                             </span>
-                        }>
-                            <Menu.Item onClick={this.props.logout}>Logout</Menu.Item>
-                        </Menu.SubMenu>
-                    </Menu>
-                </div>
-            </Layout.Header>
-        );
-    }
+                        </span>
+                    }>
+                        <Menu.Item onClick={props.logout}>Logout</Menu.Item>
+                    </Menu.SubMenu>
+                </Menu>
+            </div>
+        </Layout.Header>
+    );
 }
 
 export default withRouter(connect(

@@ -16,44 +16,35 @@ export interface ContentListProps {
     count: number;
 }
 
-export default class TaskList extends React.PureComponent<ContentListProps> {
-    constructor(props: any) {
-        super(props);
-    }
+export default function TaskList(props: ContentListProps) {
+    const taskViews = [];
 
-    public render() {
-        const taskViews = [];
-
-        for (let i = 0; i < this.props.tasks.length; i++) {
-            const task = this.props.tasks[i];
-            const preview = this.props.previews[i];
-            taskViews.push(
-                <TaskItem key={task.id} task={task} preview={preview}></TaskItem>
-            )
-        }
-        for (const task of this.props.tasks) {
-
-        }
-
-        return (
-            <>
-                <Row type='flex' justify='center' align='middle'>
-                    <Col className='cvat-task-list' md={22} lg={18} xl={16} xxl={14}>
-                        { taskViews }
-                    </Col>
-                </Row>
-                <Row type='flex' justify='center' align='middle'>
-                    <Col md={22} lg={18} xl={16} xxl={14}>
-                        <Pagination
-                            className='cvat-tasks-pagination'
-                            onChange={this.props.goToPage}
-                            total={this.props.count}
-                            pageSize={10}
-                            showQuickJumper
-                        />
-                    </Col>
-                </Row>
-            </>
+    for (let i = 0; i < props.tasks.length; i++) {
+        const task = props.tasks[i];
+        const preview = props.previews[i];
+        taskViews.push(
+            <TaskItem key={task.id} task={task} preview={preview}></TaskItem>
         )
     }
+
+    return (
+        <>
+            <Row type='flex' justify='center' align='middle'>
+                <Col className='cvat-task-list' md={22} lg={18} xl={16} xxl={14}>
+                    { taskViews }
+                </Col>
+            </Row>
+            <Row type='flex' justify='center' align='middle'>
+                <Col md={22} lg={18} xl={16} xxl={14}>
+                    <Pagination
+                        className='cvat-tasks-pagination'
+                        onChange={props.goToPage}
+                        total={props.count}
+                        pageSize={10}
+                        showQuickJumper
+                    />
+                </Col>
+            </Row>
+        </>
+    )
 }

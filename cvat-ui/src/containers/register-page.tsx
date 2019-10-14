@@ -37,44 +37,38 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 type RegisterPageProps = StateToProps & DispatchToProps & RouteComponentProps;
-class RegisterPage extends React.PureComponent<RegisterPageProps> {
-    constructor(props: RegisterPageProps) {
-        super(props);
+function RegisterPage(props: RegisterPageProps) {
+    const { registerError } = props.auth;
+    const sizes = {
+        xs: { span: 14 },
+        sm: { span: 14 },
+        md: { span: 10 },
+        lg: { span: 4 },
+        xl: { span: 4 },
     }
 
-    public render() {
-        const { registerError } = this.props.auth;
-        const sizes = {
-            xs: { span: 14 },
-            sm: { span: 14 },
-            md: { span: 10 },
-            lg: { span: 4 },
-            xl: { span: 4 },
-        }
-
-        if (registerError) {
-            Modal.error({
-                title: 'Could not login',
-                content: `${registerError.toString()}`,
-            });
-        }
-
-        return (
-            <Row type='flex' justify='center' align='middle'>
-                <Col {...sizes}>
-                    <Title level={2}> Create an account </Title>
-                    <RegisterForm onSubmit={this.props.register}/>
-                    <Row type='flex' justify='start' align='top'>
-                        <Col>
-                            <Text strong>
-                                Already have an account? <Link to="/auth/login"> Login </Link>
-                            </Text>
-                        </Col>
-                    </Row>
-                </Col>
-            </Row>
-        );
+    if (registerError) {
+        Modal.error({
+            title: 'Could not login',
+            content: `${registerError.toString()}`,
+        });
     }
+
+    return (
+        <Row type='flex' justify='center' align='middle'>
+            <Col {...sizes}>
+                <Title level={2}> Create an account </Title>
+                <RegisterForm onSubmit={props.register}/>
+                <Row type='flex' justify='start' align='top'>
+                    <Col>
+                        <Text strong>
+                            Already have an account? <Link to="/auth/login"> Login </Link>
+                        </Text>
+                    </Col>
+                </Row>
+            </Col>
+        </Row>
+    );
 }
 
 export default withRouter(connect(

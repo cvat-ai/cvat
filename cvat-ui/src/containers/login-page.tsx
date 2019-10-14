@@ -38,44 +38,38 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type LoginPageProps = StateToProps & DispatchToProps & RouteComponentProps;
 
-class LoginPage extends React.PureComponent<LoginPageProps> {
-    constructor(props: LoginPageProps) {
-        super(props);
+function LoginPage(props: LoginPageProps) {
+    const { loginError } = props.auth;
+    const sizes = {
+        xs: { span: 14 },
+        sm: { span: 14 },
+        md: { span: 10 },
+        lg: { span: 4 },
+        xl: { span: 4 },
     }
 
-    public render() {
-        const { loginError } = this.props.auth;
-        const sizes = {
-            xs: { span: 14 },
-            sm: { span: 14 },
-            md: { span: 10 },
-            lg: { span: 4 },
-            xl: { span: 4 },
-        }
-
-        if (loginError) {
-            Modal.error({
-                title: 'Could not login',
-                content: `${loginError.toString()}`,
-            });
-        }
-
-        return (
-            <Row type='flex' justify='center' align='middle'>
-                <Col {...sizes}>
-                    <Title level={2}> Login </Title>
-                    <LoginForm onSubmit={this.props.login}/>
-                    <Row type='flex' justify='start' align='top'>
-                        <Col>
-                            <Text strong>
-                                New to CVAT? Create <Link to="/auth/register">an account</Link>
-                            </Text>
-                        </Col>
-                    </Row>
-                </Col>
-            </Row>
-        );
+    if (loginError) {
+        Modal.error({
+            title: 'Could not login',
+            content: `${loginError.toString()}`,
+        });
     }
+
+    return (
+        <Row type='flex' justify='center' align='middle'>
+            <Col {...sizes}>
+                <Title level={2}> Login </Title>
+                <LoginForm onSubmit={props.login}/>
+                <Row type='flex' justify='start' align='top'>
+                    <Col>
+                        <Text strong>
+                            New to CVAT? Create <Link to="/auth/register">an account</Link>
+                        </Text>
+                    </Col>
+                </Row>
+            </Col>
+        </Row>
+    );
 }
 
 export default withRouter(connect(

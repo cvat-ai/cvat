@@ -41,9 +41,7 @@ function mapDispatchToProps(dispatch: any): CVATAppActions {
     };
 }
 
-class CVATApplication extends React.PureComponent<
-CVATAppProps &
-CVATAppActions> {
+class CVATApplication extends React.PureComponent<CVATAppProps & CVATAppActions> {
     constructor(props: any) {
         super(props);
     }

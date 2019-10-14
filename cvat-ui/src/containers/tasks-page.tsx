@@ -83,12 +83,6 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
         const query = { ...this.props.tasks.query };
 
         query.page = page;
-        for (const field of Object.keys(query)) {
-            if (!query[field]) {
-                delete query[field];
-            }
-        }
-
         this.updateURL(query);
         this.props.getTasks(query);
     }
@@ -99,14 +93,16 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
 
         const fields = ['name', 'mode', 'owner', 'assignee', 'status', 'id'];
         for (const field of fields) {
-            delete query[field];
+            query[field] = null;
         }
-        delete query.search;
+        query.search = null;
 
+        let specificRequest = false;
         for (const param of search.split(/[\s]+and[\s]+|[\s]+AND[\s]+/)) {
             if (param.includes(':')) {
                 const [name, value] = param.split(':');
                 if (fields.includes(name) && !!value) {
+                    specificRequest = true;
                     if (name === 'id') {
                         if (Number.isInteger(+value)) {
                             query[name] = +value;
@@ -119,13 +115,7 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
         }
 
         query.page = 1;
-        for (const field of Object.keys(query)) {
-            if (!query[field]) {
-                delete query[field];
-            }
-        }
-
-        if (Object.keys(query).length === 1 && value) { // only id
+        if (!specificRequest && value) { // only id
             query.search = value;
         }
 
@@ -149,12 +139,6 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
                         query[field] = params.get(field);
                     }
                 }
-            }
-        }
-
-        for (const field of Object.keys(query)) {
-            if (!query[field]) {
-                delete query[field];
             }
         }
 

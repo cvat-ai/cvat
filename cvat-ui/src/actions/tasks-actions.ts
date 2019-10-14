@@ -12,34 +12,28 @@ export enum TasksActionTypes {
 }
 
 export function getTasksSuccess(array: any[], previews: string[],
-    count: number, query: any): AnyAction {
+    count: number, query: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
         payload: {
             previews,
             array,
             count,
+            query,
         },
     };
-
-    if (query !== null) {
-        (action.payload as any).query = query;
-    }
 
     return action;
 }
 
-export function getTasksFailed(error: any, query: any): AnyAction {
+export function getTasksFailed(error: any, query: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_FAILED,
         payload: {
             error,
+            query,
         },
     };
-
-    if (query !== null) {
-        (action.payload as any).query = query;
-    }
 
     return action;
 }
@@ -47,9 +41,17 @@ export function getTasksFailed(error: any, query: any): AnyAction {
 export function getTasksAsync(query: TasksQuery):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        // We need remove all keys with null values from query
+        const filteredQuery = { ...query };
+        for (const key in filteredQuery) {
+            if (filteredQuery[key] === null) {
+                delete filteredQuery[key];
+            }
+        }
+
         let result = null;
         try {
-            result = await cvat.tasks.get(query);
+            result = await cvat.tasks.get(filteredQuery);
         } catch (error) {
             dispatch(getTasksFailed(error, query));
             return;
