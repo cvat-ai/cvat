@@ -24,6 +24,7 @@ schema_view = get_schema_view(
 )
 
 router = routers.DefaultRouter(trailing_slash=False)
+router.register('projects', views.ProjectViewSet)
 router.register('tasks', views.TaskViewSet)
 router.register('jobs', views.JobViewSet)
 router.register('users', views.UserViewSet)

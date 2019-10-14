@@ -124,7 +124,7 @@ class CVAT_API_V1():
         return self.base + 'tasks'
 
     def tasks_page(self, page_id):
-        return self.tasks + '?page={page_id}'
+        return self.tasks + '?page={}'.format(page_id)
 
     def tasks_id(self, task_id):
         return self.tasks + '/{}'.format(task_id)

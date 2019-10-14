@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0.alpha] - 2020-02-XX
+### Added
+- Server only support for projects. Extend REST API v1 (/api/v1/projects*).
+- Ability to [get basic information about users without admin permissions](
+https://github.com/opencv/cvat/issues/750).
+- Changed REST API: removed PUT and added DELETE methods for /api/v1/users/ID.
+
+### Changed
+-
+
+### Deprecated
+-
+
+### Removed
+-
+
+### Fixed
+- [Mask problem on coco json style](https://github.com/opencv/cvat/issues/718)
+
+### Security
+-
+
 ## [0.5.0] - 2019-10-12
 ### Added
 - A converter to YOLO format

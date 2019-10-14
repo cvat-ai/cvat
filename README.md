@@ -76,7 +76,11 @@ contributors and other users.
 
 However, if you have a feature request or a bug report that can reproduced,
 feel free to open an issue (with steps to reproduce the bug if it's a bug
-report).
+report) on [GitHub* issues](https://github.com/opencv/cvat/issues).
 
 If you are not sure or just want to browse other users common questions,
 [Gitter chat](https://gitter.im/opencv-cvat) is the way to go.
+
+Other ways to ask questions and get our support:
+* [\#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow*
+* [Forum on Intel Developer Zone](https://software.intel.com/en-us/forums/computer-vision)
