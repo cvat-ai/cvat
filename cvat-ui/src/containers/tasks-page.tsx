@@ -146,57 +146,61 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
         this.props.getTasks(query);
     }
 
-    public render() {
+    private renderTaskList() {
         const searchString = this.computeSearchField(this.props.tasks.query);
 
+        const List = this.props.tasks.array.length ? <TaskList
+            tasks={this.props.tasks.array}
+            previews={this.props.tasks.previews}
+            page={this.props.tasks.query.page}
+            count={this.props.tasks.count}
+            goToPage={this.handlePagination.bind(this)}
+        /> : <EmptyList/>
+
+        if (this.props.tasks.error) {
+            Modal.error({
+                title: 'Could not receive tasks',
+                content: `${this.props.tasks.error.toString()}`,
+            });
+        }
+
+        return (
+            <div className='tasks-page'>
+                <Row type='flex' justify='center' align='middle'>
+                    <Col md={22} lg={18} xl={16} xxl={14}>
+                        <Text strong> Default project </Text>
+                    </Col>
+                </Row>
+                <Row type='flex' justify='center' align='middle'>
+                    <Col md={11} lg={9} xl={8} xxl={7}>
+                        <Text className='cvat-title'> Tasks </Text>
+                        <Input.Search
+                            defaultValue={searchString}
+                            onSearch={this.handleSearch.bind(this)}
+                            size='large' placeholder='Search'
+                        />
+                    </Col>
+                    <Col
+                        md={{span: 11}}
+                        lg={{span: 9}}
+                        xl={{span: 8}}
+                        xxl={{span: 7}}>
+                        <Button size='large' id='cvat-create-task-button' type='primary' onClick={
+                            () => window.open('/tasks/create', '_blank')
+                        }> Create new task </Button>
+                    </Col>
+                </Row>
+                {List}
+            </div>
+        )
+    }
+
+    public render() {
         if (this.props.tasks.initialized) {
-            const List = this.props.tasks.array.length ? <TaskList
-                tasks={this.props.tasks.array}
-                previews={this.props.tasks.previews}
-                page={this.props.tasks.query.page}
-                count={this.props.tasks.count}
-                goToPage={this.handlePagination.bind(this)}
-            /> : <EmptyList/>
-
-            if (this.props.tasks.error) {
-                Modal.error({
-                    title: 'Could not receive tasks',
-                    content: `${this.props.tasks.error.toString()}`,
-                });
-            }
-
-            return (
-                <div className='tasks-page'>
-                    <Row type='flex' justify='center' align='middle'>
-                        <Col md={22} lg={18} xl={16} xxl={14}>
-                            <Text strong> Default project </Text>
-                        </Col>
-                    </Row>
-                    <Row type='flex' justify='center' align='middle'>
-                        <Col md={11} lg={9} xl={8} xxl={7}>
-                            <Text className='cvat-title'> Tasks </Text>
-                            <Input.Search
-                                defaultValue={searchString}
-                                onSearch={this.handleSearch.bind(this)}
-                                size='large' placeholder='Search'
-                            />
-                        </Col>
-                        <Col
-                            md={{span: 11}}
-                            lg={{span: 9}}
-                            xl={{span: 8}}
-                            xxl={{span: 7}}>
-                            <Button size='large' id='cvat-create-task-button' type='primary' onClick={
-                                () => window.open('/tasks/create', '_blank')
-                            }> Create new task </Button>
-                        </Col>
-                    </Row>
-                    {List}
-                </div>
-            )
+            return this.renderTaskList();
         } else {
             return (
-                <Spin size="large" style={{margin: '25% 50%'}}/>
+                <Spin size='large' style={{margin: '25% 50%'}}/>
             );
         }
     }
