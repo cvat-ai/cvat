@@ -30,40 +30,55 @@ class LoginForm extends React.PureComponent<LoginFormProps> {
         });
     }
 
-    public render() {
+    private renderUsernameField() {
         const { getFieldDecorator } = this.props.form;
 
         return (
+            <Form.Item hasFeedback>
+                {getFieldDecorator('username', {
+                    rules: [{
+                        required: true,
+                        message: 'Please specify a username',
+                    }],
+                })(
+                    <Input
+                        autoComplete='username'
+                        prefix={<Icon type='user' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        placeholder='Username'
+                    />
+                )}
+            </Form.Item>
+        )
+    }
+
+    private renderPasswordField() {
+        const { getFieldDecorator } = this.props.form;
+
+        return (
+            <Form.Item hasFeedback>
+                {getFieldDecorator('password', {
+                    rules: [{
+                        required: true,
+                        message: 'Please specify a password',
+                    }],
+                })(
+                    <Input
+                        autoComplete='current-password'
+                        prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        placeholder='Password'
+                        type='password'
+                    />
+                )}
+            </Form.Item>
+        )
+    }
+
+    public render() {
+        return (
             <Form onSubmit={this.handleSubmit.bind(this)} className='login-form'>
-                <Form.Item hasFeedback>
-                    {getFieldDecorator('username', {
-                        rules: [{
-                            required: true,
-                            message: 'Please specify a username',
-                        }],
-                    })(
-                        <Input
-                            autoComplete='username'
-                            prefix={<Icon type='user' style={{ color: 'rgba(0,0,0,.25)'}} />}
-                            placeholder='Username'
-                        />
-                    )}
-                </Form.Item>
-                <Form.Item hasFeedback>
-                    {getFieldDecorator('password', {
-                        rules: [{
-                            required: true,
-                            message: 'Please specify a password',
-                        }],
-                    })(
-                        <Input
-                            autoComplete='current-password'
-                            prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)'}} />}
-                            placeholder='Password'
-                            type='password'
-                        />
-                    )}
-                </Form.Item>
+                {this.renderUsernameField()}
+                {this.renderPasswordField()}
+
                 <Form.Item>
                     <Button type='primary' htmlType='submit' className='login-form-button'>
                         Sign in

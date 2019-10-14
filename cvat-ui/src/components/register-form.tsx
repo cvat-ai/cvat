@@ -79,99 +79,136 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
         });
     }
 
-    render() {
-        const { getFieldDecorator } = this.props.form;
+    private renderFirstNameField() {
+        return (
+            <Form.Item hasFeedback>
+                {this.props.form.getFieldDecorator('firstName', {
+                    rules: [{
+                        required: true,
+                        message: 'Please specify a first name',
+                        pattern: /^[a-zA-Z]{2,}(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/,
+                    }],
+                })(
+                    <Input
+                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        placeholder='First name'
+                    />
+                )}
+            </Form.Item>
+        )
+    }
 
+    private renderLastNameField() {
+        return (
+            <Form.Item hasFeedback>
+                {this.props.form.getFieldDecorator('lastName', {
+                    rules: [{
+                        required: true,
+                        message: 'Please specify a last name',
+                        pattern: /^[a-zA-Z]{2,}(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/,
+                    }],
+                })(
+                    <Input
+                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        placeholder='Last name'
+                    />
+                )}
+            </Form.Item>
+        )
+    }
+
+    private renderUsernameField() {
+        return (
+            <Form.Item hasFeedback>
+                {this.props.form.getFieldDecorator('username', {
+                    rules: [{
+                        required: true,
+                        message: 'Please specify a username',
+                    }, {
+                        validator: this.validateUsername,
+                    }],
+                })(
+                    <Input
+                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        placeholder='Username'
+                    />
+                )}
+            </Form.Item>
+        )
+    }
+
+    private renderEmailField() {
+        return (
+            <Form.Item hasFeedback>
+                {this.props.form.getFieldDecorator('email', {
+                    rules: [{
+                        type: 'email',
+                        message: 'The input is not valid E-mail!',
+                        }, {
+                        required: true,
+                        message: 'Please specify an email address',
+                    }],
+                })(
+                    <Input
+                        autoComplete='email'
+                        prefix={<Icon type='mail' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        placeholder='Email address'
+                    />
+                )}
+            </Form.Item>
+        )
+    }
+
+    private renderPasswordField() {
+        return (
+            <Form.Item hasFeedback>
+                {this.props.form.getFieldDecorator('password1', {
+                    rules: [{
+                        required: true,
+                        message: 'Please input your password!',
+                    }, {
+                        validator: this.validatePassword.bind(this),
+                    }],
+                })(<Input.Password
+                    autoComplete='new-password'
+                    prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                    placeholder='Password'
+                />)}
+            </Form.Item>
+        )
+    }
+
+    private renderPasswordConfirmationField() {
+        return (
+            <Form.Item hasFeedback>
+                {this.props.form.getFieldDecorator('password2', {
+                    rules: [{
+                        required: true,
+                        message: 'Please confirm your password!',
+                    }, {
+                        validator: this.validateConfirmation.bind(this),
+                    }],
+                })(<Input.Password
+                    autoComplete='new-password'
+                    prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                    placeholder='Confirm password'
+                />)}
+            </Form.Item>
+        )
+    }
+
+
+
+    public render() {
         return (
             <Form onSubmit={this.handleSubmit.bind(this)} className='login-form'>
-                <Form.Item hasFeedback>
-                    {getFieldDecorator('firstName', {
-                        rules: [{
-                            required: true,
-                            message: 'Please specify a first name',
-                            pattern: /^[a-zA-Z]{2,}(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/,
-                        }],
-                    })(
-                        <Input
-                            prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)'}} />}
-                            placeholder='First name'
-                        />
-                    )}
-                </Form.Item>
-                <Form.Item hasFeedback>
-                    {getFieldDecorator('lastName', {
-                        rules: [{
-                            required: true,
-                            message: 'Please specify a last name',
-                            pattern: /^[a-zA-Z]{2,}(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/,
-                        }],
-                    })(
-                        <Input
-                            prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)'}} />}
-                            placeholder='Last name'
-                        />
-                    )}
-                </Form.Item>
-                <Form.Item hasFeedback>
-                    {getFieldDecorator('username', {
-                        rules: [{
-                            required: true,
-                            message: 'Please specify a username',
-                        }, {
-                            validator: this.validateUsername,
-                        }],
-                    })(
-                        <Input
-                            prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)'}} />}
-                            placeholder='Username'
-                        />
-                    )}
-                </Form.Item>
-                <Form.Item hasFeedback>
-                    {getFieldDecorator('email', {
-                        rules: [{
-                            type: 'email',
-                            message: 'The input is not valid E-mail!',
-                          }, {
-                            required: true,
-                            message: 'Please specify an email address',
-                        }],
-                    })(
-                        <Input
-                            autoComplete='email'
-                            prefix={<Icon type='mail' style={{ color: 'rgba(0,0,0,.25)'}} />}
-                            placeholder='Email address'
-                        />
-                    )}
-                </Form.Item>
-                <Form.Item hasFeedback>
-                    {getFieldDecorator('password1', {
-                        rules: [{
-                            required: true,
-                            message: 'Please input your password!',
-                        }, {
-                            validator: this.validatePassword.bind(this),
-                        }],
-                    })(<Input.Password
-                        autoComplete='new-password'
-                        prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)'}} />}
-                        placeholder='Password'
-                    />)}
-                </Form.Item>
-                <Form.Item hasFeedback>
-                    {getFieldDecorator('password2', {
-                        rules: [{
-                            required: true,
-                            message: 'Please confirm your password!',
-                        }, {
-                            validator: this.validateConfirmation.bind(this),
-                        }],
-                    })(<Input.Password
-                        autoComplete='new-password'
-                        prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)'}} />}
-                        placeholder='Confirm password'
-                    />)}
-                </Form.Item>
+                {this.renderFirstNameField()}
+                {this.renderLastNameField()}
+                {this.renderUsernameField()}
+                {this.renderEmailField()}
+                {this.renderPasswordField()}
+                {this.renderPasswordConfirmationField()}
+
                 <Form.Item>
                     <Button type='primary' htmlType='submit' className='register-form-button'>
                         Submit

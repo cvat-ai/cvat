@@ -136,7 +136,7 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
                             query[field] = +value;
                         }
                     } else {
-                        query[field] = params.get(field);
+                        query[field] = value;
                     }
                 }
             }
