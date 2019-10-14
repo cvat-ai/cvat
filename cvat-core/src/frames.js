@@ -111,8 +111,7 @@
                 // Just go to server and get preview (no any cache)
                 const result = await serverProxy.frames.getPreview(taskID);
                 if (isNode) {
-                    frameCache[this.tid][this.number] = global.Buffer.from(result, 'binary').toString('base64');
-                    resolve(frameCache[this.tid][this.number]);
+                    resolve(global.Buffer.from(result, 'binary').toString('base64'));
                 } else if (isBrowser) {
                     const reader = new FileReader();
                     reader.onload = () => {
@@ -124,7 +123,6 @@
                 reject(error);
             }
         });
-
     }
 
     async function getFrame(taskID, mode, frame) {
