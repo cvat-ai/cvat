@@ -180,7 +180,7 @@ This is native CVAT annotation format.
   ├── frame000003.xml
   └── ...
   ```
-  Each \*.xml file contains annotations for a frame with the same name as annotation file.
+  Each *.xml file contains annotations for a frame with the same name as annotation file.
   Detailed structure specification of the \*.xml file can be found
   [here](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf).
 - supported shapes - Rectangles
@@ -300,7 +300,7 @@ It may take some time.
    train
    tvmonitor
    ```
-1. Zip all label files together (we need add only label files that correspond train subset)
+1. Zip all label files together (we need to add only label files that correspond to the train subset)
    ```bash
    cat train.txt | while read p; do echo ${p%/*/*}/labels/${${p##*/}%%.*}.txt; done | zip labels.zip -j -@ obj.names
    ```
@@ -314,7 +314,7 @@ It may take some time.
 
 #### COCO loader description
 - uploaded file: single unpacked `*.json`.
-- supported shapes: Polygons
+- supported shapes: Polygons (the `segmentation` must not be empty)
 - additional comments: the CVAT task should be created with the full label set that may be in the annotation files
 
 #### How to create a task from MS COCO dataset
@@ -476,7 +476,7 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
    ```bash
    zip anno.zip -j <path to pascal.tfrecord> <path to label_map.pbtxt>
    ```
-1. Click `Upload annotation` button, choose `TFRecord ZIP 1.0` and select the      *.zip file
+1. Click `Upload annotation` button, choose `TFRecord ZIP 1.0` and select the *.zip file
    with labels from previous step. It may take some time.
 
 ### PNG mask

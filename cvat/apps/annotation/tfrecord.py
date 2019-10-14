@@ -81,7 +81,7 @@ def dump(file_object, annotations):
             'image/height': int64_feature(height),
             'image/width': int64_feature(width),
             'image/filename': bytes_feature(image_name.encode('utf8')),
-            'image/source_id': bytes_feature(img_id),
+            'image/source_id': bytes_feature(str(img_id).encode('utf8')),
             'image/object/bbox/xmin': float_list_feature(xmins),
             'image/object/bbox/xmax': float_list_feature(xmaxs),
             'image/object/bbox/ymin': float_list_feature(ymins),
