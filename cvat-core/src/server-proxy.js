@@ -342,14 +342,20 @@
                 }
             }
 
-            async function getUsers() {
+            async function getUsers(id = null) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/users`, {
-                        proxy: config.proxy,
-                    });
+                    if (id === null) {
+                        response = await Axios.get(`${backendAPI}/users`, {
+                            proxy: config.proxy,
+                        });
+                    } else {
+                        response = await Axios.get(`${backendAPI}/users/${id}`, {
+                            proxy: config.proxy,
+                        });
+                    }
                 } catch (errorData) {
                     throw generateError(errorData, 'Could not get users from the server');
                 }

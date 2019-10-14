@@ -34,7 +34,7 @@ export default class TaskItem extends React.PureComponent<TaskItemProps, TaskIte
     render() {
         // Task info
         const id = this.props.task.id;
-        const owner = this.props.task.owner;
+        const owner = this.props.task.owner.username;
         const updated = moment(this.props.task.updatedDate).fromNow();
         const created = moment(this.props.task.createdDate).format('MMMM Do YYYY');
 

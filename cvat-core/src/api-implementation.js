@@ -116,6 +116,8 @@
 
             // If task was found by its id, then create task instance and get Job instance from it
             if (tasks !== null && tasks.length) {
+                tasks[0].owner = await serverProxy.users.getUsers(tasks[0].owner);
+                tasks[0].assignee = await serverProxy.users.getUsers(tasks[0].assignee);
                 const task = new Task(tasks[0]);
                 return filter.jobID ? task.jobs
                     .filter((job) => job.id === filter.jobID) : task.jobs;
@@ -159,8 +161,13 @@
                 }
             }
 
+            const users = await serverProxy.users.getUsers();
             const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
-            const tasks = tasksData.map((task) => new Task(task));
+            const tasks = tasksData.map((task) => {
+                [task.owner] = users.filter((user) => user.id === task.owner);
+                [task.assignee] = users.filter((user) => user.id === task.assignee);
+                return new Task(task);
+            });
             tasks.count = tasksData.count;
 
             return tasks;

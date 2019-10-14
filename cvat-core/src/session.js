@@ -797,9 +797,9 @@
                     get: () => data.mode,
                 },
                 /**
-                    * Identificator of a user who has created the task
+                    * Instance of a user who has created the task
                     * @name owner
-                    * @type {integer}
+                    * @type {module:API.cvat.classes.User}
                     * @memberof module:API.cvat.classes.Task
                     * @readonly
                     * @instance
@@ -808,9 +808,9 @@
                     get: () => data.owner,
                 },
                 /**
-                    * Identificator of a user who is responsible for the task
+                    * Instance of a user who is responsible for the task
                     * @name assignee
-                    * @type {integer}
+                    * @type {module:API.cvat.classes.User}
                     * @memberof module:API.cvat.classes.Task
                     * @instance
                     * @throws {module:API.cvat.exceptions.ArgumentError}
