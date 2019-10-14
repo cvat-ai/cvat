@@ -16,6 +16,8 @@ export interface RegisterData {
     password2: string;
 }
 
+import patterns from '../utils/validation-patterns';
+
 type RegisterFormProps = {
     onSubmit(registerData: RegisterData): void;
 } & FormComponentProps;
@@ -34,22 +36,22 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
         }
       };
 
-    private validatePassword(rule: any, value: any, callback: any) {
+    private validatePassword(_: any, value: any, callback: any) {
         const { form } = this.props;
-        if (!/(?=.{8,})/.test(value)) {
-            callback('Password must have at least 8 characters');
+        if (!patterns.validatePasswordLength.pattern.test(value)) {
+            callback(patterns.validatePasswordLength.message);
         }
 
-        if (!/(?=.*[0-9])/.test(value)) {
-            callback('Password must have at least 1 numeric characters');
+        if (!patterns.passwordContainsNumericCharacters.pattern.test(value)) {
+            callback(patterns.passwordContainsNumericCharacters.message);
         }
 
-        if (!/(?=.*[A-Z])/.test(value)) {
-            callback('Password must have at least 1 uppercase alphabetical character');
+        if (!patterns.passwordContainsUpperCaseCharacter.pattern.test(value)) {
+            callback(patterns.passwordContainsUpperCaseCharacter.message);
         }
 
-        if (!/(?=.*[a-z])/.test(value)) {
-            callback('Password must have at least 1 lowercase alphabetical character');
+        if (!patterns.passwordContainsLowerCaseCharacter.pattern.test(value)) {
+            callback(patterns.passwordContainsLowerCaseCharacter.message);
         }
 
         if (value) {
@@ -58,13 +60,13 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
         callback();
     };
 
-    private validateUsername(rule: any, value: any, callback: any) {
-        if (!/(?=.{5,})/.test(value)) {
-            callback('Username must have at least 5 characters');
+    private validateUsername(_: any, value: any, callback: any) {
+        if (!patterns.validateUsernameLength.pattern.test(value)) {
+            callback(patterns.validateUsernameLength.message);
         }
 
-        if (!/^[a-zA-Z0-9_-]{5,}$/.test(value)) {
-            callback('Only characters (a-z), (A-Z), (0-9), -, _ are available');
+        if (!patterns.validateUsernameCharacters.pattern.test(value)) {
+            callback(patterns.validateUsernameCharacters.message);
         }
 
         callback();
@@ -86,7 +88,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
                     rules: [{
                         required: true,
                         message: 'Please specify a first name',
-                        pattern: /^[a-zA-Z]{2,}(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/,
+                        pattern: patterns.validateName.pattern,
                     }],
                 })(
                     <Input
@@ -105,7 +107,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
                     rules: [{
                         required: true,
                         message: 'Please specify a last name',
-                        pattern: /^[a-zA-Z]{2,}(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/,
+                        pattern: patterns.validateName.pattern,
                     }],
                 })(
                     <Input
