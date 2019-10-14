@@ -1,0 +1,315 @@
+.cvat-header.ant-layout-header {
+    display: flex;
+    padding-left: 0px;
+    padding-right: 0px;
+    line-height: 0px;
+    height: 44px;
+    background: #D8D8D8;
+}
+
+.left-header {
+    width: 50%;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.right-header {
+    width: 50%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.cvat-header-buttons.ant-radio-group {
+    height: 100%;
+    display: flex;
+}
+
+.cvat-header-buttons.ant-radio-group > label {
+    height: 100%;
+    background: rgba(255, 255, 255, 0);
+    border-radius: 0px;
+    display: flex;
+    align-items: center;
+    padding: 0 30px;
+
+    /* Important here is used in order to redefine all states :hover, :active, :focus-within, etc */
+    user-select: none !important;
+    border: none !important;
+    border-color: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: black !important;
+}
+
+.cvat-header-buttons.ant-radio-group > label::before {
+    background-color: unset !important;
+}
+
+.cvat-header-buttons.ant-radio-group > label.ant-radio-button-wrapper-checked {
+    height: 100%;
+    background: #C3C3C3;
+}
+.anticon.cvat-logo-icon {
+    display: flex;
+    align-items: center;
+}
+
+.anticon.cvat-back-icon {
+    display: flex;
+    align-items: center;
+}
+
+.anticon.cvat-logo-icon > img {
+    display: flex;
+    height: 15.8px;
+    margin-left: 18px;
+}
+
+.anticon.cvat-back-icon > img {
+    display: flex;
+    height: 15.8px;
+    margin-left: 18px;
+    margin-right: 18px;
+}
+
+.anticon.cvat-back-icon:hover > img {
+    filter: invert(0.4);
+}
+
+.ant-btn.header-button {
+    height: 100%;
+    background: rgba(255, 255, 255, 0);
+    border-radius: 0px;
+    color: black !important;
+    transition: color 0.5s;
+    padding: 0 30px;
+}
+
+.ant-btn.header-button:active {
+    background: #C3C3C3;
+}
+
+.ant-menu.cvat-header-menu {
+    width: fit-content;
+    align-items: center;
+    border: 0px;
+    border-left: 1px solid #c3c3c3;
+    height: 100%;
+    background: rgba(255,255,255,0);
+}
+
+.ant-menu.cvat-header-menu > li.ant-menu-submenu {
+    border-bottom: unset !important;
+}
+
+
+.ant-menu.cvat-header-menu > li > div {
+    margin-top: 0px;
+}
+
+.anticon.cvat-header-user-icon {
+    display: contents;
+}
+
+.anticon.cvat-header-user-icon > img {
+    width: 17px;
+    margin: 16px;
+}
+
+.anticon.cvat-header-menu-icon {
+    display: contents;
+}
+
+.anticon.cvat-header-menu-icon > img {
+    width: 14px;
+    margin: 10px;
+    transform: rotate(-90deg);
+}
+
+.anticon.cvat-empty-tasks-icon > img {
+    width: 90px;
+}
+
+.cvat-title {
+    font-weight: 400;
+    font-size: 23px;
+    color: black;
+    padding-top: 5px;
+}
+
+.tasks-page {
+    padding-top: 30px;
+}
+
+.tasks-page > div:nth-child(1) {
+    margin-bottom: 10px;
+}
+
+.tasks-page > div:nth-child(1) > div > span {
+    color: black;
+}
+
+.tasks-page > div:nth-child(2) > div:nth-child(1) {
+    display: flex;
+}
+
+.tasks-page > div:nth-child(2) > div:nth-child(2) {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.tasks-page > div:nth-child(2) > div:nth-child(1) > span:nth-child(2) {
+    width: 200px;
+    margin-left: 10px;
+}
+
+.tasks-page > span.ant-typography {
+    user-select: none;
+}
+
+.tasks-page {
+    height: 100%;
+}
+
+.tasks-page > div:nth-child(4) {
+    margin-top: 28px;
+}
+
+.tasks-page > div:nth-child(3) {
+    margin-top: 28px;
+}
+
+/* > 1280 */
+@media only screen and (min-height: 1280px) {
+    .tasks-page > div:nth-child(3) {
+        height: 80%;
+    }
+}
+
+/* 769 => 1280 */
+@media only screen and (max-height: 1280px) {
+    .tasks-page > div:nth-child(3) {
+        height: 80%;
+    }
+}
+
+/* 0 => 768 */
+@media only screen and (max-height: 768px) {
+    .tasks-page > div:nth-child(3) {
+        height: 70%;
+    }
+}
+
+/* empty-tasks icon */
+.cvat-empty-task-list > div:nth-child(1) {
+    margin-top: 100px;
+}
+
+.cvat-empty-task-list > div:nth-child(2) > div {
+    margin-top: 20px;
+}
+
+/* No tasks created yet */
+.cvat-empty-task-list > div:nth-child(2) > div > span {
+    font-size: 20px;
+    color: #4A4A4A;
+}
+
+/* To get started with your annotation project .. */
+.cvat-empty-task-list > div:nth-child(3) {
+    margin-top: 10px;
+}
+
+.ant-pagination.cvat-tasks-pagination {
+    display: flex;
+    justify-content: center;
+}
+
+.cvat-task-list {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.cvat-tasks-list-item {
+    width: 100%;
+    height: 120px;
+    border: 1px solid #c3c3c3;
+    border-radius: 3px;
+    margin-bottom: 15px;
+    padding-top: 20px;
+    background: white;
+}
+
+.cvat-tasks-list-item:hover {
+    border: 1px solid #40a9ff;
+}
+
+.cvat-tasks-list-item > div:nth-child(4) > div {
+    margin-right: 20px;
+}
+
+.cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) {
+    margin-right: 20px;
+    margin-top: 20px;
+}
+
+.cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) > div {
+    display: flex;
+}
+
+.cvat-task-item-menu-icon > img {
+    height: 20px;
+}
+
+.cvat-task-item-menu-icon > img:hover {
+    filter: invert(0.5);
+}
+
+.cvat-task-item-menu > hr {
+    border: 0.5px solid #D6D6D6;
+}
+
+.cvat-task-preview {
+    max-width: 140px;
+    max-height: 80px;
+}
+
+.cvat-task-preview-wrapper {
+    display: flex;
+    justify-content: center;
+    overflow: auto;
+    margin: 20px;
+    margin-top: 0px;
+}
+
+.cvat-task-progress {
+    width: 100%;
+}
+
+.cvat-task-completed-progress {
+    color: #61C200;
+    fill: #61C200;
+    margin-right: 5px;
+}
+
+.cvat-task-completed-progress > div > div > div > div {
+    background: #52c41a !important;
+}
+
+.cvat-task-progress-progress {
+    color: #1890FF;
+    fill: #1890FF;
+    margin-right: 5px;
+}
+
+.cvat-task-pending-progress {
+    color: #C1C1C1;
+    fill: #C1C1C1;
+    margin-right: 5px;
+}
+
+#cvat-create-task-button {
+    padding: 0 30px;
+}

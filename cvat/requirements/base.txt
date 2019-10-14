@@ -38,7 +38,7 @@ pascal_voc_writer==0.1.4
 django-rest-auth[with_social]==0.9.5
 cython==0.29.13
 matplotlib==3.0.3
-scikit-image>=0.14.0
+scikit-image==0.15.0
 tensorflow==1.12.3
 django-cors-headers==3.0.2
 furl==2.0.0

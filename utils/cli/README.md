@@ -35,9 +35,9 @@ optional arguments:
 ```
 **Examples**
 - List all tasks
-`cli.py --auth user:pass --server-host localhost --server-port 8080 ls`
+`cli.py ls`
 - Create a task
-`cli.py create --name "new task" --labels labels.json local file1.jpg file2.jpg`
+`cli.py create "new task" --labels labels.json local file1.jpg file2.jpg`
 - Delete some tasks
 `cli.py delete 100 101 102`
 - Dump annotations
