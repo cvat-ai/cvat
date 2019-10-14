@@ -70,7 +70,11 @@ def main():
         return
 
     with open(mapping_file) as json_file:
-        mapping = json.load(json_file)
+        try:
+            mapping = json.load(json_file)
+        except json.decoder.JSONDecodeError:
+            logging.critical('JSON file not able to be parsed! Check file')
+            return
 
     try:
         mapping = mapping['label_map']

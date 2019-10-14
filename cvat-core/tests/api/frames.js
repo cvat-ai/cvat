@@ -69,3 +69,17 @@ describe('Feature: get frame data', () => {
         expect(typeof (frameData)).toBe('string');
     });
 });
+
+describe('Feature: get frame preview', () => {
+    test('get frame preview for a task', async () => {
+        const task = (await window.cvat.tasks.get({ id: 100 }))[0];
+        const frame = await task.frames.preview();
+        expect(typeof (frame)).toBe('string');
+    });
+
+    test('get frame preview for a job', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 100 }))[0];
+        const frame = await job.frames.preview();
+        expect(typeof (frame)).toBe('string');
+    });
+});

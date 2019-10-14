@@ -10,7 +10,7 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
-    const { getFrame } = require('./frames');
+    const { getFrame, getPreview } = require('./frames');
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
@@ -107,6 +107,11 @@
                     async get(frame) {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.frames.get, frame);
+                        return result;
+                    },
+                    async preview() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.frames.preview);
                         return result;
                     },
                 },
@@ -380,6 +385,17 @@
                 * @throws {module:API.cvat.exceptions.ServerError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
             */
+            /**
+                * Get the first frame of a task for preview
+                * @method preview
+                * @memberof Session.frames
+                * @returns {string} - jpeg encoded image
+                * @instance
+                * @async
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+            */
 
             /**
                 * Namespace is used for an interaction with logs
@@ -619,6 +635,7 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             };
         }
 
@@ -780,9 +797,9 @@
                     get: () => data.mode,
                 },
                 /**
-                    * Identificator of a user who has created the task
+                    * Instance of a user who has created the task
                     * @name owner
-                    * @type {integer}
+                    * @type {module:API.cvat.classes.User}
                     * @memberof module:API.cvat.classes.Task
                     * @readonly
                     * @instance
@@ -791,9 +808,9 @@
                     get: () => data.owner,
                 },
                 /**
-                    * Identificator of a user who is responsible for the task
+                    * Instance of a user who is responsible for the task
                     * @name assignee
-                    * @type {integer}
+                    * @type {module:API.cvat.classes.User}
                     * @memberof module:API.cvat.classes.Task
                     * @instance
                     * @throws {module:API.cvat.exceptions.ArgumentError}
@@ -1122,6 +1139,7 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             };
         }
 
@@ -1218,6 +1236,11 @@
         return frameData;
     };
 
+    Job.prototype.frames.preview.implementation = async function () {
+        const frameData = await getPreview(this.task.id);
+        return frameData;
+    };
+
     // TODO: Check filter for annotations
     Job.prototype.annotations.get.implementation = async function (frame, filter) {
         if (frame < this.startFrame || frame > this.stopFrame) {
@@ -1293,7 +1316,7 @@
                 name: this.name,
                 bug_tracker: this.bugTracker,
                 z_order: this.zOrder,
-                labels: [...this.labels.map(el => el.toJSON())],
+                labels: [...this.labels.map((el) => el.toJSON())],
             };
 
             await serverProxy.tasks.saveTask(this.id, taskData);
@@ -1302,7 +1325,7 @@
 
         const taskData = {
             name: this.name,
-            labels: this.labels.map(el => el.toJSON()),
+            labels: this.labels.map((el) => el.toJSON()),
             image_quality: this.imageQuality,
             z_order: Boolean(this.zOrder),
         };
@@ -1356,6 +1379,11 @@
 
         const result = await getFrame(this.id, this.mode, frame);
         return result;
+    };
+
+    Task.prototype.frames.preview.implementation = async function () {
+        const frameData = await getPreview(this.id);
+        return frameData;
     };
 
     // TODO: Check filter for annotations
