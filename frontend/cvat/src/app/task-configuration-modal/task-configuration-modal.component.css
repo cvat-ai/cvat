@@ -1,0 +1,15 @@
+.h1 {
+    font-size: 1.4em;
+}
+
+.h2 {
+    font-size: 1.2em;
+}
+
+.semiBold {
+    font-family: BarlowSemiCondensed-SemiBold;
+}
+
+.regular {
+    font-family: BarlowSemiCondensed-Regular;
+}
