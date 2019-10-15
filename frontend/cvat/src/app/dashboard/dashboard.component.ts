@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {MatDialog, MatDialogConfig } from '@angular/material/dialog';
-import { TaskConfigurationComponent } from '../task-configuration/task-configuration.component';
+import { TaskConfigurationModalComponent } from '../task-configuration-modal/task-configuration-modal.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -17,8 +17,13 @@ export class DashboardComponent implements OnInit {
   }
 
   dashboardCreateTaskButton() {
-    const dialogConfig = new MatDialogConfig();
-    this.matDialog.open(TaskConfigurationComponent, dialogConfig);
+  /*  const dialogConfig = new MatDialogConfig();
+    this.matDialog.open(TaskConfigurationModalComponent);
+    */
+    const dialogRef = this.matDialog.open(TaskConfigurationModalComponent, {
+     width: '500px',
+     /*data: {name: this.name, animal: this.animal}*/
+   });
   }
 
 
