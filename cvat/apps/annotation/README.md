@@ -175,12 +175,13 @@ This is native CVAT annotation format.
 - downloaded file: a zip archive with following structure:
   ```bash
   taskname.zip
-  ├── frame000001.xml
-  ├── frame000002.xml
-  ├── frame000003.xml
+  ├── frame_000001.xml
+  ├── frame_000002.xml
+  ├── frame_000003.xml
   └── ...
   ```
-  Each *.xml file contains annotations for a frame with the same name as annotation file.
+  Each annotation `*.xml` file has a name that corresponds to the name of the image file
+  (e.g. `frame_000001.txt` is the annotation for the `frame_000001.jpg` image).
   Detailed structure specification of the \*.xml file can be found
   [here](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf).
 - supported shapes - Rectangles
@@ -192,18 +193,17 @@ This is native CVAT annotation format.
 -   uploaded file: a zip archive with following structure:
     ```bash
     taskname.zip
-    ├── frame000001.xml
-    ├── frame000002.xml
-    ├── frame000003.xml
+    ├── frame_000001.xml
+    ├── frame_000002.xml
+    ├── frame_000003.xml
     └── ...
     ```
-    Each \*.xml file contains annotations for a frame with the same name as annotation file.
-    Note: it should be possible to match the CVAT frame(imagename) and image filename from the annotation \*.xml
+    It should be possible to match the CVAT frame(imagename) and image filename from the annotation \*.xml
     file(tag filename, e.g. `<filename>2008_004457.jpg</filename>`). There are 2 options:
     1. full match between image name and filename form annotation *.xml
-      file (in case of a task was created from images or archive of images).
-    1. match by frame number (if CVAT cannot match by name).
-      If filename tag contains a number CVAT will interpret it as frame number.
+       file (in case of a task was created from images or archive of images).
+    1. match by frame number (if CVAT cannot match by name). File name should be in the following format `frame_%6d.jpg`.
+       It will be used when task was created from video for example.
 
 -   supported shapes: Rectangles
 -   limitations: Support of Pascal VOC object detection format
@@ -230,12 +230,13 @@ It may take some time.
 - downloaded file: a zip archive with following structure:
   ```bash
   taskname.zip
-  ├── frame000001.txt
-  ├── frame000002.txt
+  ├── frame_000001.txt
+  ├── frame_000002.txt
   ├── ...
   └── obj.names
   ```
-  Each `*.txt` file contains annotations for a frame with the same name as annotation file.
+  Each annotation `*.txt` file has a name that corresponds to the name of the image file
+  (e.g. `frame_000001.txt` is the annotation for the `frame_000001.jpg` image).
   Short description of  `*.txt` file structure: each line describes label and bounding box
   in the following format `label_id cx cy w h`.
   `obj.names` contains the ordered list of label names.
@@ -245,19 +246,18 @@ It may take some time.
 -   uploaded file: a zip archive with following structure:
     ```bash
     taskname.zip
-    ├── frame000001.txt
-    ├── frame000002.txt
-    ├── frame000003.txt
+    ├── frame_000001.txt
+    ├── frame_000002.txt
+    ├── frame_000003.txt
     ├── ...
     └──obj.names
     ```
-    Each `*.txt` file contains annotations for a frame with the same name as annotation file.
-    Note: it should be possible to match the CVAT frame(imagename) and annotation filename.
+    It should be possible to match the CVAT frame(imagename) and annotation filename
     There are 2 options:
-    1. full match between image name and filename form annotation `*.txt` file
+    1. full match between image name and name of annotation `*.txt` file
        (in case of a task was created from images or archive of images).
-    1. match by frame number (if CVAT cannot match by name).
-       If name of the *.txt annotation file contains a number CVAT will interpret it as frame number.
+    1. match by frame number (if CVAT cannot match by name). File name should be in the following format `frame_%6d.jpg`.
+       It will be used when task was created from video for example.
 
 -   supported shapes: Rectangles
 -   additional comments: the CVAT task should be created with the full label set that may be in the annotation files
@@ -484,9 +484,9 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
 - downloaded file: a zip archive with following structure:
   ```bash
   taskname.zip
-  ├── frame000001.png
-  ├── frame000002.png
-  ├── frame000003.png
+  ├── frame_000001.png
+  ├── frame_000002.png
+  ├── frame_000003.png
   ├── ...
   └── colormap.txt
   ```
@@ -494,7 +494,7 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
   Color generation correspond to the Pascal VOC color generation
   [algorithm](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/htmldoc/devkit_doc.html#sec:voclabelcolormap).
   (0, 0, 0) is used for background.
-  colormap.txt file contains the values of used colors in RGB format.
+  `colormap.txt` file contains the values of the used colors in RGB format.
 - supported shapes - Rectangles, Polygons
 
 #### Mask loader description
