@@ -6,14 +6,11 @@ import {
     Pagination,
 } from 'antd';
 
-import TaskItem from './task-item'
+import TaskItemComponent from '../../containers/tasks-page/task-item';
 
 export interface ContentListProps {
-    goToPage(page: number): void;
-    loaders: any[];
-    dumpers: any[];
+    onPageChange(page: number): void;
     tasks: any[];
-    previews: string[];
     page: number;
     count: number;
 }
@@ -23,15 +20,8 @@ export default function TaskList(props: ContentListProps) {
 
     for (let i = 0; i < props.tasks.length; i++) {
         const task = props.tasks[i];
-        const preview = props.previews[i];
         taskViews.push(
-            <TaskItem
-                key={task.id}
-                task={task}
-                preview={preview}
-                loaders={props.loaders}
-                dumpers={props.dumpers}
-            />
+            <TaskItemComponent idx={i} key={task.id}/>
         )
     }
 
@@ -46,7 +36,7 @@ export default function TaskList(props: ContentListProps) {
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-tasks-pagination'
-                        onChange={props.goToPage}
+                        onChange={props.onPageChange}
                         total={props.count}
                         pageSize={10}
                         current={props.page}

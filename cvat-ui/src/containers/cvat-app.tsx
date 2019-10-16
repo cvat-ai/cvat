@@ -13,7 +13,7 @@ import { gettingFormatsAsync } from '../actions/annotation-actions';
 import { AuthState } from '../reducers/interfaces';
 import { AnnotationState } from '../reducers/interfaces';
 
-import TasksPage from './tasks-page';
+import TasksPageContainer from './tasks-page/tasks-page';
 import CreateTaskPage from './create-task-page';
 import TaskPage from './task-page';
 import ModelsPage from './models-page/models-page';
@@ -67,7 +67,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & CVATAppActions>
                             <Header> </Header>
                             <Layout.Content>
                                 <Switch>
-                                    <Route exact path='/tasks' component={TasksPage}/>
+                                    <Route exact path='/tasks' component={TasksPageContainer}/>
                                     <Route exact path='/models' component={ModelsPage}/>
                                     <Route path='/tasks/create' component={CreateTaskPage}/>
                                     <Route path='/tasks/:number' component={TaskPage}/>
