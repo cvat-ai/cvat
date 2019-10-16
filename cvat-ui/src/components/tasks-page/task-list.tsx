@@ -10,6 +10,8 @@ import TaskItem from './task-item'
 
 export interface ContentListProps {
     goToPage(page: number): void;
+    loaders: any[];
+    dumpers: any[];
     tasks: any[];
     previews: string[];
     page: number;
@@ -23,7 +25,13 @@ export default function TaskList(props: ContentListProps) {
         const task = props.tasks[i];
         const preview = props.previews[i];
         taskViews.push(
-            <TaskItem key={task.id} task={task} preview={preview}></TaskItem>
+            <TaskItem
+                key={task.id}
+                task={task}
+                preview={preview}
+                loaders={props.loaders}
+                dumpers={props.dumpers}
+            />
         )
     }
 
@@ -41,6 +49,7 @@ export default function TaskList(props: ContentListProps) {
                         onChange={props.goToPage}
                         total={props.count}
                         pageSize={10}
+                        current={props.page}
                         showQuickJumper
                     />
                 </Col>

@@ -9,7 +9,9 @@ import 'antd/dist/antd.css';
 import '../stylesheet.css';
 
 import { authorizedAsync } from '../actions/auth-actions';
+import { gettingFormatsAsync } from '../actions/annotation-actions';
 import { AuthState } from '../reducers/interfaces';
+import { AnnotationState } from '../reducers/interfaces';
 
 import TasksPage from './tasks-page';
 import CreateTaskPage from './create-task-page';
@@ -23,20 +25,24 @@ import Header from './cvat-header';
 
 export interface CVATAppProps {
     auth: AuthState;
+    annotation: AnnotationState;
 }
 
 export interface CVATAppActions {
+    loadFormats: () => void;
     verifyAuthorized: () => void;
 }
 
 function mapStateToProps(state: any): CVATAppProps {
     return {
         auth: state.auth,
+        annotation: state.annotation,
     };
 }
 
 function mapDispatchToProps(dispatch: any): CVATAppActions {
     return {
+        loadFormats: (): void => dispatch(gettingFormatsAsync()),
         verifyAuthorized: (): void => dispatch(authorizedAsync())
     };
 }
@@ -47,12 +53,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & CVATAppActions>
     }
 
     public componentDidMount() {
+        this.props.loadFormats();
         this.props.verifyAuthorized();
     }
 
     // Where you go depends on your URL
     public render() {
-        if (this.props.auth.initialized) {
+        if (this.props.auth.initialized && this.props.annotation.initialized) {
             if (this.props.auth.user) {
                 return (
                     <BrowserRouter>

@@ -23,6 +23,11 @@ const defaultState: TasksState = {
 
 export default (state = defaultState, action: AnyAction): TasksState => {
     switch (action.type) {
+        case TasksActionTypes.GET_TASKS:
+            return {
+                ...state,
+                initialized: false,
+            };
         case TasksActionTypes.GET_TASKS_SUCCESS:
             return {
                 ...state,

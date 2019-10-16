@@ -81,6 +81,9 @@ function CVATHeader(props: HeaderProps) {
             </div>
             <div className='right-header'>
                 <Button className='header-button' type='link' onClick={
+                        () => window.open('https://github.com/opencv/cvat', '_blank')
+                }> <Icon type='github' /> GitHub </Button>
+                <Button className='header-button' type='link' onClick={
                         () => window.open('/documentation/user_guide.html', '_blank')
                 }> Help </Button>
                 <Menu className='cvat-header-menu' subMenuCloseDelay={0.1} mode='horizontal'>

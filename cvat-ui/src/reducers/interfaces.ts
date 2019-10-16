@@ -27,3 +27,10 @@ export interface TasksState {
     error: any;
     query: TasksQuery;
 }
+
+export interface AnnotationState {
+    loaders: any[];
+    dumpers: any[];
+    initialized: boolean;
+    error: any;
+}

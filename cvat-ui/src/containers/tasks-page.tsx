@@ -13,7 +13,12 @@ import {
     Modal,
 } from 'antd';
 
-import { TasksState, TasksQuery } from '../reducers/interfaces';
+import {
+    TasksState,
+    TasksQuery,
+    AnnotationState,
+} from '../reducers/interfaces';
+
 import EmptyList from '../components/tasks-page/empty-list';
 import TaskList from '../components/tasks-page/task-list';
 
@@ -21,6 +26,7 @@ import { getTasksAsync } from '../actions/tasks-actions';
 
 interface StateToProps {
     tasks: TasksState;
+    annotation: AnnotationState;
 }
 
 interface DispatchToProps {
@@ -34,6 +40,7 @@ interface TasksPageState {
 function mapStateToProps(state: any): object {
     return {
         tasks: state.tasks,
+        annotation: state.annotation,
     };
 }
 
@@ -54,7 +61,7 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
     private updateURL(query: TasksQuery) {
         let queryString = '?';
         for (const field of Object.keys(query)) {
-            if (query[field] != null && field !== 'page') {
+            if (query[field] !== null) {
                 queryString += `${field}=${query[field]}&`;
             }
         }
@@ -63,15 +70,18 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
         });
     }
 
-    private computeSearchField(query: TasksQuery): string {
+    private updateSearchField(query: TasksQuery): string {
         let searchString = '';
         for (const field of Object.keys(query)) {
-
-            if (query[field] != null && field !== 'page') {
-                if (typeof (query[field] === 'number')) {
-                    searchString += `${field}:${query[field]} AND `;
+            if (query[field] !== null && field !== 'page') {
+                if (field === 'search') {
+                    return (query[field] as any) as string;
                 } else {
-                    searchString += `${field}:"${query[field]}" AND `;
+                    if (typeof (query[field] === 'number')) {
+                        searchString += `${field}:${query[field]} AND `;
+                    } else {
+                        searchString += `${field}:"${query[field]}" AND `;
+                    }
                 }
             }
         }
@@ -147,9 +157,11 @@ class TasksPage extends React.PureComponent<TasksPageProps, TasksPageState> {
     }
 
     private renderTaskList() {
-        const searchString = this.computeSearchField(this.props.tasks.query);
+        const searchString = this.updateSearchField(this.props.tasks.query);
 
         const List = this.props.tasks.array.length ? <TaskList
+            loaders={this.props.annotation.loaders}
+            dumpers={this.props.annotation.dumpers}
             tasks={this.props.tasks.array}
             previews={this.props.tasks.previews}
             page={this.props.tasks.query.page}

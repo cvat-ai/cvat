@@ -7,8 +7,18 @@ import getCore from '../core';
 const cvat = getCore();
 
 export enum TasksActionTypes {
+    GET_TASKS = 'GET_TASKS',
     GET_TASKS_SUCCESS = 'GET_TASKS_SUCCESS',
     GET_TASKS_FAILED = 'GET_TASKS_FAILED',
+}
+
+export function getTasks(): AnyAction {
+    const action = {
+        type: TasksActionTypes.GET_TASKS,
+        payload: {},
+    };
+
+    return action;
 }
 
 export function getTasksSuccess(array: any[], previews: string[],
@@ -41,6 +51,8 @@ export function getTasksFailed(error: any, query: TasksQuery): AnyAction {
 export function getTasksAsync(query: TasksQuery):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(getTasks());
+
         // We need remove all keys with null values from query
         const filteredQuery = { ...query };
         for (const key in filteredQuery) {
