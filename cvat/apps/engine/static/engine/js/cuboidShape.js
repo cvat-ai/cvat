@@ -944,6 +944,21 @@ SVG.Cube = SVG.invent({
 
         },
 
+        move(dx,dy) {
+            this.face.dmove(dx, dy);
+            this.dorsal.dmove(dx, dy);
+            this.right.dmove(dx, dy);
+            this.left.dmove(dx, dy);
+
+            this.front_left_edge.dmove(dx, dy);
+            this.front_right_edge.dmove(dx, dy);
+            this.dorsal_right_edge.dmove(dx, dy);
+            this.front_top_edge.dmove(dx, dy);
+            this.right_top_edge.dmove(dx, dy);
+            this.front_bot_edge.dmove(dx, dy);
+            this.right_bot_edge.dmove(dx, dy);
+        },
+
         showProjections() {
             if (this.projectionLineEnable) {
                 this.ft_proj.show();
@@ -1079,8 +1094,8 @@ SVG.Cube = SVG.invent({
             edges.forEach((edge)=> {
                 edge.node.classList.add('occludedShape');
             })
-            this.face.hide()
-            this.right.hide()
+            this.face.attr('stroke-width', 0);
+            this.right.attr('stroke-width', 0);
             this.left.node.classList.add('occludedShape')
             this.dorsal.node.classList.add('occludedShape')
         },
@@ -1090,8 +1105,8 @@ SVG.Cube = SVG.invent({
             edges.forEach((edge)=> {
                 edge.node.classList.remove('occludedShape');
             })
-            this.face.show()
-            this.right.show()
+            this.face.attr('stroke-width', this.attr('stroke-width'));
+            this.right.attr('stroke-width', this.attr('stroke-width'));
             this.left.node.classList.remove('occludedShape')
             this.dorsal.node.classList.remove('occludedShape')
         },

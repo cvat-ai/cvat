@@ -395,6 +395,18 @@ class ShapeBufferView {
             });
             break;
         case 'cuboid':
+            points = window.cvat.translate.points.canvasToActual(points);
+            points = PolylineModel.convertStringToNumberArray(points);
+            let view_model = new Cuboid2PointViewModel(points);
+            this._shapeView = this._frameContent.polyline(points).addClass('shapeCreation').attr({
+                'stroke-width': 0,
+            });
+
+            this._shapeViewGroup = this._frameContent.cube(view_model).addClass('shapeCreation').attr({
+                'stroke-width': STROKE_WIDTH / scale,
+            });
+
+            break;
         case 'polyline':
             this._shapeView = this._frameContent.polyline(points).addClass('shapeCreation').attr({
                 'stroke-width': STROKE_WIDTH / scale,
