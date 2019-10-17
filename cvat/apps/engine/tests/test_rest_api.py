@@ -2139,19 +2139,15 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
             compare_objects(self, data, response.data, ignore_keys=["id"])
 
     def _run_api_v1_tasks_id_annotations(self, owner, assignee, annotator):
-        task, jobs = self._create_task(owner, assignee)
+        task, _ = self._create_task(owner, assignee)
         if annotator:
             HTTP_200_OK = status.HTTP_200_OK
             HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
             HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
-            HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
-            HTTP_201_CREATED = status.HTTP_201_CREATED
         else:
             HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
             HTTP_204_NO_CONTENT = status.HTTP_401_UNAUTHORIZED
             HTTP_400_BAD_REQUEST = status.HTTP_401_UNAUTHORIZED
-            HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
-            HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
 
         data = {
             "version": 0,
@@ -2523,13 +2519,11 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
         if annotator:
             HTTP_200_OK = status.HTTP_200_OK
             HTTP_204_NO_CONTENT = status.HTTP_204_NO_CONTENT
-            HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
             HTTP_202_ACCEPTED = status.HTTP_202_ACCEPTED
             HTTP_201_CREATED = status.HTTP_201_CREATED
         else:
             HTTP_200_OK = status.HTTP_401_UNAUTHORIZED
             HTTP_204_NO_CONTENT = status.HTTP_401_UNAUTHORIZED
-            HTTP_400_BAD_REQUEST = status.HTTP_401_UNAUTHORIZED
             HTTP_202_ACCEPTED = status.HTTP_401_UNAUTHORIZED
             HTTP_201_CREATED = status.HTTP_401_UNAUTHORIZED
 
