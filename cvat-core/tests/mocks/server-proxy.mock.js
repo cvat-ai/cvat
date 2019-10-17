@@ -192,6 +192,10 @@ class ServerProxy {
             return JSON.parse(JSON.stringify(usersDummyData)).results[0];
         }
 
+        async function getPreview() {
+            return 'DUMMY_IMAGE';
+        }
+
         async function getData() {
             return 'DUMMY_IMAGE';
         }
@@ -282,16 +286,18 @@ class ServerProxy {
                 value: Object.freeze({
                     getData,
                     getMeta,
+                    getPreview,
                 }),
                 writable: false,
             },
 
             annotations: {
-                value: Object.freeze({
+                value: {
                     updateAnnotations,
                     getAnnotations,
-                }),
-                writable: false,
+                },
+                // To implement on of important tests
+                writable: true,
             },
         }));
     }

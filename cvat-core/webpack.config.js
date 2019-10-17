@@ -7,13 +7,12 @@ const path = require('path');
 
 const nodeConfig = {
     target: 'node',
-    mode: 'production',
+    mode: 'development',
     devtool: 'source-map',
     entry: './src/api.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'cvat-core.node.js',
-        library: 'cvat',
         libraryTarget: 'commonjs',
     },
     module: {
@@ -21,9 +20,6 @@ const nodeConfig = {
             test: /.js?$/,
             exclude: /node_modules/,
         }],
-    },
-    externals: {
-        canvas: 'commonjs canvas',
     },
     stats: {
         warnings: false,

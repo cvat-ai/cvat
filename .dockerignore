@@ -6,5 +6,6 @@
 /.vscode
 /db.sqlite3
 /keys
-package-lock.json
-node_modules
+**/node_modules
+cvat-ui
+cvat-canvas

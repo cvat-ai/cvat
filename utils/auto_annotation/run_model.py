@@ -28,6 +28,7 @@ def _get_kwargs():
 
     parser.add_argument('--show-images', action='store_true', help='Show the results of the annotation in a window')
     parser.add_argument('--show-image-delay', default=0, type=int, help='Displays the images for a set duration in milliseconds, default is until a key is pressed')
+    parser.add_argument('--serialize', default=False, action='store_true', help='Try to serialize the result')
     
     return vars(parser.parse_args())
 
@@ -70,7 +71,11 @@ def main():
         return
 
     with open(mapping_file) as json_file:
-        mapping = json.load(json_file)
+        try:
+            mapping = json.load(json_file)
+        except json.decoder.JSONDecodeError:
+            logging.critical('JSON file not able to be parsed! Check file')
+            return
 
     try:
         mapping = mapping['label_map']
@@ -98,6 +103,19 @@ def main():
                                               attribute_spec,
                                               py_file,
                                               restricted=restricted)
+
+    if kwargs['serialize']:
+        os.environ['DJANGO_SETTINGS_MODULE'] = 'cvat.settings.production'
+        import django
+        django.setup()
+
+        from cvat.apps.engine.serializers import LabeledDataSerializer
+
+        serializer = LabeledDataSerializer(data=results)
+
+        if not serializer.is_valid():
+            logging.critical('Data unable to be serialized correctly!')
+            serializer.is_valid(raise_exception=True)
 
     logging.warning('Program didn\'t have any errors.')
     show_images = kwargs.get('show_images', False)

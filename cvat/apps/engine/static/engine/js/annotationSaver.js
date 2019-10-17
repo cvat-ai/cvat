@@ -20,20 +20,28 @@ class AnnotationSaverModel extends Listener {
 
         this._version = initialData.version;
         this._shapeCollection = shapeCollection;
-        this._initialObjects = [];
+        this._initialObjects = {};
 
+        this._resetState();
         this.update();
 
         // We need use data from export instead of initialData
         // Otherwise we have differ keys order and JSON comparison code incorrect
         const data = this._shapeCollection.export()[0];
         for (const shape of data.shapes) {
-            this._initialObjects[shape.id] = shape;
+            this._initialObjects.shapes[shape.id] = shape;
         }
 
         for (const track of data.tracks) {
-            this._initialObjects[track.id] = track;
+            this._initialObjects.tracks[track.id] = track;
         }
+    }
+
+    _resetState() {
+        this._initialObjects = {
+            shapes: {},
+            tracks: {},
+        };
     }
 
     update() {
@@ -122,9 +130,6 @@ class AnnotationSaverModel extends Listener {
     }
 
     _split(exported) {
-        const exportedIDs = Array.from(exported.shapes, shape => +shape.id)
-            .concat(Array.from(exported.tracks, track => +track.id));
-
         const created = {
             version: this._version,
             shapes: [],
@@ -148,30 +153,36 @@ class AnnotationSaverModel extends Listener {
 
         // Compare initial state objects and export state objects
         // in order to get updated and created objects
-        for (const obj of exported.shapes.concat(exported.tracks)) {
-            if (obj.id in this._initialObjects) {
-                const exportedHash = JSON.stringify(obj);
-                const initialSash = JSON.stringify(this._initialObjects[obj.id]);
-                if (exportedHash !== initialSash) {
-                    const target = 'shapes' in obj ? updated.tracks : updated.shapes;
-                    target.push(obj);
+        for (const type of Object.keys(this._initialObjects)) {
+            for (const obj of exported[type]) {
+                if (obj.id in this._initialObjects[type]) {
+                    const exportedHash = JSON.stringify(obj);
+                    const initialSash = JSON.stringify(this._initialObjects[type][obj.id]);
+                    if (exportedHash !== initialSash) {
+                        updated[type].push(obj);
+                    }
+                } else if (typeof obj.id === 'undefined') {
+                    created[type].push(obj);
+                } else {
+                    throw Error(`Bad object ID found: ${obj.id}. `
+                        + 'It is not contained in initial state and have server ID');
                 }
-            } else if (typeof obj.id === 'undefined') {
-                const target = 'shapes' in obj ? created.tracks : created.shapes;
-                target.push(obj);
-            } else {
-                throw Error(`Bad object ID found: ${obj.id}. `
-                    + 'It is not contained in initial state and have server ID');
             }
         }
 
+        const indexes = {
+            shapes: exported.shapes.map((object) => +object.id),
+            tracks: exported.tracks.map((object) => +object.id),
+        };
+
         // Compare initial state indexes and export state indexes
         // in order to get removed objects
-        for (const shapeID in this._initialObjects) {
-            if (!exportedIDs.includes(+shapeID)) {
-                const initialShape = this._initialObjects[shapeID];
-                const target = 'shapes' in initialShape ? deleted.tracks : deleted.shapes;
-                target.push(initialShape);
+        for (const type of Object.keys(this._initialObjects)) {
+            for (const shapeID in this._initialObjects[type]) {
+                if (!indexes[type].includes(+shapeID)) {
+                    const object = this._initialObjects[type][shapeID];
+                    deleted[type].push(object);
+                }
             }
         }
 
@@ -229,10 +240,12 @@ class AnnotationSaverModel extends Listener {
                 this._updateCreatedObjects(exported, savedObjects, mapping);
                 this._shapeCollection.flush = false;
                 this._version = savedObjects.version;
-                for (const object of savedObjects.shapes.concat(savedObjects.tracks)) {
-                    this._initialObjects[object.id] = object;
+                this._resetState();
+                for (const type of Object.keys(this._initialObjects)) {
+                    for (const object of savedObjects[type]) {
+                        this._initialObjects[type][object.id] = object;
+                    }
                 }
-
                 this._version = savedObjects.version;
             } else {
                 const [created, updated, deleted] = this._split(exported);
@@ -240,25 +253,27 @@ class AnnotationSaverModel extends Listener {
                 const savedCreated = await this._create(created);
                 this._updateCreatedObjects(created, savedCreated, mapping);
                 this._version = savedCreated.version;
-                for (const object of created.shapes.concat(created.tracks)) {
-                    this._initialObjects[object.id] = object;
+                for (const type of Object.keys(this._initialObjects)) {
+                    for (const object of savedCreated[type]) {
+                        this._initialObjects[type][object.id] = object;
+                    }
                 }
 
                 this.notify('saveUpdated');
                 const savedUpdated = await this._update(updated);
                 this._version = savedUpdated.version;
-                for (const object of updated.shapes.concat(updated.tracks)) {
-                    if (object.id in this._initialObjects) {
-                        this._initialObjects[object.id] = object;
+                for (const type of Object.keys(this._initialObjects)) {
+                    for (const object of savedUpdated[type]) {
+                        this._initialObjects[type][object.id] = object;
                     }
                 }
 
                 this.notify('saveDeleted');
                 const savedDeleted = await this._delete(deleted);
                 this._version = savedDeleted.version;
-                for (const object of savedDeleted.shapes.concat(savedDeleted.tracks)) {
-                    if (object.id in this._initialObjects) {
-                        delete this._initialObjects[object.id];
+                for (const type of Object.keys(this._initialObjects)) {
+                    for (const object of savedDeleted[type]) {
+                        delete this._initialObjects[type][object.id];
                     }
                 }
 

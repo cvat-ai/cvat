@@ -7,7 +7,10 @@ from django.conf import settings
 from django.db.models import Q
 import rules
 from . import AUTH_ROLE
+from . import signature
 from rest_framework.permissions import BasePermission
+from django.core import signing
+from rest_framework import authentication, exceptions
 
 def register_signals():
     from django.db.models.signals import post_migrate, post_save
@@ -30,6 +33,30 @@ def register_signals():
 
         django_auth_ldap.backend.populate_user.connect(create_user)
 
+class SignatureAuthentication(authentication.BaseAuthentication):
+    """
+    Authentication backend for signed URLs.
+    """
+    def authenticate(self, request):
+        """
+        Returns authenticated user if URL signature is valid.
+        """
+        signer = signature.Signer()
+        sign = request.query_params.get(signature.QUERY_PARAM)
+        if not sign:
+            return
+
+        try:
+            user = signer.unsign(sign, request.build_absolute_uri())
+        except signing.SignatureExpired:
+            raise exceptions.AuthenticationFailed('This URL has expired.')
+        except signing.BadSignature:
+            raise exceptions.AuthenticationFailed('Invalid signature.')
+        if not user.is_active:
+            raise exceptions.AuthenticationFailed('User inactive or deleted.')
+
+        return (user, None)
+
 # AUTH PREDICATES
 has_admin_role = rules.is_group_member(str(AUTH_ROLE.ADMIN))
 has_user_role = rules.is_group_member(str(AUTH_ROLE.USER))
@@ -37,19 +64,32 @@ has_annotator_role = rules.is_group_member(str(AUTH_ROLE.ANNOTATOR))
 has_observer_role = rules.is_group_member(str(AUTH_ROLE.OBSERVER))
 
 @rules.predicate
+def is_project_owner(db_user, db_project):
+    # If owner is None (null) the task can be accessed/changed/deleted
+    # only by admin. At the moment each task has an owner.
+    return db_project is not None and db_project.owner == db_user
+
+@rules.predicate
+def is_project_assignee(db_user, db_project):
+    return db_project is not None and db_project.assignee == db_user
+
+@rules.predicate
+def is_project_annotator(db_user, db_project):
+    db_tasks = list(db_project.tasks.prefetch_related('segment_set').all())
+    return any([is_task_annotator(db_user, db_task) for db_task in db_tasks])
+
+@rules.predicate
 def is_task_owner(db_user, db_task):
     # If owner is None (null) the task can be accessed/changed/deleted
     # only by admin. At the moment each task has an owner.
-    return db_task.owner == db_user
+    return db_task.owner == db_user or is_project_owner(db_user, db_task.project)
 
 @rules.predicate
 def is_task_assignee(db_user, db_task):
-    return db_task.assignee == db_user
+    return db_task.assignee == db_user or is_project_assignee(db_user, db_task.project)
 
 @rules.predicate
 def is_task_annotator(db_user, db_task):
-    from functools import reduce
-
     db_segments = list(db_task.segment_set.prefetch_related('job_set__assignee').all())
     return any([is_job_annotator(db_user, db_job)
         for db_segment in db_segments for db_job in db_segment.job_set.all()])
@@ -73,6 +113,13 @@ rules.add_perm('engine.role.user', has_user_role)
 rules.add_perm('engine.role.admin', has_admin_role)
 rules.add_perm('engine.role.annotator', has_annotator_role)
 rules.add_perm('engine.role.observer', has_observer_role)
+
+rules.add_perm('engine.project.create', has_admin_role | has_user_role)
+rules.add_perm('engine.project.access', has_admin_role | has_observer_role |
+    is_project_owner | is_project_annotator)
+rules.add_perm('engine.project.change', has_admin_role | is_project_owner |
+    is_project_assignee)
+rules.add_perm('engine.project.delete', has_admin_role | is_project_owner)
 
 rules.add_perm('engine.task.create', has_admin_role | has_user_role)
 rules.add_perm('engine.task.access', has_admin_role | has_observer_role |
@@ -106,6 +153,26 @@ class ObserverRolePermission(BasePermission):
     def has_permission(self, request, view):
         return request.user.has_perm("engine.role.observer")
 
+class ProjectCreatePermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_permission(self, request, view):
+        return request.user.has_perm("engine.project.create")
+
+class ProjectAccessPermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.project.access", obj)
+
+class ProjectChangePermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.project.change", obj)
+
+class ProjectDeletePermission(BasePermission):
+    # pylint: disable=no-self-use
+    def has_object_permission(self, request, view, obj):
+        return request.user.has_perm("engine.project.delete", obj)
+
 class TaskCreatePermission(BasePermission):
     # pylint: disable=no-self-use
     def has_permission(self, request, view):
@@ -116,7 +183,8 @@ class TaskAccessPermission(BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.has_perm("engine.task.access", obj)
 
-class TaskGetQuerySetMixin(object):
+
+class ProjectGetQuerySetMixin(object):
     def get_queryset(self):
         queryset = super().get_queryset()
         user = self.request.user
@@ -125,7 +193,26 @@ class TaskGetQuerySetMixin(object):
             return queryset
         else:
             return queryset.filter(Q(owner=user) | Q(assignee=user) |
-                Q(segment__job__assignee=user) | Q(assignee=None)).distinct()
+                Q(task__owner=user) | Q(task__assignee=user) |
+                Q(task__segment__job__assignee=user)).distinct()
+
+def filter_task_queryset(queryset, user):
+    # Don't filter queryset for admin, observer
+    if has_admin_role(user) or has_observer_role(user):
+        return queryset
+    else:
+        return queryset.filter(Q(owner=user) | Q(assignee=user) |
+            Q(segment__job__assignee=user) | Q(assignee=None)).distinct()
+
+class TaskGetQuerySetMixin(object):
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        # Don't filter queryset for detail methods
+        if self.detail:
+            return queryset
+        else:
+            return filter_task_queryset(queryset, user)
 
 class TaskChangePermission(BasePermission):
     # pylint: disable=no-self-use

@@ -273,7 +273,7 @@
                 lock: this.lock,
                 zOrder: this.zOrder,
                 points: [...this.points],
-                attributes: Object.assign({}, this.attributes),
+                attributes: { ...this.attributes },
                 label: this.label,
                 group: this.group,
                 color: this.color,
