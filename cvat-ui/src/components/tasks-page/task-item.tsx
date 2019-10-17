@@ -163,6 +163,7 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
                     onClick={() => {
                         this.props.onDumpAnnotation(this.props.task.instance, dumper);
                     }}>
+                    <Icon type='download'/>
                     <Text strong={isDefaultFormat(dumper.name, mode)}>
                         {dumper.name}
                     </Text>
