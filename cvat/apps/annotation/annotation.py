@@ -436,8 +436,6 @@ class Annotation:
         return os.path.splitext(os.path.basename(path))[0]
 
     def match_frame(self, filename):
-        import re
-
         # try to match by filename
         _filename = self._get_filename(filename)
         if _filename in self._frame_mapping:
