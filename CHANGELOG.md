@@ -47,10 +47,7 @@ https://github.com/opencv/cvat/issues/750).
 - Ability to dump/load annotations in several formats from UI (CVAT, Pascal VOC, YOLO, MS COCO, png mask, TFRecord)
 - Auth for REST API (api/v1/auth/): login, logout, register, ...
 - Preview for the new CVAT UI (dashboard only) is available: http://localhost:9080/
-<<<<<<< HEAD
 - Added command line tool for performing common task operations (/utils/cli/)
-=======
->>>>>>> master
 
 ### Changed
 - Outside and keyframe buttons in the side panel for all interpolation shapes (they were only for boxes before)
