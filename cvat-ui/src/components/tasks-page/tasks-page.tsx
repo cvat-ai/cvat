@@ -16,15 +16,16 @@ import EmptyListComponent from './empty-list';
 import TaskListContainer from '../../containers/tasks-page/tasks-list';
 
 interface TasksPageProps {
+    dumpError: any;
     tasksAreBeingFetched: boolean;
-    tasksFetchingError: boolean;
+    tasksFetchingError: any;
     tasksQuery: TasksQuery;
     numberOfTasks: number;
     numberOfVisibleTasks: number;
     onGetTasks: (query: TasksQuery) => void;
 }
 
-class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteComponentProps> {
+class VisibleTasksPage extends React.PureComponent<TasksPageProps & RouteComponentProps> {
     constructor(props: any) {
         super(props);
     }
@@ -127,19 +128,28 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         this.props.onGetTasks(query);
     }
 
+    public componentDidUpdate() {
+        if (this.props.tasksFetchingError) {
+            Modal.error({
+                title: 'Could not receive tasks',
+                content: `${this.props.tasksFetchingError.toString()}`,
+            });
+        }
+
+        if (this.props.dumpError) {
+            Modal.error({
+                title: 'Could not dump annotation tasks',
+                content: `${this.props.dumpError.toString()}`,
+            });;
+        }
+    }
+
     public render() {
         if (this.props.tasksAreBeingFetched) {
             return (
                 <Spin size='large' style={{margin: '25% 50%'}}/>
             );
         } else {
-            if (this.props.tasksFetchingError) {
-                Modal.error({
-                    title: 'Could not receive tasks',
-                    content: `${this.props.tasksFetchingError.toString()}`,
-                });
-            }
-
             return (
                 <div className='tasks-page'>
                     <TopBar
@@ -156,4 +166,4 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
     }
 }
 
-export default withRouter(TasksPageComponent);
+export default withRouter(VisibleTasksPage);

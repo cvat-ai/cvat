@@ -11,9 +11,10 @@ import {
     Modal,
 } from 'antd';
 
-
 import { registerAsync } from '../actions/auth-actions';
 import RegisterForm, { RegisterData } from '../components/register-form';
+
+import { CombinedState } from '../reducers/root-reducer';
 import { AuthState } from '../reducers/interfaces';
 
 interface StateToProps {
@@ -24,7 +25,7 @@ interface DispatchToProps {
     register: (registerData: RegisterData) => void;
 }
 
-function mapStateToProps(state: any): StateToProps {
+function mapStateToProps(state: CombinedState): StateToProps {
     return {
         auth: state.auth,
     };

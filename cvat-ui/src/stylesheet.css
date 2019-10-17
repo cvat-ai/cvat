@@ -271,11 +271,11 @@
     border: 0.5px solid #D6D6D6;
 }
 
-.cvat-task-item-upload-submenu-item {
+.cvat-task-item-load-submenu-item {
     padding: 0px;
 }
 
-.cvat-task-item-upload-submenu-item > span > .ant-upload {
+.cvat-task-item-load-submenu-item > span > .ant-upload {
     width: 100%;
 }
 

@@ -187,7 +187,7 @@
                 * You need upload annotations from a server again after successful executing
                 * @method upload
                 * @memberof Session.annotations
-                * @param {File} annotations - a text file with annotations
+                * @param {File} annotations - a file with annotations
                 * @param {module:API.cvat.classes.Loader} loader - a loader
                 * which will be used to upload
                 * @instance

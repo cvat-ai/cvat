@@ -10,19 +10,27 @@ import {
     Menu,
     Dropdown,
     Upload,
+    Modal,
 } from 'antd';
 
 import { ClickParam } from 'antd/lib/menu/index';
 
+import {
+    Task,
+    LoadState,
+    DumpState,
+} from '../../reducers/interfaces';
+
 import moment from 'moment';
 
 export interface TaskItemProps {
-    task: any;
-    preview: string;
+    task: Task;
+    activeLoading: LoadState | null;
+    activeDumpings: DumpState[];
     loaders: any[];
     dumpers: any[];
-    onDumpAnnotation: (tid: number, format: string) => void;
-    onLoadAnnotation: (tid: number, format: string, file: File) => void;
+    onDumpAnnotation: (task: any, dumper: any) => void;
+    onLoadAnnotation: (task: any, loader: any, file: File) => void;
 }
 
 function isDefaultFormat(dumperName: string, taskMode: string): boolean {
@@ -30,18 +38,18 @@ function isDefaultFormat(dumperName: string, taskMode: string): boolean {
     || (dumperName === 'CVAT XML 1.1 for images' && taskMode === 'annotation');
 }
 
-export default class TaskItem extends React.PureComponent<TaskItemProps> {
+export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> {
     constructor(props: TaskItemProps) {
         super(props);
     }
 
     private handleMenuClick(params: ClickParam) {
-        const tracker = this.props.task.bugTracker;
+        const tracker = this.props.task.instance.bugTracker;
 
         if (params.keyPath.length === 2) {
             // dump or upload
             if (params.keyPath[1] === 'dump') {
-                this.props.onDumpAnnotation(this.props.task.id, params.keyPath[0]);
+
             }
         } else {
             switch (params.key) {
@@ -68,7 +76,7 @@ export default class TaskItem extends React.PureComponent<TaskItemProps> {
     }
 
     private renderPreview() {
-        const preview = this.props.preview;
+        const preview = this.props.task.preview;
 
         return (
             <Col span={4}>
@@ -81,13 +89,13 @@ export default class TaskItem extends React.PureComponent<TaskItemProps> {
 
     private renderDescription() {
         // Get and truncate a task name
-        let name = this.props.task.name;
+        let name = this.props.task.instance.name;
         name = `${name.substring(0, 70)}${name.length > 70 ? '...' : ''}`;
 
-        const id = this.props.task.id;
-        const owner = this.props.task.owner.username;
-        const updated = moment(this.props.task.updatedDate).fromNow();
-        const created = moment(this.props.task.createdDate).format('MMMM Do YYYY');
+        const id = this.props.task.instance.id;
+        const owner = this.props.task.instance.owner.username;
+        const updated = moment(this.props.task.instance.updatedDate).fromNow();
+        const created = moment(this.props.task.instance.createdDate).format('MMMM Do YYYY');
 
         return (
             <Col span={10}>
@@ -100,8 +108,8 @@ export default class TaskItem extends React.PureComponent<TaskItemProps> {
 
     private renderProgress() {
         // Count number of jobs and performed jobs
-        const numOfJobs = this.props.task.jobs.length;
-        const numOfCompleted = this.props.task.jobs.filter(
+        const numOfJobs = this.props.task.instance.jobs.length;
+        const numOfCompleted = this.props.task.instance.jobs.filter(
             (job: any) => job.status === 'completed'
         ).length;
 
@@ -142,39 +150,37 @@ export default class TaskItem extends React.PureComponent<TaskItemProps> {
     }
 
     private renderDumperItem(dumper: any) {
-        const mode = this.props.task.mode;
+        const mode = this.props.task.instance.mode;
+        const dumpWithThisDumper = this.props.activeDumpings
+            .filter((dump: DumpState) => dump.dumperName === dumper.name)[0];
 
-        if (isDefaultFormat(dumper.name, mode)) {
-            return (
-                <Menu.Item className='cvat-task-item-dump-submenu-item' key={dumper.name}>
-                    <Button block={true} type='link' disabled={!!dumper.active}>
-                        <Text strong>
-                            {dumper.name}
-                        </Text>
-                    </Button>
-                </Menu.Item>
-            );
-        } else {
-            return (
-                <Menu.Item className='cvat-task-item-dump-submenu-item' key={dumper.name}>
-                    <Button block={true} type='link' disabled={!!dumper.active}>
-                        <Text>
-                            {dumper.name}
-                        </Text>
-                    </Button>
-                </Menu.Item>
-            );
-        }
+        const pending = !!dumpWithThisDumper && !dumpWithThisDumper.done;
+
+        return (
+            <Menu.Item className='cvat-task-item-dump-submenu-item' key={dumper.name}>
+                <Button block={true} type='link' disabled={pending}
+                    onClick={() => {
+                        this.props.onDumpAnnotation(this.props.task.instance, dumper);
+                    }}>
+                    <Text strong={isDefaultFormat(dumper.name, mode)}>
+                        {dumper.name}
+                    </Text>
+                    {pending ? <Icon type='loading'/> : null}
+                </Button>
+            </Menu.Item>
+        );
     }
 
     private renderLoaderItem(loader: any) {
+        const disabled = false;//typeof (this.props.activeLoad) !== 'undefined';
+
         return (
-            <Menu.Item className='cvat-task-item-upload-submenu-item' key={loader.name}>
+            <Menu.Item className='cvat-task-item-load-submenu-item' key={loader.name}>
                 <Upload accept={`.${loader.format}`} multiple={false} beforeUpload={(file: File) => {
-                    this.props.onLoadAnnotation(this.props.task.id, loader.name, file);
+                    this.props.onLoadAnnotation(this.props.task.instance, loader, file);
                     return false;
                 }}>
-                    <Button block={true} type='link' disabled={!!loader.active}>
+                    <Button block={true} type='link' disabled={disabled}>
                         <Text> {loader.name} </Text>
                     </Button>
                 </Upload>
@@ -183,14 +189,14 @@ export default class TaskItem extends React.PureComponent<TaskItemProps> {
     }
 
     private renderMenu() {
-        const tracker = this.props.task.bugTracker;
+        const tracker = this.props.task.instance.bugTracker;
 
         return (
             <Menu subMenuCloseDelay={0.15} className='cvat-task-item-menu' onClick={this.handleMenuClick.bind(this)}>
                 <Menu.SubMenu key='dump' title='Dump annotations'>
                     {this.props.dumpers.map((dumper) => this.renderDumperItem(dumper))}
                 </Menu.SubMenu>
-                <Menu.SubMenu key='upload' title='Upload annotations'>
+                <Menu.SubMenu key='load' title='Upload annotations'>
                     {this.props.loaders.map((loader) => this.renderLoaderItem(loader))}
                 </Menu.SubMenu>
                 {tracker ? <Menu.Item key='tracker'>Open bug tracker</Menu.Item> : null}
@@ -234,5 +240,5 @@ export default class TaskItem extends React.PureComponent<TaskItemProps> {
                 {this.renderNavigation()}
             </Row>
         )
-    }
+    };
 }

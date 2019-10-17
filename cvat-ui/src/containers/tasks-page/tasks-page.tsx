@@ -4,12 +4,14 @@ import { connect } from 'react-redux';
 import {
     TasksQuery,
 } from '../../reducers/interfaces';
+import { CombinedState } from '../../reducers/root-reducer';
 
 import TasksPageComponent from '../../components/tasks-page/tasks-page';
 
 import { getTasksAsync } from '../../actions/tasks-actions';
 
 interface StateToProps {
+    dumpError: any;
     tasksAreBeingFetched: boolean;
     tasksFetchingError: any;
     tasksQuery: TasksQuery;
@@ -21,13 +23,14 @@ interface DispatchToProps {
     getTasks: (query: TasksQuery) => void;
 }
 
-function mapStateToProps(state: any): StateToProps {
+function mapStateToProps(state: CombinedState): StateToProps {
     return {
+        dumpError: state.tasks.dumpError,
         tasksAreBeingFetched: !state.tasks.initialized,
         tasksFetchingError: state.tasks.error,
         tasksQuery: state.tasks.query,
         numberOfTasks: state.tasks.count,
-        numberOfVisibleTasks: state.tasks.array.length,
+        numberOfVisibleTasks: state.tasks.current.length,
     };
 }
 
@@ -42,6 +45,7 @@ type TasksPageContainerProps = StateToProps & DispatchToProps;
 function TasksPageContainer(props: TasksPageContainerProps) {
     return (
         <TasksPageComponent
+            dumpError={props.dumpError}
             tasksAreBeingFetched={props.tasksAreBeingFetched}
             tasksFetchingError={props.tasksFetchingError}
             tasksQuery={props.tasksQuery}

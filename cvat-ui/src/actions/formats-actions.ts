@@ -5,20 +5,14 @@ import getCore from '../core';
 
 const cvat = getCore();
 
-export enum AnnotationActionTypes {
+export enum FormatsActionTypes {
     GETTING_FORMATS_SUCCESS = 'GETTING_FORMATS_SUCCESS',
     GETTING_FORMATS_FAILED = 'GETTING_FORMATS_FAILED',
-    UPLOAD_ANNOTATIONS = 'UPLOAD_ANNOTATIONS',
-    UPLOAD_ANNOTATIONS_SUCCESS = 'UPLOAD_ANNOTATIONS_SUCCESS',
-    UPLOAD_ANNOTATIONS_FAILED = 'UPLOAD_ANNOTATIONS_FAILED',
-    DUMP_ANNOTATIONS = 'DUMP_ANNOTATIONS',
-    DUMP_ANNOTATIONS_SUCCESS = 'DUMP_ANNOTATIONS_SUCCESS',
-    DUMP_ANNOTATIONS_FAILED = 'DUMP_ANNOTATIONS_FAILED',
 }
 
 export function gettingFormatsSuccess(formats: any): AnyAction {
     return {
-        type: AnnotationActionTypes.GETTING_FORMATS_SUCCESS,
+        type: FormatsActionTypes.GETTING_FORMATS_SUCCESS,
         payload: {
             formats,
         },
@@ -27,7 +21,7 @@ export function gettingFormatsSuccess(formats: any): AnyAction {
 
 export function gettingFormatsFailed(error: any): AnyAction {
     return {
-        type: AnnotationActionTypes.GETTING_FORMATS_FAILED,
+        type: FormatsActionTypes.GETTING_FORMATS_FAILED,
         payload: {
             error,
         },

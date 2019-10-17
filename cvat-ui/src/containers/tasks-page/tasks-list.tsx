@@ -5,6 +5,7 @@ import {
     TasksState,
     TasksQuery,
 } from '../../reducers/interfaces';
+import { CombinedState } from '../../reducers/root-reducer';
 
 import TasksListComponent from '../../components/tasks-page/task-list';
 
@@ -22,7 +23,7 @@ interface OwnProps {
     onPageChange: (page: number) => void;
 }
 
-function mapStateToProps(state: any): StateToProps {
+function mapStateToProps(state: CombinedState): StateToProps {
     return {
         tasks: state.tasks,
     };
@@ -40,7 +41,7 @@ function TasksListContainer(props: TasksListContainerProps) {
     return (
         <TasksListComponent
             onPageChange={props.onPageChange}
-            tasks={props.tasks.array}
+            tasks={props.tasks.current}
             page={props.tasks.query.page}
             count={props.tasks.count}
         />

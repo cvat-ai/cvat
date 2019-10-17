@@ -6,22 +6,23 @@ import {
     Pagination,
 } from 'antd';
 
-import TaskItemComponent from '../../containers/tasks-page/task-item';
+import TaskItem from '../../containers/tasks-page/task-item';
+import { Task } from '../../reducers/interfaces';
 
 export interface ContentListProps {
     onPageChange(page: number): void;
-    tasks: any[];
+    tasks: Task[];
     page: number;
     count: number;
 }
 
-export default function TaskList(props: ContentListProps) {
+export default function VisibleTaskList(props: ContentListProps) {
     const taskViews = [];
 
     for (let i = 0; i < props.tasks.length; i++) {
         const task = props.tasks[i];
         taskViews.push(
-            <TaskItemComponent idx={i} key={task.id}/>
+            <TaskItem idx={i} taskID={task.instance.id} key={task.instance.id}/>
         )
     }
 

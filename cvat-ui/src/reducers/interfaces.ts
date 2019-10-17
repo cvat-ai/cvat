@@ -19,16 +19,39 @@ export interface TasksQuery {
     [key: string]: string | number | null;
 }
 
+export interface DumpState {
+    dumperName: any;
+    done: boolean;
+}
+
+export interface LoadState {
+    done: any;
+    error: any;
+}
+
+export interface Task {
+    instance: any;
+    preview: string;
+}
+
+export interface ActiveTask {
+    dump: DumpState[];
+    load: LoadState | null;
+}
+
 export interface TasksState {
     initialized: boolean;
     count: number;
-    array: any[];
-    previews: string[];
+    current: Task[];
+    active: {
+        [index: number]: ActiveTask;
+    };
     error: any;
+    dumpError: any;
     query: TasksQuery;
 }
 
-export interface AnnotationState {
+export interface FormatsState {
     loaders: any[];
     dumpers: any[];
     initialized: boolean;

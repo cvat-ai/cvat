@@ -14,6 +14,8 @@ import {
 import Text from 'antd/lib/typography/Text';
 
 import { logoutAsync } from '../actions/auth-actions';
+
+import { CombinedState } from '../reducers/root-reducer';
 import { AuthState } from '../reducers/interfaces';
 
 interface StateToProps {
@@ -24,7 +26,7 @@ interface DispatchToProps {
     logout(): void;
 }
 
-function mapStateToProps(state: any): StateToProps {
+function mapStateToProps(state: CombinedState): StateToProps {
     return {
         auth: state.auth,
     };

@@ -9,9 +9,11 @@ import 'antd/dist/antd.css';
 import '../stylesheet.css';
 
 import { authorizedAsync } from '../actions/auth-actions';
-import { gettingFormatsAsync } from '../actions/annotation-actions';
+import { gettingFormatsAsync } from '../actions/formats-actions';
+
+import { CombinedState } from '../reducers/root-reducer';
 import { AuthState } from '../reducers/interfaces';
-import { AnnotationState } from '../reducers/interfaces';
+import { FormatsState } from '../reducers/interfaces';
 
 import TasksPageContainer from './tasks-page/tasks-page';
 import CreateTaskPage from './create-task-page';
@@ -23,31 +25,33 @@ import RegisterPage from './register-page';
 import Header from './cvat-header';
 
 
-export interface CVATAppProps {
+interface StateToProps {
     auth: AuthState;
-    annotation: AnnotationState;
+    formats: FormatsState;
 }
 
-export interface CVATAppActions {
+interface DispatchToProps {
     loadFormats: () => void;
     verifyAuthorized: () => void;
 }
 
-function mapStateToProps(state: any): CVATAppProps {
+function mapStateToProps(state: CombinedState): StateToProps {
     return {
         auth: state.auth,
-        annotation: state.annotation,
+        formats: state.formats,
     };
 }
 
-function mapDispatchToProps(dispatch: any): CVATAppActions {
+function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         loadFormats: (): void => dispatch(gettingFormatsAsync()),
         verifyAuthorized: (): void => dispatch(authorizedAsync())
     };
 }
 
-class CVATApplication extends React.PureComponent<CVATAppProps & CVATAppActions> {
+type CVATAppProps = StateToProps & DispatchToProps;
+
+class CVATApplication extends React.PureComponent<CVATAppProps> {
     constructor(props: any) {
         super(props);
     }
@@ -59,7 +63,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & CVATAppActions>
 
     // Where you go depends on your URL
     public render() {
-        if (this.props.auth.initialized && this.props.annotation.initialized) {
+        if (this.props.auth.initialized && this.props.formats.initialized) {
             if (this.props.auth.user) {
                 return (
                     <BrowserRouter>

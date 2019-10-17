@@ -8,12 +8,12 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
-interface TopBarComponentProps {
+interface VisibleTopBarProps {
     onSearch: (value: string) => void;
     searchValue: string;
 }
 
-export default class TopBarComponent extends React.PureComponent<TopBarComponentProps> {
+export default class VisibleTopBar extends React.PureComponent<VisibleTopBarProps> {
     public render() {
         return (
             <>
