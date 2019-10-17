@@ -14,6 +14,7 @@ import {
 
 import { ClickParam } from 'antd/lib/menu/index';
 import { UploadChangeParam } from 'antd/lib/upload';
+import { RcFile } from 'antd/lib/upload';
 
 import {
     Task,
@@ -184,21 +185,15 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
                     accept={`.${loader.format}`}
                     multiple={false}
                     showUploadList={ false }
-                    customRequest={({ file, onSuccess }: any) => {
-                        setTimeout(() => {
-                            onSuccess(file);
-                        }, 0);
-                    }}
-                    onChange={(param: UploadChangeParam) => {
-                        if (param.file.status === 'done') {
-                            this.props.onLoadAnnotation(
-                                this.props.task.instance,
-                                loader,
-                                param.file.originFileObj as File,
-                            );
-                        }
-                    }}
-                >
+                    beforeUpload={(file: RcFile) => {
+                        this.props.onLoadAnnotation(
+                            this.props.task.instance,
+                            loader,
+                            file as File,
+                        );
+
+                        return false;
+                }}>
                     <Button block={true} type='link' disabled={!!this.props.activeLoading}>
                         <Icon type='upload'/>
                         <Text> {loader.name} </Text>
