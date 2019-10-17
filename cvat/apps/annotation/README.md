@@ -182,11 +182,11 @@ This is native CVAT annotation format.
   ```
   Each annotation `*.xml` file has a name that corresponds to the name of the image file
   (e.g. `frame_000001.txt` is the annotation for the `frame_000001.jpg` image).
-  Detailed structure specification of the \*.xml file can be found
+  Detailed structure specification of the `*.xml` file can be found
   [here](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf).
 - supported shapes - Rectangles
-- additional comments: If you plan to use 'truncated' and 'difficult' attributes please add to CVAT
-  labels attributes the corresponding items:
+- additional comments: If you plan to use 'truncated' and 'difficult' attributes please add the corresponding
+  items to the CVAT label attributes:
   `~checkbox=difficult:false ~checkbox=truncated:false`
 
 #### Pascal loader description
@@ -203,7 +203,7 @@ This is native CVAT annotation format.
     1. full match between image name and filename form annotation *.xml
        file (in case of a task was created from images or archive of images).
     1. match by frame number (if CVAT cannot match by name). File name should be in the following format `frame_%6d.jpg`.
-       It will be used when task was created from video for example.
+       It will be used when task was created from a video.
 
 -   supported shapes: Rectangles
 -   limitations: Support of Pascal VOC object detection format
@@ -211,7 +211,7 @@ This is native CVAT annotation format.
 
 #### How to create a task from Pascal VOC dataset
 1.  Download the Pascal Voc dataset
-1.  Create the CVAT task with the following labels:
+1.  Create a CVAT task with the following labels:
     ```bash
     aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog horse motorbike person pottedplant sheep sofa train tvmonitor
     ```
@@ -257,7 +257,7 @@ It may take some time.
     1. full match between image name and name of annotation `*.txt` file
        (in case of a task was created from images or archive of images).
     1. match by frame number (if CVAT cannot match by name). File name should be in the following format `frame_%6d.jpg`.
-       It will be used when task was created from video for example.
+       It will be used when task was created from a video.
 
 -   supported shapes: Rectangles
 -   additional comments: the CVAT task should be created with the full label set that may be in the annotation files
