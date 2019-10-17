@@ -20,19 +20,20 @@ export interface TaskItemProps {
 
 export default function TaskItem(props: TaskItemProps) {
     // Task info
-    const id = props.task.id;
-    const owner = props.task.owner.username;
-    const updated = moment(props.task.updatedDate).fromNow();
-    const created = moment(props.task.createdDate).format('MMMM Do YYYY');
+    const task = props.task;
+    const id = task.id;
+    const owner = task.owner? task.owner.username : undefined;
+    const updated = moment(task.updatedDate).fromNow();
+    const created = moment(task.createdDate).format('MMMM Do YYYY');
     const preview = props.preview;
 
     // Get and truncate a task name
-    let name = props.task.name;
+    let name = task.name;
     name = `${name.substring(0, 70)}${name.length > 70 ? '...' : ''}`;
 
     // Count number of jobs and performed jobs
-    const numOfJobs = props.task.jobs.length;
-    const numOfCompleted = props.task.jobs.filter(
+    const numOfJobs = task.jobs.length;
+    const numOfCompleted = task.jobs.filter(
         (job: any) => job.status === 'completed'
     ).length;
 
@@ -65,7 +66,7 @@ export default function TaskItem(props: TaskItemProps) {
             </Col>
             <Col span={10}>
                 <Text strong> {id} {name} </Text> <br/>
-                <Text type='secondary'> Created by { owner } on {created} </Text> <br/>
+                <Text type='secondary'> Created { owner? 'by ' + owner : '' } on {created} </Text> <br/>
                 <Text type='secondary'> Last updated {updated} </Text>
             </Col>
             <Col span={6}>
