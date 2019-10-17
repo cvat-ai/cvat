@@ -10,10 +10,10 @@ import {
     Menu,
     Dropdown,
     Upload,
-    Modal,
 } from 'antd';
 
 import { ClickParam } from 'antd/lib/menu/index';
+import { UploadChangeParam } from 'antd/lib/upload';
 
 import {
     Task,
@@ -154,7 +154,7 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
         const dumpWithThisDumper = this.props.activeDumpings
             .filter((dump: DumpState) => dump.dumperName === dumper.name)[0];
 
-        const pending = !!dumpWithThisDumper && !dumpWithThisDumper.done;
+        const pending = !!dumpWithThisDumper;
 
         return (
             <Menu.Item className='cvat-task-item-dump-submenu-item' key={dumper.name}>
@@ -172,16 +172,37 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
     }
 
     private renderLoaderItem(loader: any) {
-        const disabled = false;//typeof (this.props.activeLoad) !== 'undefined';
+        const loadingWithThisLoader = this.props.activeLoading
+            && this.props.activeLoading.loaderName === loader.name
+            ? this.props.activeLoading : null;
+
+        const pending = !!loadingWithThisLoader;
 
         return (
             <Menu.Item className='cvat-task-item-load-submenu-item' key={loader.name}>
-                <Upload accept={`.${loader.format}`} multiple={false} beforeUpload={(file: File) => {
-                    this.props.onLoadAnnotation(this.props.task.instance, loader, file);
-                    return false;
-                }}>
-                    <Button block={true} type='link' disabled={disabled}>
+                <Upload
+                    accept={`.${loader.format}`}
+                    multiple={false}
+                    showUploadList={ false }
+                    customRequest={({ file, onSuccess }: any) => {
+                        setTimeout(() => {
+                            onSuccess(file);
+                        }, 0);
+                    }}
+                    onChange={(param: UploadChangeParam) => {
+                        if (param.file.status === 'done') {
+                            this.props.onLoadAnnotation(
+                                this.props.task.instance,
+                                loader,
+                                param.file.originFileObj as File,
+                            );
+                        }
+                    }}
+                >
+                    <Button block={true} type='link' disabled={!!this.props.activeLoading}>
+                        <Icon type='upload'/>
                         <Text> {loader.name} </Text>
+                        {pending ? <Icon type='loading'/> : null}
                     </Button>
                 </Upload>
             </Menu.Item>

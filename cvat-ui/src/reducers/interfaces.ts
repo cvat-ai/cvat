@@ -20,13 +20,11 @@ export interface TasksQuery {
 }
 
 export interface DumpState {
-    dumperName: any;
-    done: boolean;
+    dumperName: string;
 }
 
 export interface LoadState {
-    done: any;
-    error: any;
+    loaderName: string;
 }
 
 export interface Task {
@@ -48,6 +46,8 @@ export interface TasksState {
     };
     error: any;
     dumpError: any;
+    loadError: any;
+    loadDone: string;
     query: TasksQuery;
 }
 

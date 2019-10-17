@@ -134,7 +134,7 @@ function dumpAnnotationFailed(task: any, dumper: any, error: any): AnyAction {
     return action;
 }
 
-export function dumpAsync(task: any, dumper: any):
+export function dumpAnnotationsAsync(task: any, dumper: any):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(dumpAnnotation(task, dumper));
@@ -151,11 +151,12 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
-function loadAnnotations(task: any): AnyAction {
+function loadAnnotations(task: any, loader: any): AnyAction {
     const action = {
         type: TasksActionTypes.LOAD_ANNOTATIONS,
         payload: {
             task,
+            loader,
         },
     };
 
@@ -185,10 +186,10 @@ function loadAnnotationsFailed(task: any, error: any): AnyAction {
     return action;
 }
 
-export function loadAsync(task: any, file: File, loader: any):
+export function loadAnnotationsAsync(task: any, loader: any, file: File):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(loadAnnotations(task));
+        dispatch(loadAnnotations(task, loader));
 
         try {
             await task.annotations.upload(file, loader);

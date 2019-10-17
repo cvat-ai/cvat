@@ -9,6 +9,8 @@ const defaultState: TasksState = {
     current: [],
     active: {},
     dumpError: null,
+    loadError: null,
+    loadDone: '',
     error: null,
     query: {
         page: 1,
@@ -43,6 +45,8 @@ export default (state = defaultState, action: AnyAction): TasksState => {
                 current: combinedWithPreviews,
                 error: null,
                 dumpError: null,
+                loadError: null,
+                loadDone: '',
                 query: { ...action.payload.query },
             };
         }
@@ -53,6 +57,8 @@ export default (state = defaultState, action: AnyAction): TasksState => {
                 current: [],
                 count: 0,
                 dumpError: null,
+                loadError: null,
+                loadDone: '',
                 error: action.payload.error,
                 query: { ...action.payload.query },
             };
@@ -72,7 +78,6 @@ export default (state = defaultState, action: AnyAction): TasksState => {
                 (dumpState): string => dumpState.dumperName,
             ).includes(dumper.name)) {
                 activeTask.dump = [...activeTask.dump, {
-                    done: false,
                     dumperName: dumper.name,
                 }];
             }
@@ -123,6 +128,58 @@ export default (state = defaultState, action: AnyAction): TasksState => {
                 ...state,
                 active: activeTasks,
                 dumpError: error,
+            };
+        }
+        case TasksActionTypes.LOAD_ANNOTATIONS: {
+            const { task } = action.payload;
+            const { loader } = action.payload;
+
+            const activeTask = {
+                ...state.active[task.id] || {
+                    dump: [],
+                    load: null,
+                },
+            };
+
+            activeTask.load = {
+                loaderName: loader.name,
+            };
+
+            const activeTasks = { ...state.active };
+            activeTasks[task.id] = activeTask;
+
+            return {
+                ...state,
+                active: activeTasks,
+                loadError: null,
+                loadDone: '',
+            };
+        }
+        case TasksActionTypes.LOAD_ANNOTATIONS_SUCCESS: {
+            const { task } = action.payload;
+
+            const activeTasks = state.active;
+            delete activeTasks[task.id];
+
+            return {
+                ...state,
+                active: activeTasks,
+                loadError: null,
+                loadDone: `Annotations were uploaded for the task #${task.id}`,
+            };
+        }
+        case TasksActionTypes.LOAD_ANNOTATIONS_FAILED: {
+            const { task } = action.payload;
+            const { error } = action.payload;
+
+            const activeTasks = state.active;
+            delete activeTasks[task.id];
+
+            return {
+                ...state,
+                active: activeTasks,
+                loadError: error,
+                loadDone: '',
             };
         }
         default:

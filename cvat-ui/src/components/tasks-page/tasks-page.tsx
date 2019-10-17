@@ -17,6 +17,8 @@ import TaskListContainer from '../../containers/tasks-page/tasks-list';
 
 interface TasksPageProps {
     dumpError: any;
+    loadError: any;
+    loadDone: string;
     tasksAreBeingFetched: boolean;
     tasksFetchingError: any;
     tasksQuery: TasksQuery;
@@ -138,8 +140,22 @@ class VisibleTasksPage extends React.PureComponent<TasksPageProps & RouteCompone
 
         if (this.props.dumpError) {
             Modal.error({
-                title: 'Could not dump annotation tasks',
+                title: 'Could not dump annotations',
                 content: `${this.props.dumpError.toString()}`,
+            });;
+        }
+
+        if (this.props.loadError) {
+            Modal.error({
+                title: 'Could not load annotations',
+                content: `${this.props.loadError.toString()}`,
+            });;
+        }
+
+        if (this.props.loadDone) {
+            Modal.info({
+                title: 'Load annotations',
+                content: `${this.props.loadDone}`,
             });;
         }
     }

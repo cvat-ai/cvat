@@ -11,6 +11,8 @@ import TasksPageComponent from '../../components/tasks-page/tasks-page';
 import { getTasksAsync } from '../../actions/tasks-actions';
 
 interface StateToProps {
+    loadDone: string;
+    loadError: any;
     dumpError: any;
     tasksAreBeingFetched: boolean;
     tasksFetchingError: any;
@@ -25,6 +27,8 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     return {
+        loadDone: state.tasks.loadDone,
+        loadError: state.tasks.loadError,
         dumpError: state.tasks.dumpError,
         tasksAreBeingFetched: !state.tasks.initialized,
         tasksFetchingError: state.tasks.error,
@@ -45,6 +49,8 @@ type TasksPageContainerProps = StateToProps & DispatchToProps;
 function TasksPageContainer(props: TasksPageContainerProps) {
     return (
         <TasksPageComponent
+            loadDone={props.loadDone}
+            loadError={props.loadError}
             dumpError={props.dumpError}
             tasksAreBeingFetched={props.tasksAreBeingFetched}
             tasksFetchingError={props.tasksFetchingError}

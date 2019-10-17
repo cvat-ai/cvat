@@ -13,8 +13,8 @@ import TaskItemComponent from '../../components/tasks-page/task-item'
 
 import {
     getTasksAsync,
-    dumpAsync,
-    loadAsync,
+    dumpAnnotationsAsync,
+    loadAnnotationsAsync,
 } from '../../actions/tasks-actions';
 
 interface StateToProps {
@@ -50,10 +50,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(getTasksAsync(query));
         },
         dump: (task: any, dumper: any): void => {
-            dispatch(dumpAsync(task, dumper));
+            dispatch(dumpAnnotationsAsync(task, dumper));
         },
         load: (task: any, loader: any, file: File): void => {
-            dispatch(loadAsync(task, file, loader));
+            dispatch(loadAnnotationsAsync(task, loader, file));
         },
     }
 }

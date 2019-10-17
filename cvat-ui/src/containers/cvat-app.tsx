@@ -61,6 +61,15 @@ class CVATApplication extends React.PureComponent<CVATAppProps> {
         this.props.verifyAuthorized();
     }
 
+    public componentDidUpdate() {
+        if (this.props.auth.authError) {
+            Modal.error({
+                title: 'Could not authorize',
+                content: `${this.props.auth.authError.toString()}`,
+            });
+        }
+    }
+
     // Where you go depends on your URL
     public render() {
         if (this.props.auth.initialized && this.props.formats.initialized) {
@@ -82,12 +91,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps> {
                         </Layout>
                     </BrowserRouter>
                 );
-            } else if (this.props.auth.authError) {
-                Modal.error({
-                    title: 'Could not authorize',
-                    content: `${this.props.auth.authError.toString()}`,
-                });
-                return <div/>;
             } else {
                 return (
                     <BrowserRouter>
