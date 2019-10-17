@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es6",
     "lib": [
       "dom",
       "dom.iterable",
@@ -20,6 +20,6 @@
     "jsx": "preserve"
   },
   "include": [
-    "src"
+    "src/index.tsx"
   ]
 }

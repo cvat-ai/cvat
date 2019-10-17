@@ -75,6 +75,16 @@ builtin functions like __str, int, float, max, min, range__.
      add_polyline(self, points, label, frame_number, attributes=None)
      ```
 
+### Testing script
+
+CVAT comes prepackaged with a small command line helper script to help develop interpretation scripts.
+
+It includes a small user interface which allows users to feed in images and see the results using
+the user interfaces provided by OpenCV.
+
+See the script and the documentation in the
+[auto_annotation directory](https://github.com/opencv/cvat/tree/develop/utils/auto_annotation)
+
 ### Examples
 
 #### [Person-vehicle-bike-detection-crossroad-0078](https://github.com/opencv/open_model_zoo/blob/2018/intel_models/person-vehicle-bike-detection-crossroad-0078/description/person-vehicle-bike-detection-crossroad-0078.md) (OpenVINO toolkit)
@@ -163,3 +173,8 @@ for frame_results in detections:
         frame_number=frame_number,
       )
 ```
+
+### Available interpretation scripts
+
+CVAT comes prepackaged with several out of the box interpretation scripts.
+See them in the [open model zoo directory](https://github.com/opencv/cvat/tree/develop/utils/open_model_zoo)
