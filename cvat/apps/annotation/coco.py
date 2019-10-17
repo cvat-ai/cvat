@@ -344,11 +344,12 @@ def load(file_object, annotations):
         for ann in anns:
             group = 0
             label_name = labels[ann['category_id']]
+            polygons = []
             if 'segmentation' in ann:
-                polygons = []
                 # polygon
                 if ann['iscrowd'] == 0:
-                    polygons = ann['segmentation']
+                    # filter non-empty polygons
+                    polygons = [polygon for polygon in ann['segmentation'] if polygon]
                 # mask
                 else:
                     if isinstance(ann['segmentation']['counts'], list):
@@ -375,3 +376,18 @@ def load(file_object, annotations):
                         attributes=[],
                         group=group,
                     ))
+
+            if not polygons and 'bbox' in ann and isinstance(ann['bbox'], list):
+                xtl = ann['bbox'][0]
+                ytl = ann['bbox'][1]
+                xbr = xtl + ann['bbox'][2]
+                ybr = ytl + ann['bbox'][3]
+                annotations.add_shape(annotations.LabeledShape(
+                    type='rectangle',
+                    frame=frame_number,
+                    label=label_name,
+                    points=[xtl, ytl, xbr, ybr],
+                    occluded=False,
+                    attributes=[],
+                    group=group,
+                ))

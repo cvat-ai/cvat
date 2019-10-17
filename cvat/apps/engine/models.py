@@ -280,7 +280,7 @@ class FloatArrayField(models.TextField):
     separator = ","
 
     def from_db_value(self, value, expression, connection):
-        if value is None:
+        if value is None or not value:
             return value
         return [float(v) for v in value.split(self.separator)]
 
