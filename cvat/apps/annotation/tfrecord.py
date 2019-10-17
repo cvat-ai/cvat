@@ -152,7 +152,7 @@ def load(file_object, annotations):
 
         for record in dataset:
             parsed_record = tf.io.parse_single_example(record, image_feature_description)
-            frame_number = annotations.match_frame(parsed_record['image/source_id'].numpy().decode('utf-8'))
+            frame_number = annotations.match_frame(parsed_record['image/filename'].numpy().decode('utf-8'))
             frame_height = tf.cast(parsed_record['image/height'], tf.int64).numpy().item()
             frame_width = tf.cast(parsed_record['image/width'], tf.int64).numpy().item()
             xmins = tf.sparse.to_dense(parsed_record['image/object/bbox/xmin']).numpy()
