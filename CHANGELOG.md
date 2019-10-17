@@ -26,7 +26,11 @@ https://github.com/opencv/cvat/issues/750).
 ### Security
 -
 
-## [0.5.0] - 2019-10-12
+## [0.5.1] - 2019-10-17
+### Added
+- Integration with Zenodo.org (DOI)
+
+## [0.5.0] - 2019-09-12
 ### Added
 - A converter to YOLO format
 - Installation guide
@@ -43,7 +47,10 @@ https://github.com/opencv/cvat/issues/750).
 - Ability to dump/load annotations in several formats from UI (CVAT, Pascal VOC, YOLO, MS COCO, png mask, TFRecord)
 - Auth for REST API (api/v1/auth/): login, logout, register, ...
 - Preview for the new CVAT UI (dashboard only) is available: http://localhost:9080/
+<<<<<<< HEAD
 - Added command line tool for performing common task operations (/utils/cli/)
+=======
+>>>>>>> master
 
 ### Changed
 - Outside and keyframe buttons in the side panel for all interpolation shapes (they were only for boxes before)
