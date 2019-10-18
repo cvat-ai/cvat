@@ -1,18 +1,14 @@
 import { AnyAction } from 'redux';
 import { TasksActionTypes } from '../actions/tasks-actions';
 
-import { TasksState, Task, DumpState } from './interfaces';
+import { TasksState, Task } from './interfaces';
 
 const defaultState: TasksState = {
     initialized: false,
+    gettingTasksError: null,
     count: 0,
     current: [],
-    active: {},
-    dumpError: null,
-    loadError: null,
-    loadDone: '',
-    error: null,
-    query: {
+    gettingQuery: {
         page: 1,
         id: null,
         search: null,
@@ -22,9 +18,41 @@ const defaultState: TasksState = {
         status: null,
         mode: null,
     },
+    activities: {
+        dumps: {
+            dumpingError: null,
+            byTask: {},
+        },
+        loads: {
+            loadingError: null,
+            loadingDoneMessage: '',
+            byTask: {},
+        },
+    },
 };
 
-export default (state = defaultState, action: AnyAction): TasksState => {
+export default (inputState: TasksState = defaultState, action: AnyAction): TasksState => {
+    function cleanupTemporaryInfo(stateToResetErrors: TasksState): TasksState {
+        return {
+            ...stateToResetErrors,
+            gettingTasksError: null,
+            activities: {
+                ...stateToResetErrors.activities,
+                dumps: {
+                    ...stateToResetErrors.activities.dumps,
+                    dumpingError: null,
+                },
+                loads: {
+                    ...stateToResetErrors.activities.loads,
+                    loadingError: null,
+                    loadingDoneMessage: '',
+                },
+            },
+        };
+    }
+
+    const state = cleanupTemporaryInfo(inputState);
+
     switch (action.type) {
         case TasksActionTypes.GET_TASKS:
             return {
@@ -43,143 +71,147 @@ export default (state = defaultState, action: AnyAction): TasksState => {
                 initialized: true,
                 count: action.payload.count,
                 current: combinedWithPreviews,
-                error: null,
-                dumpError: null,
-                loadError: null,
-                loadDone: '',
-                query: { ...action.payload.query },
+                gettingQuery: { ...action.payload.gettingQuery },
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:
             return {
                 ...state,
                 initialized: true,
-                current: [],
                 count: 0,
-                dumpError: null,
-                loadError: null,
-                loadDone: '',
-                error: action.payload.error,
-                query: { ...action.payload.query },
+                current: [],
+                gettingQuery: { ...action.payload.gettingQuery },
+                gettingTasksError: action.payload.gettingTasksError,
             };
-
         case TasksActionTypes.DUMP_ANNOTATIONS: {
             const { task } = action.payload;
             const { dumper } = action.payload;
 
-            const activeTask = {
-                ...state.active[task.id] || {
-                    dump: [],
-                    load: null,
-                },
+            const tasksDumpingActivities = {
+                ...state.activities.dumps,
             };
 
-            if (!activeTask.dump.map(
-                (dumpState): string => dumpState.dumperName,
-            ).includes(dumper.name)) {
-                activeTask.dump = [...activeTask.dump, {
-                    dumperName: dumper.name,
-                }];
+            const theTaskDumpingActivities = [...tasksDumpingActivities.byTask[task.id] || []];
+            if (!theTaskDumpingActivities.includes(dumper.name)) {
+                theTaskDumpingActivities.push(dumper.name);
+            } else {
+                throw Error('Dump with the same dumper for this same task has been already started');
             }
-
-            const activeTasks = { ...state.active };
-            activeTasks[task.id] = activeTask;
+            tasksDumpingActivities.byTask[task.id] = theTaskDumpingActivities;
 
             return {
                 ...state,
-                active: activeTasks,
+                activities: {
+                    ...state.activities,
+                    dumps: tasksDumpingActivities,
+                },
             };
         }
         case TasksActionTypes.DUMP_ANNOTATIONS_SUCCESS: {
             const { task } = action.payload;
             const { dumper } = action.payload;
 
-            const activeTask = { ...state.active[task.id] };
-            const activeDumps = activeTask.dump.filter(
-                (dumpState: DumpState): boolean => dumpState.dumperName !== dumper.name,
-            );
+            const tasksDumpingActivities = {
+                ...state.activities.dumps,
+            };
 
-            activeTask.dump = activeDumps;
+            const theTaskDumpingActivities = tasksDumpingActivities.byTask[task.id]
+                .filter((dumperName: string): boolean => dumperName !== dumper.name);
 
-            const activeTasks = { ...state.active };
-            activeTasks[task.id] = activeTask;
+            tasksDumpingActivities.byTask[task.id] = theTaskDumpingActivities;
 
             return {
                 ...state,
-                active: activeTasks,
+                activities: {
+                    ...state.activities,
+                    dumps: tasksDumpingActivities,
+                },
             };
         }
         case TasksActionTypes.DUMP_ANNOTATIONS_FAILED: {
             const { task } = action.payload;
             const { dumper } = action.payload;
-            const { error } = action.payload;
+            const { dumpingError } = action.payload;
 
-            const activeTask = { ...state.active[task.id] };
-            const activeDumps = activeTask.dump.filter(
-                (dumpState: DumpState): boolean => dumpState.dumperName !== dumper.name,
-            );
+            const tasksDumpingActivities = {
+                ...state.activities.dumps,
+                dumpingError,
+            };
 
-            activeTask.dump = activeDumps;
+            const theTaskDumpingActivities = tasksDumpingActivities.byTask[task.id]
+                .filter((dumperName: string): boolean => dumperName !== dumper.name);
 
-            const activeTasks = { ...state.active };
-            activeTasks[task.id] = activeTask;
+            tasksDumpingActivities.byTask[task.id] = theTaskDumpingActivities;
 
             return {
                 ...state,
-                active: activeTasks,
-                dumpError: error,
+                activities: {
+                    ...state.activities,
+                    dumps: tasksDumpingActivities,
+                },
             };
         }
         case TasksActionTypes.LOAD_ANNOTATIONS: {
             const { task } = action.payload;
             const { loader } = action.payload;
 
-            const activeTask = {
-                ...state.active[task.id] || {
-                    dump: [],
-                    load: null,
-                },
+            const tasksLoadingActivity = {
+                ...state.activities.loads,
             };
 
-            activeTask.load = {
-                loaderName: loader.name,
-            };
+            if (task.id in tasksLoadingActivity.byTask) {
+                throw Error('Load for this task has been already started');
+            }
 
-            const activeTasks = { ...state.active };
-            activeTasks[task.id] = activeTask;
+            tasksLoadingActivity.byTask[task.id] = loader.name;
 
             return {
                 ...state,
-                active: activeTasks,
-                loadError: null,
-                loadDone: '',
+                activities: {
+                    ...state.activities,
+                    loads: tasksLoadingActivity,
+                },
             };
         }
         case TasksActionTypes.LOAD_ANNOTATIONS_SUCCESS: {
             const { task } = action.payload;
 
-            const activeTasks = state.active;
-            delete activeTasks[task.id];
+            const tasksLoadingActivity = {
+                ...state.activities.loads,
+            };
+
+            delete tasksLoadingActivity.byTask[task.id];
 
             return {
                 ...state,
-                active: activeTasks,
-                loadError: null,
-                loadDone: `Annotations were uploaded for the task #${task.id}`,
+                activities: {
+                    ...state.activities,
+                    loads: {
+                        ...tasksLoadingActivity,
+                        loadingDoneMessage: `Annotations have been loaded to the task ${task.id}`,
+                    },
+                },
             };
         }
         case TasksActionTypes.LOAD_ANNOTATIONS_FAILED: {
             const { task } = action.payload;
-            const { error } = action.payload;
+            const { loadingError } = action.payload;
 
-            const activeTasks = state.active;
-            delete activeTasks[task.id];
+            const tasksLoadingActivity = {
+                ...state.activities.loads,
+            };
+
+            delete tasksLoadingActivity.byTask[task.id];
 
             return {
                 ...state,
-                active: activeTasks,
-                loadError: error,
-                loadDone: '',
+                activities: {
+                    ...state.activities,
+                    loads: {
+                        ...tasksLoadingActivity,
+                        loadingError,
+                    },
+                },
             };
         }
         default:

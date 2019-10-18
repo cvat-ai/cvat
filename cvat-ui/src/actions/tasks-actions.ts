@@ -28,39 +28,39 @@ function getTasks(): AnyAction {
 }
 
 function getTasksSuccess(array: any[], previews: string[],
-    count: number, query: TasksQuery): AnyAction {
+    count: number, gettingQuery: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
         payload: {
             previews,
             array,
             count,
-            query,
+            gettingQuery,
         },
     };
 
     return action;
 }
 
-function getTasksFailed(error: any, query: TasksQuery): AnyAction {
+function getTasksFailed(gettingTasksError: any, gettingQuery: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_FAILED,
         payload: {
-            error,
-            query,
+            gettingTasksError,
+            gettingQuery,
         },
     };
 
     return action;
 }
 
-export function getTasksAsync(query: TasksQuery):
+export function getTasksAsync(gettingQuery: TasksQuery):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(getTasks());
 
         // We need remove all keys with null values from query
-        const filteredQuery = { ...query };
+        const filteredQuery = { ...gettingQuery };
         for (const key in filteredQuery) {
             if (filteredQuery[key] === null) {
                 delete filteredQuery[key];
@@ -70,8 +70,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         let result = null;
         try {
             result = await cvat.tasks.get(filteredQuery);
-        } catch (error) {
-            dispatch(getTasksFailed(error, query));
+        } catch (gettingTasksError) {
+            dispatch(getTasksFailed(gettingTasksError, gettingQuery));
             return;
         }
 
@@ -93,7 +93,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             }
         }
 
-        dispatch(getTasksSuccess(array, previews, result.count, query));
+        dispatch(getTasksSuccess(array, previews, result.count, gettingQuery));
     };
 }
 
@@ -121,13 +121,13 @@ function dumpAnnotationSuccess(task: any, dumper: any): AnyAction {
     return action;
 }
 
-function dumpAnnotationFailed(task: any, dumper: any, error: any): AnyAction {
+function dumpAnnotationFailed(task: any, dumper: any, dumpingError: any): AnyAction {
     const action = {
         type: TasksActionTypes.DUMP_ANNOTATIONS_FAILED,
         payload: {
             task,
             dumper,
-            error,
+            dumpingError,
         },
     };
 
@@ -137,13 +137,12 @@ function dumpAnnotationFailed(task: any, dumper: any, error: any): AnyAction {
 export function dumpAnnotationsAsync(task: any, dumper: any):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(dumpAnnotation(task, dumper));
-
         try {
+            dispatch(dumpAnnotation(task, dumper));
             const url = await task.annotations.dump(task.name, dumper);
             window.location.assign(url);
-        } catch (error) {
-            dispatch(dumpAnnotationFailed(task, dumper, error));
+        } catch (dumpingError) {
+            dispatch(dumpAnnotationFailed(task, dumper, dumpingError));
             return;
         }
 
@@ -174,12 +173,12 @@ function loadAnnotationsSuccess(task: any): AnyAction {
     return action;
 }
 
-function loadAnnotationsFailed(task: any, error: any): AnyAction {
+function loadAnnotationsFailed(task: any, loadingError: any): AnyAction {
     const action = {
         type: TasksActionTypes.LOAD_ANNOTATIONS_FAILED,
         payload: {
             task,
-            error,
+            loadingError,
         },
     };
 
@@ -189,12 +188,11 @@ function loadAnnotationsFailed(task: any, error: any): AnyAction {
 export function loadAnnotationsAsync(task: any, loader: any, file: File):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        dispatch(loadAnnotations(task, loader));
-
         try {
+            dispatch(loadAnnotations(task, loader));
             await task.annotations.upload(file, loader);
-        } catch (error) {
-            dispatch(loadAnnotationsFailed(task, error));
+        } catch (loadingError) {
+            dispatch(loadAnnotationsFailed(task, loadingError));
             return;
         }
 

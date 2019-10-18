@@ -19,36 +19,34 @@ export interface TasksQuery {
     [key: string]: string | number | null;
 }
 
-export interface DumpState {
-    dumperName: string;
-}
-
-export interface LoadState {
-    loaderName: string;
-}
-
 export interface Task {
-    instance: any;
+    instance: any; // cvat-core instance
     preview: string;
-}
-
-export interface ActiveTask {
-    dump: DumpState[];
-    load: LoadState | null;
 }
 
 export interface TasksState {
     initialized: boolean;
+    gettingTasksError: any;
+    gettingQuery: TasksQuery;
     count: number;
     current: Task[];
-    active: {
-        [index: number]: ActiveTask;
+    activities: {
+        dumps: {
+            dumpingError: any;
+            byTask: {
+                // dumps in different formats at the same time
+                [tid: number]: string[]; // dumper names
+            };
+        };
+        loads: {
+            loadingError: any;
+            loadingDoneMessage: string;
+            byTask: {
+                // only one loading simultaneously
+                [tid: number]: string; // loader name
+            };
+        };
     };
-    error: any;
-    dumpError: any;
-    loadError: any;
-    loadDone: string;
-    query: TasksQuery;
 }
 
 export interface FormatsState {
