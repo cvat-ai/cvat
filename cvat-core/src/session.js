@@ -10,7 +10,7 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
-    const { getFrame, getPreview } = require('./frames');
+    const { getFrame, getRanges} = require('./frames');
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
@@ -109,9 +109,9 @@
                             .apiWrapper.call(this, prototype.frames.get, frame);
                         return result;
                     },
-                    async preview() {
+                    async ranges() {
                         const result = await PluginRegistry
-                            .apiWrapper.call(this, prototype.frames.preview);
+                            .apiWrapper.call(this, prototype.frames.ranges);
                         return result;
                     },
                 },
@@ -386,10 +386,10 @@
                 * @throws {module:API.cvat.exceptions.ArgumentError}
             */
             /**
-                * Get the first frame of a task for preview
-                * @method preview
+                * Returns the ranges of cached frames
+                * @method ranges
                 * @memberof Session.frames
-                * @returns {string} - jpeg encoded image
+                * @returns {module:API.cvat.classes.FrameData}
                 * @instance
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -635,7 +635,7 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
-                preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+                ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
             };
         }
 
@@ -694,6 +694,7 @@
                 start_frame: undefined,
                 stop_frame: undefined,
                 frame_filter: undefined,
+                data_chunk_size: undefined,                
             };
 
             for (const property in data) {
@@ -1116,6 +1117,18 @@
                         data.frame_filter = filter;
                     },
                 },
+                dataChunkSize: {
+                    get: () => data.data_chunk_size,
+                    set: (chunkSize) => {
+                        if (typeof (chunkSize) !== 'number' || chunkSize < 1) {
+                            throw new ArgumentError(
+                                `Chink size value must be a positive number. But value ${chunkSize} has been got.`,
+                            );
+                        }
+
+                        data.data_chunk_size = chunkSize;
+                    },
+                },
             }));
 
             // When we call a function, for example: task.annotations.get()
@@ -1139,7 +1152,7 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
-                preview: Object.getPrototypeOf(this).frames.preview.bind(this),
+                ranges: Object.getPrototypeOf(this).frames.ranges.bind(this), 
             };
         }
 
@@ -1232,13 +1245,20 @@
             );
         }
 
-        const frameData = await getFrame(this.task.id, this.task.mode, frame);
+        const frameData = await getFrame(
+            this.task.id,
+            this.task.dataChunkSize,
+            this.task.mode,
+            frame,
+        );
         return frameData;
     };
 
-    Job.prototype.frames.preview.implementation = async function () {
-        const frameData = await getPreview(this.task.id);
-        return frameData;
+    Job.prototype.frames.ranges.implementation = async function () {
+        const rangesData = await getRanges(
+            this.task.id,
+        );
+        return rangesData;
     };
 
     // TODO: Check filter for annotations
@@ -1377,13 +1397,20 @@
             );
         }
 
-        const result = await getFrame(this.id, this.mode, frame);
+        const result = await getFrame(
+            this.id,
+            this.dataChunkSize,
+            this.mode,
+            frame,
+        );
         return result;
     };
 
-    Task.prototype.frames.preview.implementation = async function () {
-        const frameData = await getPreview(this.id);
-        return frameData;
+    Task.prototype.frames.ranges.implementation = async function () {
+        const rangesData = await getRanges(
+            this.id,
+        );
+        return rangesData;
     };
 
     // TODO: Check filter for annotations

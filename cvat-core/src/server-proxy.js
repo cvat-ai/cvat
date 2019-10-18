@@ -399,19 +399,19 @@
                 return response.data;
             }
 
-            async function getData(tid, frame) {
+            async function getData(tid, chunk) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/${frame}`, {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/chunk/${chunk}`, {
                         proxy: config.proxy,
-                        responseType: 'blob',
+                        responseType: 'arraybuffer',
                     });
                 } catch (errorData) {
                     throw generateError(
                         errorData,
-                        `Could not get frame ${frame} for the task ${tid} from the server`,
+                        `Could not get chunk ${chunk} for the task ${tid} from the server`,
                     );
                 }
 

@@ -9,14 +9,18 @@
 */
 
 (() => {
+    const cvatData = require('../../cvat-data');
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
-    const { ArgumentError } = require('./exceptions');
-    const { isBrowser, isNode } = require('browser-or-node');
+    const {
+        Exception,
+        ArgumentError,
+    } = require('./exceptions');
 
     // This is the frames storage
     const frameDataCache = {};
     const frameCache = {};
+    let nextChunk = null;
 
     /**
         * Class provides meta information about specific frame and frame itself
@@ -79,87 +83,101 @@
     }
 
     FrameData.prototype.data.implementation = async function (onServerRequest) {
-        return new Promise(async (resolve, reject) => {
-            try {
-                if (this.number in frameCache[this.tid]) {
-                    resolve(frameCache[this.tid][this.number]);
-                } else {
-                    onServerRequest();
-                    const frame = await serverProxy.frames.getData(this.tid, this.number);
+        async function getFrameData(resolve, reject) {
+            function onDecode(provider, frameNumber) {
+                if (frameNumber === this.number) {
+                    resolve(provider.frame(frameNumber));
+                }
+            }
 
-                    if (isNode) {
-                        frameCache[this.tid][this.number] = global.Buffer.from(frame, 'binary').toString('base64');
-                        resolve(frameCache[this.tid][this.number]);
-                    } else if (isBrowser) {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                            frameCache[this.tid][this.number] = reader.result;
-                            resolve(frameCache[this.tid][this.number]);
-                        };
-                        reader.readAsDataURL(frame);
+            try {
+                const { provider } = frameDataCache[this.tid];
+                const { chunkSize } = frameDataCache[this.tid];
+                const frame = provider.frame(this.number);
+                if (frame === null || frame === 'loading') {
+                    onServerRequest();                    
+                    const start = parseInt(this.number / chunkSize, 10) * chunkSize;
+                    const stop = (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1;
+                    const chunkNumber = Math.floor(this.number / chunkSize);
+                    let chunk = null;
+                    if (frame === null) {
+                        chunk = await serverProxy.frames.getData(this.tid, chunkNumber);
+                       
                     }
+                    // if status is loading, a chunk has already been loaded
+                    // and it is being decoded now
+
+                    try {
+                        provider.startDecode(chunk, start, stop, onDecode.bind(this, provider));
+                    } catch (error) {
+                        if (error.donePromise) {
+                            try {
+                                await error.donePromise;
+                                provider.startDecode(chunk, start,
+                                    stop, onDecode.bind(this, provider));
+                            } catch (_) {
+                                reject(this.number);
+                            }
+                        }
+                    }
+                } else {
+                    if (this.number % chunkSize > 1){
+                        if (!provider.isNextChunkExists(this.number)){
+                            const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
+                            provider.setReadyToLoading(nextChunkNumber);                            
+                            serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
+                            provider.startDecode(nextChunk, (nextChunkNumber) * chunkSize, (nextChunkNumber + 1) * chunkSize - 1, function(){});
+                            });
+                        }
+                    }
+                    resolve(frame);
                 }
             } catch (exception) {
-                reject(exception);
+                if (exception instanceof Exception) {
+                    reject(exception);
+                } else {
+                    reject(new Exception(exception.message));
+                }
             }
-        });
+        }
+
+        return new Promise(getFrameData.bind(this));
     };
 
-    async function getPreview(taskID) {
-        return new Promise(async (resolve, reject) => {
-            try {
-                // Just go to server and get preview (no any cache)
-                const result = await serverProxy.frames.getPreview(taskID);
-                if (isNode) {
-                    resolve(global.Buffer.from(result, 'binary').toString('base64'));
-                } else if (isBrowser) {
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        resolve(reader.result);
-                    };
-                    reader.readAsDataURL(result);
-                }
-            } catch (error) {
-                reject(error);
-            }
-        });
-    }
-
-    async function getFrame(taskID, mode, frame) {
+    async function getFrame(taskID, chunkSize, mode, frame) {
         if (!(taskID in frameDataCache)) {
-            frameDataCache[taskID] = {};
-            frameDataCache[taskID].meta = await serverProxy.frames.getMeta(taskID);
+            const blockType = mode === 'interpolation' ? cvatData.BlockType.TSVIDEO
+                : cvatData.BlockType.ARCHIVE;
+
+            const value = {
+                meta: await serverProxy.frames.getMeta(taskID),
+                chunkSize,
+                provider: new cvatData.FrameProvider(3, blockType, chunkSize),
+            };
 
             frameCache[taskID] = {};
+            frameDataCache[taskID] = value;
         }
 
-        if (!(frame in frameDataCache[taskID])) {
-            let size = null;
-            if (mode === 'interpolation') {
-                [size] = frameDataCache[taskID].meta;
-            } else if (mode === 'annotation') {
-                if (frame >= frameDataCache[taskID].meta.length) {
-                    throw new ArgumentError(
-                        `Meta information about frame ${frame} can't be received from the server`,
-                    );
-                } else {
-                    size = frameDataCache[taskID].meta[frame];
-                }
-            } else {
-                throw new ArgumentError(
-                    `Invalid mode is specified ${mode}`,
-                );
-            }
+        let size = null;
+        [size] = frameDataCache[taskID].meta;
+        frameDataCache[taskID].provider.setRenderSize(size.width, size.height);
 
-            frameDataCache[taskID][frame] = new FrameData(size.width, size.height, taskID, frame);
-        }
-
-        return frameDataCache[taskID][frame];
+        return new FrameData(size.width, size.height, taskID, frame);
     }
+
+    function getRanges(taskID) {
+        if (!(taskID in frameDataCache)) {
+            return [];
+        }
+
+        return frameDataCache[taskID].provider.cachedFrames;
+    }
+
 
     module.exports = {
         FrameData,
         getFrame,
-        getPreview,
+        getRanges,
     };
 })();

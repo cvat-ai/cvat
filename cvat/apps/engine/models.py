@@ -33,26 +33,7 @@ class StatusChoice(str, Enum):
     def __str__(self):
         return self.value
 
-class Project(models.Model):
-    name = SafeCharField(max_length=256)
-    owner = models.ForeignKey(User, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name="+")
-    assignee = models.ForeignKey(User, null=True,  blank=True,
-        on_delete=models.SET_NULL, related_name="+")
-    bug_tracker = models.CharField(max_length=2000, blank=True, default="")
-    created_date = models.DateTimeField(auto_now_add=True)
-    updated_date = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=32, choices=StatusChoice.choices(),
-        default=StatusChoice.ANNOTATION)
-
-    # Extend default permission model
-    class Meta:
-        default_permissions = ()
-
 class Task(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE,
-        null=True, blank=True, related_name="tasks",
-        related_query_name="task")
     name = SafeCharField(max_length=256)
     size = models.PositiveIntegerField()
     mode = models.CharField(max_length=32)
@@ -73,17 +54,27 @@ class Task(models.Model):
     frame_filter = models.CharField(max_length=256, default="", blank=True)
     status = models.CharField(max_length=32, choices=StatusChoice.choices(),
         default=StatusChoice.ANNOTATION)
+    data_chunk_size = models.PositiveIntegerField(default=300)
 
     # Extend default permission model
     class Meta:
         default_permissions = ()
 
+    @staticmethod
+    def _get_dest_dir(index):
+        return str(int(index) // 10000), str(int(index) // 100)
+
     def get_frame_path(self, frame):
-        d1 = str(int(frame) // 10000)
-        d2 = str(int(frame) // 100)
+        d1, d2 = self._get_dest_dir(frame)
         path = os.path.join(self.get_data_dirname(), d1, d2,
             str(frame) + '.jpg')
 
+        return path
+
+    def get_chunk_path(self, chunk):
+        ext = 'ts' if self.mode == 'interpolation' else 'tar'
+        path = os.path.join(self.get_data_dirname(),
+            '{}.{}'.format(chunk, ext))
         return path
 
     def get_frame_step(self):
@@ -101,9 +92,6 @@ class Task(models.Model):
 
     def get_client_log_path(self):
         return os.path.join(self.get_task_dirname(), "client.log")
-
-    def get_image_meta_cache_path(self):
-        return os.path.join(self.get_task_dirname(), "image_meta.cache")
 
     def get_task_dirname(self):
         return os.path.join(settings.DATA_ROOT, str(self.id))
