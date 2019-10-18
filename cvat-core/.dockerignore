@@ -1,5 +1,5 @@
-dist
-docs
-node_modules
-reports
+/dist
+/docs
+/node_modules
+/reports
 

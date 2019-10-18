@@ -6,6 +6,6 @@
 /.vscode
 /db.sqlite3
 /keys
+/cvat-canvas
 **/node_modules
-cvat-ui
-cvat-canvas
+
