@@ -34,7 +34,7 @@ function isDefaultFormat(dumperName: string, taskMode: string): boolean {
     || (dumperName === 'CVAT XML 1.1 for images' && taskMode === 'annotation');
 }
 
-export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> {
+export default class TaskItemComponent extends React.PureComponent<TaskItemProps> {
     constructor(props: TaskItemProps) {
         super(props);
     }

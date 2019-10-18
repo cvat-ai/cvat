@@ -3,10 +3,11 @@ import { connect } from 'react-redux';
 
 import {
     TasksQuery,
-    Task,
 } from '../../reducers/interfaces';
 
-import { CombinedState } from '../../reducers/root-reducer';
+import {
+    CombinedState,
+} from '../../reducers/root-reducer';
 
 import TaskItemComponent from '../../components/tasks-page/task-item'
 

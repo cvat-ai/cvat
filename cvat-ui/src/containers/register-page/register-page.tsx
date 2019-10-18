@@ -38,7 +38,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 type RegisterPageProps = StateToProps & DispatchToProps & RouteComponentProps;
-function RegisterPage(props: RegisterPageProps) {
+function RegisterPageContainer(props: RegisterPageProps) {
     const { registerError } = props.auth;
     const sizes = {
         xs: { span: 14 },
@@ -75,4 +75,4 @@ function RegisterPage(props: RegisterPageProps) {
 export default withRouter(connect(
     mapStateToProps,
     mapDispatchToProps,
-)(RegisterPage));
+)(RegisterPageContainer));

@@ -13,7 +13,7 @@ interface VisibleTopBarProps {
     searchValue: string;
 }
 
-export default class VisibleTopBar extends React.PureComponent<VisibleTopBarProps> {
+export default class TopBarComponent extends React.PureComponent<VisibleTopBarProps> {
     public render() {
         return (
             <>

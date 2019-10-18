@@ -40,7 +40,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type LoginPageProps = StateToProps & DispatchToProps & RouteComponentProps;
 
-function LoginPage(props: LoginPageProps) {
+function LoginPageContainer(props: LoginPageProps) {
     const { loginError } = props.auth;
     const sizes = {
         xs: { span: 14 },
@@ -77,4 +77,4 @@ function LoginPage(props: LoginPageProps) {
 export default withRouter(connect(
     mapStateToProps,
     mapDispatchToProps,
-)(LoginPage));
+)(LoginPageContainer));

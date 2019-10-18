@@ -9,13 +9,13 @@ import 'antd/dist/antd.css';
 import '../stylesheet.css';
 
 import TasksPageContainer from '../containers/tasks-page/tasks-page';
-import CreateTaskPage from '../containers/create-task-page/create-task-page';
-import TaskPage from '../containers/task-page/task-page';
-import ModelsPage from '../containers/models-page/models-page';
-import AnnotationPage from '../containers/annotation-page/annotation-page';
-import LoginPage from '../containers/login-page/login-page';
-import RegisterPage from '../containers/register-page/register-page';
-import Header from '../containers/header/header';
+import CreateTaskPageContainer from '../containers/create-task-page/create-task-page';
+import TaskPageContainer from '../containers/task-page/task-page';
+import ModelsPageContainer from '../containers/models-page/models-page';
+import AnnotationPageContainer from '../containers/annotation-page/annotation-page';
+import LoginPageContainer from '../containers/login-page/login-page';
+import RegisterPageContainer from '../containers/register-page/register-page';
+import HeaderContainer from '../containers/header/header';
 
 type CVATAppProps = {
     loadFormats: () => void;
@@ -53,14 +53,14 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                 return (
                     <BrowserRouter>
                         <Layout>
-                            <Header> </Header>
+                            <HeaderContainer> </HeaderContainer>
                             <Layout.Content>
                                 <Switch>
                                     <Route exact path='/tasks' component={TasksPageContainer}/>
-                                    <Route exact path='/models' component={ModelsPage}/>
-                                    <Route path='/tasks/create' component={CreateTaskPage}/>
-                                    <Route path='/tasks/:number' component={TaskPage}/>
-                                    <Route path='/tasks/:number/jobs/:number' component={AnnotationPage}/>
+                                    <Route exact path='/models' component={ModelsPageContainer}/>
+                                    <Route path='/tasks/create' component={CreateTaskPageContainer}/>
+                                    <Route path='/tasks/:number' component={TaskPageContainer}/>
+                                    <Route path='/tasks/:number/jobs/:number' component={AnnotationPageContainer}/>
                                     <Redirect to='/tasks'/>
                                 </Switch>
                             </Layout.Content>
@@ -71,8 +71,8 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                 return (
                     <BrowserRouter>
                         <Switch>
-                            <Route exact path='/auth/register' component={RegisterPage}/>
-                            <Route exact path='/auth/login' component={LoginPage}/>
+                            <Route exact path='/auth/register' component={RegisterPageContainer}/>
+                            <Route exact path='/auth/login' component={LoginPageContainer}/>
                             <Redirect to='/auth/login'/>
                         </Switch>
                     </BrowserRouter>

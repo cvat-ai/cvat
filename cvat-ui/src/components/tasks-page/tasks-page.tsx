@@ -27,7 +27,7 @@ interface TasksPageProps {
     onGetTasks: (gettingQuery: TasksQuery) => void;
 }
 
-class VisibleTasksPage extends React.PureComponent<TasksPageProps & RouteComponentProps> {
+class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteComponentProps> {
     constructor(props: any) {
         super(props);
     }
@@ -182,4 +182,4 @@ class VisibleTasksPage extends React.PureComponent<TasksPageProps & RouteCompone
     }
 }
 
-export default withRouter(VisibleTasksPage);
+export default withRouter(TasksPageComponent);

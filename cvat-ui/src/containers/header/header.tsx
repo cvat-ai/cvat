@@ -40,7 +40,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type HeaderProps = StateToProps & DispatchToProps & RouteComponentProps;
 
-function CVATHeader(props: HeaderProps) {
+function CVATHeaderContainer(props: HeaderProps) {
     const cvatLogo = () => (<img src="/assets/cvat-logo.svg"/>);
     const backLogo = () => (<img src="/assets/icon-playcontrol-previous.svg"/>);
     const userLogo = () => (<img src="/assets/icon-account.svg" />);
@@ -109,4 +109,4 @@ function CVATHeader(props: HeaderProps) {
 export default withRouter(connect(
     mapStateToProps,
     mapDispatchToProps,
-)(CVATHeader));
+)(CVATHeaderContainer));

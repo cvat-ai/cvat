@@ -16,7 +16,7 @@ type LoginFormProps = {
     onSubmit(loginData: LoginData): void;
 } & FormComponentProps;
 
-class LoginForm extends React.PureComponent<LoginFormProps> {
+class LoginFormComponent extends React.PureComponent<LoginFormProps> {
     constructor(props: LoginFormProps) {
         super(props);
     }
@@ -89,4 +89,4 @@ class LoginForm extends React.PureComponent<LoginFormProps> {
     }
 }
 
-export default Form.create<LoginFormProps>()(LoginForm);
+export default Form.create<LoginFormProps>()(LoginFormComponent);

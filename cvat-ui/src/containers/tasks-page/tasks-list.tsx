@@ -5,11 +5,16 @@ import {
     TasksState,
     TasksQuery,
 } from '../../reducers/interfaces';
-import { CombinedState } from '../../reducers/root-reducer';
+
+import {
+    CombinedState,
+} from '../../reducers/root-reducer';
 
 import TasksListComponent from '../../components/tasks-page/task-list';
 
-import { getTasksAsync } from '../../actions/tasks-actions';
+import {
+    getTasksAsync,
+} from '../../actions/tasks-actions';
 
 interface StateToProps {
     tasks: TasksState;

@@ -15,7 +15,7 @@ export interface ContentListProps {
     numberOfTasks: number;
 }
 
-export default function VisibleTaskList(props: ContentListProps) {
+export default function TaskListComponent(props: ContentListProps) {
     const tasks = props.currentTasksIndexes;
     const taskViews = tasks.map(
         (tid, id) => <TaskItem idx={id} taskID={tid} key={tid}/>

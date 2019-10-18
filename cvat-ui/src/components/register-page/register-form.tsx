@@ -22,7 +22,7 @@ type RegisterFormProps = {
     onSubmit(registerData: RegisterData): void;
 } & FormComponentProps;
 
-class RegisterForm extends React.PureComponent<RegisterFormProps> {
+class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
     constructor(props: RegisterFormProps) {
         super(props);
     }
@@ -221,4 +221,4 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
     }
 }
 
-export default Form.create<RegisterFormProps>()(RegisterForm);
+export default Form.create<RegisterFormProps>()(RegisterFormComponent);
