@@ -16,7 +16,7 @@ export interface RegisterData {
     password2: string;
 }
 
-import patterns from '../utils/validation-patterns';
+import patterns from '../../utils/validation-patterns';
 
 type RegisterFormProps = {
     onSubmit(registerData: RegisterData): void;

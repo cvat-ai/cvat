@@ -13,10 +13,10 @@ import {
 } from 'antd';
 import Text from 'antd/lib/typography/Text';
 
-import { logoutAsync } from '../actions/auth-actions';
+import { logoutAsync } from '../../actions/auth-actions';
 
-import { CombinedState } from '../reducers/root-reducer';
-import { AuthState } from '../reducers/interfaces';
+import { CombinedState } from '../../reducers/root-reducer';
+import { AuthState } from '../../reducers/interfaces';
 
 interface StateToProps {
     auth: AuthState;

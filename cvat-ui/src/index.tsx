@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 
-import CVATApplication from './containers/cvat-app';
+import CVATApplication from './components/cvat-app';
 import createCVATStore from './store';
 
 const cvatStore = createCVATStore();

@@ -15,14 +15,14 @@ import { CombinedState } from '../reducers/root-reducer';
 import { AuthState } from '../reducers/interfaces';
 import { FormatsState } from '../reducers/interfaces';
 
-import TasksPageContainer from './tasks-page/tasks-page';
-import CreateTaskPage from './create-task-page';
-import TaskPage from './task-page';
-import ModelsPage from './models-page/models-page';
-import AnnotationPage from './annotation-page/annotation-page';
-import LoginPage from './login-page';
-import RegisterPage from './register-page';
-import Header from './cvat-header';
+import TasksPageContainer from '../containers/tasks-page/tasks-page';
+import CreateTaskPage from '../containers/create-task-page/create-task-page';
+import TaskPage from '../containers/task-page/task-page';
+import ModelsPage from '../containers/models-page/models-page';
+import AnnotationPage from '../containers/annotation-page/annotation-page';
+import LoginPage from '../containers/login-page/login-page';
+import RegisterPage from '../containers/register-page/register-page';
+import Header from '../containers/header/header';
 
 
 interface StateToProps {

@@ -11,12 +11,12 @@ import {
     Modal,
 } from 'antd';
 
-import LoginForm, { LoginData } from '../components/login-form';
+import LoginForm, { LoginData } from '../../components/login-page/login-form';
 
-import { loginAsync } from '../actions/auth-actions';
+import { loginAsync } from '../../actions/auth-actions';
 
-import { CombinedState } from '../reducers/root-reducer';
-import { AuthState } from '../reducers/interfaces';
+import { CombinedState } from '../../reducers/root-reducer';
+import { AuthState } from '../../reducers/interfaces';
 
 interface StateToProps {
     auth: AuthState;
