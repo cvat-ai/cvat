@@ -26,7 +26,11 @@ https://github.com/opencv/cvat/issues/750).
 ### Security
 -
 
-## [0.5.0] - 2019-10-12
+## [0.5.1] - 2019-10-17
+### Added
+- Integration with Zenodo.org (DOI)
+
+## [0.5.0] - 2019-09-12
 ### Added
 - A converter to YOLO format
 - Installation guide

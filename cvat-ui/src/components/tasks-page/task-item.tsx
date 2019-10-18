@@ -89,19 +89,26 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
     }
 
     private renderDescription() {
-        // Get and truncate a task name
-        let name = this.props.task.instance.name;
-        name = `${name.substring(0, 70)}${name.length > 70 ? '...' : ''}`;
+    // Task info
+        const task = this.props.task.instance;
+        const { id } = task;
+        const owner = task.owner ? task.owner.username : null;
+        const updated = moment(task.updatedDate).fromNow();
+        const created = moment(task.createdDate).format('MMMM Do YYYY');
 
-        const id = this.props.task.instance.id;
-        const owner = this.props.task.instance.owner.username;
-        const updated = moment(this.props.task.instance.updatedDate).fromNow();
-        const created = moment(this.props.task.instance.createdDate).format('MMMM Do YYYY');
+        // Get and truncate a task name
+        const name = `${task.name.substring(0, 70)}${task.name.length > 70 ? '...' : ''}`;
 
         return (
             <Col span={10}>
                 <Text strong> {id} {name} </Text> <br/>
-                <Text type='secondary'> Created by { owner } on {created} </Text> <br/>
+                { owner ?
+                    <>
+                        <Text type='secondary'>
+                            Created { owner ? 'by ' + owner : '' } on {created}
+                        </Text> <br/>
+                    </> : null
+                }
                 <Text type='secondary'> Last updated {updated} </Text>
             </Col>
         )
