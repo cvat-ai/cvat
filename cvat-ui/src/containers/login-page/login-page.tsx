@@ -1,23 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { RouteComponentProps } from 'react-router';
-import { Link, withRouter } from 'react-router-dom';
-
-import Title from 'antd/lib/typography/Title';
-import Text from 'antd/lib/typography/Text';
-import {
-    Col,
-    Row,
-    Modal,
-} from 'antd';
-
-import LoginForm, { LoginData } from '../../components/login-page/login-form';
-
 import { loginAsync } from '../../actions/auth-actions';
-
 import { CombinedState } from '../../reducers/root-reducer';
-import { AuthState } from '../../reducers/interfaces';
-
 import LoginPageComponent from '../../components/login-page/login-page';
 
 interface StateToProps {
@@ -40,9 +24,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-type LoginPageProps = StateToProps & DispatchToProps & RouteComponentProps;
-
-function LoginPageContainer(props: LoginPageProps) {
+function LoginPageContainer(props: StateToProps & DispatchToProps) {
     return (
         <LoginPageComponent
             onLogin={props.login}

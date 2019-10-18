@@ -86,21 +86,14 @@ export function authorizedFailed(authError: any): AnyAction {
     };
 }
 
-export function registerAsync({
-    username,
-    firstName,
-    lastName,
-    email,
-    password1,
-    password2,
-}: {
-    username: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    password1: string;
-    password2: string;
-}): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function registerAsync(
+    username: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    password1: string,
+    password2: string,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         let users = null;
         try {
