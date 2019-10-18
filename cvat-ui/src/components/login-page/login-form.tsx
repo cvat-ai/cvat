@@ -21,7 +21,7 @@ class LoginFormComponent extends React.PureComponent<LoginFormProps> {
         super(props);
     }
 
-    private handleSubmit(e: React.FormEvent) {
+    private handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         this.props.form.validateFields((error, values) => {
             if (!error) {
@@ -75,7 +75,7 @@ class LoginFormComponent extends React.PureComponent<LoginFormProps> {
 
     public render() {
         return (
-            <Form onSubmit={this.handleSubmit.bind(this)} className='login-form'>
+            <Form onSubmit={this.handleSubmit} className='login-form'>
                 {this.renderUsernameField()}
                 {this.renderPasswordField()}
 

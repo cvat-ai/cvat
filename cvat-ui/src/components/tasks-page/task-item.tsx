@@ -39,7 +39,7 @@ export default class TaskItemComponent extends React.PureComponent<TaskItemProps
         super(props);
     }
 
-    private handleMenuClick(params: ClickParam) {
+    private handleMenuClick = (params: ClickParam) => {
         const tracker = this.props.taskInstance.bugTracker;
 
         if (params.keyPath.length === 2) {
@@ -212,7 +212,7 @@ export default class TaskItemComponent extends React.PureComponent<TaskItemProps
         const tracker = this.props.taskInstance.bugTracker;
 
         return (
-            <Menu subMenuCloseDelay={0.15} className='cvat-task-item-menu' onClick={this.handleMenuClick.bind(this)}>
+            <Menu subMenuCloseDelay={0.15} className='cvat-task-item-menu' onClick={this.handleMenuClick}>
                 <Menu.SubMenu key='dump' title='Dump annotations'>
                     {this.props.dumpers.map((dumper) => this.renderDumperItem(dumper))}
                 </Menu.SubMenu>

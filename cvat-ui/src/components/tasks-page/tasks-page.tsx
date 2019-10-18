@@ -63,7 +63,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         return searchString.slice(0, -5);
     }
 
-    private handleSearch(value: string): void {
+    private handleSearch = (value: string): void => {
         const gettingQuery = { ...this.props.gettingQuery };
         const search = value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim();
 
@@ -99,7 +99,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         this.props.onGetTasks(gettingQuery);
     }
 
-    private handlePagination(page: number): void {
+    private handlePagination = (page: number): void => {
         const gettingQuery = { ...this.props.gettingQuery };
 
         gettingQuery.page = page;
@@ -169,12 +169,12 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
             return (
                 <div className='tasks-page'>
                     <TopBar
-                        onSearch={this.handleSearch.bind(this)}
+                        onSearch={this.handleSearch}
                         searchValue={this.getSearchField(this.props.gettingQuery)}
                     />
                     {this.props.numberOfVisibleTasks ?
                         <TaskListContainer
-                            onSwitchPage={this.handlePagination.bind(this)}
+                            onSwitchPage={this.handlePagination}
                         /> : <EmptyListComponent/>}
                 </div>
             )
