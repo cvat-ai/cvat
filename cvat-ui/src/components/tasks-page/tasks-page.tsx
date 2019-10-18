@@ -16,15 +16,15 @@ import EmptyListComponent from './empty-list';
 import TaskListContainer from '../../containers/tasks-page/tasks-list';
 
 interface TasksPageProps {
-    dumpError: any;
-    loadError: any;
-    loadDone: string;
+    dumpingError: string;
+    loadingError: string;
+    tasksFetchingError: string;
+    loadingDoneMessage: string;
     tasksAreBeingFetched: boolean;
-    tasksFetchingError: any;
-    tasksQuery: TasksQuery;
+    gettingQuery: TasksQuery;
     numberOfTasks: number;
     numberOfVisibleTasks: number;
-    onGetTasks: (query: TasksQuery) => void;
+    onGetTasks: (gettingQuery: TasksQuery) => void;
 }
 
 class VisibleTasksPage extends React.PureComponent<TasksPageProps & RouteComponentProps> {
@@ -32,11 +32,11 @@ class VisibleTasksPage extends React.PureComponent<TasksPageProps & RouteCompone
         super(props);
     }
 
-    private updateURL(query: TasksQuery) {
+    private updateURL(gettingQuery: TasksQuery) {
         let queryString = '?';
-        for (const field of Object.keys(query)) {
-            if (query[field] !== null) {
-                queryString += `${field}=${query[field]}&`;
+        for (const field of Object.keys(gettingQuery)) {
+            if (gettingQuery[field] !== null) {
+                queryString += `${field}=${gettingQuery[field]}&`;
             }
         }
         this.props.history.replace({
@@ -44,17 +44,17 @@ class VisibleTasksPage extends React.PureComponent<TasksPageProps & RouteCompone
         });
     }
 
-    private getSearchField(query: TasksQuery): string {
+    private getSearchField(gettingQuery: TasksQuery): string {
         let searchString = '';
-        for (const field of Object.keys(query)) {
-            if (query[field] !== null && field !== 'page') {
+        for (const field of Object.keys(gettingQuery)) {
+            if (gettingQuery[field] !== null && field !== 'page') {
                 if (field === 'search') {
-                    return (query[field] as any) as string;
+                    return (gettingQuery[field] as any) as string;
                 } else {
-                    if (typeof (query[field] === 'number')) {
-                        searchString += `${field}:${query[field]} AND `;
+                    if (typeof (gettingQuery[field] === 'number')) {
+                        searchString += `${field}:${gettingQuery[field]} AND `;
                     } else {
-                        searchString += `${field}:"${query[field]}" AND `;
+                        searchString += `${field}:"${gettingQuery[field]}" AND `;
                     }
                 }
             }
@@ -64,14 +64,14 @@ class VisibleTasksPage extends React.PureComponent<TasksPageProps & RouteCompone
     }
 
     private handleSearch(value: string): void {
-        const query = { ...this.props.tasksQuery };
+        const gettingQuery = { ...this.props.gettingQuery };
         const search = value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim();
 
         const fields = ['name', 'mode', 'owner', 'assignee', 'status', 'id'];
         for (const field of fields) {
-            query[field] = null;
+            gettingQuery[field] = null;
         }
-        query.search = null;
+        gettingQuery.search = null;
 
         let specificRequest = false;
         for (const param of search.split(/[\s]+and[\s]+|[\s]+AND[\s]+/)) {
@@ -81,53 +81,53 @@ class VisibleTasksPage extends React.PureComponent<TasksPageProps & RouteCompone
                     specificRequest = true;
                     if (name === 'id') {
                         if (Number.isInteger(+value)) {
-                            query[name] = +value;
+                            gettingQuery[name] = +value;
                         }
                     } else {
-                        query[name] = value;
+                        gettingQuery[name] = value;
                     }
                 }
             }
         }
 
-        query.page = 1;
+        gettingQuery.page = 1;
         if (!specificRequest && value) { // only id
-            query.search = value;
+            gettingQuery.search = value;
         }
 
-        this.updateURL(query);
-        this.props.onGetTasks(query);
+        this.updateURL(gettingQuery);
+        this.props.onGetTasks(gettingQuery);
     }
 
     private handlePagination(page: number): void {
-        const query = { ...this.props.tasksQuery };
+        const gettingQuery = { ...this.props.gettingQuery };
 
-        query.page = page;
-        this.updateURL(query);
-        this.props.onGetTasks(query);
+        gettingQuery.page = page;
+        this.updateURL(gettingQuery);
+        this.props.onGetTasks(gettingQuery);
     }
 
     public componentDidMount() {
-        const query = { ...this.props.tasksQuery };
+        const gettingQuery = { ...this.props.gettingQuery };
         const params = new URLSearchParams(this.props.location.search);
 
-        for (const field of Object.keys(query)) {
+        for (const field of Object.keys(gettingQuery)) {
             if (params.has(field)) {
                 const value = params.get(field);
                 if (value) {
                     if (field === 'id' || field === 'page') {
                         if (Number.isInteger(+value)) {
-                            query[field] = +value;
+                            gettingQuery[field] = +value;
                         }
                     } else {
-                        query[field] = value;
+                        gettingQuery[field] = value;
                     }
                 }
             }
         }
 
-        this.updateURL(query);
-        this.props.onGetTasks(query);
+        this.updateURL(gettingQuery);
+        this.props.onGetTasks(gettingQuery);
     }
 
     public componentDidUpdate() {
@@ -138,24 +138,24 @@ class VisibleTasksPage extends React.PureComponent<TasksPageProps & RouteCompone
             });
         }
 
-        if (this.props.dumpError) {
+        if (this.props.dumpingError) {
             Modal.error({
                 title: 'Could not dump annotations',
-                content: `${this.props.dumpError.toString()}`,
+                content: `${this.props.dumpingError}`,
             });;
         }
 
-        if (this.props.loadError) {
+        if (this.props.loadingError) {
             Modal.error({
                 title: 'Could not load annotations',
-                content: `${this.props.loadError.toString()}`,
+                content: `${this.props.loadingError}`,
             });;
         }
 
-        if (this.props.loadDone) {
+        if (this.props.loadingDoneMessage) {
             Modal.info({
-                title: 'Load annotations',
-                content: `${this.props.loadDone}`,
+                title: 'Successful loading of annotations',
+                content: `${this.props.loadingDoneMessage}`,
             });;
         }
     }
@@ -170,11 +170,11 @@ class VisibleTasksPage extends React.PureComponent<TasksPageProps & RouteCompone
                 <div className='tasks-page'>
                     <TopBar
                         onSearch={this.handleSearch.bind(this)}
-                        searchValue={this.getSearchField(this.props.tasksQuery)}
+                        searchValue={this.getSearchField(this.props.gettingQuery)}
                     />
                     {this.props.numberOfVisibleTasks ?
                         <TaskListContainer
-                            onPageChange={this.handlePagination.bind(this)}
+                            onSwitchPage={this.handlePagination.bind(this)}
                         /> : <EmptyListComponent/>}
                 </div>
             )

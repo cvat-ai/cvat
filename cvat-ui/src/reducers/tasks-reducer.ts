@@ -5,7 +5,7 @@ import { TasksState, Task } from './interfaces';
 
 const defaultState: TasksState = {
     initialized: false,
-    gettingTasksError: null,
+    tasksFetchingError: null,
     count: 0,
     current: [],
     gettingQuery: {
@@ -35,7 +35,7 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
     function cleanupTemporaryInfo(stateToResetErrors: TasksState): TasksState {
         return {
             ...stateToResetErrors,
-            gettingTasksError: null,
+            tasksFetchingError: null,
             activities: {
                 ...stateToResetErrors.activities,
                 dumps: {
@@ -81,7 +81,7 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                 count: 0,
                 current: [],
                 gettingQuery: { ...action.payload.gettingQuery },
-                gettingTasksError: action.payload.gettingTasksError,
+                tasksFetchingError: action.payload.tasksFetchingError,
             };
         case TasksActionTypes.DUMP_ANNOTATIONS: {
             const { task } = action.payload;

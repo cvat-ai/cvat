@@ -42,11 +42,11 @@ function getTasksSuccess(array: any[], previews: string[],
     return action;
 }
 
-function getTasksFailed(gettingTasksError: any, gettingQuery: TasksQuery): AnyAction {
+function getTasksFailed(tasksFetchingError: any, gettingQuery: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_FAILED,
         payload: {
-            gettingTasksError,
+            tasksFetchingError,
             gettingQuery,
         },
     };
@@ -70,8 +70,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         let result = null;
         try {
             result = await cvat.tasks.get(filteredQuery);
-        } catch (gettingTasksError) {
-            dispatch(getTasksFailed(gettingTasksError, gettingQuery));
+        } catch (tasksFetchingError) {
+            dispatch(getTasksFailed(tasksFetchingError, gettingQuery));
             return;
         }
 

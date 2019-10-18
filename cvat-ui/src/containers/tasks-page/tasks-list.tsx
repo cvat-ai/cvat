@@ -20,7 +20,7 @@ interface DispatchToProps {
 }
 
 interface OwnProps {
-    onPageChange: (page: number) => void;
+    onSwitchPage: (page: number) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -40,10 +40,10 @@ type TasksListContainerProps = StateToProps & DispatchToProps & OwnProps;
 function TasksListContainer(props: TasksListContainerProps) {
     return (
         <TasksListComponent
-            onPageChange={props.onPageChange}
-            tasks={props.tasks.current}
-            page={props.tasks.query.page}
-            count={props.tasks.count}
+            onSwitchPage={props.onSwitchPage}
+            currentTasksIndexes={props.tasks.current.map((task) => task.instance.id)}
+            currentPage={props.tasks.gettingQuery.page}
+            numberOfTasks={props.tasks.count}
         />
     );
 }

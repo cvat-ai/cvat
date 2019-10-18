@@ -16,18 +16,13 @@ import { ClickParam } from 'antd/lib/menu/index';
 import { UploadChangeParam } from 'antd/lib/upload';
 import { RcFile } from 'antd/lib/upload';
 
-import {
-    Task,
-    LoadState,
-    DumpState,
-} from '../../reducers/interfaces';
-
 import moment from 'moment';
 
 export interface TaskItemProps {
-    task: Task;
-    activeLoading: LoadState | null;
-    activeDumpings: DumpState[];
+    taskInstance: any;
+    previewImage: string;
+    dumpActivities: string[] | null;
+    loadActivity: string | null;
     loaders: any[];
     dumpers: any[];
     onDumpAnnotation: (task: any, dumper: any) => void;
@@ -45,7 +40,7 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
     }
 
     private handleMenuClick(params: ClickParam) {
-        const tracker = this.props.task.instance.bugTracker;
+        const tracker = this.props.taskInstance.bugTracker;
 
         if (params.keyPath.length === 2) {
             // dump or upload
@@ -77,12 +72,10 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
     }
 
     private renderPreview() {
-        const preview = this.props.task.preview;
-
         return (
             <Col span={4}>
                 <div className='cvat-task-preview-wrapper'>
-                    <img alt='Preview' className='cvat-task-preview' src={preview}/>
+                    <img alt='Preview' className='cvat-task-preview' src={this.props.previewImage}/>
                 </div>
             </Col>
         )
@@ -90,7 +83,7 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
 
     private renderDescription() {
     // Task info
-        const task = this.props.task.instance;
+        const task = this.props.taskInstance;
         const { id } = task;
         const owner = task.owner ? task.owner.username : null;
         const updated = moment(task.updatedDate).fromNow();
@@ -115,9 +108,10 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
     }
 
     private renderProgress() {
+        const task = this.props.taskInstance;
         // Count number of jobs and performed jobs
-        const numOfJobs = this.props.task.instance.jobs.length;
-        const numOfCompleted = this.props.task.instance.jobs.filter(
+        const numOfJobs = task.jobs.length;
+        const numOfCompleted = task.jobs.filter(
             (job: any) => job.status === 'completed'
         ).length;
 
@@ -158,17 +152,19 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
     }
 
     private renderDumperItem(dumper: any) {
-        const mode = this.props.task.instance.mode;
-        const dumpWithThisDumper = this.props.activeDumpings
-            .filter((dump: DumpState) => dump.dumperName === dumper.name)[0];
+        const task = this.props.taskInstance;
+        const { mode } = task;
 
-        const pending = !!dumpWithThisDumper;
+        const dumpingWithThisDumper = (this.props.dumpActivities || [])
+            .filter((_dumper: string) => _dumper === dumper.name)[0];
+
+        const pending = !!dumpingWithThisDumper;
 
         return (
             <Menu.Item className='cvat-task-item-dump-submenu-item' key={dumper.name}>
                 <Button block={true} type='link' disabled={pending}
                     onClick={() => {
-                        this.props.onDumpAnnotation(this.props.task.instance, dumper);
+                        this.props.onDumpAnnotation(task, dumper);
                     }}>
                     <Icon type='download'/>
                     <Text strong={isDefaultFormat(dumper.name, mode)}>
@@ -181,9 +177,9 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
     }
 
     private renderLoaderItem(loader: any) {
-        const loadingWithThisLoader = this.props.activeLoading
-            && this.props.activeLoading.loaderName === loader.name
-            ? this.props.activeLoading : null;
+        const loadingWithThisLoader = this.props.loadActivity
+            && this.props.loadActivity === loader.name
+            ? this.props.loadActivity : null;
 
         const pending = !!loadingWithThisLoader;
 
@@ -195,14 +191,14 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
                     showUploadList={ false }
                     beforeUpload={(file: RcFile) => {
                         this.props.onLoadAnnotation(
-                            this.props.task.instance,
+                            this.props.taskInstance,
                             loader,
                             file as File,
                         );
 
                         return false;
                 }}>
-                    <Button block={true} type='link' disabled={!!this.props.activeLoading}>
+                    <Button block={true} type='link' disabled={!!this.props.loadActivity}>
                         <Icon type='upload'/>
                         <Text> {loader.name} </Text>
                         {pending ? <Icon type='loading'/> : null}
@@ -213,7 +209,7 @@ export default class VisibleTaskItem extends React.PureComponent<TaskItemProps> 
     }
 
     private renderMenu() {
-        const tracker = this.props.task.instance.bugTracker;
+        const tracker = this.props.taskInstance.bugTracker;
 
         return (
             <Menu subMenuCloseDelay={0.15} className='cvat-task-item-menu' onClick={this.handleMenuClick.bind(this)}>

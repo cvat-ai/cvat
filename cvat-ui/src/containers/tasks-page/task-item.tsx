@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 
 import {
     TasksQuery,
-    ActiveTask,
     Task,
 } from '../../reducers/interfaces';
 
@@ -18,8 +17,10 @@ import {
 } from '../../actions/tasks-actions';
 
 interface StateToProps {
-    task: Task;
-    activeTask: ActiveTask | undefined;
+    dumpActivities: string[] | null;
+    loadActivity: string | null;
+    previewImage: string;
+    taskInstance: any;
     loaders: any[];
     dumpers: any[];
 }
@@ -36,11 +37,18 @@ interface OwnProps {
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
+    const task = state.tasks.current[own.idx];
+    const { formats } = state;
+    const { dumps } = state.tasks.activities;
+    const { loads } = state.tasks.activities;
+
     return {
-        task: state.tasks.current[own.idx],
-        activeTask: state.tasks.active[own.taskID],
-        loaders: state.formats.loaders,
-        dumpers: state.formats.dumpers,
+        dumpActivities: dumps.byTask[own.taskID] ? dumps.byTask[own.taskID] : null,
+        loadActivity: loads.byTask[own.taskID] ? loads.byTask[own.taskID] : null,
+        previewImage: task.preview,
+        taskInstance: task.instance,
+        loaders: formats.loaders,
+        dumpers: formats.dumpers,
     };
 }
 
@@ -63,9 +71,10 @@ type TasksItemContainerProps = StateToProps & DispatchToProps & OwnProps;
 function TaskItemContainer(props: TasksItemContainerProps) {
     return (
         <TaskItemComponent
-            activeLoading={props.activeTask ? props.activeTask.load : null}
-            activeDumpings={props.activeTask ? [...props.activeTask.dump] : []}
-            task={props.task}
+            taskInstance={props.taskInstance}
+            previewImage={props.previewImage}
+            dumpActivities={props.dumpActivities}
+            loadActivity={props.loadActivity}
             loaders={props.loaders}
             dumpers={props.dumpers}
             onLoadAnnotation={props.load}

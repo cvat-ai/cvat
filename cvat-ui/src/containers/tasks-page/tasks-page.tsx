@@ -11,28 +11,33 @@ import TasksPageComponent from '../../components/tasks-page/tasks-page';
 import { getTasksAsync } from '../../actions/tasks-actions';
 
 interface StateToProps {
-    loadDone: string;
-    loadError: any;
-    dumpError: any;
-    tasksAreBeingFetched: boolean;
+    dumpingError: any;
+    loadingError: any;
     tasksFetchingError: any;
-    tasksQuery: TasksQuery;
+    loadingDoneMessage: string;
+    tasksAreBeingFetched: boolean;
+    gettingQuery: TasksQuery;
     numberOfTasks: number;
     numberOfVisibleTasks: number;
 }
 
 interface DispatchToProps {
-    getTasks: (query: TasksQuery) => void;
+    getTasks: (gettingQuery: TasksQuery) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
+    const { tasks } = state;
+    const { activities } = tasks;
+    const { dumps } = activities;
+    const { loads } = activities;
+
     return {
-        loadDone: state.tasks.loadDone,
-        loadError: state.tasks.loadError,
-        dumpError: state.tasks.dumpError,
+        dumpingError: dumps.dumpingError,
+        loadingError: loads.loadingError,
+        tasksFetchingError: tasks.tasksFetchingError,
+        loadingDoneMessage: loads.loadingDoneMessage,
         tasksAreBeingFetched: !state.tasks.initialized,
-        tasksFetchingError: state.tasks.error,
-        tasksQuery: state.tasks.query,
+        gettingQuery: tasks.gettingQuery,
         numberOfTasks: state.tasks.count,
         numberOfVisibleTasks: state.tasks.current.length,
     };
@@ -49,12 +54,12 @@ type TasksPageContainerProps = StateToProps & DispatchToProps;
 function TasksPageContainer(props: TasksPageContainerProps) {
     return (
         <TasksPageComponent
-            loadDone={props.loadDone}
-            loadError={props.loadError}
-            dumpError={props.dumpError}
+            dumpingError={props.dumpingError ? props.dumpingError.toString() : ''}
+            loadingError={props.loadingError ? props.loadingError.toString() : ''}
+            tasksFetchingError={props.tasksFetchingError ? props.tasksFetchingError.toString(): ''}
+            loadingDoneMessage={props.loadingDoneMessage}
             tasksAreBeingFetched={props.tasksAreBeingFetched}
-            tasksFetchingError={props.tasksFetchingError}
-            tasksQuery={props.tasksQuery}
+            gettingQuery={props.gettingQuery}
             numberOfTasks={props.numberOfTasks}
             numberOfVisibleTasks={props.numberOfVisibleTasks}
             onGetTasks={props.getTasks}
