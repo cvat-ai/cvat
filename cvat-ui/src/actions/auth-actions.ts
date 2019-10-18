@@ -116,7 +116,7 @@ export function registerAsync({
     };
 }
 
-export function loginAsync({ username, password }: {username: string; password: string}):
+export function loginAsync(username: string, password: string):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         let users = null;

@@ -134,28 +134,28 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         if (this.props.tasksFetchingError) {
             Modal.error({
                 title: 'Could not receive tasks',
-                content: `${this.props.tasksFetchingError.toString()}`,
+                content: this.props.tasksFetchingError,
             });
         }
 
         if (this.props.dumpingError) {
             Modal.error({
                 title: 'Could not dump annotations',
-                content: `${this.props.dumpingError}`,
+                content: this.props.dumpingError,
             });;
         }
 
         if (this.props.loadingError) {
             Modal.error({
                 title: 'Could not load annotations',
-                content: `${this.props.loadingError}`,
+                content: this.props.loadingError,
             });;
         }
 
         if (this.props.loadingDoneMessage) {
             Modal.info({
                 title: 'Successful loading of annotations',
-                content: `${this.props.loadingDoneMessage}`,
+                content: this.props.loadingDoneMessage,
             });;
         }
     }

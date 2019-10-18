@@ -18,63 +18,40 @@ import { loginAsync } from '../../actions/auth-actions';
 import { CombinedState } from '../../reducers/root-reducer';
 import { AuthState } from '../../reducers/interfaces';
 
+import LoginPageComponent from '../../components/login-page/login-page';
+
 interface StateToProps {
-    auth: AuthState;
+    loginError: any;
 }
 
 interface DispatchToProps {
-    login(loginData: LoginData): void;
+    login(username: string, password: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     return {
-        auth: state.auth,
+        loginError: state.auth.loginError,
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        login: (loginData: LoginData) => dispatch(loginAsync(loginData)),
-    }
+        login: (...args) => dispatch(loginAsync(...args)),
+    };
 }
 
 type LoginPageProps = StateToProps & DispatchToProps & RouteComponentProps;
 
 function LoginPageContainer(props: LoginPageProps) {
-    const { loginError } = props.auth;
-    const sizes = {
-        xs: { span: 14 },
-        sm: { span: 14 },
-        md: { span: 10 },
-        lg: { span: 4 },
-        xl: { span: 4 },
-    }
-
-    if (loginError) {
-        Modal.error({
-            title: 'Could not login',
-            content: `${loginError.toString()}`,
-        });
-    }
-
     return (
-        <Row type='flex' justify='center' align='middle'>
-            <Col {...sizes}>
-                <Title level={2}> Login </Title>
-                <LoginForm onSubmit={props.login}/>
-                <Row type='flex' justify='start' align='top'>
-                    <Col>
-                        <Text strong>
-                            New to CVAT? Create <Link to="/auth/register">an account</Link>
-                        </Text>
-                    </Col>
-                </Row>
-            </Col>
-        </Row>
+        <LoginPageComponent
+            onLogin={props.login}
+            loginError={props.loginError ? props.loginError.toString() : ''}
+        />
     );
 }
 
-export default withRouter(connect(
+export default connect(
     mapStateToProps,
     mapDispatchToProps,
-)(LoginPageContainer));
+)(LoginPageContainer);
