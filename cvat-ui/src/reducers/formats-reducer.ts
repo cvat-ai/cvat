@@ -6,7 +6,7 @@ import { FormatsState } from './interfaces';
 const defaultState: FormatsState = {
     loaders: [],
     dumpers: [],
-    error: null,
+    gettingFormatsError: null,
     initialized: false,
 };
 
@@ -16,7 +16,7 @@ export default (state = defaultState, action: AnyAction): FormatsState => {
             return {
                 ...state,
                 initialized: true,
-                error: null,
+                gettingFormatsError: null,
                 dumpers: action.payload.formats.map((format: any): any[] => format.dumpers).flat(),
                 loaders: action.payload.formats.map((format: any): any[] => format.loaders).flat(),
             };
@@ -24,7 +24,7 @@ export default (state = defaultState, action: AnyAction): FormatsState => {
             return {
                 ...state,
                 initialized: true,
-                error: action.payload.error,
+                gettingFormatsError: action.payload.gettingFormatsError,
             };
         default:
             return state;

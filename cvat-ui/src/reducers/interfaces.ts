@@ -53,5 +53,5 @@ export interface FormatsState {
     loaders: any[];
     dumpers: any[];
     initialized: boolean;
-    error: any;
+    gettingFormatsError: any;
 }
