@@ -389,7 +389,7 @@
                 * Returns the ranges of cached frames
                 * @method ranges
                 * @memberof Session.frames
-                * @returns {module:API.cvat.classes.FrameData}
+                * @returns {Array{string}}
                 * @instance
                 * @async
                 * @throws {module:API.cvat.exceptions.PluginError}
@@ -636,6 +636,7 @@
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
                 ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
+                preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             };
         }
 
