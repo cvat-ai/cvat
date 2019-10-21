@@ -148,6 +148,27 @@
     }
 };
 
+
+    async function getPreview(taskID) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                // Just go to server and get preview (no any cache)
+                const result = await serverProxy.frames.getPreview(taskID);
+                if (isNode) {
+                    resolve(global.Buffer.from(result, 'binary').toString('base64'));
+                } else if (isBrowser) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        resolve(reader.result);
+                    };
+                    reader.readAsDataURL(result);
+                }
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
     async function getFrame(taskID, chunkSize, mode, frame) {
         if (!(taskID in frameDataCache)) {
             const blockType = mode === 'interpolation' ? cvatData.BlockType.TSVIDEO
@@ -162,13 +183,28 @@
             frameCache[taskID] = {};
             frameDataCache[taskID] = value;
         }
-
+        
         let size = null;
-        [size] = frameDataCache[taskID].meta;
-        frameDataCache[taskID].provider.setRenderSize(size.width, size.height);
+        if (mode === 'interpolation') {
+            [size] = frameDataCache[taskID].meta;            
+        } else if (mode === 'annotation') {
+            if (frame >= frameDataCache[taskID].meta.length) {
+                throw new ArgumentError(
+                    `Meta information about frame ${frame} can't be received from the server`,
+                );
+            } else {
+                size = frameDataCache[taskID].meta[frame];
+            }
+        } else {
+                throw new ArgumentError(
+                    `Invalid mode is specified ${mode}`,
+                );
+            }
 
+        frameDataCache[taskID].provider.setRenderSize(size.width, size.height);
         return new FrameData(size.width, size.height, taskID, frame);
-    }
+        
+    };
 
     function getRanges(taskID) {
         if (!(taskID in frameDataCache)) {
@@ -183,5 +219,6 @@
         FrameData,
         getFrame,
         getRanges,
+        getPreview,
     };
 })();
