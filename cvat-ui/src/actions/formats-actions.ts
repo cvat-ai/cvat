@@ -19,11 +19,11 @@ export function gettingFormatsSuccess(formats: any): AnyAction {
     };
 }
 
-export function gettingFormatsFailed(gettingFormatsError: any): AnyAction {
+export function gettingFormatsFailed(error: any): AnyAction {
     return {
         type: FormatsActionTypes.GETTING_FORMATS_FAILED,
         payload: {
-            gettingFormatsError,
+            error,
         },
     };
 }
@@ -33,8 +33,8 @@ export function gettingFormatsAsync(): ThunkAction<Promise<void>, {}, {}, AnyAct
         let formats = null;
         try {
             formats = await cvat.server.formats();
-        } catch (gettingFormatsError) {
-            dispatch(gettingFormatsFailed(gettingFormatsError));
+        } catch (error) {
+            dispatch(gettingFormatsFailed(error));
             return;
         }
 

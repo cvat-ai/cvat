@@ -24,7 +24,7 @@ export default (state = defaultState, action: AnyAction): FormatsState => {
             return {
                 ...state,
                 initialized: true,
-                gettingFormatsError: action.payload.gettingFormatsError,
+                gettingFormatsError: action.payload.error,
             };
         default:
             return state;

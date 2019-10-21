@@ -28,39 +28,39 @@ function getTasks(): AnyAction {
 }
 
 function getTasksSuccess(array: any[], previews: string[],
-    count: number, gettingQuery: TasksQuery): AnyAction {
+    count: number, query: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_SUCCESS,
         payload: {
             previews,
             array,
             count,
-            gettingQuery,
+            query,
         },
     };
 
     return action;
 }
 
-function getTasksFailed(tasksFetchingError: any, gettingQuery: TasksQuery): AnyAction {
+function getTasksFailed(error: any, query: TasksQuery): AnyAction {
     const action = {
         type: TasksActionTypes.GET_TASKS_FAILED,
         payload: {
-            tasksFetchingError,
-            gettingQuery,
+            error,
+            query,
         },
     };
 
     return action;
 }
 
-export function getTasksAsync(gettingQuery: TasksQuery):
+export function getTasksAsync(query: TasksQuery):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         dispatch(getTasks());
 
         // We need remove all keys with null values from query
-        const filteredQuery = { ...gettingQuery };
+        const filteredQuery = { ...query };
         for (const key in filteredQuery) {
             if (filteredQuery[key] === null) {
                 delete filteredQuery[key];
@@ -70,8 +70,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         let result = null;
         try {
             result = await cvat.tasks.get(filteredQuery);
-        } catch (tasksFetchingError) {
-            dispatch(getTasksFailed(tasksFetchingError, gettingQuery));
+        } catch (error) {
+            dispatch(getTasksFailed(error, query));
             return;
         }
 
@@ -93,7 +93,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             }
         }
 
-        dispatch(getTasksSuccess(array, previews, result.count, gettingQuery));
+        dispatch(getTasksSuccess(array, previews, result.count, query));
     };
 }
 
@@ -121,13 +121,13 @@ function dumpAnnotationSuccess(task: any, dumper: any): AnyAction {
     return action;
 }
 
-function dumpAnnotationFailed(task: any, dumper: any, dumpingError: any): AnyAction {
+function dumpAnnotationFailed(task: any, dumper: any, error: any): AnyAction {
     const action = {
         type: TasksActionTypes.DUMP_ANNOTATIONS_FAILED,
         payload: {
             task,
             dumper,
-            dumpingError,
+            error,
         },
     };
 
@@ -141,8 +141,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             dispatch(dumpAnnotation(task, dumper));
             const url = await task.annotations.dump(task.name, dumper);
             window.location.assign(url);
-        } catch (dumpingError) {
-            dispatch(dumpAnnotationFailed(task, dumper, dumpingError));
+        } catch (error) {
+            dispatch(dumpAnnotationFailed(task, dumper, error));
             return;
         }
 
@@ -173,12 +173,12 @@ function loadAnnotationsSuccess(task: any): AnyAction {
     return action;
 }
 
-function loadAnnotationsFailed(task: any, loadingError: any): AnyAction {
+function loadAnnotationsFailed(task: any, error: any): AnyAction {
     const action = {
         type: TasksActionTypes.LOAD_ANNOTATIONS_FAILED,
         payload: {
             task,
-            loadingError,
+            error,
         },
     };
 
@@ -191,8 +191,8 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             dispatch(loadAnnotations(task, loader));
             await task.annotations.upload(file, loader);
-        } catch (loadingError) {
-            dispatch(loadAnnotationsFailed(task, loadingError));
+        } catch (error) {
+            dispatch(loadAnnotationsFailed(task, error));
             return;
         }
 

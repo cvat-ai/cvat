@@ -71,7 +71,7 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                 initialized: true,
                 count: action.payload.count,
                 current: combinedWithPreviews,
-                gettingQuery: { ...action.payload.gettingQuery },
+                gettingQuery: { ...action.payload.query },
             };
         }
         case TasksActionTypes.GET_TASKS_FAILED:
@@ -80,8 +80,8 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                 initialized: true,
                 count: 0,
                 current: [],
-                gettingQuery: { ...action.payload.gettingQuery },
-                tasksFetchingError: action.payload.tasksFetchingError,
+                gettingQuery: { ...action.payload.query },
+                tasksFetchingError: action.payload.error,
             };
         case TasksActionTypes.DUMP_ANNOTATIONS: {
             const { task } = action.payload;
@@ -131,7 +131,7 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
         case TasksActionTypes.DUMP_ANNOTATIONS_FAILED: {
             const { task } = action.payload;
             const { dumper } = action.payload;
-            const { dumpingError } = action.payload;
+            const dumpingError = action.payload.error;
 
             const tasksDumpingActivities = {
                 ...state.activities.dumps,
@@ -195,7 +195,7 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
         }
         case TasksActionTypes.LOAD_ANNOTATIONS_FAILED: {
             const { task } = action.payload;
-            const { loadingError } = action.payload;
+            const loadingError = action.payload.error;
 
             const tasksLoadingActivity = {
                 ...state.activities.loads,
