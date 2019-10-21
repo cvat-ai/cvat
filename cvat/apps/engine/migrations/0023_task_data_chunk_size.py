@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0021_auto_20190826_1827'),
+        ('engine', '0022_auto_20191004_0817'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='task',
             name='data_chunk_size',
-            field=models.PositiveIntegerField(default=300),
+            field=models.PositiveIntegerField(default=36),
         ),
     ]
