@@ -12,10 +12,8 @@
     const cvatData = require('../../cvat-data');
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
-    const {
-        Exception,
-        ArgumentError,
-    } = require('./exceptions');
+    const { isBrowser, isNode } = require('browser-or-node');
+    const { Exception } = require('./exceptions');
 
     // This is the frames storage
     const frameDataCache = {};
@@ -90,59 +88,65 @@
                 }
             }
 
-            try {
-                const { provider } = frameDataCache[this.tid];
-                const { chunkSize } = frameDataCache[this.tid];
-                const frame = provider.frame(this.number);
-                if (frame === null || frame === 'loading') {
-                    onServerRequest();                    
-                    const start = parseInt(this.number / chunkSize, 10) * chunkSize;
-                    const stop = (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1;
-                    const chunkNumber = Math.floor(this.number / chunkSize);
-                    let chunk = null;
-                    if (frame === null) {
-                        chunk = await serverProxy.frames.getData(this.tid, chunkNumber);
-                       
-                    }
-                    // if status is loading, a chunk has already been loaded
-                    // and it is being decoded now
+            if (isNode) {                
+                resolve("Dummy data");
+            } else if (isBrowser) {
+                try {
+                    const { provider } = frameDataCache[this.tid];
+                    const { chunkSize } = frameDataCache[this.tid];
+                    const frame = provider.frame(this.number);
+                    if (frame === null || frame === 'loading') {
+                        onServerRequest();                    
+                        const start = parseInt(this.number / chunkSize, 10) * chunkSize;
+                        const stop = (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1;
+                        const chunkNumber = Math.floor(this.number / chunkSize);
+                        let chunk = null;
+                        if (frame === null) {
+                            chunk = await serverProxy.frames.getData(this.tid, chunkNumber);
+                           
+                        }
+                        // if status is loading, a chunk has already been loaded
+                        // and it is being decoded now
 
-                    try {
-                        provider.startDecode(chunk, start, stop, onDecode.bind(this, provider));
-                    } catch (error) {
-                        if (error.donePromise) {
-                            try {
-                                await error.donePromise;
-                                provider.startDecode(chunk, start,
-                                    stop, onDecode.bind(this, provider));
-                            } catch (_) {
-                                reject(this.number);
+                        try {
+                            provider.startDecode(chunk, start, stop, onDecode.bind(this, provider));
+                        } catch (error) {
+                            if (error.donePromise) {
+                                try {
+                                    await error.donePromise;
+                                    provider.startDecode(chunk, start,
+                                        stop, onDecode.bind(this, provider));
+                                } catch (_) {
+                                    reject(this.number);
+                                }
                             }
                         }
-                    }
-                } else {
-                    if (this.number % chunkSize > 1){
-                        if (!provider.isNextChunkExists(this.number)){
-                            const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
-                            provider.setReadyToLoading(nextChunkNumber);                            
-                            serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
-                            provider.startDecode(nextChunk, (nextChunkNumber) * chunkSize, (nextChunkNumber + 1) * chunkSize - 1, function(){});
-                            });
+                    } else {
+                        if (this.number % chunkSize > 1){
+                            if (!provider.isNextChunkExists(this.number)){
+                                const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
+                                provider.setReadyToLoading(nextChunkNumber);                            
+                                serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
+                                provider.startDecode(nextChunk, (nextChunkNumber) * chunkSize, (nextChunkNumber + 1) * chunkSize - 1, function(){});
+                                });
+                            }
                         }
+                        resolve(frame);
                     }
-                    resolve(frame);
+                } catch (exception) {
+                    if (exception instanceof Exception) {
+                        reject(exception);
+                    } else {
+                        reject(new Exception(exception.message));
+                    }
                 }
-            } catch (exception) {
-                if (exception instanceof Exception) {
-                    reject(exception);
-                } else {
-                    reject(new Exception(exception.message));
-                }
-            }
+
+            return new Promise(getFrameData.bind(this));
         }
 
-        return new Promise(getFrameData.bind(this));
-    };
+       
+    }
+};
 
     async function getFrame(taskID, chunkSize, mode, frame) {
         if (!(taskID in frameDataCache)) {
