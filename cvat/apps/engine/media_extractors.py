@@ -235,7 +235,6 @@ class VideoExtractor(DirectoryExtractor):
         shutil.copyfile(self[k], dest_path)
 
     def save_as_chunks(self, chunk_size, task, progress_callback=None):
-        chunk_size = 36
         if not self._source_path:
             raise Exception('No data to compress')
 
