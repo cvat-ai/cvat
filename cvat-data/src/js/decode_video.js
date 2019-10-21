@@ -1,7 +1,4 @@
 const JSMpeg = require('./jsmpeg');
-const jpeg = require('./pttjpeg')
-const jsjpeg = require('jpeg-js')
-const Base64 = require('js-base64').Base64;
 
 /* This function is a modified version of function from jsmpeg
     which converts an image from YCbCr space to RGBA space
