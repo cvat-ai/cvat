@@ -10,10 +10,10 @@ import {
     Menu,
     Dropdown,
     Upload,
+    Modal,
 } from 'antd';
 
 import { ClickParam } from 'antd/lib/menu/index';
-import { UploadChangeParam } from 'antd/lib/upload';
 import { RcFile } from 'antd/lib/upload';
 
 import moment from 'moment';
@@ -25,6 +25,8 @@ export interface TaskItemProps {
     loadActivity: string | null;
     loaders: any[];
     dumpers: any[];
+    deleted: boolean;
+    onDeleteTask: (taskInstance: any) => void;
     onDumpAnnotation: (task: any, dumper: any) => void;
     onLoadAnnotation: (task: any, loader: any, file: File) => void;
 }
@@ -62,7 +64,16 @@ export default class TaskItemComponent extends React.PureComponent<TaskItemProps
 
                     return;
                 } case 'delete': {
-
+                    const { taskInstance } = this.props;
+                    const taskID = taskInstance.id;
+                    const self = this;
+                    Modal.confirm({
+                        title: `The task ${taskID} will be deleted`,
+                        content: 'All related data (images, annotations) will be lost. Continue?',
+                        onOk: () => {
+                            this.props.onDeleteTask(taskInstance);
+                        },
+                    });
                     return;
                 } default: {
                     return;
@@ -252,8 +263,14 @@ export default class TaskItemComponent extends React.PureComponent<TaskItemProps
     }
 
     public render() {
+        const style = {};
+        if (this.props.deleted) {
+            (style as any).pointerEvents = 'none';
+            (style as any).opacity = 0.5;
+        }
+
         return (
-            <Row className='cvat-tasks-list-item' type='flex' justify='center' align='top'>
+            <Row className='cvat-tasks-list-item' type='flex' justify='center' align='top' style={{...style}}>
                 {this.renderPreview()}
                 {this.renderDescription()}
                 {this.renderProgress()}

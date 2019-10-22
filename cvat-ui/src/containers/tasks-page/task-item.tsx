@@ -15,11 +15,13 @@ import {
     getTasksAsync,
     dumpAnnotationsAsync,
     loadAnnotationsAsync,
+    deleteTaskAsync,
 } from '../../actions/tasks-actions';
 
 interface StateToProps {
     dumpActivities: string[] | null;
     loadActivity: string | null;
+    deleteActivity: boolean | null;
     previewImage: string;
     taskInstance: any;
     loaders: any[];
@@ -28,6 +30,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     getTasks: (query: TasksQuery) => void;
+    delete: (taskInstance: any) => void;
     dump: (task: any, format: string) => void;
     load: (task: any, format: string, file: File) => void;
 }
@@ -42,10 +45,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const { formats } = state;
     const { dumps } = state.tasks.activities;
     const { loads } = state.tasks.activities;
+    const { deletes } = state.tasks.activities;
 
     return {
         dumpActivities: dumps.byTask[own.taskID] ? dumps.byTask[own.taskID] : null,
         loadActivity: loads.byTask[own.taskID] ? loads.byTask[own.taskID] : null,
+        deleteActivity: deletes.byTask[own.taskID] ? deletes.byTask[own.taskID] : null,
         previewImage: task.preview,
         taskInstance: task.instance,
         loaders: formats.loaders,
@@ -64,6 +69,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         load: (task: any, loader: any, file: File): void => {
             dispatch(loadAnnotationsAsync(task, loader, file));
         },
+        delete: (taskInstance: any): void => {
+            dispatch(deleteTaskAsync(taskInstance));
+        },
     }
 }
 
@@ -72,12 +80,14 @@ type TasksItemContainerProps = StateToProps & DispatchToProps & OwnProps;
 function TaskItemContainer(props: TasksItemContainerProps) {
     return (
         <TaskItemComponent
+            deleted={props.deleteActivity === true}
             taskInstance={props.taskInstance}
             previewImage={props.previewImage}
             dumpActivities={props.dumpActivities}
             loadActivity={props.loadActivity}
             loaders={props.loaders}
             dumpers={props.dumpers}
+            onDeleteTask={props.delete}
             onLoadAnnotation={props.load}
             onDumpAnnotation={props.dump}
         />

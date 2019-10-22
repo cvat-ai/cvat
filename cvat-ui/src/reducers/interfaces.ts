@@ -46,6 +46,12 @@ export interface TasksState {
                 [tid: number]: string; // loader name
             };
         };
+        deletes: {
+            deletingError: any;
+            byTask: {
+                [tid: number]: boolean; // deleted (deleting if in dictionary)
+            };
+        };
     };
 }
 

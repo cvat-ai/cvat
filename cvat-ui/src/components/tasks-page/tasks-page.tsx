@@ -16,6 +16,7 @@ import EmptyListComponent from './empty-list';
 import TaskListContainer from '../../containers/tasks-page/tasks-list';
 
 interface TasksPageProps {
+    deletingError: string;
     dumpingError: string;
     loadingError: string;
     tasksFetchingError: string;
@@ -142,21 +143,28 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
             Modal.error({
                 title: 'Could not dump annotations',
                 content: this.props.dumpingError,
-            });;
+            });
         }
 
         if (this.props.loadingError) {
             Modal.error({
                 title: 'Could not load annotations',
                 content: this.props.loadingError,
-            });;
+            });
+        }
+
+        if (this.props.deletingError) {
+            Modal.error({
+                title: 'Could not delete the task',
+                content: this.props.deletingError,
+            });
         }
 
         if (this.props.loadingDoneMessage) {
             Modal.info({
                 title: 'Successful loading of annotations',
                 content: this.props.loadingDoneMessage,
-            });;
+            });
         }
     }
 
