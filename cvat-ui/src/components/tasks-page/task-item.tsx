@@ -1,4 +1,6 @@
 import React from 'react';
+import { RouteComponentProps } from 'react-router';
+import { withRouter } from 'react-router-dom';
 
 import Text from 'antd/lib/typography/Text';
 import {
@@ -36,7 +38,7 @@ function isDefaultFormat(dumperName: string, taskMode: string): boolean {
     || (dumperName === 'CVAT XML 1.1 for images' && taskMode === 'annotation');
 }
 
-export default class TaskItemComponent extends React.PureComponent<TaskItemProps> {
+class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps> {
     constructor(props: TaskItemProps) {
         super(props);
     }
@@ -242,12 +244,15 @@ export default class TaskItemComponent extends React.PureComponent<TaskItemProps
 
     private renderNavigation() {
         const subMenuIcon = () => (<img src='/assets/icon-sub-menu.svg'/>);
+        const { id } = this.props.taskInstance;
 
         return (
             <Col span={4}>
                 <Row type='flex' justify='end'>
                     <Col>
-                        <Button type='primary' size='large' ghost> Open </Button>
+                        <Button type='primary' size='large' ghost onClick={
+                            () => this.props.history.push(`/tasks/${id}`)
+                        }> Open </Button>
                     </Col>
                 </Row>
                 <Row type='flex' justify='end'>
@@ -279,3 +284,5 @@ export default class TaskItemComponent extends React.PureComponent<TaskItemProps
         )
     };
 }
+
+export default withRouter(TaskItemComponent);
