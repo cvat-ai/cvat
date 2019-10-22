@@ -84,11 +84,9 @@ self.onmessage = function (e) {
 
     for (let i = start; i <= end; i++){
         var t0 = performance.now();
-
-
         const result = videoDecoder.decode();
         var t_decode = performance.now();
-        console.log("decode " + i + " frame  took " + (t_decode - t0) + " milliseconds.");
+        // console.log("decode " + i + " frame  took " + (t_decode - t0) + " milliseconds.");
         if (!Array.isArray(result)) {
             const message = 'Result must be an array.'
                 + `Got ${result}. Possible reasons: `

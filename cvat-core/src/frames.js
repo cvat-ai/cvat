@@ -140,12 +140,9 @@
                         reject(new Exception(exception.message));
                     }
                 }
-
-            return new Promise(getFrameData.bind(this));
         }
-
-       
     }
+    return new Promise(getFrameData.bind(this));
 };
 
 
@@ -177,7 +174,7 @@
             const value = {
                 meta: await serverProxy.frames.getMeta(taskID),
                 chunkSize,
-                provider: new cvatData.FrameProvider(3, blockType, chunkSize),
+                provider: new cvatData.FrameProvider(9, blockType, chunkSize),
             };
 
             frameCache[taskID] = {};

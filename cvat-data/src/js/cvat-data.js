@@ -34,25 +34,39 @@ class FrameProvider {
             delete this._blocks[start / this._blockSize];
         }
 
-        // remove frames from pre-previose blocks
-        if (this._blocks_ranges.length > 1)
+
+        // delete frames whose are not in areas of current frame
+        for (let i = 0; i < this._blocks_ranges.length; i++)
         {
-            const secondFromEnd = this._blocks_ranges[this._blocks_ranges.length - 2];
-            const [start, end] = secondFromEnd.split(':').map((el) => +el);
-            for (let i = start; i <= end; i++) {
-                delete this._frames[i];
+            const [start, end] = this._blocks_ranges[i].split(':').map((el) => +el);
+
+            let tmp_v = this._currFrame - 2 * this._blockSize;
+            if (this._currFrame - 2 * this._blockSize < end &&
+                this._currFrame - 2 * this._blockSize > start){
+                for (let j = start; j <= end; j++) {
+                    delete this._frames[j];
+                }
+            }
+
+            tmp_v = this._currFrame + 2 * this._blockSize;
+            if (this._currFrame + 2 * this._blockSize > start &&
+                this._currFrame + 2 * this._blockSize < end){
+                for (let j = start; j <= end; j++) {
+                    delete this._frames[j];
+                }
             }
         }
     }
 
     setRenderSize(width, height){
-        this._width = width;
+        this._width = width
         this._height = height;
     }
 
     /* Method returns frame from collection. Else method returns 0 */
     frame(frameNumber) {        
         if (frameNumber in this._frames) {
+           this._currFrame = frameNumber;
            return this._frames[frameNumber];
         }
         return null;
