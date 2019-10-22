@@ -20,6 +20,8 @@ import HeaderContainer from '../containers/header/header';
 type CVATAppProps = {
     loadFormats: () => void;
     verifyAuthorized: () => void;
+    initPlugins: () => void;
+    pluginsInitialized: boolean;
     userInitialized: boolean;
     formatsInitialized: boolean;
     gettingAuthError: string;
@@ -35,6 +37,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
     public componentDidMount() {
         this.props.loadFormats();
         this.props.verifyAuthorized();
+        this.props.initPlugins();
     }
 
     public componentDidUpdate() {
@@ -48,7 +51,11 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
 
     // Where you go depends on your URL
     public render() {
-        if (this.props.userInitialized && this.props.formatsInitialized) {
+        const readyForRender = this.props.userInitialized
+            && this.props.formatsInitialized
+            && this.props.pluginsInitialized;
+
+        if (readyForRender) {
             if (this.props.user) {
                 return (
                     <BrowserRouter>
