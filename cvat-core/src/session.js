@@ -10,7 +10,7 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
-    const { getFrame, getRanges} = require('./frames');
+    const { getFrame, getRanges, getPreview} = require('./frames');
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
@@ -112,6 +112,11 @@
                     async ranges() {
                         const result = await PluginRegistry
                             .apiWrapper.call(this, prototype.frames.ranges);
+                        return result;
+                    },
+                    async preview() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.frames.preview);
                         return result;
                     },
                 },
@@ -385,6 +390,19 @@
                 * @throws {module:API.cvat.exceptions.ServerError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
             */
+
+            /**
+                * Get the first frame of a task for preview
+                * @method preview
+                * @memberof Session.frames
+                * @returns {string} - jpeg encoded image
+                * @instance
+                * @async
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+            */
+
             /**
                 * Returns the ranges of cached frames
                 * @method ranges
@@ -1153,7 +1171,8 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
-                ranges: Object.getPrototypeOf(this).frames.ranges.bind(this), 
+                ranges: Object.getPrototypeOf(this).frames.ranges.bind(this),
+                preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             };
         }
 
@@ -1407,11 +1426,21 @@
         return result;
     };
 
+    Job.prototype.frames.preview.implementation = async function () {
+        const frameData = await getPreview(this.task.id);
+        return frameData;
+    };
+
     Task.prototype.frames.ranges.implementation = async function () {
         const rangesData = await getRanges(
             this.id,
         );
         return rangesData;
+    };
+
+    Task.prototype.frames.preview.implementation = async function () {
+        const frameData = await getPreview(this.id);
+        return frameData;
     };
 
     // TODO: Check filter for annotations

@@ -13,7 +13,7 @@
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
     const { isBrowser, isNode } = require('browser-or-node');
-    const { Exception } = require('./exceptions');
+    const { Exception, ArgumentError} = require('./exceptions');
 
     // This is the frames storage
     const frameDataCache = {};
