@@ -14,6 +14,10 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
+import getCore from '../../core';
+
+const core = getCore();
+
 interface HeaderContainerProps {
     onLogout: () => void;
     username: string;
@@ -54,7 +58,10 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
                         () => props.history.push('/models')
                     }> Models </Radio.Button>
                     <Button className='header-button' type='link' onClick={
-                        () => window.open('/analytics/app/kibana', '_blank')
+                        () => {
+                            const serverHost = core.config.backendAPI.slice(0, -7);
+                            window.open(`${serverHost}/analytics/app/kibana`, '_blank');
+                        }
                     }> Analytics </Button>
                 </Radio.Group>
             </div>
@@ -63,7 +70,10 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
                         () => window.open('https://github.com/opencv/cvat', '_blank')
                 }> <Icon type='github' /> GitHub </Button>
                 <Button className='header-button' type='link' onClick={
-                        () => window.open('/documentation/user_guide.html', '_blank')
+                        () => {
+                            const serverHost = core.config.backendAPI.slice(0, -7);
+                            window.open(`${serverHost}/documentation/user_guide.html`, '_blank')
+                        }
                 }> Help </Button>
                 <Menu className='cvat-header-menu' subMenuCloseDelay={0.1} mode='horizontal'>
                     <Menu.SubMenu title={
