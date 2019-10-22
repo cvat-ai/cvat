@@ -22,7 +22,7 @@ docker-compose -f docker-compose.yml -f components/openvino/docker-compose.openv
 docker-compose -f docker-compose.yml -f components/openvino/docker-compose.openvino.yml up -d
 ```
 
-You should be able to login and see the web interface for CVAT know, complete with the new "Model Manager" button.
+You should be able to login and see the web interface for CVAT now, complete with the new "Model Manager" button.
 
 ### OpenVINO Models
 
