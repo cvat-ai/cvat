@@ -20,6 +20,8 @@ const core = getCore();
 
 interface HeaderContainerProps {
     onLogout: () => void;
+    installedAnalytics: boolean;
+    installedAutoAnnotation: boolean;
     username: string;
     logoutError: string;
 }
@@ -54,15 +56,19 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
                     <Radio.Button value='tasks'onChange={
                         () => props.history.push('/tasks')
                     }> Tasks </Radio.Button>
-                    <Radio.Button value='models' onChange={
-                        () => props.history.push('/models')
-                    }> Models </Radio.Button>
-                    <Button className='header-button' type='link' onClick={
-                        () => {
-                            const serverHost = core.config.backendAPI.slice(0, -7);
-                            window.open(`${serverHost}/analytics/app/kibana`, '_blank');
-                        }
-                    }> Analytics </Button>
+                    { props.installedAutoAnnotation ?
+                        <Radio.Button value='models' onChange={
+                            () => props.history.push('/models')
+                        }> Models </Radio.Button> : null
+                    }
+                    { props.installedAnalytics ?
+                        <Button className='header-button' type='link' onClick={
+                            () => {
+                                const serverHost = core.config.backendAPI.slice(0, -7);
+                                window.open(`${serverHost}/analytics/app/kibana`, '_blank');
+                            }
+                        }> Analytics </Button> : null
+                    }
                 </Radio.Group>
             </div>
             <div className='right-header'>
