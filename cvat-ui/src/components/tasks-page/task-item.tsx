@@ -21,6 +21,8 @@ import { RcFile } from 'antd/lib/upload';
 import moment from 'moment';
 
 export interface TaskItemProps {
+    installedTFAnnotation: boolean;
+    installedAutoAnnotation: boolean;
     taskInstance: any;
     previewImage: string;
     dumpActivities: string[] | null;
@@ -39,7 +41,7 @@ function isDefaultFormat(dumperName: string, taskMode: string): boolean {
 }
 
 class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps> {
-    constructor(props: TaskItemProps) {
+    constructor(props: TaskItemProps & RouteComponentProps) {
         super(props);
     }
 
@@ -233,8 +235,12 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     {this.props.loaders.map((loader) => this.renderLoaderItem(loader))}
                 </Menu.SubMenu>
                 {tracker ? <Menu.Item key='tracker'>Open bug tracker</Menu.Item> : null}
-                <Menu.Item key='auto'>Run auto annotation</Menu.Item>
-                <Menu.Item key='tf'>Run TF annotation</Menu.Item>
+                { this.props.installedTFAnnotation ?
+                    <Menu.Item key='tf'>Run TF annotation</Menu.Item> : null
+                }
+                { this.props.installedAutoAnnotation ?
+                    <Menu.Item key='auto'>Run auto annotation</Menu.Item> : null
+                }
                 <hr/>
                 <Menu.Item key='update'>Update</Menu.Item>
                 <Menu.Item key='delete'>Delete</Menu.Item>

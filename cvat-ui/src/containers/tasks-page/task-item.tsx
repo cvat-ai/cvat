@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 
 import {
     TasksQuery,
+    SupportedPlugins,
 } from '../../reducers/interfaces';
 
 import {
@@ -19,6 +20,8 @@ import {
 } from '../../actions/tasks-actions';
 
 interface StateToProps {
+    installedTFAnnotation: boolean;
+    installedAutoAnnotation: boolean;
     dumpActivities: string[] | null;
     loadActivity: string | null;
     deleteActivity: boolean | null;
@@ -46,8 +49,11 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const { dumps } = state.tasks.activities;
     const { loads } = state.tasks.activities;
     const { deletes } = state.tasks.activities;
+    const { plugins } = state.plugins;
 
     return {
+        installedTFAnnotation: plugins[SupportedPlugins.TF_ANNOTATION],
+        installedAutoAnnotation: plugins[SupportedPlugins.AUTO_ANNOTATION],
         dumpActivities: dumps.byTask[own.taskID] ? dumps.byTask[own.taskID] : null,
         loadActivity: loads.byTask[own.taskID] ? loads.byTask[own.taskID] : null,
         deleteActivity: deletes.byTask[own.taskID] ? deletes.byTask[own.taskID] : null,
@@ -80,6 +86,8 @@ type TasksItemContainerProps = StateToProps & DispatchToProps & OwnProps;
 function TaskItemContainer(props: TasksItemContainerProps) {
     return (
         <TaskItemComponent
+            installedTFAnnotation={props.installedTFAnnotation}
+            installedAutoAnnotation={props.installedAutoAnnotation}
             deleted={props.deleteActivity === true}
             taskInstance={props.taskInstance}
             previewImage={props.previewImage}
