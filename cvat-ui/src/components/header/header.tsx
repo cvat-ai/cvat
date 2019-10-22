@@ -74,7 +74,7 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
                             const serverHost = core.config.backendAPI.slice(0, -7);
                             window.open(`${serverHost}/documentation/user_guide.html`, '_blank')
                         }
-                }> Help </Button>
+                }> <Icon type='question-circle' /> Help </Button>
                 <Menu className='cvat-header-menu' subMenuCloseDelay={0.1} mode='horizontal'>
                     <Menu.SubMenu title={
                         <span>
