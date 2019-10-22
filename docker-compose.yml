@@ -66,13 +66,13 @@ services:
     image: nginx
     restart: always
     build:
-      context: cvat-ui
+      context: .
       args:
         http_proxy:
         https_proxy:
         no_proxy:
         socks_proxy:
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.ui
     environment:
       REACT_APP_API_PROTOCOL: http
       REACT_APP_API_HOST: localhost

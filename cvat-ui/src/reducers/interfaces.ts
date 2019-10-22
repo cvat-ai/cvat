@@ -19,11 +19,39 @@ export interface TasksQuery {
     [key: string]: string | number | null;
 }
 
+export interface Task {
+    instance: any; // cvat-core instance
+    preview: string;
+}
+
 export interface TasksState {
     initialized: boolean;
+    tasksFetchingError: any;
+    gettingQuery: TasksQuery;
     count: number;
-    array: any[];
-    previews: string[];
-    error: any;
-    query: TasksQuery;
+    current: Task[];
+    activities: {
+        dumps: {
+            dumpingError: any;
+            byTask: {
+                // dumps in different formats at the same time
+                [tid: number]: string[]; // dumper names
+            };
+        };
+        loads: {
+            loadingError: any;
+            loadingDoneMessage: string;
+            byTask: {
+                // only one loading simultaneously
+                [tid: number]: string; // loader name
+            };
+        };
+    };
+}
+
+export interface FormatsState {
+    loaders: any[];
+    dumpers: any[];
+    initialized: boolean;
+    gettingFormatsError: any;
 }

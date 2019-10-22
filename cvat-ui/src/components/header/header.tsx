@@ -1,5 +1,5 @@
 import React from 'react';
-import { connect } from 'react-redux';
+
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
 
@@ -11,53 +11,32 @@ import {
     Menu,
     Modal,
 } from 'antd';
+
 import Text from 'antd/lib/typography/Text';
 
-import { logoutAsync } from '../actions/auth-actions';
-import { AuthState } from '../reducers/interfaces';
-
-interface StateToProps {
-    auth: AuthState;
+interface HeaderContainerProps {
+    onLogout: () => void;
+    username: string;
+    logoutError: string;
 }
 
-interface DispatchToProps {
-    logout(): void;
-}
+function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
+    const cvatLogo = () => (<img src='/assets/cvat-logo.svg'/>);
+    const backLogo = () => (<img src='/assets/icon-playcontrol-previous.svg'/>);
+    const userLogo = () => (<img src='/assets/icon-account.svg' />);
 
-function mapStateToProps(state: any): StateToProps {
-    return {
-        auth: state.auth,
-    };
-}
-
-function mapDispatchToProps(dispatch: any): DispatchToProps {
-    return {
-        logout: () => dispatch(logoutAsync()),
-    }
-}
-
-type HeaderProps = StateToProps & DispatchToProps & RouteComponentProps;
-
-function CVATHeader(props: HeaderProps) {
-    const cvatLogo = () => (<img src="/assets/cvat-logo.svg"/>);
-    const backLogo = () => (<img src="/assets/icon-playcontrol-previous.svg"/>);
-    const userLogo = () => (<img src="/assets/icon-account.svg" />);
-    const { username } = props.auth.user;
-    const { pathname } = props.location;
-    const { logoutError } = props.auth;
-
-    if (logoutError) {
+    if (props.logoutError) {
         Modal.error({
             title: 'Could not logout',
-            content: `${logoutError.toString()}`,
+            content: `${props.logoutError}`,
         });
     }
 
     let activeTab = null;
 
-    if (pathname === '/tasks') {
+    if (props.history.location.pathname === '/tasks') {
         activeTab = 'tasks';
-    } else if (pathname === '/models') {
+    } else if (props.history.location.pathname === '/models') {
         activeTab = 'models';
     }
 
@@ -81,6 +60,9 @@ function CVATHeader(props: HeaderProps) {
             </div>
             <div className='right-header'>
                 <Button className='header-button' type='link' onClick={
+                        () => window.open('https://github.com/opencv/cvat', '_blank')
+                }> <Icon type='github' /> GitHub </Button>
+                <Button className='header-button' type='link' onClick={
                         () => window.open('/documentation/user_guide.html', '_blank')
                 }> Help </Button>
                 <Menu className='cvat-header-menu' subMenuCloseDelay={0.1} mode='horizontal'>
@@ -88,12 +70,12 @@ function CVATHeader(props: HeaderProps) {
                         <span>
                             <Icon className='cvat-header-user-icon' component={userLogo} />
                             <span>
-                                <Text strong> {username} </Text>
+                                <Text strong> {props.username} </Text>
                                 <Icon className='cvat-header-menu-icon' component={backLogo} />
                             </span>
                         </span>
                     }>
-                        <Menu.Item onClick={props.logout}>Logout</Menu.Item>
+                        <Menu.Item onClick={props.onLogout}>Logout</Menu.Item>
                     </Menu.SubMenu>
                 </Menu>
             </div>
@@ -101,7 +83,4 @@ function CVATHeader(props: HeaderProps) {
     );
 }
 
-export default withRouter(connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(CVATHeader));
+export default withRouter(HeaderContainer);
