@@ -64,6 +64,7 @@ services:
   cvat_ui:
     container_name: cvat_ui
     image: nginx
+    restart: always
     build:
       context: cvat-ui
       args:
