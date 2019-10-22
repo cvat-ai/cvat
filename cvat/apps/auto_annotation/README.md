@@ -9,6 +9,10 @@ OpenVINO&trade; toolkit format are supported. If you would like to annotate a
 task with a custom model please convert it to the intermediate representation
 (IR) format via the model optimizer tool. See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
 
+### Installation
+
+See the installation instructions for [the OpenVINO component](../../../components/openvino)
+
 ### Usage
 
 To annotate a task with a custom model you need to prepare 4 files:
