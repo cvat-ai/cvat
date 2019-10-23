@@ -1,15 +1,15 @@
-module.exports = (function(){ "use strict";
+JSMpeg.BitBuffer = (function(){ "use strict";
 
 var BitBuffer = function(bufferOrLength, mode) {
 	if (typeof(bufferOrLength) === 'object') {
 		this.bytes = (bufferOrLength instanceof Uint8Array)
-			? bufferOrLength
+			? bufferOrLength 
 			: new Uint8Array(bufferOrLength);
 
 		this.byteLength = this.bytes.length;
 	}
 	else {
-		this.bytes = new Uint8Array(bufferOrLength || 1024*1024);
+		this.bytes = new Uint8Array(bufferOrLength || 1024*1024);	
 		this.byteLength = 0;
 	}
 
@@ -30,7 +30,7 @@ BitBuffer.prototype.resize = function(size) {
 BitBuffer.prototype.evict = function(sizeNeeded) {
 	var bytePos = this.index >> 3,
 		available = this.bytes.length - this.byteLength;
-
+	
 	// If the current index is the write position, we can simply reset both
 	// to 0. Also reset (and throw away yet unread data) if we won't be able
 	// to fit the new data in even after a normal eviction.
@@ -46,8 +46,8 @@ BitBuffer.prototype.evict = function(sizeNeeded) {
 		// Nothing read yet - we can't evict anything
 		return;
 	}
-
-	// Some browsers don't support copyWithin() yet - we may have to do
+	
+	// Some browsers don't support copyWithin() yet - we may have to do 
 	// it manually using set and a subarray
 	if (this.bytes.copyWithin) {
 		this.bytes.copyWithin(0, bytePos, this.byteLength);
@@ -105,14 +105,14 @@ BitBuffer.prototype.write = function(buffers) {
 
 BitBuffer.prototype.appendSingleBuffer = function(buffer) {
 	buffer = buffer instanceof Uint8Array
-		? buffer
+		? buffer 
 		: new Uint8Array(buffer);
-
+	
 	this.bytes.set(buffer, this.byteLength);
 	this.byteLength += buffer.length;
 };
 
-BitBuffer.prototype.findNextStartCode = function() {
+BitBuffer.prototype.findNextStartCode = function() {	
 	for (var i = (this.index+7 >> 3); i < this.byteLength; i++) {
 		if(
 			this.bytes[i] == 0x00 &&
@@ -142,7 +142,7 @@ BitBuffer.prototype.nextBytesAreStartCode = function() {
 	var i = (this.index+7 >> 3);
 	return (
 		i >= this.byteLength || (
-			this.bytes[i] == 0x00 &&
+			this.bytes[i] == 0x00 && 
 			this.bytes[i+1] == 0x00 &&
 			this.bytes[i+2] == 0x01
 		)

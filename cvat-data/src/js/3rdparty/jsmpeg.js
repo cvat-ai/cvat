@@ -3,7 +3,7 @@
 
 // This sets up the JSMpeg "Namespace". The object is empty apart from the Now()
 // utility function and the automatic CreateVideoElements() after DOMReady.
-module.exports = {
+var JSMpeg = {
 
 	// The Player sets up the connections between source, demuxer, decoders,
 	// renderer and audio output. It ties everything together, is responsible
@@ -15,7 +15,7 @@ module.exports = {
 	// the video and handles Audio unlocking on iOS. VideoElements can be
 	// created directly in HTML using the <div class="jsmpeg"/> tag.
 	VideoElement: null,
-
+	
 	// The BitBuffer wraps a Uint8Array and allows reading an arbitrary number
 	// of bits at a time. On writing, the BitBuffer either expands its
 	// internal buffer (for static files) or deletes old data (for streaming).
@@ -30,7 +30,7 @@ module.exports = {
 	//   .established - boolean, true after connection is established
 	//   .completed - boolean, true if the source is completely loaded
 	//   .progress - float 0-1
-	Source: {},
+	Source: {}, 
 
 	// A Demuxer may sit between a Source and a Decoder. It separates the
 	// incoming raw data into Video, Audio and other Streams. API:
@@ -68,10 +68,19 @@ module.exports = {
 	//   .stop()
 	//   .enqueuedTime - float, in seconds
 	//   .enabled - wether the output does anything upon receiving data
-	AudioOutput: {},
+	AudioOutput: {}, 
 
 	Now: function() {
-		return Date.now() / 1000;
+		return window.performance 
+			? window.performance.now() / 1000
+			: Date.now() / 1000;
+	},
+
+	CreateVideoElements: function() {
+		var elements = document.querySelectorAll('.jsmpeg');
+		for (var i = 0; i < elements.length; i++) {
+			new JSMpeg.VideoElement(elements[i]);
+		}
 	},
 
 	Fill: function(array, value) {
@@ -85,9 +94,29 @@ module.exports = {
 		}
 	},
 
-	// The build process may append `JSMpeg.WASM_BINARY_INLINED = base64data;`
+	Base64ToArrayBuffer: function(base64) {
+		var binary =  window.atob(base64);
+		var length = binary.length;
+		var bytes = new Uint8Array(length);
+		for (var i = 0; i < length; i++)        {
+			bytes[i] = binary.charCodeAt(i);
+		}
+		return bytes.buffer;
+	},
+
+	// The build process may append `JSMpeg.WASM_BINARY_INLINED = base64data;` 
 	// to the minified source.
 	// If this property is present, jsmpeg will use the inlined binary data
 	// instead of trying to load a jsmpeg.wasm file via Ajax.
 	WASM_BINARY_INLINED: null
 };
+
+// Automatically create players for all found <div class="jsmpeg"/> elements.
+if (document.readyState === 'complete') {
+	JSMpeg.CreateVideoElements();
+}
+else {
+	document.addEventListener('DOMContentLoaded', JSMpeg.CreateVideoElements);
+}
+
+

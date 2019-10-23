@@ -1,6 +1,6 @@
 diff -u 3rdparty/buffer.js 3rdparty_edited/buffer.js
---- 3rdparty/buffer.js	2019-09-16 13:40:39.797780000 +0300
-+++ 3rdparty_edited/buffer.js	2019-09-16 14:06:11.377803000 +0300
+--- 3rdparty/buffer.js	2019-07-05 10:45:39.000000000 +0000
++++ 3rdparty_edited/buffer.js	2019-10-02 10:02:56.000000000 +0000
 @@ -1,15 +1,15 @@
 -JSMpeg.BitBuffer = (function(){ "use strict";
 +module.exports = (function(){ "use strict";
@@ -68,8 +68,8 @@ diff -u 3rdparty/buffer.js 3rdparty_edited/buffer.js
  			this.bytes[i+2] == 0x01
  		)
 diff -u 3rdparty/decoder.js 3rdparty_edited/decoder.js
---- 3rdparty/decoder.js	2019-09-16 13:40:52.813780000 +0300
-+++ 3rdparty_edited/decoder.js	2019-09-16 14:13:43.357810000 +0300
+--- 3rdparty/decoder.js	2019-07-05 10:45:39.000000000 +0000
++++ 3rdparty_edited/decoder.js	2019-10-02 10:02:56.000000000 +0000
 @@ -1,4 +1,4 @@
 -JSMpeg.Decoder.Base = (function(){ "use strict";
 +module.exports = (function(){ "use strict";
@@ -86,8 +86,8 @@ diff -u 3rdparty/decoder.js 3rdparty_edited/decoder.js
  		) {
  			this.timestampIndex = newTimestampIndex;
 diff -u 3rdparty/jsmpeg.js 3rdparty_edited/jsmpeg.js
---- 3rdparty/jsmpeg.js	2019-09-16 13:40:58.645781000 +0300
-+++ 3rdparty_edited/jsmpeg.js	2019-09-16 14:07:41.681805000 +0300
+--- 3rdparty/jsmpeg.js	2019-07-05 10:45:39.000000000 +0000
++++ 3rdparty_edited/jsmpeg.js	2019-10-02 10:02:56.000000000 +0000
 @@ -3,7 +3,7 @@
  
  // This sets up the JSMpeg "Namespace". The object is empty apart from the Now()
@@ -169,14 +169,14 @@ diff -u 3rdparty/jsmpeg.js 3rdparty_edited/jsmpeg.js
 -
 -
 diff -u 3rdparty/mpeg1.js 3rdparty_edited/mpeg1.js
---- 3rdparty/mpeg1.js	2019-09-16 13:41:04.889781000 +0300
-+++ 3rdparty_edited/mpeg1.js	2019-09-18 13:09:34.921018429 +0300
-@@ -1,19 +1,24 @@
+--- 3rdparty/mpeg1.js	2019-07-05 10:45:39.000000000 +0000
++++ 3rdparty_edited/mpeg1.js	2019-10-08 07:50:38.000000000 +0000
+@@ -1,19 +1,22 @@
 -JSMpeg.Decoder.MPEG1Video = (function(){ "use strict";
 +const BaseDecoder = require('./decoder');
 +const BitBuffer = require('./buffer');
 +const now = require('./jsmpeg').Now;
-+const fill = require('./jsmpeg').Now;
++const fill = require('./jsmpeg').Fill;
  
 -// Inspired by Java MPEG-1 Video Decoder and Player by Zoltan Korandi 
 +module.exports = (function(){ "use strict";
@@ -190,19 +190,19 @@ diff -u 3rdparty/mpeg1.js 3rdparty_edited/mpeg1.js
  
  	this.onDecodeCallback = options.onVideoDecode;
  
- 	var bufferSize = options.videoBufferSize || 512*1024;
- 	var bufferMode = options.streaming
+-	var bufferSize = options.videoBufferSize || 512*1024;
+-	var bufferMode = options.streaming
 -		? JSMpeg.BitBuffer.MODE.EVICT
 -		: JSMpeg.BitBuffer.MODE.EXPAND;
-+		? BitBuffer.MODE.EVICT
-+		: BitBuffer.MODE.EXPAND;
++	var bufferSize = options.videoBufferSize || 8*1024*1024;
++	var bufferMode = BitBuffer.MODE.EXPAND;
  
 -	this.bits = new JSMpeg.BitBuffer(bufferSize, bufferMode);
 +	this.bits = new BitBuffer(bufferSize, bufferMode);
  
  	this.customIntraQuantMatrix = new Uint8Array(64);
  	this.customNonIntraQuantMatrix = new Uint8Array(64);
-@@ -23,11 +28,11 @@
+@@ -23,11 +26,11 @@
  	this.decodeFirstFrame = options.decodeFirstFrame !== false;
  };
  
@@ -216,7 +216,14 @@ diff -u 3rdparty/mpeg1.js 3rdparty_edited/mpeg1.js
  
  	if (!this.hasSequenceHeader) {
  		if (this.bits.findStartCode(MPEG1.START.SEQUENCE) === -1) {
-@@ -42,8 +47,8 @@
+@@ -36,14 +39,15 @@
+ 		this.decodeSequenceHeader();
+ 
+ 		if (this.decodeFirstFrame) {
++			console.log("decodeFirstFrame");
+ 			this.decode();
+ 		}
+ 	}
  };
  
  MPEG1.prototype.decode = function() {
@@ -227,26 +234,39 @@ diff -u 3rdparty/mpeg1.js 3rdparty_edited/mpeg1.js
  	if (!this.hasSequenceHeader) {
  		return false;
  	}
-@@ -53,14 +58,15 @@
+@@ -53,14 +57,15 @@
  		return false;
  	}
  
 -	this.decodePicture();
+-	this.advanceDecodedTime(1/this.frameRate);
 +	const result = this.decodePicture();
- 	this.advanceDecodedTime(1/this.frameRate);
++	// this.advanceDecodedTime(1/this.frameRate);
  
 -	var elapsedTime = JSMpeg.Now() - startTime;
-+	var elapsedTime = now() - startTime;
- 	if (this.onDecodeCallback) {
- 		this.onDecodeCallback(this, elapsedTime);
- 	}
+-	if (this.onDecodeCallback) {
+-		this.onDecodeCallback(this, elapsedTime);
+-	}
 -	return true;
++	// var elapsedTime = now() - startTime;
++	// if (this.onDecodeCallback) {
++	// 	this.onDecodeCallback(this, elapsedTime);
++	// }
 +
 +	return result;
  };
  
  MPEG1.prototype.readHuffman = function(codeTable) {
-@@ -212,11 +218,6 @@
+@@ -74,7 +79,7 @@
+ 
+ // Sequence Layer
+ 
+-MPEG1.prototype.frameRate = 30;
++MPEG1.prototype.frameRate = 29.97;
+ MPEG1.prototype.decodeSequenceHeader = function() {
+ 	var newWidth = this.bits.read(12),
+ 		newHeight = this.bits.read(12);
+@@ -212,10 +217,9 @@
  		this.bits.rewind(32);
  	}
  
@@ -254,20 +274,22 @@ diff -u 3rdparty/mpeg1.js 3rdparty_edited/mpeg1.js
 -	if (this.destination) {
 -		this.destination.render(this.currentY, this.currentCr, this.currentCb, true);
 -	}
--
++	let curY = this.currentY;
++	let curCr = this.currentCr;
++	let curCb = this.currentCb;
+ 
  	// If this is a reference picutre then rotate the prediction pointers
  	if (
- 		this.pictureType === MPEG1.PICTURE_TYPE.INTRA ||
-@@ -244,6 +245,8 @@
+@@ -244,6 +248,8 @@
  		this.currentCb = tmpCb;
  		this.currentCb32 = tmpCb32;
  	}
 +
-+	return [this.currentY, this.currentCr, this.currentCb, this.codedWidth, this.codedHeight];
++	return [curY, curCr, curCb];
  };
  
  
-@@ -842,7 +845,7 @@
+@@ -842,7 +848,7 @@
  		else {
  			MPEG1.IDCT(this.blockData);
  			MPEG1.CopyBlockToDestination(this.blockData, destArray, destIndex, scan);
@@ -276,7 +298,7 @@ diff -u 3rdparty/mpeg1.js 3rdparty_edited/mpeg1.js
  		}
  	}
  	else {
-@@ -854,7 +857,7 @@
+@@ -854,7 +860,7 @@
  		else {
  			MPEG1.IDCT(this.blockData);
  			MPEG1.AddBlockToDestination(this.blockData, destArray, destIndex, scan);
@@ -286,8 +308,8 @@ diff -u 3rdparty/mpeg1.js 3rdparty_edited/mpeg1.js
  	}
  
 diff -u 3rdparty/ts.js 3rdparty_edited/ts.js
---- 3rdparty/ts.js	2019-09-10 11:58:32.265852000 +0300
-+++ 3rdparty_edited/ts.js	2019-09-16 14:19:38.941816000 +0300
+--- 3rdparty/ts.js	2019-07-26 07:00:06.000000000 +0000
++++ 3rdparty_edited/ts.js	2019-10-02 10:02:56.000000000 +0000
 @@ -1,4 +1,6 @@
 -JSMpeg.Demuxer.TS = (function(){ "use strict";
 +const BitBuffer = require('./buffer');
@@ -296,21 +318,31 @@ diff -u 3rdparty/ts.js 3rdparty_edited/ts.js
  
  var TS = function(options) {
  	this.bits = null;
-@@ -25,11 +27,11 @@
+@@ -23,15 +25,14 @@
+ };
+ 
  TS.prototype.write = function(buffer) {
- 	if (this.leftoverBytes) {
- 		var totalLength = buffer.byteLength + this.leftoverBytes.byteLength;
--		this.bits = new JSMpeg.BitBuffer(totalLength);
+-	// if (this.leftoverBytes) {
+-	// 	var totalLength = buffer.byteLength + this.leftoverBytes.byteLength;
+-	// 	this.bits = new JSMpeg.BitBuffer(totalLength);
+-	// 	this.bits.write([this.leftoverBytes, buffer]);
+-	// }
+-	// else {
+-	delete this.bits;
+-	this.bits = new JSMpeg.BitBuffer(buffer);
+-	// }
++	if (this.leftoverBytes) {
++		var totalLength = buffer.byteLength + this.leftoverBytes.byteLength;
 +		this.bits = new BitBuffer(totalLength);
- 		this.bits.write([this.leftoverBytes, buffer]);
- 	}
- 	else {
--		this.bits = new JSMpeg.BitBuffer(buffer);
++		this.bits.write([this.leftoverBytes, buffer]);
++	}
++	else {
 +		this.bits = new BitBuffer(buffer);
- 	}
++	}
  
  	while (this.bits.has(188 << 3) && this.parsePacket()) {}
-@@ -87,7 +89,7 @@
+ 
+@@ -88,7 +89,7 @@
  			this.bits.skip(6);
  			var headerLength = this.bits.read(8);
  			var payloadBeginIndex = this.bits.index + (headerLength << 3);
@@ -319,7 +351,7 @@ diff -u 3rdparty/ts.js 3rdparty_edited/ts.js
  			var pi = this.pesPacketInfo[streamId];
  			if (pi) {
  				var pts = 0;
-@@ -108,14 +110,14 @@
+@@ -109,14 +110,14 @@
  					// so we're using JavaScript's double number type. Also
  					// divide by the 90khz clock to get the pts in seconds.
  					pts = (p32_30 * 1073741824 + p29_15 * 32768 + p14_0)/90000;
@@ -336,7 +368,7 @@ diff -u 3rdparty/ts.js 3rdparty_edited/ts.js
  					? packetLength - headerLength - 3
  					: 0;
  				this.packetStart(pi, pts, payloadLength);
-@@ -127,11 +129,11 @@
+@@ -128,11 +129,11 @@
  
  		if (streamId) {
  			// Attempt to detect if the PES packet is complete. For Audio (and
@@ -350,7 +382,7 @@ diff -u 3rdparty/ts.js 3rdparty_edited/ts.js
  			// in between, but it might just fit exactly. If this fails, we can
  			// only wait for the next PES header for that stream.
  
-@@ -142,7 +144,7 @@
+@@ -143,7 +144,7 @@
  
  				var hasPadding = !payloadStart && (adaptationField & 0x2);
  				if (complete || (this.guessVideoFrameEnd && hasPadding)) {

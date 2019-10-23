@@ -1,4 +1,4 @@
-module.exports = (function(){ "use strict";
+JSMpeg.Decoder.Base = (function(){ "use strict";
 
 var BaseDecoder = function(options) {
 	this.destination = null;
@@ -89,7 +89,7 @@ BaseDecoder.prototype.advanceDecodedTime = function(seconds) {
 		// to advance the decoded time manually and can instead sync it exactly
 		// to the PTS.
 		if (
-			newTimestampIndex !== -1 &&
+			newTimestampIndex !== -1 && 
 			newTimestampIndex !== this.timestampIndex
 		) {
 			this.timestampIndex = newTimestampIndex;

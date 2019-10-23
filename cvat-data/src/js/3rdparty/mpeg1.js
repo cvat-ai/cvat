@@ -1,22 +1,19 @@
-const BaseDecoder = require('./decoder');
-const BitBuffer = require('./buffer');
-const now = require('./jsmpeg').Now;
-const fill = require('./jsmpeg').Fill;
+JSMpeg.Decoder.MPEG1Video = (function(){ "use strict";
 
-module.exports = (function(){ "use strict";
-
-// Inspired by Java MPEG-1 Video Decoder and Player by Zoltan Korandi
+// Inspired by Java MPEG-1 Video Decoder and Player by Zoltan Korandi 
 // https://sourceforge.net/projects/javampeg1video/
 
 var MPEG1 = function(options) {
-	BaseDecoder.call(this, options);
+	JSMpeg.Decoder.Base.call(this, options);
 
 	this.onDecodeCallback = options.onVideoDecode;
 
-	var bufferSize = options.videoBufferSize || 8*1024*1024;
-	var bufferMode = BitBuffer.MODE.EXPAND;
+	var bufferSize = options.videoBufferSize || 512*1024;
+	var bufferMode = options.streaming
+		? JSMpeg.BitBuffer.MODE.EVICT
+		: JSMpeg.BitBuffer.MODE.EXPAND;
 
-	this.bits = new BitBuffer(bufferSize, bufferMode);
+	this.bits = new JSMpeg.BitBuffer(bufferSize, bufferMode);
 
 	this.customIntraQuantMatrix = new Uint8Array(64);
 	this.customNonIntraQuantMatrix = new Uint8Array(64);
@@ -26,11 +23,11 @@ var MPEG1 = function(options) {
 	this.decodeFirstFrame = options.decodeFirstFrame !== false;
 };
 
-MPEG1.prototype = Object.create(BaseDecoder.prototype);
+MPEG1.prototype = Object.create(JSMpeg.Decoder.Base.prototype);
 MPEG1.prototype.constructor = MPEG1;
 
 MPEG1.prototype.write = function(pts, buffers) {
-	BaseDecoder.prototype.write.call(this, pts, buffers);
+	JSMpeg.Decoder.Base.prototype.write.call(this, pts, buffers);
 
 	if (!this.hasSequenceHeader) {
 		if (this.bits.findStartCode(MPEG1.START.SEQUENCE) === -1) {
@@ -39,15 +36,14 @@ MPEG1.prototype.write = function(pts, buffers) {
 		this.decodeSequenceHeader();
 
 		if (this.decodeFirstFrame) {
-			console.log("decodeFirstFrame");
 			this.decode();
 		}
 	}
 };
 
 MPEG1.prototype.decode = function() {
-	var startTime = now();
-
+	var startTime = JSMpeg.Now();
+	
 	if (!this.hasSequenceHeader) {
 		return false;
 	}
@@ -57,15 +53,14 @@ MPEG1.prototype.decode = function() {
 		return false;
 	}
 
-	const result = this.decodePicture();
-	// this.advanceDecodedTime(1/this.frameRate);
+	this.decodePicture();
+	this.advanceDecodedTime(1/this.frameRate);
 
-	// var elapsedTime = now() - startTime;
-	// if (this.onDecodeCallback) {
-	// 	this.onDecodeCallback(this, elapsedTime);
-	// }
-
-	return result;
+	var elapsedTime = JSMpeg.Now() - startTime;
+	if (this.onDecodeCallback) {
+		this.onDecodeCallback(this, elapsedTime);
+	}
+	return true;
 };
 
 MPEG1.prototype.readHuffman = function(codeTable) {
@@ -79,7 +74,7 @@ MPEG1.prototype.readHuffman = function(codeTable) {
 
 // Sequence Layer
 
-MPEG1.prototype.frameRate = 29.97;
+MPEG1.prototype.frameRate = 30;
 MPEG1.prototype.decodeSequenceHeader = function() {
 	var newWidth = this.bits.read(12),
 		newHeight = this.bits.read(12);
@@ -217,9 +212,10 @@ MPEG1.prototype.decodePicture = function(skipOutput) {
 		this.bits.rewind(32);
 	}
 
-	let curY = this.currentY;
-	let curCr = this.currentCr;
-	let curCb = this.currentCb;
+	// Invoke decode callbacks
+	if (this.destination) {
+		this.destination.render(this.currentY, this.currentCr, this.currentCb, true);
+	}
 
 	// If this is a reference picutre then rotate the prediction pointers
 	if (
@@ -248,8 +244,6 @@ MPEG1.prototype.decodePicture = function(skipOutput) {
 		this.currentCb = tmpCb;
 		this.currentCb32 = tmpCb32;
 	}
-
-	return [curY, curCr, curCb];
 };
 
 
@@ -848,7 +842,7 @@ MPEG1.prototype.decodeBlock = function(block) {
 		else {
 			MPEG1.IDCT(this.blockData);
 			MPEG1.CopyBlockToDestination(this.blockData, destArray, destIndex, scan);
-			fill(this.blockData, 0);
+			JSMpeg.Fill(this.blockData, 0);
 		}
 	}
 	else {
@@ -860,7 +854,7 @@ MPEG1.prototype.decodeBlock = function(block) {
 		else {
 			MPEG1.IDCT(this.blockData);
 			MPEG1.AddBlockToDestination(this.blockData, destArray, destIndex, scan);
-			fill(this.blockData, 0);
+			JSMpeg.Fill(this.blockData, 0);
 		}
 	}
 
