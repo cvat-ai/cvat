@@ -91,7 +91,7 @@ class Task(models.Model):
         return path
 
     def get_chunk_path(self, chunk):
-        ext = 'ts' if self.mode == 'interpolation' else 'tar'
+        ext = 'ts' if self.mode == 'interpolation' else 'zip'
         path = os.path.join(self.get_data_dirname(),
             '{}.{}'.format(chunk, ext))
         return path

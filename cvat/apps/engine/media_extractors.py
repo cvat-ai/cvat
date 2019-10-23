@@ -2,7 +2,7 @@ import os
 import tempfile
 import shutil
 import numpy as np
-import tarfile
+import zipfile
 import math
 from io import BytesIO
 
@@ -97,21 +97,17 @@ class ImageListExtractor(MediaExtractor):
         total_length = len(self._source_path)
         for i in range(0, total_length, chunk_size):
             chunk_data = self._source_path[i:i + chunk_size]
-            tarname = task.get_chunk_path(counter)
-            self.prepare_dirs(tarname)
-            with tarfile.open(tarname, 'x:') as tar_chunk:
+            archive_name = task.get_chunk_path(counter)
+            self.prepare_dirs(archive_name)
+            with zipfile.ZipFile(archive_name, 'x') as zip_chunk:
                 for idx, image_file in enumerate(chunk_data):
                     w, h, image_buf = self.compress_image(image_file)
                     media_meta.append({
                         'name': image_file,
                         'size': (w, h),
                     })
-                    tarinfo = tarfile.TarInfo(name='{:06d}.jpeg'.format(idx))
-                    tarinfo.size = len(image_buf.getbuffer())
-                    tar_chunk.addfile(
-                        tarinfo=tarinfo,
-                        fileobj=image_buf,
-                    )
+                    arcname = '{:06d}.jpeg'.format(idx)
+                    zip_chunk.writestr(arcname, image_buf.getvalue())
             counter += 1
             if progress_callback:
                 progress_callback(i / total_length)
