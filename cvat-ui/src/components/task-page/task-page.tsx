@@ -33,7 +33,7 @@ interface TaskPageComponentProps {
 
 function TaskPageComponent(props: TaskPageComponentProps & RouteComponentProps<{id: string}>) {
     const { id } = props.match.params;
-    if (!props.taskInstance && !props.taskFetchingError) {
+    if (!props.taskInstance && !props.taskFetchingError || props.taskInstance.id != +id) {
         props.onFetchTask(+id);
         return (
             <Spin size='large' style={{margin: '25% 50%'}}/>
