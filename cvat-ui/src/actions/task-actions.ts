@@ -49,8 +49,12 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             dispatch(getTask());
             const taskInstance = (await core.tasks.get({ id: tid }))[0];
-            const previewImage = await taskInstance.frames.preview();
-            dispatch(getTaskSuccess(taskInstance, previewImage));
+            if (taskInstance) {
+                const previewImage = await taskInstance.frames.preview();
+                dispatch(getTaskSuccess(taskInstance, previewImage));
+            } else {
+                throw Error(`Task ${tid} wasn't found on the server`);
+            }
         } catch (error) {
             dispatch(getTaskFailed(error));
         }

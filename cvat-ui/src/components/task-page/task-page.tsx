@@ -31,43 +31,54 @@ interface TaskPageComponentProps {
     onDeleteTask: (task: any) => void;
 }
 
-function TaskPageComponent(props: TaskPageComponentProps & RouteComponentProps<{id: string}>) {
-    const { id } = props.match.params;
-    if (!props.taskInstance && !props.taskFetchingError || props.taskInstance.id != +id) {
-        props.onFetchTask(+id);
-        return (
-            <Spin size='large' style={{margin: '25% 50%'}}/>
-        );
-    } else if (props.taskFetchingError) {
-        Modal.error({
-            title: `Could not receive task ${id}`,
-            content: props.taskFetchingError,
-        });
+class TaskPageComponent extends React.PureComponent<TaskPageComponentProps & RouteComponentProps<{id: string}>> {
+    public componentDidUpdate() {
+        if (this.props.deleteActivity) {
+            this.props.history.replace('/tasks');
+        }
+    }
 
-        return (
-            <div> </div>
-        )
-    } else {
-        return (
-            <Row type='flex' justify='center' align='middle'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
-                    <TopBarComponent
-                        taskInstance={props.taskInstance}
-                        loaders={props.loaders}
-                        dumpers={props.dumpers}
-                        loadActivity={props.loadActivity}
-                        dumpActivities={props.dumpActivities}
-                        installedTFAnnotation={props.installedTFAnnotation}
-                        installedAutoAnnotation={props.installedAutoAnnotation}
-                        onLoadAnnotation={props.onLoadAnnotation}
-                        onDumpAnnotation={props.onDumpAnnotation}
-                        onDeleteTask={props.onDeleteTask}
-                    />
-                    <DetailsComponent/>
-                    <JobListComponent/>
-                </Col>
-            </Row>
-        );
+    public render() {
+        const { id } = this.props.match.params;
+        const fetchTask = !this.props.taskInstance && !this.props.taskFetchingError
+            || (this.props.taskInstance && this.props.taskInstance.id !== +id );
+
+        if (fetchTask) {
+            this.props.onFetchTask(+id);
+            return (
+                <Spin size='large' style={{margin: '25% 50%'}}/>
+            );
+        } else if (this.props.taskFetchingError) {
+            Modal.error({
+                title: `Could not receive task ${id}`,
+                content: this.props.taskFetchingError,
+            });
+
+            return (
+                <div> </div>
+            )
+        } else {
+            return (
+                <Row type='flex' justify='center' align='middle'>
+                    <Col md={22} lg={18} xl={16} xxl={14}>
+                        <TopBarComponent
+                            taskInstance={this.props.taskInstance}
+                            loaders={this.props.loaders}
+                            dumpers={this.props.dumpers}
+                            loadActivity={this.props.loadActivity}
+                            dumpActivities={this.props.dumpActivities}
+                            installedTFAnnotation={this.props.installedTFAnnotation}
+                            installedAutoAnnotation={this.props.installedAutoAnnotation}
+                            onLoadAnnotation={this.props.onLoadAnnotation}
+                            onDumpAnnotation={this.props.onDumpAnnotation}
+                            onDeleteTask={this.props.onDeleteTask}
+                        />
+                        <DetailsComponent/>
+                        <JobListComponent/>
+                    </Col>
+                </Row>
+            );
+        }
     }
 }
 
