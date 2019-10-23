@@ -701,6 +701,7 @@ function callAnnotationUI(jid) {
         ).then((taskData, imageMetaData, annotationData, annotationFormats) => {
             $('#loadingOverlay').remove();
             setTimeout(async () => {
+                window.cvat.config.backendAPI = `${window.location.origin}/api/v1`;
                 [window.cvatTask] = (await window.cvat.tasks.get({ id: taskData[0].id }));
                 buildAnnotationUI(jobData, taskData[0],
                     imageMetaData[0], annotationData[0], annotationFormats[0], loadJobEvent);
