@@ -9,16 +9,15 @@ import {
     Button,
     Icon,
     Progress,
-    Menu,
     Dropdown,
-    Upload,
     Modal,
 } from 'antd';
 
 import { ClickParam } from 'antd/lib/menu/index';
-import { RcFile } from 'antd/lib/upload';
 
 import moment from 'moment';
+
+import ActionsMenu, { handleMenuClick } from '../actions-menu/actions-menu';
 
 export interface TaskItemProps {
     installedTFAnnotation: boolean;
@@ -35,55 +34,9 @@ export interface TaskItemProps {
     onLoadAnnotation: (task: any, loader: any, file: File) => void;
 }
 
-function isDefaultFormat(dumperName: string, taskMode: string): boolean {
-    return (dumperName === 'CVAT XML 1.1 for videos' && taskMode === 'interpolation')
-    || (dumperName === 'CVAT XML 1.1 for images' && taskMode === 'annotation');
-}
-
 class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps> {
     constructor(props: TaskItemProps & RouteComponentProps) {
         super(props);
-    }
-
-    private handleMenuClick = (params: ClickParam) => {
-        const tracker = this.props.taskInstance.bugTracker;
-
-        if (params.keyPath.length === 2) {
-            // dump or upload
-            if (params.keyPath[1] === 'dump') {
-
-            }
-        } else {
-            switch (params.key) {
-                case 'tracker': {
-                    window.open(`${tracker}`, '_blank')
-                    return;
-                } case 'auto': {
-
-                    return;
-                } case 'tf': {
-
-                    return;
-                } case 'update': {
-
-                    return;
-                } case 'delete': {
-                    const { taskInstance } = this.props;
-                    const taskID = taskInstance.id;
-                    const self = this;
-                    Modal.confirm({
-                        title: `The task ${taskID} will be deleted`,
-                        content: 'All related data (images, annotations) will be lost. Continue?',
-                        onOk: () => {
-                            this.props.onDeleteTask(taskInstance);
-                        },
-                    });
-                    return;
-                } default: {
-                    return;
-                }
-            }
-        }
     }
 
     private renderPreview() {
@@ -166,88 +119,6 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         )
     }
 
-    private renderDumperItem(dumper: any) {
-        const task = this.props.taskInstance;
-        const { mode } = task;
-
-        const dumpingWithThisDumper = (this.props.dumpActivities || [])
-            .filter((_dumper: string) => _dumper === dumper.name)[0];
-
-        const pending = !!dumpingWithThisDumper;
-
-        return (
-            <Menu.Item className='cvat-task-item-dump-submenu-item' key={dumper.name}>
-                <Button block={true} type='link' disabled={pending}
-                    onClick={() => {
-                        this.props.onDumpAnnotation(task, dumper);
-                    }}>
-                    <Icon type='download'/>
-                    <Text strong={isDefaultFormat(dumper.name, mode)}>
-                        {dumper.name}
-                    </Text>
-                    {pending ? <Icon type='loading'/> : null}
-                </Button>
-            </Menu.Item>
-        );
-    }
-
-    private renderLoaderItem(loader: any) {
-        const loadingWithThisLoader = this.props.loadActivity
-            && this.props.loadActivity === loader.name
-            ? this.props.loadActivity : null;
-
-        const pending = !!loadingWithThisLoader;
-
-        return (
-            <Menu.Item className='cvat-task-item-load-submenu-item' key={loader.name}>
-                <Upload
-                    accept={`.${loader.format}`}
-                    multiple={false}
-                    showUploadList={ false }
-                    beforeUpload={(file: RcFile) => {
-                        this.props.onLoadAnnotation(
-                            this.props.taskInstance,
-                            loader,
-                            file as File,
-                        );
-
-                        return false;
-                }}>
-                    <Button block={true} type='link' disabled={!!this.props.loadActivity}>
-                        <Icon type='upload'/>
-                        <Text> {loader.name} </Text>
-                        {pending ? <Icon type='loading'/> : null}
-                    </Button>
-                </Upload>
-            </Menu.Item>
-        );
-    }
-
-    private renderMenu() {
-        const tracker = this.props.taskInstance.bugTracker;
-
-        return (
-            <Menu subMenuCloseDelay={0.15} className='cvat-task-item-menu' onClick={this.handleMenuClick}>
-                <Menu.SubMenu key='dump' title='Dump annotations'>
-                    {this.props.dumpers.map((dumper) => this.renderDumperItem(dumper))}
-                </Menu.SubMenu>
-                <Menu.SubMenu key='load' title='Upload annotations'>
-                    {this.props.loaders.map((loader) => this.renderLoaderItem(loader))}
-                </Menu.SubMenu>
-                {tracker ? <Menu.Item key='tracker'>Open bug tracker</Menu.Item> : null}
-                { this.props.installedTFAnnotation ?
-                    <Menu.Item key='tf'>Run TF annotation</Menu.Item> : null
-                }
-                { this.props.installedAutoAnnotation ?
-                    <Menu.Item key='auto'>Run auto annotation</Menu.Item> : null
-                }
-                <hr/>
-                <Menu.Item key='update'>Update</Menu.Item>
-                <Menu.Item key='delete'>Delete</Menu.Item>
-            </Menu>
-        );
-    }
-
     private renderNavigation() {
         const subMenuIcon = () => (<img src='/assets/icon-sub-menu.svg'/>);
         const { id } = this.props.taskInstance;
@@ -263,8 +134,21 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 </Row>
                 <Row type='flex' justify='end'>
                     <Col>
-                        <Text style={{color: 'black'}}> Actions </Text>
-                        <Dropdown overlay={this.renderMenu()}>
+                        <Text className='cvat-black-color'> Actions </Text>
+                        <Dropdown overlay={
+                            ActionsMenu({
+                                taskInstance: this.props.taskInstance,
+                                loaders: this.props.loaders,
+                                dumpers: this.props.dumpers,
+                                loadActivity: this.props.loadActivity,
+                                dumpActivities: this.props.dumpActivities,
+                                installedTFAnnotation: this.props.installedTFAnnotation,
+                                installedAutoAnnotation: this.props.installedAutoAnnotation,
+                                onLoadAnnotation: this.props.onLoadAnnotation,
+                                onDumpAnnotation: this.props.onDumpAnnotation,
+                                onDeleteTask: this.props.onDeleteTask,
+                            })
+                        }>
                             <Icon className='cvat-task-item-menu-icon' component={subMenuIcon}/>
                         </Dropdown>
                     </Col>

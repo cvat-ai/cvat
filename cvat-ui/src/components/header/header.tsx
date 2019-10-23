@@ -48,7 +48,7 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
 
     return (
         <Layout.Header className='cvat-header'>
-            <div className='left-header'>
+            <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={cvatLogo}/>
                 <Icon className='cvat-back-icon' component={backLogo}/>
 
@@ -71,7 +71,7 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
                     }
                 </Radio.Group>
             </div>
-            <div className='right-header'>
+            <div className='cvat-right-header'>
                 <Button className='header-button' type='link' onClick={
                         () => window.open('https://github.com/opencv/cvat', '_blank')
                 }> <Icon type='github' /> GitHub </Button>

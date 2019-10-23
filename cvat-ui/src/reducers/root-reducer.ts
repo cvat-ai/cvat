@@ -3,12 +3,14 @@ import authReducer from './auth-reducer';
 import tasksReducer from './tasks-reducer';
 import formatsReducer from './formats-reducer';
 import pluginsReducer from './plugins-reducer';
+import taskReducer from './task-reducer';
 
 import {
     AuthState,
     TasksState,
     FormatsState,
     PluginsState,
+    TaskState,
 } from './interfaces';
 
 export interface CombinedState {
@@ -16,6 +18,7 @@ export interface CombinedState {
     tasks: TasksState;
     formats: FormatsState;
     plugins: PluginsState;
+    activeTask: TaskState;
 }
 
 export default function createRootReducer(): Reducer {
@@ -24,5 +27,6 @@ export default function createRootReducer(): Reducer {
         tasks: tasksReducer,
         formats: formatsReducer,
         plugins: pluginsReducer,
+        activeTask: taskReducer,
     });
 }

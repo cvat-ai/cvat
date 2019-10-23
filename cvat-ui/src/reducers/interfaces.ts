@@ -76,3 +76,8 @@ export interface PluginsState {
         [name in SupportedPlugins]: boolean;
     };
 }
+
+export interface TaskState {
+    task: Task | null;
+    taskFetchingError: any;
+}
