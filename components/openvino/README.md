@@ -6,8 +6,10 @@
 
 ### Preparation
 
-- Download the latest [OpenVINO toolkit](https://software.intel.com/en-us/openvino-toolkit) .tgz installer (offline or online) for Ubuntu platforms.
-  - Note that OpenVINO does not maintain forward compatability between Intermediate Representations, so the version of OpenVINO in CVAT and the version used to translate the models needs to be the same.
+- Download the latest [OpenVINO toolkit](https://software.intel.com/en-us/openvino-toolkit) .tgz installer
+(offline or online) for Ubuntu platforms. Note that OpenVINO does not maintain forward compatability between
+Intermediate Representations (IRs), so the version of OpenVINO in CVAT and the version used to translate the
+models needs to be the same.
 - Put downloaded file into ```cvat/components/openvino```.
 - Accept EULA in the `cvat/components/eula.cfg` file.
 
