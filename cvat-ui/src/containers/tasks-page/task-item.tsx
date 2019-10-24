@@ -50,13 +50,14 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const { loads } = state.tasks.activities;
     const { deletes } = state.tasks.activities;
     const { plugins } = state.plugins;
+    const id = own.taskID;
 
     return {
-        installedTFAnnotation: plugins[SupportedPlugins.TF_ANNOTATION],
-        installedAutoAnnotation: plugins[SupportedPlugins.AUTO_ANNOTATION],
-        dumpActivities: dumps.byTask[own.taskID] ? dumps.byTask[own.taskID] : null,
-        loadActivity: loads.byTask[own.taskID] ? loads.byTask[own.taskID] : null,
-        deleteActivity: deletes.byTask[own.taskID] ? deletes.byTask[own.taskID] : null,
+        installedTFAnnotation: plugins.TF_ANNOTATION,
+        installedAutoAnnotation: plugins.AUTO_ANNOTATION,
+        dumpActivities: dumps.byTask[id] ? dumps.byTask[id] : null,
+        loadActivity: loads.byTask[id] ? loads.byTask[id] : null,
+        deleteActivity: deletes.byTask[id] ? deletes.byTask[id] : null,
         previewImage: task.preview,
         taskInstance: task.instance,
         loaders: formats.loaders,

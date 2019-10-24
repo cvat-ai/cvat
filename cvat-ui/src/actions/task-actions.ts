@@ -20,12 +20,12 @@ function getTask(): AnyAction {
     return action;
 }
 
-function getTaskSuccess(taskInstance: any, taskPreview: string): AnyAction {
+function getTaskSuccess(taskInstance: any, previewImage: string): AnyAction {
     const action = {
         type: TaskActionTypes.GET_TASK_SUCCESS,
         payload: {
             taskInstance,
-            taskPreview,
+            previewImage,
         },
     };
 

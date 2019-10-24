@@ -9,26 +9,16 @@ import {
     Modal,
 } from 'antd';
 
-import TopBarComponent from './top-bar';
-import DetailsComponent from './details';
-import JobListComponent from './job-list';
+import TopBarContainer from '../../containers/task-page/top-bar';
+import DetailsContainer from '../../containers/task-page/details';
+import JobListContainer from '../../containers/task-page/job-list';
 
 interface TaskPageComponentProps {
-    previewImage: string;
     taskInstance: any;
     taskFetchingError: string;
-    loaders: any[];
-    dumpers: any[];
-    loadActivity: string | null;
-    dumpActivities: string[] | null;
     deleteActivity: boolean | null;
-    installedTFAnnotation: boolean;
-    installedAutoAnnotation: boolean;
     installedGit: boolean;
     onFetchTask: (tid: number) => void;
-    onLoadAnnotation: (taskInstance: any, loader: any, file: File) => void;
-    onDumpAnnotation: (task: any, dumper: any) => void;
-    onDeleteTask: (task: any) => void;
 }
 
 class TaskPageComponent extends React.PureComponent<TaskPageComponentProps & RouteComponentProps<{id: string}>> {
@@ -61,20 +51,9 @@ class TaskPageComponent extends React.PureComponent<TaskPageComponentProps & Rou
             return (
                 <Row type='flex' justify='center' align='middle'>
                     <Col md={22} lg={18} xl={16} xxl={14}>
-                        <TopBarComponent
-                            taskInstance={this.props.taskInstance}
-                            loaders={this.props.loaders}
-                            dumpers={this.props.dumpers}
-                            loadActivity={this.props.loadActivity}
-                            dumpActivities={this.props.dumpActivities}
-                            installedTFAnnotation={this.props.installedTFAnnotation}
-                            installedAutoAnnotation={this.props.installedAutoAnnotation}
-                            onLoadAnnotation={this.props.onLoadAnnotation}
-                            onDumpAnnotation={this.props.onDumpAnnotation}
-                            onDeleteTask={this.props.onDeleteTask}
-                        />
-                        <DetailsComponent/>
-                        <JobListComponent/>
+                        <TopBarContainer/>
+                        <DetailsContainer/>
+                        <JobListContainer/>
                     </Col>
                 </Row>
             );

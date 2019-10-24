@@ -10,14 +10,11 @@ import {
     Icon,
     Progress,
     Dropdown,
-    Modal,
 } from 'antd';
-
-import { ClickParam } from 'antd/lib/menu/index';
 
 import moment from 'moment';
 
-import ActionsMenu, { handleMenuClick } from '../actions-menu/actions-menu';
+import ActionsMenu from '../actions-menu/actions-menu';
 
 export interface TaskItemProps {
     installedTFAnnotation: boolean;
@@ -42,8 +39,8 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     private renderPreview() {
         return (
             <Col span={4}>
-                <div className='cvat-task-preview-wrapper'>
-                    <img alt='Preview' className='cvat-task-preview' src={this.props.previewImage}/>
+                <div className='cvat-task-item-preview-wrapper'>
+                    <img alt='Preview' className='cvat-task-item-preview' src={this.props.previewImage}/>
                 </div>
             </Col>
         )
