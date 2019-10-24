@@ -42,12 +42,6 @@ class MediaExtractor:
         if tmp_dir:
             shutil.rmtree(tmp_dir)
 
-    @staticmethod
-    def prepare_dirs(file_path):
-        dirname = os.path.dirname(file_path)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-
 #Note step, start, stop have no affect
 class ImageListExtractor(MediaExtractor):
     def __init__(self, source_path, image_quality, step=1, start=0, stop=0):
@@ -91,14 +85,13 @@ class ImageListExtractor(MediaExtractor):
             f.write(compressed_image.getvalue())
         return w, h
 
-    def save_as_chunks(self, chunk_size, task, progress_callback=None):
+    def save_as_chunks(self, chunk_size, data, progress_callback=None):
         counter = 0
         media_meta = []
         total_length = len(self._source_path)
         for i in range(0, total_length, chunk_size):
             chunk_data = self._source_path[i:i + chunk_size]
-            archive_name = task.get_chunk_path(counter)
-            self.prepare_dirs(archive_name)
+            archive_name = data.get_compressed_chunk_path(counter)
             with zipfile.ZipFile(archive_name, 'x') as zip_chunk:
                 for idx, image_file in enumerate(chunk_data):
                     w, h, image_buf = self.compress_image(image_file)
@@ -230,7 +223,7 @@ class VideoExtractor(DirectoryExtractor):
     def save_image(self, k, dest_path):
         shutil.copyfile(self[k], dest_path)
 
-    def save_as_chunks(self, chunk_size, task, progress_callback=None):
+    def save_as_chunks(self, chunk_size, data, progress_callback=None):
         if not self._source_path:
             raise Exception('No data to compress')
 
@@ -238,8 +231,7 @@ class VideoExtractor(DirectoryExtractor):
             start_frame = i * chunk_size
             input_images = os.path.join(self._tmp_dir, self._imagename_pattern)
             input_options = '-f image2 -framerate 25 -start_number {}'.format(start_frame)
-            output_chunk = task.get_chunk_path(i)
-            self.prepare_dirs(output_chunk)
+            output_chunk = data.get_compressed_chunk_path(i)
             output_options = '-vframes {} -codec:v mpeg1video -q:v 0'.format(chunk_size)
 
             ff = FFmpeg(

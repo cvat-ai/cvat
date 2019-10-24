@@ -710,7 +710,7 @@
                 start_frame: undefined,
                 stop_frame: undefined,
                 frame_filter: undefined,
-                data_chunk_size: undefined,                
+                data_chunk_size: undefined,
             };
 
             for (const property in data) {
@@ -1360,39 +1360,40 @@
             return this;
         }
 
-        const taskData = {
+        const taskSpec = {
             name: this.name,
             labels: this.labels.map((el) => el.toJSON()),
-            image_quality: this.imageQuality,
             z_order: Boolean(this.zOrder),
         };
 
         if (typeof (this.bugTracker) !== 'undefined') {
-            taskData.bug_tracker = this.bugTracker;
+            taskSpec.bug_tracker = this.bugTracker;
         }
         if (typeof (this.segmentSize) !== 'undefined') {
-            taskData.segment_size = this.segmentSize;
+            taskSpec.segment_size = this.segmentSize;
         }
         if (typeof (this.overlap) !== 'undefined') {
-            taskData.overlap = this.overlap;
-        }
-        if (typeof (this.startFrame) !== 'undefined') {
-            taskData.start_frame = this.startFrame;
-        }
-        if (typeof (this.stopFrame) !== 'undefined') {
-            taskData.stop_frame = this.stopFrame;
-        }
-        if (typeof (this.frameFilter) !== 'undefined') {
-            taskData.frame_filter = this.frameFilter;
+            taskSpec.overlap = this.overlap;
         }
 
-        const taskFiles = {
+        const taskDataSpec = {
             client_files: this.clientFiles,
             server_files: this.serverFiles,
             remote_files: this.remoteFiles,
+            image_quality: this.imageQuality,
         };
 
-        const task = await serverProxy.tasks.createTask(taskData, taskFiles, onUpdate);
+        if (typeof (this.startFrame) !== 'undefined') {
+            taskDataSpec.start_frame = this.startFrame;
+        }
+        if (typeof (this.stopFrame) !== 'undefined') {
+            taskDataSpec.stop_frame = this.stopFrame;
+        }
+        if (typeof (this.frameFilter) !== 'undefined') {
+            taskDataSpec.frame_filter = this.frameFilter;
+        }
+
+        const task = await serverProxy.tasks.createTask(taskSpec, taskDataSpec, onUpdate);
         return new Task(task);
     };
 

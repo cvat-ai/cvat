@@ -453,13 +453,6 @@
 
 #frameBackground {
     position: absolute;
-    z-index: -1;
-    background-repeat: no-repeat;
-    transform-origin: top left;
-}
-
-#canvasBackground {
-    position: absolute;
     z-index: 0;
     background-repeat: no-repeat;
     transform-origin: top left;

@@ -7,7 +7,6 @@ import re
 import traceback
 from ast import literal_eval
 import shutil
-import tarfile
 from datetime import datetime
 from tempfile import mkstemp, NamedTemporaryFile
 
@@ -36,7 +35,7 @@ from .log import slogger, clogger
 from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
 from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    ExceptionSerializer, AboutSerializer, JobSerializer, ImageMetaSerializer,
-   RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
+   RqStatusSerializer, DataSerializer, LabeledDataSerializer,
    PluginSerializer, FileInfoSerializer, LogEventSerializer,
    ProjectSerializer, BasicUserSerializer)
 from cvat.apps.annotation.serializers import AnnotationFileSerializer
@@ -278,14 +277,16 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-    @action(detail=True, methods=['POST'], serializer_class=TaskDataSerializer)
+    @action(detail=True, methods=['POST'])
     def data(self, request, pk):
         db_task = self.get_object() # call check_object_permissions as well
-        serializer = TaskDataSerializer(db_task, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            task.create(db_task.id, serializer.data)
-            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        serializer = DataSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        db_data = serializer.save()
+        db_task.data = db_data
+        db_task.save()
+        task.create(db_task.id, serializer.data)
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
@@ -422,12 +423,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             'original_size': [],
         }
 
-        db_task = models.Task.objects.prefetch_related('image_set').select_related('video').get(pk=pk)
+        db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
 
         if db_task.mode == 'interpolation':
             media = [db_task.video]
         else:
-            media = list(db_task.image_set.order_by('frame'))
+            media = list(db_task.data.images.order_by('frame'))
 
         for item in media:
             data['original_size'].append({
@@ -448,8 +449,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             db_task = self.get_object()
             # Follow symbol links if the chunk is a link on a real image otherwise
             # mimetype detection inside sendfile will work incorrectly.
-            frame_provider = FrameProvider(db_task)
-            path = os.path.realpath(frame_provider.get_chunk(chunk))
+            frame_provider = FrameProvider(db_task.data)
+            path = os.path.realpath(frame_provider.get_compressed_chunk(chunk))
 
             return sendfile(request, path)
         except Exception as e:
@@ -463,11 +464,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         """Get a peview image of the task"""
         try:
             db_task = self.get_object()
-            frame_provider = FrameProvider(db_task)
-            # Follow symbol links if the frame is a link on a real image otherwise
-            # mimetype detection inside sendfile will work incorrectly.
-            path = os.path.realpath(frame_provider.get_preview())
-            return sendfile(request, path)
+            frame_provider = FrameProvider(db_task.data)
+            return sendfile(request, frame_provider.get_preview())
         except Exception as e:
             slogger.task[pk].error(
                 "cannot get preview image", exc_info=True)
