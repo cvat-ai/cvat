@@ -80,9 +80,8 @@ def _save_task_to_db(db_task):
 
     segment_step -= db_task.overlap
 
-    for x in range(0, db_task.data.size, segment_step):
-        start_frame = x
-        stop_frame = min(x + segment_size - 1, db_task.data.size - 1)
+    for start_frame in range(0, db_task.data.size, segment_step):
+        stop_frame = min(start_frame + segment_size - 1, db_task.data.size - 1)
 
         slogger.glob.info("New segment for task #{}: start_frame = {}, \
             stop_frame = {}".format(db_task.id, start_frame, stop_frame))
@@ -97,6 +96,7 @@ def _save_task_to_db(db_task):
         db_job.segment = db_segment
         db_job.save()
 
+    db_task.data.save()
     db_task.save()
 
 def _count_files(data):

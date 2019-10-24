@@ -39,7 +39,8 @@ class FrameProvider():
         return self._chunk_extractor[frame_offset]
 
     def get_compressed_chunk(self, chunk_number):
-        if chunk_number < 0 or chunk_number > math.ceil(self._db_data.size / self._db_data.chunk_size):
+        chunk_number = int(chunk_number)
+        if chunk_number < 0 or chunk_number >= math.ceil(self._db_data.size / self._db_data.chunk_size):
             raise Exception('requested chunk does not exist')
 
         path = self._db_data.get_compressed_chunk_path(chunk_number)

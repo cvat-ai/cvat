@@ -76,6 +76,10 @@ def create_data_objects(apps, schema_editor):
                     image_path = os.path.join(compressed_cache_dir, get_frame_path(frame))
                     chunk.write(image_path + '\n')
 
+
+        # create preview
+        shutil.copyfile(os.path.join(compressed_cache_dir, get_frame_path(0)), os.path.join(db_data_dir, 'preview.jpeg'))
+
         # need fix path
         if hasattr(db_task, 'video'):
             db_task.video.data = db_data

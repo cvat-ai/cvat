@@ -94,7 +94,7 @@ class Data(models.Model):
             self._get_chunk_name(chunk_number))
 
     def get_preview_path(self):
-        return os.path.join(self.get_data_dirname(), 'preview.jpg')
+        return os.path.join(self.get_data_dirname(), 'preview.jpeg')
 
 class Video(models.Model):
     data = models.OneToOneField(Data, on_delete=models.CASCADE, related_name="video", null=True)
