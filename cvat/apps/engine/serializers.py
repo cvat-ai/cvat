@@ -223,14 +223,15 @@ class DataSerializer(serializers.ModelSerializer):
 class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
+    data_chunk_size = serializers.ReadOnlyField(source="data.chunk_size")
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'z_order', 'status', 'labels', 'segments',
-            'project', 'data')
-        read_only_fields = ('mode', 'created_date', 'updated_date', 'status')
+            'project', 'data', 'data_chunk_size')
+        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size')
         write_once_fields = ('overlap', 'segment_size')
         ordering = ['-id']
 

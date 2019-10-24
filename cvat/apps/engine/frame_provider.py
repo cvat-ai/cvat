@@ -1,5 +1,6 @@
 import os
 import zipfile
+import math
 
 from cvat.apps.engine.media_extractors import ArchiveExtractor, VideoExtractor
 from cvat.apps.engine.models import DataChoice
@@ -38,13 +39,16 @@ class FrameProvider():
         return self._chunk_extractor[frame_offset]
 
     def get_compressed_chunk(self, chunk_number):
+        if chunk_number < 0 or chunk_number > math.ceil(self._db_data.size / self._db_data.chunk_size):
+            raise Exception('requested chunk does not exist')
+
         path = self._db_data.get_compressed_chunk_path(chunk_number)
         if self._db_data.type == DataChoice.LIST:
-            zip_chunk_path = '{}.list'.format(os.path.splitext(path)[0])
+            zip_chunk_path = '{}.zip'.format(os.path.splitext(path)[0])
             if not os.path.exists(zip_chunk_path):
                 with zipfile.ZipFile(zip_chunk_path, 'x') as zip_chunk:
                     with open(path, 'r') as images:
-                        for im_path, idx in enumerate(images):
+                        for idx, im_path in enumerate(images):
                             zip_chunk.write(
                                 filename=im_path.strip(),
                                 arcname='{:06d}.jpeg'.format(idx),

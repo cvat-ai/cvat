@@ -69,8 +69,8 @@ def create_data_objects(apps, schema_editor):
             shutil.move(client_log_file, new_task_logs_dir)
 
         # prepare *.list chunks
-        for start_frame, chunk_idx in enumerate(range(0, db_data.size, db_data.chunk_size)):
-            with open(os.path.join(db_data_dir, '{}.list'.format(chunk_idx)), 'w') as chunk:
+        for chunk_idx, start_frame in enumerate(range(0, db_data.size, db_data.chunk_size)):
+            with open(os.path.join(compressed_cache_dir, '{}.list'.format(chunk_idx)), 'w') as chunk:
                 stop_frame = min(db_data.chunk_size, db_data.size)
                 for frame in range(start_frame, stop_frame):
                     image_path = os.path.join(compressed_cache_dir, get_frame_path(frame))
