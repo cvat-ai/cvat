@@ -1,11 +1,11 @@
 ## [Keras+Tensorflow Mask R-CNN Segmentation](https://github.com/matterport/Mask_RCNN)
 
 ### What is it?
--  This application allows you automatically to segment many various objects on images.
--  It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.
+-   This application allows you automatically to segment many various objects on images.
+-   It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.
 
--  It uses a pre-trained model on MS COCO dataset
--  It supports next classes (use them in "labels" row):
+-   It uses a pre-trained model on MS COCO dataset
+-   It supports next classes (use them in "labels" row):
 ```python
 'BG', 'person', 'bicycle', 'car', 'motorcycle', 'airplane',
 'bus', 'train', 'truck', 'boat', 'traffic light',
@@ -23,8 +23,7 @@
 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
 'teddy bear', 'hair drier', 'toothbrush'.
 ```
--  Component adds "Run Auto Segmentation" button into dashboard.
-
+-   Component adds "Run Auto Segmentation" button into dashboard.
 
 ### Build docker image
 ```bash

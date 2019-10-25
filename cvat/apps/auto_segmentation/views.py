@@ -50,7 +50,6 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
     ROOT_DIR = os.environ.get('AUTO_SEGMENTATION_PATH')
     # Import Mask RCNN
     sys.path.append(ROOT_DIR)  # To find local version of the library
-    from mrcnn import utils
     import mrcnn.model as modellib
 
     # Import COCO config
