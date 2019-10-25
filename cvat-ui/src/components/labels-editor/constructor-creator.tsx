@@ -3,54 +3,33 @@ import React from 'react';
 import {
     Row,
     Col,
-    Form,
-    Input,
     Button,
-    Modal,
 } from 'antd';
 
-import { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
 import AttributeForm from './attribute-form';
+import LabelForm from './label-form';
 
-import patterns from '../../utils/validation-patterns';
-
-interface ConstructorCreatorProps {
+interface Props {
     onCreate: (label: any) => void;
 }
 
-interface ConstructorCreaterState {
-    name: string;
+interface State {
     attributes: any[];
 }
 
-type Props = ConstructorCreatorProps & FormComponentProps;
-type State = ConstructorCreaterState;
-
-class ConstructorCreator extends React.PureComponent<Props, State> {
+export default class ConstructorCreator extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
         super(props);
 
         this.state = {
-            name: '',
             attributes: [],
         };
     }
 
-    private handleSubmitLabel = (e: React.FormEvent) => {
-        e.preventDefault();
-        this.props.form.validateFields((error, values) => {
-            if (!error) {
-                this.props.onCreate({
-                    name: values.name,
-                    attributes: this.state.attributes,
-                })
-            }
-        });
-    };
-
     private handleNewAttribute = (values: any) => {
         if (this.state.attributes.length === values.id) {
+            // Hasn't been added yet, we have to add it
             this.state.attributes.push({
                 id: values.id,
             });
@@ -79,69 +58,42 @@ class ConstructorCreator extends React.PureComponent<Props, State> {
         // else hasn't been saved yet
     }
 
-    private validateLabelName = () => {
-        const value = this.state.name;
-        if (!value) {
-            Modal.error({
-                title: 'Could not add label',
-                content: 'Specify a name',
-            });
+    private renderAttrForm(attribute: any) {
+        const id = attribute === null ?
+            this.state.attributes.length : attribute.id;
 
-            return false;
-        }
-
-        if (!patterns.validateLabelName.pattern.test(value)) {
-            Modal.error({
-                title: 'Could not add label',
-                content: patterns.validateLabelName.message,
-            });
-
-            return false;
-        }
-
-        return true;
-    }
-
-    public render() {
-        const forms = this.state.attributes.filter((attr) => !attr.deleted)
-            .map((attr: any) => (
-                <Row type='flex' justify='space-between' align='middle' key={attr.id}>
-                    <Col span={24}>
-                        <AttributeForm
-                            id={attr.id}
-                            onSubmit={this.handleNewAttribute}
-                            onDelete={this.handleDeleteAttribute}
-                            instance={attr}
-                        />
-                    </Col>
-                </Row>
-            ));
-
-        forms.push(
-            <Row type='flex' justify='space-between' align='middle' key={this.state.attributes.length}>
+        return (
+            <Row type='flex' justify='space-between' align='middle' key={id}>
                 <Col span={24}>
                     <AttributeForm
+                        id={id}
                         onSubmit={this.handleNewAttribute}
                         onDelete={this.handleDeleteAttribute}
-                        id={this.state.attributes.length}
-                        instance={null}
+                        instance={attribute}
                     />
                 </Col>
             </Row>
-        );
+        )
+    }
+
+    public render() {
+        // Render all forms with entered attributes
+        const forms = this.state.attributes.filter((attr) => !attr.deleted)
+            .map((attr: any) => this.renderAttrForm(attr));
+
+        // Render a form for a new attribute
+        forms.push(this.renderAttrForm(null));
 
         return (
-            <>
-                <Row type='flex' justify='space-between' align='middle' style={{marginTop: '10px'}}>
+            <div className='cvat-label-constructor-creator'>
+                <Row type='flex' justify='space-between' align='middle'>
                     <Col span={9}>
-                        <Input
-                            placeholder='Label name'
-                            onChange={(e) => {
-                                this.setState({
-                                    name: e.target.value,
-                                });
-                            }}
-                        />
+                        <LabelForm id='labelForm' onSubmit={(name) => {
+                            this.props.onCreate({
+                                name,
+                                attributes: this.state.attributes,
+                            })
+                        }}/>
                     </Col>
                 </Row>
                 <Row type='flex' justify='start' align='middle'>
@@ -149,22 +101,21 @@ class ConstructorCreator extends React.PureComponent<Props, State> {
                         <Text> Attributes </Text>
                     </Col>
                 </Row>
+
                 { forms.reverse() }
+
                 <Row type='flex' justify='space-between' align='middle'>
                     <Col>
                         <Button
                             style={{width: '150px'}}
                             type='primary'
+                            form='labelForm'
+                            htmlType='submit'
                             onClick={() => {
-                                if (this.validateLabelName()) {
-                                    this.props.onCreate({
-                                        name: this.state.name,
-                                        attributes: this.state.attributes,
-                                    });
-                                }
-                            }
-
-                            }
+                                this.setState({
+                                    attributes: [],
+                                });
+                            }}
                         > Add Label </Button>
                     </Col>
                     <Col>
@@ -177,9 +128,7 @@ class ConstructorCreator extends React.PureComponent<Props, State> {
                         > Cancel </Button>
                     </Col>
                 </Row>
-            </>
+            </div>
         );
     }
 }
-
-export default Form.create<Props>()(ConstructorCreator);

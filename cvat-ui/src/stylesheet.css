@@ -433,6 +433,14 @@
     color: #111111;
 }
 
+.cvat-label-constructor-creator > div:first-child {
+    margin-top: 10px;
+}
+
+.cvat-attribute-constructor-form > div:first-child > div:nth-child(4) {
+    display: contents;
+}
+
 #cvat-create-task-button {
     padding: 0 30px;
 }

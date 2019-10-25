@@ -203,9 +203,50 @@ class AttributeForm extends React.PureComponent<Props, State> {
         );
     }
 
+    private renderMutable() {
+        return (
+            <Form.Item>
+                <Tooltip overlay='Can this attribute be changed frame to frame?'>
+                    { this.props.form.getFieldDecorator('mutable', {
+                        initialValue: false,
+                        valuePropName: 'checked'
+                    })(
+                        <Checkbox> Mutable </Checkbox>
+                    )}
+                </Tooltip>
+            </Form.Item>
+        );
+    }
+
+    private renderSaveButton() {
+        return (
+            <Form.Item>
+                <Tooltip overlay='Save the attribute'>
+                    <Button type='link' htmlType='submit'>
+                        <Icon type='plus-circle'/>
+                    </Button>
+                </Tooltip>
+            </Form.Item>
+        );
+    }
+
+    private renderDeleteButton() {
+        return (
+            <Form.Item>
+                <Tooltip overlay='Delete the attribute'>
+                    <Button type='link' onClick={() => {
+                        this.props.onDelete(this.props.id);
+                    }}>
+                        <Icon type='minus-circle'/>
+                    </Button>
+                </Tooltip>
+            </Form.Item>
+        );
+    }
+
     public render() {
         return (
-            <Form onSubmit={this.handleSubmit}>
+            <Form onSubmit={this.handleSubmit} className='cvat-attribute-constructor-form'>
                 <Row type='flex' justify='space-between' align='middle'>
                     <Col span={5}>
                         { this.renderAttributeNameInput() }
@@ -223,39 +264,14 @@ class AttributeForm extends React.PureComponent<Props, State> {
                                 this.renderNumberRangeInput()
                             : this.renderDefaultValueInput()
                     } </Col>
-                    <Col span={5} style={{display: 'contents'}}>
-                        <Form.Item>
-                            <Tooltip overlay='Can this attribute be changed frame to frame?'>
-                                { this.props.form.getFieldDecorator('mutable', {
-                                    initialValue: false,
-                                    valuePropName: 'checked'
-                                })(
-                                    <Checkbox> Mutable </Checkbox>
-                                )}
-                            </Tooltip>
-                        </Form.Item>
+                    <Col span={5}>
+                        { this.renderMutable() }
                     </Col>
                     <Col span={2}>
-                        <Form.Item>
-                            <Tooltip overlay='Save the attribute'>
-                                <Button type='link' htmlType='submit'>
-                                    <Icon type='plus-circle'/>
-                                </Button>
-                            </Tooltip>
-                        </Form.Item>
+                        { this.renderSaveButton() }
                     </Col>
                     <Col span={2}>
-                        { this.props.instance ?
-                            <Form.Item>
-                                <Tooltip overlay='Delete the attribute'>
-                                    <Button type='link' onClick={() => {
-                                        this.props.onDelete(this.props.id);
-                                    }}>
-                                        <Icon type='minus-circle'/>
-                                    </Button>
-                                </Tooltip>
-                            </Form.Item> : null
-                        }
+                        { this.props.instance ? this.renderDeleteButton() : null }
                     </Col>
                 </Row>
             </Form>

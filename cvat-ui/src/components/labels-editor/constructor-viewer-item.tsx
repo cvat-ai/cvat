@@ -23,12 +23,12 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                     <Icon theme='filled' type='edit'/>
                 </span>
             </Tooltip>
-            { Number.isInteger(props.label.id) ?
+            { Number.isInteger(props.label.id) ? null :
                 <Tooltip title='Delete label'>
                     <span onClick={() => props.onDelete(props.label)}>
                         <Icon type='close'></Icon>
                     </span>
-                </Tooltip> : null
+                </Tooltip>
             }
         </div>
     );
