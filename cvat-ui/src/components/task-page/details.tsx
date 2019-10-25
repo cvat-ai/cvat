@@ -11,6 +11,8 @@ import Title from 'antd/lib/typography/Title';
 
 import moment from 'moment';
 
+import LabelsEditorComponent from '../labels-editor/labels-editor';
+
 interface DetailsComponentProps {
     previewImage: string;
     taskInstance: any;
@@ -27,8 +29,7 @@ export default function DetailsComponent(props: DetailsComponentProps) {
     const owner = taskInstance.owner ? taskInstance.owner.username : null;
     const assignee = taskInstance.assignee ? taskInstance.assignee.username : null;
     const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
-
-    const zOrder = props.taskInstance.zOrder.toString();
+    const zOrder = taskInstance.zOrder.toString();
 
     return (
         <div className='cvat-task-details'>
@@ -101,6 +102,7 @@ export default function DetailsComponent(props: DetailsComponentProps) {
                         <Col>
                             <Text strong className='cvat-black-color'> Labels </Text>
                             <br/>
+                            <LabelsEditorComponent labels={taskInstance.labels}/>
                         </Col>
                     </Row>
                 </Col>

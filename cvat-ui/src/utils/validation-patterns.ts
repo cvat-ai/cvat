@@ -35,6 +35,16 @@ const validationPatterns = {
         pattern: /^[a-zA-Z]{2,}(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/,
         message: 'Invalid name',
     },
+
+    validateAttributeName: {
+        pattern: /\S+/,
+        message: 'Invalid name',
+    },
+
+    validateLabelName: {
+        pattern: /\S+/,
+        message: 'Invalid name',
+    },
 };
 
 export default { ...validationPatterns };

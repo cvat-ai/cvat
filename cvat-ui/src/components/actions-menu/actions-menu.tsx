@@ -44,9 +44,6 @@ export function handleMenuClick(props: MinActionsMenuProps, params: ClickParam) 
             } case 'tf': {
 
                 return;
-            } case 'update': {
-
-                return;
             } case 'delete': {
                 const taskID = taskInstance.id;
                 Modal.confirm({
@@ -98,7 +95,6 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
                 <Menu.Item key='auto'>Run auto annotation</Menu.Item> : null
             }
             <hr/>
-            <Menu.Item key='update'>Update</Menu.Item>
             <Menu.Item key='delete'>Delete</Menu.Item>
         </Menu>
     );

@@ -37,7 +37,7 @@
     "@types/react-redux": "^7.1.2",
     "@types/react-router": "^5.0.5",
     "@types/react-router-dom": "^5.1.0",
-    "antd": "^3.23.2",
+    "antd": "^3.24.2",
     "dotenv-webpack": "^1.7.0",
     "moment": "^2.24.0",
     "prop-types": "^15.7.2",
