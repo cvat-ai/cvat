@@ -135,7 +135,7 @@ def make_image_list(path_to_data):
         return int(os.path.splitext(os.path.basename(item))[0])
 
     image_list = []
-    for root, dirnames, filenames in os.walk(path_to_data):
+    for root, _, filenames in os.walk(path_to_data):
         for filename in fnmatch.filter(filenames, '*.jpg'):
                 image_list.append(os.path.join(root, filename))
 
