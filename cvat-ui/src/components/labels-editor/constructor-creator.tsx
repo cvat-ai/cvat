@@ -18,10 +18,14 @@ interface State {
     attributes: any[];
 }
 
+
 export default class ConstructorCreator extends React.PureComponent<Props, State> {
+    private formRefs: any[];
+
     public constructor(props: Props) {
         super(props);
 
+        this.formRefs = [];
         this.state = {
             attributes: [],
         };
@@ -66,6 +70,7 @@ export default class ConstructorCreator extends React.PureComponent<Props, State
             <Row type='flex' justify='space-between' align='middle' key={id}>
                 <Col span={24}>
                     <AttributeForm
+                        ref={(el) => el ? this.formRefs.push(el) : null}
                         id={id}
                         onSubmit={this.handleNewAttribute}
                         onDelete={this.handleDeleteAttribute}
@@ -77,6 +82,7 @@ export default class ConstructorCreator extends React.PureComponent<Props, State
     }
 
     public render() {
+        this.formRefs = [];
         // Render all forms with entered attributes
         const forms = this.state.attributes.filter((attr) => !attr.deleted)
             .map((attr: any) => this.renderAttrForm(attr));
@@ -92,7 +98,13 @@ export default class ConstructorCreator extends React.PureComponent<Props, State
                             this.props.onCreate({
                                 name,
                                 attributes: this.state.attributes,
-                            })
+                            });
+
+                            this.setState({
+                                attributes: [],
+                            });
+
+                            this.formRefs.forEach((ref) => ref.resetFields());
                         }}/>
                     </Col>
                 </Row>
@@ -111,11 +123,6 @@ export default class ConstructorCreator extends React.PureComponent<Props, State
                             type='primary'
                             form='labelForm'
                             htmlType='submit'
-                            onClick={() => {
-                                this.setState({
-                                    attributes: [],
-                                });
-                            }}
                         > Add Label </Button>
                     </Col>
                     <Col>

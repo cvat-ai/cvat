@@ -222,7 +222,11 @@ class AttributeForm extends React.PureComponent<Props, State> {
         return (
             <Form.Item>
                 <Tooltip overlay='Save the attribute'>
-                    <Button type='link' htmlType='submit'>
+                    <Button
+                        type='link'
+                        htmlType='submit'
+                        className='cvat-save-attribute-button'
+                    >
                         <Icon type='plus-circle'/>
                     </Button>
                 </Tooltip>
@@ -234,14 +238,22 @@ class AttributeForm extends React.PureComponent<Props, State> {
         return (
             <Form.Item>
                 <Tooltip overlay='Delete the attribute'>
-                    <Button type='link' onClick={() => {
-                        this.props.onDelete(this.props.id);
-                    }}>
+                    <Button
+                        type='link'
+                        className='cvat-delete-attribute-button'
+                        onClick={() => {
+                            this.props.onDelete(this.props.id);
+                        }}
+                    >
                         <Icon type='minus-circle'/>
                     </Button>
                 </Tooltip>
             </Form.Item>
         );
+    }
+
+    public resetFields() {
+        this.props.form.resetFields();
     }
 
     public render() {

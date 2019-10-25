@@ -441,6 +441,14 @@
     display: contents;
 }
 
+.cvat-save-attribute-button:hover > i {
+    color: black;
+}
+
+.cvat-delete-attribute-button:hover > i {
+    color: red;
+}
+
 #cvat-create-task-button {
     padding: 0 30px;
 }
