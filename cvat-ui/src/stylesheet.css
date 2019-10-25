@@ -271,6 +271,18 @@
     border: 0.5px solid #D6D6D6;
 }
 
+.cvat-task-item-load-submenu-item {
+    padding: 0px;
+}
+
+.cvat-task-item-load-submenu-item > span > .ant-upload {
+    width: 100%;
+}
+
+.cvat-task-item-dump-submenu-item {
+    padding: 0px;
+}
+
 .cvat-task-preview {
     max-width: 140px;
     max-height: 80px;
@@ -279,7 +291,7 @@
 .cvat-task-preview-wrapper {
     display: flex;
     justify-content: center;
-    overflow: auto;
+    overflow: hidden;
     margin: 20px;
     margin-top: 0px;
 }

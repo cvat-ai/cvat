@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default class AnnotationPage extends React.PureComponent {
+export default class AnnotationPageContainer extends React.PureComponent {
     constructor(props: any) {
         super(props);
     }

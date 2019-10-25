@@ -25,11 +25,11 @@ export function registerSuccess(user: any): AnyAction {
     };
 }
 
-export function registerFailed(registerError: any): AnyAction {
+export function registerFailed(error: any): AnyAction {
     return {
         type: AuthActionTypes.REGISTER_FAILED,
         payload: {
-            registerError,
+            error,
         },
     };
 }
@@ -43,11 +43,11 @@ export function loginSuccess(user: any): AnyAction {
     };
 }
 
-export function loginFailed(loginError: any): AnyAction {
+export function loginFailed(error: any): AnyAction {
     return {
         type: AuthActionTypes.LOGIN_FAILED,
         payload: {
-            loginError,
+            error,
         },
     };
 }
@@ -59,11 +59,11 @@ export function logoutSuccess(): AnyAction {
     };
 }
 
-export function logoutFailed(logoutError: any): AnyAction {
+export function logoutFailed(error: any): AnyAction {
     return {
         type: AuthActionTypes.LOGOUT_FAILED,
         payload: {
-            logoutError,
+            error,
         },
     };
 }
@@ -77,30 +77,23 @@ export function authorizedSuccess(user: any): AnyAction {
     };
 }
 
-export function authorizedFailed(authError: any): AnyAction {
+export function authorizedFailed(error: any): AnyAction {
     return {
         type: AuthActionTypes.AUTHORIZED_FAILED,
         payload: {
-            authError,
+            error,
         },
     };
 }
 
-export function registerAsync({
-    username,
-    firstName,
-    lastName,
-    email,
-    password1,
-    password2,
-}: {
-    username: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    password1: string;
-    password2: string;
-}): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function registerAsync(
+    username: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    password1: string,
+    password2: string,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         let users = null;
         try {
@@ -116,7 +109,7 @@ export function registerAsync({
     };
 }
 
-export function loginAsync({ username, password }: {username: string; password: string}):
+export function loginAsync(username: string, password: string):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         let users = null;

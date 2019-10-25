@@ -6,26 +6,20 @@ import {
     Pagination,
 } from 'antd';
 
-import TaskItem from './task-item'
+import TaskItem from '../../containers/tasks-page/task-item';
 
 export interface ContentListProps {
-    goToPage(page: number): void;
-    tasks: any[];
-    previews: string[];
-    page: number;
-    count: number;
+    onSwitchPage(page: number): void;
+    currentTasksIndexes: number[];
+    currentPage: number;
+    numberOfTasks: number;
 }
 
-export default function TaskList(props: ContentListProps) {
-    const taskViews = [];
-
-    for (let i = 0; i < props.tasks.length; i++) {
-        const task = props.tasks[i];
-        const preview = props.previews[i];
-        taskViews.push(
-            <TaskItem key={task.id} task={task} preview={preview}></TaskItem>
-        )
-    }
+export default function TaskListComponent(props: ContentListProps) {
+    const tasks = props.currentTasksIndexes;
+    const taskViews = tasks.map(
+        (tid, id) => <TaskItem idx={id} taskID={tid} key={tid}/>
+    );
 
     return (
         <>
@@ -38,9 +32,10 @@ export default function TaskList(props: ContentListProps) {
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-tasks-pagination'
-                        onChange={props.goToPage}
-                        total={props.count}
+                        onChange={props.onSwitchPage}
+                        total={props.numberOfTasks}
                         pageSize={10}
+                        current={props.currentPage}
                         showQuickJumper
                     />
                 </Col>

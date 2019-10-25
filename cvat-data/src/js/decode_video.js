@@ -92,10 +92,11 @@ self.onmessage = function (e) {
                 + `Got ${result}. Possible reasons: `
                 + 'bad video file, unpached jsmpeg';
             throw Error(message);
+            self.close();
         }
         
 
-        postMessage({fileName : null, index : i, data : YCbCrToRGBA(...result, e.data.width, e.data.height)});
+        postMessage({fileName : null, index : i, data : YCbCrToRGBA(...result, e.data.width, e.data.height), isEnd : i === end});
     }
 
     self.close();
