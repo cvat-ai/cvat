@@ -102,15 +102,13 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
         r = model.detect([image], verbose=1)
 
         r = r[0]
-        # "r['rois'][i]" gives bounding box around the object
-        for i in range(len(r['class_ids'])):
-            if r['class_ids'][i] in labels_mapping.keys():
-                if r['scores'][i] >= treshold:
-                    # xmin, ymin, xmax, ymax = _normalize_box(
-                    #     boxes[0][i], width, height)
-                    mask = _convert_to_int(r['masks'][:,:,i])
+        # "r['rois'][index]" gives bounding box around the object
+        for index, c_id in enumerate(r['class_ids']):
+            if c_id in labels_mapping.keys():
+                if r['scores'][index] >= treshold:
+                    mask = _convert_to_int(r['masks'][:,:,index])
                     segmentation = _convert_to_segmentation(mask)
-                    label = labels_mapping[r['class_ids'][i]]
+                    label = labels_mapping[c_id]
                     if label not in result:
                         result[label] = []
                     result[label].append(
