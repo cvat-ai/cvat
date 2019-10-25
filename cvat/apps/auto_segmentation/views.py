@@ -66,11 +66,6 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
         raise OSError('Model path env not found in the system.')
     job = rq.get_current_job()
 
-    # Download COCO trained weights from Releases if needed
-    if not os.path.exists(COCO_MODEL_PATH):
-        utils.download_trained_weights(COCO_MODEL_PATH)
-    job = rq.get_current_job()
-
     ## CONFIGURATION
 
     class InferenceConfig(coco.CocoConfig):
@@ -102,12 +97,6 @@ def run_tensorflow_auto_segmentation(image_list, labels_mapping, treshold):
         job.save_meta()
 
         image = skimage.io.imread(image_path)
-        # image = Image.open(image_path)
-        # width, height = image.size
-        # if width > 1920 or height > 1080:
-        #     image = image.resize(
-        #         (width // 2, height // 2), Image.ANTIALIAS)
-        # image_np = load_image_into_numpy(image)
 
         # for multiple image detection, "batch size" must be equal to number of images
         r = model.detect([image], verbose=1)
