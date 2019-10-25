@@ -198,7 +198,7 @@ def create_thread(tid, labels_mapping, user):
     except Exception as ex:
         try:
             slogger.task[tid].exception('exception was occured during auto segmentation of the task', exc_info=True)
-        except:
+        except Exception:
             slogger.glob.exception('exception was occured during auto segmentation of the task {}'.format(tid), exc_into=True)
         raise ex
 
@@ -276,7 +276,7 @@ def create(request, tid):
     except Exception as ex:
         try:
             slogger.task[tid].exception("exception was occured during tensorflow segmentation request", exc_info=True)
-        except:
+        except Exception:
             pass
         return HttpResponseBadRequest(str(ex))
 
@@ -329,7 +329,7 @@ def cancel(request, tid):
     except Exception as ex:
         try:
             slogger.task[tid].exception("cannot cancel tensorflow segmentation for task #{}".format(tid), exc_info=True)
-        except:
+        except Exception:
             pass
         return HttpResponseBadRequest(str(ex))
 
