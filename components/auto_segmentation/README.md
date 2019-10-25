@@ -23,7 +23,7 @@
 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors',
 'teddy bear', 'hair drier', 'toothbrush'.
 ```
--   Component adds "Run Auto Segmentation" button into dashboard.
+-  Component adds "Run Auto Segmentation" button into dashboard.
 
 ### Build docker image
 ```bash
