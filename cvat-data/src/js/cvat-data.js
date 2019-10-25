@@ -22,8 +22,22 @@ class FrameProvider {
         this._running = false;
         this._blockType = blockType;
         this._currFrame = -1;
+        this._requestedBlockDecode = null;
         this._width = null;
         this._height = null;
+        this._decodingBlocks = {};
+        this._decodeThreadCount = 0;
+        this._timerId = setTimeout(this._worker.bind(this), 100);
+    };
+
+    _worker()
+    {
+        if (this._requestedBlockDecode != null &&
+            this._decodeThreadCount < 3)
+        {
+            this.startDecode();
+        }
+        this._timerId = setTimeout(this._worker.bind(this), 100);
     }
 
     /* This method removes extra data from a cache when memory overflow */
@@ -33,7 +47,6 @@ class FrameProvider {
             const [start, end] = shifted.split(':').map((el) => +el);
             delete this._blocks[start / this._blockSize];
         }
-
 
         // delete frames whose are not in areas of current frame
         for (let i = 0; i < this._blocks_ranges.length; i++)
@@ -55,6 +68,21 @@ class FrameProvider {
                     delete this._frames[j];
                 }
             }
+        }
+    }
+
+    requestDecodeBlock(block, start, end, resolveCallback, rejectCallback){
+        if (this._requestedBlockDecode != null)
+        {
+            this._requestedBlockDecode.rejectCallback();
+        }
+
+        this._requestedBlockDecode = {
+            block : block,
+            start : start,
+            end : end,
+            resolveCallback : resolveCallback,
+            rejectCallback : rejectCallback,
         }
     }
 
@@ -95,13 +123,17 @@ class FrameProvider {
         this._blocks[chunkNumber] = "loading";
     }
 
-    startDecode(block, start, end, callback)
-    {
+    startDecode() {
          if (this._blockType === BlockType.TSVIDEO){
-            if (this._running) {
-                throw new Error('Decoding has already running');
-            }
-
+         
+            let start = this._requestedBlockDecode.start;
+            let end = this._requestedBlockDecode.end;
+            let block = this._requestedBlockDecode.block;           
+           
+            console.log("start decoding " + start + " to " + end + " frames");
+            this._decodingBlocks[`${start}:${end}`] = this._requestedBlockDecode;
+            this._requestedBlockDecode = null;
+            
             for (let i = start; i < end; i++){
                 this._frames[i] = 'loading';
             }
@@ -114,18 +146,29 @@ class FrameProvider {
 
             worker.onerror = (function (e) {
                 console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
-            });
+                worker.terminate();
+                this._decodeThreadCount--;
+                console.log(this._decodeThreadCount);
+                delete this._decodingBlocks[`${start}:${end}`];
+            }).bind(this);
 
-            worker.postMessage({block : block, 
-                                start : start, 
-                                  end : end,
-                                width : this._width,
+            worker.postMessage({block  : block, 
+                                start  : start, 
+                                  end  : end,
+                                width  : this._width,
                                 height : this._height});
+            this._decodeThreadCount++;
+            console.log(this._decodeThreadCount);
             
-
             worker.onmessage = (function (event){
                 this._frames[event.data.index] = event.data.data;
-                callback(event.data.index);
+                this._decodingBlocks[`${start}:${end}`].resolveCallback(event.data.index);
+                if (event.data.isEnd) {
+                    console.log("stop decoding " + start + " to " + end + " frames");
+                    this._decodeThreadCount--;
+                    console.log(this._decodeThreadCount);
+                    delete this._decodingBlocks[`${start}:${end}`];
+                }
             }).bind(this);
            
         } else {
@@ -133,21 +176,27 @@ class FrameProvider {
 
             worker.onerror = (function (e) {
                 console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
+                this._decodeThreadCount--;
             });
 
             worker.postMessage({block : block, 
                                 start : start, 
                                   end : end });
-
-            
+            this._decodeThreadCount++;
+                        
             worker.onmessage = (function (event){
                 this._frames[event.data.index] = event.data.data;
+                if (event.data.isEnd)
+                    this._decodeThreadCount--;
                 callback(event.data.index);
-
             }).bind(this);
         }
     }
 
+    get decodeThreadCount()
+    {
+        return this._decodeThreadCount;
+    }
 
     /*
         Method returns a list of cached ranges

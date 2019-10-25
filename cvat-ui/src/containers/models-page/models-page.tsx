@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default class ModelsPage extends React.PureComponent {
+export default class ModelsPageContainer extends React.PureComponent {
     constructor(props: any) {
         super(props);
     }

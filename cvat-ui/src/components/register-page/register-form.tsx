@@ -16,18 +16,18 @@ export interface RegisterData {
     password2: string;
 }
 
-import patterns from '../utils/validation-patterns';
+import patterns from '../../utils/validation-patterns';
 
 type RegisterFormProps = {
     onSubmit(registerData: RegisterData): void;
 } & FormComponentProps;
 
-class RegisterForm extends React.PureComponent<RegisterFormProps> {
+class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
     constructor(props: RegisterFormProps) {
         super(props);
     }
 
-    private validateConfirmation(rule: any, value: any, callback: any) {
+    private validateConfirmation = (rule: any, value: any, callback: any) => {
         const { form } = this.props;
         if (value && value !== form.getFieldValue('password1')) {
           callback('Two passwords that you enter is inconsistent!');
@@ -36,7 +36,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
         }
       };
 
-    private validatePassword(_: any, value: any, callback: any) {
+    private validatePassword = (_: any, value: any, callback: any) => {
         const { form } = this.props;
         if (!patterns.validatePasswordLength.pattern.test(value)) {
             callback(patterns.validatePasswordLength.message);
@@ -60,7 +60,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
         callback();
     };
 
-    private validateUsername(_: any, value: any, callback: any) {
+    private validateUsername = (_: any, value: any, callback: any) => {
         if (!patterns.validateUsernameLength.pattern.test(value)) {
             callback(patterns.validateUsernameLength.message);
         }
@@ -72,7 +72,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
         callback();
     };
 
-    private handleSubmit(e: React.FormEvent) {
+    private handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         this.props.form.validateFields((error, values) => {
             if (!error) {
@@ -169,7 +169,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
                         required: true,
                         message: 'Please input your password!',
                     }, {
-                        validator: this.validatePassword.bind(this),
+                        validator: this.validatePassword,
                     }],
                 })(<Input.Password
                     autoComplete='new-password'
@@ -188,7 +188,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
                         required: true,
                         message: 'Please confirm your password!',
                     }, {
-                        validator: this.validateConfirmation.bind(this),
+                        validator: this.validateConfirmation,
                     }],
                 })(<Input.Password
                     autoComplete='new-password'
@@ -203,7 +203,7 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
 
     public render() {
         return (
-            <Form onSubmit={this.handleSubmit.bind(this)} className='login-form'>
+            <Form onSubmit={this.handleSubmit} className='login-form'>
                 {this.renderFirstNameField()}
                 {this.renderLastNameField()}
                 {this.renderUsernameField()}
@@ -221,4 +221,4 @@ class RegisterForm extends React.PureComponent<RegisterFormProps> {
     }
 }
 
-export default Form.create<RegisterFormProps>()(RegisterForm);
+export default Form.create<RegisterFormProps>()(RegisterFormComponent);
