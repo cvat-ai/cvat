@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to [get basic information about users without admin permissions](
 https://github.com/opencv/cvat/issues/750).
 - Changed REST API: removed PUT and added DELETE methods for /api/v1/users/ID.
+- Added Mask-RCNN Auto Annotation Script
 
 ### Changed
 -
