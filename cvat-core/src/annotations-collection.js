@@ -177,19 +177,19 @@
 
         export() {
             const data = {
-                tracks: this.tracks.filter(track => !track.removed)
-                    .map(track => track.toJSON()),
+                tracks: this.tracks.filter((track) => !track.removed)
+                    .map((track) => track.toJSON()),
                 shapes: Object.values(this.shapes)
                     .reduce((accumulator, value) => {
                         accumulator.push(...value);
                         return accumulator;
-                    }, []).filter(shape => !shape.removed)
-                    .map(shape => shape.toJSON()),
+                    }, []).filter((shape) => !shape.removed)
+                    .map((shape) => shape.toJSON()),
                 tags: Object.values(this.tags).reduce((accumulator, value) => {
                     accumulator.push(...value);
                     return accumulator;
-                }, []).filter(tag => !tag.removed)
-                    .map(tag => tag.toJSON()),
+                }, []).filter((tag) => !tag.removed)
+                    .map((tag) => tag.toJSON()),
             };
 
             return data;
@@ -200,7 +200,7 @@
             const shapes = this.shapes[frame] || [];
             const tags = this.tags[frame] || [];
 
-            const objects = tracks.concat(shapes).concat(tags).filter(object => !object.removed);
+            const objects = tracks.concat(shapes).concat(tags).filter((object) => !object.removed);
             // filtering here
 
             const objectStates = [];
@@ -370,7 +370,7 @@
 
             const clientID = ++this.count;
             const track = {
-                frame: Math.min.apply(null, Object.keys(keyframes).map(frame => +frame)),
+                frame: Math.min.apply(null, Object.keys(keyframes).map((frame) => +frame)),
                 shapes: Object.values(keyframes),
                 group: 0,
                 label_id: label.id,
@@ -577,7 +577,7 @@
 
                     if (objectType === 'track') {
                         const keyframes = Object.keys(object.shapes)
-                            .sort((a, b) => +a - +b).map(el => +el);
+                            .sort((a, b) => +a - +b).map((el) => +el);
 
                         let prevKeyframe = keyframes[0];
                         let visible = false;
@@ -699,13 +699,13 @@
                     } else if (state.objectType === 'track') {
                         constructed.tracks.push({
                             attributes: attributes
-                                .filter(attr => !labelAttributes[attr.spec_id].mutable),
+                                .filter((attr) => !labelAttributes[attr.spec_id].mutable),
                             frame: state.frame,
                             group: 0,
                             label_id: state.label.id,
                             shapes: [{
                                 attributes: attributes
-                                    .filter(attr => labelAttributes[attr.spec_id].mutable),
+                                    .filter((attr) => labelAttributes[attr.spec_id].mutable),
                                 frame: state.frame,
                                 occluded: state.occluded || false,
                                 outside: false,

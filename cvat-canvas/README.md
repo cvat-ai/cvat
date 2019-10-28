@@ -58,6 +58,16 @@ Canvas itself handles:
         enabled: boolean;
     }
 
+    interface DrawnData {
+        shapeType: string;
+        points: number[];
+        objectType?: string;
+        occluded?: boolean;
+        attributes?: [index: number]: string;
+        label?: Label;
+        color?: string;
+    }
+
     interface Canvas {
         html(): HTMLDivElement;
         setup(frameData: any, objectStates: any[]): void;
@@ -71,6 +81,7 @@ Canvas itself handles:
         group(groupData: GroupData): void;
         split(splitData: SplitData): void;
         merge(mergeData: MergeData): void;
+        select(objectState: any): void;
 
         cancel(): void;
     }
@@ -78,12 +89,13 @@ Canvas itself handles:
 
 ### API CSS
 
-- All drawn objects (shapes, tracks) have an id ```cvat_canvas_object_{objectState.id}```
+- All drawn objects (shapes, tracks) have an id ```cvat_canvas_shape_{objectState.clientID}```
 - Drawn shapes and tracks have classes ```cvat_canvas_shape```,
  ```cvat_canvas_shape_activated```,
  ```cvat_canvas_shape_grouping```,
  ```cvat_canvas_shape_merging```,
- ```cvat_canvas_shape_drawing```
+ ```cvat_canvas_shape_drawing```,
+ ```cvat_canvas_shape_occluded```
 - Drawn texts have the class ```cvat_canvas_text```
 - Tags have the class ```cvat_canvas_tag```
 - Canvas image has ID ```cvat_canvas_image```
@@ -98,10 +110,11 @@ Standard JS events are used.
     - canvas.activated => ObjectState
     - canvas.deactivated
     - canvas.moved => {states: ObjectState[], x: number, y: number}
-    - canvas.drawn => {state: ObjectState}
-    - canvas.edited => {state: ObjectState}
-    - canvas.splitted => {state: ObjectState, frame: number}
-    - canvas.groupped => {states: ObjectState[], reset: boolean}
+    - canvas.find => {states: ObjectState[], x: number, y: number}
+    - canvas.drawn => {state: DrawnData}
+    - canvas.edited => {state: ObjectState, points: number[]}
+    - canvas.splitted => {state: ObjectState}
+    - canvas.groupped => {states: ObjectState[]}
     - canvas.merged => {states: ObjectState[]}
     - canvas.canceled
 ```
@@ -109,7 +122,7 @@ Standard JS events are used.
 ### WEB
 ```js
     // Create an instance of a canvas
-    const canvas = new window.canvas.Canvas(window.cvat.classes.ObjectState);
+    const canvas = new window.canvas.Canvas();
 
     // Put canvas to a html container
     htmlContainer.appendChild(canvas.html());
@@ -149,7 +162,7 @@ Than you can use it in TypeScript:
 ```ts
     import * as CANVAS from 'cvat-canvas.node';
     // Create an instance of a canvas
-    const canvas = new CANVAS.Canvas(null);
+    const canvas = new CANVAS.Canvas();
 
     // Put canvas to a html container
     htmlContainer.appendChild(canvas.html());

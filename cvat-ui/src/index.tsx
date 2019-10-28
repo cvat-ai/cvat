@@ -1,24 +1,74 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { connect, Provider } from 'react-redux';
 
-import { Provider } from 'react-redux'
-import configureStore from './store';
+import CVATApplication from './components/cvat-app';
+import createCVATStore from './store';
 
-import App from './components/app/app';
+import { authorizedAsync } from './actions/auth-actions';
+import { gettingFormatsAsync } from './actions/formats-actions';
 
-import * as serviceWorker from './serviceWorker';
+import { CombinedState } from './reducers/root-reducer';
 
-import './index.scss';
+const cvatStore = createCVATStore();
 
+interface StateToProps {
+    userInitialized: boolean;
+    formatsInitialized: boolean;
+    gettingAuthError: any;
+    gettingFormatsError: any;
+    user: any;
+}
+
+interface DispatchToProps {
+    loadFormats: () => void;
+    verifyAuthorized: () => void;
+}
+
+function mapStateToProps(state: CombinedState): StateToProps {
+    const { auth } = state;
+    const { formats } = state;
+
+    return {
+        userInitialized: auth.initialized,
+        formatsInitialized: formats.initialized,
+        gettingAuthError: auth.authError,
+        user: auth.user,
+        gettingFormatsError: formats.gettingFormatsError,
+    };
+}
+
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+    return {
+        loadFormats: (): void => dispatch(gettingFormatsAsync()),
+        verifyAuthorized: (): void => dispatch(authorizedAsync())
+    };
+}
+
+function reduxAppWrapper(props: StateToProps & DispatchToProps) {
+    return (
+        <CVATApplication
+            loadFormats={props.loadFormats}
+            verifyAuthorized={props.verifyAuthorized}
+            userInitialized={props.userInitialized}
+            formatsInitialized={props.formatsInitialized}
+            gettingAuthError={props.gettingAuthError ? props.gettingAuthError.toString() : ''}
+            gettingFormatsError={props.gettingFormatsError ? props.gettingFormatsError.toString() : ''}
+            user={props.user}
+        />
+    )
+}
+
+const ReduxAppWrapper = connect(
+    mapStateToProps,
+    mapDispatchToProps,
+)(reduxAppWrapper);
 
 ReactDOM.render(
-  <Provider store={ configureStore() }>
-    <App />
-  </Provider>,
-  document.getElementById('root')
-);
-
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();
+    (
+        <Provider store={cvatStore}>
+            <ReduxAppWrapper/>
+        </Provider>
+    ),
+    document.getElementById('root')
+)

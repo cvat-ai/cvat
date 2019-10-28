@@ -9,6 +9,10 @@ OpenVINO&trade; toolkit format are supported. If you would like to annotate a
 task with a custom model please convert it to the intermediate representation
 (IR) format via the model optimizer tool. See [OpenVINO documentation](https://software.intel.com/en-us/articles/OpenVINO-InferEngine) for details.
 
+### Installation
+
+See the installation instructions for [the OpenVINO component](../../../components/openvino)
+
 ### Usage
 
 To annotate a task with a custom model you need to prepare 4 files:
@@ -74,6 +78,16 @@ builtin functions like __str, int, float, max, min, range__.
      add_polygon(self, points, label, frame_number, attributes=None)
      add_polyline(self, points, label, frame_number, attributes=None)
      ```
+
+### Testing script
+
+CVAT comes prepackaged with a small command line helper script to help develop interpretation scripts.
+
+It includes a small user interface which allows users to feed in images and see the results using
+the user interfaces provided by OpenCV.
+
+See the script and the documentation in the
+[auto_annotation directory](https://github.com/opencv/cvat/tree/develop/utils/auto_annotation)
 
 ### Examples
 
@@ -163,3 +177,8 @@ for frame_results in detections:
         frame_number=frame_number,
       )
 ```
+
+### Available interpretation scripts
+
+CVAT comes prepackaged with several out of the box interpretation scripts.
+See them in the [open model zoo directory](https://github.com/opencv/cvat/tree/develop/utils/open_model_zoo)

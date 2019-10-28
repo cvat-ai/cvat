@@ -4,6 +4,7 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/840351da141e4eaeac6476fd19ec0a33)](https://app.codacy.com/app/cvat/cvat?utm_source=github.com&utm_medium=referral&utm_content=opencv/cvat&utm_campaign=Badge_Grade_Dashboard)
 [![Gitter chat](https://badges.gitter.im/opencv-cvat/gitter.png)](https://gitter.im/opencv-cvat)
 [![Coverage Status](https://coveralls.io/repos/github/opencv/cvat/badge.svg?branch=)](https://coveralls.io/github/opencv/cvat?branch=develop)
+[![DOI](https://zenodo.org/badge/139156354.svg)](https://zenodo.org/badge/latestdoi/139156354)
 
 CVAT is free, online, interactive video and image annotation tool for computer vision. It is being used by our team to annotate million of objects with different properties. Many UI and UX decisions are based on feedbacks from professional data annotation team.
 
@@ -13,6 +14,8 @@ CVAT is free, online, interactive video and image annotation tool for computer v
 
 - [Installation guide](cvat/apps/documentation/installation.md)
 - [User's guide](cvat/apps/documentation/user_guide.md)
+- [Django REST API documentation](#rest-api)
+- [Command line interface](utils/cli/)
 - [XML annotation format](cvat/apps/documentation/xml_format.md)
 - [AWS Deployment Guide](cvat/apps/documentation/AWS-Deployment-Guide.md)
 - [Questions](#questions)
@@ -57,6 +60,11 @@ After you click the link above:
 
 If you have any questions, please contact Onepanel directly at support@onepanel.io. If you are in the Onepanel application, you can also use the chat icon in the bottom right corner.
 
+## REST API
+
+Automatically generated Swagger documentation for Django REST API is
+available on ``<cvat_origin>/api/swagger`` (default: ``localhost:8080/api/swagger``).
+
 ## LICENSE
 
 Code released under the [MIT License](https://opensource.org/licenses/MIT).
@@ -69,7 +77,11 @@ contributors and other users.
 
 However, if you have a feature request or a bug report that can reproduced,
 feel free to open an issue (with steps to reproduce the bug if it's a bug
-report).
+report) on [GitHub* issues](https://github.com/opencv/cvat/issues).
 
 If you are not sure or just want to browse other users common questions,
 [Gitter chat](https://gitter.im/opencv-cvat) is the way to go.
+
+Other ways to ask questions and get our support:
+* [\#cvat](https://stackoverflow.com/search?q=%23cvat) tag on StackOverflow*
+* [Forum on Intel Developer Zone](https://software.intel.com/en-us/forums/computer-vision)

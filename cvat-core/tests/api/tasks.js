@@ -26,7 +26,7 @@ describe('Feature: get a list of tasks', () => {
     test('get all tasks', async () => {
         const result = await window.cvat.tasks.get();
         expect(Array.isArray(result)).toBeTruthy();
-        expect(result).toHaveLength(5);
+        expect(result).toHaveLength(6);
         for (const el of result) {
             expect(el).toBeInstanceOf(Task);
         }
@@ -137,7 +137,7 @@ describe('Feature: save a task', () => {
         });
 
         expect(result[0].labels).toHaveLength(labelsLength + 1);
-        const appendedLabel = result[0].labels.filter(el => el.name === 'My boss\'s car');
+        const appendedLabel = result[0].labels.filter((el) => el.name === 'My boss\'s car');
         expect(appendedLabel).toHaveLength(1);
         expect(appendedLabel[0].attributes).toHaveLength(1);
         expect(appendedLabel[0].attributes[0].name).toBe('parked');
