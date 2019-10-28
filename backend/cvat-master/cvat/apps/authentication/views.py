@@ -10,13 +10,11 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from furl import furl
 
-from django.views.decorators.clickjacking import xframe_options_exempt
 from django.http import HttpResponse
 
 from . import forms
 from . import signature
 
-@xframe_options_exempt
 def sign_in_user(request):
     if request.method == 'POST':
         username=request.POST['username']

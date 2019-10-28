@@ -41,7 +41,6 @@ urlpatterns = [
     path('api/docs/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
     # entry point for API
-    path('api-token-auth/', obtain_auth_token_views.obtain_auth_token),
     path('api/v1/auth/', include('cvat.apps.authentication.api_urls')),
     path('api/v1/', include((router.urls, 'cvat'), namespace='v1'))
 ]
