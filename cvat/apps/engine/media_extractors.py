@@ -80,14 +80,14 @@ class ImageListExtractor(IMediaExtractor):
         converted_image.close()
         return width, height, buf
 
-    def save_as_chunks(self, chunk_size, chunk_path_generator, progress_callback=None, quality=100):
+    def save_as_chunks(self, chunk_size, compressed_chunk_path, original_chunk_path, progress_callback=None, quality=100):
         counter = 0
         media_meta = []
         total_length = len(self._source_path)
         for i in range(0, total_length, chunk_size):
             chunk_data = self._source_path[i:i + chunk_size]
-            archive_name = chunk_path_generator(counter)
-            with zipfile.ZipFile(archive_name, 'x') as zip_chunk:
+            compressed_chunk = compressed_chunk_path(counter)
+            with zipfile.ZipFile(compressed_chunk, 'x') as zip_chunk:
                 for idx, image_file in enumerate(chunk_data):
                     w, h, image_buf = self.compress_image(image_file, quality)
                     media_meta.append({
@@ -96,6 +96,12 @@ class ImageListExtractor(IMediaExtractor):
                     })
                     arcname = '{:06d}.jpeg'.format(idx)
                     zip_chunk.writestr(arcname, image_buf.getvalue())
+
+            original_chunk = original_chunk_path(counter)
+            with zipfile.ZipFile(original_chunk, 'x') as zip_chunk:
+                for idx, image_file in enumerate(chunk_data):
+                    zip_chunk.write(filename=image_file, arcname=os.path.basename(image_file))
+
             counter += 1
             if progress_callback:
                 progress_callback(i / total_length)
@@ -177,9 +183,10 @@ class VideoExtractor(IMediaExtractor):
         self.delete_tmp_dir(self._tmp_dir)
 
     def _get_av_container(self):
-        return av.open(av.datasets.curated(self._source_path[0]))
+        container = av.open(av.datasets.curated(self._source_path[0]))
+        return container
 
-    def save_as_chunks(self, chunk_size, chunk_path_generator, progress_callback=None, quality=100):
+    def save_as_chunks(self, chunk_size, compressed_chunk_path, original_chunk_path, progress_callback=None, quality=100):
         if not self._source_path:
             raise Exception('No data to compress')
 
@@ -207,7 +214,7 @@ class VideoExtractor(IMediaExtractor):
             start_frame = self._start + chunk_idx * chunk_size
             input_images = os.path.join(self._tmp_dir, self._imagename_pattern)
             input_options = '-f image2 -framerate {} -start_number {}'.format(self._output_fps, start_frame)
-            output_chunk = chunk_path_generator(chunk_idx)
+            output_chunk = compressed_chunk_path(chunk_idx)
             output_options = '-vframes {} -codec:v mpeg1video -q:v {}'.format(chunk_size, translated_quality)
 
             ff = FFmpeg(
@@ -215,10 +222,17 @@ class VideoExtractor(IMediaExtractor):
                 outputs = {output_chunk: output_options},
             )
 
-            slogger.glob.info("FFMpeg cmd: {} ".format(ff.cmd))
+            ff.run()
+
+            output_chunk = original_chunk_path(chunk_idx)
+            output_options = '-vframes {} -codec:v mpeg1video -q:v {}'.format(chunk_size, 0)
+            ff = FFmpeg(
+                inputs  = {input_images: input_options},
+                outputs = {output_chunk: output_options},
+            )
             ff.run()
             if progress_callback and container.streams.video[0].frames:
-                progress_callback(chunk_idx / container.streams.video[0].frames)
+                progress_callback(chunk_idx * chunk_size / container.streams.video[0].frames)
 
         return [{'name': self._source_path[0], 'size': (frame.width, frame.height)}], frame_count
 

@@ -246,7 +246,8 @@ def _create_thread(tid, data):
     for extractor in extractors:
         media_meta, image_count = extractor.save_as_chunks(
             chunk_size=db_data.chunk_size,
-            chunk_path_generator=db_data.get_compressed_chunk_path,
+            compressed_chunk_path=db_data.get_compressed_chunk_path,
+            original_chunk_path=db_data.get_original_chunk_path,
             progress_callback=update_progress,
             quality=db_data.image_quality,
         )
