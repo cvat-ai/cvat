@@ -3,6 +3,7 @@ import tempfile
 import shutil
 import zipfile
 from io import BytesIO
+import itertools
 
 import av
 import av.datasets
@@ -161,8 +162,6 @@ class PDFExtractor(DirectoryExtractor):
 class VideoExtractor(IMediaExtractor):
     def __init__(self, source_path, step=1, start=0, stop=0):
         self._tmp_dir = self.create_tmp_dir()
-        # self._video_source = source_path[0]
-        # self._source_path = source_path
         self._imagename_pattern = '%09d.png'
         self._output_fps = 25
         self._tmp_dir = self.create_tmp_dir()
@@ -190,20 +189,22 @@ class VideoExtractor(IMediaExtractor):
 
         container = self._get_av_container()
 
-        def generate_chunk(decoder, count):
-            it = iter(decoder)
-            while True:
-                yield [next(it) for i in range(count)]
+        def generate_chunks(decoder, count):
+            it = itertools.islice(decoder, self._start, self._stop if self._stop else None)
+            frames = list(itertools.islice(it, 0, count * self._step, self._step))
+            while frames:
+                yield frames
+                frames = list(itertools.islice(it, 0, count * self._step, self._step))
 
         frame_count = 0
-        for chunk_idx, frames in enumerate(generate_chunk(container.decode(), chunk_size)):
+        for chunk_idx, frames in enumerate(generate_chunks(container.decode(), chunk_size)):
             for f in os.listdir(self._tmp_dir):
                 os.remove(os.path.join(self._tmp_dir, f))
             for frame in frames:
                 frame.to_image().save(os.path.join(self._tmp_dir, '{:09d}.png'.format(frame.pts)), format='PNG', compress_level=0)
                 frame_count += 1
 
-            start_frame = chunk_idx * chunk_size
+            start_frame = self._start + chunk_idx * chunk_size
             input_images = os.path.join(self._tmp_dir, self._imagename_pattern)
             input_options = '-f image2 -framerate {} -start_number {}'.format(self._output_fps, start_frame)
             output_chunk = chunk_path_generator(chunk_idx)
