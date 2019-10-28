@@ -15,6 +15,8 @@ import ConstructorViewer from './constructor-viewer';
 import ConstructorCreator from './constructor-creator';
 import ConstructorUpdater from './constructor-updater';
 
+import idGenerator, { Label, Attribute } from './common';
+
 enum ConstructorMode {
     SHOW = 'SHOW',
     CREATE = 'CREATE',
@@ -22,14 +24,15 @@ enum ConstructorMode {
 }
 
 interface LabelsEditortProps {
-    labels: any;
+    labels: Label[];
     onSubmit: (labels: string) => void;
 }
 
 interface LabelsEditorState {
     constructorMode: ConstructorMode;
-    labelForUpdate: any;
-    labels: any;
+    savedLabels: Label[];
+    unsavedLabels: Label[];
+    labelForUpdate: Label | null;
 }
 
 export default class LabelsEditor
@@ -37,43 +40,112 @@ export default class LabelsEditor
 
     public constructor(props: LabelsEditortProps) {
         super(props);
+
+        function transformLabel(label: any): Label {
+            return {
+                name: label.name,
+                id: label.id || idGenerator(),
+                attributes: label.attributes.map((attr: any): Attribute => {
+                    return {
+                        id: attr.id || idGenerator(),
+                        name: attr.name,
+                        type: attr.input_type,
+                        mutable: attr.mutable,
+                        values: attr.values,
+                    };
+                }),
+            }
+        }
+
         this.state = {
             constructorMode: ConstructorMode.SHOW,
-            labels: this.props.labels,
+            savedLabels: this.props.labels.map(transformLabel)
+                .filter((label: Label) => label.id >= 0),
+            unsavedLabels: this.props.labels.map(transformLabel)
+                .filter((label: Label) => label.id < 0),
             labelForUpdate: null,
         };
     }
 
-    private handleUpdate = (label: any) => {
-        this.setState({
-            constructorMode: ConstructorMode.UPDATE,
-            labelForUpdate: label,
-        });
+    private handleUpdate = (label: Label) => {
+        if (label.id >= 0) {
+            const savedLabels = this.state.savedLabels
+                .filter((_label: Label) => _label.id !== label.id);
+            savedLabels.push(label);
+            this.setState({
+                savedLabels,
+                constructorMode: ConstructorMode.SHOW,
+            });
+        } else {
+            const unsavedLabels = this.state.unsavedLabels
+                .filter((_label: Label) => _label.id !== label.id);
+                unsavedLabels.push(label);
+            this.setState({
+                unsavedLabels,
+                constructorMode: ConstructorMode.SHOW,
+            });
+        }
     };
 
-    private handleDelete = (label: any) => {
-        if (Number.isInteger(label.id)) {
+    private handleDelete = (label: Label) => {
+        // the label is saved on the server, cannot delete it
+        if (typeof(label.id) !== 'undefined' && label.id >= 0) {
             Modal.error({
                 title: 'Could not delete the label',
                 content: 'It has been already saved on the server',
             });
         }
+
+        const unsavedLabels = this.state.unsavedLabels.filter(
+            (_label: Label) => _label.id !== label.id
+        );
+
+        this.setState({
+            unsavedLabels: [...unsavedLabels],
+        });
     };
 
-    private handleCreate = (label: any) => {
+    private handleCreate = (label: Label | null) => {
         if (label === null) {
             this.setState({
                 constructorMode: ConstructorMode.SHOW,
             });
         } else {
             this.setState({
-                labels: [...this.state.labels, label]
-            })
+                unsavedLabels: [...this.state.unsavedLabels,
+                    {
+                        ...label,
+                        id: idGenerator()
+                    }
+                ],
+            });
         }
     };
 
     private handleSubmit = () => {
+        const forSave = [];
+        for (const label of this.state.unsavedLabels.concat(this.state.savedLabels)) {
+            let updatedAttributes = false;
+            let newLabel = false;
+            for (const attr of label.attributes) {
+                if (attr.id < 0) {
+                    delete attr.id;
+                    updatedAttributes = true;
+                    break;
+                }
+            }
 
+            if (label.id < 0) {
+                newLabel = true;
+                delete label.id;
+            }
+
+            if (newLabel || updatedAttributes) {
+                forSave.push(label);
+            }
+        }
+
+        return forSave;
     };
 
     public render() {
@@ -91,7 +163,7 @@ export default class LabelsEditor
                         <Text> Raw </Text>
                     </span>
                 } key='1'>
-                    <RawViewer labels={this.state.labels}/>
+                    <RawViewer labels={[...this.state.savedLabels, ...this.state.unsavedLabels]}/>
                 </Tabs.TabPane>
 
                 <Tabs.TabPane tab={
@@ -112,14 +184,21 @@ export default class LabelsEditor
                     {
                         this.state.constructorMode === ConstructorMode.SHOW ?
                         <ConstructorViewer
-                            labels={this.state.labels}
-                            onUpdate={this.handleUpdate}
+                            labels={[...this.state.savedLabels, ...this.state.unsavedLabels]}
+                            onUpdate={(label: Label) => {
+                                this.setState({
+                                    constructorMode: ConstructorMode.UPDATE,
+                                    labelForUpdate: label,
+                                });
+                            }}
                             onDelete={this.handleDelete}
                         /> :
 
-                        this.state.constructorMode === ConstructorMode.UPDATE ?
+                        this.state.constructorMode === ConstructorMode.UPDATE
+                            && this.state.labelForUpdate !== null ?
                         <ConstructorUpdater
                             label={this.state.labelForUpdate}
+                            onUpdate={this.handleUpdate}
                         /> :
 
                         <ConstructorCreator

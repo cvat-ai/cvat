@@ -102,7 +102,9 @@ export default function DetailsComponent(props: DetailsComponentProps) {
                         <Col>
                             <Text strong className='cvat-black-color'> Labels </Text>
                             <br/>
-                            <LabelsEditorComponent labels={taskInstance.labels}/>
+                            <LabelsEditorComponent labels={taskInstance.labels.map(
+                                (label: any) => label.toJSON()
+                            )}/>
                         </Col>
                     </Row>
                 </Col>

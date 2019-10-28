@@ -7,11 +7,13 @@ import {
 
 import Text from 'antd/lib/typography/Text';
 
+import { Label } from './common';
+
 interface ConstructorViewerItemProps {
-    label: any;
+    label: Label;
     color: string;
-    onUpdate: (label: any) => void;
-    onDelete: (label: any) => void;
+    onUpdate: (label: Label) => void;
+    onDelete: (label: Label) => void;
 }
 
 export default function ConstructorViewerItem(props: ConstructorViewerItemProps) {
@@ -23,7 +25,7 @@ export default function ConstructorViewerItem(props: ConstructorViewerItemProps)
                     <Icon theme='filled' type='edit'/>
                 </span>
             </Tooltip>
-            { Number.isInteger(props.label.id) ? null :
+            { props.label.id >= 0 ? null :
                 <Tooltip title='Delete label'>
                     <span onClick={() => props.onDelete(props.label)}>
                         <Icon type='close'></Icon>

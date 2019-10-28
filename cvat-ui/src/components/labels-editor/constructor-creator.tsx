@@ -10,14 +10,15 @@ import Text from 'antd/lib/typography/Text';
 import AttributeForm from './attribute-form';
 import LabelForm from './label-form';
 
+import idGenerator, { Label, Attribute } from './common';
+
 interface Props {
-    onCreate: (label: any) => void;
+    onCreate: (label: Label | null) => void;
 }
 
 interface State {
-    attributes: any[];
+    attributes: Attribute[];
 }
-
 
 export default class ConstructorCreator extends React.PureComponent<Props, State> {
     private formRefs: any[];
@@ -31,48 +32,45 @@ export default class ConstructorCreator extends React.PureComponent<Props, State
         };
     }
 
-    private handleNewAttribute = (values: any) => {
-        if (this.state.attributes.length === values.id) {
-            // Hasn't been added yet, we have to add it
-            this.state.attributes.push({
-                id: values.id,
-            });
-        }
+    private handleSubmitAttribute = (values: any) => {
+        const attributes = this.state.attributes
+            .filter((attr: Attribute) => attr.id !== values.id);
 
-        const attr = this.state.attributes[values.id];
-        attr.name = values.name;
-        attr.type = values.type.toLowerCase();
-        attr.mutable = values.mutable;
-        attr.values = values.values;
+        const attr: Attribute = {
+            id: values.id,
+            name: values.name,
+            type: values.type.toLowerCase(),
+            mutable: values.mutable,
+            values: values.values,
+        };
 
         this.setState({
-            attributes: [...this.state.attributes],
+            attributes: [...attributes, attr],
         });
     }
 
     private handleDeleteAttribute = (id: number) => {
         if (id < this.state.attributes.length) {
-            this.state.attributes[id].deleted = true;
+            const attributes = this.state.attributes
+                .filter((attr: Attribute) => attr.id !== id);
 
             this.setState({
-                attributes: [...this.state.attributes],
+                attributes: [...attributes],
             });
         }
-
-        // else hasn't been saved yet
     }
 
-    private renderAttrForm(attribute: any) {
+    private renderAttrForm(attribute: Attribute | null) {
         const id = attribute === null ?
-            this.state.attributes.length : attribute.id;
+            idGenerator() : attribute.id;
 
         return (
             <Row type='flex' justify='space-between' align='middle' key={id}>
                 <Col span={24}>
                     <AttributeForm
-                        ref={(el) => el ? this.formRefs.push(el) : null}
+                        wrappedComponentRef={(el: any) => el ? this.formRefs.push(el) : null}
                         id={id}
-                        onSubmit={this.handleNewAttribute}
+                        onSubmit={this.handleSubmitAttribute}
                         onDelete={this.handleDeleteAttribute}
                         instance={attribute}
                     />
@@ -83,28 +81,37 @@ export default class ConstructorCreator extends React.PureComponent<Props, State
 
     public render() {
         this.formRefs = [];
-        // Render all forms with entered attributes
-        const forms = this.state.attributes.filter((attr) => !attr.deleted)
-            .map((attr: any) => this.renderAttrForm(attr));
-
-        // Render a form for a new attribute
-        forms.push(this.renderAttrForm(null));
+        // Render all forms with entered attributes and a form for a new attribute
+        const forms = this.state.attributes.concat([null as any as Attribute])
+            .map((attr: Attribute) => this.renderAttrForm(attr));
 
         return (
             <div className='cvat-label-constructor-creator'>
                 <Row type='flex' justify='space-between' align='middle'>
                     <Col span={9}>
-                        <LabelForm id='labelForm' onSubmit={(name) => {
-                            this.props.onCreate({
-                                name,
-                                attributes: this.state.attributes,
-                            });
+                        <LabelForm id='labelForm' onSubmit={async (name): Promise<boolean> => {
+                            let readyForSubmit = true;
+                            for (const ref of this.formRefs) {
+                                try {
+                                    await ref.submitOutside();
+                                } catch (error) {
+                                    readyForSubmit = false;
+                                }
+                            }
 
-                            this.setState({
-                                attributes: [],
-                            });
+                            if (readyForSubmit) {
+                                this.props.onCreate({
+                                    name,
+                                    id: 0,  // will be redefined in onCreate to a right id
+                                    attributes: this.state.attributes,
+                                });
 
-                            this.formRefs.forEach((ref) => ref.resetFields());
+                                this.setState({
+                                    attributes: [],
+                                });
+                            }
+
+                            return readyForSubmit;
                         }}/>
                     </Col>
                 </Row>
@@ -123,7 +130,7 @@ export default class ConstructorCreator extends React.PureComponent<Props, State
                             type='primary'
                             form='labelForm'
                             htmlType='submit'
-                        > Add Label </Button>
+                        > Save & Continue </Button>
                     </Col>
                     <Col>
                         <Button
@@ -132,7 +139,7 @@ export default class ConstructorCreator extends React.PureComponent<Props, State
                             onClick={() => {
                                 this.props.onCreate(null);
                             }}
-                        > Cancel </Button>
+                        > Cancel & Exit </Button>
                     </Col>
                 </Row>
             </div>

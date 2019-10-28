@@ -2,10 +2,12 @@ import React from 'react';
 
 import ConstructorViewerItem from './constructor-viewer-item';
 
+import { Label } from './common';
+
 interface ConstructorViewerProps {
-    labels: any;
-    onUpdate: (label: any) => void;
-    onDelete: (label: any) => void;
+    labels: Label[];
+    onUpdate: (label: Label) => void;
+    onDelete: (label: Label) => void;
 }
 
 const colors = [

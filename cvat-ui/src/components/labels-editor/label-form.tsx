@@ -18,19 +18,19 @@ export enum AttributeType {
 
 interface AttributeFormProps {
     id: string;
-    onSubmit: (name: string) => void;
+    onSubmit: (name: string) => Promise<boolean>;
 }
 
 type Props = AttributeFormProps & FormComponentProps;
 
 class LabelForm extends React.PureComponent<Props> {
-
     private handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        this.props.form.validateFields((error, values) => {
+        this.props.form.validateFields(async (error, values) => {
             if (!error) {
-                this.props.form.resetFields();
-                this.props.onSubmit(values.name);
+                if (await this.props.onSubmit(values.name)) {
+                    this.props.form.resetFields();
+                }
             }
         });
     }

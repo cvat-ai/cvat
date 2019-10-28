@@ -384,6 +384,7 @@
     border-top: none;
     border-radius: 0px 0px 5px 5px;
     min-height: 9em !important;
+    font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
 }
 
 .cvat-constructor-viewer {
@@ -435,6 +436,11 @@
 
 .cvat-label-constructor-creator > div:first-child {
     margin-top: 10px;
+}
+
+.cvat-label-constructor-updater > div:first-child {
+    margin-top: 10px;
+    margin-bottom: 30px;
 }
 
 .cvat-attribute-constructor-form > div:first-child > div:nth-child(4) {

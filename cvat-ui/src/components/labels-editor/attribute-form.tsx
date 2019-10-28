@@ -14,6 +14,7 @@ import {
 } from 'antd';
 
 import patterns from '../../utils/validation-patterns';
+import { Attribute } from './common';
 
 export enum AttributeType {
     SELECT = 'SELECT',
@@ -25,7 +26,7 @@ export enum AttributeType {
 
 interface AttributeFormProps {
     id: number;
-    instance: any;
+    instance: Attribute | null;
     onSubmit: (values: any) => void;
     onDelete: (id: number) => void;
 }
@@ -38,37 +39,46 @@ type Props = AttributeFormProps & FormComponentProps;
 type State = AttributeFormState;
 
 class AttributeForm extends React.PureComponent<Props, State> {
+    private readonly disabled: boolean;
+
     constructor(props: Props) {
         super(props);
 
+        this.disabled = props.id >= 0;
+
         this.state = {
-            attributeType: AttributeType.SELECT,
+            attributeType: props.instance
+                ? props.instance.type.toUpperCase() as AttributeType : AttributeType.SELECT,
         };
+    }
+
+    private submitAfterValidation(values: any) {
+        values.id = this.props.id;
+        switch (values.type) {
+            case AttributeType.SELECT:
+            case AttributeType.RADIO:
+                this.props.onSubmit(values)
+                break;
+            case AttributeType.CHECKBOX:
+                values.values = [values.booleanDefaultValue]
+                this.props.onSubmit(values);
+                break;
+            case AttributeType.TEXT:
+                values.values = [values.defaulValue]
+                this.props.onSubmit(values);
+                break;
+            case AttributeType.NUMBER:
+                values.values = [values.numberRange]
+                this.props.onSubmit(values);
+                break;
+        }
     }
 
     private handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         this.props.form.validateFields((error, values) => {
             if (!error) {
-                values.id = this.props.id;
-                switch (values.type) {
-                    case AttributeType.SELECT:
-                    case AttributeType.RADIO:
-                        this.props.onSubmit(values)
-                        break;
-                    case AttributeType.CHECKBOX:
-                        values.values = [values.booleanDefaultValue]
-                        this.props.onSubmit(values);
-                        break;
-                    case AttributeType.TEXT:
-                        values.values = [values.defaulValue]
-                        this.props.onSubmit(values);
-                        break;
-                    case AttributeType.NUMBER:
-                        values.values = [values.numberRange]
-                        this.props.onSubmit(values);
-                        break;
-                }
+                this.submitAfterValidation(values);
             }
         });
     }
@@ -111,15 +121,19 @@ class AttributeForm extends React.PureComponent<Props, State> {
     }
 
     private renderValuesInput() {
+        const value = this.props.instance ? this.props.instance.values : undefined;
+
         return (
-            <Form.Item hasFeedback>
+            <Form.Item>
                 { this.props.form.getFieldDecorator('values', {
+                    initialValue: value,
                     rules: [{
                         required: true,
                         message: 'Please specify values',
                     }],
                 })(
                     <Select
+                        disabled={this.disabled}
                         mode='tags'
                         dropdownMenuStyle={{display: 'none'}}
                         placeholder='Attribute values'
@@ -130,12 +144,14 @@ class AttributeForm extends React.PureComponent<Props, State> {
     }
 
     private renderBooleanInput() {
+        const value = this.props.instance ? this.props.instance.values[0] : 'false';
+
         return (
             <Form.Item>
                 { this.props.form.getFieldDecorator('booleanDefaultValue', {
-                    initialValue: 'false',
+                    initialValue: value,
                 })(
-                    <Select>
+                    <Select disabled={this.disabled}>
                         <Select.Option value='false'> False </Select.Option>
                         <Select.Option value='true'> True </Select.Option>
                     </Select>
@@ -145,52 +161,65 @@ class AttributeForm extends React.PureComponent<Props, State> {
     }
 
     private renderNumberRangeInput() {
+        const value = this.props.instance ? this.props.instance.values.join(';') : '';
+
         return (
             <Form.Item>
                 { this.props.form.getFieldDecorator('numberRange', {
+                    initialValue: value,
                     rules: [{
                         validator: this.validateRange,
                     }],
                 })(
-                    <Input placeholder='min;max;step'/>
+                    <Input disabled={this.disabled} placeholder='min;max;step'/>
                 )}
             </Form.Item>
         );
     }
 
     private renderDefaultValueInput() {
+        const value = this.props.instance ? this.props.instance.values[0] : '';
+
         return (
             <Form.Item>
-                { this.props.form.getFieldDecorator('defaulValue')(
-                    <Input placeholder='Default value'/>
+                { this.props.form.getFieldDecorator('defaulValue', {
+                    initialValue: value,
+                })(
+                    <Input disabled={this.disabled} placeholder='Default value'/>
                 )}
             </Form.Item>
         );
     }
 
     private renderAttributeNameInput() {
+        const value = this.props.instance ? this.props.instance.name : '';
+
         return (
-            <Form.Item hasFeedback> {
+            <Form.Item> {
                 this.props.form.getFieldDecorator('name', {
+                    initialValue: value,
                     rules: [{
                         required: true,
                         message: 'Please specify a name',
                     }, {
                         validator: this.validateAttributeName,
                     }],
-                })(<Input placeholder='Name'/>)
+                })(<Input disabled={this.disabled} placeholder='Name'/>)
             } </Form.Item>
         );
     }
 
     private renderAttributeTypeSelector() {
+        const value = this.props.instance
+            ? this.props.instance.type.toUpperCase() : AttributeType.SELECT;
+
         return (
             <Form.Item>
                 <Tooltip overlay='An HTML element representing the attribute'>
                     {this.props.form.getFieldDecorator('type', {
-                        initialValue: AttributeType.SELECT,
+                        initialValue: value,
                     })(
-                        <Select onChange={this.handleTypeChange}>
+                        <Select disabled={this.disabled} onChange={this.handleTypeChange}>
                             <Select.Option value={AttributeType.SELECT}> Select </Select.Option>
                             <Select.Option value={AttributeType.RADIO}> Radio </Select.Option>
                             <Select.Option value={AttributeType.CHECKBOX}> Checkbox </Select.Option>
@@ -204,14 +233,16 @@ class AttributeForm extends React.PureComponent<Props, State> {
     }
 
     private renderMutable() {
+        const value = this.props.instance ? this.props.instance.mutable : false;
+
         return (
             <Form.Item>
                 <Tooltip overlay='Can this attribute be changed frame to frame?'>
                     { this.props.form.getFieldDecorator('mutable', {
-                        initialValue: false,
+                        initialValue: value,
                         valuePropName: 'checked'
                     })(
-                        <Checkbox> Mutable </Checkbox>
+                        <Checkbox disabled={this.disabled}> Mutable </Checkbox>
                     )}
                 </Tooltip>
             </Form.Item>
@@ -252,8 +283,34 @@ class AttributeForm extends React.PureComponent<Props, State> {
         );
     }
 
-    public resetFields() {
-        this.props.form.resetFields();
+    public submitOutside() {
+        return new Promise((resolve: any, reject: any) => {
+            if (!this.props.instance || this.disabled) {
+                resolve();
+                return;
+            }
+
+            this.props.form.validateFields((error, values) => {
+                if (error) {
+                    // Add got fields
+                    // If do not do it, input fields automatically get previous right values
+                    for (const key in error) {
+                        error[key].value = values[key];
+                    }
+
+                    // Draw error messages in UI
+                    this.props.form.setFields(error);
+                    reject(error);
+                } else {
+                    try {
+                        this.submitAfterValidation(values);
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                }
+            });
+        });
     }
 
     public render() {
@@ -280,10 +337,11 @@ class AttributeForm extends React.PureComponent<Props, State> {
                         { this.renderMutable() }
                     </Col>
                     <Col span={2}>
-                        { this.renderSaveButton() }
-                    </Col>
-                    <Col span={2}>
-                        { this.props.instance ? this.renderDeleteButton() : null }
+                        {   !this.disabled ?
+                                this.props.instance ?
+                                    this.renderDeleteButton() : this.renderSaveButton()
+                                : null
+                        }
                     </Col>
                 </Row>
             </Form>
