@@ -230,7 +230,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'z_order', 'status', 'labels', 'segments',
-            'project', 'data', 'data_chunk_size')
+            'project', 'data_chunk_size')
         read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size')
         write_once_fields = ('overlap', 'segment_size')
         ordering = ['-id']

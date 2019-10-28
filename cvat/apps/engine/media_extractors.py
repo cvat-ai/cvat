@@ -1,17 +1,19 @@
 import os
 import tempfile
 import shutil
-import numpy as np
 import zipfile
-import math
 from io import BytesIO
 
+import av
+import av.datasets
+import numpy as np
 from ffmpy import FFmpeg
 from pyunpack import Archive
 from PIL import Image
+import mimetypes
 
 from cvat.apps.engine.log import slogger
-import mimetypes
+
 _SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 MEDIA_MIMETYPES_FILES = [
     os.path.join(_SCRIPT_DIR, "media.mimetypes"),
@@ -25,10 +27,9 @@ def get_mime(name):
 
     return 'unknown'
 
-class MediaExtractor:
-    def __init__(self, source_path, image_quality, step, start, stop):
+class IMediaExtractor:
+    def __init__(self, source_path, step, start, stop):
         self._source_path = sorted(source_path)
-        self._image_quality = image_quality
         self._step = step
         self._start = start
         self._stop = stop
@@ -43,13 +44,12 @@ class MediaExtractor:
             shutil.rmtree(tmp_dir)
 
 #Note step, start, stop have no affect
-class ImageListExtractor(MediaExtractor):
-    def __init__(self, source_path, image_quality, step=1, start=0, stop=0):
+class ImageListExtractor(IMediaExtractor):
+    def __init__(self, source_path, step=1, start=0, stop=0):
         if not source_path:
             raise Exception('No image found')
         super().__init__(
             source_path=source_path,
-            image_quality=image_quality,
             step=1,
             start=0,
             stop=0,
@@ -61,7 +61,7 @@ class ImageListExtractor(MediaExtractor):
     def __getitem__(self, k):
         return self._source_path[k]
 
-    def compress_image(self, image_path):
+    def compress_image(self, image_path, quality):
         image = Image.open(image_path)
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
@@ -73,28 +73,22 @@ class ImageListExtractor(MediaExtractor):
         converted_image = image.convert('RGB')
         image.close()
         buf = BytesIO()
-        converted_image.save(buf, format='JPEG', quality=self._image_quality, optimize=True)
+        converted_image.save(buf, format='JPEG', quality=quality, optimize=True)
         buf.seek(0)
         width, height = converted_image.size
         converted_image.close()
         return width, height, buf
 
-    def save_image(self, k, dest_path):
-        w, h, compressed_image = self.compress_image(self[k])
-        with open(dest_path, 'wb') as f:
-            f.write(compressed_image.getvalue())
-        return w, h
-
-    def save_as_chunks(self, chunk_size, data, progress_callback=None):
+    def save_as_chunks(self, chunk_size, chunk_path_generator, progress_callback=None, quality=100):
         counter = 0
         media_meta = []
         total_length = len(self._source_path)
         for i in range(0, total_length, chunk_size):
             chunk_data = self._source_path[i:i + chunk_size]
-            archive_name = data.get_compressed_chunk_path(counter)
+            archive_name = chunk_path_generator(counter)
             with zipfile.ZipFile(archive_name, 'x') as zip_chunk:
                 for idx, image_file in enumerate(chunk_data):
-                    w, h, image_buf = self.compress_image(image_file)
+                    w, h, image_buf = self.compress_image(image_file, quality)
                     media_meta.append({
                         'name': image_file,
                         'size': (w, h),
@@ -111,7 +105,7 @@ class ImageListExtractor(MediaExtractor):
 
 #Note step, start, stop have no affect
 class DirectoryExtractor(ImageListExtractor):
-    def __init__(self, source_path, image_quality, step=1, start=0, stop=0):
+    def __init__(self, source_path, step=1, start=0, stop=0):
         image_paths = []
         for source in source_path:
             for root, _, files in os.walk(source):
@@ -120,7 +114,6 @@ class DirectoryExtractor(ImageListExtractor):
                 image_paths.extend(paths)
         super().__init__(
             source_path=image_paths,
-            image_quality=image_quality,
             step=1,
             start=0,
             stop=0,
@@ -128,12 +121,11 @@ class DirectoryExtractor(ImageListExtractor):
 
 #Note step, start, stop have no affect
 class ArchiveExtractor(DirectoryExtractor):
-    def __init__(self, source_path, image_quality, step=1, start=0, stop=0):
+    def __init__(self, source_path, step=1, start=0, stop=0):
         self._tmp_dir = self.create_tmp_dir()
         Archive(source_path[0]).extractall(self._tmp_dir)
         super().__init__(
             source_path=[self._tmp_dir],
-            image_quality=image_quality,
             step=1,
             start=0,
             stop=0,
@@ -144,7 +136,7 @@ class ArchiveExtractor(DirectoryExtractor):
 
 #Note step, start, stop have no affect
 class PDFExtractor(DirectoryExtractor):
-    def __init__(self, source_path, image_quality, step=1, start=0, stop=0):
+    def __init__(self, source_path, step=1, start=0, stop=0):
         if not source_path:
             raise Exception('No PDF found')
 
@@ -158,7 +150,6 @@ class PDFExtractor(DirectoryExtractor):
 
         super().__init__(
             source_path=[self._tmp_storage],
-            image_quality=image_quality,
             step=1,
             start=0,
             stop=0,
@@ -167,72 +158,56 @@ class PDFExtractor(DirectoryExtractor):
     def __del__(self):
         self.delete_tmp_dir(self._tmp_dir)
 
-class VideoExtractor(DirectoryExtractor):
-    def __init__(self, source_path, image_quality, step=1, start=0, stop=0):
+class VideoExtractor(IMediaExtractor):
+    def __init__(self, source_path, step=1, start=0, stop=0):
         self._tmp_dir = self.create_tmp_dir()
-        self._video_source = source_path[0]
-        self._imagename_pattern = '%09d.jpeg'
-        self.extract_video(
-            video_source=self._video_source,
-            output_dir=self._tmp_dir,
-            quality=image_quality,
-            step=step,
-            start=start,
-            stop=stop,
-            imagename_pattern=self._imagename_pattern,
-        )
+        # self._video_source = source_path[0]
+        # self._source_path = source_path
+        self._imagename_pattern = '%09d.png'
+        self._output_fps = 25
+        self._tmp_dir = self.create_tmp_dir()
 
         super().__init__(
-            source_path=[self._tmp_dir],
-            image_quality=image_quality,
+            source_path=source_path,
             step=step,
             start=start,
             stop=stop,
         )
-
-    @staticmethod
-    def extract_video(video_source, output_dir, quality, step=1, start=0, stop=0, imagename_pattern='%09d.jpeg'):
-        # translate inversed range 1:95 to 2:32
-        translated_quality = 96 - quality
-        translated_quality = round((((translated_quality - 1) * (31 - 2)) / (95 - 1)) + 2)
-        target_path = os.path.join(output_dir, imagename_pattern)
-        output_opts = '-start_number 0 -b:v 10000k -vsync 0 -an -y -q:v {}'.format(translated_quality)
-        filters = ''
-        if stop > 0:
-            filters = 'between(n,' + str(start) + ',' + str(stop) + ')'
-        elif start > 0:
-            filters = 'gte(n,' + str(start) + ')'
-
-        if step > 1:
-            filters += ('*' if filters else '') + 'not(mod(n-' + str(start) + ',' + str(step) + '))'
-
-        if filters:
-            output_opts += " -vf select=\"'" + filters + "'\""
-
-        ff = FFmpeg(
-            inputs  = {video_source: None},
-            outputs = {target_path: output_opts},
-        )
-
-        slogger.glob.info("FFMpeg cmd: {} ".format(ff.cmd))
-        ff.run()
 
     def __del__(self):
         self.delete_tmp_dir(self._tmp_dir)
 
-    def save_image(self, k, dest_path):
-        shutil.copyfile(self[k], dest_path)
+    def _get_av_container(self):
+        return av.open(av.datasets.curated(self._source_path[0]))
 
-    def save_as_chunks(self, chunk_size, data, progress_callback=None):
+    def save_as_chunks(self, chunk_size, chunk_path_generator, progress_callback=None, quality=100):
         if not self._source_path:
             raise Exception('No data to compress')
 
-        for i in range(math.ceil(len(self._source_path) / chunk_size)):
-            start_frame = i * chunk_size
+        # # translate inversed range 1:100 to 2:32
+        translated_quality = 101 - quality
+        translated_quality = round((((translated_quality - 1) * (31 - 2)) / (100 - 1)) + 2)
+
+        container = self._get_av_container()
+
+        def generate_chunk(decoder, count):
+            it = iter(decoder)
+            while True:
+                yield [next(it) for i in range(count)]
+
+        frame_count = 0
+        for chunk_idx, frames in enumerate(generate_chunk(container.decode(), chunk_size)):
+            for f in os.listdir(self._tmp_dir):
+                os.remove(os.path.join(self._tmp_dir, f))
+            for frame in frames:
+                frame.to_image().save(os.path.join(self._tmp_dir, '{:09d}.png'.format(frame.pts)), format='PNG', compress_level=0)
+                frame_count += 1
+
+            start_frame = chunk_idx * chunk_size
             input_images = os.path.join(self._tmp_dir, self._imagename_pattern)
-            input_options = '-f image2 -framerate 25 -start_number {}'.format(start_frame)
-            output_chunk = data.get_compressed_chunk_path(i)
-            output_options = '-vframes {} -codec:v mpeg1video -q:v 0'.format(chunk_size)
+            input_options = '-f image2 -framerate {} -start_number {}'.format(self._output_fps, start_frame)
+            output_chunk = chunk_path_generator(chunk_idx)
+            output_options = '-vframes {} -codec:v mpeg1video -q:v {}'.format(chunk_size, translated_quality)
 
             ff = FFmpeg(
                 inputs  = {input_images: input_options},
@@ -241,12 +216,15 @@ class VideoExtractor(DirectoryExtractor):
 
             slogger.glob.info("FFMpeg cmd: {} ".format(ff.cmd))
             ff.run()
-            if progress_callback:
-                progress_callback(i / len(self._source_path))
-        image = Image.open(self[0])
-        width, height = image.size
-        image.close()
-        return [{'name': self._video_source, 'size': (width, height)}], len(self._source_path)
+            if progress_callback and container.streams.video[0].frames:
+                progress_callback(chunk_idx / container.streams.video[0].frames)
+
+        return [{'name': self._source_path[0], 'size': (frame.width, frame.height)}], frame_count
+
+    def save_preview(self, preview_path):
+        frame_decoder = self._get_av_container().decode()
+        preview = next(frame_decoder)
+        preview.to_image().save(preview_path)
 
 def _is_archive(path):
     mime = mimetypes.guess_type(path)
