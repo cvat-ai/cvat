@@ -73,7 +73,6 @@ class Parser:
             for n in range(num):
                 # -----entry index calcs------
                 obj_index = self.entry_index(params['side'], coords, classes, n * side_square + i, coords)
-                # -----entry index calcs------
                 scale = predictions[obj_index]
                 if scale < self.PROB_THRESHOLD:
                     continue
@@ -81,17 +80,18 @@ class Parser:
 
                 # Network produces location predictions in absolute coordinates of feature maps.
                 # Scale it to relative coordinates.
-                x = (col + predictions[box_index + 0 * side_square]) / params['side']
-                y = (row + predictions[box_index + 1 * side_square]) / params['side']
+                x = (col + predictions[box_index + 0 * side_square]) / params['side'] * 416
+                y = (row + predictions[box_index + 1 * side_square]) / params['side'] * 416
                 # Value for exp is very big number in some cases so following construction is using here
                 try:
-                    w_exp = exp(predictions[box_index + 2 * side_square])
                     h_exp = exp(predictions[box_index + 3 * side_square])
+                    w_exp = exp(predictions[box_index + 2 * side_square])
                 except OverflowError:
                     continue
 
-                w = w_exp * params['anchors'][2 * n] / 416
-                h = h_exp * params['anchors'][2 * n + 1] / 416
+                w = w_exp * params['anchors'][2 * n]
+                h = h_exp * params['anchors'][2 * n + 1]
+
                 for j in range(classes):
                     class_index = self.entry_index(params['side'], coords, classes, n * side_square + i,
                                               coords + 1 + j)
@@ -105,8 +105,8 @@ class Parser:
                                                         w=w,
                                                         class_id=j,
                                                         confidence=confidence,
-                                                        h_scale=orig_im_h,
-                                                        w_scale=orig_im_w))
+                                                        h_scale=(orig_im_h/416),
+                                                        w_scale=(orig_im_w/416)))
 
 
 for detection in detections:
@@ -115,12 +115,7 @@ for detection in detections:
     width = detection['frame_width']
     detection = detection['detections']
 
-    original_shape = (width, height)
-
-    resized_width = width / 416
-    resized_height = height / 416
-
-    resized_shape = (resized_width, resized_height)
+    original_shape = (height, width)
 
     # https://github.com/opencv/open_model_zoo/blob/master/demos/python_demos/object_detection_demo_yolov3_async/object_detection_demo_yolov3_async.py#L72
     anchors = [10,13,16,30,33,23,30,61,62,45,59,119,116,90,156,198,373,326]
@@ -148,7 +143,6 @@ for detection in detections:
     parser.sort_objects()
 
     objects = []
-
     for obj in parser.objects:
         if obj['confidence'] >= parser.PROB_THRESHOLD:
             label = obj['class_id']
@@ -157,4 +151,4 @@ for detection in detections:
             ymin = obj['ymin']
             ymax = obj['ymax']
 
-            results.add_box(xmax, ymax, xmin, ymin, label, frame_number)
+            results.add_box(xmin, ymin, xmax, ymax, label, frame_number)
