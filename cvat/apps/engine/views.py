@@ -5,7 +5,6 @@
 import os
 import re
 import traceback
-from ast import literal_eval
 import shutil
 from datetime import datetime
 from tempfile import mkstemp, NamedTemporaryFile
@@ -267,6 +266,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         task_dirname = instance.get_task_dirname()
         super().perform_destroy(instance)
         shutil.rmtree(task_dirname, ignore_errors=True)
+        if not instance.data.tasks.all():
+            shutil.rmtree(instance.data.get_data_dirname())
+            instance.data.delete()
 
     @action(detail=True, methods=['GET'], serializer_class=JobSerializer)
     def jobs(self, request, pk):
