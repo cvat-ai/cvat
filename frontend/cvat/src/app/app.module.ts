@@ -14,6 +14,7 @@ import { LoginComponent } from './login/login.component';
 import { MatDialogModule } from '@angular/material';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ShareBrowseModalComponent } from './share-browse-modal/share-browse-modal.component';
+import { DashboardItemComponent } from './dashboard-item/dashboard-item.component';
 //import { BasicAuthInterceptor } from './_helpers/basic-auth.interceptor';
 
 @NgModule({
@@ -22,7 +23,8 @@ import { ShareBrowseModalComponent } from './share-browse-modal/share-browse-mod
     DashboardComponent,
     TaskConfigurationModalComponent,
     LoginComponent,
-    ShareBrowseModalComponent
+    ShareBrowseModalComponent,
+    DashboardItemComponent
   ],
   imports: [
     BrowserModule,

@@ -1,0 +1,34 @@
+/*import { environment } from '../environments/environment';*/
+
+.dashboardItem {
+    margin: 5px auto;
+    width: 1200px;
+    height: 335px;
+    background-color: #e7edf5;
+    border: 1px solid;
+    border-radius: 5px;
+}
+
+.dashboardTaskIntro{
+  width: 30%;
+  height: 75%;
+  float: left;
+  margin-left: 20px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.dashboardTitleWrapper {
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+}
+
+.dashboardButtonsUI {
+    margin-top: 1%;
+    width: 35%;
+    height: 75%;
+    float: left;
+    overflow-y: auto;
+}

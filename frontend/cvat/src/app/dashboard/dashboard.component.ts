@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input} from '@angular/core';
 import {MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { TaskConfigurationModalComponent } from '../task-configuration-modal/task-configuration-modal.component';
+import { DashboardService } from '../dashboard.service';
+import { Task } from '../models/task'
 
 @Component({
   selector: 'app-dashboard',
@@ -10,10 +12,12 @@ import { TaskConfigurationModalComponent } from '../task-configuration-modal/tas
 export class DashboardComponent implements OnInit {
   title='CVAT Dashboard';
   metaData: Object; //SHOULD THIS BE PRIVATE?
-  taskData: Object;
-  constructor(private matDialog: MatDialog) { }
+  taskData: Task[];
+
+  constructor(private matDialog: MatDialog, private dashboardService: DashboardService) { }
 
   ngOnInit() {
+    this.dashboardService.getTasks().subscribe(tasks=>(this.taskData=tasks));
   }
 
   dashboardCreateTaskButton() {
