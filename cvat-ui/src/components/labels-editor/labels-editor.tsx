@@ -4,8 +4,6 @@ import {
     Tabs,
     Icon,
     Modal,
-    Button,
-    Tooltip,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -15,7 +13,11 @@ import ConstructorViewer from './constructor-viewer';
 import ConstructorCreator from './constructor-creator';
 import ConstructorUpdater from './constructor-updater';
 
-import idGenerator, { Label, Attribute } from './common';
+import {
+    idGenerator,
+    Label,
+    Attribute,
+} from './common';
 
 enum ConstructorMode {
     SHOW = 'SHOW',
@@ -25,7 +27,7 @@ enum ConstructorMode {
 
 interface LabelsEditortProps {
     labels: Label[];
-    onSubmit: (labels: string) => void;
+    onSubmit: (labels: any[]) => void;
 }
 
 interface LabelsEditorState {
@@ -51,7 +53,7 @@ export default class LabelsEditor
                         name: attr.name,
                         type: attr.input_type,
                         mutable: attr.mutable,
-                        values: attr.values,
+                        values: [...attr.values],
                     };
                 }),
             }
@@ -67,21 +69,75 @@ export default class LabelsEditor
         };
     }
 
-    private handleUpdate = (label: Label) => {
-        if (label.id >= 0) {
-            const savedLabels = this.state.savedLabels
-                .filter((_label: Label) => _label.id !== label.id);
-            savedLabels.push(label);
-            this.setState({
-                savedLabels,
-                constructorMode: ConstructorMode.SHOW,
-            });
-        } else {
-            const unsavedLabels = this.state.unsavedLabels
-                .filter((_label: Label) => _label.id !== label.id);
+    private handleSubmit() {
+        function transformLabel(label: Label): any {
+            return {
+                name: label.name,
+                id: label.id < 0 ? undefined : label.id,
+                attributes: label.attributes.map((attr: Attribute): any => {
+                    return {
+                        name: attr.name,
+                        id: attr.id < 0 ? undefined : attr.id,
+                        input_type: attr.type,
+                        default_value: attr.values[0],
+                        mutable: attr.mutable,
+                        values: [...attr.values],
+                    };
+                }),
+            }
+        }
+
+        const output = [];
+        for (const label of this.state.savedLabels.concat(this.state.unsavedLabels)) {
+            output.push(transformLabel(label));
+        }
+
+        this.props.onSubmit(output);
+    }
+
+    private handleRawSubmit = (labels: Label[]) => {
+        const unsavedLabels = [];
+        const savedLabels = [];
+
+        for (let label of labels) {
+            if (label.id >= 0) {
+                savedLabels.push(label);
+            } else {
                 unsavedLabels.push(label);
+            }
+        }
+
+        this.setState({
+            unsavedLabels,
+            savedLabels,
+        });
+
+        this.handleSubmit();
+    }
+
+    private handleUpdate = (label: Label | null) => {
+        if (label) {
+            if (label.id >= 0) {
+                const savedLabels = this.state.savedLabels
+                    .filter((_label: Label) => _label.id !== label.id);
+                savedLabels.push(label);
+                this.setState({
+                    savedLabels,
+                    constructorMode: ConstructorMode.SHOW,
+                });
+            } else {
+                const unsavedLabels = this.state.unsavedLabels
+                    .filter((_label: Label) => _label.id !== label.id);
+                    unsavedLabels.push(label);
+                this.setState({
+                    unsavedLabels,
+                    constructorMode: ConstructorMode.SHOW,
+                });
+            }
+
+            this.handleSubmit();
+        } else {
             this.setState({
-                unsavedLabels,
                 constructorMode: ConstructorMode.SHOW,
             });
         }
@@ -103,6 +159,8 @@ export default class LabelsEditor
         this.setState({
             unsavedLabels: [...unsavedLabels],
         });
+
+        this.handleSubmit();
     };
 
     private handleCreate = (label: Label | null) => {
@@ -119,66 +177,30 @@ export default class LabelsEditor
                     }
                 ],
             });
+
+            this.handleSubmit();
         }
-    };
-
-    private handleSubmit = () => {
-        const forSave = [];
-        for (const label of this.state.unsavedLabels.concat(this.state.savedLabels)) {
-            let updatedAttributes = false;
-            let newLabel = false;
-            for (const attr of label.attributes) {
-                if (attr.id < 0) {
-                    delete attr.id;
-                    updatedAttributes = true;
-                    break;
-                }
-            }
-
-            if (label.id < 0) {
-                newLabel = true;
-                delete label.id;
-            }
-
-            if (newLabel || updatedAttributes) {
-                forSave.push(label);
-            }
-        }
-
-        return forSave;
     };
 
     public render() {
         return (
-            <Tabs defaultActiveKey='2' type='card' tabBarStyle={{marginBottom: '0px'}} tabBarExtraContent={
-                <Button
-                    type='ghost'
-                    size='default'
-                    onClick={() => this.handleSubmit}
-                > Submit Labels </Button>
-            }>
+            <Tabs defaultActiveKey='2' type='card' tabBarStyle={{marginBottom: '0px'}}>
                 <Tabs.TabPane tab={
                     <span>
                         <Icon type='edit'/>
                         <Text> Raw </Text>
                     </span>
                 } key='1'>
-                    <RawViewer labels={[...this.state.savedLabels, ...this.state.unsavedLabels]}/>
+                    <RawViewer
+                        labels={[...this.state.savedLabels, ...this.state.unsavedLabels]}
+                        onSubmit={this.handleRawSubmit}
+                    />
                 </Tabs.TabPane>
 
                 <Tabs.TabPane tab={
                     <span>
                         <Icon type='build'/>
                         <Text> Constructor </Text>
-                        <span className='labels-editor-new-label-button' onClick={
-                            () => this.setState({
-                                constructorMode: ConstructorMode.CREATE,
-                            })
-                        }>
-                            <Tooltip title='Add label'>
-                                <Icon type='plus-circle'/>
-                            </Tooltip>
-                        </span>
                     </span>
                 } key='2'>
                     {
@@ -192,6 +214,11 @@ export default class LabelsEditor
                                 });
                             }}
                             onDelete={this.handleDelete}
+                            onCreate={() => {
+                                this.setState({
+                                    constructorMode: ConstructorMode.CREATE,
+                                })
+                            }}
                         /> :
 
                         this.state.constructorMode === ConstructorMode.UPDATE

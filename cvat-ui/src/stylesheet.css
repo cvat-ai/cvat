@@ -409,7 +409,7 @@
     margin-left: 8px;
     user-select: none;
     border: 1px solid rgba(0, 0, 0, 0);
-    opacity: 0.7;
+    opacity: 0.6;
 }
 
 .cvat-constructor-viewer-item > span {
@@ -426,6 +426,18 @@
     border: 1px solid rgba(0, 0, 0, 255);
 }
 
+.cvat-constructor-viewer-new-item {
+    height: fit-content;
+    display: flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 2px;
+    margin: 2px;
+    margin-left: 8px;
+    user-select: none;
+    opacity: 1;
+}
+
 .labels-editor-new-label-button > i {
     margin-left: 10px;
 }
@@ -434,13 +446,12 @@
     color: #111111;
 }
 
-.cvat-label-constructor-creator > div:first-child {
+.cvat-label-constructor-creator > form:first-child {
     margin-top: 10px;
 }
 
-.cvat-label-constructor-updater > div:first-child {
+.cvat-label-constructor-updater > form:first-child {
     margin-top: 10px;
-    margin-bottom: 30px;
 }
 
 .cvat-attribute-constructor-form > div:first-child > div:nth-child(4) {

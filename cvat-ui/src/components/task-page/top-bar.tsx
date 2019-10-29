@@ -27,11 +27,12 @@ interface DetailsComponentProps {
 
 export default function DetailsComponent(props: DetailsComponentProps) {
     const subMenuIcon = () => (<img src='/assets/icon-sub-menu.svg'/>);
+    const { id } = props.taskInstance;
 
     return (
         <Row className='cvat-task-top-bar' type='flex' justify='space-between' align='middle'>
             <Col>
-                <Text className='cvat-title'> Task details #ID </Text>
+                <Text className='cvat-title'> Task details #{id} </Text>
             </Col>
             <Col>
                 <Dropdown overlay={

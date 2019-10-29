@@ -45,6 +45,12 @@ const validationPatterns = {
         pattern: /\S+/,
         message: 'Invalid name',
     },
+
+    validateAttributeValue: {
+        pattern: /\S+/,
+        message: 'Invalid attribute value',
+    },
+
 };
 
 export default { ...validationPatterns };

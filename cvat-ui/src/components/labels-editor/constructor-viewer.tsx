@@ -1,13 +1,18 @@
 import React from 'react';
 
-import ConstructorViewerItem from './constructor-viewer-item';
+import {
+    Icon,
+    Button,
+} from 'antd';
 
+import ConstructorViewerItem from './constructor-viewer-item';
 import { Label } from './common';
 
 interface ConstructorViewerProps {
     labels: Label[];
     onUpdate: (label: Label) => void;
     onDelete: (label: Label) => void;
+    onCreate: () => void;
 }
 
 const colors = [
@@ -28,7 +33,12 @@ function nextColor() {
 }
 
 export default function ConstructorViewer(props: ConstructorViewerProps) {
-    const list = [];
+    currentColor = 0;
+
+    const list = [
+        <Button key='create' type='ghost' onClick={props.onCreate} className='cvat-constructor-viewer-new-item'>
+            Add label <Icon type='plus-circle'/>
+        </Button>];
     for (const label of props.labels) {
         list.push(
             <ConstructorViewerItem

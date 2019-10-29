@@ -102,9 +102,14 @@ export default function DetailsComponent(props: DetailsComponentProps) {
                         <Col>
                             <Text strong className='cvat-black-color'> Labels </Text>
                             <br/>
-                            <LabelsEditorComponent labels={taskInstance.labels.map(
-                                (label: any) => label.toJSON()
-                            )}/>
+                            <LabelsEditorComponent
+                                labels={taskInstance.labels.map(
+                                    (label: any) => label.toJSON()
+                                )}
+                                onSubmit={(labels: any[]) => {
+                                    console.log(labels);
+                                }}
+                            />
                         </Col>
                     </Row>
                 </Col>
@@ -112,11 +117,3 @@ export default function DetailsComponent(props: DetailsComponentProps) {
         </div>
     );
 }
-
-
-// task instance
-// task preview
-// plugins
-
-// todo: shared actions button
-// todo: shared labels component
