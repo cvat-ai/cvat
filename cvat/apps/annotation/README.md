@@ -181,7 +181,7 @@ This is native CVAT annotation format.
   └── ...
   ```
   Each annotation `*.xml` file has a name that corresponds to the name of the image file
-  (e.g. `frame_000001.txt` is the annotation for the `frame_000001.jpg` image).
+  (e.g. `frame_000001.xml` is the annotation for the `frame_000001.jpg` image).
   Detailed structure specification of the `*.xml` file can be found
   [here](http://host.robots.ox.ac.uk/pascal/VOC/voc2012/devkit_doc.pdf).
 - supported shapes - Rectangles
@@ -199,8 +199,8 @@ This is native CVAT annotation format.
     └── ...
     ```
     It should be possible to match the CVAT frame(imagename) and image filename from the annotation \*.xml
-    file(tag filename, e.g. `<filename>2008_004457.jpg</filename>`). There are 2 options:
-    1. full match between image name and filename form annotation *.xml
+    file (the tag filename, e.g. `<filename>2008_004457.jpg</filename>`). There are 2 options:
+    1. full match between image name and filename from annotation *.xml
        file (in case of a task was created from images or archive of images).
     1. match by frame number (if CVAT cannot match by name). File name should be in the following format `frame_%6d.jpg`.
        It will be used when task was created from a video.
@@ -210,12 +210,13 @@ This is native CVAT annotation format.
 -   additional comments: the CVAT task should be created with the full label set that may be in the annotation files
 
 #### How to create a task from Pascal VOC dataset
-1.  Download the Pascal Voc dataset
+1.  Download the Pascal Voc dataset (Can be downloaded from the
+    [PASCAL VOC website](http://host.robots.ox.ac.uk/pascal/VOC/))
 1.  Create a CVAT task with the following labels:
     ```bash
     aeroplane bicycle bird boat bottle bus car cat chair cow diningtable dog horse motorbike person pottedplant sheep sofa train tvmonitor
     ```
-    You can add `~checkbox=difficult:false ~checkbox=truncated:false` attributes if you want to use it.
+    You can add `~checkbox=difficult:false ~checkbox=truncated:false` attributes for each label if you want to use them.
 
     Select interesting image files
     (See [Creating an annotation task](cvat/apps/documentation/user_guide.md#creating-an-annotation-task)
@@ -264,7 +265,7 @@ It may take some time.
 
 #### How to create a task from YOLO formatted dataset (from VOC for example)
 1. Follow the official [guide](https://pjreddie.com/darknet/yolo/)(see Training YOLO on VOC section)
-   and prepare the YOLO formatted annotation.
+   and prepare the YOLO formatted annotation files.
 1. Zip train images
    ```bash
    zip images.zip -j -@ < train.txt
@@ -481,7 +482,7 @@ python create_pascal_tf_record.py --data_dir <path to VOCdevkit> --set train --y
 
 ### PNG mask
 #### Mask dumper description
-- downloaded file: a zip archive with following structure:
+- downloaded file: a zip archive with the following structure:
   ```bash
   taskname.zip
   ├── frame_000001.png

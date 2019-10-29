@@ -1556,7 +1556,7 @@ def compare_objects(self, obj1, obj2, ignore_keys, fp_tolerance=.001):
         for v1, v2 in zip(obj1, obj2):
             compare_objects(self, v1, v2, ignore_keys)
     else:
-        if isinstance(obj1, float) or (obj2, float):
+        if isinstance(obj1, float) or isinstance(obj2, float):
             self.assertAlmostEqual(obj1, obj2, delta=fp_tolerance)
         else:
             self.assertEqual(obj1, obj2)
@@ -2133,6 +2133,13 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         return response
 
+    def _get_annotation_formats(self, user):
+        with ForceLogin(user, self.client):
+            response = self.client.get(
+                path="/api/v1/server/annotation/formats"
+            )
+        return response
+
     def _check_response(self, response, data):
         if not response.status_code in [
             status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]:
@@ -2657,13 +2664,19 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
             return annotations
 
-        for annotation_format in AnnotationFormat.objects.all():
-            for dumper in annotation_format.annotationdumper_set.all():
+        response = self._get_annotation_formats(owner)
+        self.assertEqual(response.status_code, HTTP_200_OK)
+
+        supported_formats = response.data
+        self.assertTrue(supported_formats)
+
+        for annotation_format in supported_formats:
+            for dumper in annotation_format["dumpers"]:
                 # 1. create task
                 task, jobs = self._create_task(owner, assignee)
 
                 # 2. add annotation
-                data = _get_initial_annotation(dumper.display_name)
+                data = _get_initial_annotation(dumper["display_name"])
                 response = self._put_api_v1_tasks_id_annotations(task["id"], annotator, data)
                 data["version"] += 1
 
@@ -2672,22 +2685,22 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
                 # 3. download annotation
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
-                    "format={}".format(dumper.display_name))
+                    "format={}".format(dumper["display_name"]))
                 self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
-                    "format={}".format(dumper.display_name))
+                    "format={}".format(dumper["display_name"]))
                 self.assertEqual(response.status_code, HTTP_201_CREATED)
 
                 response = self._dump_api_v1_tasks_id_annotations(task["id"], annotator,
-                    "action=download&format={}".format(dumper.display_name))
+                    "action=download&format={}".format(dumper["display_name"]))
                 self.assertEqual(response.status_code, HTTP_200_OK)
 
                 # 4. check downloaded data
                 if response.status_code == status.HTTP_200_OK:
                     self.assertTrue(response.streaming)
                     content = io.BytesIO(b"".join(response.streaming_content))
-                    self._check_dump_content(content, task, jobs, data, annotation_format)
+                    self._check_dump_content(content, task, jobs, data, annotation_format["name"])
                     content.seek(0)
 
                     # 5. remove annotation form the task
@@ -2700,11 +2713,11 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                         "annotation_file": content,
                     }
 
-                    for loader in annotation_format.annotationloader_set.all():
-                        response = self._upload_api_v1_tasks_id_annotations(task["id"], annotator, uploaded_data, "format={}".format(loader.display_name))
+                    for loader in annotation_format["loaders"]:
+                        response = self._upload_api_v1_tasks_id_annotations(task["id"], annotator, uploaded_data, "format={}".format(loader["display_name"]))
                         self.assertEqual(response.status_code, HTTP_202_ACCEPTED)
 
-                        response = self._upload_api_v1_tasks_id_annotations(task["id"], annotator, {}, "format={}".format(loader.display_name))
+                        response = self._upload_api_v1_tasks_id_annotations(task["id"], annotator, {}, "format={}".format(loader["display_name"]))
                         self.assertEqual(response.status_code, HTTP_201_CREATED)
 
                         response = self._get_api_v1_tasks_id_annotations(task["id"], annotator)
@@ -2712,7 +2725,7 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                         data["version"] += 2 # upload is delete + put
                         self._check_response(response, data)
 
-    def _check_dump_content(self, content, task, jobs, data, annotation_format):
+    def _check_dump_content(self, content, task, jobs, data, annotation_format_name):
         def etree_to_dict(t):
             d = {t.tag: {} if t.attrib else None}
             children = list(t)
@@ -2731,26 +2744,26 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                     d[t.tag] = text
             return d
 
-        if annotation_format.name == "CVAT":
+        if annotation_format_name == "CVAT":
             xmldump = ET.fromstring(content.read())
             self.assertEqual(xmldump.tag, "annotations")
             tags = xmldump.findall("./meta")
             self.assertEqual(len(tags), 1)
             meta = etree_to_dict(tags[0])["meta"]
             self.assertEqual(meta["task"]["name"], task["name"])
-        elif annotation_format.name == "PASCAL VOC":
+        elif annotation_format_name == "PASCAL VOC":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif annotation_format.name == "YOLO":
+        elif annotation_format_name == "YOLO":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif annotation_format.name == "COCO":
+        elif annotation_format_name == "COCO":
             with tempfile.NamedTemporaryFile() as tmp_file:
                 tmp_file.write(content.read())
                 tmp_file.flush()
                 coco = coco_loader.COCO(tmp_file.name)
                 self.assertTrue(coco.getAnnIds())
-        elif annotation_format.name == "TFRecord":
+        elif annotation_format_name == "TFRecord":
             self.assertTrue(zipfile.is_zipfile(content))
-        elif annotation_format.name == "MASK":
+        elif annotation_format_name == "MASK":
             self.assertTrue(zipfile.is_zipfile(content))
 
     def test_api_v1_tasks_id_annotations_admin(self):
