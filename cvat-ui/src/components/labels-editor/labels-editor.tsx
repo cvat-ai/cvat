@@ -69,7 +69,7 @@ export default class LabelsEditor
         };
     }
 
-    private handleSubmit() {
+    private handleSubmit(savedLabels: Label[], unsavedLabels: Label[]) {
         function transformLabel(label: Label): any {
             return {
                 name: label.name,
@@ -88,7 +88,7 @@ export default class LabelsEditor
         }
 
         const output = [];
-        for (const label of this.state.savedLabels.concat(this.state.unsavedLabels)) {
+        for (const label of savedLabels.concat(unsavedLabels)) {
             output.push(transformLabel(label));
         }
 
@@ -112,30 +112,30 @@ export default class LabelsEditor
             savedLabels,
         });
 
-        this.handleSubmit();
+        this.handleSubmit(savedLabels, unsavedLabels);
     }
 
     private handleUpdate = (label: Label | null) => {
         if (label) {
+            const savedLabels = this.state.savedLabels
+                .filter((_label: Label) => _label.id !== label.id);
+            const unsavedLabels = this.state.unsavedLabels
+                .filter((_label: Label) => _label.id !== label.id);
             if (label.id >= 0) {
-                const savedLabels = this.state.savedLabels
-                    .filter((_label: Label) => _label.id !== label.id);
                 savedLabels.push(label);
                 this.setState({
                     savedLabels,
                     constructorMode: ConstructorMode.SHOW,
                 });
             } else {
-                const unsavedLabels = this.state.unsavedLabels
-                    .filter((_label: Label) => _label.id !== label.id);
-                    unsavedLabels.push(label);
+                unsavedLabels.push(label);
                 this.setState({
                     unsavedLabels,
                     constructorMode: ConstructorMode.SHOW,
                 });
             }
 
-            this.handleSubmit();
+            this.handleSubmit(savedLabels, unsavedLabels);
         } else {
             this.setState({
                 constructorMode: ConstructorMode.SHOW,
@@ -160,7 +160,7 @@ export default class LabelsEditor
             unsavedLabels: [...unsavedLabels],
         });
 
-        this.handleSubmit();
+        this.handleSubmit(this.state.savedLabels, unsavedLabels);
     };
 
     private handleCreate = (label: Label | null) => {
@@ -169,16 +169,18 @@ export default class LabelsEditor
                 constructorMode: ConstructorMode.SHOW,
             });
         } else {
+            const unsavedLabels = [...this.state.unsavedLabels,
+                {
+                    ...label,
+                    id: idGenerator()
+                }
+            ];
+
             this.setState({
-                unsavedLabels: [...this.state.unsavedLabels,
-                    {
-                        ...label,
-                        id: idGenerator()
-                    }
-                ],
+                unsavedLabels,
             });
 
-            this.handleSubmit();
+            this.handleSubmit(this.state.savedLabels, unsavedLabels);
         }
     };
 
