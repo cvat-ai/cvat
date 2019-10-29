@@ -2664,11 +2664,24 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
             return annotations
 
-        response = self._get_annotation_formats(owner)
+        response = self._get_annotation_formats(annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
 
-        supported_formats = response.data
-        self.assertTrue(supported_formats)
+
+        if annotator is not None:
+            supported_formats = response.data
+        else:
+            supported_formats = [{
+                "name": "CVAT",
+                "dumpers": [{
+                    "display_name": "CVAT XML 1.1 for images"
+                }],
+                "loaders": [{
+                    "display_name": "CVAT XML 1.1"
+                }]
+            }]
+
+        self.assertTrue(isinstance(supported_formats, list) and supported_formats)
 
         for annotation_format in supported_formats:
             for dumper in annotation_format["dumpers"]:
