@@ -17,6 +17,12 @@ def create_data_objects(apps, schema_editor):
         d1, d2 = str(int(frame) // 10000), str(int(frame) // 100)
         return os.path.join(d1, d2, str(frame) + '.jpg')
 
+    def fix_path(path):
+        ind = path.find('.upload')
+        if ind != -1:
+            path = path[ind + len('.upload'):]
+        return path
+
     Task = apps.get_model('engine', 'Task')
     Data = apps.get_model('engine', 'Data')
 
@@ -80,30 +86,19 @@ def create_data_objects(apps, schema_editor):
         # create preview
         shutil.copyfile(os.path.join(compressed_cache_dir, get_frame_path(0)), os.path.join(db_data_dir, 'preview.jpeg'))
 
-        # need fix path
         if hasattr(db_task, 'video'):
             db_task.video.data = db_data
+            db_task.video.path = fix_path(db_task.video.path)
             db_task.video.save()
 
-        # need fix path
         for db_image in db_task.image_set.all():
             db_image.data = db_data
+            db_image.path = fix_path(db_image.path)
             db_image.save()
 
-        # need fix path
-        for client_file in db_task.clientfile_set.all():
-            client_file.data = db_data
-            client_file.save()
-
-        # need fix path
-        for server_file in db_task.serverfile_set.all():
-            server_file.data = db_data
-            server_file.save()
-
-        # need fix path
-        for remote_file in db_task.remotefile_set.all():
-            remote_file.data = db_data
-            remote_file.save()
+        db_task.clientfile_set.all().delete()
+        db_task.serverfile_set.all().delete()
+        db_task.remotefile_set.all().delete()
 
         db_task.save()
 

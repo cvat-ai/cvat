@@ -44,6 +44,7 @@ RUN apt-get update && \
         libswresample-dev \
         libswscale-dev \
         p7zip-full \
+        pkg-config \
         python3-dev \
         python3-pip \
         supervisor \

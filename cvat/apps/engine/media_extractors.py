@@ -168,7 +168,10 @@ class PDFExtractor(DirectoryExtractor):
 class VideoExtractor(IMediaExtractor):
     def __init__(self, source_path, step=1, start=0, stop=0):
         self._tmp_dir = self.create_tmp_dir()
-        self._imagename_pattern = '%09d.png'
+        self._imagename_pattern = {
+            'cmd': '%09d.tiff',
+            'py': '{:09d}.tiff'
+        }
         self._output_fps = 25
         self._tmp_dir = self.create_tmp_dir()
 
@@ -195,33 +198,37 @@ class VideoExtractor(IMediaExtractor):
         translated_quality = round((((translated_quality - 1) * (31 - 2)) / (100 - 1)) + 2)
 
         container = self._get_av_container()
+        container.streams.video[0].thread_type = 'AUTO'
 
-        def generate_chunks(decoder, count):
-            it = itertools.islice(decoder, self._start, self._stop if self._stop else None)
+        def decode_frames(container):
+            for packet in container.demux():
+                for frame in packet.decode():
+                    yield frame
+
+        def generate_chunks(container, count):
+            it = itertools.islice(decode_frames(container), self._start, self._stop if self._stop else None)
             frames = list(itertools.islice(it, 0, count * self._step, self._step))
             while frames:
                 yield frames
                 frames = list(itertools.islice(it, 0, count * self._step, self._step))
 
         frame_count = 0
-        for chunk_idx, frames in enumerate(generate_chunks(container.decode(), chunk_size)):
+        for chunk_idx, frames in enumerate(generate_chunks(container, chunk_size)):
             for f in os.listdir(self._tmp_dir):
                 os.remove(os.path.join(self._tmp_dir, f))
             for frame in frames:
-                frame.to_image().save(os.path.join(self._tmp_dir, '{:09d}.png'.format(frame.pts)), format='PNG', compress_level=0)
+                frame.to_image().save(os.path.join(self._tmp_dir,  self._imagename_pattern['py'].format(frame.index)), compression='raw')
                 frame_count += 1
-
             start_frame = self._start + chunk_idx * chunk_size
-            input_images = os.path.join(self._tmp_dir, self._imagename_pattern)
+            input_images = os.path.join(self._tmp_dir, self._imagename_pattern['cmd'])
             input_options = '-f image2 -framerate {} -start_number {}'.format(self._output_fps, start_frame)
             output_chunk = compressed_chunk_path(chunk_idx)
-            output_options = '-vframes {} -codec:v mpeg1video -q:v {}'.format(chunk_size, translated_quality)
+            output_options = '-vframes {} -codec:v mpeg1video -q:v {} '.format(chunk_size, translated_quality)
 
             ff = FFmpeg(
                 inputs  = {input_images: input_options},
                 outputs = {output_chunk: output_options},
             )
-
             ff.run()
 
             output_chunk = original_chunk_path(chunk_idx)
