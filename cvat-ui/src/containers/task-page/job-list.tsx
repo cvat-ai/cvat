@@ -88,7 +88,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 function TaskPageContainer(props: StateToProps & DispatchToProps) {
     return (
         <JobListComponent
-
+            taskInstance={props.taskInstance}
         />
     );
 }

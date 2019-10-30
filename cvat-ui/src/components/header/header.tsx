@@ -62,7 +62,7 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
                         }> Models </Radio.Button> : null
                     }
                     { props.installedAnalytics ?
-                        <Button className='header-button' type='link' onClick={
+                        <Button className='cvat-header-button' type='link' onClick={
                             () => {
                                 const serverHost = core.config.backendAPI.slice(0, -7);
                                 window.open(`${serverHost}/analytics/app/kibana`, '_blank');
@@ -72,10 +72,10 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
                 </Radio.Group>
             </div>
             <div className='cvat-right-header'>
-                <Button className='header-button' type='link' onClick={
+                <Button className='cvat-header-button' type='link' onClick={
                         () => window.open('https://github.com/opencv/cvat', '_blank')
                 }> <Icon type='github' /> GitHub </Button>
-                <Button className='header-button' type='link' onClick={
+                <Button className='cvat-header-button' type='link' onClick={
                         () => {
                             const serverHost = core.config.backendAPI.slice(0, -7);
                             window.open(`${serverHost}/documentation/user_guide.html`, '_blank')

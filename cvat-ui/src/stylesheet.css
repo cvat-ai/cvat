@@ -90,7 +90,7 @@
     filter: invert(0.4);
 }
 
-.ant-btn.header-button {
+.ant-btn.cvat-header-button {
     height: 100%;
     background: rgba(255, 255, 255, 0);
     border-radius: 0px;
@@ -99,7 +99,7 @@
     padding: 0 30px;
 }
 
-.ant-btn.header-button:active {
+.ant-btn.cvat-header-button:active {
     background: #C3C3C3;
 }
 
@@ -464,6 +464,30 @@
 
 .cvat-delete-attribute-button:hover > i {
     color: red;
+}
+
+.cvat-jobs-header {
+    margin-bottom: 0px !important;
+}
+
+/* Pagination in center */
+.cvat-task-jobs-table > div > div {
+    text-align: center;
+}
+.cvat-task-jobs-table > div > div > ul {
+    float: none !important;
+}
+
+.cvat-job-completed-color {
+    color: #61C200;
+}
+
+.cvat-job-validation-color {
+    color: #1890FF;
+}
+
+.cvat-job-annotation-color {
+    color: #C1C1C1;
 }
 
 #cvat-create-task-button {
