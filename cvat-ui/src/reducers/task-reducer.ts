@@ -1,10 +1,11 @@
 import { AnyAction } from 'redux';
 
 import { TaskActionTypes } from '../actions/task-actions';
-import { TaskState } from './interfaces';
+import { Task, TaskState } from './interfaces';
 
 const defaultState: TaskState = {
     taskFetchingError: null,
+    taskUpdatingError: null,
     task: null,
 };
 
@@ -22,7 +23,6 @@ export default function (state = defaultState, action: AnyAction): TaskState {
                     instance: action.payload.taskInstance,
                     preview: action.payload.previewImage,
                 },
-                taskFetchingError: null,
             };
         }
         case TaskActionTypes.GET_TASK_FAILED: {
@@ -30,6 +30,36 @@ export default function (state = defaultState, action: AnyAction): TaskState {
                 ...state,
                 task: null,
                 taskFetchingError: action.payload.error,
+            };
+        }
+        case TaskActionTypes.UPDATE_TASK: {
+            return {
+                ...state,
+                task: {
+                    ...(state.task as Task),
+                    instance: null,
+                },
+                taskUpdatingError: null,
+            };
+        }
+        case TaskActionTypes.UPDATE_TASK_SUCCESS: {
+            return {
+                ...state,
+                task: {
+                    ...(state.task as Task),
+                    instance: action.payload.taskInstance,
+                },
+                taskUpdatingError: null,
+            };
+        }
+        case TaskActionTypes.UPDATE_TASK_FAILED: {
+            return {
+                ...state,
+                task: {
+                    ...(state.task as Task),
+                    instance: action.payload.taskInstance,
+                },
+                taskUpdatingError: action.payload.error,
             };
         }
         default:

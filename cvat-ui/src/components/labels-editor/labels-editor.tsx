@@ -59,12 +59,13 @@ export default class LabelsEditor
             }
         }
 
+        const transformedLabels = this.props.labels.map(transformLabel);
         this.state = {
-            constructorMode: ConstructorMode.SHOW,
-            savedLabels: this.props.labels.map(transformLabel)
+            savedLabels: transformedLabels
                 .filter((label: Label) => label.id >= 0),
-            unsavedLabels: this.props.labels.map(transformLabel)
+            unsavedLabels: transformedLabels
                 .filter((label: Label) => label.id < 0),
+            constructorMode: ConstructorMode.SHOW,
             labelForUpdate: null,
         };
     }
@@ -78,7 +79,7 @@ export default class LabelsEditor
                     return {
                         name: attr.name,
                         id: attr.id < 0 ? undefined : attr.id,
-                        input_type: attr.type,
+                        input_type: attr.type.toLowerCase(),
                         default_value: attr.values[0],
                         mutable: attr.mutable,
                         values: [...attr.values],

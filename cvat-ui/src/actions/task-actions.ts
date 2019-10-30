@@ -9,6 +9,9 @@ export enum TaskActionTypes {
     GET_TASK = 'GET_TASK',
     GET_TASK_SUCCESS = 'GET_TASK_SUCCESS',
     GET_TASK_FAILED = 'GET_TASK_FAILED',
+    UPDATE_TASK = 'UPDATE_TASK',
+    UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
+    UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
 }
 
 function getTask(): AnyAction {
@@ -57,6 +60,61 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             }
         } catch (error) {
             dispatch(getTaskFailed(error));
+        }
+    };
+}
+
+function updateTask(): AnyAction {
+    const action = {
+        type: TaskActionTypes.UPDATE_TASK,
+        payload: {},
+    };
+
+    return action;
+}
+
+function updateTaskSuccess(taskInstance: any): AnyAction {
+    const action = {
+        type: TaskActionTypes.UPDATE_TASK_SUCCESS,
+        payload: {
+            taskInstance,
+        },
+    };
+
+    return action;
+}
+
+function updateTaskFailed(error: any, taskInstance: any): AnyAction {
+    const action = {
+        type: TaskActionTypes.UPDATE_TASK_FAILED,
+        payload: {
+            error,
+            taskInstance,
+        },
+    };
+
+    return action;
+}
+
+export function updateTaskAsync(taskInstance: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch(updateTask());
+            await taskInstance.save();
+            const task = await core.tasks.get({ id: taskInstance.id });
+            dispatch(updateTaskSuccess(task));
+        } catch (error) {
+            // try abort all changes
+            let task = null;
+            try {
+                task = await core.tasks.get({ id: taskInstance.id });
+            } catch (_) {
+                // server error?
+                dispatch(updateTaskFailed(error, taskInstance));
+            }
+
+            dispatch(updateTaskFailed(error, task));
         }
     };
 }

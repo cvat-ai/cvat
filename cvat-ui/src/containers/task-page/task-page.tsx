@@ -8,6 +8,7 @@ import { CombinedState } from '../../reducers/root-reducer';
 
 interface StateToProps {
     taskFetchingError: any;
+    taskUpdatingError: any;
     taskInstance: any;
     deleteActivity: boolean | null;
     installedGit: boolean;
@@ -33,6 +34,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         taskInstance,
         taskFetchingError: activeTask.taskFetchingError,
+        taskUpdatingError: activeTask.taskUpdatingError,
         deleteActivity,
         installedGit: plugins.GIT_INTEGRATION,
     };
@@ -51,6 +53,7 @@ function TaskPageContainer(props: StateToProps & DispatchToProps) {
         <TaskPageComponent
             taskInstance={props.taskInstance}
             taskFetchingError={props.taskFetchingError ? props.taskFetchingError.toString() : ''}
+            taskUpdatingError={props.taskUpdatingError ? props.taskUpdatingError.toString() : ''}
             deleteActivity={props.deleteActivity}
             installedGit={props.installedGit}
             onFetchTask={props.fetchTask}

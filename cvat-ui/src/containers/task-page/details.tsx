@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 
 import DetailsComponent from '../../components/task-page/details';
 import { CombinedState } from '../../reducers/root-reducer';
+import { updateTaskAsync } from '../../actions/task-actions';
 
 interface StateToProps {
     previewImage: string;
@@ -10,6 +11,9 @@ interface StateToProps {
     installedGit: boolean;
 }
 
+interface DispatchToProps {
+    onTaskUpdate: (taskInstance: any) => void;
+}
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { plugins } = state.plugins;
@@ -24,16 +28,26 @@ function mapStateToProps(state: CombinedState): StateToProps {
 }
 
 
-function TaskPageContainer(props: StateToProps) {
+function mapDispatchToProps(dispatch: any): DispatchToProps {
+    return {
+        onTaskUpdate: (taskInstance: any) =>
+            dispatch(updateTaskAsync(taskInstance))
+    }
+}
+
+
+function TaskPageContainer(props: StateToProps & DispatchToProps) {
     return (
         <DetailsComponent
             previewImage={props.previewImage}
             taskInstance={props.taskInstance}
             installedGit={props.installedGit}
+            onTaskUpdate={props.onTaskUpdate}
         />
     );
 }
 
 export default connect(
-    mapStateToProps, {}
+    mapStateToProps,
+    mapDispatchToProps,
 )(TaskPageContainer);

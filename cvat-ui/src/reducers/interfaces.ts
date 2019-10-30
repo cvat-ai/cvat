@@ -80,4 +80,5 @@ export interface PluginsState {
 export interface TaskState {
     task: Task | null;
     taskFetchingError: any;
+    taskUpdatingError: any;
 }

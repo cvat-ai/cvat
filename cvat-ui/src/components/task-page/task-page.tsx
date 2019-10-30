@@ -16,6 +16,7 @@ import JobListContainer from '../../containers/task-page/job-list';
 interface TaskPageComponentProps {
     taskInstance: any;
     taskFetchingError: string;
+    taskUpdatingError: string;
     deleteActivity: boolean | null;
     installedGit: boolean;
     onFetchTask: (tid: number) => void;
@@ -40,7 +41,7 @@ class TaskPageComponent extends React.PureComponent<TaskPageComponentProps & Rou
             );
         } else if (this.props.taskFetchingError) {
             Modal.error({
-                title: `Could not receive task ${id}`,
+                title: `Could not receive the task ${id}`,
                 content: this.props.taskFetchingError,
             });
 
@@ -48,6 +49,13 @@ class TaskPageComponent extends React.PureComponent<TaskPageComponentProps & Rou
                 <div> </div>
             )
         } else {
+            if (this.props.taskUpdatingError) {
+                Modal.error({
+                    title: `Could not update the task ${id}`,
+                    content: this.props.taskUpdatingError,
+                });
+            }
+
             return (
                 <Row type='flex' justify='center' align='middle'>
                     <Col md={22} lg={18} xl={16} xxl={14}>

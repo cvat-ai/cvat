@@ -957,11 +957,7 @@
                             }
                         }
 
-                        if (typeof (data.id) === 'undefined') {
-                            data.labels = [...labels];
-                        } else {
-                            data.labels = data.labels.concat([...labels]);
-                        }
+                        data.labels = [...labels];
                     },
                 },
                 /**
@@ -1313,6 +1309,7 @@
         if (typeof (this.id) !== 'undefined') {
             // If the task has been already created, we update it
             const taskData = {
+                assignee: this.assignee ? this.assignee.id : null,
                 name: this.name,
                 bug_tracker: this.bugTracker,
                 z_order: this.zOrder,

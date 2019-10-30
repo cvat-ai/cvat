@@ -3,7 +3,6 @@ import React from 'react';
 import {
     Row,
     Col,
-    Button,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -12,12 +11,15 @@ import Title from 'antd/lib/typography/Title';
 import moment from 'moment';
 
 import LabelsEditorComponent from '../labels-editor/labels-editor';
+import getCore from '../../core';
+
+const core = getCore();
 
 interface DetailsComponentProps {
     previewImage: string;
     taskInstance: any;
     installedGit: boolean; // change to git repos url
-    onLabelsUpdate: (labels: any[]) => void;
+    onTaskUpdate: (taskInstance: any) => void;
 }
 
 export default function DetailsComponent(props: DetailsComponentProps) {
@@ -109,7 +111,11 @@ export default function DetailsComponent(props: DetailsComponentProps) {
                                     (label: any) => label.toJSON()
                                 )}
                                 onSubmit={(labels: any[]) => {
-                                    props.onLabelsUpdate(labels);
+                                    taskInstance.labels = labels.map((labelData) => {
+                                        return new core.classes.Label(labelData);
+                                    });
+
+                                    props.onTaskUpdate(taskInstance);
                                 }}
                             />
                         </Col>
