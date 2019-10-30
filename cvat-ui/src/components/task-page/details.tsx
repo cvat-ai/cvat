@@ -86,7 +86,10 @@ export default function DetailsComponent(props: DetailsComponentProps) {
                         <Col span={10}>
                             { assignee ? <Text type='secondary'>
                                 Assigned to {assignee}
-                            </Text> : null }
+                            </Text> : <Text type='secondary'>
+                                Not assigned to anyone
+                            </Text>
+                            }
                         </Col>
                     </Row>
                     { bugTracker ?
@@ -100,8 +103,6 @@ export default function DetailsComponent(props: DetailsComponentProps) {
                     }
                     <Row>
                         <Col>
-                            <Text strong className='cvat-black-color'> Labels </Text>
-                            <br/>
                             <LabelsEditorComponent
                                 labels={taskInstance.labels.map(
                                     (label: any) => label.toJSON()
