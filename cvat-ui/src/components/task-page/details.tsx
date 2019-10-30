@@ -16,7 +16,8 @@ import LabelsEditorComponent from '../labels-editor/labels-editor';
 interface DetailsComponentProps {
     previewImage: string;
     taskInstance: any;
-    installedGit: boolean;
+    installedGit: boolean; // change to git repos url
+    onLabelsUpdate: (labels: any[]) => void;
 }
 
 export default function DetailsComponent(props: DetailsComponentProps) {
@@ -108,7 +109,7 @@ export default function DetailsComponent(props: DetailsComponentProps) {
                                     (label: any) => label.toJSON()
                                 )}
                                 onSubmit={(labels: any[]) => {
-                                    console.log(labels);
+                                    props.onLabelsUpdate(labels);
                                 }}
                             />
                         </Col>

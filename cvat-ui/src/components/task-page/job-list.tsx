@@ -36,6 +36,7 @@ export default function JobListComponent(props: Props) {
         title: 'Frames',
         dataIndex: 'frames',
         key: 'frames',
+        className: 'cvat-black-color',
     }, {
         title: 'Status',
         dataIndex: 'status',
@@ -52,14 +53,17 @@ export default function JobListComponent(props: Props) {
         title: 'Started on',
         dataIndex: 'started',
         key: 'started',
+        className: 'cvat-black-color',
     }, {
         title: 'Duration',
         dataIndex: 'duration',
         key: 'duration',
+        className: 'cvat-black-color',
     }, {
         title: 'Assignee',
         dataIndex: 'assignee',
         key: 'assignee',
+        className: 'cvat-black-color',
     }];
 
     let completed = 0;
