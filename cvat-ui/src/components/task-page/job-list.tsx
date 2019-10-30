@@ -23,15 +23,13 @@ interface Props {
 
 export default function JobListComponent(props: Props) {
     const { jobs } = props.taskInstance;
-
-    let jobNumber = 1;
     const columns = [{
         title: 'Job',
         dataIndex: 'job',
         key: 'job',
         render: (id: number) => {
             return (
-                <a href={`${baseURL}/?id=${id}`}> { `Job #${jobNumber++}` } </a>
+                <a href={`${baseURL}/?id=${id}`}> { `Job #${id++}` } </a>
             );
         }
     }, {
@@ -77,9 +75,9 @@ export default function JobListComponent(props: Props) {
             job: job.id,
             frames: `${job.startFrame}-${job.stopFrame}`,
             status: `${job.status}`,
-            started: `${created.format('MMMM Do YYYY')}`,
+            started: `${created.format('MMMM Do YYYY HH:MM')}`,
             duration: `${moment.duration(moment(moment.now()).diff(created)).humanize()}`,
-            assignee: `${job.assignee ? job.assignee : 'Nobody'}`,
+            assignee: `${job.assignee ? job.assignee.username : ''}`,
         });
 
         return acc;

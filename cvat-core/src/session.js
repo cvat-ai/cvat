@@ -536,9 +536,9 @@
                     get: () => data.id,
                 },
                 /**
-                    * Identifier of a user who is responsible for the job
+                    * Instance of a user who is responsible for the job
                     * @name assignee
-                    * @type {integer}
+                    * @type {module:API.cvat.classes.User}
                     * @memberof module:API.cvat.classes.Job
                     * @instance
                     * @throws {module:API.cvat.exceptions.ArgumentError}
