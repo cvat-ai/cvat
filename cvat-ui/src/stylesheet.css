@@ -370,6 +370,11 @@
     margin-bottom: 20px;
 }
 
+.cvat-task-assignee-selector {
+    margin-left: 10px;
+    width: 150px;
+}
+
 .cvat-open-bug-tracker-button {
     margin-left: 15px;
 }

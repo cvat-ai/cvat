@@ -14,6 +14,7 @@
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
+    const User = require('./user');
 
     function buildDublicatedAPI(prototype) {
         Object.defineProperties(prototype, {
@@ -545,10 +546,10 @@
                 */
                 assignee: {
                     get: () => data.assignee,
-                    set: () => (assignee) => {
-                        if (!Number.isInteger(assignee) || assignee < 0) {
+                    set: (assignee) => {
+                        if (assignee !== null && !(assignee instanceof User)) {
                             throw new ArgumentError(
-                                'Value must be a non negative integer',
+                                'Value must be a user instance',
                             );
                         }
                         data.assignee = assignee;
@@ -817,10 +818,10 @@
                 */
                 assignee: {
                     get: () => data.assignee,
-                    set: () => (assignee) => {
-                        if (!Number.isInteger(assignee) || assignee < 0) {
+                    set: (assignee) => {
+                        if (assignee !== null && !(assignee instanceof User)) {
                             throw new ArgumentError(
-                                'Value must be a non negative integer',
+                                'Value must be a user instance',
                             );
                         }
                         data.assignee = assignee;

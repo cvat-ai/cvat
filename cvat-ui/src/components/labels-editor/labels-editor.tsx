@@ -167,10 +167,10 @@ export default class LabelsEditor
     };
 
     public componentDidMount() {
-        this.componentDidUpdate(null);
+        this.componentDidUpdate(null as any as LabelsEditortProps);
     }
 
-    public componentDidUpdate(prevProps: LabelsEditortProps | null) {
+    public componentDidUpdate(prevProps: LabelsEditortProps) {
         function transformLabel(label: any): Label {
             return {
                 name: label.name,

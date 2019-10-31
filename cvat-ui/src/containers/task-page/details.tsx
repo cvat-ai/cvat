@@ -8,6 +8,7 @@ import { updateTaskAsync } from '../../actions/task-actions';
 interface StateToProps {
     previewImage: string;
     taskInstance: any;
+    registeredUsers: any[];
     installedGit: boolean;
 }
 
@@ -21,6 +22,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const previewImage = (state.activeTask.task as any).preview;
 
     return {
+        registeredUsers: state.users.users,
         taskInstance,
         previewImage,
         installedGit: plugins.GIT_INTEGRATION,
@@ -43,6 +45,7 @@ function TaskPageContainer(props: StateToProps & DispatchToProps) {
             taskInstance={props.taskInstance}
             installedGit={props.installedGit}
             onTaskUpdate={props.onTaskUpdate}
+            registeredUsers={props.registeredUsers}
         />
     );
 }

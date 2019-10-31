@@ -19,13 +19,16 @@ import HeaderContainer from '../containers/header/header';
 
 type CVATAppProps = {
     loadFormats: () => void;
+    loadUsers: () => void;
     verifyAuthorized: () => void;
     initPlugins: () => void;
     pluginsInitialized: boolean;
     userInitialized: boolean;
     formatsInitialized: boolean;
+    usersInitialized: boolean;
     gettingAuthError: string;
     gettingFormatsError: string;
+    gettingUsersError: string;
     user: any;
 }
 
@@ -35,17 +38,52 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
     }
 
     public componentDidMount() {
-        this.props.loadFormats();
         this.props.verifyAuthorized();
-        this.props.initPlugins();
     }
 
     public componentDidUpdate() {
+        if (!this.props.userInitialized) {
+            return;
+        }
+
         if (this.props.gettingAuthError) {
             Modal.error({
                 title: 'Could not check authorization',
                 content: `${this.props.gettingAuthError}`,
             });
+            return;
+        }
+
+        if (!this.props.formatsInitialized) {
+            this.props.loadFormats();
+            return;
+        }
+
+        if (this.props.gettingFormatsError) {
+            Modal.error({
+                title: 'Could not receive annotations formats',
+                content: `${this.props.gettingFormatsError}`,
+            });
+            return;
+        }
+
+        if (!this.props.usersInitialized) {
+            this.props.loadUsers();
+            return;
+        }
+
+        if (this.props.gettingUsersError) {
+            Modal.error({
+                title: 'Could not receive users',
+                content: `${this.props.gettingUsersError}`,
+            });
+
+            return;
+        }
+
+        if (!this.props.pluginsInitialized) {
+            this.props.initPlugins();
+            return;
         }
     }
 
@@ -53,7 +91,8 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
     public render() {
         const readyForRender = this.props.userInitialized
             && this.props.formatsInitialized
-            && this.props.pluginsInitialized;
+            && this.props.pluginsInitialized
+            && this.props.usersInitialized;
 
         if (readyForRender) {
             if (this.props.user) {

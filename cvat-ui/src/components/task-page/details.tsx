@@ -5,6 +5,7 @@ import {
     Col,
     Modal,
     Button,
+    Select,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -22,12 +23,14 @@ interface Props {
     previewImage: string;
     taskInstance: any;
     installedGit: boolean; // change to git repos url
+    registeredUsers: any[];
     onTaskUpdate: (taskInstance: any) => void;
 }
 
 interface State {
     name: string;
     bugTracker: string;
+    assignee: any;
 }
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
@@ -39,6 +42,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         this.state = {
             name: taskInstance.name,
             bugTracker: taskInstance.bugTracker,
+            assignee: taskInstance.assignee,
         };
     }
 
@@ -111,8 +115,40 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     private renderUsers() {
         const { taskInstance } = this.props;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
-        const assignee = taskInstance.assignee ? taskInstance.assignee.username : null;
+        const assignee = this.state.assignee ? this.state.assignee.username : null;
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
+        const assigneeSelect = (
+            <Select
+                value={assignee ? assignee : '\0'}
+                size='small'
+                showSearch
+                className='cvat-task-assignee-selector'
+                onChange={(value: string) => {
+                    let [userInstance] = this.props.registeredUsers
+                        .filter((user: any) => user.username === value);
+
+                    if (userInstance === undefined) {
+                        userInstance = null;
+                    }
+
+                    this.setState({
+                        assignee: userInstance,
+                    });
+
+                    taskInstance.assignee = userInstance;
+                    this.props.onTaskUpdate(taskInstance);
+                }}
+            >
+                <Select.Option key='-1' value='\0'>{'\0'}</Select.Option>
+                { this.props.registeredUsers.map((user) => {
+                    return (
+                        <Select.Option key={user.id} value={user.username}>
+                            {user.username}
+                        </Select.Option>
+                    );
+                })}
+            </Select>
+        );
 
         return (
             <Row type='flex' justify='space-between' align='middle'>
@@ -122,12 +158,10 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                     </Text> : null }
                 </Col>
                 <Col span={10}>
-                    { assignee ? <Text type='secondary'>
-                        Assigned to {assignee}
-                    </Text> : <Text type='secondary'>
-                        Not assigned to anyone
+                    <Text type='secondary'>
+                        {'Assigned to'}
+                        { assigneeSelect }
                     </Text>
-                    }
                 </Col>
             </Row>
         );
@@ -200,6 +234,16 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                 </Col>
             </Row>
         );
+    }
+
+    public componentDidUpdate(prevProps: Props) {
+        if (prevProps !== this.props) {
+            this.setState({
+                name: this.props.taskInstance.name,
+                bugTracker: this.props.taskInstance.bugTracker,
+                assignee: this.props.taskInstance.assignee,
+            });
+        }
     }
 
     public render() {

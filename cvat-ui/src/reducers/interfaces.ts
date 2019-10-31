@@ -82,3 +82,9 @@ export interface TaskState {
     taskFetchingError: any;
     taskUpdatingError: any;
 }
+
+export interface UsersState {
+    users: any[];
+    initialized: boolean;
+    gettingUsersError: any;
+}
