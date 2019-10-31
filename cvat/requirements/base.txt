@@ -7,7 +7,7 @@ django-compressor==2.2
 django-rq==2.0.0
 EasyProcess==0.2.3
 ffmpy==0.2.2
-Pillow==5.1.0
+Pillow==6.2.0
 numpy==1.16.2
 patool==1.12
 python-ldap==3.0.0
