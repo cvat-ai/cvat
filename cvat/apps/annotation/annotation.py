@@ -118,6 +118,8 @@ class Annotation:
         self._host = host
         self._create_callback=create_callback
         self._MAX_ANNO_SIZE=30000
+        self._frame_info = {}
+        self._frame_mapping = {}
 
         db_labels = self._db_task.label_set.all().prefetch_related('attributespec_set').order_by('pk')
 
@@ -188,6 +190,10 @@ class Annotation:
                 "width": db_image.width,
                 "height": db_image.height,
             } for db_image in self._db_task.image_set.all()}
+
+        self._frame_mapping = {
+            self._get_filename(info["path"]): frame for frame, info in self._frame_info.items()
+        }
 
     def _init_meta(self):
         db_segments = self._db_task.segment_set.all().prefetch_related('job_set')
@@ -424,3 +430,15 @@ class Annotation:
     @property
     def frame_info(self):
         return self._frame_info
+
+    @staticmethod
+    def _get_filename(path):
+        return os.path.splitext(os.path.basename(path))[0]
+
+    def match_frame(self, filename):
+        # try to match by filename
+        _filename = self._get_filename(filename)
+        if _filename in self._frame_mapping:
+            return self._frame_mapping[_filename]
+
+        raise Exception("Cannot match filename or determinate framenumber for {} filename".format(filename))

@@ -333,26 +333,6 @@ def load(file_object, annotations):
     from pycocotools import mask as mask_utils
     import numpy as np
 
-    def get_filename(path):
-        import os
-        return os.path.splitext(os.path.basename(path))[0]
-
-    def match_frame(frame_info, filename):
-        import re
-        # try to match by filename
-        yolo_filename = get_filename(filename)
-        for frame_number, info in frame_info.items():
-            cvat_filename = get_filename(info["path"])
-            if cvat_filename == yolo_filename:
-                return frame_number
-
-        # try to extract frame number from filename
-        numbers = re.findall(r"\d+", filename)
-        if numbers and len(numbers) == 1:
-            return int(numbers[0])
-
-        raise Exception("Cannot match filename or determinate framenumber for {} filename".format(filename))
-
     coco = coco_loader.COCO(file_object.name)
     labels={cat['id']: cat['name'] for cat in coco.loadCats(coco.getCatIds())}
 
@@ -360,7 +340,7 @@ def load(file_object, annotations):
     for img_id in coco.getImgIds():
         anns = coco.loadAnns(coco.getAnnIds(imgIds=img_id))
         img = coco.loadImgs(ids=img_id)[0]
-        frame_number = match_frame(annotations.frame_info, img['file_name'])
+        frame_number = annotations.match_frame(img['file_name'])
         for ann in anns:
             group = 0
             label_name = labels[ann['category_id']]
