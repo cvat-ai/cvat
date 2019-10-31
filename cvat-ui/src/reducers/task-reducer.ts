@@ -35,10 +35,6 @@ export default function (state = defaultState, action: AnyAction): TaskState {
         case TaskActionTypes.UPDATE_TASK: {
             return {
                 ...state,
-                task: {
-                    ...(state.task as Task),
-                    instance: null,
-                },
                 taskUpdatingError: null,
             };
         }
@@ -49,7 +45,6 @@ export default function (state = defaultState, action: AnyAction): TaskState {
                     ...(state.task as Task),
                     instance: action.payload.taskInstance,
                 },
-                taskUpdatingError: null,
             };
         }
         case TaskActionTypes.UPDATE_TASK_FAILED: {

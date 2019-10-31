@@ -28,7 +28,6 @@ interface HeaderContainerProps {
 
 function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
     const cvatLogo = () => (<img src='/assets/cvat-logo.svg'/>);
-    const backLogo = () => (<img src='/assets/icon-playcontrol-previous.svg'/>);
     const userLogo = () => (<img src='/assets/icon-account.svg' />);
 
     if (props.logoutError) {
@@ -50,7 +49,6 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
         <Layout.Header className='cvat-header'>
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={cvatLogo}/>
-                <Icon className='cvat-back-icon' component={backLogo}/>
 
                 <Radio.Group size='default' value={activeTab} className='cvat-header-buttons'>
                     <Radio.Button value='tasks'onChange={
@@ -87,7 +85,7 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
                             <Icon className='cvat-header-user-icon' component={userLogo} />
                             <span>
                                 <Text strong> {props.username} </Text>
-                                <Icon className='cvat-header-menu-icon' component={backLogo} />
+                                <Icon className='cvat-header-menu-icon' type='caret-down'/>
                             </span>
                         </span>
                     }>

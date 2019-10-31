@@ -66,11 +66,7 @@
 .anticon.cvat-logo-icon {
     display: flex;
     align-items: center;
-}
-
-.anticon.cvat-back-icon {
-    display: flex;
-    align-items: center;
+    margin-right: 20px;
 }
 
 .anticon.cvat-logo-icon > img {
@@ -128,10 +124,6 @@
 .anticon.cvat-header-user-icon > img {
     width: 17px;
     margin: 16px;
-}
-
-.anticon.cvat-header-menu-icon {
-    display: contents;
 }
 
 .anticon.cvat-header-menu-icon > img {
@@ -466,8 +458,8 @@
     color: red;
 }
 
-.cvat-jobs-header {
-    margin-bottom: 0px !important;
+.ant-typography.cvat-jobs-header {
+    margin-bottom: 0px;
 }
 
 /* Pagination in center */
