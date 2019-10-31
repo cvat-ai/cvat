@@ -14,6 +14,7 @@
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
+    const User = require('./user');
 
     function buildDublicatedAPI(prototype) {
         Object.defineProperties(prototype, {
@@ -536,19 +537,19 @@
                     get: () => data.id,
                 },
                 /**
-                    * Identifier of a user who is responsible for the job
+                    * Instance of a user who is responsible for the job
                     * @name assignee
-                    * @type {integer}
+                    * @type {module:API.cvat.classes.User}
                     * @memberof module:API.cvat.classes.Job
                     * @instance
                     * @throws {module:API.cvat.exceptions.ArgumentError}
                 */
                 assignee: {
                     get: () => data.assignee,
-                    set: () => (assignee) => {
-                        if (!Number.isInteger(assignee) || assignee < 0) {
+                    set: (assignee) => {
+                        if (assignee !== null && !(assignee instanceof User)) {
                             throw new ArgumentError(
-                                'Value must be a non negative integer',
+                                'Value must be a user instance',
                             );
                         }
                         data.assignee = assignee;
@@ -817,10 +818,10 @@
                 */
                 assignee: {
                     get: () => data.assignee,
-                    set: () => (assignee) => {
-                        if (!Number.isInteger(assignee) || assignee < 0) {
+                    set: (assignee) => {
+                        if (assignee !== null && !(assignee instanceof User)) {
                             throw new ArgumentError(
-                                'Value must be a non negative integer',
+                                'Value must be a user instance',
                             );
                         }
                         data.assignee = assignee;
@@ -957,11 +958,7 @@
                             }
                         }
 
-                        if (typeof (data.id) === 'undefined') {
-                            data.labels = [...labels];
-                        } else {
-                            data.labels = data.labels.concat([...labels]);
-                        }
+                        data.labels = [...labels];
                     },
                 },
                 /**
@@ -1313,6 +1310,7 @@
         if (typeof (this.id) !== 'undefined') {
             // If the task has been already created, we update it
             const taskData = {
+                assignee: this.assignee ? this.assignee.id : null,
                 name: this.name,
                 bug_tracker: this.bugTracker,
                 z_order: this.zOrder,
