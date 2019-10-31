@@ -43,7 +43,7 @@ export default function LoaderItemComponent(props: LoaderItemComponentProps) {
                 }}>
                 <Button block={true} type='link' disabled={!!props.loadActivity}>
                     <Icon type='upload'/>
-                    <Text> {loader.name} </Text>
+                    <Text>{loader.name}</Text>
                     {pending ? <Icon type='loading'/> : null}
                 </Button>
             </Upload>

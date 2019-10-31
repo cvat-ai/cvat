@@ -84,7 +84,7 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
                         <span>
                             <Icon className='cvat-header-user-icon' component={userLogo} />
                             <span>
-                                <Text strong> {props.username} </Text>
+                                <Text strong>{props.username}</Text>
                                 <Icon className='cvat-header-menu-icon' type='caret-down'/>
                             </span>
                         </span>

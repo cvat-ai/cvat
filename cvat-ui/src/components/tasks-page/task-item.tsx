@@ -59,7 +59,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
 
         return (
             <Col span={10}>
-                <Text strong> {id} {name} </Text> <br/>
+                <Text strong>{`${id} ${name}`}</Text> <br/>
                 { owner ?
                     <>
                         <Text type='secondary'>
@@ -99,7 +99,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         }
                     </Col>
                     <Col>
-                        <Text type='secondary'> {numOfCompleted} of {numOfJobs} jobs </Text>
+                        <Text type='secondary'>{`${numOfCompleted} of ${numOfJobs} jobs`}</Text>
                     </Col>
                 </Row>
                 <Row>

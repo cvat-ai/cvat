@@ -29,7 +29,7 @@ export default function JobListComponent(props: Props) {
         key: 'job',
         render: (id: number) => {
             return (
-                <a href={`${baseURL}/?id=${id}`}> { `Job #${id++}` } </a>
+                <a href={`${baseURL}/?id=${id}`}>{ `Job #${id++}` }</a>
             );
         }
     }, {
@@ -46,7 +46,7 @@ export default function JobListComponent(props: Props) {
                 status === 'validation' ? 'cvat-job-validation-color' : 'cvat-job-annotation-color';
 
             return (
-                <Text strong className={progressColor}> { status } </Text>
+                <Text strong className={progressColor}>{ status }</Text>
             );
         }
     }, {
@@ -95,8 +95,7 @@ export default function JobListComponent(props: Props) {
                 </Col>
                 <Col>
                     <Text className='cvat-black-color'>
-                        <Text strong className='cvat-black-color'> {completed} </Text>
-                        of 15 jobs completed
+                        {`${completed} of ${data.length} jobs`}
                     </Text>
                 </Col>
             </Row>
