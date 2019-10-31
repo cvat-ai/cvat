@@ -43,28 +43,9 @@ export default class LabelsEditor
     public constructor(props: LabelsEditortProps) {
         super(props);
 
-        function transformLabel(label: any): Label {
-            return {
-                name: label.name,
-                id: label.id || idGenerator(),
-                attributes: label.attributes.map((attr: any): Attribute => {
-                    return {
-                        id: attr.id || idGenerator(),
-                        name: attr.name,
-                        type: attr.input_type,
-                        mutable: attr.mutable,
-                        values: [...attr.values],
-                    };
-                }),
-            }
-        }
-
-        const transformedLabels = this.props.labels.map(transformLabel);
         this.state = {
-            savedLabels: transformedLabels
-                .filter((label: Label) => label.id >= 0),
-            unsavedLabels: transformedLabels
-                .filter((label: Label) => label.id < 0),
+            savedLabels: [],
+            unsavedLabels: [],
             constructorMode: ConstructorMode.SHOW,
             labelForUpdate: null,
         };
@@ -184,6 +165,38 @@ export default class LabelsEditor
             this.handleSubmit(this.state.savedLabels, unsavedLabels);
         }
     };
+
+    public componentDidMount() {
+        this.componentDidUpdate(null);
+    }
+
+    public componentDidUpdate(prevProps: LabelsEditortProps | null) {
+        function transformLabel(label: any): Label {
+            return {
+                name: label.name,
+                id: label.id || idGenerator(),
+                attributes: label.attributes.map((attr: any): Attribute => {
+                    return {
+                        id: attr.id || idGenerator(),
+                        name: attr.name,
+                        type: attr.input_type,
+                        mutable: attr.mutable,
+                        values: [...attr.values],
+                    };
+                }),
+            }
+        }
+
+        if (!prevProps || prevProps.labels !== this.props.labels) {
+            const transformedLabels = this.props.labels.map(transformLabel);
+            this.setState({
+                savedLabels: transformedLabels
+                    .filter((label: Label) => label.id >= 0),
+                unsavedLabels: transformedLabels
+                    .filter((label: Label) => label.id < 0),
+            });
+        }
+    }
 
     public render() {
         return (

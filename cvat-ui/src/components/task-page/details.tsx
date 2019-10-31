@@ -135,7 +135,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
 
     private renderBugTracker() {
         const { taskInstance } = this.props;
-        const { bugTracker } = taskInstance;
+        const { bugTracker } = this.state;
 
         const onChangeValue = (value: string) => {
             if (value && !patterns.validateURL.pattern.test(value)) {

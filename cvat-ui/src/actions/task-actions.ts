@@ -102,13 +102,13 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             dispatch(updateTask());
             await taskInstance.save();
-            const task = await core.tasks.get({ id: taskInstance.id });
+            const [task] = await core.tasks.get({ id: taskInstance.id });
             dispatch(updateTaskSuccess(task));
         } catch (error) {
             // try abort all changes
             let task = null;
             try {
-                task = await core.tasks.get({ id: taskInstance.id });
+                [task] = await core.tasks.get({ id: taskInstance.id });
             } catch (_) {
                 // server error?
                 dispatch(updateTaskFailed(error, taskInstance));

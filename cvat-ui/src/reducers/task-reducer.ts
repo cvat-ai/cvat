@@ -15,6 +15,7 @@ export default function (state = defaultState, action: AnyAction): TaskState {
             return {
                 ...state,
                 taskFetchingError: null,
+                taskUpdatingError: null,
             };
         case TaskActionTypes.GET_TASK_SUCCESS: {
             return {
@@ -36,6 +37,7 @@ export default function (state = defaultState, action: AnyAction): TaskState {
             return {
                 ...state,
                 taskUpdatingError: null,
+                taskFetchingError: null,
             };
         }
         case TaskActionTypes.UPDATE_TASK_SUCCESS: {
