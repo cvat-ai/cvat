@@ -370,6 +370,10 @@
     margin-bottom: 20px;
 }
 
+.cvat-open-bug-tracker-button {
+    margin-left: 15px;
+}
+
 .cvat-raw-labels-viewer {
     border-color: #d9d9d9 !important;
     box-shadow: none !important;

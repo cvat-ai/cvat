@@ -51,6 +51,10 @@ const validationPatterns = {
         message: 'Invalid attribute value',
     },
 
+    validateURL: {
+        pattern: /^(https?):\/\/[^\s$.?#].[^\s]*$/,
+        message: 'URL is not valid',
+    },
 };
 
 export default { ...validationPatterns };

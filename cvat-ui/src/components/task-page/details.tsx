@@ -3,6 +3,8 @@ import React from 'react';
 import {
     Row,
     Col,
+    Modal,
+    Button,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -12,6 +14,7 @@ import moment from 'moment';
 
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import getCore from '../../core';
+import patterns from '../../utils/validation-patterns';
 
 const core = getCore();
 
@@ -24,14 +27,18 @@ interface Props {
 
 interface State {
     name: string;
+    bugTracker: string;
 }
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props);
 
+        const { taskInstance } = props;
+
         this.state = {
-            name: props.taskInstance.name,
+            name: taskInstance.name,
+            bugTracker: taskInstance.bugTracker,
         };
     }
 
@@ -130,18 +137,45 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         const { taskInstance } = this.props;
         const { bugTracker } = taskInstance;
 
+        const onChangeValue = (value: string) => {
+            if (value && !patterns.validateURL.pattern.test(value)) {
+                Modal.error({
+                    title: `Could not update the task ${taskInstance.id}`,
+                    content: 'Issue tracker is expected to be URL',
+                });
+            } else {
+                this.setState({
+                    bugTracker: value,
+                });
+
+                taskInstance.bugTracker = value;
+                this.props.onTaskUpdate(taskInstance);
+            }
+        }
+
         if (bugTracker) {
             return (
                 <Row>
                     <Col>
-                        <Text strong className='cvat-black-color'> Bug Tracker </Text>
+                        <Text strong className='cvat-black-color'> Issue Tracker </Text>
                         <br/>
-                        <a href={bugTracker}>{bugTracker}</a>
+                        <Text editable={{onChange: onChangeValue}}>{bugTracker}</Text>
+                        <Button type='ghost' size='small' onClick={() => {
+                            window.open(bugTracker, '_blank');
+                        }} className='cvat-open-bug-tracker-button'>{'Open the issue'}</Button>
                     </Col>
                 </Row>
             );
         } else {
-            return null;
+            return (
+                <Row>
+                    <Col>
+                        <Text strong className='cvat-black-color'> Issue Tracker </Text>
+                        <br/>
+                        <Text editable={{onChange: onChangeValue}}>{'Not specified'}</Text>
+                    </Col>
+                </Row>
+            );
         }
     }
 
