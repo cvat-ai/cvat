@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from skimage.measure import approximate_polygon, find_contours
 
 
 MASK_THRESHOLD = .5
@@ -43,7 +44,7 @@ for detection in detections:
             y = box[4] * height
             right = box[5] * width
             bottom = box[6] * height
-            mask = masks[index][label]
+            mask = masks[index][label - 1]
 
             mask = segm_postprocess((x, y, right, bottom),
                                     mask,
@@ -51,14 +52,13 @@ for detection in detections:
                                     width,
                                     MASK_THRESHOLD)
 
-            contour, _ = cv2.findContours(mask,
-                                          cv2.RETR_EXTERNAL,
-                                          cv2.CHAIN_APPROX_TC89_KCOS)
+            contours = find_contours(mask, MASK_THRESHOLD)
+            contour = contours[0]
+            contour = np.flip(contour, axis=1)
+            contour = approximate_polygon(contour, tolerance=2.5)
+            segmentation = contour.tolist()
 
-            contour = contour[0]
-            contour = contour.tolist()
-            contour = [x[0] for x in contour]
 
             # NOTE: if you want to see the boxes, uncomment next line
             # results.add_box(x, y, right, bottom, label, frame_number)
-            results.add_polygon(contour, label, frame_number)
+            results.add_polygon(segmentation, label, frame_number)
