@@ -111,6 +111,20 @@ def main():
 
         from cvat.apps.engine.serializers import LabeledDataSerializer
 
+        # NOTE: We're actually using `run_inference_engine_annotation`
+        # incorrectly here. The `mapping` dict is supposed to be a mapping
+        # of integers -> integers and represents the transition from model
+        # integers to the labels in the database. We're using a mapping of
+        # integers -> strings. For testing purposes, this shortcut is fine.
+        # We just want to make sure everything works. Until, that is....
+        # we want to test using the label serializer. Then we have to transition
+        # back to integers, otherwise the serializer complains about have a string
+        # where an integer is expected. We'll just brute force that.
+
+        for shape in results['shapes']:
+            # Change the english label to an integer for serialization validation
+            shape['label_id'] = 1
+
         serializer = LabeledDataSerializer(data=results)
 
         if not serializer.is_valid():
