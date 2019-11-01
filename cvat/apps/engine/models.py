@@ -86,6 +86,17 @@ class Task(models.Model):
 
         return path
 
+    @staticmethod
+    def get_image_frame(image_path):
+        assert image_path.endswith('.jpg')
+        index = os.path.splitext(os.path.basename(image_path))[0]
+
+        path = os.path.dirname(image_path)
+        d2 = os.path.basename(path)
+        d1 = os.path.basename(os.path.dirname(path))
+
+        return int(d1) * 10000 + int(d2) * 100 + int(index)
+
     def get_frame_step(self):
         match = re.search("step\s*=\s*([1-9]\d*)", self.frame_filter)
         return int(match.group(1)) if match else 1
@@ -107,6 +118,12 @@ class Task(models.Model):
 
     def get_task_dirname(self):
         return os.path.join(settings.DATA_ROOT, str(self.id))
+
+    def get_datumaro_project_dir(self):
+        return os.path.join(self.get_task_dirname(), "datumaro")
+
+    def get_export_cache_dir(self):
+        return os.path.join(self.get_task_dirname(), "export_cache")
 
     def __str__(self):
         return self.name
