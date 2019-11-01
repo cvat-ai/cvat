@@ -233,14 +233,13 @@ class VideoExtractor(DirectoryExtractor):
     def save_as_chunks(self, chunk_size, task, progress_callback=None):
         if not self._source_path:
             raise Exception('No data to compress')
-
         for i in range(math.ceil(len(self._source_path) / chunk_size)):
             start_frame = i * chunk_size
             input_images = os.path.join(self._tmp_dir, self._imagename_pattern)
             input_options = '-f image2 -framerate 25 -start_number {}'.format(start_frame)
             output_chunk = task.get_chunk_path(i)
             self.prepare_dirs(output_chunk)
-            output_options = '-vframes {} -codec:v mpeg1video -q:v 0'.format(chunk_size)
+            output_options = '-vframes {} -f mpegts -c:a none -codec:v mpeg1video -bf 0 -b:v 800k'.format(chunk_size)
 
             ff = FFmpeg(
                 inputs  = {input_images: input_options},
