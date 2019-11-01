@@ -42,7 +42,8 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
     }
 
     public componentDidUpdate() {
-        if (!this.props.userInitialized) {
+        if (!this.props.userInitialized ||
+            this.props.userInitialized && this.props.user == null) {
             return;
         }
 
@@ -89,10 +90,10 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
 
     // Where you go depends on your URL
     public render() {
-        const readyForRender = this.props.userInitialized
-            && this.props.formatsInitialized
-            && this.props.pluginsInitialized
-            && this.props.usersInitialized;
+        const readyForRender =
+            (this.props.userInitialized && this.props.user == null) ||
+            (this.props.userInitialized && this.props.formatsInitialized &&
+             this.props.pluginsInitialized &&this.props.usersInitialized);
 
         if (readyForRender) {
             if (this.props.user) {
