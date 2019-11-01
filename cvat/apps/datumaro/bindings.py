@@ -2,6 +2,8 @@ from collections import OrderedDict
 import os
 import os.path as osp
 
+from django.db import transaction
+
 from cvat.apps.annotation.annotation import Annotation
 from cvat.apps.engine.annotation import TaskAnnotation
 from cvat.apps.engine.models import Task, ShapeType
@@ -58,7 +60,8 @@ class CvatTaskExtractor(datumaro.Extractor):
         self._categories = self._load_categories()
 
         cvat_annotations = TaskAnnotation(db_task.id, user)
-        cvat_annotations.init_from_db()
+        with transaction.atomic():
+            cvat_annotations.init_from_db()
         cvat_annotations = Annotation(cvat_annotations.ir_data, db_task)
 
         dm_annotations = []
