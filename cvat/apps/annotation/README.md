@@ -315,7 +315,8 @@ It may take some time.
 
 #### COCO loader description
 - uploaded file: single unpacked `*.json`.
-- supported shapes: Polygons (the `segmentation` must not be empty)
+- supported shapes: object is interpreted as Polygon if the `segmentation` field of annotation is not empty
+  else as Rectangle with coordinates from `bbox` field.
 - additional comments: the CVAT task should be created with the full label set that may be in the annotation files
 
 #### How to create a task from MS COCO dataset
