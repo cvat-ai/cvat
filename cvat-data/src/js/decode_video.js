@@ -77,7 +77,7 @@ self.onmessage = function (e) {
     const start = e.data.start;
     const end   = e.data.end;
 
-    videoDecoder = new JSMpeg.Decoder.MPEG1Video({decodeFirstFrame : false});
+    videoDecoder = new JSMpeg.Decoder.MPEG1Video({decodeFirstFrame : false, videoBufferSize : block.length});
     demuxer = new JSMpeg.Demuxer.TS({});
     demuxer.connect(JSMpeg.Demuxer.TS.STREAM.VIDEO_1, videoDecoder);
     demuxer.write(block);
@@ -88,6 +88,7 @@ self.onmessage = function (e) {
         var t_decode = performance.now();
         // console.log("decode " + i + " frame  took " + (t_decode - t0) + " milliseconds.");
         if (!Array.isArray(result)) {
+            // console.log("frame: " + i + " block: " + block);
             const message = 'Result must be an array.'
                 + `Got ${result}. Possible reasons: `
                 + 'bad video file, unpached jsmpeg';
@@ -96,7 +97,7 @@ self.onmessage = function (e) {
         }
         
 
-        postMessage({fileName : null, index : i, data : YCbCrToRGBA(...result, e.data.width, e.data.height), isEnd : i === end});
+        postMessage({start : start, end : end, fileName : null, index : i, data : YCbCrToRGBA(...result, e.data.width, e.data.height), isEnd : i === end});
     }
 
     self.close();

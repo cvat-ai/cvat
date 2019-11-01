@@ -26,7 +26,7 @@ self.onmessage = function (e) {
             _zip.file(relativePath).async('blob').then((fileData) => {
                 const reader = new FileReader();
                 reader.onload = (function(i, event){
-                    postMessage({fileName : relativePath, index : fileIndex, data: reader.result});
+                    postMessage({fileName : relativePath, index : fileIndex, data: reader.result, isEnd : i === inverseUnzippedFilesCount < start});
                     inverseUnzippedFilesCount --;
                     if (inverseUnzippedFilesCount < start){
                         self.close();

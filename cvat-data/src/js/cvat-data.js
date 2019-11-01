@@ -12,6 +12,27 @@ const BlockType = Object.freeze({
     ARCHIVE: 'archive',
 });
 
+
+class Mutex {
+    constructor() {
+        this._lock = Promise.resolve();
+    }
+    _acquire() {
+        var release;
+        const lock = this._lock = new Promise(resolve => {
+            release = resolve;
+        });
+        return release;
+    }
+    acquireQueued() {
+        const q = this._lock.then(() => release);
+        const release = this._acquire();
+        return q;
+    }
+};
+
+
+
 class FrameProvider {
     constructor(memory, blockType, blockSize) {
         this._frames = {};
@@ -28,26 +49,36 @@ class FrameProvider {
         this._decodingBlocks = {};
         this._decodeThreadCount = 0;
         this._timerId = setTimeout(this._worker.bind(this), 100);
+        this._mutex = new Mutex();
     };
 
-    _worker()
+    async _worker()
     {
         if (this._requestedBlockDecode != null &&
-            this._decodeThreadCount < 3)
+            this._decodeThreadCount < 2)
         {
-            this.startDecode();
+            await this.startDecode();
         }
         this._timerId = setTimeout(this._worker.bind(this), 100);
     }
 
+    is_chunk_cached(start, end)
+    {
+        return (`${start}:${end}` in this._blocks_ranges);
+    }
+  
+
     /* This method removes extra data from a cache when memory overflow */
-    _cleanup() {
+    async _cleanup() {
         if (this._blocks_ranges.length > this._memory) {
             const shifted = this._blocks_ranges.shift(); // get the oldest block
             const [start, end] = shifted.split(':').map((el) => +el);
             delete this._blocks[start / this._blockSize];
+            for (let i = start; i <= end; i++){
+                delete this._frames[i];
+            }
         }
-
+           
         // delete frames whose are not in areas of current frame
         for (let i = 0; i < this._blocks_ranges.length; i++)
         {
@@ -71,19 +102,30 @@ class FrameProvider {
         }
     }
 
-    requestDecodeBlock(block, start, end, resolveCallback, rejectCallback){
-        if (this._requestedBlockDecode != null)
-        {
+    async requestDecodeBlock(block, start, end, resolveCallback, rejectCallback){
+        const release = await this._mutex.acquireQueued();
+        if (this._requestedBlockDecode != null) {
             this._requestedBlockDecode.rejectCallback();
         }
-
-        this._requestedBlockDecode = {
-            block : block,
-            start : start,
-            end : end,
-            resolveCallback : resolveCallback,
-            rejectCallback : rejectCallback,
+        if (! (`${start}:${end}` in this._decodingBlocks)) {
+            if (block === null)
+            {
+                block = this._blocks[Math.floor((start+1) / chunkSize)];
+            }
+            this._requestedBlockDecode = {
+                block : block,
+                start : start,
+                end : end,
+                resolveCallback : resolveCallback,
+                rejectCallback : rejectCallback,
+            }
         }
+        release();
+    }
+
+    isRequestExist()
+    {
+        return this._requestedBlockDecode != null;
     }
 
     setRenderSize(width, height){
@@ -92,7 +134,7 @@ class FrameProvider {
     }
 
     /* Method returns frame from collection. Else method returns 0 */
-    frame(frameNumber) {        
+    async frame(frameNumber) {        
         if (frameNumber in this._frames) {
            this._currFrame = frameNumber;
            return this._frames[frameNumber];
@@ -123,23 +165,24 @@ class FrameProvider {
         this._blocks[chunkNumber] = "loading";
     }
 
-    startDecode() {
+    async startDecode() {
          if (this._blockType === BlockType.TSVIDEO){
-         
+
+           
+            const release = await this._mutex.acquireQueued();
             let start = this._requestedBlockDecode.start;
             let end = this._requestedBlockDecode.end;
             let block = this._requestedBlockDecode.block;           
-           
-            console.log("start decoding " + start + " to " + end + " frames");
+            this._blocks_ranges.push(`${start}:${end}`);
             this._decodingBlocks[`${start}:${end}`] = this._requestedBlockDecode;
-            this._requestedBlockDecode = null;
+            this._requestedBlockDecode = null;         
             
             for (let i = start; i < end; i++){
                 this._frames[i] = 'loading';
             }
 
             this._blocks[Math.floor((start+1)/ this._blockSize)] = block;
-            this._blocks_ranges.push(`${start}:${end}`);
+            
             this._cleanup();    
 
             const worker = new Worker('/static/engine/js/decode_video.js');
@@ -148,7 +191,8 @@ class FrameProvider {
                 console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
                 worker.terminate();
                 this._decodeThreadCount--;
-                console.log(this._decodeThreadCount);
+                // console.log(this._decodeThreadCount);
+                this._decodingBlocks[`${start}:${end}`].rejectCallback();
                 delete this._decodingBlocks[`${start}:${end}`];
             }).bind(this);
 
@@ -158,24 +202,36 @@ class FrameProvider {
                                 width  : this._width,
                                 height : this._height});
             this._decodeThreadCount++;
-            console.log(this._decodeThreadCount);
+            // console.log(this._decodeThreadCount);
             
             worker.onmessage = (function (event){
+                // console.log("Decoded " + event.data.index + "frame");
                 this._frames[event.data.index] = event.data.data;
-                this._decodingBlocks[`${start}:${end}`].resolveCallback(event.data.index);
+                this._decodingBlocks[`${event.data.start}:${event.data.end}`].resolveCallback(event.data.index);
                 if (event.data.isEnd) {
-                    console.log("stop decoding " + start + " to " + end + " frames");
                     this._decodeThreadCount--;
-                    console.log(this._decodeThreadCount);
-                    delete this._decodingBlocks[`${start}:${end}`];
+                    // console.log("stop decoding " + event.data.start + " to " + event.data.end + " frames");
+                    // console.log(this._decodeThreadCount);
+                    delete this._decodingBlocks[`${event.data.start}:${event.data.end}`];
                 }
             }).bind(this);
+            release();
            
         } else {
+
+            const release = await this._mutex.acquireQueued();
+            let start = this._requestedBlockDecode.start;
+            let end = this._requestedBlockDecode.end;
+            let block = this._requestedBlockDecode.block;           
+            this._blocks_ranges.push(`${start}:${end}`);
+            this._decodingBlocks[`${start}:${end}`] = this._requestedBlockDecode;
+            this._requestedBlockDecode = null; 
+
             const worker = new Worker('/static/engine/js/unzip_imgs.js');
 
             worker.onerror = (function (e) {
                 console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
+                this._decodingBlocks[`${start}:${end}`].rejectCallback();
                 this._decodeThreadCount--;
             });
 
@@ -185,11 +241,14 @@ class FrameProvider {
             this._decodeThreadCount++;
                         
             worker.onmessage = (function (event){
-                this._frames[event.data.index] = event.data.data;
-                if (event.data.isEnd)
+               this._decodingBlocks[`${start}:${end}`].resolveCallback(event.data.index);
+               if (event.data.isEnd){
+                    delete this._decodingBlocks[`${start}:${end}`];
                     this._decodeThreadCount--;
-                callback(event.data.index);
+               }
             }).bind(this);
+
+            release();
         }
     }
 
