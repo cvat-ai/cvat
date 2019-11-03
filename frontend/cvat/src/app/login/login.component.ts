@@ -38,8 +38,13 @@ export class LoginComponent implements OnInit {
 
     this.loginService.signIn(loginData).subscribe(response => this.response = response);
   //  localStorage.clear();
+
+  /*This is not sufficient for if you get like 404 not found or something*/
     if(this.response!="Your username and password didn't match. Please try again."){
       this.router.navigate(['./dashboard']);
+      sessionStorage.setItem('username', loginData.get('username').toString());
+      sessionStorage.setItem('password', loginData.get('password').toString());
+
       //localStorage.setItem('user', this.response.text());
     }
     //console.log(localStorage.getItem('user').text());
