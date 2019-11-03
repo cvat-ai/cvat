@@ -1,5 +1,6 @@
-import { Component, Input} from '@angular/core';
+import { Component, Input, Output,EventEmitter} from '@angular/core';
 import { Task } from '../models/task';
+import {MatDialog} from '@angular/material/dialog';
 import { environment } from '../../environments/environment';
 
 @Component({
@@ -9,5 +10,19 @@ import { environment } from '../../environments/environment';
 })
 export class DashboardItemComponent{
   @Input() task: Task;
+  @Output() deleted = new EventEmitter<number>()
   imgUrl = environment.apiUrl+"api/v1/tasks/";
+
+  constructor(private matDialog:MatDialog) { }
+
+  openDeleteModal(templateRef){
+    const dialogRef=this.matDialog.open(templateRef,
+    {
+      width: '400px',
+    });
+  }
+
+  delete(){
+    this.deleted.emit(this.task.id);
+  }
 }

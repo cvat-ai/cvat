@@ -1,4 +1,18 @@
-/*import { environment } from '../environments/environment';*/
+.semiBold {
+    font-family: BarlowSemiCondensed-SemiBold;
+}
+
+.regular {
+    font-family: BarlowSemiCondensed-Regular;
+}
+
+.h1 {
+    font-size: 1.4em;
+}
+
+.bold {
+    font-family: BarlowSemiCondensed-Bold;
+}
 
 .dashboardItem {
     margin: 5px auto;
@@ -31,4 +45,13 @@
     height: 75%;
     float: left;
     overflow-y: auto;
+}
+
+.dashboardButtonUI {
+    display: block;
+    width: 60%;
+    height: 1.6em;
+    margin: auto;
+    margin-top: 0.3em;
+    font-size: 1em;
 }

@@ -11,6 +11,8 @@ import { map } from 'rxjs/operators';
 })
 export class DashboardService {
 
+  private tasksUrl=environment.apiUrl+'api/v1/tasks';
+
   httpOptions={
     headers: new HttpHeaders({
       'Content-Type':  'application/json',
@@ -31,9 +33,17 @@ return this.http.get(environment.apiUrl+'dashboard/meta').subscribe(response => 
 
   getTasks(): Observable<Task[]>{
 
-    return this.http.get(environment.apiUrl+'api/v1/tasks', this.httpOptions).pipe(
+    return this.http.get(this.tasksUrl, this.httpOptions).pipe(
         map(response=> response['results'] as Task[]),
         catchError(this.handleError)
+    );
+  }
+
+  deleteTask(id: number): Observable{
+
+    return this.http.delete(this.tasksUrl+'/'+`${id}`)
+    .pipe(
+      catchError(this.handleError)
     );
   }
 
@@ -41,5 +51,7 @@ return this.http.get(environment.apiUrl+'dashboard/meta').subscribe(response => 
     console.error(res.error || res.body.error);
     return observableThrowError(res.error || 'Server error');
   }
+
+
 
 }

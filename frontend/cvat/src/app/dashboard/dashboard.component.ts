@@ -2,7 +2,8 @@ import { Component, OnInit, Input} from '@angular/core';
 import {MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { TaskConfigurationModalComponent } from '../task-configuration-modal/task-configuration-modal.component';
 import { DashboardService } from '../dashboard.service';
-import { Task } from '../models/task'
+import { Task } from '../models/task';
+import { DashboardItemComponent } from '../dashboardItem/dashboardItem.component;'
 
 @Component({
   selector: 'app-dashboard',
@@ -28,6 +29,20 @@ export class DashboardComponent implements OnInit {
      width: '500px',
      /*data: {name: this.name, animal: this.animal}*/
    });
+  }
+
+  //tid stands for task id
+  deleteTask(id: number){
+    this.dashboardService.deleteTask(id).subscribe(
+      (val) => {
+        this.taskData.splice(id-1, 1);
+        console.log(this.taskData);
+      }
+    );
+  }
+
+  navigateToUserGuide(){
+    window.location.href="http://localhost:8080/documentation/user_guide.html";
   }
 
 
