@@ -31,6 +31,8 @@ def log_exception(logger=None, exc_info=True):
 
 _TASK_IMAGES_EXTRACTOR = '_cvat_task_images'
 _TASK_ANNO_EXTRACTOR = '_cvat_task_anno'
+_TASK_IMAGES_REMOTE_EXTRACTOR = 'cvat_rest_api_task_images'
+
 
 class TaskProject:
     @staticmethod
@@ -126,12 +128,77 @@ class TaskProject:
             self._init_dataset()
         if format == DEFAULT_FORMAT:
             self._dataset.save(save_dir=save_dir, save_images=save_images)
+        elif format == DEFAULT_FORMAT_REMOTE:
+            self._remote_export(save_dir=save_dir, server_url=server_url)
         else:
             self._dataset.export(output_format=format,
                 save_dir=save_dir, save_images=save_images)
 
+    def _remote_image_converter(self, save_dir, server_url=None):
+        os.makedirs(save_dir, exist_ok=True)
+
+        db_task = self._db_task
+        items = []
+        config = {
+            'server_host': 'localhost',
+            'server_port': '',
+            'task_id': db_task.id,
+        }
+        if server_url:
+            parsed_url = urlsplit(server_url)
+            config['server_host'] = parsed_url.netloc
+            port = 80
+            if parsed_url.port:
+                port = parsed_url.port
+            config['server_port'] = int(port)
+
+        images_meta = {
+            'images': items,
+        }
+        for db_image in self._db_task.image_set.all():
+            frame_info = {
+                'id': db_image.frame,
+                'width': db_image.width,
+                'height': db_image.height,
+            }
+            items.append(frame_info)
+
+        with open(osp.join(save_dir, 'config.json'), 'w') as config_file:
+            json.dump(config, config_file)
+        with open(osp.join(save_dir, 'images_meta.json'), 'w') as images_file:
+            json.dump(images_meta, images_file)
+
+    def _remote_export(self, save_dir, server_url=None):
+        if self._dataset is None:
+            self._init_dataset()
+
+        os.makedirs(save_dir, exist_ok=True)
+        self._dataset.save(save_dir=save_dir, save_images=False, merge=True)
+
+        exported_project = Project.load(save_dir)
+        source_name = 'task_%s_images' % self._db_task.id
+        exported_project.add_source(source_name, {
+            'format': _TASK_IMAGES_REMOTE_EXTRACTOR,
+        })
+        self._remote_image_converter(
+            osp.join(save_dir, exported_project.local_source_dir(source_name)),
+            server_url=server_url)
+        exported_project.save()
+
+        templates_dir = osp.join(osp.dirname(__file__),
+            'export_templates', 'extractors')
+        target_dir = osp.join(
+            exported_project.config.project_dir,
+            exported_project.config.env_dir,
+            exported_project.env.config.extractors_dir)
+        os.makedirs(target_dir, exist_ok=True)
+        shutil.copyfile(
+            osp.join(templates_dir, _TASK_IMAGES_REMOTE_EXTRACTOR + '.py'),
+            osp.join(target_dir, _TASK_IMAGES_REMOTE_EXTRACTOR + '.py'))
+
 
 DEFAULT_FORMAT = "datumaro_project"
+DEFAULT_FORMAT_REMOTE = "datumaro_project_remote"
 DEFAULT_CACHE_TTL = timedelta(hours=10)
 CACHE_TTL = DEFAULT_CACHE_TTL
 
