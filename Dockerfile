@@ -159,7 +159,7 @@ COPY tests ${HOME}/tests
 RUN while read -r line; do pip3 install --no-cache-dir $line; done < \
         ${HOME}/cvat/apps/datumaro/dependencies/datumaro/requirements.txt && \
     mkdir -p ${HOME}/cvat/apps/datumaro/modules && \
-    ln -s ${HOME}/cvat/apps/datumaro/dependencies/datumaro ${HOME}/cvat/apps/datumaro/modules
+    ln -s ${HOME}/cvat/apps/datumaro/dependencies/datumaro/datumaro ${HOME}/cvat/apps/datumaro/modules
 # Binary option is necessary to correctly apply the patch on Windows platform.
 # https://unix.stackexchange.com/questions/239364/how-to-fix-hunk-1-failed-at-1-different-line-endings-message
 RUN patch --binary -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
