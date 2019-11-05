@@ -29,7 +29,7 @@ def import_foreign_module(name, path):
         module = importlib.import_module(name)
         sys.modules.pop(name) # remove from cache
     except ImportError as e:
-        pass
+        log.warn("Failed to import module '%s': %s" % (name, e))
     finally:
         sys.path = default_path
     return module
@@ -189,7 +189,9 @@ class Environment:
     def _get_custom_module_items(self, dir, module_name):
         items = None
 
-        module = import_foreign_module(module_name, dir)
+        module = None
+        if osp.exists(osp.join(dir, module_name)):
+            module = import_foreign_module(module_name, dir)
         if module is not None:
             if hasattr(module, 'items'):
                 items = module.items
@@ -215,7 +217,6 @@ class Environment:
                 if hasattr(module, name):
                     items = [ (name, getattr(module, name)) ]
                 else:
-                    print(module.__dir__())
                     log.warn("Failed to import custom module '%s'."
                         " Custom module is expected to provide 'items' "
                         "list or have an item matching its file name."
