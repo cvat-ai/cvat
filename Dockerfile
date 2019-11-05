@@ -43,7 +43,10 @@ RUN apt-get update && \
         unzip \
         unrar \
         p7zip-full \
-        vim && \
+        vim \
+        git-core \
+        libsm6 \
+        libxext6 && \
     pip3 install -U setuptools && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
@@ -76,6 +79,14 @@ ENV TF_ANNOTATION=${TF_ANNOTATION}
 ENV TF_ANNOTATION_MODEL_PATH=${HOME}/rcnn/inference_graph
 RUN if [ "$TF_ANNOTATION" = "yes" ]; then \
         bash -i /tmp/components/tf_annotation/install.sh; \
+    fi
+
+# Auto segmentation support. by Mohammad
+ARG AUTO_SEGMENTATION
+ENV AUTO_SEGMENTATION=${AUTO_SEGMENTATION}
+ENV AUTO_SEGMENTATION_PATH=${HOME}/Mask_RCNN
+RUN if [ "$AUTO_SEGMENTATION" = "yes" ]; then \
+    bash -i /tmp/components/auto_segmentation/install.sh; \
     fi
 
 ARG WITH_TESTS
