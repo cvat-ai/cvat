@@ -11,6 +11,7 @@ import TasksPageComponent from '../../components/tasks-page/tasks-page';
 import { getTasksAsync } from '../../actions/tasks-actions';
 
 interface StateToProps {
+    deletingError: any;
     dumpingError: any;
     loadingError: any;
     tasksFetchingError: any;
@@ -30,8 +31,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { activities } = tasks;
     const { dumps } = activities;
     const { loads } = activities;
+    const { deletes } = activities;
 
     return {
+        deletingError: deletes.deletingError,
         dumpingError: dumps.dumpingError,
         loadingError: loads.loadingError,
         tasksFetchingError: tasks.tasksFetchingError,
@@ -54,6 +57,7 @@ type TasksPageContainerProps = StateToProps & DispatchToProps;
 function TasksPageContainer(props: TasksPageContainerProps) {
     return (
         <TasksPageComponent
+            deletingError={props.deletingError ? props.deletingError.toString() : ''}
             dumpingError={props.dumpingError ? props.dumpingError.toString() : ''}
             loadingError={props.loadingError ? props.loadingError.toString() : ''}
             tasksFetchingError={props.tasksFetchingError ? props.tasksFetchingError.toString(): ''}
