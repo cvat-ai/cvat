@@ -33,7 +33,7 @@ class _Converter:
     def __init__(self, task, extractor, save_dir,
             apply_colormap=True, save_images=False):
 
-        assert task in VocTask
+        assert not task or task in VocTask
         self._task = task
         self._extractor = extractor
         self._save_dir = save_dir
@@ -124,9 +124,8 @@ class _Converter:
                     ET.SubElement(root_elem, 'filename').text = \
                         item_id + VocPath.IMAGE_EXT
 
-                    image = item.image
-                    if image is not None:
-                        h, w, c = image.shape
+                    if item.has_image:
+                        h, w, c = item.image.shape
                         size_elem = ET.SubElement(root_elem, 'size')
                         ET.SubElement(size_elem, 'width').text = str(w)
                         ET.SubElement(size_elem, 'height').text = str(h)
@@ -194,7 +193,8 @@ class _Converter:
 
                                 objects_with_actions[new_obj_id][action] = presented
 
-                    if self._task in [VocTask.detection,
+                    if self._task in [None,
+                            VocTask.detection,
                             VocTask.person_layout,
                             VocTask.action_classification]:
                         with open(osp.join(self._ann_dir, item_id + '.xml'), 'w') as f:
@@ -232,15 +232,16 @@ class _Converter:
                     action_list[item_id] = None
                     segm_list[item_id] = None
 
-                if self._task in [VocTask.classification, VocTask.detection]:
+                if self._task in [None,
+                        VocTask.classification, VocTask.detection]:
                     self.save_clsdet_lists(subset_name, clsdet_list)
-                    if self._task is VocTask.classification:
+                    if self._task in [None, VocTask.classification]:
                         self.save_class_lists(subset_name, class_lists)
-                if self._task is VocTask.action_classification:
+                if self._task in [None, VocTask.action_classification]:
                     self.save_action_lists(subset_name, action_list)
-                if self._task is VocTask.person_layout:
+                if self._task in [None, VocTask.person_layout]:
                     self.save_layout_lists(subset_name, layout_list)
-                if self._task is VocTask.segmentation:
+                if self._task in [None, VocTask.segmentation]:
                     self.save_segm_lists(subset_name, segm_list)
 
     def save_action_lists(self, subset_name, action_list):
@@ -322,7 +323,7 @@ class _Converter:
         cv2.imwrite(path, data)
 
 class VocConverter(Converter):
-    def __init__(self, task, save_images=False, apply_colormap=False):
+    def __init__(self, task=None, save_images=False, apply_colormap=False):
         super().__init__()
         self._task = task
         self._save_images = save_images

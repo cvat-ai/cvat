@@ -277,8 +277,8 @@ class _Converter:
                 filename = ''
                 if item.has_image:
                     filename = str(item.id) + CocoPath.IMAGE_EXT
-                if self._save_images:
-                    self.save_image(item, filename)
+                    if self._save_images:
+                        self.save_image(item, filename)
                 task_conv.save_image_info(item, filename)
                 task_conv.save_annotations(item)
 

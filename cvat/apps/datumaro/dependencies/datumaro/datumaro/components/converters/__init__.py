@@ -14,6 +14,7 @@ from datumaro.components.converters.ms_coco import (
 )
 
 from datumaro.components.converters.voc import (
+    VocConverter,
     VocClassificationConverter,
     VocDetectionConverter,
     VocLayoutConverter,
@@ -31,6 +32,7 @@ items = [
     ('coco_person_kp', CocoPersonKeypointsConverter),
     ('coco_labels', CocoLabelsConverter),
 
+    ('voc', VocConverter),
     ('voc_cls', VocClassificationConverter),
     ('voc_det', VocDetectionConverter),
     ('voc_segm', VocSegmentationConverter),
