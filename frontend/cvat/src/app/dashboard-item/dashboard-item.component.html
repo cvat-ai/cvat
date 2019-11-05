@@ -1,3 +1,4 @@
+
 <div id={{task.id}} class="dashboardItem">
 
   <div class="dashboardTitleWrapper">
@@ -41,13 +42,9 @@
 
           <div style="text-align: center;">
           <button mat-button mat-dialog-close class="regular h2 templateDisagreeButton" style="margin-top: 20px; margin: 30px" > Cancel </button>
-          <button (click)="delete()" mat-button mat-dialog-close class="regular h2 templateAgreeButton" style="margin-top: 20px; margin: 30px;"> Ok </button>
+          <button (click)="delete(task.id)" mat-button mat-dialog-close class="regular h2 templateAgreeButton" style="margin-top: 20px; margin: 30px;"> Ok </button>
           </div>
     </ng-template>
 
   </div>
-
-
-
-
 </div>

@@ -1,7 +1,12 @@
-import { Component, Input, Output,EventEmitter} from '@angular/core';
+import {Component, Input, ViewChild,ViewContainerRef,ComponentFactoryResolver,
+ComponentRef} from '@angular/core';
 import { Task } from '../models/task';
 import {MatDialog} from '@angular/material/dialog';
 import { environment } from '../../environments/environment';
+
+export interface deleteTaskInterface{
+  delete(id: number);
+}
 
 @Component({
   selector: 'app-dashboard-item',
@@ -10,19 +15,19 @@ import { environment } from '../../environments/environment';
 })
 export class DashboardItemComponent{
   @Input() task: Task;
-  @Output() deleted = new EventEmitter<number>()
+  compInteraction: deleteTaskInterface;
   imgUrl = environment.apiUrl+"api/v1/tasks/";
 
   constructor(private matDialog:MatDialog) { }
 
-  openDeleteModal(templateRef){
+  openDeleteModal(templateRef: TemplateRef){
     const dialogRef=this.matDialog.open(templateRef,
     {
       width: '400px',
     });
   }
 
-  delete(){
-    this.deleted.emit(this.task.id);
+  delete(id: number){
+    this.compInteraction.delete(id);
   }
 }

@@ -33,7 +33,7 @@ return this.http.get(environment.apiUrl+'dashboard/meta').subscribe(response => 
 
   getTasks(): Observable<Task[]>{
 
-    return this.http.get(this.tasksUrl, this.httpOptions).pipe(
+    return this.http.get<Task[]>(this.tasksUrl, this.httpOptions).pipe(
         map(response=> response['results'] as Task[]),
         catchError(this.handleError)
     );

@@ -26,6 +26,7 @@ import { DashboardItemComponent } from './dashboard-item/dashboard-item.componen
     ShareBrowseModalComponent,
     DashboardItemComponent
   ],
+
   imports: [
     BrowserModule,
     AppRoutingModule,
@@ -40,7 +41,7 @@ import { DashboardItemComponent } from './dashboard-item/dashboard-item.componen
 
 
   bootstrap: [AppComponent],
-  entryComponents: [TaskConfigurationModalComponent]
+  entryComponents: [TaskConfigurationModalComponent, DashboardItemComponent]
 })
 export class AppModule { }
 

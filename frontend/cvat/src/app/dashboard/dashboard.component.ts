@@ -1,9 +1,10 @@
-import { Component, OnInit, Input} from '@angular/core';
+import { Component, OnInit, Input, ComponentRef, ComponentFactoryResolver, OnDestroy,
+ViewContainerRef, ViewChild} from '@angular/core';
 import {MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { TaskConfigurationModalComponent } from '../task-configuration-modal/task-configuration-modal.component';
 import { DashboardService } from '../dashboard.service';
 import { Task } from '../models/task';
-import { DashboardItemComponent } from '../dashboardItem/dashboardItem.component;'
+import { DashboardItemComponent } from '../dashboard-item/dashboard-item.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -11,14 +12,25 @@ import { DashboardItemComponent } from '../dashboardItem/dashboardItem.component
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
+
+  @ViewChild('taskView', {static: true, read: ViewContainerRef}) vc: ViewContainerRef;
   title='CVAT Dashboard';
   metaData: Object; //SHOULD THIS BE PRIVATE?
-  taskData: Task[];
+  taskRef=[];
 
-  constructor(private matDialog: MatDialog, private dashboardService: DashboardService) { }
+  constructor(private matDialog: MatDialog, private dashboardService: DashboardService,
+  private CFR: ComponentFactoryResolver) { }
 
   ngOnInit() {
-    this.dashboardService.getTasks().subscribe(tasks=>(this.taskData=tasks));
+    this.dashboardService.getTasks().subscribe((tasks)=>{
+      for(let task of tasks){
+        const componentFactory=this.CFR.resolveComponentFactory(DashboardItemComponent);
+        const componentRef=this.vc.createComponent(componentFactory);
+        componentRef.instance.task=task;
+        componentRef.instance.compInteraction=this;
+        this.taskRef.push(componentRef);
+      }
+    });
   }
 
   dashboardCreateTaskButton() {
@@ -32,11 +44,18 @@ export class DashboardComponent implements OnInit {
   }
 
   //tid stands for task id
-  deleteTask(id: number){
+  delete(id: number){
     this.dashboardService.deleteTask(id).subscribe(
       (val) => {
-        this.taskData.splice(id-1, 1);
-        console.log(this.taskData);
+
+        try{
+          let componentRef = this.taskRef.filter(x => x.instance.task.id == id)[0];
+          componentRef.destroy();
+        }
+        catch(e){
+          console.log("destroy error");
+          console.log(e);
+        }
       }
     );
   }

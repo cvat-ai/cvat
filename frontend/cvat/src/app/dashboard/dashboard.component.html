@@ -27,9 +27,7 @@
 
             <div id="dashboardPagination">
                 <div id="dashboardList" style="float: left; width: 100%">
-                  <app-dashboard-item *ngFor="let task of taskData"
-                    [task]="task" (deleted)="deleteTask($event)">
-                  </app-dashboard-item>
+                  <ng-template #taskView></ng-template>
                 </div>
             </div>
         </div>
