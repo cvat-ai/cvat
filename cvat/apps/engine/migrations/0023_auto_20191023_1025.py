@@ -111,7 +111,7 @@ def create_data_objects(apps, schema_editor):
         old_location = os.path.join(settings.BASE_DIR, 'models', str(db_model.id))
         new_location = os.path.join(settings.BASE_DIR, 'data', 'models', str(db_model.id))
 
-        shutil.copytree(old_location, new_location)
+        shutil.move(old_location, new_location)
 
         db_model.model_file.name = db_model.model_file.name.replace(old_location, new_location)
         db_model.weights_file.name = db_model.weights_file.name.replace(old_location, new_location)
