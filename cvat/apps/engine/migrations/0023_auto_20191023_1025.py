@@ -27,82 +27,87 @@ def create_data_objects(apps, schema_editor):
     Data = apps.get_model('engine', 'Data')
 
     for db_task in Task.objects.prefetch_related("image_set").select_related("video").all():
-        # create folders
-        new_task_dir = os.path.join(settings.TASKS_ROOT, str(db_task.id))
-        os.makedirs(new_task_dir)
-        os.makedirs(os.path.join(new_task_dir, 'artifacts'))
-        new_task_logs_dir = os.path.join(new_task_dir, 'logs')
-        os.makedirs(new_task_logs_dir)
+        try:
+            # create folders
+            new_task_dir = os.path.join(settings.TASKS_ROOT, str(db_task.id))
+            os.makedirs(new_task_dir)
+            os.makedirs(os.path.join(new_task_dir, 'artifacts'))
+            new_task_logs_dir = os.path.join(new_task_dir, 'logs')
+            os.makedirs(new_task_logs_dir)
 
-        # create Data object
-        db_data = Data.objects.create(
-            size=db_task.size,
-            image_quality=db_task.image_quality,
-            start_frame=db_task.start_frame,
-            stop_frame=db_task.stop_frame,
-            frame_filter=db_task.frame_filter,
-            type=DataChoice.LIST,
-        )
-        db_data.save()
+            # create Data object
+            db_data = Data.objects.create(
+                size=db_task.size,
+                image_quality=db_task.image_quality,
+                start_frame=db_task.start_frame,
+                stop_frame=db_task.stop_frame,
+                frame_filter=db_task.frame_filter,
+                type=DataChoice.LIST,
+            )
+            db_data.save()
 
-        db_task.data = db_data
+            db_task.data = db_data
 
-        db_data_dir = os.path.join(settings.MEDIA_DATA_ROOT, str(db_data.id))
-        os.makedirs(db_data_dir)
-        compressed_cache_dir = os.path.join(db_data_dir, 'cache', 'compressed')
-        # os.makedirs(compressed_cache_dir)
-        os.makedirs(os.path.join(db_data_dir, 'cache', 'original'))
+            db_data_dir = os.path.join(settings.MEDIA_DATA_ROOT, str(db_data.id))
+            os.makedirs(db_data_dir)
+            compressed_cache_dir = os.path.join(db_data_dir, 'cache', 'compressed')
+            os.makedirs(os.path.join(db_data_dir, 'cache', 'original'))
 
-        old_db_task_dir = os.path.join(settings.DATA_ROOT, str(db_task.id))
+            old_db_task_dir = os.path.join(settings.DATA_ROOT, str(db_task.id))
 
-        # move image data
-        # compressed images
-        old_task_data_dir = os.path.join(old_db_task_dir, 'data')
-        if os.path.isdir(old_task_data_dir):
-            shutil.copytree(old_task_data_dir, compressed_cache_dir, symlinks=False)
+            # move image data
+            # compressed images
+            old_task_data_dir = os.path.join(old_db_task_dir, 'data')
+            if os.path.isdir(old_task_data_dir):
+                shutil.copytree(old_task_data_dir, compressed_cache_dir, symlinks=False)
 
-        # original images
-        # ???
-
-
-        # move logs
-        task_log_file = os.path.join(old_db_task_dir, 'task.log')
-        if os.path.isfile(task_log_file):
-            shutil.move(task_log_file, new_task_logs_dir)
-
-        client_log_file = os.path.join(old_db_task_dir, 'client.log')
-        if os.path.isfile(client_log_file):
-            shutil.move(client_log_file, new_task_logs_dir)
-
-        # prepare *.list chunks
-        for chunk_idx, start_frame in enumerate(range(0, db_data.size, db_data.chunk_size)):
-            with open(os.path.join(compressed_cache_dir, '{}.list'.format(chunk_idx)), 'w') as chunk:
-                stop_frame = min(db_data.chunk_size, db_data.size)
-                for frame in range(start_frame, stop_frame):
-                    image_path = os.path.join(compressed_cache_dir, get_frame_path(frame))
-                    chunk.write(image_path + '\n')
+            # original images
+            # ???
 
 
-        # create preview
-        shutil.copyfile(os.path.join(compressed_cache_dir, get_frame_path(0)), os.path.join(db_data_dir, 'preview.jpeg'))
+            # move logs
+            task_log_file = os.path.join(old_db_task_dir, 'task.log')
+            if os.path.isfile(task_log_file):
+                shutil.move(task_log_file, new_task_logs_dir)
 
-        if hasattr(db_task, 'video'):
-            db_task.video.data = db_data
-            db_task.video.path = fix_path(db_task.video.path)
-            db_task.video.save()
+            client_log_file = os.path.join(old_db_task_dir, 'client.log')
+            if os.path.isfile(client_log_file):
+                shutil.move(client_log_file, new_task_logs_dir)
 
-        for db_image in db_task.image_set.all():
-            db_image.data = db_data
-            db_image.path = fix_path(db_image.path)
-            db_image.save()
+            # prepare *.list chunks
+            for chunk_idx, start_frame in enumerate(range(0, db_data.size, db_data.chunk_size)):
+                with open(os.path.join(compressed_cache_dir, '{}.list'.format(chunk_idx)), 'w') as chunk:
+                    stop_frame = min(start_frame + db_data.chunk_size, db_data.size)
+                    for frame in range(start_frame, stop_frame):
+                        image_path = os.path.join(compressed_cache_dir, get_frame_path(frame))
+                        chunk.write(image_path + '\n')
 
-        db_task.clientfile_set.all().delete()
-        db_task.serverfile_set.all().delete()
-        db_task.remotefile_set.all().delete()
 
-        db_task.save()
+            # create preview
+            first_frame = os.path.join(compressed_cache_dir, get_frame_path(0))
+            if os.path.isfile(first_frame):
+                shutil.copyfile(first_frame, os.path.join(db_data_dir, 'preview.jpeg'))
 
-        shutil.rmtree(old_db_task_dir)
+            if hasattr(db_task, 'video'):
+                db_task.video.data = db_data
+                db_task.video.path = fix_path(db_task.video.path)
+                db_task.video.save()
+
+            for db_image in db_task.image_set.all():
+                db_image.data = db_data
+                db_image.path = fix_path(db_image.path)
+                db_image.save()
+
+            db_task.clientfile_set.all().delete()
+            db_task.serverfile_set.all().delete()
+            db_task.remotefile_set.all().delete()
+
+            db_task.save()
+
+            shutil.rmtree(old_db_task_dir)
+        except Exception as e:
+            print('Cannot migrate data for the task: {}'.format(db_task.id))
+            print(str(e))
 
     # DL models migration
     if apps.is_installed('auto_annotation'):
