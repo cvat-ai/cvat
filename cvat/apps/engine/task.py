@@ -257,7 +257,7 @@ def _create_thread(tid, data):
             for image_meta in media_meta:
                 db_images.append(models.Image(
                     data=db_data,
-                    path=image_meta['name'],
+                    path=os.path.relpath(image_meta['name'], upload_dir),
                     frame=frame_counter,
                     width=image_meta['size'][0],
                     height=image_meta['size'][1],
@@ -267,7 +267,7 @@ def _create_thread(tid, data):
     if db_data.type == models.DataChoice.VIDEO:
         models.Video.objects.create(
             data=db_data,
-            path=media_meta[0]['name'],
+            path=os.path.relpath(media_meta[0]['name'], upload_dir),
             width=media_meta[0]['size'][0], height=media_meta[0]['size'][1])
         if db_data.stop_frame == 0:
             db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()

@@ -82,7 +82,7 @@ class ImageListExtractor(IMediaExtractor):
 
     def save_as_chunks(self, chunk_size, compressed_chunk_path, original_chunk_path, progress_callback=None, quality=100):
         counter = 0
-        media_meta = []
+        image_sizes = []
         total_length = len(self._source_path)
         for i in range(0, total_length, chunk_size):
             chunk_data = self._source_path[i:i + chunk_size]
@@ -90,10 +90,7 @@ class ImageListExtractor(IMediaExtractor):
             with zipfile.ZipFile(compressed_chunk, 'x') as zip_chunk:
                 for idx, image_file in enumerate(chunk_data):
                     w, h, image_buf = self.compress_image(image_file, quality)
-                    media_meta.append({
-                        'name': image_file,
-                        'size': (w, h),
-                    })
+                    image_sizes.append((w, h))
                     arcname = '{:06d}.jpeg'.format(idx)
                     zip_chunk.writestr(arcname, image_buf.getvalue())
 
@@ -105,10 +102,14 @@ class ImageListExtractor(IMediaExtractor):
             counter += 1
             if progress_callback:
                 progress_callback(i / total_length)
-        return media_meta, total_length
+        meta = [{'name': name, 'size': size} for name, size in zip(self.get_image_names(), image_sizes)]
+        return meta, total_length
 
     def save_preview(self, preview_path):
         shutil.copyfile(self._source_path[0], preview_path)
+
+    def get_image_names(self):
+        return self._source_path
 
 #Note step, start, stop have no affect
 class DirectoryExtractor(ImageListExtractor):
@@ -130,7 +131,8 @@ class DirectoryExtractor(ImageListExtractor):
 class ArchiveExtractor(DirectoryExtractor):
     def __init__(self, source_path, step=1, start=0, stop=0):
         self._tmp_dir = self.create_tmp_dir()
-        Archive(source_path[0]).extractall(self._tmp_dir)
+        self._archive_source = source_path[0]
+        Archive(self._archive_source).extractall(self._tmp_dir)
         super().__init__(
             source_path=[self._tmp_dir],
             step=1,
@@ -141,6 +143,9 @@ class ArchiveExtractor(DirectoryExtractor):
     def __del__(self):
         self.delete_tmp_dir(self._tmp_dir)
 
+    def get_image_names(self):
+        return  [os.path.join(os.path.dirname(self._archive_source), os.path.relpath(p, self._tmp_dir)) for p in super().get_image_names()]
+
 #Note step, start, stop have no affect
 class PDFExtractor(DirectoryExtractor):
     def __init__(self, source_path, step=1, start=0, stop=0):
@@ -148,8 +153,9 @@ class PDFExtractor(DirectoryExtractor):
             raise Exception('No PDF found')
 
         from pdf2image import convert_from_path
-        file_ = convert_from_path(source_path)
+        self._pdf_source = source_path[0]
         self._tmp_dir = self.create_tmp_dir()
+        file_ = convert_from_path(self._pdf_source)
         basename = os.path.splitext(os.path.basename(source_path))[0]
         for page_num, page in enumerate(file_):
             output = os.path.join(self._tmp_dir, '{}{:09d}.jpeg'.format(basename, page_num))
@@ -164,6 +170,9 @@ class PDFExtractor(DirectoryExtractor):
 
     def __del__(self):
         self.delete_tmp_dir(self._tmp_dir)
+
+    def get_image_names(self):
+        return  [os.path.join(os.path.dirname(self._pdf_source), os.path.relpath(p, self._tmp_dir)) for p in super().get_image_names()]
 
 class VideoExtractor(IMediaExtractor):
     def __init__(self, source_path, step=1, start=0, stop=0):
@@ -219,6 +228,7 @@ class VideoExtractor(IMediaExtractor):
             for frame in frames:
                 frame.to_image().save(os.path.join(self._tmp_dir,  self._imagename_pattern['py'].format(frame.index)), compression='raw')
                 frame_count += 1
+
             start_frame = self._start + chunk_idx * chunk_size
             input_images = os.path.join(self._tmp_dir, self._imagename_pattern['cmd'])
             input_options = '-f image2 -framerate {} -start_number {}'.format(self._output_fps, start_frame)

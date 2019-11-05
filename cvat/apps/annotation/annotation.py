@@ -297,15 +297,10 @@ class Annotation:
         def _get_frame(annotations, shape):
             db_image = self._frame_info[shape["frame"]]
             frame = self._db_task.data.start_frame + shape["frame"] * self._db_task.data.get_frame_step()
-            rpath = db_image['path'].split(os.path.sep)
-            if len(rpath) != 1:
-                rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
-            else:
-                rpath = rpath[0]
             if frame not in annotations:
                 annotations[frame] = Annotation.Frame(
                     frame=frame,
-                    name=rpath,
+                    name=db_image['path'],
                     height=db_image["height"],
                     width=db_image["width"],
                     labeled_shapes=[],
