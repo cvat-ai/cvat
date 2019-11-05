@@ -99,7 +99,7 @@
                     const { provider } = frameDataCache[this.tid];
                     const { chunkSize } = frameDataCache[this.tid];                   
 
-                    const frame = provider.frame(this.number);
+                    const frame = await provider.frame(this.number);
                     if (frame === null || frame === 'loading') {
                         onServerRequest();                    
                         const start = parseInt(this.number / chunkSize, 10) * chunkSize;
@@ -108,11 +108,14 @@
                         let chunk = null;
                        
                         if (frame === null) {
-                            chunk = await serverProxy.frames.getData(this.tid, chunkNumber);                           
-                        }
-
-                        provider.requestDecodeBlock(chunk, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
-                               
+                            if (!provider.is_chunk_cached(start, stop)){
+                                serverProxy.frames.getData(this.tid, chunkNumber).then(chunk =>{
+                                    provider.requestDecodeBlock(chunk, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
+                                }); 
+                            } else {
+                                 provider.requestDecodeBlock(null, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
+                            }                         
+                        }                               
                     } else {                       
                         if (this.number % chunkSize > 1){
                             if (!provider.isNextChunkExists(this.number)){

@@ -33,7 +33,11 @@ class FrameProviderWrapper extends Listener {
             if (frameNumber >= start && frameNumber <= stop) {
                 const data = await frameData.data();
                 this._loaded = frameNumber;
-                this._result = new ImageData(data, frameData.width, frameData.height);
+                if (window.cvatTask.mode === 'interpolation'){
+                    this._result = new ImageData(data, frameData.width, frameData.height);
+                } else {
+                    this._result = data;
+                }
                 return this._result;
             }
         }
@@ -45,7 +49,12 @@ class FrameProviderWrapper extends Listener {
         // but we promise to notify the player when frame is loaded
         frameData.data().then((data) => {
             this._loaded = frameNumber;
-            this._result = new ImageData(data, frameData.width, frameData.height);
+            if (window.cvatTask.mode === 'interpolation'){
+               this._result = new ImageData(data, frameData.width, frameData.height);
+            } else {
+               this._result = data;
+            }
+
             this.notify();
         }).catch((error) => {
             if (typeof (error) === 'number') {
@@ -232,7 +241,7 @@ class PlayerModel extends Listener {
         }
     }
 
-    async shift(delta, absolute) {
+    async shift(delta, absolute, is_load_frame = true) {
         if (['resize', 'drag'].indexOf(window.cvat.mode) !== -1) {
             return false;
         }
@@ -241,6 +250,14 @@ class PlayerModel extends Listener {
         this._frame.current = Math.clamp(absolute ? delta : this._frame.current + delta,
             this._frame.start,
             this._frame.stop);
+        if (!is_load_frame)
+        {
+            this._image = null;
+            this._continueAfterLoad = this.playing;
+            this._pauseFlag = true;
+            this.notify();
+            return false;
+        }
         const frame = await this._frameProvider.require(this._frame.current);
         if (!frame) {
             this._image = null;
@@ -531,10 +548,10 @@ class PlayerController {
 
     progressMouseDown(e) {
         this._rewinding = true;
-        this._rewind(e);
     }
 
-    progressMouseUp() {
+    progressMouseUp(e) {
+        this._rewind(e);
         this._rewinding = false;
         if (this._events.jump) {
             this._events.jump.close();
@@ -543,10 +560,10 @@ class PlayerController {
     }
 
     progressMouseMove(e) {
-        this._rewind(e);
+        this._rewind(e, true);
     }
 
-    _rewind(e) {
+    _rewind(e, is_move = false) {
         if (this._rewinding) {
             if (!this._events.jump) {
                 this._events.jump = Logger.addContinuedEvent(Logger.EventType.jumpFrame);
@@ -558,7 +575,7 @@ class PlayerController {
             const percent = x / progressWidth;
             const targetFrame = Math.round((frames.stop - frames.start) * percent);
             this._model.pause();
-            this._model.shift(targetFrame + frames.start, true);
+            this._model.shift(targetFrame + frames.start, !is_move);
         }
     }
 
@@ -703,8 +720,7 @@ class PlayerView {
         this._playerContentUI.on('dblclick', () => this._controller.fit());
         this._playerContentUI.on('mousemove', e => this._controller.frameMouseMove(e));
         this._progressUI.on('mousedown', e => this._controller.progressMouseDown(e));
-        this._progressUI.on('mouseup', () => this._controller.progressMouseUp());
-        this._progressUI.on('mousemove', e => this._controller.progressMouseMove(e));
+        this._progressUI.on('mouseup', e => this._controller.progressMouseUp(e));
         this._playButtonUI.on('click', () => this._controller.play());
         this._pauseButtonUI.on('click', () => this._controller.pause());
         this._nextButtonUI.on('click', () => this._controller.next());
@@ -875,22 +891,22 @@ class PlayerView {
         this._loadingUI.addClass('hidden');
         if (this._latestDrawnImage !== image) {
             this._latestDrawnImage = image;
-            this._playerCanvasBackground.attr('width', image.width);
-            this._playerCanvasBackground.attr('height', image.height);
-
             if (window.cvatTask.mode === 'interpolation') {
+                this._playerCanvasBackground.attr('width', image.width);
+                this._playerCanvasBackground.attr('height', image.height);
                 const ctx = this._playerCanvasBackground[0].getContext('2d');
                 const imageData = ctx.createImageData(image.width, image.height);
                 imageData.data.set(image.data);
                 ctx.putImageData(imageData, 0, 0);
             } else {
-                const ctx = this._playerCanvasBackground[0].getContext('2d');
-                
+                const ctx = this._playerCanvasBackground[0].getContext('2d');                
                 var img = new Image();
                 img.onload = function() {
+                    this._playerCanvasBackground.attr('width', img.width);
+                    this._playerCanvasBackground.attr('height', img.height);
                     ctx.drawImage(img, 0, 0);
-                };
-                img.src = image.data;
+                }.bind(this);
+                img.src = image;
             }
         }
 
