@@ -33,7 +33,7 @@ class FrameProviderWrapper extends Listener {
             if (frameNumber >= start && frameNumber <= stop) {
                 const data = await frameData.data();
                 this._loaded = frameNumber;
-                if (window.cvatTask.mode === 'interpolation'){
+                if (window.cvatTask.dataChunkType === 'video'){
                     this._result = new ImageData(data, frameData.width, frameData.height);
                 } else {
                     this._result = data;
@@ -42,14 +42,14 @@ class FrameProviderWrapper extends Listener {
             }
         }
 
-    
+
 
         // fetching from server
         // we don't want to wait it
         // but we promise to notify the player when frame is loaded
         frameData.data().then((data) => {
             this._loaded = frameNumber;
-            if (window.cvatTask.mode === 'interpolation'){
+            if (window.cvatTask.dataChunkType === 'video'){
                this._result = new ImageData(data, frameData.width, frameData.height);
             } else {
                this._result = data;
@@ -891,7 +891,7 @@ class PlayerView {
         this._loadingUI.addClass('hidden');
         if (this._latestDrawnImage !== image) {
             this._latestDrawnImage = image;
-            if (window.cvatTask.mode === 'interpolation') {
+            if (window.cvatTask.dataChunkType === 'video') {
                 this._playerCanvasBackground.attr('width', image.width);
                 this._playerCanvasBackground.attr('height', image.height);
                 const ctx = this._playerCanvasBackground[0].getContext('2d');

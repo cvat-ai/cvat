@@ -712,6 +712,7 @@
                 stop_frame: undefined,
                 frame_filter: undefined,
                 data_chunk_size: undefined,
+                data_chunk_type: undefined,
             };
 
             for (const property in data) {
@@ -1135,12 +1136,15 @@
                     set: (chunkSize) => {
                         if (typeof (chunkSize) !== 'number' || chunkSize < 1) {
                             throw new ArgumentError(
-                                `Chink size value must be a positive number. But value ${chunkSize} has been got.`,
+                                `Chunk size value must be a positive number. But value ${chunkSize} has been got.`,
                             );
                         }
 
                         data.data_chunk_size = chunkSize;
                     },
+                },
+                dataChunkType: {
+                    get: () => data.data_chunk_type,
                 },
             }));
 
@@ -1262,6 +1266,7 @@
         const frameData = await getFrame(
             this.task.id,
             this.task.dataChunkSize,
+            this.task.dataChunkType,
             this.task.mode,
             frame,
         );
@@ -1416,6 +1421,7 @@
         const result = await getFrame(
             this.id,
             this.dataChunkSize,
+            this.dataChunkType,
             this.mode,
             frame,
         );

@@ -92,44 +92,44 @@
                 reject(this.number);
             }
 
-            if (isNode) {                
+            if (isNode) {
                 resolve("Dummy data");
             } else if (isBrowser) {
                 try {
                     const { provider } = frameDataCache[this.tid];
-                    const { chunkSize } = frameDataCache[this.tid];                   
+                    const { chunkSize } = frameDataCache[this.tid];
 
                     const frame = await provider.frame(this.number);
                     if (frame === null || frame === 'loading') {
-                        onServerRequest();                    
+                        onServerRequest();
                         const start = parseInt(this.number / chunkSize, 10) * chunkSize;
                         const stop = (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1;
                         const chunkNumber = Math.floor(this.number / chunkSize);
                         let chunk = null;
-                       
+
                         if (frame === null) {
                             if (!provider.is_chunk_cached(start, stop)){
                                 serverProxy.frames.getData(this.tid, chunkNumber).then(chunk =>{
                                     provider.requestDecodeBlock(chunk, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
-                                }); 
+                                });
                             } else {
                                  provider.requestDecodeBlock(null, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
-                            }                         
-                        }                               
-                    } else {                       
+                            }
+                        }
+                    } else {
                         if (this.number % chunkSize > 1){
                             if (!provider.isNextChunkExists(this.number)){
                                 const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
-                                provider.setReadyToLoading(nextChunkNumber);                            
+                                provider.setReadyToLoading(nextChunkNumber);
                                 serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
-                                    provider.requestDecodeBlock(nextChunk, (nextChunkNumber) * chunkSize, (nextChunkNumber + 1) * chunkSize - 1, 
+                                    provider.requestDecodeBlock(nextChunk, (nextChunkNumber) * chunkSize, (nextChunkNumber + 1) * chunkSize - 1,
                                                                 function(){}, rejectRequest.bind(this, provider));
                                 });
                             }
                         }
                         resolve(frame);
                     }
-                    
+
                 } catch (exception) {
                     if (exception instanceof Exception) {
                         reject(exception);
@@ -163,9 +163,9 @@
         });
     }
 
-    async function getFrame(taskID, chunkSize, mode, frame) {
+    async function getFrame(taskID, chunkSize, chunkType, mode, frame) {
         if (!(taskID in frameDataCache)) {
-            const blockType = mode === 'interpolation' ? cvatData.BlockType.TSVIDEO
+            const blockType = chunkType === 'video' ? cvatData.BlockType.TSVIDEO
                 : cvatData.BlockType.ARCHIVE;
 
             const value = {
@@ -178,10 +178,10 @@
             frameCache[taskID] = {};
             frameDataCache[taskID] = value;
         }
-        
+
         let size = null;
         if (mode === 'interpolation') {
-            [size] = frameDataCache[taskID].meta;            
+            [size] = frameDataCache[taskID].meta;
         } else if (mode === 'annotation') {
             if (frame >= frameDataCache[taskID].meta.length) {
                 throw new ArgumentError(
