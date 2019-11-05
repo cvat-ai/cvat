@@ -104,6 +104,21 @@ def create_data_objects(apps, schema_editor):
 
         shutil.rmtree(old_db_task_dir)
 
+    # DL models migration
+    DLModel = apps.get_model('auto_annotation', 'AnnotationModel')
+
+    for db_model in DLModel.objects.all():
+        old_location = os.path.join(settings.BASE_DIR, 'models', str(db_model.id))
+        new_location = os.path.join(settings.BASE_DIR, 'data', 'models', str(db_model.id))
+
+        shutil.copytree(old_location, new_location)
+
+        db_model.model_file.name = db_model.model_file.name.replace(old_location, new_location)
+        db_model.weights_file.name = db_model.weights_file.name.replace(old_location, new_location)
+        db_model.labelmap_file.name = db_model.labelmap_file.name.replace(old_location, new_location)
+        db_model.interpretation_file.name = db_model.interpretation_file.name.replace(old_location, new_location)
+
+        db_model.save()
 
 class Migration(migrations.Migration):
 
