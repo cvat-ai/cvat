@@ -1,4 +1,7 @@
 import React from 'react';
+import { RouteComponentProps } from 'react-router';
+import { withRouter } from 'react-router-dom';
+
 import {
     Col,
     Row,
@@ -13,7 +16,7 @@ interface VisibleTopBarProps {
     searchValue: string;
 }
 
-export default class TopBarComponent extends React.PureComponent<VisibleTopBarProps> {
+class TopBarComponent extends React.PureComponent<VisibleTopBarProps & RouteComponentProps> {
     public render() {
         return (
             <>
@@ -37,7 +40,7 @@ export default class TopBarComponent extends React.PureComponent<VisibleTopBarPr
                         xl={{span: 8}}
                         xxl={{span: 7}}>
                         <Button size='large' id='cvat-create-task-button' type='primary' onClick={
-                            () => window.open('/tasks/create', '_blank')
+                            () => this.props.history.push('/tasks/create')
                         }> Create new task </Button>
                     </Col>
                 </Row>
@@ -45,3 +48,5 @@ export default class TopBarComponent extends React.PureComponent<VisibleTopBarPr
         )
     }
 }
+
+export default withRouter(TopBarComponent);

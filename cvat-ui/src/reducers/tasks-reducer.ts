@@ -28,6 +28,10 @@ const defaultState: TasksState = {
             loadingDoneMessage: '',
             byTask: {},
         },
+        deletes: {
+            deletingError: null,
+            byTask: {},
+        },
     },
 };
 
@@ -57,6 +61,13 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
         case TasksActionTypes.GET_TASKS:
             return {
                 ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: {
+                        deletingError: null,
+                        byTask: {},
+                    },
+                },
                 initialized: false,
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
@@ -210,6 +221,64 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                     loads: {
                         ...tasksLoadingActivity,
                         loadingError,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.DELETE_TASK: {
+            const { taskID } = action.payload;
+
+            const deletesActivities = state.activities.deletes;
+
+            const activities = { ...state.activities };
+            activities.deletes = { ...activities.deletes };
+
+            activities.deletes.byTask[taskID] = false;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: deletesActivities,
+                },
+            };
+        }
+        case TasksActionTypes.DELETE_TASK_SUCCESS: {
+            const { taskID } = action.payload;
+
+            const deletesActivities = state.activities.deletes;
+
+            const activities = { ...state.activities };
+            activities.deletes = { ...activities.deletes };
+
+            activities.deletes.byTask[taskID] = true;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: deletesActivities,
+                },
+            };
+        }
+        case TasksActionTypes.DELETE_TASK_FAILED: {
+            const { taskID } = action.payload;
+            const { error } = action.payload;
+
+            const deletesActivities = state.activities.deletes;
+
+            const activities = { ...state.activities };
+            activities.deletes = { ...activities.deletes };
+
+            delete activities.deletes.byTask[taskID];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: {
+                        ...deletesActivities,
+                        deletingError: error,
                     },
                 },
             };

@@ -16,6 +16,9 @@ export enum TasksActionTypes {
     DUMP_ANNOTATIONS = 'DUMP_ANNOTATIONS',
     DUMP_ANNOTATIONS_SUCCESS = 'DUMP_ANNOTATIONS_SUCCESS',
     DUMP_ANNOTATIONS_FAILED = 'DUMP_ANNOTATIONS_FAILED',
+    DELETE_TASK = 'DELETE_TASK',
+    DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
+    DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
 }
 
 function getTasks(): AnyAction {
@@ -197,5 +200,54 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
 
         dispatch(loadAnnotationsSuccess(task));
+    };
+}
+
+function deleteTask(taskID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.DELETE_TASK,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function deleteTaskSuccess(taskID: number): AnyAction {
+    const action = {
+        type: TasksActionTypes.DELETE_TASK_SUCCESS,
+        payload: {
+            taskID,
+        },
+    };
+
+    return action;
+}
+
+function deleteTaskFailed(taskID: number, error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.DELETE_TASK_FAILED,
+        payload: {
+            taskID,
+            error,
+        },
+    };
+
+    return action;
+}
+
+export function deleteTaskAsync(taskInstance: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch(deleteTask(taskInstance.id));
+            await taskInstance.delete();
+        } catch (error) {
+            dispatch(deleteTaskFailed(taskInstance.id, error));
+            return;
+        }
+
+        dispatch(deleteTaskSuccess(taskInstance.id));
     };
 }
