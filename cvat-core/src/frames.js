@@ -84,7 +84,6 @@
         async function getFrameData(resolve, reject) {
             function onDecode(provider, frameNumber) {
                 if (frameNumber === this.number) {
-                    console.log("resolve frame : " + frameNumber);
                     resolve(provider.frame(frameNumber));
                 }
             }

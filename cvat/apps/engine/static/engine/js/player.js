@@ -891,22 +891,22 @@ class PlayerView {
         this._loadingUI.addClass('hidden');
         if (this._latestDrawnImage !== image) {
             this._latestDrawnImage = image;
-            this._playerCanvasBackground.attr('width', image.width);
-            this._playerCanvasBackground.attr('height', image.height);
-
             if (window.cvatTask.mode === 'interpolation') {
+                this._playerCanvasBackground.attr('width', image.width);
+                this._playerCanvasBackground.attr('height', image.height);
                 const ctx = this._playerCanvasBackground[0].getContext('2d');
                 const imageData = ctx.createImageData(image.width, image.height);
                 imageData.data.set(image.data);
                 ctx.putImageData(imageData, 0, 0);
             } else {
-                const ctx = this._playerCanvasBackground[0].getContext('2d');
-                
+                const ctx = this._playerCanvasBackground[0].getContext('2d');                
                 var img = new Image();
                 img.onload = function() {
+                    this._playerCanvasBackground.attr('width', img.width);
+                    this._playerCanvasBackground.attr('height', img.height);
                     ctx.drawImage(img, 0, 0);
-                };
-                img.src = image.data;
+                }.bind(this);
+                img.src = image;
             }
         }
 

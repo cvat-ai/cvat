@@ -241,6 +241,7 @@ class FrameProvider {
             this._decodeThreadCount++;
                         
             worker.onmessage = (function (event){
+               this._frames[event.data.index] = event.data.data;
                this._decodingBlocks[`${start}:${end}`].resolveCallback(event.data.index);
                if (event.data.isEnd){
                     delete this._decodingBlocks[`${start}:${end}`];

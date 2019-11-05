@@ -4,7 +4,6 @@ const JSZip = require('jszip');
 
 self.onmessage = function (e) {
 
-    // frames = {};
     const zip = new JSZip();
     const start =  e.data.start;
     const end =  e.data.end;
