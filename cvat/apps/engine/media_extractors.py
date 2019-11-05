@@ -156,13 +156,13 @@ class PDFExtractor(DirectoryExtractor):
         self._pdf_source = source_path[0]
         self._tmp_dir = self.create_tmp_dir()
         file_ = convert_from_path(self._pdf_source)
-        basename = os.path.splitext(os.path.basename(source_path))[0]
+        basename = os.path.splitext(os.path.basename(self._pdf_source))[0]
         for page_num, page in enumerate(file_):
             output = os.path.join(self._tmp_dir, '{}{:09d}.jpeg'.format(basename, page_num))
             page.save(output, 'JPEG')
 
         super().__init__(
-            source_path=[self._tmp_storage],
+            source_path=[self._tmp_dir],
             step=1,
             start=0,
             stop=0,
