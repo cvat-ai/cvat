@@ -88,51 +88,48 @@
                 }
             }
 
+            function rejectRequest() {
+                reject(this.number);
+            }
+
             if (isNode) {                
                 resolve("Dummy data");
             } else if (isBrowser) {
                 try {
                     const { provider } = frameDataCache[this.tid];
-                    const { chunkSize } = frameDataCache[this.tid];
-                    const frame = provider.frame(this.number);
+                    const { chunkSize } = frameDataCache[this.tid];                   
+
+                    const frame = await provider.frame(this.number);
                     if (frame === null || frame === 'loading') {
                         onServerRequest();                    
                         const start = parseInt(this.number / chunkSize, 10) * chunkSize;
                         const stop = (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1;
                         const chunkNumber = Math.floor(this.number / chunkSize);
                         let chunk = null;
+                       
                         if (frame === null) {
-                            chunk = await serverProxy.frames.getData(this.tid, chunkNumber);
-                           
-                        }
-                        // if status is loading, a chunk has already been loaded
-                        // and it is being decoded now
-
-                        try {
-                            provider.startDecode(chunk, start, stop, onDecode.bind(this, provider));
-                        } catch (error) {
-                            if (error.donePromise) {
-                                try {
-                                    await error.donePromise;
-                                    provider.startDecode(chunk, start,
-                                        stop, onDecode.bind(this, provider));
-                                } catch (_) {
-                                    reject(this.number);
-                                }
-                            }
-                        }
-                    } else {
+                            if (!provider.is_chunk_cached(start, stop)){
+                                serverProxy.frames.getData(this.tid, chunkNumber).then(chunk =>{
+                                    provider.requestDecodeBlock(chunk, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
+                                }); 
+                            } else {
+                                 provider.requestDecodeBlock(null, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
+                            }                         
+                        }                               
+                    } else {                       
                         if (this.number % chunkSize > 1){
                             if (!provider.isNextChunkExists(this.number)){
                                 const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
                                 provider.setReadyToLoading(nextChunkNumber);                            
                                 serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
-                                provider.startDecode(nextChunk, (nextChunkNumber) * chunkSize, (nextChunkNumber + 1) * chunkSize - 1, function(){});
+                                    provider.requestDecodeBlock(nextChunk, (nextChunkNumber) * chunkSize, (nextChunkNumber + 1) * chunkSize - 1, 
+                                                                function(){}, rejectRequest.bind(this, provider));
                                 });
                             }
                         }
                         resolve(frame);
                     }
+                    
                 } catch (exception) {
                     if (exception instanceof Exception) {
                         reject(exception);
@@ -175,6 +172,7 @@
                 meta: await serverProxy.frames.getMeta(taskID),
                 chunkSize,
                 provider: new cvatData.FrameProvider(9, blockType, chunkSize),
+                lastFrameRequest : frame,
             };
 
             frameCache[taskID] = {};
@@ -200,7 +198,6 @@
 
         frameDataCache[taskID].provider.setRenderSize(size.width, size.height);
         return new FrameData(size.width, size.height, taskID, frame);
-        
     };
 
     function getRanges(taskID) {

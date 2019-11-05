@@ -202,9 +202,9 @@ class VideoExtractor(IMediaExtractor):
         if not self._source_path:
             raise Exception('No data to compress')
 
-        # # translate inversed range 1:100 to 2:32
-        translated_quality = 101 - quality
-        translated_quality = round((((translated_quality - 1) * (31 - 2)) / (100 - 1)) + 2)
+        # # translate inversed range 1:95 to 2:32
+        translated_quality = 96 - quality
+        translated_quality = round((((translated_quality - 1) * (31 - 2)) / (95 - 1)) + 2)
 
         container = self._get_av_container()
         container.streams.video[0].thread_type = 'AUTO'
@@ -233,7 +233,7 @@ class VideoExtractor(IMediaExtractor):
             input_images = os.path.join(self._tmp_dir, self._imagename_pattern['cmd'])
             input_options = '-f image2 -framerate {} -start_number {}'.format(self._output_fps, start_frame)
             output_chunk = compressed_chunk_path(chunk_idx)
-            output_options = '-vframes {} -codec:v mpeg1video -q:v {} '.format(chunk_size, translated_quality)
+            output_options = '-vframes {} -f mpegts -c:a none -codec:v mpeg1video -bf 0 -b:v 800k'.format(chunk_size)
 
             ff = FFmpeg(
                 inputs  = {input_images: input_options},
@@ -242,7 +242,7 @@ class VideoExtractor(IMediaExtractor):
             ff.run()
 
             output_chunk = original_chunk_path(chunk_idx)
-            output_options = '-vframes {} -codec:v mpeg1video -q:v {}'.format(chunk_size, 0)
+            output_options = '-vframes {} -f mpegts -c:a none -codec:v mpeg1video -bf 0 -q:v {}'.format(chunk_size, 0)
             ff = FFmpeg(
                 inputs  = {input_images: input_options},
                 outputs = {output_chunk: output_options},

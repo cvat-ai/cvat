@@ -32,6 +32,7 @@ RUN apt-get update && \
         apache2 \
         apache2-dev \
         ffmpeg \
+        git-core \
         gstreamer0.10-ffmpeg \
         libapache2-mod-xsendfile \
         libavcodec-dev \
@@ -43,6 +44,8 @@ RUN apt-get update && \
         libsasl2-dev \
         libswresample-dev \
         libswscale-dev \
+        libsm6 \
+        libxext6 \
         p7zip-full \
         pkg-config \
         python3-dev \
@@ -50,7 +53,6 @@ RUN apt-get update && \
         supervisor \
         tzdata \
         unrar \
-        unzip \
         vim && \
     pip3 install -U setuptools && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
@@ -84,6 +86,14 @@ ENV TF_ANNOTATION=${TF_ANNOTATION}
 ENV TF_ANNOTATION_MODEL_PATH=${HOME}/rcnn/inference_graph
 RUN if [ "$TF_ANNOTATION" = "yes" ]; then \
         bash -i /tmp/components/tf_annotation/install.sh; \
+    fi
+
+# Auto segmentation support. by Mohammad
+ARG AUTO_SEGMENTATION
+ENV AUTO_SEGMENTATION=${AUTO_SEGMENTATION}
+ENV AUTO_SEGMENTATION_PATH=${HOME}/Mask_RCNN
+RUN if [ "$AUTO_SEGMENTATION" = "yes" ]; then \
+    bash -i /tmp/components/auto_segmentation/install.sh; \
     fi
 
 ARG WITH_TESTS
@@ -150,7 +160,7 @@ COPY ssh ${HOME}/.ssh
 COPY utils ${HOME}/utils
 COPY cvat/ ${HOME}/cvat
 COPY cvat-core/ ${HOME}/cvat-core
-COPY cvat-core/ ${HOME}/cvat-data
+COPY cvat-data/ ${HOME}/cvat-data
 COPY tests ${HOME}/tests
 # Binary option is necessary to correctly apply the patch on Windows platform.
 # https://unix.stackexchange.com/questions/239364/how-to-fix-hunk-1-failed-at-1-different-line-endings-message

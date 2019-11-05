@@ -31,6 +31,26 @@
     const { ArgumentError } = require('./exceptions');
     const { Task } = require('./session');
 
+    function attachUsers(task, users) {
+        if (task.assignee !== null) {
+            [task.assignee] = users.filter((user) => user.id === task.assignee);
+        }
+
+        for (const segment of task.segments) {
+            for (const job of segment.jobs) {
+                if (job.assignee !== null) {
+                    [job.assignee] = users.filter((user) => user.id === job.assignee);
+                }
+            }
+        }
+
+        if (task.owner !== null) {
+            [task.owner] = users.filter((user) => user.id === task.owner);
+        }
+
+        return task;
+    }
+
     function implementAPI(cvat) {
         cvat.plugins.list.implementation = PluginRegistry.list;
         cvat.plugins.register.implementation = PluginRegistry.register.bind(cvat);
@@ -116,9 +136,10 @@
 
             // If task was found by its id, then create task instance and get Job instance from it
             if (tasks !== null && tasks.length) {
-                tasks[0].owner = await serverProxy.users.getUsers(tasks[0].owner);
-                tasks[0].assignee = await serverProxy.users.getUsers(tasks[0].assignee);
-                const task = new Task(tasks[0]);
+                const users = (await serverProxy.users.getUsers())
+                    .map((userData) => new User(userData));
+                const task = new Task(attachUsers(tasks[0], users));
+
                 return filter.jobID ? task.jobs
                     .filter((job) => job.id === filter.jobID) : task.jobs;
             }
@@ -161,13 +182,14 @@
                 }
             }
 
-            const users = await serverProxy.users.getUsers();
+            const users = (await serverProxy.users.getUsers())
+                .map((userData) => new User(userData));
             const tasksData = await serverProxy.tasks.getTasks(searchParams.toString());
-            const tasks = tasksData.map((task) => {
-                [task.owner] = users.filter((user) => user.id === task.owner);
-                [task.assignee] = users.filter((user) => user.id === task.assignee);
-                return new Task(task);
-            });
+            const tasks = tasksData
+                .map((task) => attachUsers(task, users))
+                .map((task) => new Task(task));
+
+
             tasks.count = tasksData.count;
 
             return tasks;
