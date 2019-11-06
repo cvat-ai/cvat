@@ -36,7 +36,11 @@ class FrameProviderWrapper extends Listener {
                 if (window.cvatTask.mode === 'interpolation'){
                     this._result = new ImageData(data, frameData.width, frameData.height);
                 } else {
-                    this._result = data;
+                    this._result = {
+                        data,
+                        width: frameData.width,
+                        height: frameData.height,
+                    };
                 }
                 return this._result;
             }
@@ -52,7 +56,11 @@ class FrameProviderWrapper extends Listener {
             if (window.cvatTask.mode === 'interpolation'){
                this._result = new ImageData(data, frameData.width, frameData.height);
             } else {
-               this._result = data;
+                this._result = {
+                   data,
+                   width: frameData.width,
+                   height: frameData.height,
+                };
             }
 
             this.notify();
@@ -899,14 +907,14 @@ class PlayerView {
                 imageData.data.set(image.data);
                 ctx.putImageData(imageData, 0, 0);
             } else {
-                const ctx = this._playerCanvasBackground[0].getContext('2d');                
+                const ctx = this._playerCanvasBackground[0].getContext('2d');
                 var img = new Image();
                 img.onload = function() {
                     this._playerCanvasBackground.attr('width', img.width);
                     this._playerCanvasBackground.attr('height', img.height);
                     ctx.drawImage(img, 0, 0);
                 }.bind(this);
-                img.src = image;
+                img.src = image.data;
             }
         }
 
