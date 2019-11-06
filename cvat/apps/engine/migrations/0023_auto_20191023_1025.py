@@ -61,9 +61,21 @@ def create_data_objects(apps, schema_editor):
             if os.path.isdir(old_task_data_dir):
                 shutil.copytree(old_task_data_dir, compressed_cache_dir, symlinks=False)
 
+                # prepare *.list chunks
+                for chunk_idx, start_frame in enumerate(range(0, db_data.size, db_data.chunk_size)):
+                    with open(os.path.join(compressed_cache_dir, '{}.list'.format(chunk_idx)), 'w') as chunk:
+                        stop_frame = min(start_frame + db_data.chunk_size, db_data.size)
+                        for frame in range(start_frame, stop_frame):
+                            image_path = os.path.join(compressed_cache_dir, get_frame_path(frame))
+                            chunk.write(image_path + '\n')
+
+                # create preview
+                first_frame = os.path.join(compressed_cache_dir, get_frame_path(0))
+                if os.path.isfile(first_frame):
+                    shutil.copyfile(first_frame, os.path.join(db_data_dir, 'preview.jpeg'))
+
             # original images
             # ???
-
 
             # move logs
             task_log_file = os.path.join(old_db_task_dir, 'task.log')
@@ -73,20 +85,6 @@ def create_data_objects(apps, schema_editor):
             client_log_file = os.path.join(old_db_task_dir, 'client.log')
             if os.path.isfile(client_log_file):
                 shutil.move(client_log_file, new_task_logs_dir)
-
-            # prepare *.list chunks
-            for chunk_idx, start_frame in enumerate(range(0, db_data.size, db_data.chunk_size)):
-                with open(os.path.join(compressed_cache_dir, '{}.list'.format(chunk_idx)), 'w') as chunk:
-                    stop_frame = min(start_frame + db_data.chunk_size, db_data.size)
-                    for frame in range(start_frame, stop_frame):
-                        image_path = os.path.join(compressed_cache_dir, get_frame_path(frame))
-                        chunk.write(image_path + '\n')
-
-
-            # create preview
-            first_frame = os.path.join(compressed_cache_dir, get_frame_path(0))
-            if os.path.isfile(first_frame):
-                shutil.copyfile(first_frame, os.path.join(db_data_dir, 'preview.jpeg'))
 
             if hasattr(db_task, 'video'):
                 db_task.video.data = db_data
@@ -114,17 +112,22 @@ def create_data_objects(apps, schema_editor):
         DLModel = apps.get_model('auto_annotation', 'AnnotationModel')
 
         for db_model in DLModel.objects.all():
-            old_location = os.path.join(settings.BASE_DIR, 'models', str(db_model.id))
-            new_location = os.path.join(settings.BASE_DIR, 'data', 'models', str(db_model.id))
+            try:
+                old_location = os.path.join(settings.BASE_DIR, 'models', str(db_model.id))
+                new_location = os.path.join(settings.BASE_DIR, 'data', 'models', str(db_model.id))
 
-            shutil.move(old_location, new_location)
+                if os.path.isdir(old_location):
+                    shutil.move(old_location, new_location)
 
-            db_model.model_file.name = db_model.model_file.name.replace(old_location, new_location)
-            db_model.weights_file.name = db_model.weights_file.name.replace(old_location, new_location)
-            db_model.labelmap_file.name = db_model.labelmap_file.name.replace(old_location, new_location)
-            db_model.interpretation_file.name = db_model.interpretation_file.name.replace(old_location, new_location)
+                    db_model.model_file.name = db_model.model_file.name.replace(old_location, new_location)
+                    db_model.weights_file.name = db_model.weights_file.name.replace(old_location, new_location)
+                    db_model.labelmap_file.name = db_model.labelmap_file.name.replace(old_location, new_location)
+                    db_model.interpretation_file.name = db_model.interpretation_file.name.replace(old_location, new_location)
 
-            db_model.save()
+                    db_model.save()
+            except Exception as e:
+                print('Cannot migrate data for the DL model: {}'.format(db_model.id))
+                print(str(e))
 
 class Migration(migrations.Migration):
 
