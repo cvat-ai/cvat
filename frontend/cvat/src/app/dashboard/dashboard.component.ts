@@ -49,8 +49,10 @@ export class DashboardComponent implements OnInit {
       (val) => {
 
         try{
-          let componentRef = this.taskRef.filter(x => x.instance.task.id == id)[0];
+          let componentRef = this.taskRef.find(x => x.instance.task.id == id);
+          this.taskRef=this.taskRef.filter(x=>x.instance.task.id!=id);
           componentRef.destroy();
+
         }
         catch(e){
           console.log("destroy error");
