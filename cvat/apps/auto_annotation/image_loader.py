@@ -6,18 +6,15 @@
 import cv2
 
 class ImageLoader():
-    def __init__(self, image_list):
-        self.image_list = image_list
-
-    def __getitem__(self, i):
-        return self.image_list[i]
+    def __init__(self, frame_provider):
+        self._frame_provider = frame_provider
 
     def __iter__(self):
-        for imagename in self.image_list:
+        for imagename in self._frame_provider:
             yield self._load_image(imagename)
 
     def __len__(self):
-        return len(self.image_list)
+        return len(self._frame_provider)
 
     @staticmethod
     def _load_image(path_to_image):

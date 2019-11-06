@@ -223,7 +223,7 @@
                 }
             }
 
-            async function createTask(taskData, files, onUpdate) {
+            async function createTask(taskSpec, taskDataSpec, onUpdate) {
                 const { backendAPI } = config;
 
                 async function wait(id) {
@@ -263,11 +263,15 @@
                     });
                 }
 
-                const batchOfFiles = new FormData();
-                for (const key in files) {
-                    if (Object.prototype.hasOwnProperty.call(files, key)) {
-                        for (let i = 0; i < files[key].length; i++) {
-                            batchOfFiles.append(`${key}[${i}]`, files[key][i]);
+                const taskData = new FormData();
+                for (const key in taskDataSpec) {
+                    if (Object.prototype.hasOwnProperty.call(taskDataSpec, key)) {
+                        if (Array.isArray(taskDataSpec[key])) {
+                            for (let i = 0; i < taskDataSpec[key].length; i++) {
+                                taskData.append(`${key}[${i}]`, taskDataSpec[key][i]);
+                            }
+                        } else {
+                            taskData.set(key, taskDataSpec[key]);
                         }
                     }
                 }
@@ -276,7 +280,7 @@
 
                 onUpdate('The task is being created on the server..');
                 try {
-                    response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskData), {
+                    response = await Axios.post(`${backendAPI}/tasks`, JSON.stringify(taskSpec), {
                         proxy: config.proxy,
                         headers: {
                             'Content-Type': 'application/json',
@@ -288,7 +292,7 @@
 
                 onUpdate('The data is being uploaded to the server..');
                 try {
-                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, batchOfFiles, {
+                    await Axios.post(`${backendAPI}/tasks/${response.data.id}/data`, taskData, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {

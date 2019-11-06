@@ -35,6 +35,7 @@ RUN npm install
 
 # Build source code
 COPY cvat-core/ /tmp/cvat-core/
+COPY cvat-data/ /tmp/cvat-data/
 COPY cvat-ui/ /tmp/cvat-ui/
 RUN mv .env.production .env && npm run build
 

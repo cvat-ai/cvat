@@ -12,6 +12,7 @@ from cvat.apps.engine.models import Task as TaskModel
 from cvat.apps.engine import annotation, task
 from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data
+from cvat.apps.engine.frame_provider import FrameProvider
 
 import django_rq
 import fnmatch
@@ -154,20 +155,6 @@ def run_tensorflow_annotation(image_list, labels_mapping, treshold):
             del sess
     return result
 
-
-def make_image_list(path_to_data):
-    def get_image_key(item):
-        return int(os.path.splitext(os.path.basename(item))[0])
-
-    image_list = []
-    for root, dirnames, filenames in os.walk(path_to_data):
-        for filename in fnmatch.filter(filenames, '*.jpg'):
-                image_list.append(os.path.join(root, filename))
-
-    image_list.sort(key=get_image_key)
-    return image_list
-
-
 def convert_to_cvat_format(data):
     result = {
         "tracks": [],
@@ -202,7 +189,7 @@ def create_thread(tid, labels_mapping, user):
         # Get job indexes and segment length
         db_task = TaskModel.objects.get(pk=tid)
         # Get image list
-        image_list = make_image_list(db_task.get_data_dirname())
+        image_list = FrameProvider(db_task)
 
         # Run auto annotation by tf
         result = None

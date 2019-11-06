@@ -67,7 +67,7 @@ def _save_task_to_db(db_task):
     segment_size = db_task.segment_size
     segment_step = segment_size
     if segment_size == 0:
-        segment_size = db_task.size
+        segment_size = db_task.data.size
 
         # Segment step must be more than segment_size + overlap in single-segment tasks
         # Otherwise a task contains an extra segment
@@ -80,9 +80,8 @@ def _save_task_to_db(db_task):
 
     segment_step -= db_task.overlap
 
-    for x in range(0, db_task.size, segment_step):
-        start_frame = x
-        stop_frame = min(x + segment_size - 1, db_task.size - 1)
+    for start_frame in range(0, db_task.data.size, segment_step):
+        stop_frame = min(start_frame + segment_size - 1, db_task.data.size - 1)
 
         slogger.glob.info("New segment for task #{}: start_frame = {}, \
             stop_frame = {}".format(db_task.id, start_frame, stop_frame))
@@ -97,6 +96,7 @@ def _save_task_to_db(db_task):
         db_job.segment = db_segment
         db_job.save()
 
+    db_task.data.save()
     db_task.save()
 
 def _count_files(data):
@@ -204,10 +204,11 @@ def _create_thread(tid, data):
     slogger.glob.info("create task #{}".format(tid))
 
     db_task = models.Task.objects.select_for_update().get(pk=tid)
-    if db_task.size != 0:
+    db_data = db_task.data
+    if db_task.data.size != 0:
         raise NotImplementedError("Adding more data is not implemented")
 
-    upload_dir = db_task.get_upload_dirname()
+    upload_dir = db_data.get_upload_dirname()
 
     if data['remote_files']:
         data['remote_files'] = _download_data(data['remote_files'], upload_dir)
@@ -230,12 +231,12 @@ def _create_thread(tid, data):
             continue
         extractors.append(MEDIA_TYPES[media_type]['extractor'](
             source_path=[os.path.join(upload_dir, f) for f in media_files],
-            image_quality=db_task.image_quality,
-            step=db_task.get_frame_step(),
-            start=db_task.start_frame,
-            stop=db_task.stop_frame,
+            step=db_data.get_frame_step(),
+            start=db_data.start_frame,
+            stop=db_data.stop_frame,
         ))
     db_task.mode = task_mode
+    db_data.type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
 
     def update_progress(progress):
         job.meta['status'] = 'Images are being compressed... {}%'.format(round(progress * 100))
@@ -244,31 +245,39 @@ def _create_thread(tid, data):
     frame_counter = 0
     for extractor in extractors:
         media_meta, image_count = extractor.save_as_chunks(
-            chunk_size=db_task.data_chunk_size,
-            task=db_task,
+            chunk_size=db_data.chunk_size,
+            compressed_chunk_path=db_data.get_compressed_chunk_path,
+            original_chunk_path=db_data.get_original_chunk_path,
             progress_callback=update_progress,
+            quality=db_data.image_quality,
         )
-        db_task.size += image_count
+        db_data.size += image_count
 
-        if db_task.mode == 'annotation':
+        if db_data.type == models.DataChoice.IMAGESET:
             for image_meta in media_meta:
                 db_images.append(models.Image(
-                    task=db_task,
-                    path=image_meta['name'],
+                    data=db_data,
+                    path=os.path.relpath(image_meta['name'], upload_dir),
                     frame=frame_counter,
-                    width=image_meta['size'][0], height=image_meta['size'][1],
+                    width=image_meta['size'][0],
+                    height=image_meta['size'][1],
                 ))
                 frame_counter += 1
-    extractors[0].save_preview(os.path.join(db_task.get_data_dirname(), 'preview.jpg'))
-    if db_task.mode == 'interpolation':
+    extractors[0].save_preview(db_data.get_preview_path())
+    if db_data.type == models.DataChoice.VIDEO:
         models.Video.objects.create(
-            task=db_task,
-            path=media_meta[0]['name'],
+            data=db_data,
+            path=os.path.relpath(media_meta[0]['name'], upload_dir),
             width=media_meta[0]['size'][0], height=media_meta[0]['size'][1])
-        if db_task.stop_frame == 0:
-            db_task.stop_frame = db_task.start_frame + (db_task.size - 1) * db_task.get_frame_step()
+        if db_data.stop_frame == 0:
+            db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
     else:
         models.Image.objects.bulk_create(db_images)
 
-    slogger.glob.info("Founded frames {} for task #{}".format(db_task.size, tid))
+    db_data.client_files.all().delete()
+    db_data.server_files.all().delete()
+    db_data.remote_files.all().delete()
+    shutil.rmtree(db_data.get_upload_dirname())
+
+    slogger.glob.info("Founded frames {} for Data #{}".format(db_data.size, db_data.id))
     _save_task_to_db(db_task)

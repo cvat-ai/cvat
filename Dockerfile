@@ -31,22 +31,29 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -yq \
         apache2 \
         apache2-dev \
-        libapache2-mod-xsendfile \
-        supervisor \
         ffmpeg \
+        git-core \
         gstreamer0.10-ffmpeg \
+        libapache2-mod-xsendfile \
+        libavcodec-dev \
+        libavdevice-dev \
+        libavfilter-dev \
+        libavformat-dev \
+        libavutil-dev \
         libldap2-dev \
         libsasl2-dev \
+        libswresample-dev \
+        libswscale-dev \
+        libsm6 \
+        libxext6 \
+        p7zip-full \
+        pkg-config \
         python3-dev \
         python3-pip \
+        supervisor \
         tzdata \
-        unzip \
         unrar \
-        p7zip-full \
-        vim \
-        git-core \
-        libsm6 \
-        libxext6 && \
+        vim && \
     pip3 install -U setuptools && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
