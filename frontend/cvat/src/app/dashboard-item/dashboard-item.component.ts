@@ -1,5 +1,5 @@
 import {Component, Input, ViewChild,ViewContainerRef,ComponentFactoryResolver,
-ComponentRef} from '@angular/core';
+ComponentRef, TemplateRef} from '@angular/core';
 import { Task } from '../models/task';
 import {MatDialog} from '@angular/material/dialog';
 import { environment } from '../../environments/environment';
@@ -20,7 +20,7 @@ export class DashboardItemComponent{
 
   constructor(private matDialog:MatDialog) { }
 
-  openDeleteModal(templateRef: TemplateRef){
+  openDeleteModal(templateRef: TemplateRef<any>){
     const dialogRef=this.matDialog.open(templateRef,
     {
       width: '400px',

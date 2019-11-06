@@ -39,7 +39,7 @@ return this.http.get(environment.apiUrl+'dashboard/meta').subscribe(response => 
     );
   }
 
-  deleteTask(id: number): Observable{
+  deleteTask(id: number): Observable<any>{
 
     return this.http.delete(this.tasksUrl+'/'+`${id}`)
     .pipe(
