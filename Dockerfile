@@ -158,7 +158,6 @@ COPY tests ${HOME}/tests
 # Required until Datumaro can be installed as a module
 RUN while read -r line; do pip3 install --no-cache-dir $line; done < \
         ${HOME}/cvat/apps/dataset_manager/dependencies/datumaro/requirements.txt && \
-    mkdir -p ${HOME}/cvat/apps/dataset_manager/modules && \
     ln -s ${HOME}/cvat/apps/dataset_manager/dependencies/datumaro/datumaro ${HOME}
 # Binary option is necessary to correctly apply the patch on Windows platform.
 # https://unix.stackexchange.com/questions/239364/how-to-fix-hunk-1-failed-at-1-different-line-endings-message
