@@ -189,7 +189,7 @@ class Annotation:
                 "path": db_image.path,
                 "width": db_image.width,
                 "height": db_image.height,
-            } for db_image in self._db_task.data.image_set.all()}
+            } for db_image in self._db_task.data.images.all()}
 
         self._frame_mapping = {
             self._get_filename(info["path"]): frame for frame, info in self._frame_info.items()

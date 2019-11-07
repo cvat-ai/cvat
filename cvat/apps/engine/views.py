@@ -267,7 +267,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         super().perform_destroy(instance)
         shutil.rmtree(task_dirname, ignore_errors=True)
         if not instance.data.tasks.all():
-            shutil.rmtree(instance.data.get_data_dirname())
+            shutil.rmtree(instance.data.get_data_dirname(), ignore_errors=True)
             instance.data.delete()
 
     @action(detail=True, methods=['GET'], serializer_class=JobSerializer)
@@ -347,7 +347,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Please specify a correct 'format' parameter for the request")
 
-        file_path = os.path.join(db_task.get_task_dirname(),
+        file_path = os.path.join(db_task.get_task_artifacts_dirname(),
             "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.format.lower()))
 
         queue = django_rq.get_queue("default")

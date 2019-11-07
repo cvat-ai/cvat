@@ -162,9 +162,8 @@ class DataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Data
-        fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter', 'type', 'client_files', 'server_files', 'remote_files')
-        # write_once_fields = ('source', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter', 'type', 'chunk_size')
-        # ordering = []
+        fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter', 'type',
+                  'client_files', 'server_files', 'remote_files')
 
     def validate_frame_filter(self, value):
         match = re.search("step\s*=\s*([1-9]\d*)", value)
@@ -190,49 +189,31 @@ class DataSerializer(serializers.ModelSerializer):
             client_file.save()
 
         for f in server_files:
-            server_file = models.ServerFile(task=db_data, **f)
+            server_file = models.ServerFile(data=db_data, **f)
             server_file.save()
 
         for f in remote_files:
-            remote_file = models.RemoteFile(task=db_data, **f)
+            remote_file = models.RemoteFile(data=db_data, **f)
             remote_file.save()
 
         db_data.save()
         return db_data
 
-    def update(self, instance, validated_data):
-        # TODO
-        client_files = validated_data.pop('clientfile_set')
-        server_files = validated_data.pop('serverfile_set')
-        remote_files = validated_data.pop('remotefile_set')
-
-        for file in client_files:
-            client_file = models.ClientFile(data=instance, **file)
-            client_file.save()
-
-        for file in server_files:
-            server_file = models.ServerFile(data=instance, **file)
-            server_file.save()
-
-        for file in remote_files:
-            remote_file = models.RemoteFile(data=instance, **file)
-            remote_file.save()
-        instance.save()
-        return instance
-
 class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
-    data_chunk_size = serializers.ReadOnlyField(source="data.chunk_size")
-    data_chunk_type = serializers.ReadOnlyField(source="data.type")
+    data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size')
+    data_chunk_type = serializers.ReadOnlyField(source='data.type')
+    size = serializers.ReadOnlyField(source='data.size')
+    image_quality = serializers.ReadOnlyField(source='data.image_quality')
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'z_order', 'status', 'labels', 'segments',
-            'project', 'data_chunk_size', 'data_chunk_type')
-        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size', 'data_chunk_type')
+            'project', 'data_chunk_size', 'data_chunk_type', 'size', 'image_quality')
+        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size', 'data_chunk_type', 'size', 'image_quality')
         write_once_fields = ('overlap', 'segment_size')
         ordering = ['-id']
 

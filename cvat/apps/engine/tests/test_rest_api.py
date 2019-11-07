@@ -12,7 +12,7 @@ from rest_framework import status
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 from cvat.apps.engine.models import (Task, Segment, Job, StatusChoice,
-    AttributeType, Project)
+    AttributeType, Project, Data)
 from cvat.apps.annotation.models import AnnotationFormat
 from unittest import mock
 import io
@@ -50,14 +50,28 @@ def create_db_users(cls):
     cls.user = cls.user5 = user_dummy
 
 def create_db_task(data):
+    data_settings = {
+        "size": data.pop("size"),
+        "image_quality": data.pop("image_quality"),
+    }
+
+    db_data = Data.objects.create(**data_settings)
+    shutil.rmtree(db_data.get_data_dirname(), ignore_errors=True)
+    os.makedirs(db_data.get_data_dirname())
+    os.makedirs(db_data.get_upload_dirname())
+
     db_task = Task.objects.create(**data)
     shutil.rmtree(db_task.get_task_dirname(), ignore_errors=True)
-    os.makedirs(db_task.get_upload_dirname())
-    os.makedirs(db_task.get_data_dirname())
+    os.makedirs(db_task.get_task_dirname())
+    os.makedirs(db_task.get_task_logs_dirname())
+    os.makedirs(db_task.get_task_artifacts_dirname())
+    os.makedirs(db_task.get_task_datum_dirname())
+    db_task.data = db_data
+    db_task.save()
 
-    for x in range(0, db_task.size, db_task.segment_size):
+    for x in range(0, db_task.data.size, db_task.segment_size):
         start_frame = x
-        stop_frame = min(x + db_task.segment_size - 1, db_task.size - 1)
+        stop_frame = min(x + db_task.segment_size - 1, db_task.data.size - 1)
 
         db_segment = Segment()
         db_segment.task = db_task
@@ -1051,7 +1065,7 @@ class TaskGetAPITestCase(APITestCase):
     def _check_response(self, response, db_task):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], db_task.name)
-        self.assertEqual(response.data["size"], db_task.size)
+        self.assertEqual(response.data["size"], db_task.data.size)
         self.assertEqual(response.data["mode"], db_task.mode)
         owner = db_task.owner.id if db_task.owner else None
         self.assertEqual(response.data["owner"], owner)
@@ -1060,7 +1074,7 @@ class TaskGetAPITestCase(APITestCase):
         self.assertEqual(response.data["overlap"], db_task.overlap)
         self.assertEqual(response.data["segment_size"], db_task.segment_size)
         self.assertEqual(response.data["z_order"], db_task.z_order)
-        self.assertEqual(response.data["image_quality"], db_task.image_quality)
+        self.assertEqual(response.data["image_quality"], db_task.data.image_quality)
         self.assertEqual(response.data["status"], db_task.status)
         self.assertListEqual(
             [label.name for label in db_task.label_set.all()],
@@ -1146,7 +1160,7 @@ class TaskUpdateAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         name = data.get("name", db_task.name)
         self.assertEqual(response.data["name"], name)
-        self.assertEqual(response.data["size"], db_task.size)
+        self.assertEqual(response.data["size"], db_task.data.size)
         mode = data.get("mode", db_task.mode)
         self.assertEqual(response.data["mode"], mode)
         owner = db_task.owner.id if db_task.owner else None
@@ -1159,7 +1173,7 @@ class TaskUpdateAPITestCase(APITestCase):
         self.assertEqual(response.data["segment_size"], db_task.segment_size)
         z_order = data.get("z_order", db_task.z_order)
         self.assertEqual(response.data["z_order"], z_order)
-        image_quality = data.get("image_quality", db_task.image_quality)
+        image_quality = data.get("image_quality", db_task.data.image_quality)
         self.assertEqual(response.data["image_quality"], image_quality)
         self.assertEqual(response.data["status"], db_task.status)
         if data.get("labels"):
@@ -1187,7 +1201,6 @@ class TaskUpdateAPITestCase(APITestCase):
         data = {
             "name": "new name for the task",
             "owner": self.owner.id,
-            "image_quality": 60,
             "labels": [{
                 "name": "non-vehicle",
                 "attributes": [{
@@ -1204,7 +1217,6 @@ class TaskUpdateAPITestCase(APITestCase):
         data = {
             "name": "new name for the task",
             "owner": self.assignee.id,
-            "image_quality": 63,
             "labels": [{
                 "name": "car",
                 "attributes": [{
@@ -1221,7 +1233,6 @@ class TaskUpdateAPITestCase(APITestCase):
     def test_api_v1_tasks_id_observer(self):
         data = {
             "name": "new name for the task",
-            "image_quality": 61,
             "labels": [{
                 "name": "test",
             }]
@@ -1231,7 +1242,6 @@ class TaskUpdateAPITestCase(APITestCase):
     def test_api_v1_tasks_id_no_auth(self):
         data = {
             "name": "new name for the task",
-            "image_quality": 59,
             "labels": [{
                 "name": "test",
             }]
@@ -1315,7 +1325,6 @@ class TaskCreateAPITestCase(APITestCase):
     def _check_response(self, response, user, data):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["name"], data["name"])
-        self.assertEqual(response.data["size"], 0)
         self.assertEqual(response.data["mode"], "")
         self.assertEqual(response.data["owner"], data.get("owner", user.id))
         self.assertEqual(response.data["assignee"], data.get("assignee"))
@@ -1323,7 +1332,6 @@ class TaskCreateAPITestCase(APITestCase):
         self.assertEqual(response.data["overlap"], data.get("overlap", None))
         self.assertEqual(response.data["segment_size"], data.get("segment_size", 0))
         self.assertEqual(response.data["z_order"], data.get("z_order", False))
-        self.assertEqual(response.data["image_quality"], data.get("image_quality", 50))
         self.assertEqual(response.data["status"], StatusChoice.ANNOTATION)
         self.assertListEqual(
             [label["name"] for label in data.get("labels")],
@@ -1342,7 +1350,6 @@ class TaskCreateAPITestCase(APITestCase):
     def test_api_v1_tasks_admin(self):
         data = {
             "name": "new name for the task",
-            "image_quality": 60,
             "labels": [{
                 "name": "non-vehicle",
                 "attributes": [{
@@ -1359,7 +1366,6 @@ class TaskCreateAPITestCase(APITestCase):
         data = {
             "name": "new name for the task",
             "owner": self.assignee.id,
-            "image_quality": 63,
             "labels": [{
                 "name": "car",
                 "attributes": [{
@@ -1376,7 +1382,6 @@ class TaskCreateAPITestCase(APITestCase):
     def test_api_v1_tasks_observer(self):
         data = {
             "name": "new name for the task",
-            "image_quality": 61,
             "labels": [{
                 "name": "test",
             }]
@@ -1386,7 +1391,6 @@ class TaskCreateAPITestCase(APITestCase):
     def test_api_v1_tasks_no_auth(self):
         data = {
             "name": "new name for the task",
-            "image_quality": 59,
             "labels": [{
                 "name": "test",
             }]
@@ -1474,7 +1478,6 @@ class TaskDataAPITestCase(APITestCase):
             "overlap": 0,
             "segment_size": 100,
             "z_order": False,
-            "image_quality": 75,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
@@ -1488,6 +1491,7 @@ class TaskDataAPITestCase(APITestCase):
             "client_files[0]": generate_image_file("test_1.jpg"),
             "client_files[1]": generate_image_file("test_2.jpg"),
             "client_files[2]": generate_image_file("test_3.jpg"),
+            "image_quality": 75,
         }
 
         response = self._run_api_v1_tasks_id_data(task_id, user, data)
@@ -1497,7 +1501,6 @@ class TaskDataAPITestCase(APITestCase):
             "name": "my task #2",
             "overlap": 0,
             "segment_size": 0,
-            "image_quality": 75,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
@@ -1512,6 +1515,7 @@ class TaskDataAPITestCase(APITestCase):
             "server_files[1]": "test_2.jpg",
             "server_files[2]": "test_3.jpg",
             "server_files[3]": "data/test_3.jpg",
+            "image_quality": 75,
         }
 
         response = self._run_api_v1_tasks_id_data(task_id, user, data)
@@ -1534,7 +1538,6 @@ class TaskDataAPITestCase(APITestCase):
             "overlap": 0,
             "segment_size": 100,
             "z_order": False,
-            "image_quality": 75,
             "labels": [
                 {"name": "car"},
                 {"name": "person"},
@@ -1577,7 +1580,6 @@ class JobAnnotationAPITestCase(APITestCase):
             "overlap": 0,
             "segment_size": 100,
             "z_order": False,
-            "image_quality": 75,
             "labels": [
                 {
                     "name": "car",
@@ -1610,6 +1612,7 @@ class JobAnnotationAPITestCase(APITestCase):
                 "client_files[0]": generate_image_file("test_1.jpg"),
                 "client_files[1]": generate_image_file("test_2.jpg"),
                 "client_files[2]": generate_image_file("test_3.jpg"),
+                "image_quality": 75,
             }
             response = self.client.post("/api/v1/tasks/{}/data".format(tid), data=images)
             assert response.status_code == status.HTTP_202_ACCEPTED
@@ -2666,7 +2669,6 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
 
         response = self._get_annotation_formats(annotator)
         self.assertEqual(response.status_code, HTTP_200_OK)
-
 
         if annotator is not None:
             supported_formats = response.data

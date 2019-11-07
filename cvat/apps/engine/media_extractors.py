@@ -97,7 +97,8 @@ class ImageListExtractor(IMediaExtractor):
             original_chunk = original_chunk_path(counter)
             with zipfile.ZipFile(original_chunk, 'x') as zip_chunk:
                 for idx, image_file in enumerate(chunk_data):
-                    zip_chunk.write(filename=image_file, arcname=os.path.basename(image_file))
+                    arcname = '{:06d}.{}'.format(idx, os.path.basename(image_file)[1])
+                    zip_chunk.write(filename=image_file, arcname=arcname)
 
             counter += 1
             if progress_callback:
