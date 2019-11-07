@@ -144,10 +144,22 @@ class _SubsetWriter:
         return converted
 
     def _convert_polyline_object(self, obj):
-        return self._convert_points_object(obj)
+        converted = self._convert_annotation(obj)
+
+        converted.update({
+            'label_id': _cast(obj.label, int),
+            'points': [float(p) for p in obj.get_points()],
+        })
+        return converted
 
     def _convert_polygon_object(self, obj):
-        return self._convert_points_object(obj)
+        converted = self._convert_annotation(obj)
+
+        converted.update({
+            'label_id': _cast(obj.label, int),
+            'points': [float(p) for p in obj.get_points()],
+        })
+        return converted
 
     def _convert_bbox_object(self, obj):
         converted = self._convert_annotation(obj)

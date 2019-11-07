@@ -26,6 +26,7 @@ def _write_xml_bbox(bbox, parent_elem):
     return bbox_elem
 
 class _Converter:
+    _DEFAULT_SUBSET_NAME = 'default'
     _LABELS = set([entry.name for entry in VocLabel])
     _BODY_PARTS = set([entry.name for entry in VocBodyPart])
     _ACTIONS = set([entry.name for entry in VocAction])
@@ -90,6 +91,8 @@ class _Converter:
     def save_subsets(self):
         for subset_name in self._extractor.subsets():
             subset = self._extractor.get_subset(subset_name)
+            if not subset_name:
+                subset_name = self._DEFAULT_SUBSET_NAME
 
             class_lists = OrderedDict()
             clsdet_list = OrderedDict()
@@ -233,7 +236,10 @@ class _Converter:
                     segm_list[item_id] = None
 
                 if self._task in [None,
-                        VocTask.classification, VocTask.detection]:
+                        VocTask.classification,
+                        VocTask.detection,
+                        VocTask.action_classification,
+                        VocTask.person_layout]:
                     self.save_clsdet_lists(subset_name, clsdet_list)
                     if self._task in [None, VocTask.classification]:
                         self.save_class_lists(subset_name, class_lists)
@@ -255,14 +261,13 @@ class _Converter:
         if len(action_list) == 0:
             return
 
-        if next(iter(action_list.items()))[1] is None:
-            return
-
         for action in VocAction:
             ann_file = osp.join(self._action_subsets_dir,
                 '%s_%s.txt' % (action.name, subset_name))
             with open(ann_file, 'w') as f:
                 for item, objs in action_list.items():
+                    if not objs:
+                        continue
                     for obj_id, obj_actions in objs.items():
                         presented = obj_actions[action]
                         f.write('%s %s % d\n' % \
@@ -274,14 +279,13 @@ class _Converter:
         if len(class_lists) == 0:
             return
 
-        if next(iter(class_lists.items()))[1] is None:
-            return
-
         for label in VocLabel:
             ann_file = osp.join(self._cls_subsets_dir,
                 '%s_%s.txt' % (label.name, subset_name))
             with open(ann_file, 'w') as f:
                 for item, item_labels in class_lists.items():
+                    if not item_labels:
+                        continue
                     presented = label.value in item_labels
                     f.write('%s % d\n' % \
                         (item, 1 if presented else -1))
