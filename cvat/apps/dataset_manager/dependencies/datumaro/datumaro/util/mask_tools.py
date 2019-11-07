@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from itertools import groupby
 import numpy as np
 
 from datumaro.util.image import lazy_image, load_image
@@ -78,3 +79,18 @@ def load_mask(path, colormap=None):
 
 def lazy_mask(path, colormap=None):
     return lazy_image(path, lambda path: load_mask(path, colormap))
+
+
+def convert_mask_to_rle(binary_mask):
+    counts = []
+    for i, (value, elements) in enumerate(
+            groupby(binary_mask.ravel(order='F'))):
+        # decoding starts from 0
+        if i == 0 and value == 1:
+            counts.append(0)
+        counts.append(len(list(elements)))
+
+    return {
+        'counts': counts,
+        'size': list(binary_mask.shape)
+    }

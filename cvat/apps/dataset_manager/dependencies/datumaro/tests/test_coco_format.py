@@ -42,8 +42,8 @@ class CocoImporterTest(TestCase):
         annotation['categories'].append({'id': 0, 'name': 'TEST', 'supercategory': ''})
         annotation['images'].append({
             "id": 0,
-            "width": 100,
-            "height": 100,
+            "width": 10,
+            "height": 5,
             "file_name": '000000000001.jpg',
             "license": 0,
             "flickr_url": '',
@@ -54,9 +54,25 @@ class CocoImporterTest(TestCase):
             "id": 0,
             "image_id": 0,
             "category_id": 0,
-            "segmentation": [0.0, 1.0],
+            "segmentation": [[0, 0, 1, 0, 1, 2, 0, 2]],
             "area": 2,
             "bbox": [0, 0, 1, 2],
+            "iscrowd": 0
+        })
+        annotation['annotations'].append({
+            "id": 1,
+            "image_id": 0,
+            "category_id": 0,
+            "segmentation": {
+                "counts": [
+                    0, 10,
+                    5, 5,
+                    5, 5,
+                    0, 10,
+                    10, 0],
+                "size": [10, 5]},
+            "area": 30,
+            "bbox": [0, 0, 10, 4],
             "iscrowd": 0
         })
         return annotation
@@ -81,12 +97,28 @@ class CocoImporterTest(TestCase):
             self.COCO_dataset_generate(temp_dir.path)
             project = Project.import_from(temp_dir.path, 'ms_coco')
             dataset = project.make_dataset()
-            item = next(iter(dataset))
 
-            self.assertTrue(item.image is not None)
-            self.assertEqual(1, len(item.annotations))
-            self.assertEqual(AnnotationType.bbox, item.annotations[0].type)
             self.assertListEqual(['val'], sorted(dataset.subsets()))
+            self.assertEqual(1, len(dataset))
+
+            item = next(iter(dataset))
+            self.assertTrue(item.has_image)
+            self.assertEqual(5, len(item.annotations))
+
+            ann_0 = find(item.annotations, lambda x: x.id == 0)
+            ann_0_poly = find(item.annotations, lambda x: \
+                x.group == ann_0.id and x.type == AnnotationType.polygon)
+            ann_0_mask = find(item.annotations, lambda x: \
+                x.group == ann_0.id and x.type == AnnotationType.mask)
+            self.assertFalse(ann_0 is None)
+            self.assertFalse(ann_0_poly is None)
+            self.assertFalse(ann_0_mask is None)
+
+            ann_1 = find(item.annotations, lambda x: x.id == 1)
+            ann_1_mask = find(item.annotations, lambda x: \
+                x.group == ann_1.id and x.type == AnnotationType.mask)
+            self.assertFalse(ann_1 is None)
+            self.assertFalse(ann_1_mask is None)
 
 class CocoConverterTest(TestCase):
     def _test_save_and_load(self, source_dataset, converter_type, test_dir):
@@ -107,8 +139,11 @@ class CocoConverterTest(TestCase):
             item_b = find(parsed_dataset, lambda x: x.id == item_a.id)
             self.assertFalse(item_b is None)
             self.assertEqual(len(item_a.annotations), len(item_b.annotations))
-            for ann_a, ann_b in zip_longest(item_a.annotations, item_b.annotations):
-                self.assertEqual(ann_a.type, ann_b.type)
+            for ann_a in item_a.annotations:
+                ann_b = find(item_b.annotations, lambda x: \
+                    x.id == ann_a.id if ann_a.id else \
+                    x.type == ann_a.type and x.group == ann_a.group)
+                self.assertEqual(ann_a, ann_b)
 
     def test_can_save_and_load_captions(self):
         class TestExtractor(Extractor):
@@ -116,12 +151,12 @@ class CocoConverterTest(TestCase):
                 items = [
                     DatasetItem(id=0, subset='train',
                         annotations=[
-                            CaptionObject('hello'),
-                            CaptionObject('world'),
+                            CaptionObject('hello', id=1),
+                            CaptionObject('world', id=2),
                         ]),
                     DatasetItem(id=1, subset='train',
                         annotations=[
-                            CaptionObject('test'),
+                            CaptionObject('test', id=3),
                         ]),
 
                     DatasetItem(id=2, subset='test'),
@@ -139,14 +174,26 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 items = [
-                    DatasetItem(id=0, subset='train',
+                    DatasetItem(id=0, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
-                            BboxObject(0, 1, 2, 3, label=2),
-                            BboxObject(5, 6, 7, 8),
+                            BboxObject(0, 1, 2, 3, label=2, group=1,
+                                attributes={ 'is_crowd': False }, id=1),
+                            PolygonObject([0, 1, 2, 1, 2, 3, 0, 3],
+                                label=2, group=1),
+                            MaskObject(np.array([[0, 0, 0, 0], [1, 1, 0, 0],
+                                                 [1, 1, 0, 0], [0, 0, 0, 0]],
+                                                 # does not include lower row
+                                                 dtype=np.bool),
+                                label=2, group=1),
                         ]),
                     DatasetItem(id=1, subset='train',
                         annotations=[
-                            BboxObject(0, 1, 2, 3, label=4),
+                            BboxObject(0, 1, 3, 3, label=4, group=3,
+                                attributes={ 'is_crowd': True }, id=3),
+                            MaskObject(np.array([[0, 0, 0, 0], [1, 0, 1, 0],
+                                                 [1, 1, 0, 0], [0, 0, 1, 0]],
+                                                 dtype=np.bool),
+                                label=4, group=3),
                         ]),
 
                     DatasetItem(id=2, subset='test'),
@@ -192,12 +239,12 @@ class CocoConverterTest(TestCase):
                 items = [
                     DatasetItem(id=0, subset='train',
                         annotations=[
-                            LabelObject(4),
-                            LabelObject(9),
+                            LabelObject(4, id=1),
+                            LabelObject(9, id=2),
                         ]),
                     DatasetItem(id=1, subset='train',
                         annotations=[
-                            LabelObject(4),
+                            LabelObject(4, id=4),
                         ]),
 
                     DatasetItem(id=2, subset='test'),
@@ -225,14 +272,16 @@ class CocoConverterTest(TestCase):
                 items = [
                     DatasetItem(id=0, subset='train',
                         annotations=[
-                            PointsObject([1, 2, 0, 2, 4, 1], label=3, group=1),
+                            PointsObject([1, 2, 0, 2, 4, 1], [0, 1, 2],
+                                label=3, group=1, id=1),
                             BboxObject(1, 2, 3, 4, label=3, group=1),
-                            PointsObject([5, 6, 0, 7, 8, 2], group=2),
-                            BboxObject(1, 2, 3, 4, label=4, group=2),
+                            PointsObject([5, 6, 0, 7], group=2, id=2),
+                            BboxObject(1, 2, 3, 4, group=2),
                         ]),
                     DatasetItem(id=1, subset='train',
                         annotations=[
-                            PointsObject([1, 2, 0, 2, 4, 1], label=5, group=3),
+                            PointsObject([1, 2, 0, 2, 4, 1], label=5,
+                                group=3, id=3),
                             BboxObject(1, 2, 3, 4, label=5, group=3),
                         ]),
 

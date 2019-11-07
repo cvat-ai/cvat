@@ -47,7 +47,7 @@ from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
 from cvat.apps.annotation.models import AnnotationDumper, AnnotationLoader
 from cvat.apps.annotation.format import get_annotation_formats
-import cvat.apps.datumaro.task as DatumaroTask
+import cvat.apps.dataset_manager.task as DatumaroTask
 
 # Server REST API
 @login_required

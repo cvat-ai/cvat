@@ -8,10 +8,13 @@ import json
 import os
 import os.path as osp
 
+import pycocotools.mask as mask_utils
+
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import *
 from datumaro.components.formats.ms_coco import *
 from datumaro.util import find
+import datumaro.util.mask_tools as mask_tools
 
 
 def _cast(value, type, default=None):
@@ -22,6 +25,8 @@ def _cast(value, type, default=None):
 
 class _TaskConverter:
     def __init__(self):
+        self._min_ann_id = 1
+
         data = {
             'licenses': [],
             'info': {},
@@ -57,7 +62,7 @@ class _TaskConverter:
             w = 0
 
         self._data['images'].append({
-            'id': str(item.id),
+            'id': _cast(item.id, int, 0),
             'width': int(w),
             'height': int(h),
             'file_name': filename,
@@ -74,6 +79,12 @@ class _TaskConverter:
         raise NotImplementedError()
 
     def write(self, path):
+        id = self._min_ann_id
+        for item in self.annotations:
+            if item['id'] == None:
+                item['id'] = id
+                id += 1
+
         with open(path, 'w') as outfile:
             json.dump(self._data, outfile)
 
@@ -84,6 +95,12 @@ class _TaskConverter:
     @property
     def categories(self):
         return self._data['categories']
+
+    def _get_ann_id(self, annotation):
+        id = annotation.id
+        if id:
+            self._min_ann_id = max(id, self._min_ann_id)
+        return id
 
 class _InstancesConverter(_TaskConverter):
     def save_categories(self, dataset):
@@ -103,14 +120,37 @@ class _InstancesConverter(_TaskConverter):
             if ann.type != AnnotationType.bbox:
                 continue
 
+            is_crowd = ann.attributes.get('is_crowd', False)
+            segmentation = None
+            if ann.group is not None:
+                if is_crowd:
+                    segmentation = find(item.annotations, lambda x: \
+                        x.group == ann.group and x.type == AnnotationType.mask)
+                    if segmentation is not None:
+                        binary_mask = np.array(segmentation.image, dtype=np.bool)
+                        binary_mask = np.asfortranarray(binary_mask, dtype=np.uint8)
+                        segmentation = mask_utils.encode(binary_mask)
+                        area = mask_utils.area(segmentation)
+                        segmentation = mask_tools.convert_mask_to_rle(binary_mask)
+                else:
+                    segmentation = find(item.annotations, lambda x: \
+                        x.group == ann.group and x.type == AnnotationType.polygon)
+                    if segmentation is not None:
+                        area = ann.area()
+                        segmentation = [segmentation.get_points()]
+            if segmentation is None:
+                is_crowd = False
+                segmentation = [ann.get_polygon()]
+                area = ann.area()
+
             elem = {
-                'id': 1 + len(self.annotations),
-                'image_id': str(item.id),
+                'id': self._get_ann_id(ann),
+                'image_id': _cast(item.id, int, 0),
                 'category_id': _cast(ann.label, int, -1) + 1,
-                'segmentation': ann.get_polygon(),
-                'area': ann.area(),
+                'segmentation': segmentation,
+                'area': float(area),
                 'bbox': ann.get_bbox(),
-                'iscrowd': 0,
+                'iscrowd': int(is_crowd),
             }
             if 'score' in ann.attributes:
                 elem['score'] = float(ann.attributes['score'])
@@ -134,8 +174,8 @@ class _CaptionsConverter(_TaskConverter):
                 continue
 
             elem = {
-                'id': 1 + len(self.annotations),
-                'image_id': str(item.id),
+                'id': self._get_ann_id(ann),
+                'image_id': _cast(item.id, int, 0),
                 'category_id': 0, # NOTE: workaround for a bug in cocoapi
                 'caption': ann.caption,
             }
@@ -171,8 +211,8 @@ class _KeypointsConverter(_TaskConverter):
                 continue
 
             elem = {
-                'id': 1 + len(self.annotations),
-                'image_id': str(item.id),
+                'id': self._get_ann_id(ann),
+                'image_id': _cast(item.id, int, 0),
                 'category_id': _cast(ann.label, int, -1) + 1,
             }
             if 'score' in ann.attributes:
@@ -225,8 +265,8 @@ class _LabelsConverter(_TaskConverter):
                 continue
 
             elem = {
-                'id': 1 + len(self.annotations),
-                'image_id': str(item.id),
+                'id': self._get_ann_id(ann),
+                'image_id': _cast(item.id, int, 0),
                 'category_id': int(ann.label) + 1,
             }
             if 'score' in ann.attributes:

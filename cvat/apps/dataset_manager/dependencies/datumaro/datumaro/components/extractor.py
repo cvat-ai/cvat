@@ -338,8 +338,9 @@ class PointsObject(ShapeObject):
 
             if visibility is not None:
                 assert len(visibility) == len(points) // 2
-                for v in visibility:
-                    assert isinstance(v, self.Visibility)
+                for i, v in enumerate(visibility):
+                    if not isinstance(v, self.Visibility):
+                        visibility[i] = self.Visibility(v)
             else:
                 visibility = []
                 for _ in range(len(points) // 2):

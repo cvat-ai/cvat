@@ -1,7 +1,7 @@
-from collections import OrderedDict
 from datetime import timedelta
 import json
-import os, os.path as osp
+import os
+import os.path as osp
 import shutil
 import sys
 import tempfile
@@ -12,13 +12,12 @@ import django_rq
 
 from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task, Label, AttributeSpec, ShapeType
-from cvat.apps.datumaro.util import current_function_name, make_zip_archive
+from .util import current_function_name, make_zip_archive
 
-sys.path.append(osp.join(osp.dirname(__file__), 'modules'))
 from datumaro.components.project import Project
 import datumaro.components.extractor as datumaro
 
-from cvat.apps.datumaro.bindings import CvatImagesDirExtractor, CvatTaskExtractor
+from .bindings import CvatImagesDirExtractor, CvatTaskExtractor
 
 
 _MODULE_NAME = __package__ + '.' + osp.splitext(osp.basename(__file__))[0]
@@ -116,6 +115,85 @@ class TaskProject:
         categories[datumaro.AnnotationType.label] = label_categories
 
         return categories
+
+    def put_annotations(self, annotations):
+        patch = {}
+
+        categories = self._dataset.categories()
+        label_cat = categories[datumaro.AnnotationType.label]
+
+        label_map = {}
+        attr_map = {}
+        db_labels = self._db_task.label_set.all()
+        for db_label in db_labels:
+            label_map[db_label.id] = label_cat.find(db_label.name)
+
+            db_attributes = db_label.attributespec_set.all()
+            for db_attr in db_attributes:
+                attr_map[(db_label.id, db_attr.id)] = db_attr.name
+        map_label = lambda label_db_id: label_map[label_db_id]
+        map_attr = lambda label_db_id, attr_db_id: \
+            attr_map[(label_db_id, attr_db_id)]
+
+        for tag_obj in annotations['tags']:
+            item_id = str(tag_obj['frame'])
+            item_anno = patch.get(item_id, [])
+
+            anno_group = tag_obj['group']
+            if isinstance(anno_group, int):
+                anno_group = [anno_group]
+            anno_label = map_label(tag_obj['label_id'])
+            anno_attr = {}
+            for attr in tag_obj['attributes']:
+                attr_name = map_attr(tag_obj['label_id'], attr['id'])
+                anno_attr[attr_name] = attr['value']
+
+            anno = datumaro.LabelObject(label=anno_label,
+                attributes=anno_attr, groups=anno_group)
+            item_anno.append(anno)
+
+            patch[item.id] = item_anno
+
+        for shape_obj in annotations['shapes']:
+            item_id = str(shape_obj['frame'])
+            item_anno = patch.get(item_id, [])
+
+            anno_group = shape_obj['group']
+            if isinstance(anno_group, int):
+                anno_group = [anno_group]
+            anno_label = map_label(shape_obj['label_id'])
+            anno_attr = {}
+            for attr in shape_obj['attributes']:
+                attr_name = map_attr(shape_obj['label_id'], attr['id'])
+                anno_attr[attr_name] = attr['value']
+
+            anno_points = shape_obj['points']
+            if shape_obj['type'] == ShapeType.POINTS:
+                anno = datumaro.PointsObject(anno_points,
+                    label=anno_label, attributes=anno_attr, groups=anno_group)
+            elif shape_obj['type'] == ShapeType.POLYLINE:
+                anno = datumaro.PolyLineObject(anno_points,
+                    label=anno_label, attributes=anno_attr, groups=anno_group)
+            elif shape_obj['type'] == ShapeType.POLYGON:
+                anno = datumaro.PolygonObject(anno_points,
+                    label=anno_label, attributes=anno_attr, groups=anno_group)
+            elif shape_obj['type'] == ShapeType.RECTANGLE:
+                x0, y0, x1, y1 = anno_points
+                anno = datumaro.BboxObject(x0, y0, x1 - x0, y1 - y0,
+                    label=anno_label, attributes=anno_attr, groups=anno_group)
+            else:
+                raise Exception("Unknown shape type '%s'" % (shape_obj['type']))
+
+            item_anno.append(anno)
+
+            patch[item.id] = item_anno
+
+        # TODO: support track annotations
+
+        patch = [datumaro.DatasetItem(id=id, annotations=anno) \
+            for id, anno in patch.items()]
+
+        self._dataset.update(patch)
 
     def save(self, save_dir=None, save_images=False):
         if self._dataset is not None:

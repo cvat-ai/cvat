@@ -9,10 +9,32 @@ import os
 import os.path as osp
 
 from pycocotools.coco import COCO
+import pycocotools.mask as mask_utils
 
 from datumaro.components.extractor import *
 from datumaro.components.formats.ms_coco import *
 from datumaro.util.image import lazy_image
+
+
+class RleMask(MaskObject):
+    def __init__(self, rle=None, label=None,
+            id=None, attributes=None, group=None):
+        lazy_decode = lambda: mask_utils.decode(rle).astype(np.bool)
+        super().__init__(image=lazy_decode, label=label,
+            id=id, attributes=attributes, group=group)
+
+        self._rle = rle
+
+    def area(self):
+        return mask_utils.area(self._rle)
+
+    def bbox(self):
+        return mask_utils.toBbox(self._rle)
+
+    def __eq__(self, other):
+        if not isinstance(other, __class__):
+            return super().__eq__(other)
+        return self._rle == other._rle
 
 
 class CocoExtractor(Extractor):
@@ -138,11 +160,13 @@ class CocoExtractor(Extractor):
 
     def _get(self, id, subset):
         file_name = None
+        image_info = None
         image = None
         annotations = []
         for ann_type, loader in self._subsets[subset].loaders.items():
             if image is None:
-                file_name = loader.loadImgs(id)[0]['file_name']
+                image_info = loader.loadImgs(id)[0]
+                file_name = image_info['file_name']
                 if file_name != '':
                     file_path = osp.join(
                         self._path, CocoPath.IMAGES_DIR, subset, file_name)
@@ -153,17 +177,18 @@ class CocoExtractor(Extractor):
             anns = loader.loadAnns(annIds)
 
             for ann in anns:
-                self._parse_annotation(ann, ann_type, annotations)
+                self._parse_annotation(ann, ann_type, annotations, image_info)
         return DatasetItem(id=id, subset=subset,
             image=image, annotations=annotations)
 
     def _parse_label(self, ann):
         cat_id = ann.get('category_id')
-        if cat_id not in [0, None]:
-            return self._label_map[cat_id]
-        return cat_id
+        if cat_id in [0, None]:
+            return None
+        return self._label_map[cat_id]
 
-    def _parse_annotation(self, ann, type, parsed_annotations):
+    def _parse_annotation(self, ann, type, parsed_annotations,
+            image_info=None):
         id = ann.get('id')
         attributes = {}
         if 'score' in ann:
@@ -172,9 +197,43 @@ class CocoExtractor(Extractor):
         if type is CocoAnnotationType.instances:
             x, y, w, h = ann['bbox']
             label_id = self._parse_label(ann)
+            group = None
+
+            is_crowd = bool(ann['iscrowd'])
+            attributes['is_crowd'] = is_crowd
+
+            segmentation = ann.get('segmentation')
+            if segmentation is not None:
+                group = id
+
+                if isinstance(segmentation, list):
+                    # polygon -- a single object might consist of multiple parts
+                    for polygon_points in segmentation:
+                        parsed_annotations.append(PolygonObject(
+                            points=polygon_points, label=label_id,
+                            group=group
+                        ))
+
+                    # we merge all parts into one mask RLE code
+                    img_h = image_info['height']
+                    img_w = image_info['width']
+                    rles = mask_utils.frPyObjects(segmentation, img_h, img_w)
+                    rle = mask_utils.merge(rles)
+                elif isinstance(segmentation['counts'], list):
+                    # uncompressed RLE
+                    img_h, img_w = segmentation['size']
+                    rle = mask_utils.frPyObjects([segmentation], img_h, img_w)[0]
+                else:
+                    # compressed RLE
+                    rle = segmentation
+
+                parsed_annotations.append(RleMask(rle=rle, label=label_id,
+                    group=group
+                ))
+
             parsed_annotations.append(
                 BboxObject(x, y, w, h, label=label_id,
-                    id=id, attributes=attributes)
+                    id=id, attributes=attributes, group=group)
             )
         elif type is CocoAnnotationType.labels:
             label_id = self._parse_label(ann)
@@ -184,13 +243,13 @@ class CocoExtractor(Extractor):
             )
         elif type is CocoAnnotationType.person_keypoints:
             keypoints = ann['keypoints']
-            points = [p for i, p in enumerate(keypoints) if i % 3 != 0]
-            visibility = [PointsObject.Visibility(p) for p in keypoints[2::3]]
+            points = [p for i, p in enumerate(keypoints) if i % 3 != 2]
+            visibility = keypoints[2::3]
             bbox = ann.get('bbox')
             label_id = self._parse_label(ann)
             group = None
             if bbox is not None:
-                group = len(parsed_annotations)
+                group = id
             parsed_annotations.append(
                 PointsObject(points, visibility, label=label_id,
                     id=id, attributes=attributes, group=group)
