@@ -212,8 +212,9 @@ class VideoExtractor(IMediaExtractor):
 
         def decode_frames(container):
             for packet in container.demux():
-                for frame in packet.decode():
-                    yield frame
+                if packet.stream.type == 'video':
+                    for frame in packet.decode():
+                        yield frame
 
         def generate_chunks(container, count):
             it = itertools.islice(decode_frames(container), self._start, self._stop if self._stop else None)
