@@ -121,10 +121,19 @@
                             if (!provider.isNextChunkExists(this.number)){
                                 const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
                                 provider.setReadyToLoading(nextChunkNumber);
-                                serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
-                                    provider.requestDecodeBlock(nextChunk, (nextChunkNumber) * chunkSize, (nextChunkNumber + 1) * chunkSize - 1,
-                                                                function(){}, rejectRequest.bind(this, provider));
-                                });
+
+                                const start = nextChunkNumber * chunkSize;
+                                const stop = (nextChunkNumber + 1) * chunkSize - 1;
+                                if (!provider.is_chunk_cached(start, stop)){
+                                    serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
+                                        provider.requestDecodeBlock(nextChunk, start, stop,
+                                                                    onDecode.bind(this, provider), rejectRequest.bind(this, provider));
+                                    });
+                                } else {
+                                    provider.requestDecodeBlock(null, start, stop,
+                                                                    onDecode.bind(this, provider), rejectRequest.bind(this, provider));
+                                }
+
                             }
                         }
                         resolve(frame);
