@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from itertools import product
+
 from django.test import TestCase
 
 # Create your tests here.
@@ -20,10 +22,10 @@ class GitUrlTest(TestCase):
             try:
                 actual = Git._parse_url(git)
                 self.assertEqual(expected, actual, "URL #%s: '%s'" % (i, url))
-            except Exception as e:
+            except Exception:
                 self.assertFalse(True, "URL #%s: '%s'" % (i, url))
 
-    def test_http_url(self):
+    def test_correct_urls_can_be_parsed(self):
         hosts = ['host.zone', '1.2.3.4']
         ports = ['', ':42']
         repo_groups = ['repo', 'r4p0']
@@ -34,30 +36,18 @@ class GitUrlTest(TestCase):
 
         # http samples
         protocols = ['', 'http://', 'https://']
-        for prot in protocols:
-            for h in hosts:
-                for p in ports:
-                    for rg in repo_groups:
-                        for repo in repo_repos:
-                            for suffix in git_suffixes:
-                                url = '{prot}{host}{port}/{rg}/{repo}{git}'.format(
-                                    prot=prot, host=h, port=p, rg=rg, repo=repo, git=suffix
-                                )
-                                expected = ('git', h + p, '%s/%s.git' % (rg, repo))
-                                samples.append((expected, url))
+        for protocol, host, port, repo_group, repo, git in product(
+                protocols, hosts, ports, repo_groups, repo_repos, git_suffixes):
+            url = '{protocol}{host}{port}/{repo_group}/{repo}{git}'.format(**locals())
+            expected = ('git', host + port, '%s/%s.git' % (repo_group, repo))
+            samples.append((expected, url))
 
         # git samples
         users = ['user', 'u123_.']
-        for u in users:
-            for h in hosts:
-                for p in ports:
-                    for rg in repo_groups:
-                        for repo in repo_repos:
-                            for suffix in git_suffixes:
-                                url = '{user}@{host}{port}:{rg}/{repo}{git}'.format(
-                                    user=u, host=h, port=p, rg=rg, repo=repo, git=suffix
-                                )
-                                expected = (u, h + p, '%s/%s.git' % (rg, repo))
-                                samples.append((expected, url))
+        for user, host, port, repo_group, repo, git in product(
+                users, hosts, ports, repo_groups, repo_repos, git_suffixes):
+            url = '{user}@{host}{port}:{repo_group}/{repo}{git}'.format(**locals())
+            expected = (user, host + port, '%s/%s.git' % (repo_group, repo))
+            samples.append((expected, url))
 
         self._check_correct_urls(samples)

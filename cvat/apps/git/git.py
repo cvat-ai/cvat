@@ -76,7 +76,7 @@ class Git:
     # HTTP/HTTPS: [http://]github.com/proj/repos[.git]
     def _parse_url(self):
         try:
-            # Almost STD66 (RFC3986), but schema can include leading digit
+            # Almost STD66 (RFC3986), but schema can include a leading digit
             # Reference on URL formats accepted by Git:
             # https://github.com/git/git/blob/77bd3ea9f54f1584147b594abc04c26ca516d987/url.c
 
