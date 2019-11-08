@@ -3,7 +3,6 @@ import json
 import os
 import os.path as osp
 import shutil
-import sys
 import tempfile
 from urllib.parse import urlsplit
 
@@ -11,7 +10,7 @@ from django.utils import timezone
 import django_rq
 
 from cvat.apps.engine.log import slogger
-from cvat.apps.engine.models import Task, Label, AttributeSpec, ShapeType
+from cvat.apps.engine.models import Task, ShapeType
 from .util import current_function_name, make_zip_archive
 
 from datumaro.components.project import Project
@@ -149,7 +148,7 @@ class TaskProject:
                 anno_attr[attr_name] = attr['value']
 
             anno = datumaro.LabelObject(label=anno_label,
-                attributes=anno_attr, groups=anno_group)
+                attributes=anno_attr, group=anno_group)
             item_anno.append(anno)
 
             patch[item.id] = item_anno
@@ -170,17 +169,17 @@ class TaskProject:
             anno_points = shape_obj['points']
             if shape_obj['type'] == ShapeType.POINTS:
                 anno = datumaro.PointsObject(anno_points,
-                    label=anno_label, attributes=anno_attr, groups=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group)
             elif shape_obj['type'] == ShapeType.POLYLINE:
                 anno = datumaro.PolyLineObject(anno_points,
-                    label=anno_label, attributes=anno_attr, groups=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group)
             elif shape_obj['type'] == ShapeType.POLYGON:
                 anno = datumaro.PolygonObject(anno_points,
-                    label=anno_label, attributes=anno_attr, groups=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group)
             elif shape_obj['type'] == ShapeType.RECTANGLE:
                 x0, y0, x1, y1 = anno_points
                 anno = datumaro.BboxObject(x0, y0, x1 - x0, y1 - y0,
-                    label=anno_label, attributes=anno_attr, groups=anno_group)
+                    label=anno_label, attributes=anno_attr, group=anno_group)
             else:
                 raise Exception("Unknown shape type '%s'" % (shape_obj['type']))
 
@@ -319,7 +318,7 @@ def export_project(task_id, user, format=None, server_url=None):
                         cleaning_job.id, CACHE_TTL))
 
         return archive_path
-    except Exception as ex:
+    except Exception:
         log_exception(slogger.task[task_id])
         raise
 
@@ -330,6 +329,6 @@ def clear_export_cache(task_id, file_path, file_ctime):
             slogger.task[task_id].info(
                 "Export cache file '{}' successfully removed" \
                 .format(file_path))
-    except Exception as ex:
+    except Exception:
         log_exception(slogger.task[task_id])
         raise

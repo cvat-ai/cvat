@@ -3,9 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 from enum import Enum
-from functools import reduce
 import numpy as np
 
 
@@ -511,9 +510,9 @@ class DatasetIteratorWrapper(_ExtractorBase):
     def categories(self):
         return self._categories
 
-    def select(self, func):
+    def select(self, filter):
         return DatasetIteratorWrapper(
-            _DatasetFilter(self, func), self.categories())
+            _DatasetFilter(self, filter), self.categories())
 
 class Extractor(_ExtractorBase):
     def __init__(self, length=None):
@@ -522,6 +521,6 @@ class Extractor(_ExtractorBase):
     def categories(self):
         return {}
 
-    def select(self, func):
+    def select(self, filter):
         return DatasetIteratorWrapper(
-            _DatasetFilter(self, func), self.categories())
+            _DatasetFilter(self, filter), self.categories())

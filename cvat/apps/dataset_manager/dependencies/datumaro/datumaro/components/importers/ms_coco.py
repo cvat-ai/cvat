@@ -7,9 +7,7 @@ from collections import defaultdict
 import os
 import os.path as osp
 
-from datumaro.components.config import Config
 from datumaro.components.formats.ms_coco import *
-from datumaro.util import dir_items
 
 
 class CocoImporter:

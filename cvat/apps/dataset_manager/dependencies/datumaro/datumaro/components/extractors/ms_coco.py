@@ -155,8 +155,8 @@ class CocoExtractor(Extractor):
     def subsets(self):
         return list(self._subsets)
 
-    def get_subset(self, subset_name):
-        return self._subsets[subset_name]
+    def get_subset(self, name):
+        return self._subsets[name]
 
     def _get(self, id, subset):
         file_name = None

@@ -8,7 +8,7 @@ from datumaro.components.project import Source, Model
 from datumaro.components.launcher import Launcher, InferenceWrapper
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import Extractor, DatasetItem, LabelObject
-from datumaro.components.config import Config, DefaultConfig, Schema, SchemaBuilder
+from datumaro.components.config import Config, DefaultConfig, SchemaBuilder
 from datumaro.components.dataset_filter import XPathDatasetFilter
 from datumaro.util.test_utils import *
 

@@ -1,19 +1,13 @@
-import os
-import os.path as osp
-
 from unittest import TestCase
 
-from datumaro.components.project import Project, Environment
 from datumaro.components.extractor import *
 from datumaro.components.comparator import Comparator
-from datumaro.components.config import Config, DefaultConfig
 from datumaro.util.test_utils import *
 
 
 class DiffTest(TestCase):
     def test_no_bbox_diff_with_same_item(self):
         detections = 3
-        class_count = 2
         anns = [
             BboxObject(i * 10, 10, 10, 10, label=i,
                     attributes={'score': (1.0 + i) / detections}) \
@@ -108,7 +102,6 @@ class DiffTest(TestCase):
 
     def test_no_label_diff_with_same_item(self):
         detections = 3
-        class_count = 2
         anns = [
             LabelObject(i, attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections)
@@ -128,7 +121,6 @@ class DiffTest(TestCase):
             len(matches))
 
     def test_can_find_wrong_label(self):
-        class_count = 2
         item1 = DatasetItem(id=1, annotations=[
             LabelObject(0),
             LabelObject(1),

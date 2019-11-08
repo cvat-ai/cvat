@@ -3,10 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import argparse
-import logging as log
-import os
-import os.path as osp
 import yaml
 
 

@@ -6,9 +6,7 @@
 import os
 import os.path as osp
 
-from datumaro.components.config import Config
 from datumaro.components.formats.voc import *
-import datumaro.components.extractors as extractors
 from datumaro.util import find
 
 

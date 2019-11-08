@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import cv2
-from itertools import chain
 import json
 import os
 import os.path as osp

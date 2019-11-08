@@ -20,7 +20,6 @@ with warnings.catch_warnings():
     _formats.append('tensorboard')
 
 from datumaro.components.extractor import *
-from datumaro.components.comparator import Comparator
 
 
 Format = Enum('Formats', _formats)

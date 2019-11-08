@@ -33,7 +33,7 @@ def create_command(args):
         project.get_source(name)
         log.fatal("Source '%s' already exists" % (name))
         return 1
-    except KeyError as e:
+    except KeyError:
         pass
 
     dst_dir = osp.join(config.project_dir, config.sources_dir, name)
@@ -74,7 +74,6 @@ def build_import_parser(parser):
 
 def import_command(args):
     project = load_project(args.project_dir)
-    config = project.config
 
     if args.source_type == 'repo':
         name = args.name
@@ -89,7 +88,7 @@ def import_command(args):
             project.get_source(name)
             log.fatal("Source '%s' already exists" % (name))
             return 1
-        except KeyError as e:
+        except KeyError:
             pass
 
         dst_dir = project.local_source_dir(name)
@@ -118,7 +117,7 @@ def import_command(args):
             project.get_source(name)
             log.fatal("Source '%s' already exists" % (name))
             return 1
-        except KeyError as e:
+        except KeyError:
             pass
 
         dst_dir = url
@@ -150,7 +149,6 @@ def build_remove_parser(parser):
 
 def remove_command(args):
     project = load_project(args.project_dir)
-    config = project.config
 
     name = args.name
     if name is None:
@@ -161,7 +159,7 @@ def remove_command(args):
         if args.force:
             log.warning("Forcefully removing the '%s' source..." % (name))
 
-        project.env.git.remove_submodule(force=args.force)
+        project.env.git.remove_submodule(name, force=args.force)
 
     project.remove_source(name)
     project.save()

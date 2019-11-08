@@ -5,7 +5,6 @@
 
 from collections import defaultdict
 import json
-import numpy as np
 import os
 import os.path as osp
 
@@ -195,8 +194,8 @@ class DatumaroExtractor(Extractor):
     def subsets(self):
         return list(self._subsets)
 
-    def get_subset(self, subset_name):
-        return self._subsets[subset_name]
+    def get_subset(self, name):
+        return self._subsets[name]
 
     def _find_subsets(self, path):
         anno_dir = osp.join(path, DatumaroPath.ANNOTATIONS_DIR)

@@ -1,11 +1,7 @@
-import os
-import os.path as osp
-
 from unittest import TestCase
 
-from datumaro.components.project import Project, Environment
+from datumaro.components.project import Project
 from datumaro.components.extractor import *
-from datumaro.components.config import Config
 
 
 class ExtractorTest(TestCase):

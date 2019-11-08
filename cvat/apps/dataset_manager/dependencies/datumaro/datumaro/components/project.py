@@ -440,8 +440,8 @@ class ProjectDataset(Extractor):
                 self._subsets.values(), 0)
         return self._length
 
-    def get_subset(self, subset_name):
-        return self._subsets[subset_name]
+    def get_subset(self, name):
+        return self._subsets[name]
 
     def subsets(self):
         return list(self._subsets)

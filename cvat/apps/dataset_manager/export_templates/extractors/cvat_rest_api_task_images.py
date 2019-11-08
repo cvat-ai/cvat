@@ -57,7 +57,7 @@ class cvat_rest_api_task_images(datumaro.Extractor):
 
             self._session = session
             self._cvat_cli = cli
-        except Exception as e:
+        except Exception:
             if session is not None:
                 session.close()
 

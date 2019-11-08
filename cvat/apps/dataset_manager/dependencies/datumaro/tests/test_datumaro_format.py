@@ -1,8 +1,5 @@
-import json
 from itertools import zip_longest
 import numpy as np
-import os
-import os.path as osp
 
 from unittest import TestCase
 
@@ -10,7 +7,6 @@ from datumaro.components.project import Project
 from datumaro.components.extractor import *
 from datumaro.components.converters.datumaro import *
 from datumaro.util.test_utils import *
-from datumaro.util import find
 from datumaro.util.mask_tools import generate_colormap
 
 
