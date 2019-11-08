@@ -25,6 +25,7 @@ https://github.com/opencv/cvat/issues/750).
 
 ### Fixed
 - [Mask problem on coco json style](https://github.com/opencv/cvat/issues/718)
+- [Exception in Git plugin](https://github.com/opencv/cvat/issues/826)
 
 ### Security
 -

@@ -134,7 +134,7 @@
                 "test",
                 "--settings",
                 "cvat.settings.testing",
-                "cvat/apps/engine",
+                "cvat/apps",
                 "utils/cli"
             ],
             "django": true,
