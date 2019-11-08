@@ -96,7 +96,6 @@ def load(file_object, annotations):
             # MOT doesn't support the outside flag so we duplicate each
             # track's last shape, increment frame_id and set outside=True
             # to end the track
-            last = list(track.shapes[-1])
             last = annotations.TrackedShape(
                 type=track.shapes[-1].type,
                 points=track.shapes[-1].points,
