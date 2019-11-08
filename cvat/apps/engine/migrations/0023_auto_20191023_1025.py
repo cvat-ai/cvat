@@ -59,7 +59,7 @@ def create_data_objects(apps, schema_editor):
             # compressed images
             old_task_data_dir = os.path.join(old_db_task_dir, 'data')
             if os.path.isdir(old_task_data_dir):
-                shutil.copytree(old_task_data_dir, compressed_cache_dir, symlinks=False)
+                shutil.copytree(old_task_data_dir, compressed_cache_dir, symlinks=False, ignore_dangling_symlinks=True)
 
                 # prepare *.list chunks
                 for chunk_idx, start_frame in enumerate(range(0, db_data.size, db_data.chunk_size)):
