@@ -38,7 +38,10 @@ class GitUrlTest(TestCase):
         protocols = ['', 'http://', 'https://']
         for protocol, host, port, repo_group, repo, git in product(
                 protocols, hosts, ports, repo_groups, repo_repos, git_suffixes):
-            url = '{protocol}{host}{port}/{repo_group}/{repo}{git}'.format(**locals())
+            url = '{protocol}{host}{port}/{repo_group}/{repo}{git}'.format(
+                protocol=protocol, host=host, port=port,
+                repo_group=repo_group, repo=repo, git=git
+            )
             expected = ('git', host + port, '%s/%s.git' % (repo_group, repo))
             samples.append((expected, url))
 
@@ -46,7 +49,10 @@ class GitUrlTest(TestCase):
         users = ['user', 'u123_.']
         for user, host, port, repo_group, repo, git in product(
                 users, hosts, ports, repo_groups, repo_repos, git_suffixes):
-            url = '{user}@{host}{port}:{repo_group}/{repo}{git}'.format(**locals())
+            url = '{user}@{host}{port}:{repo_group}/{repo}{git}'.format(
+                user=user, host=host, port=port,
+                repo_group=repo_group, repo=repo, git=git
+            )
             expected = (user, host + port, '%s/%s.git' % (repo_group, repo))
             samples.append((expected, url))
 
