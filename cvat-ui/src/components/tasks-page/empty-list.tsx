@@ -8,7 +8,7 @@ import {
     Icon,
 } from 'antd';
 
-export default function EmptyList() {
+export default function EmptyListComponent() {
     const emptyTasksIcon = () => (<img src='/assets/empty-tasks-icon.svg'/>);
 
     return (

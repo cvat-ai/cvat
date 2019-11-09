@@ -28,6 +28,7 @@ module.exports = {
         '@typescript-eslint/indent': ['warn', 4],
         '@typescript-eslint/no-explicit-any': [0],
         'no-restricted-syntax': [0, {'selector': 'ForOfStatement'}],
+        'no-plusplus': [0],
     },
     'settings': {
         'import/resolver': {

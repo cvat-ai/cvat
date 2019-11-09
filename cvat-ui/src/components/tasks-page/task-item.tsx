@@ -1,4 +1,6 @@
 import React from 'react';
+import { RouteComponentProps } from 'react-router';
+import { withRouter } from 'react-router-dom';
 
 import Text from 'antd/lib/typography/Text';
 import {
@@ -7,68 +9,82 @@ import {
     Button,
     Icon,
     Progress,
-    Menu,
     Dropdown,
 } from 'antd';
 
 import moment from 'moment';
 
+import ActionsMenu from '../actions-menu/actions-menu';
+
 export interface TaskItemProps {
-    task: any;
-    preview: string;
+    installedTFAnnotation: boolean;
+    installedAutoAnnotation: boolean;
+    taskInstance: any;
+    previewImage: string;
+    dumpActivities: string[] | null;
+    loadActivity: string | null;
+    loaders: any[];
+    dumpers: any[];
+    deleted: boolean;
+    onDeleteTask: (taskInstance: any) => void;
+    onDumpAnnotation: (task: any, dumper: any) => void;
+    onLoadAnnotation: (task: any, loader: any, file: File) => void;
 }
 
-export default function TaskItem(props: TaskItemProps) {
-    // Task info
-    const task = props.task;
-    const id = task.id;
-    const owner = task.owner? task.owner.username : undefined;
-    const updated = moment(task.updatedDate).fromNow();
-    const created = moment(task.createdDate).format('MMMM Do YYYY');
-    const preview = props.preview;
+class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps> {
+    constructor(props: TaskItemProps & RouteComponentProps) {
+        super(props);
+    }
 
-    // Get and truncate a task name
-    let name = task.name;
-    name = `${name.substring(0, 70)}${name.length > 70 ? '...' : ''}`;
-
-    // Count number of jobs and performed jobs
-    const numOfJobs = task.jobs.length;
-    const numOfCompleted = task.jobs.filter(
-        (job: any) => job.status === 'completed'
-    ).length;
-
-    // Progress appearence depends on number of jobs
-    const progressColor = numOfCompleted === numOfJobs ? 'cvat-task-completed-progress':
-        numOfCompleted ? 'cvat-task-progress-progress' : 'cvat-task-pending-progress';
-
-    const subMenuIcon = () => (<img src='/assets/icon-sub-menu.svg'/>);
-
-    // Menu
-    const menu = (
-        <Menu className='cvat-task-item-menu'>
-            <Menu.Item key='dump'>Dump annotations</Menu.Item>
-            <Menu.Item key='upload'>Upload annotations</Menu.Item>
-            <Menu.Item key='tracker'>Open bug tracker</Menu.Item>
-            <Menu.Item key='auto'>Run auto annotation</Menu.Item>
-            <Menu.Item key='tf'>Run TF annotation</Menu.Item>
-            <hr/>
-            <Menu.Item key='update'>Update</Menu.Item>
-            <Menu.Item key='delete'>Delete</Menu.Item>
-        </Menu>
-      );
-
-    return (
-        <Row className='cvat-tasks-list-item' type='flex' justify='center' align='top'>
+    private renderPreview() {
+        return (
             <Col span={4}>
-                <div className='cvat-task-preview-wrapper'>
-                    <img alt='Preview' className='cvat-task-preview' src={preview}/>
+                <div className='cvat-task-item-preview-wrapper'>
+                    <img alt='Preview' className='cvat-task-item-preview' src={this.props.previewImage}/>
                 </div>
             </Col>
+        )
+    }
+
+    private renderDescription() {
+    // Task info
+        const task = this.props.taskInstance;
+        const { id } = task;
+        const owner = task.owner ? task.owner.username : null;
+        const updated = moment(task.updatedDate).fromNow();
+        const created = moment(task.createdDate).format('MMMM Do YYYY');
+
+        // Get and truncate a task name
+        const name = `${task.name.substring(0, 70)}${task.name.length > 70 ? '...' : ''}`;
+
+        return (
             <Col span={10}>
-                <Text strong> {id} {name} </Text> <br/>
-                <Text type='secondary'> Created { owner? 'by ' + owner : '' } on {created} </Text> <br/>
+                <Text strong>{`${id} ${name}`}</Text> <br/>
+                { owner ?
+                    <>
+                        <Text type='secondary'>
+                            Created { owner ? 'by ' + owner : '' } on {created}
+                        </Text> <br/>
+                    </> : null
+                }
                 <Text type='secondary'> Last updated {updated} </Text>
             </Col>
+        )
+    }
+
+    private renderProgress() {
+        const task = this.props.taskInstance;
+        // Count number of jobs and performed jobs
+        const numOfJobs = task.jobs.length;
+        const numOfCompleted = task.jobs.filter(
+            (job: any) => job.status === 'completed'
+        ).length;
+
+        // Progress appearence depends on number of jobs
+        const progressColor = numOfCompleted === numOfJobs ? 'cvat-task-completed-progress':
+            numOfCompleted ? 'cvat-task-progress-progress' : 'cvat-task-pending-progress';
+
+        return (
             <Col span={6}>
                 <Row type='flex' justify='space-between' align='top'>
                     <Col>
@@ -83,7 +99,7 @@ export default function TaskItem(props: TaskItemProps) {
                         }
                     </Col>
                     <Col>
-                        <Text type='secondary'> {numOfCompleted} of {numOfJobs} jobs </Text>
+                        <Text type='secondary'>{`${numOfCompleted} of ${numOfJobs} jobs`}</Text>
                     </Col>
                 </Row>
                 <Row>
@@ -97,21 +113,63 @@ export default function TaskItem(props: TaskItemProps) {
                         />
                 </Row>
             </Col>
+        )
+    }
+
+    private renderNavigation() {
+        const subMenuIcon = () => (<img src='/assets/icon-sub-menu.svg'/>);
+        const { id } = this.props.taskInstance;
+
+        return (
             <Col span={4}>
                 <Row type='flex' justify='end'>
                     <Col>
-                        <Button type='primary' size='large' ghost> Open </Button>
+                        <Button type='primary' size='large' ghost onClick={
+                            () => this.props.history.push(`/tasks/${id}`)
+                        }> Open </Button>
                     </Col>
                 </Row>
                 <Row type='flex' justify='end'>
                     <Col>
-                        <Text style={{color: 'black'}}> Actions </Text>
-                        <Dropdown overlay={menu}>
+                        <Text className='cvat-black-color'> Actions </Text>
+                        <Dropdown overlay={
+                            ActionsMenu({
+                                taskInstance: this.props.taskInstance,
+                                loaders: this.props.loaders,
+                                dumpers: this.props.dumpers,
+                                loadActivity: this.props.loadActivity,
+                                dumpActivities: this.props.dumpActivities,
+                                installedTFAnnotation: this.props.installedTFAnnotation,
+                                installedAutoAnnotation: this.props.installedAutoAnnotation,
+                                onLoadAnnotation: this.props.onLoadAnnotation,
+                                onDumpAnnotation: this.props.onDumpAnnotation,
+                                onDeleteTask: this.props.onDeleteTask,
+                            })
+                        }>
                             <Icon className='cvat-task-item-menu-icon' component={subMenuIcon}/>
                         </Dropdown>
                     </Col>
                 </Row>
             </Col>
-        </Row>
-    )
+        )
+    }
+
+    public render() {
+        const style = {};
+        if (this.props.deleted) {
+            (style as any).pointerEvents = 'none';
+            (style as any).opacity = 0.5;
+        }
+
+        return (
+            <Row className='cvat-tasks-list-item' type='flex' justify='center' align='top' style={{...style}}>
+                {this.renderPreview()}
+                {this.renderDescription()}
+                {this.renderProgress()}
+                {this.renderNavigation()}
+            </Row>
+        )
+    };
 }
+
+export default withRouter(TaskItemComponent);

@@ -81,7 +81,7 @@ def dump(file_object, annotations):
             'image/height': int64_feature(height),
             'image/width': int64_feature(width),
             'image/filename': bytes_feature(image_name.encode('utf8')),
-            'image/source_id': int64_feature(img_id),
+            'image/source_id': bytes_feature(str(img_id).encode('utf8')),
             'image/object/bbox/xmin': float_list_feature(xmins),
             'image/object/bbox/xmax': float_list_feature(xmaxs),
             'image/object/bbox/ymin': float_list_feature(ymins),
@@ -138,7 +138,7 @@ def load(file_object, annotations):
         dataset = tf.data.TFRecordDataset(filenames)
         image_feature_description = {
             'image/filename': tf.io.FixedLenFeature([], tf.string),
-            'image/source_id': tf.io.FixedLenFeature([], tf.int64),
+            'image/source_id': tf.io.FixedLenFeature([], tf.string),
             'image/height': tf.io.FixedLenFeature([], tf.int64),
             'image/width': tf.io.FixedLenFeature([], tf.int64),
             # Object boxes and classes.
@@ -152,7 +152,7 @@ def load(file_object, annotations):
 
         for record in dataset:
             parsed_record = tf.io.parse_single_example(record, image_feature_description)
-            frame_number = tf.cast(parsed_record['image/source_id'], tf.int64).numpy().item()
+            frame_number = annotations.match_frame(parsed_record['image/filename'].numpy().decode('utf-8'))
             frame_height = tf.cast(parsed_record['image/height'], tf.int64).numpy().item()
             frame_width = tf.cast(parsed_record['image/width'], tf.int64).numpy().item()
             xmins = tf.sparse.to_dense(parsed_record['image/object/bbox/xmin']).numpy()

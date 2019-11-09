@@ -129,7 +129,7 @@ describe('Feature: save a task', () => {
             }],
         });
 
-        result[0].labels = [newLabel];
+        result[0].labels = [...result[0].labels, newLabel];
         result[0].save();
 
         result = await window.cvat.tasks.get({

@@ -25,7 +25,7 @@ export default (state = defaultState, action: AnyAction): AuthState => {
             return {
                 ...state,
                 initialized: true,
-                authError: action.payload.authError,
+                authError: action.payload.error,
             };
         case AuthActionTypes.LOGIN_SUCCESS:
             return {
@@ -37,7 +37,7 @@ export default (state = defaultState, action: AnyAction): AuthState => {
             return {
                 ...state,
                 user: null,
-                loginError: action.payload.loginError,
+                loginError: action.payload.error,
             };
         case AuthActionTypes.LOGOUT_SUCCESS:
             return {
@@ -48,7 +48,7 @@ export default (state = defaultState, action: AnyAction): AuthState => {
         case AuthActionTypes.LOGOUT_FAILED:
             return {
                 ...state,
-                logoutError: action.payload.logoutError,
+                logoutError: action.payload.error,
             };
         case AuthActionTypes.REGISTER_SUCCESS:
             return {
@@ -60,7 +60,7 @@ export default (state = defaultState, action: AnyAction): AuthState => {
             return {
                 ...state,
                 user: null,
-                registerError: action.payload.registerError,
+                registerError: action.payload.error,
             };
         default:
             return state;
