@@ -116,27 +116,26 @@ class CvatTaskExtractor(datumaro.Extractor):
         label_cat = categories[datumaro.AnnotationType.label]
 
         label_map = {}
-        attr_map = {}
+        label_attrs = {}
         db_labels = self._db_task.label_set.all()
         for db_label in db_labels:
             label_map[db_label.name] = label_cat.find(db_label.name)[0]
 
+            attrs = {}
             db_attributes = db_label.attributespec_set.all()
             for db_attr in db_attributes:
-                attr_map[(db_label.name, db_attr.id)] = db_attr.name
+                attrs[db_attr.name] = db_attr.default_value
+            label_attrs[db_label.name] = attrs
         map_label = lambda label_db_name: label_map[label_db_name]
-        map_attr = lambda label_db_name, attr_db_id: \
-            attr_map[(label_db_name, attr_db_id)]
 
         for tag_obj in cvat_anno.tags:
             anno_group = tag_obj.group
             if isinstance(anno_group, int):
                 anno_group = anno_group
             anno_label = map_label(tag_obj.label)
-            anno_attr = {}
+            anno_attr = dict(label_attrs[tag_obj.label])
             for attr in tag_obj.attributes:
-                attr_name = map_attr(tag_obj.label, attr.id)
-                anno_attr[attr_name] = attr.value
+                anno_attr[attr.name] = attr.value
 
             anno = datumaro.LabelObject(label=anno_label,
                 attributes=anno_attr, group=anno_group)
@@ -147,10 +146,9 @@ class CvatTaskExtractor(datumaro.Extractor):
             if isinstance(anno_group, int):
                 anno_group = anno_group
             anno_label = map_label(shape_obj.label)
-            anno_attr = {}
+            anno_attr = dict(label_attrs[shape_obj.label])
             for attr in shape_obj.attributes:
-                attr_name = map_attr(shape_obj.label, attr.id)
-                anno_attr[attr_name] = attr.value
+                anno_attr[attr.name] = attr.value
 
             anno_points = shape_obj.points
             if shape_obj.type == ShapeType.POINTS:
