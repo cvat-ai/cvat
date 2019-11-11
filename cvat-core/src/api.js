@@ -116,6 +116,20 @@ function build() {
                 return result;
             },
             /**
+                * Method returns available dataset export formats
+                * @method exportFormats
+                * @async
+                * @memberof module:API.cvat.server
+                * @returns {module:String[]}
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async datasetExportFormats() {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.server.datasetExportFormats);
+                return result;
+            },
+            /**
                 * Method allows to register on a server
                 * @method register
                 * @async

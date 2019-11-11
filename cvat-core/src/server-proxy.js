@@ -101,6 +101,22 @@
                 return response.data;
             }
 
+            async function datasetExportFormats() {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/server/annotation/dataset_export_formats`, {
+                        proxy: config.proxy,
+                    });
+                    response = JSON.parse(response.data);
+                } catch (errorData) {
+                    throw generateError(errorData, 'Could not get export formats from the server');
+                }
+
+                return response;
+            }
+
             async function register(username, firstName, lastName, email, password1, password2) {
                 let response = null;
                 try {
@@ -221,6 +237,31 @@
                 } catch (errorData) {
                     throw generateError(errorData, 'Could not delete the task from the server');
                 }
+            }
+
+            async function exportDataset(id, format) {
+                const { backendAPI } = config;
+                let url = `${backendAPI}/tasks/${id}/export?format=${format}`;
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios
+                                .get(`${url}`, {
+                                    proxy: config.proxy,
+                                });
+                            url = `${url}&action=download`;
+                            resolve(url);
+                        } catch (errorData) {
+                            reject(generateError(
+                                errorData,
+                                `Failed to export the task ${id} as a dataset`,
+                            ));
+                        }
+                    }
+
+                    setTimeout(request);
+                });
             }
 
             async function createTask(taskData, files, onUpdate) {
@@ -555,6 +596,7 @@
                         about,
                         share,
                         formats,
+                        datasetExportFormats,
                         exception,
                         login,
                         logout,
@@ -570,6 +612,7 @@
                         saveTask,
                         createTask,
                         deleteTask,
+                        exportDataset,
                     }),
                     writable: false,
                 },
