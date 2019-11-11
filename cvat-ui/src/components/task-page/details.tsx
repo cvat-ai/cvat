@@ -30,7 +30,6 @@ interface Props {
 interface State {
     name: string;
     bugTracker: string;
-    assignee: any;
 }
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
@@ -42,7 +41,6 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         this.state = {
             name: taskInstance.name,
             bugTracker: taskInstance.bugTracker,
-            assignee: taskInstance.assignee,
         };
     }
 
@@ -115,7 +113,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     private renderUsers() {
         const { taskInstance } = this.props;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
-        const assignee = this.state.assignee ? this.state.assignee.username : null;
+        const assignee = taskInstance.assignee ? taskInstance.assignee.username : null;
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
         const assigneeSelect = <UserSelector
             users={this.props.registeredUsers}
@@ -128,10 +126,6 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                     if (userInstance === undefined) {
                         userInstance = null;
                     }
-
-                    this.setState({
-                        assignee: userInstance,
-                    });
 
                     taskInstance.assignee = userInstance;
                     this.props.onTaskUpdate(taskInstance);
@@ -230,7 +224,6 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             this.setState({
                 name: this.props.taskInstance.name,
                 bugTracker: this.props.taskInstance.bugTracker,
-                assignee: this.props.taskInstance.assignee,
             });
         }
     }

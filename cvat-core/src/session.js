@@ -1205,6 +1205,7 @@
         if (this.id) {
             const jobData = {
                 status: this.status,
+                assignee: this.assignee ? this.assignee.id : null,
             };
 
             await serverProxy.jobs.saveJob(this.id, jobData);

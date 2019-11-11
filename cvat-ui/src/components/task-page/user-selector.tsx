@@ -13,7 +13,7 @@ interface Props {
 export default function UserSelector(props: Props) {
     return (
         <Select
-                value={props.value ? props.value : '\0'}
+                defaultValue={props.value ? props.value : '\0'}
                 size='small'
                 showSearch
                 className='cvat-user-selector'
