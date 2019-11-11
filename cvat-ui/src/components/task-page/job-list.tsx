@@ -3,7 +3,6 @@ import React from 'react';
 import {
     Row,
     Col,
-    Icon,
     Table,
 } from 'antd';
 
