@@ -19,6 +19,8 @@ import sys
 import fcntl
 import shutil
 import subprocess
+import mimetypes
+mimetypes.add_type("application/wasm", ".wasm", True)
 
 from pathlib import Path
 
