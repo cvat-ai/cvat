@@ -333,6 +333,11 @@
     margin-right: 5px;
 }
 
+.cvat-task-details-wrapper {
+    overflow-y: auto;
+    height: 100%;
+}
+
 .cvat-task-details {
     width: 100%;
     height: auto;
