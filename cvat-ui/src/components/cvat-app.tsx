@@ -127,7 +127,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             }
         } else {
             return (
-                <Spin size="large" style={{margin: '25% 50%'}}/>
+                <Spin size='large' style={{margin: '25% 50%'}}/>
             );
         }
     }

@@ -171,7 +171,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
     public render() {
         if (this.props.tasksAreBeingFetched) {
             return (
-                <Spin size='large' style={{margin: '25% 50%'}}/>
+                <Spin size='large' style={{margin: '25% 45%'}}/>
             );
         } else {
             return (

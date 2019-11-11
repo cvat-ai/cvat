@@ -85,7 +85,7 @@ class RawViewer extends React.PureComponent<Props, State> {
                     })( <Input.TextArea rows={5} className='cvat-raw-labels-viewer'/> )
                 } </Form.Item>
                 <Row type='flex' justify='start' align='middle'>
-                    <Col span={4}>
+                    <Col>
                         <Tooltip overlay='Save labels and return'>
                             <Button
                                 style={{width: '150px'}}
@@ -94,8 +94,7 @@ class RawViewer extends React.PureComponent<Props, State> {
                             > Done </Button>
                         </Tooltip>
                     </Col>
-                    <Col span={1}/>
-                    <Col span={4}>
+                    <Col offset={1}>
                         <Tooltip overlay='Do not save the label and return'>
                             <Button
                                 style={{width: '150px'}}
