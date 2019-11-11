@@ -3,6 +3,7 @@ import json
 import os
 import os.path as osp
 import shutil
+import sys
 import tempfile
 from urllib.parse import urlsplit
 
@@ -13,6 +14,7 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task, ShapeType
 from .util import current_function_name, make_zip_archive
 
+sys.path.append(osp.join(__file__[:__file__.rfind('cvat/')], 'datumaro'))
 from datumaro.components.project import Project
 import datumaro.components.extractor as datumaro
 

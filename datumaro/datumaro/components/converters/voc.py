@@ -7,7 +7,7 @@ import cv2
 from collections import OrderedDict, defaultdict
 import os
 import os.path as osp
-from xml.etree import ElementTree as ET
+from lxml import etree as ET
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import *
@@ -201,7 +201,8 @@ class _Converter:
                             VocTask.person_layout,
                             VocTask.action_classification]:
                         with open(osp.join(self._ann_dir, item_id + '.xml'), 'w') as f:
-                            f.write(ET.tostring(root_elem, encoding='unicode'))
+                            f.write(ET.tostring(root_elem,
+                                encoding='unicode', pretty_print=True))
 
                     clsdet_list[item_id] = True
                     layout_list[item_id] = objects_with_parts
