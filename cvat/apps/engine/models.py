@@ -77,7 +77,7 @@ class Data(models.Model):
 
     def _get_chunk_name(self, chunk_number):
         if self.type == DataChoice.VIDEO:
-            ext = 'ts'
+            ext = 'mp4'
         elif self.type == DataChoice.IMAGESET:
             ext = 'zip'
         else:

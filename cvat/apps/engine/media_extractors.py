@@ -233,14 +233,15 @@ class VideoExtractor(IMediaExtractor):
 
             start_frame = self._start + chunk_idx * chunk_size
             input_images = os.path.join(self._tmp_dir, self._imagename_pattern['cmd'])
-            input_options = '-f image2 -framerate {} -start_number {}'.format(self._output_fps, start_frame)
+            input_options = '-f image2 -r {} -start_number {}'.format('25', start_frame)
             output_chunk = compressed_chunk_path(chunk_idx)
-            output_options = '-vframes {} -vsync drop -r 30000/1001 -b:a 2M -bt 4M -c:v libx264 -profile baseline -pix_fmt yuv420p -pass 1 -coder 0 -bf 0 -flags -loop -wpredp 0'.format(chunk_size)
+            output_options = '-vframes {} -c:a none -vcodec libx264 -pix_fmt yuv420p -pass 1 -coder 0 -bf 0 -flags -loop -wpredp 0'.format(chunk_size)
 
             ff = FFmpeg(
                 inputs  = {input_images: input_options},
                 outputs = {output_chunk: output_options},
             )
+            print(ff.cmd)
             ff.run()
 
             output_chunk = original_chunk_path(chunk_idx)
