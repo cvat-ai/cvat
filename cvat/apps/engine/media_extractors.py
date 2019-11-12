@@ -8,12 +8,9 @@ import itertools
 import av
 import av.datasets
 import numpy as np
-from ffmpy import FFmpeg
 from pyunpack import Archive
 from PIL import Image
 import mimetypes
-
-from cvat.apps.engine.log import slogger
 
 _SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 MEDIA_MIMETYPES_FILES = [
@@ -183,7 +180,6 @@ class VideoExtractor(IMediaExtractor):
             'py': '{:09d}.tiff'
         }
         self._output_fps = 25
-        self._tmp_dir = self.create_tmp_dir()
 
         super().__init__(
             source_path=source_path,
@@ -191,9 +187,6 @@ class VideoExtractor(IMediaExtractor):
             start=start,
             stop=stop,
         )
-
-    def __del__(self):
-        self.delete_tmp_dir(self._tmp_dir)
 
     def _get_av_container(self):
         container = av.open(av.datasets.curated(self._source_path[0]))
@@ -203,12 +196,12 @@ class VideoExtractor(IMediaExtractor):
         if not self._source_path:
             raise Exception('No data to compress')
 
-        # # translate inversed range 1:95 to 2:32
-        translated_quality = 96 - quality
-        translated_quality = round((((translated_quality - 1) * (31 - 2)) / (95 - 1)) + 2)
+        # translate inversed range [1:100] to [0:51]
+        translated_quality = round(51 * (100 - quality) / 99)
 
         container = self._get_av_container()
-        container.streams.video[0].thread_type = 'AUTO'
+        source_video_stream = container.streams.video[0]
+        source_video_stream.thread_type = 'AUTO'
 
         def decode_frames(container):
             for packet in container.demux():
@@ -223,34 +216,65 @@ class VideoExtractor(IMediaExtractor):
                 yield frames
                 frames = list(itertools.islice(it, 0, count * self._step, self._step))
 
+        def create_av_container(path, w, h, rate, pix_format, options):
+            container = av.open(path, 'w')
+            video_stream = container.add_stream('libx264', rate=rate)
+            video_stream.pix_fmt = pix_format
+            video_stream.width = w
+            video_stream.height = h
+            video_stream.options = options
+
+            return container, video_stream
+
         frame_count = 0
         for chunk_idx, frames in enumerate(generate_chunks(container, chunk_size)):
-            for f in os.listdir(self._tmp_dir):
-                os.remove(os.path.join(self._tmp_dir, f))
+            output_compressed_container, output_compressed_v_stream = create_av_container(
+                path=compressed_chunk_path(chunk_idx),
+                w=source_video_stream.width,
+                h=source_video_stream.height,
+                rate=self._output_fps,
+                pix_format='yuv420p',
+                options={
+                    'profile': 'baseline',
+                    'coder': '0',
+                    'crf': str(translated_quality),
+                    'wpredp': '0',
+                    'flags': '-loop'
+                },
+            )
+
+            output_original_container, output_original_v_stream = create_av_container(
+                path=original_chunk_path(chunk_idx),
+                w=source_video_stream.width,
+                h=source_video_stream.height,
+                rate=self._output_fps,
+                pix_format='yuv420p',
+                options={
+                    "crf": "0",
+                    "preset": "ultrafast",
+                },
+            )
+
             for frame in frames:
-                frame.to_image().save(os.path.join(self._tmp_dir,  self._imagename_pattern['py'].format(frame.index)), compression='raw')
-                frame_count += 1
+                # let libav set the correct pts and time_base
+                frame.pts = None
+                frame.time_base = None
+                for packet in output_compressed_v_stream.encode(frame):
+                    output_compressed_container.mux(packet)
 
-            start_frame = self._start + chunk_idx * chunk_size
-            input_images = os.path.join(self._tmp_dir, self._imagename_pattern['cmd'])
-            input_options = '-f image2 -r {} -start_number {}'.format('25', start_frame)
-            output_chunk = compressed_chunk_path(chunk_idx)
-            output_options = '-vframes {} -c:a none -vcodec libx264 -pix_fmt yuv420p -pass 1 -coder 0 -bf 0 -flags -loop -wpredp 0'.format(chunk_size)
+                for packet in output_original_v_stream.encode(frame):
+                    output_original_container.mux(packet)
 
-            ff = FFmpeg(
-                inputs  = {input_images: input_options},
-                outputs = {output_chunk: output_options},
-            )
-            print(ff.cmd)
-            ff.run()
+            # Flush streams
+            for packet in output_compressed_v_stream.encode():
+                output_compressed_container.mux(packet)
+            output_compressed_container.close()
+            for packet in output_original_v_stream.encode():
+                output_original_container.mux(packet)
+            output_original_container.close()
 
-            output_chunk = original_chunk_path(chunk_idx)
-            output_options = '-vframes {} -f mpegts -c:a none -codec:v mpeg1video -bf 0 -q:v {}'.format(chunk_size, 0)
-            ff = FFmpeg(
-                inputs  = {input_images: input_options},
-                outputs = {output_chunk: output_options},
-            )
-            ff.run()
+            frame_count += len(frames)
+
             if progress_callback and container.streams.video[0].frames:
                 progress_callback(chunk_idx * chunk_size / container.streams.video[0].frames)
 
