@@ -154,6 +154,7 @@ COPY utils ${HOME}/utils
 COPY cvat/ ${HOME}/cvat
 COPY cvat-core/ ${HOME}/cvat-core
 COPY tests ${HOME}/tests
+COPY datumaro/ ${HOME}/datumaro
 
 RUN while read -r line; do pip3 install --no-cache-dir $line; done < ${HOME}/datumaro/requirements.txt
 # Binary option is necessary to correctly apply the patch on Windows platform.
