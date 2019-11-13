@@ -14,7 +14,8 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task, ShapeType
 from .util import current_function_name, make_zip_archive
 
-sys.path.append(osp.join(__file__[:__file__.rfind('cvat/')], 'datumaro'))
+_DATUMARO_REPO_PATH = osp.join(__file__[:__file__.rfind('cvat/')], 'datumaro')
+sys.path.append(_DATUMARO_REPO_PATH)
 from datumaro.components.project import Project
 import datumaro.components.extractor as datumaro
 
@@ -202,15 +203,15 @@ class TaskProject:
         else:
             self._project.save(save_dir=save_dir)
 
-    def export(self, format, save_dir, save_images=False, server_url=None):
+    def export(self, dst_format, save_dir, save_images=False, server_url=None):
         if self._dataset is None:
             self._init_dataset()
-        if format == DEFAULT_FORMAT:
+        if dst_format == DEFAULT_FORMAT:
             self._dataset.save(save_dir=save_dir, save_images=save_images)
-        elif format == DEFAULT_FORMAT_REMOTE:
+        elif dst_format == DEFAULT_FORMAT_REMOTE:
             self._remote_export(save_dir=save_dir, server_url=server_url)
         else:
-            self._dataset.export(output_format=format,
+            self._dataset.export(output_format=dst_format,
                 save_dir=save_dir, save_images=save_images)
 
     def _remote_image_converter(self, save_dir, server_url=None):
@@ -275,21 +276,30 @@ class TaskProject:
             osp.join(templates_dir, _TASK_IMAGES_REMOTE_EXTRACTOR + '.py'),
             osp.join(target_dir, _TASK_IMAGES_REMOTE_EXTRACTOR + '.py'))
 
+        # NOTE: put datumaro component to the archive so that
+        # it was available to the user
+        shutil.copytree(_DATUMARO_REPO_PATH, osp.join(save_dir, 'datumaro'),
+            ignore=lambda src, names: ['__pycache__'] + [
+                n for n in names
+                if sum([int(n.endswith(ext)) for ext in
+                        ['.pyx', '.pyo', '.pyd', '.pyc']])
+            ])
+
 
 DEFAULT_FORMAT = "datumaro_project"
 DEFAULT_FORMAT_REMOTE = "datumaro_project_remote"
 DEFAULT_CACHE_TTL = timedelta(hours=10)
 CACHE_TTL = DEFAULT_CACHE_TTL
 
-def export_project(task_id, user, format=None, server_url=None):
+def export_project(task_id, user, dst_format=None, server_url=None):
     try:
         db_task = Task.objects.get(pk=task_id)
 
-        if not format:
-            format = DEFAULT_FORMAT
+        if not dst_format:
+            dst_format = DEFAULT_FORMAT
 
         cache_dir = db_task.get_export_cache_dir()
-        save_dir = osp.join(cache_dir, format)
+        save_dir = osp.join(cache_dir, dst_format)
         archive_path = osp.normpath(save_dir) + '.zip'
 
         task_time = timezone.localtime(db_task.updated_date).timestamp()
@@ -297,9 +307,9 @@ def export_project(task_id, user, format=None, server_url=None):
                 task_time <= osp.getmtime(archive_path)):
             os.makedirs(cache_dir, exist_ok=True)
             with tempfile.TemporaryDirectory(
-                    dir=cache_dir, prefix=format + '_') as temp_dir:
+                    dir=cache_dir, prefix=dst_format + '_') as temp_dir:
                 project = TaskProject.from_task(db_task, user)
-                project.export(format, save_dir=temp_dir, save_images=True,
+                project.export(dst_format, save_dir=temp_dir, save_images=True,
                     server_url=server_url)
 
                 os.makedirs(cache_dir, exist_ok=True)
@@ -316,7 +326,7 @@ def export_project(task_id, user, format=None, server_url=None):
                 "and available for downloading for next '{}'. "
                 "Export cache cleaning job is enqueued, "
                 "id '{}', start in '{}'" \
-                    .format(db_task.name, format, CACHE_TTL,
+                    .format(db_task.name, dst_format, CACHE_TTL,
                         cleaning_job.id, CACHE_TTL))
 
         return archive_path

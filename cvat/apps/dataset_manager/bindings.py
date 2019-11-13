@@ -69,7 +69,7 @@ class CvatTaskExtractor(datumaro.Extractor):
         for cvat_anno in cvat_annotations.group_by_frame():
             dm_anno = self._read_cvat_anno(cvat_anno)
             dm_item = datumaro.DatasetItem(
-                id=cvat_anno.frame, annotations=dm_anno)
+                id_=cvat_anno.frame, annotations=dm_anno)
             dm_annotations.append((dm_item.id, dm_item))
 
         dm_annotations = sorted(dm_annotations, key=lambda e: e[0])
