@@ -10,7 +10,6 @@ from functools import reduce
 import logging as log
 import os
 import os.path as osp
-import shutil
 import sys
 
 from datumaro.components.config import Config, DEFAULT_FORMAT
@@ -186,29 +185,30 @@ class Environment:
         self.visualizers = ModuleRegistry(config)
         self.git = GitWrapper(config)
 
-    def _get_custom_module_items(self, dir, module_name):
+    def _get_custom_module_items(self, module_dir, module_name):
         items = None
 
         module = None
-        if osp.exists(osp.join(dir, module_name)):
-            module = import_foreign_module(module_name, dir)
+        if osp.exists(osp.join(module_dir, module_name)):
+            module = import_foreign_module(module_name, module_dir)
         if module is not None:
             if hasattr(module, 'items'):
                 items = module.items
             else:
                 items = self._find_custom_module_items(
-                    osp.join(dir, module_name))
+                    osp.join(module_dir, module_name))
 
         return items
 
-    def _find_custom_module_items(self, dir):
-        files = [p for p in os.listdir(dir)
+    @staticmethod
+    def _find_custom_module_items(module_dir):
+        files = [p for p in os.listdir(module_dir)
             if p.endswith('.py') and p != '__init__.py']
 
         all_items = []
         for f in files:
             name = osp.splitext(f)[0]
-            module = import_foreign_module(name, dir)
+            module = import_foreign_module(name, module_dir)
 
             items = []
             if hasattr(module, 'items'):
@@ -221,7 +221,7 @@ class Environment:
                         " Custom module is expected to provide 'items' "
                         "list or have an item matching its file name."
                         " Skipping this module." % \
-                        (dir + '.' + name))
+                        (module_dir + '.' + name))
 
             all_items.extend(items)
 
@@ -257,7 +257,7 @@ class Subset(Extractor):
         self.items = OrderedDict()
 
     def __iter__(self):
-        for id, item in self.items.items():
+        for item in self.items.values():
             yield item
 
     def __len__(self):
@@ -311,10 +311,10 @@ class ProjectDataset(Extractor):
         config = self.config
         env = self.env
 
-        filter = None
+        dataset_filter = None
         if config.filter:
-            filter = XPathDatasetFilter(config.filter)
-        self._filter = filter
+            dataset_filter = XPathDatasetFilter(config.filter)
+        self._filter = dataset_filter
 
         sources = {}
         for s_name, source in config.sources.items():
@@ -352,7 +352,7 @@ class ProjectDataset(Extractor):
         subsets = defaultdict(lambda: Subset(self))
         for source_name, source in self._sources.items():
             for item in source:
-                if filter and not filter(item):
+                if dataset_filter and not dataset_filter(item):
                     continue
 
                 existing_item = subsets[item.subset].items.get(item.id)
@@ -387,7 +387,7 @@ class ProjectDataset(Extractor):
         # override with our items, fallback to existing images
         if own_source is not None:
             for item in own_source:
-                if filter and not filter(item):
+                if dataset_filter and not dataset_filter(item):
                     continue
 
                 if not item.has_image:
@@ -410,7 +410,8 @@ class ProjectDataset(Extractor):
 
         self._length = None
 
-    def _merge_anno(self, a, b):
+    @staticmethod
+    def _merge_anno(a, b):
         from itertools import chain
         merged = []
         for item in chain(a, b):
@@ -428,7 +429,7 @@ class ProjectDataset(Extractor):
         return self.select(lambda item: not item.path)
 
     def __iter__(self):
-        for subset_name, subset in self._subsets.items():
+        for subset in self._subsets.values():
             for item in subset:
                 if self._filter and not self._filter(item):
                     continue
@@ -453,15 +454,15 @@ class ProjectDataset(Extractor):
         assert not self._categories
         self._categories = categories
 
-    def get(self, id, subset=None, path=None):
+    def get(self, item_id, subset=None, path=None):
         if path:
             source = path[0]
             rest_path = path[1:]
             return self._sources[source].get(
-                id=id, subset=subset, path=rest_path)
-        return self._subsets[subset].items[id]
+                item_id=item_id, subset=subset, path=rest_path)
+        return self._subsets[subset].items[item_id]
 
-    def put(self, item, id=None, subset=None, path=None):
+    def put(self, item, item_id=None, subset=None, path=None):
         if path is None:
             path = item.path
         if path:
@@ -469,10 +470,10 @@ class ProjectDataset(Extractor):
             rest_path = path[1:]
             # TODO: reverse remapping
             self._sources[source].put(item,
-                id=id, subset=subset, path=rest_path)
+                item_id=item_id, subset=subset, path=rest_path)
 
-        if id is None:
-            id = item.id
+        if item_id is None:
+            item_id = item.id
         if subset is None:
             subset = item.subset
 
@@ -480,7 +481,7 @@ class ProjectDataset(Extractor):
             annotations=item.annotations)
         if item.subset not in self._subsets:
             self._subsets[item.subset] = Subset(self)
-        self._subsets[subset].items[id] = item
+        self._subsets[subset].items[item_id] = item
         self._length = None
 
         return item
@@ -506,23 +507,24 @@ class ProjectDataset(Extractor):
 
         dataset.save(merge=True)
 
-    def export(self, save_dir, output_format, filter=None, **converter_kwargs):
+    def export(self, save_dir, output_format,
+            filter_expr=None, **converter_kwargs):
         save_dir = osp.abspath(save_dir)
         os.makedirs(save_dir, exist_ok=True)
 
         dataset = self
-        if filter:
-            filter = XPathDatasetFilter(filter)
-            dataset = dataset.select(filter)
+        if filter_expr:
+            dataset_filter = XPathDatasetFilter(filter_expr)
+            dataset = dataset.select(dataset_filter)
 
         converter = self.env.make_converter(output_format, **converter_kwargs)
         converter(dataset, save_dir)
 
-    def extract(self, save_dir, filter=None):
+    def extract(self, save_dir, filter_expr=None):
         project = Project(self.config)
-        if filter:
-            XPathDatasetFilter(filter)
-            project.set_filter(filter)
+        if filter_expr:
+            XPathDatasetFilter(filter_expr)
+            project.set_filter(filter_expr)
         project.save(save_dir)
 
     def update(self, items):
@@ -619,10 +621,10 @@ class Project:
         return project
 
     @staticmethod
-    def import_from(path, type, env=None, **kwargs):
+    def import_from(path, dataset_format, env=None, **kwargs):
         if env is None:
             env = Environment()
-        importer = env.make_importer(type)
+        importer = env.make_importer(dataset_format)
         return importer(path, **kwargs)
 
     def __init__(self, config=None):
@@ -704,4 +706,5 @@ class Project:
         return osp.join(self.config.sources_dir, source_name)
 
 def load_project_as_dataset(url):
+    # implement the function declared above
     return Project.load(url).make_dataset()

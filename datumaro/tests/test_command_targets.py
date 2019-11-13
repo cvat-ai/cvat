@@ -5,8 +5,9 @@ import os.path as osp
 
 from unittest import TestCase
 
+from datumaro.components.project import Project
 from datumaro.util.command_targets import *
-from datumaro.util.test_utils import *
+from datumaro.util.test_utils import current_function_name, TestDir
 
 
 class CommandTargetsTest(TestCase):
@@ -19,8 +20,8 @@ class CommandTargetsTest(TestCase):
         self.assertFalse(status)
 
     def test_image_false_when_false(self):
-        with TestDir() as dir:
-            path = osp.join(dir.path, 'test.jpg')
+        with TestDir() as test_dir:
+            path = osp.join(test_dir.path, 'test.jpg')
             with open(path, 'w+') as f:
                 f.write('qwerty123')
 
@@ -31,8 +32,8 @@ class CommandTargetsTest(TestCase):
             self.assertFalse(status)
 
     def test_image_true_when_true(self):
-        with TestDir() as dir:
-            path = osp.join(dir.path, 'test.jpg')
+        with TestDir() as test_dir:
+            path = osp.join(test_dir.path, 'test.jpg')
             image = np.random.random_sample([10, 10, 3])
             cv2.imwrite(path, image)
 
@@ -58,8 +59,8 @@ class CommandTargetsTest(TestCase):
         self.assertFalse(status)
 
     def test_project_true_when_project_file(self):
-        with TestDir() as dir:
-            path = osp.join(dir.path, 'test.jpg')
+        with TestDir() as test_dir:
+            path = osp.join(test_dir.path, 'test.jpg')
             Project().save(path)
 
             target = ProjectTarget()
@@ -91,8 +92,8 @@ class CommandTargetsTest(TestCase):
         self.assertFalse(status)
 
     def test_project_true_when_not_project_file(self):
-        with TestDir() as dir:
-            path = osp.join(dir.path, 'test.jpg')
+        with TestDir() as test_dir:
+            path = osp.join(test_dir.path, 'test.jpg')
             with open(path, 'w+') as f:
                 f.write('wqererw')
 

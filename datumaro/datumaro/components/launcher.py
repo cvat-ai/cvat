@@ -24,7 +24,7 @@ class Launcher:
 class InferenceWrapper(Extractor):
     class ItemWrapper(DatasetItem):
         def __init__(self, item, annotations, path=None):
-            super().__init__(id=item.id)
+            super().__init__(id_=item.id)
             self._annotations = annotations
             self._item = item
             self._path = path

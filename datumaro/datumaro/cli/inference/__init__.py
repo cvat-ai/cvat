@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
-import os
-import os.path as osp
 
 
 def run_command(args):

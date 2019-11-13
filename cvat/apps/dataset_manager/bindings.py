@@ -25,7 +25,7 @@ class CvatImagesDirExtractor(datumaro.Extractor):
                 if self._is_image(path):
                     item_id = Task.get_image_frame(path)
                     item = datumaro.DatasetItem(
-                        id=item_id, image=lazy_image(path))
+                        id_=item_id, image=lazy_image(path))
                     items.append((item.id, item))
 
         items = sorted(items, key=lambda e: e[0])
@@ -42,10 +42,10 @@ class CvatImagesDirExtractor(datumaro.Extractor):
     def subsets(self):
         return None
 
-    def get(self, id, subset=None, path=None):
+    def get(self, item_id, subset=None, path=None):
         if path or subset:
             raise KeyError()
-        return self._items[id]
+        return self._items[item_id]
 
     def _is_image(self, path):
         for ext in self._SUPPORTED_FORMATS:
@@ -85,10 +85,10 @@ class CvatTaskExtractor(datumaro.Extractor):
     def subsets(self):
         return None
 
-    def get(self, id, subset=None, path=None):
+    def get(self, item_id, subset=None, path=None):
         if path or subset:
             raise KeyError()
-        return self._items[id]
+        return self._items[item_id]
 
     def _load_categories(self):
         categories = {}

@@ -62,7 +62,8 @@ class DatumaroExtractor(Extractor):
         if parsed_anns is not None:
             self._categories = self._load_categories(parsed_anns)
 
-    def _load_categories(self, parsed):
+    @staticmethod
+    def _load_categories(parsed):
         categories = {}
 
         parsed_label_cat = parsed['categories'].get(AnnotationType.label.name)
@@ -97,17 +98,17 @@ class DatumaroExtractor(Extractor):
     def _get(self, index, subset_name):
         item = self._annotations[subset_name]['items'][index]
 
-        id = item.get('id')
+        item_id = item.get('id')
 
         image_path = osp.join(self._path, DatumaroPath.IMAGES_DIR,
-            id + DatumaroPath.IMAGE_EXT)
+            item_id + DatumaroPath.IMAGE_EXT)
         image = None
         if osp.isfile(image_path):
             image = lazy_image(image_path)
 
         annotations = self._load_annotations(item)
 
-        return DatasetItem(id=id, subset=subset_name,
+        return DatasetItem(id_=item_id, subset=subset_name,
             annotations=annotations, image=image)
 
     def _load_annotations(self, item):
@@ -115,17 +116,17 @@ class DatumaroExtractor(Extractor):
         loaded = []
 
         for ann in parsed:
-            id = ann.get('id')
-            type = AnnotationType[ann['type']]
+            ann_id = ann.get('id')
+            ann_type = AnnotationType[ann['type']]
             attributes = ann.get('attributes')
             group = ann.get('group')
 
-            if type == AnnotationType.label:
+            if ann_type == AnnotationType.label:
                 label_id = ann.get('label_id')
                 loaded.append(LabelObject(label=label_id,
-                    id=id, attributes=attributes, group=group))
+                    id_=ann_id, attributes=attributes, group=group))
 
-            elif type == AnnotationType.mask:
+            elif ann_type == AnnotationType.mask:
                 label_id = ann.get('label_id')
                 mask_id = str(ann.get('mask_id'))
 
@@ -141,36 +142,36 @@ class DatumaroExtractor(Extractor):
                         mask = lazy_image(mask_path)
 
                 loaded.append(MaskObject(label=label_id, image=mask,
-                    id=id, attributes=attributes, group=group))
+                    id_=ann_id, attributes=attributes, group=group))
 
-            elif type == AnnotationType.polyline:
+            elif ann_type == AnnotationType.polyline:
                 label_id = ann.get('label_id')
                 points = ann.get('points')
                 loaded.append(PolyLineObject(points, label=label_id,
-                    id=id, attributes=attributes, group=group))
+                    id_=ann_id, attributes=attributes, group=group))
 
-            elif type == AnnotationType.polygon:
+            elif ann_type == AnnotationType.polygon:
                 label_id = ann.get('label_id')
                 points = ann.get('points')
                 loaded.append(PolygonObject(points, label=label_id,
-                    id=id, attributes=attributes, group=group))
+                    id_=ann_id, attributes=attributes, group=group))
 
-            elif type == AnnotationType.bbox:
+            elif ann_type == AnnotationType.bbox:
                 label_id = ann.get('label_id')
                 x, y, w, h = ann.get('bbox')
                 loaded.append(BboxObject(x, y, w, h, label=label_id,
-                    id=id, attributes=attributes, group=group))
+                    id_=ann_id, attributes=attributes, group=group))
 
-            elif type == AnnotationType.points:
+            elif ann_type == AnnotationType.points:
                 label_id = ann.get('label_id')
                 points = ann.get('points')
                 loaded.append(PointsObject(points, label=label_id,
-                    id=id, attributes=attributes, group=group))
+                    id_=ann_id, attributes=attributes, group=group))
 
-            elif type == AnnotationType.caption:
+            elif ann_type == AnnotationType.caption:
                 caption = ann.get('caption')
                 loaded.append(CaptionObject(caption,
-                    id=id, attributes=attributes, group=group))
+                    id_=ann_id, attributes=attributes, group=group))
 
             else:
                 raise NotImplementedError()
@@ -182,8 +183,8 @@ class DatumaroExtractor(Extractor):
 
     def __iter__(self):
         for subset_name, subset in self._subsets.items():
-            for id in subset.items:
-                yield self._get(id, subset_name)
+            for index in subset.items:
+                yield self._get(index, subset_name)
 
     def __len__(self):
         length = 0
@@ -197,7 +198,8 @@ class DatumaroExtractor(Extractor):
     def get_subset(self, name):
         return self._subsets[name]
 
-    def _find_subsets(self, path):
+    @staticmethod
+    def _find_subsets(path):
         anno_dir = osp.join(path, DatumaroPath.ANNOTATIONS_DIR)
         if not osp.isdir(anno_dir):
             raise Exception('Datumaro dataset not found at "%s"' % path)

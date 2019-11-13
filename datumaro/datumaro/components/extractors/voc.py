@@ -148,7 +148,7 @@ class VocExtractor(Extractor):
         annotations = self._get_annotations(item)
 
         return DatasetItem(annotations=annotations,
-            id=item, subset=subset_name, image=image)
+            id_=item, subset=subset_name, image=image)
 
     def _get_label_id(self, label):
         label_id, _ = self._categories[AnnotationType.label].find(label)
@@ -258,7 +258,7 @@ class VocExtractor(Extractor):
                         continue
 
                 item_annotations.append(BboxObject(*obj_bbox, label=obj_label_id,
-                    attributes=attributes, id=obj_id, group=group))
+                    attributes=attributes, id_=obj_id, group=group))
 
         return item_annotations
 
@@ -481,7 +481,7 @@ class VocResultsExtractor(Extractor):
         annotations = self._get_annotations(item, subset_name)
 
         return DatasetItem(annotations=annotations,
-            id=item, subset=subset_name, image=image)
+            id_=item, subset=subset_name, image=image)
 
     def _get_annotations(self, item, subset_name):
         raise NotImplementedError()

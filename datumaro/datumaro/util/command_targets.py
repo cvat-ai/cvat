@@ -5,7 +5,6 @@
 
 import argparse
 import cv2
-import os.path as osp
 from enum import Enum
 
 from datumaro.components.project import Project
@@ -37,7 +36,7 @@ def is_project(value, project=None):
 def is_source(value, project=None):
     if project is not None:
         try:
-            source = project.get_source(value)
+            project.get_source(value)
             return True
         except KeyError:
             pass

@@ -6,7 +6,7 @@
 import os
 import os.path as osp
 
-from datumaro.components.formats.voc import *
+from datumaro.components.formats.voc import VocTask, VocPath
 from datumaro.util import find
 
 
@@ -24,14 +24,17 @@ class VocImporter:
         project = Project()
 
         for task, extractor_type, task_dir in self._TASKS:
-            dir = osp.join(path, VocPath.SUBSETS_DIR, task_dir)
-            if not osp.isdir(dir):
+            task_dir = osp.join(path, VocPath.SUBSETS_DIR, task_dir)
+            if not osp.isdir(task_dir):
                 continue
 
             project.add_source(task.name, {
                 'url': path,
                 'format': extractor_type,
             })
+
+        if len(project.config.sources) == 0:
+            raise Exception("Failed to find 'voc' dataset at '%s'" % path)
 
         return project
 
@@ -55,16 +58,20 @@ class VocResultsImporter:
         project = Project()
 
         for task_name, extractor_type, task_dir in self._TASKS:
-            dir = osp.join(path, task_dir)
-            if not osp.isdir(dir):
+            task_dir = osp.join(path, task_dir)
+            if not osp.isdir(task_dir):
                 continue
-            dir_items = os.listdir(dir)
+            dir_items = os.listdir(task_dir)
             if not find(dir_items, lambda x: x == task_name):
                 continue
 
             project.add_source(task_name, {
-                'url': dir,
+                'url': task_dir,
                 'format': extractor_type,
             })
+
+        if len(project.config.sources) == 0:
+            raise Exception("Failed to find 'voc_results' dataset at '%s'" % \
+                path)
 
         return project

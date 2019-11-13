@@ -12,11 +12,11 @@ class ExtractorTest(TestCase):
 
             def __iter__(self):
                 return iter([
-                    DatasetItem(id=0, subset='train'),
-                    DatasetItem(id=1, subset='train'),
-                    DatasetItem(id=2, subset='train'),
+                    DatasetItem(id_=0, subset='train'),
+                    DatasetItem(id_=1, subset='train'),
+                    DatasetItem(id_=2, subset='train'),
 
-                    DatasetItem(id=3, subset='test'),
+                    DatasetItem(id_=3, subset='test'),
                 ])
 
             def subsets(self):

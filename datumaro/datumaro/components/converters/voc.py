@@ -122,8 +122,11 @@ class _Converter:
 
                 if len(bboxes) != 0:
                     root_elem = ET.Element('annotation')
-                    ET.SubElement(root_elem, 'folder').text = \
-                        item_id[ : item_id.find('_')]
+                    if '_' in item_id:
+                        folder = item_id[ : item_id.find('_')]
+                    else:
+                        folder = ''
+                    ET.SubElement(root_elem, 'folder').text = folder
                     ET.SubElement(root_elem, 'filename').text = \
                         item_id + VocPath.IMAGE_EXT
 

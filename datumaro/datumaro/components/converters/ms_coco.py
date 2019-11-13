@@ -17,10 +17,12 @@ from datumaro.util import find
 import datumaro.util.mask_tools as mask_tools
 
 
-def _cast(value, type, default=None):
+def _cast(value, type_conv, default=None):
+    if value is None:
+        return default
     try:
-        return type(value)
-    except Exception as e:
+        return type_conv(value)
+    except Exception:
         return default
 
 class _TaskConverter:
@@ -79,11 +81,11 @@ class _TaskConverter:
         raise NotImplementedError()
 
     def write(self, path):
-        id = self._min_ann_id
-        for item in self.annotations:
-            if item['id'] == None:
-                item['id'] = id
-                id += 1
+        next_id = self._min_ann_id
+        for ann in self.annotations:
+            if ann['id'] == None:
+                ann['id'] = next_id
+                next_id += 1
 
         with open(path, 'w') as outfile:
             json.dump(self._data, outfile)
@@ -97,10 +99,10 @@ class _TaskConverter:
         return self._data['categories']
 
     def _get_ann_id(self, annotation):
-        id = annotation.id
-        if id:
-            self._min_ann_id = max(id, self._min_ann_id)
-        return id
+        ann_id = annotation.id
+        if ann_id:
+            self._min_ann_id = max(ann_id, self._min_ann_id)
+        return ann_id
 
 class _InstancesConverter(_TaskConverter):
     def save_categories(self, dataset):
@@ -108,9 +110,9 @@ class _InstancesConverter(_TaskConverter):
         if label_categories is None:
             return
 
-        for id, cat in enumerate(label_categories.items):
+        for idx, cat in enumerate(label_categories.items):
             self.categories.append({
-                'id': 1 + id,
+                'id': 1 + idx,
                 'name': cat.name,
                 'supercategory': cat.parent,
             })
@@ -196,11 +198,11 @@ class _KeypointsConverter(_TaskConverter):
         if points_categories is None:
             return
 
-        for id, kp_cat in points_categories.items.items():
-            label_cat = label_categories.items[id]
+        for idx, kp_cat in points_categories.items.items():
+            label_cat = label_categories.items[idx]
 
             cat = {
-                'id': 1 + id,
+                'id': 1 + idx,
                 'name': label_cat.name,
                 'supercategory': label_cat.parent,
                 'keypoints': [str(l) for l in kp_cat.labels],
@@ -255,9 +257,9 @@ class _LabelsConverter(_TaskConverter):
         if label_categories is None:
             return
 
-        for id, cat in enumerate(label_categories.items):
+        for idx, cat in enumerate(label_categories.items):
             self.categories.append({
-                'id': 1 + id,
+                'id': 1 + idx,
                 'name': cat.name,
                 'supercategory': cat.parent,
             })

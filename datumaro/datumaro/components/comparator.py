@@ -6,7 +6,7 @@
 from itertools import zip_longest
 import numpy as np
 
-from datumaro.components.extractor import *
+from datumaro.components.extractor import AnnotationType, LabelCategories
 
 
 class Comparator:

@@ -104,6 +104,8 @@ def build_export_parser(parser):
         help="Output format")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.add_argument('--save-images', action='store_true',
+        help="Save images")
     return parser
 
 def export_command(args):
@@ -115,7 +117,8 @@ def export_command(args):
     project.make_dataset().export(
         save_dir=dst_dir,
         output_format=args.output_format,
-        filter=args.filter)
+        filter_expr=args.filter,
+        save_images=args.save_images)
     log.info("Project exported to '%s' as '%s'" % \
         (dst_dir, args.output_format))
 
@@ -148,7 +151,7 @@ def extract_command(args):
     dst_dir = osp.abspath(args.dst_dir)
     os.makedirs(dst_dir, exist_ok=False)
 
-    project.make_dataset().extract(filter=args.filter, save_dir=dst_dir)
+    project.make_dataset().extract(filter_expr=args.filter, save_dir=dst_dir)
     log.info("Subproject extracted to '%s'" % (dst_dir))
 
     return 0
@@ -209,7 +212,7 @@ def diff_command(args):
         log.info("Saving diff to '%s'" % save_dir)
         os.makedirs(osp.abspath(save_dir))
     visualizer = DiffVisualizer(save_dir=save_dir, comparator=comparator,
-        format=args.output_format)
+        output_format=args.output_format)
     visualizer.save_dataset_diff(
         first_project.make_dataset(),
         second_project.make_dataset())

@@ -8,12 +8,12 @@ import yaml
 
 class Schema:
     class Item:
-        def __init__(self, type, internal=False):
-            self.type = type
+        def __init__(self, ctor, internal=False):
+            self.ctor = ctor
             self.internal = internal
 
         def __call__(self, *args, **kwargs):
-            return self.type(*args, **kwargs)
+            return self.ctor(*args, **kwargs)
 
     def __init__(self, items=None, fallback=None):
         self._items = {}
@@ -67,12 +67,11 @@ class SchemaBuilder:
     def __init__(self):
         self._items = {}
 
-    def add(self, name, type=str, internal=False):
+    def add(self, name, ctor=str, internal=False):
         if name in self._items:
             raise KeyError('Key "%s" already exists' % (name))
 
-        self._items[name] = Schema.Item(
-            type=type, internal=internal)
+        self._items[name] = Schema.Item(ctor, internal=internal)
         return self
 
     def build(self):
@@ -96,14 +95,14 @@ class Config:
     def _items(self, allow_fallback=True, allow_internal=True):
         all_config = {}
         if allow_fallback and self._schema is not None:
-            for k, v in self._schema.items():
-                all_config[k] = v()
+            for key, item in self._schema.items():
+                all_config[key] = item()
         all_config.update(self._config)
 
         if not allow_internal and self._schema is not None:
-            for k, v in self._schema.items():
-                if v.internal:
-                    all_config.pop(k)
+            for key, item in self._schema.items():
+                if item.internal:
+                    all_config.pop(key)
         return all_config
 
     def items(self, allow_fallback=True, allow_internal=True):
@@ -156,7 +155,7 @@ class Config:
                 if my_v != other_v:
                     return False
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def update(self, other):

@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import os
-import os.path as osp
 
 
 def find(iterable, pred=lambda x: True, default=None):

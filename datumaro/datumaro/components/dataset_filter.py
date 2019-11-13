@@ -7,10 +7,12 @@ from lxml import etree as ET
 from datumaro.components.extractor import *
 
 
-def _cast(value, type, default=None):
+def _cast(value, type_conv, default=None):
+    if value is None:
+        return default
     try:
-        return type(value)
-    except Exception as e:
+        return type_conv(value)
+    except Exception:
         return default
 
 class DatasetItemEncoder:

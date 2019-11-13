@@ -13,7 +13,7 @@ class DiffTest(TestCase):
                     attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections)
         ]
-        item = DatasetItem(id=0, annotations=anns)
+        item = DatasetItem(id_=0, annotations=anns)
 
         iou_thresh = 0.5
         conf_thresh = 0.5
@@ -38,12 +38,12 @@ class DiffTest(TestCase):
     def test_can_find_bbox_with_wrong_label(self):
         detections = 3
         class_count = 2
-        item1 = DatasetItem(id=1, annotations=[
+        item1 = DatasetItem(id_=1, annotations=[
             BboxObject(i * 10, 10, 10, 10, label=i,
                     attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections)
         ])
-        item2 = DatasetItem(id=2, annotations=[
+        item2 = DatasetItem(id_=2, annotations=[
             BboxObject(i * 10, 10, 10, 10, label=(i + 1) % class_count,
                     attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections)
@@ -72,12 +72,12 @@ class DiffTest(TestCase):
     def test_can_find_missing_boxes(self):
         detections = 3
         class_count = 2
-        item1 = DatasetItem(id=1, annotations=[
+        item1 = DatasetItem(id_=1, annotations=[
             BboxObject(i * 10, 10, 10, 10, label=i,
                     attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections) if i % 2 == 0
         ])
-        item2 = DatasetItem(id=2, annotations=[
+        item2 = DatasetItem(id_=2, annotations=[
             BboxObject(i * 10, 10, 10, 10, label=(i + 1) % class_count,
                     attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections) if i % 2 == 1
@@ -106,7 +106,7 @@ class DiffTest(TestCase):
             LabelObject(i, attributes={'score': (1.0 + i) / detections}) \
                 for i in range(detections)
         ]
-        item = DatasetItem(id=1, annotations=anns)
+        item = DatasetItem(id_=1, annotations=anns)
 
         conf_thresh = 0.5
         comp = Comparator(conf_threshold=conf_thresh)
@@ -121,12 +121,12 @@ class DiffTest(TestCase):
             len(matches))
 
     def test_can_find_wrong_label(self):
-        item1 = DatasetItem(id=1, annotations=[
+        item1 = DatasetItem(id_=1, annotations=[
             LabelObject(0),
             LabelObject(1),
             LabelObject(2),
         ])
-        item2 = DatasetItem(id=2, annotations=[
+        item2 = DatasetItem(id_=2, annotations=[
             LabelObject(2),
             LabelObject(3),
             LabelObject(4),

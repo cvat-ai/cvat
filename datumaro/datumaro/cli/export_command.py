@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
-import os
 import os.path as osp
 
 from datumaro.components.project import Project

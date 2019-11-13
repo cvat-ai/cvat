@@ -31,19 +31,19 @@ class DiffVisualizer:
     _UNMATCHED_LABEL = -1
 
 
-    def __init__(self, comparator, save_dir, format=DEFAULT_FORMAT):
+    def __init__(self, comparator, save_dir, output_format=DEFAULT_FORMAT):
         self.comparator = comparator
 
-        if isinstance(format, str):
-            format = Format[format]
-        assert format in Format
-        self.format = format
+        if isinstance(output_format, str):
+            output_format = Format[output_format]
+        assert output_format in Format
+        self.format = output_format
 
         self.save_dir = save_dir
-        if format is Format.tensorboard:
+        if output_format is Format.tensorboard:
             logdir = osp.join(self.save_dir, 'logs', 'diff')
             self.file_writer = tb.SummaryWriter(logdir)
-        if format is Format.simple:
+        if output_format is Format.simple:
             self.label_diff_writer = None
 
         self.categories = {}
@@ -52,6 +52,9 @@ class DiffVisualizer:
         self.bbox_confusion_matrix = Counter()
 
     def save_dataset_diff(self, extractor_a, extractor_b):
+        if self.save_dir:
+            os.makedirs(self.save_dir, exist_ok=True)
+
         if len(extractor_a) != len(extractor_b):
             print("Datasets have different lengths: %s vs %s" % \
                 (len(extractor_a), len(extractor_b)))
@@ -210,8 +213,7 @@ class DiffVisualizer:
 
             img = np.hstack([img_a, img_b])
 
-            path = osp.join(self.save_dir,
-                'diff_%s' % item_a.id)
+            path = osp.join(self.save_dir, 'diff_%s' % item_a.id)
 
             if self.format is Format.simple:
                 cv2.imwrite(path + '.png', img)
@@ -242,7 +244,7 @@ class DiffVisualizer:
         labels = [label for id, label in classes.items()]
 
         fig = plt.figure()
-        ax = fig.add_subplot(111)
+        fig.add_subplot(111)
         table = plt.table(
             cellText=matrix,
             colLabels=labels,

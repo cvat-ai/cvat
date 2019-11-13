@@ -7,7 +7,7 @@ from collections import defaultdict
 import os
 import os.path as osp
 
-from datumaro.components.formats.ms_coco import *
+from datumaro.components.formats.ms_coco import CocoAnnotationType, CocoPath
 
 
 class CocoImporter:
@@ -28,8 +28,11 @@ class CocoImporter:
 
         subsets = self.find_subsets(path)
 
-        for subset_name, anns in subsets.items():
-            for ann_type, ann_file in anns.items():
+        if len(subsets) == 0:
+            raise Exception("Failed to find 'coco' dataset at '%s'" % path)
+
+        for ann_files in subsets.values():
+            for ann_type, ann_file in ann_files.items():
                 source_name = osp.splitext(osp.basename(ann_file))[0]
                 project.add_source(source_name, {
                     'url': ann_file,

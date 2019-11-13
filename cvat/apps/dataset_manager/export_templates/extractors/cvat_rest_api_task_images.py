@@ -20,22 +20,23 @@ CONFIG_SCHEMA = _SchemaBuilder() \
     .build()
 
 class cvat_rest_api_task_images(datumaro.Extractor):
-    def _image_local_path(self, id):
+    def _image_local_path(self, item_id):
         task_id = self._config.task_id
         return osp.join(self._cache_dir,
-            'task_{}_frame_{:06d}.jpg'.format(task_id, id))
+            'task_{}_frame_{:06d}.jpg'.format(task_id, item_id))
 
     def _make_image_loader(self, item_id):
-        return lazy_image(item_id, lambda id: self._image_loader(id, self))
+        return lazy_image(item_id,
+            lambda item_id: self._image_loader(item_id, self))
 
-    def _is_image_cached(self, id):
-        return osp.isfile(self._image_local_path(id))
+    def _is_image_cached(self, item_id):
+        return osp.isfile(self._image_local_path(item_id))
 
-    def _download_image(self, id):
+    def _download_image(self, item_id):
         self._connect()
         os.makedirs(self._cache_dir, exist_ok=True)
         self._cvat_cli.tasks_frame(task_id=self._config.task_id,
-            frame_ids=[id], outdir=self._cache_dir)
+            frame_ids=[item_id], outdir=self._cache_dir)
 
     def _connect(self):
         if self._session is not None:
@@ -67,10 +68,10 @@ class cvat_rest_api_task_images(datumaro.Extractor):
                 self._session.close()
 
     @staticmethod
-    def _image_loader(id, extractor):
-        if not extractor._is_image_cached(id):
-            extractor._download_image(id)
-        local_path = extractor._image_local_path(id)
+    def _image_loader(item_id, extractor):
+        if not extractor._is_image_cached(item_id):
+            extractor._download_image(item_id)
+        local_path = extractor._image_local_path(item_id)
         return load_image(local_path)
 
     def __init__(self, url):
@@ -91,9 +92,9 @@ class cvat_rest_api_task_images(datumaro.Extractor):
 
         items = []
         for entry in image_list:
-            id = entry['id']
+            item_id = entry['id']
             item = datumaro.DatasetItem(
-                id=id, image=self._make_image_loader(id))
+                id_=item_id, image=self._make_image_loader(item_id))
             items.append((item.id, item))
 
         items = sorted(items, key=lambda e: e[0])
@@ -113,7 +114,7 @@ class cvat_rest_api_task_images(datumaro.Extractor):
     def subsets(self):
         return None
 
-    def get(self, id, subset=None, path=None):
+    def get(self, item_id, subset=None, path=None):
         if path or subset:
             raise KeyError()
-        return self._items[id]
+        return self._items[item_id]

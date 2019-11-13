@@ -20,13 +20,13 @@ AnnotationType = Enum('AnnotationType',
     ])
 
 class Annotation:
-    def __init__(self, id=None, type=None, attributes=None, group=None):
-        if id is not None:
-            id = int(id)
-        self.id = id
+    def __init__(self, id_=None, type_=None, attributes=None, group=None):
+        if id_ is not None:
+            id_ = int(id_)
+        self.id = id_
 
-        assert type in AnnotationType
-        self.type = type
+        assert type_ in AnnotationType
+        self.type = type_
 
         if attributes is None:
             attributes = {}
@@ -100,8 +100,8 @@ class LabelCategories(Categories):
 
 class LabelObject(Annotation):
     def __init__(self, label=None,
-            id=None, attributes=None, group=None):
-        super().__init__(id=id, type=AnnotationType.label,
+            id_=None, attributes=None, group=None):
+        super().__init__(id_=id_, type_=AnnotationType.label,
             attributes=attributes, group=group)
         self.label = label
 
@@ -143,8 +143,8 @@ class MaskCategories(Categories):
 
 class MaskObject(Annotation):
     def __init__(self, image=None, label=None,
-            id=None, attributes=None, group=None):
-        super().__init__(id=id, type=AnnotationType.mask,
+            id_=None, attributes=None, group=None):
+        super().__init__(id_=id_, type_=AnnotationType.mask,
             attributes=attributes, group=group)
         self._image = image
         self._label = label
@@ -197,9 +197,9 @@ def compute_iou(bbox_a, bbox_b):
     return intersection / max(1.0, union)
 
 class ShapeObject(Annotation):
-    def __init__(self, type, points=None, label=None,
-            id=None, attributes=None, group=None):
-        super().__init__(id=id, type=type,
+    def __init__(self, type_, points=None, label=None,
+            id_=None, attributes=None, group=None):
+        super().__init__(id_=id_, type_=type_,
             attributes=attributes, group=group)
         self.points = points
         self.label = label
@@ -238,10 +238,10 @@ class ShapeObject(Annotation):
 
 class PolyLineObject(ShapeObject):
     def __init__(self, points=None,
-            label=None, id=None, attributes=None, group=None):
-        super().__init__(type=AnnotationType.polyline,
+            label=None, id_=None, attributes=None, group=None):
+        super().__init__(type_=AnnotationType.polyline,
             points=points, label=label,
-            id=id, attributes=attributes, group=group)
+            id_=id_, attributes=attributes, group=group)
 
     def get_polygon(self):
         return self.get_points()
@@ -251,20 +251,20 @@ class PolyLineObject(ShapeObject):
 
 class PolygonObject(ShapeObject):
     def __init__(self, points=None,
-            label=None, id=None, attributes=None, group=None):
-        super().__init__(type=AnnotationType.polygon,
+            label=None, id_=None, attributes=None, group=None):
+        super().__init__(type_=AnnotationType.polygon,
             points=points, label=label,
-            id=id, attributes=attributes, group=group)
+            id_=id_, attributes=attributes, group=group)
 
     def get_polygon(self):
         return self.get_points()
 
 class BboxObject(ShapeObject):
     def __init__(self, x=0, y=0, w=0, h=0,
-            label=None, id=None, attributes=None, group=None):
-        super().__init__(type=AnnotationType.bbox,
+            label=None, id_=None, attributes=None, group=None):
+        super().__init__(type_=AnnotationType.bbox,
             points=[x, y, x + w, y + h], label=label,
-            id=id, attributes=attributes, group=group)
+            id_=id_, attributes=attributes, group=group)
 
     @property
     def x(self):
@@ -331,7 +331,7 @@ class PointsObject(ShapeObject):
     ])
 
     def __init__(self, points=None, visibility=None, label=None,
-            id=None, attributes=None, group=None):
+            id_=None, attributes=None, group=None):
         if points is not None:
             assert len(points) % 2 == 0
 
@@ -345,9 +345,9 @@ class PointsObject(ShapeObject):
                 for _ in range(len(points) // 2):
                     visibility.append(self.Visibility.absent)
 
-        super().__init__(type=AnnotationType.points,
+        super().__init__(type_=AnnotationType.points,
             points=points, label=label,
-            id=id, attributes=attributes, group=group)
+            id_=id_, attributes=attributes, group=group)
 
         self.visibility = visibility
 
@@ -362,8 +362,8 @@ class PointsObject(ShapeObject):
 
 class CaptionObject(Annotation):
     def __init__(self, caption=None,
-            id=None, attributes=None, group=None):
-        super().__init__(id=id, type=AnnotationType.caption,
+            id_=None, attributes=None, group=None):
+        super().__init__(id_=id_, type_=AnnotationType.caption,
             attributes=attributes, group=group)
 
         if caption is None:
@@ -377,13 +377,13 @@ class CaptionObject(Annotation):
             (self.caption == other.caption)
 
 class DatasetItem:
-    def __init__(self, id, annotations=None,
+    def __init__(self, id_, annotations=None,
             subset=None, path=None, image=None):
-        assert id is not None
-        if not isinstance(id, str):
-            id = str(id)
-        assert len(id) != 0
-        self._id = id
+        assert id_ is not None
+        if not isinstance(id_, str):
+            id_ = str(id_)
+        assert len(id_) != 0
+        self._id = id_
 
         if subset is None:
             subset = ''
@@ -451,10 +451,10 @@ class IExtractor:
     def categories(self):
         raise NotImplementedError()
 
-    def select(self, filter):
+    def select(self, pred):
         raise NotImplementedError()
 
-    def get(self, id, subset=None, path=None):
+    def get(self, item_id, subset=None, path=None):
         raise NotImplementedError()
 
 class _DatasetFilter:
@@ -510,9 +510,9 @@ class DatasetIteratorWrapper(_ExtractorBase):
     def categories(self):
         return self._categories
 
-    def select(self, filter):
+    def select(self, pred):
         return DatasetIteratorWrapper(
-            _DatasetFilter(self, filter), self.categories())
+            _DatasetFilter(self, pred), self.categories())
 
 class Extractor(_ExtractorBase):
     def __init__(self, length=None):
@@ -521,9 +521,9 @@ class Extractor(_ExtractorBase):
     def categories(self):
         return {}
 
-    def select(self, filter):
+    def select(self, pred):
         return DatasetIteratorWrapper(
-            _DatasetFilter(self, filter), self.categories())
+            _DatasetFilter(self, pred), self.categories())
 
 
 DEFAULT_SUBSET_NAME = '_default'

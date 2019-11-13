@@ -14,11 +14,11 @@ from datumaro.components.formats.datumaro import *
 from datumaro.util.mask_tools import apply_colormap
 
 
-def _cast(value, type, default=None):
+def _cast(value, type_conv, default=None):
     if value is None:
         return default
     try:
-        return type(value)
+        return type_conv(value)
     except Exception:
         return default
 

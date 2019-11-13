@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import os.path as osp
 
 from datumaro.components.project import Project, \
@@ -16,4 +15,6 @@ def make_project_path(project_dir, project_filename=None):
     return osp.join(project_dir, project_filename)
 
 def load_project(project_dir, project_filename=None):
+    if project_filename:
+        project_dir = osp.join(project_dir, project_filename)
     return Project.load(project_dir)

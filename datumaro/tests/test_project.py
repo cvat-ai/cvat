@@ -10,7 +10,7 @@ from datumaro.components.converter import Converter
 from datumaro.components.extractor import Extractor, DatasetItem, LabelObject
 from datumaro.components.config import Config, DefaultConfig, SchemaBuilder
 from datumaro.components.dataset_filter import XPathDatasetFilter
-from datumaro.util.test_utils import *
+from datumaro.util.test_utils import TestDir
 
 
 class ProjectTest(TestCase):
@@ -72,13 +72,10 @@ class ProjectTest(TestCase):
         project = Project()
         project.add_source(source_name, origin)
 
-        project_dir = 'project_%s' % (current_function_name())
-        path = osp.join(project_dir, project.config.project_filename)
-        os.makedirs(project_dir, exist_ok=False)
-        with FileRemover(project_dir, is_dir=True):
-            project.save(path)
+        with TestDir() as test_dir:
+            project.save(test_dir.path)
 
-            loaded = Project.load(path)
+            loaded = Project.load(test_dir.path)
             loaded = loaded.get_source(source_name)
             self.assertEqual(origin, loaded)
 
@@ -109,13 +106,10 @@ class ProjectTest(TestCase):
         saved = Model({ 'launcher': 'name' })
         project.add_model(model_name, saved)
 
-        project_dir = 'project_%s' % (current_function_name())
-        path = osp.join(project_dir, project.config.project_filename)
-        os.makedirs(project_dir, exist_ok=False)
-        with FileRemover(project_dir, is_dir=True):
-            project.save(path)
+        with TestDir() as test_dir:
+            project.save(test_dir.path)
 
-            loaded = Project.load(path)
+            loaded = Project.load(test_dir.path)
             loaded = loaded.get_model(model_name)
             self.assertEqual(saved, loaded)
 
@@ -139,7 +133,7 @@ class ProjectTest(TestCase):
 
             def __iter__(self):
                 for i in range(self.n):
-                    yield DatasetItem(id=i, subset='train', image=i)
+                    yield DatasetItem(id_=i, subset='train', image=i)
 
             def subsets(self):
                 return ['train']
@@ -179,7 +173,7 @@ class ProjectTest(TestCase):
 
             def __iter__(self):
                 for i in range(self.n):
-                    yield DatasetItem(id=i, subset='train', image=i,
+                    yield DatasetItem(id_=i, subset='train', image=i,
                         annotations=[ LabelObject(i) ])
 
             def subsets(self):
@@ -212,7 +206,7 @@ class ProjectTest(TestCase):
                         subset = f.readline()[:-1]
                         label = int(f.readline()[:-1])
                         assert(subset == 'train')
-                        yield DatasetItem(id=index, subset=subset,
+                        yield DatasetItem(id_=index, subset=subset,
                             annotations=[ LabelObject(label) ])
 
             def __len__(self):
@@ -233,12 +227,10 @@ class ProjectTest(TestCase):
         project.add_model(model_name, { 'launcher': launcher_name })
         project.add_source('source', { 'format': extractor_name })
 
-        test_dir = 'transformed_%s' % current_function_name()
-        os.makedirs(test_dir, exist_ok=False)
-        with FileRemover(test_dir, is_dir=True):
-            project.make_dataset().transform(model_name, test_dir)
+        with TestDir() as test_dir:
+            project.make_dataset().transform(model_name, test_dir.path)
 
-            result = Project.load(test_dir)
+            result = Project.load(test_dir.path)
             result.env.extractors.register(extractor_name, TestExtractorDst)
             it = iter(result.make_dataset())
             item1 = next(it)
@@ -255,7 +247,7 @@ class ProjectTest(TestCase):
 
             def __iter__(self):
                 for i in range(self.n):
-                    yield DatasetItem(id=self.s + i, subset='train')
+                    yield DatasetItem(id_=self.s + i, subset='train')
 
             def subsets(self):
                 return ['train']
@@ -283,7 +275,7 @@ class ProjectTest(TestCase):
 
             def __iter__(self):
                 for i in range(self.n):
-                    yield DatasetItem(id=i, subset='train')
+                    yield DatasetItem(id_=i, subset='train')
 
             def subsets(self):
                 return ['train']
@@ -302,7 +294,7 @@ class ProjectTest(TestCase):
         project = Project()
         dataset = project.make_dataset()
 
-        item = DatasetItem(id=1)
+        item = DatasetItem(id_=1)
         dataset.put(item)
 
         self.assertEqual(item, next(iter(dataset)))
@@ -328,8 +320,8 @@ class ProjectTest(TestCase):
             })
             dataset = parent.make_dataset()
 
-            item1 = DatasetItem(id='ch1', path=['child1'])
-            item2 = DatasetItem(id='ch2', path=['child2'])
+            item1 = DatasetItem(id_='ch1', path=['child1'])
+            item2 = DatasetItem(id_='ch2', path=['child2'])
             dataset.put(item1)
             dataset.put(item2)
 
@@ -339,32 +331,32 @@ class ProjectTest(TestCase):
 
     def test_project_can_merge_item_annotations(self):
         class TestExtractor(Extractor):
-            def __init__(self, url, id=None):
+            def __init__(self, url, v=None):
                 super().__init__()
-                self.id = id
+                self.v = v
 
             def __iter__(self):
-                id1_item = DatasetItem(id=1, subset='train', annotations=[
-                    LabelObject(2, id=3),
+                v1_item = DatasetItem(id_=1, subset='train', annotations=[
+                    LabelObject(2, id_=3),
                     LabelObject(3, attributes={ 'x': 1 }),
                 ])
 
-                id2_item = DatasetItem(id=1, subset='train', annotations=[
+                v2_item = DatasetItem(id_=1, subset='train', annotations=[
                     LabelObject(3, attributes={ 'x': 1 }),
-                    LabelObject(4, id=4),
+                    LabelObject(4, id_=4),
                 ])
 
-                if self.id == 1:
-                    yield id1_item
+                if self.v == 1:
+                    yield v1_item
                 else:
-                    yield id2_item
+                    yield v2_item
 
             def subsets(self):
                 return ['train']
 
         project = Project()
-        project.env.extractors.register('t1', lambda p: TestExtractor(p, id=1))
-        project.env.extractors.register('t2', lambda p: TestExtractor(p, id=2))
+        project.env.extractors.register('t1', lambda p: TestExtractor(p, v=1))
+        project.env.extractors.register('t2', lambda p: TestExtractor(p, v=2))
         project.add_source('source1', { 'format': 't1' })
         project.add_source('source2', { 'format': 't2' })
 
@@ -383,15 +375,16 @@ class DatasetFilterTest(TestCase):
 
         def __iter__(self):
             for i in range(self.n):
-                yield DatasetItem(id=i, subset='train')
+                yield DatasetItem(id_=i, subset='train')
 
         def subsets(self):
             return ['train']
 
     def test_xpathfilter_can_be_applied(self):
         extractor = self.TestExtractor('', n=4)
-        filter = XPathDatasetFilter('/item[id > 1]')
-        filtered = extractor.select(filter)
+        dataset_filter = XPathDatasetFilter('/item[id > 1]')
+
+        filtered = extractor.select(dataset_filter)
 
         self.assertEqual(2, len(filtered))
 

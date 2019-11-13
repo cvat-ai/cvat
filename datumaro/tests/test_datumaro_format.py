@@ -14,29 +14,29 @@ class DatumaroConverterTest(TestCase):
     class TestExtractor(Extractor):
         def __iter__(self):
             items = [
-                DatasetItem(id=100, subset='train',
+                DatasetItem(id_=100, subset='train',
                     annotations=[
-                        CaptionObject('hello', id=1),
-                        CaptionObject('world', id=2, group=5),
-                        LabelObject(2, id=3, attributes={
+                        CaptionObject('hello', id_=1),
+                        CaptionObject('world', id_=2, group=5),
+                        LabelObject(2, id_=3, attributes={
                             'x': 1,
                             'y': '2',
                         }),
-                        BboxObject(1, 2, 3, 4, label=4, id=4, attributes={
+                        BboxObject(1, 2, 3, 4, label=4, id_=4, attributes={
                             'score': 10.0,
                         }),
-                        BboxObject(5, 6, 7, 8, id=5, group=5),
-                        PointsObject([1, 2, 2, 0, 1, 1], label=0, id=5),
-                        MaskObject(label=3, id=5, image=np.ones((2, 3))),
+                        BboxObject(5, 6, 7, 8, id_=5, group=5),
+                        PointsObject([1, 2, 2, 0, 1, 1], label=0, id_=5),
+                        MaskObject(label=3, id_=5, image=np.ones((2, 3))),
                     ]),
-                DatasetItem(id=21, subset='train',
+                DatasetItem(id_=21, subset='train',
                     annotations=[
                         CaptionObject('test'),
                         LabelObject(2),
-                        BboxObject(1, 2, 3, 4, 5, id=42, group=42)
+                        BboxObject(1, 2, 3, 4, 5, id_=42, group=42)
                     ]),
 
-                DatasetItem(id=42, subset='test'),
+                DatasetItem(id_=42, subset='test'),
             ]
             return iter(items)
 

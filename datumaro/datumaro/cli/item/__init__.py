@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
-import os
-import os.path as osp
 
 
 def build_export_parser(parser):
