@@ -244,8 +244,8 @@ class _Converter:
 
         subsets = self._extractor.subsets()
         if len(subsets) == 0:
-            subsets = [ DatumaroPath.DEFAULT_SUBSET ]
-        subsets = [n if n else DatumaroPath.DEFAULT_SUBSET for n in subsets]
+            subsets = [ DEFAULT_SUBSET_NAME ]
+        subsets = [n if n else DEFAULT_SUBSET_NAME for n in subsets]
         subsets = { name: _SubsetWriter(name, self) for name in subsets }
 
         for subset, writer in subsets.items():
@@ -254,7 +254,7 @@ class _Converter:
         for item in self._extractor:
             subset = item.subset
             if not subset:
-                subset = DatumaroPath.DEFAULT_SUBSET
+                subset = DEFAULT_SUBSET_NAME
             writer = subsets[subset]
 
             if self._save_images:

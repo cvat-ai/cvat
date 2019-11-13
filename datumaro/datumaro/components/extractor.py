@@ -524,3 +524,6 @@ class Extractor(_ExtractorBase):
     def select(self, filter):
         return DatasetIteratorWrapper(
             _DatasetFilter(self, filter), self.categories())
+
+
+DEFAULT_SUBSET_NAME = '_default'

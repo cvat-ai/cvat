@@ -66,6 +66,8 @@ class CocoExtractor(Extractor):
 
         subset_name = osp.splitext(osp.basename(path))[0] \
             .rsplit('_', maxsplit=1)[1]
+        if subset_name == DEFAULT_SUBSET_NAME:
+            subset_name = None
         subset = CocoExtractor.Subset(subset_name, self)
         loader = self._make_subset_loader(path)
         subset.loaders[task] = loader
@@ -90,7 +92,7 @@ class CocoExtractor(Extractor):
     def _load_categories(self):
         loaders = {}
 
-        for subset_name, subset in self._subsets.items():
+        for subset in self._subsets.values():
             loaders.update(subset.loaders)
 
         self._categories = {}
@@ -131,7 +133,7 @@ class CocoExtractor(Extractor):
         cats = loader.loadCats(catIds)
 
         categories = PointsCategories()
-        for idx, cat in enumerate(cats):
+        for cat in cats:
             label_id, _ = self._categories[AnnotationType.label].find(cat['name'])
             categories.add(label_id=label_id,
                 labels=cat['keypoints'], adjacent=cat['skeleton'])

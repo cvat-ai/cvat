@@ -52,7 +52,7 @@ class _TaskConverter:
         self._data = data
 
     def is_empty(self):
-        return len(self._data['images']) == 0
+        return len(self._data['annotations']) == 0
 
     def save_image_info(self, item, filename):
         if item.has_image:
@@ -158,6 +158,9 @@ class _InstancesConverter(_TaskConverter):
             self.annotations.append(elem)
 
 class _ImageInfoConverter(_TaskConverter):
+    def is_empty(self):
+        return len(self._data['images']) == 0
+
     def save_categories(self, dataset):
         pass
 
@@ -283,7 +286,11 @@ class _Converter:
         CocoAnnotationType.labels: _LabelsConverter,
     }
 
-    def __init__(self, task, extractor, save_dir, save_images=False):
+    def __init__(self, extractor, save_dir, save_images=False, task=None):
+        if not task:
+            task = list(self._TASK_CONVERTER.keys())
+        elif task in CocoAnnotationType:
+            task = [task]
         self._task = task
         self._extractor = extractor
         self._save_dir = save_dir
@@ -296,8 +303,13 @@ class _Converter:
         self._ann_dir = osp.join(self._save_dir, CocoPath.ANNOTATIONS_DIR)
         os.makedirs(self._ann_dir, exist_ok=True)
 
-    def make_task_converter(self):
-        return self._TASK_CONVERTER[self._task]()
+    def make_task_converter(self, task):
+        return self._TASK_CONVERTER[task]()
+
+    def make_task_converters(self):
+        return {
+            task: self.make_task_converter(task) for task in self._task
+        }
 
     def save_image(self, item, filename):
         path = osp.join(self._images_dir, filename)
@@ -310,31 +322,36 @@ class _Converter:
 
         for subset_name in self._extractor.subsets():
             subset = self._extractor.get_subset(subset_name)
+            if not subset_name:
+                subset_name = DEFAULT_SUBSET_NAME
 
-            task_conv = self.make_task_converter()
-            task_conv.save_categories(subset)
+            task_converters = self.make_task_converters()
+            for task_conv in task_converters.values():
+                task_conv.save_categories(subset)
             for item in subset:
                 filename = ''
                 if item.has_image:
                     filename = str(item.id) + CocoPath.IMAGE_EXT
                     if self._save_images:
                         self.save_image(item, filename)
-                task_conv.save_image_info(item, filename)
-                task_conv.save_annotations(item)
+                for task_conv in task_converters.values():
+                    task_conv.save_image_info(item, filename)
+                    task_conv.save_annotations(item)
 
-            if not task_conv.is_empty():
-                task_conv.write(osp.join(self._ann_dir,
-                    '%s_%s.json' % (self._task.name, subset_name)))
+            for task, task_conv in task_converters.items():
+                if not task_conv.is_empty():
+                    task_conv.write(osp.join(self._ann_dir,
+                        '%s_%s.json' % (task.name, subset_name)))
 
 class CocoConverter(Converter):
-    def __init__(self, task, save_images=False):
+    def __init__(self, task=None, save_images=False):
         super().__init__()
         self._task = task
         self._save_images = save_images
 
     def __call__(self, extractor, save_dir):
-        converter = _Converter(self._task, extractor, save_dir,
-            save_images=self._save_images)
+        converter = _Converter(extractor, save_dir,
+            save_images=self._save_images, task=self._task)
         converter.convert()
 
 def CocoInstancesConverter(save_images=False):

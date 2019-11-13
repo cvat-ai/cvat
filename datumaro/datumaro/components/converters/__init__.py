@@ -6,6 +6,7 @@
 from datumaro.components.converters.datumaro import DatumaroConverter
 
 from datumaro.components.converters.ms_coco import (
+    CocoConverter,
     CocoImageInfoConverter,
     CocoCaptionsConverter,
     CocoInstancesConverter,
@@ -26,6 +27,7 @@ from datumaro.components.converters.voc import (
 items = [
     ('datumaro', DatumaroConverter),
 
+    ('coco', CocoConverter),
     ('coco_images', CocoImageInfoConverter),
     ('coco_captions', CocoCaptionsConverter),
     ('coco_instances', CocoInstancesConverter),

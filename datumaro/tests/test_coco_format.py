@@ -158,12 +158,16 @@ class CocoConverterTest(TestCase):
                             CaptionObject('test', id=3),
                         ]),
 
-                    DatasetItem(id=2, subset='test'),
+                    DatasetItem(id=2, subset='val',
+                        annotations=[
+                            CaptionObject('word', id=1),
+                        ]
+                    ),
                 ]
                 return iter(items)
 
             def subsets(self):
-                return ['train', 'test']
+                return ['train', 'val']
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
@@ -195,12 +199,20 @@ class CocoConverterTest(TestCase):
                                 label=4, group=3),
                         ]),
 
-                    DatasetItem(id=2, subset='test'),
+                    DatasetItem(id=2, subset='val',
+                        annotations=[
+                            BboxObject(0, 1, 3, 2, label=4, group=3,
+                                attributes={ 'is_crowd': True }, id=3),
+                            MaskObject(np.array([[0, 0, 0, 0], [1, 0, 1, 0],
+                                                 [1, 1, 0, 0], [0, 0, 0, 0]],
+                                                 dtype=np.bool),
+                                label=4, group=3),
+                        ]),
                 ]
                 return iter(items)
 
             def subsets(self):
-                return ['train', 'test']
+                return ['train', 'val']
 
             def categories(self):
                 label_categories = LabelCategories()
@@ -221,12 +233,16 @@ class CocoConverterTest(TestCase):
                     DatasetItem(id=0, subset='train'),
                     DatasetItem(id=1, subset='train'),
 
-                    DatasetItem(id=2, subset='test'),
+                    DatasetItem(id=2, subset='val'),
+                    DatasetItem(id=3, subset='val'),
+                    DatasetItem(id=4, subset='val'),
+
+                    DatasetItem(id=5, subset='test'),
                 ]
                 return iter(items)
 
             def subsets(self):
-                return ['train', 'test']
+                return ['train', 'val', 'test']
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
@@ -246,12 +262,15 @@ class CocoConverterTest(TestCase):
                             LabelObject(4, id=4),
                         ]),
 
-                    DatasetItem(id=2, subset='test'),
+                    DatasetItem(id=2, subset='val',
+                        annotations=[
+                            LabelObject(2, id=1),
+                        ]),
                 ]
                 return iter(items)
 
             def subsets(self):
-                return ['train', 'test']
+                return ['train', 'val']
 
             def categories(self):
                 label_categories = LabelCategories()
@@ -284,12 +303,17 @@ class CocoConverterTest(TestCase):
                             BboxObject(1, 2, 3, 4, label=5, group=3),
                         ]),
 
-                    DatasetItem(id=2, subset='test'),
+                    DatasetItem(id=2, subset='val',
+                        annotations=[
+                            PointsObject([0, 2, 0, 2, 4, 1], label=2,
+                                group=3, id=3),
+                            BboxObject(0, 2, 4, 4, label=2, group=3),
+                        ]),
                 ]
                 return iter(items)
 
             def subsets(self):
-                return ['train', 'test']
+                return ['train', 'val']
 
             def categories(self):
                 label_categories = LabelCategories()
