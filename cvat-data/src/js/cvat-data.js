@@ -186,10 +186,11 @@ class FrameProvider {
 
             this._cleanup();
 
-            const decoder = new Decoder({ rgb: true });
+            // const decoder = new Decoder({ rgb: true });
+
 
             let index = 0;
-            decoder.onPictureDecoded = (buffer, width, height, infos) => {
+            const onPictureDecoded = (buffer, width, height, infos) => {
                 console.log(infos);
                 this._frames[index] = new Uint8ClampedArray(buffer);
                 this._decodingBlocks[`${start}:${end}`].resolveCallback(index);
@@ -202,6 +203,29 @@ class FrameProvider {
                 index++;
             }
 
+            var worker = new Worker('/static/engine/js/Decoder.js');
+
+            worker.addEventListener('message', e => {
+                var data = e.data;
+                if (data.consoleLog){
+                  console.log(data.consoleLog);
+                  return;
+                };
+
+                onPictureDecoded(data.buf, data.width, data.height, data.infos);
+
+              }, false);
+
+            worker.postMessage({type: "Broadway.js - Worker init", options: {
+                rgb: true,
+                memsize: this.memsize,
+                // reuseMemory: this._config.reuseMemory ? true : false
+                reuseMemory: false,
+              }});
+
+
+
+
             const reader = new MP4Reader(new Bytestream(block));
             reader.read();
             var video = reader.tracks[1];
@@ -211,13 +235,27 @@ class FrameProvider {
             var pps = avc.pps[0];
 
             /* Decode Sequence & Picture Parameter Sets */
-            decoder.decode(sps);
-            decoder.decode(pps);
+            // decoder.decode(sps);
+            // decoder.decode(pps);
+            var copyU8_sps = new Uint8Array(sps.length);
+            copyU8_sps.set( sps, 0, sps.length );
+            worker.postMessage({buf: copyU8_sps, offset: 0, length: copyU8_sps.length});
+            var copyU8_pps = new Uint8Array(pps.length);
+            copyU8_pps.set( pps, 0, pps.length );
+
+            worker.postMessage({buf: pps, offset: 0, length: pps.length});
 
             /* Decode Pictures */
             for (let sample = 0; sample < video.getSampleCount(); sample++){
-                video.getSampleNALUnits(sample).forEach(nal => decoder.decode(nal));
+                // video.getSampleNALUnits(sample).forEach(nal => decoder.decode(nal));
+
+                video.getSampleNALUnits(sample).forEach(nal => {
+                    var copyU8_nal = new Uint8Array(nal.length);
+                    copyU8_nal.set( nal, 0, nal.length );
+                    worker.postMessage({buf: copyU8_nal, offset: 0, length: copyU8_nal.length})
+                });
             }
+            this._decodeThreadCount++;
 
             // const worker = new Worker('/static/engine/js/decode_video.js');
 
