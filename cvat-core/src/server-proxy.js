@@ -250,8 +250,12 @@
                                 .get(`${url}`, {
                                     proxy: config.proxy,
                                 });
-                            url = `${url}&action=download`;
-                            resolve(url);
+                            if (response.status === 202) {
+                                setTimeout(request, 3000);
+                            } else {
+                                url = `${url}&action=download`;
+                                resolve(url);
+                            }
                         } catch (errorData) {
                             reject(generateError(
                                 errorData,

@@ -110,10 +110,16 @@ class TaskView {
         }
     }
 
-    async _exportDataset(button, format) {
+    async _exportDataset(button, formatName) {
         button.disabled = true;
         try {
-            const url = await this._task.annotations.exportDataset(format);
+            const format = this._exportFormats.find((x) => {
+                return x.name == formatName;
+            });
+            if (!format) {
+                throw `Unknown dataset export format '${formatName}'`;
+            }
+            const url = await this._task.annotations.exportDataset(format.tag);
             const tempElem = document.createElement('a');
             tempElem.href = `${url}`;
             document.body.appendChild(tempElem);
@@ -126,8 +132,8 @@ class TaskView {
         }
     }
 
-    _isDefaultExportFormat(format) {
-        return format == 'datumaro_project';
+    _isDefaultExportFormat(formatTag) {
+        return formatTag == 'datumaro_project';
     }
 
     init(task) {
@@ -194,8 +200,8 @@ class TaskView {
             + 'style="text-align-last: center;"> Export as Dataset </select>');
         $('<option selected disabled> Export as Dataset </option>').appendTo(exportButton);
         for (const format of this._exportFormats) {
-            const item = $(`<option>${format}</li>`);
-            if (this._isDefaultExportFormat(format)) {
+            const item = $(`<option>${format.name}</li>`);
+            if (this._isDefaultExportFormat(format.tag)) {
                 item.addClass('bold');
             }
             item.appendTo(exportButton);
@@ -252,11 +258,37 @@ class DashboardView {
         this._sharePath = metaData.share_path;
         this._params = {};
         this._annotationFormats = annotationFormats;
-        this._exportFormats = exportFormats;
+        this._exportFormats = [];
 
+        this._setupExportFormats(exportFormats);
         this._setupList();
         this._setupTaskSearch();
         this._setupCreateDialog();
+    }
+
+    _setupExportFormats(availableFormats) {
+        const publicFormats = [];
+
+        if (-1 != availableFormats.indexOf('datumaro_project')) {
+            publicFormats.push({
+                tag: 'datumaro_project',
+                name: 'Datumaro',
+            });
+        }
+        if (-1 != availableFormats.indexOf('voc')) {
+            publicFormats.push({
+                tag: 'voc',
+                name: 'PASCAL VOC 2012',
+            });
+        }
+        if (-1 != availableFormats.indexOf('coco')) {
+            publicFormats.push({
+                tag: 'coco',
+                name: 'MS COCO',
+            });
+        }
+
+        this._exportFormats = publicFormats;
     }
 
     _setupList() {

@@ -214,9 +214,7 @@ class TaskProject:
     def export(self, dst_format, save_dir, save_images=False, server_url=None):
         if self._dataset is None:
             self._init_dataset()
-        if dst_format == DEFAULT_FORMAT:
-            self._dataset.save(save_dir=save_dir, save_images=save_images)
-        elif dst_format == DEFAULT_FORMAT_REMOTE:
+        if dst_format == EXPORT_FORMAT_DATUMARO_PROJECT:
             self._remote_export(save_dir=save_dir, server_url=server_url)
         else:
             self._dataset.export(output_format=dst_format,
