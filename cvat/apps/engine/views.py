@@ -470,7 +470,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if not dst_format:
             dst_format = DatumaroTask.DEFAULT_FORMAT
         dst_format = dst_format.lower()
-        if 100 < len(dst_format) or not re.fullmatch(r"^[\w_-]+$", dst_format):
+        if dst_format not in DatumaroTask.get_export_formats():
             raise serializers.ValidationError(
                 "Unexpected parameter 'format' specified for the request")
 
