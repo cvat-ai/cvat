@@ -10,13 +10,30 @@ import shutil
 from unittest import TestCase
 
 from datumaro.components.project import Project
-from datumaro.components.extractor import *
+from datumaro.components.extractor import (Extractor, DatasetItem,
+    AnnotationType, Annotation,
+    LabelObject, MaskObject, PointsObject, PolygonObject,
+    PolyLineObject, BboxObject, CaptionObject,
+    LabelCategories, MaskCategories, PointsCategories
+)
 import datumaro.components.formats.voc as VOC
-from datumaro.components.extractors.voc import *
-from datumaro.components.converters.voc import *
-from datumaro.components.importers.voc import *
-from datumaro.util.test_utils import *
+from datumaro.components.extractors.voc import (
+    VocClassificationExtractor,
+    VocDetectionExtractor,
+    VocSegmentationExtractor,
+    VocLayoutExtractor,
+    VocActionExtractor,
+)
+from datumaro.components.converters.voc import (
+    VocClassificationConverter,
+    VocDetectionConverter,
+    VocLayoutConverter,
+    VocActionConverter,
+    VocSegmentationConverter,
+)
+from datumaro.components.importers.voc import VocImporter
 from datumaro.util import find
+from datumaro.util.test_utils import TestDir
 
 
 class VocTest(TestCase):
@@ -427,7 +444,7 @@ class VocImporterTest(TestCase):
 
             dataset = VocImporter()(dummy_dir).make_dataset()
 
-            self.assertEqual(len(VocTask), len(dataset.sources))
+            self.assertEqual(len(VOC.VocTask), len(dataset.sources))
             self.assertEqual(set(subsets), set(dataset.subsets()))
             self.assertEqual(
                 sum([len(s) for _, s in subsets.items()]),

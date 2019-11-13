@@ -459,15 +459,15 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 "Unexpected parameter 'action' specified for the request")
 
-        format = request.query_params.get("format", "")
-        if not format:
-            format = DatumaroTask.DEFAULT_FORMAT
-        format = format.lower()
-        if 100 < len(format) or not re.fullmatch(r"^[\w_-]+$", format):
+        dst_format = request.query_params.get("format", "")
+        if not dst_format:
+            dst_format = DatumaroTask.DEFAULT_FORMAT
+        dst_format = dst_format.lower()
+        if 100 < len(dst_format) or not re.fullmatch(r"^[\w_-]+$", dst_format):
             raise serializers.ValidationError(
                 "Unexpected parameter 'format' specified for the request")
 
-        rq_id = "task_dataset_export.{}.{}".format(pk, format)
+        rq_id = "task_dataset_export.{}.{}".format(pk, dst_format)
         queue = django_rq.get_queue("default")
 
         rq_job = queue.fetch_job(rq_id)
@@ -484,8 +484,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                         rq_job.delete()
 
                         timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-                        filename = "task_{}-{}-{}.zip" \
-                            .format(db_task.name, timestamp, format)
+                        filename = "task_{}-{}-{}.zip".format(
+                            db_task.name, timestamp, dst_format)
                         return sendfile(request, file_path, attachment=True,
                             attachment_filename=filename.lower())
                     else:
@@ -501,7 +501,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         ttl = DatumaroTask.CACHE_TTL.total_seconds()
         queue.enqueue_call(func=DatumaroTask.export_project,
-            args=(pk, request.user, format), job_id=rq_id,
+            args=(pk, request.user, dst_format), job_id=rq_id,
             meta={ 'request_time': timezone.localtime() },
             result_ttl=ttl, failure_ttl=ttl)
         return Response(status=status.HTTP_201_CREATED)

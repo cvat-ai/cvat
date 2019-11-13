@@ -1,14 +1,25 @@
 import json
+import numpy as np
 import os
 import os.path as osp
 
 from unittest import TestCase
 
 from datumaro.components.project import Project
-from datumaro.components.extractor import *
-from datumaro.components.converters.ms_coco import *
-from datumaro.util.test_utils import *
+from datumaro.components.extractor import (Extractor, DatasetItem,
+    AnnotationType, LabelObject, MaskObject, PointsObject, PolygonObject,
+    PolyLineObject, BboxObject, CaptionObject,
+    LabelCategories, MaskCategories, PointsCategories
+)
+from datumaro.components.converters.ms_coco import (
+    CocoImageInfoConverter,
+    CocoCaptionsConverter,
+    CocoInstancesConverter,
+    CocoPersonKeypointsConverter,
+    CocoLabelsConverter,
+)
 from datumaro.util import find
+from datumaro.util.test_utils import TestDir
 
 
 class CocoImporterTest(TestCase):

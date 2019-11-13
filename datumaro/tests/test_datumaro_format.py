@@ -4,9 +4,13 @@ import numpy as np
 from unittest import TestCase
 
 from datumaro.components.project import Project
-from datumaro.components.extractor import *
-from datumaro.components.converters.datumaro import *
-from datumaro.util.test_utils import *
+from datumaro.components.extractor import (Extractor, DatasetItem,
+    AnnotationType, LabelObject, MaskObject, PointsObject, PolygonObject,
+    PolyLineObject, BboxObject, CaptionObject,
+    LabelCategories, MaskCategories, PointsCategories
+)
+from datumaro.components.converters.datumaro import DatumaroConverter
+from datumaro.util.test_utils import TestDir
 from datumaro.util.mask_tools import generate_colormap
 
 
@@ -36,12 +40,18 @@ class DatumaroConverterTest(TestCase):
                         BboxObject(1, 2, 3, 4, 5, id_=42, group=42)
                     ]),
 
+                DatasetItem(id_=2, subset='val',
+                    annotations=[
+                        PolyLineObject([1, 2, 3, 4, 5, 6, 7, 8], id_=11),
+                        PolygonObject([1, 2, 3, 4, 5, 6, 7, 8], id_=12),
+                    ]),
+
                 DatasetItem(id_=42, subset='test'),
             ]
             return iter(items)
 
         def subsets(self):
-            return ['train', 'test']
+            return ['train', 'val', 'test']
 
         def categories(self):
             label_categories = LabelCategories()

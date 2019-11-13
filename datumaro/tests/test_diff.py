@@ -1,8 +1,7 @@
 from unittest import TestCase
 
-from datumaro.components.extractor import *
+from datumaro.components.extractor import DatasetItem, LabelObject, BboxObject
 from datumaro.components.comparator import Comparator
-from datumaro.util.test_utils import *
 
 
 class DiffTest(TestCase):

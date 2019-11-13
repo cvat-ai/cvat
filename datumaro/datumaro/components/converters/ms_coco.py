@@ -5,14 +5,21 @@
 
 import cv2
 import json
+import numpy as np
 import os
 import os.path as osp
 
 import pycocotools.mask as mask_utils
 
 from datumaro.components.converter import Converter
-from datumaro.components.extractor import *
-from datumaro.components.formats.ms_coco import *
+from datumaro.components.extractor import (
+    DEFAULT_SUBSET_NAME,
+    AnnotationType, Annotation,
+    LabelObject, MaskObject, PointsObject, PolygonObject,
+    PolyLineObject, BboxObject, CaptionObject,
+    LabelCategories, MaskCategories, PointsCategories
+)
+from datumaro.components.formats.ms_coco import CocoAnnotationType, CocoPath
 from datumaro.util import find
 import datumaro.util.mask_tools as mask_tools
 
@@ -83,7 +90,7 @@ class _TaskConverter:
     def write(self, path):
         next_id = self._min_ann_id
         for ann in self.annotations:
-            if ann['id'] == None:
+            if ann['id'] is None:
                 ann['id'] = next_id
                 next_id += 1
 

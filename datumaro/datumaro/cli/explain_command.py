@@ -7,13 +7,13 @@ import argparse
 import cv2
 import logging as log
 from matplotlib import cm
-import numpy as np
 import os
 import os.path as osp
 
 from datumaro.components.project import Project
 from datumaro.components.algorithms.rise import RISE
-from datumaro.util.command_targets import *
+from datumaro.util.command_targets import TargetKinds, \
+    ProjectTarget, SourceTarget, ImageTarget
 from datumaro.util.image import load_image
 from .util.project import load_project
 

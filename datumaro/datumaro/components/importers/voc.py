@@ -20,7 +20,7 @@ class VocImporter:
     ]
 
     def __call__(self, path):
-        from datumaro.components.project import Project, Source # cyclic import
+        from datumaro.components.project import Project # cyclic import
         project = Project()
 
         for task, extractor_type, task_dir in self._TASKS:
@@ -54,7 +54,7 @@ class VocResultsImporter:
     ]
 
     def __call__(self, path):
-        from datumaro.components.project import Project, Source # cyclic import
+        from datumaro.components.project import Project # cyclic import
         project = Project()
 
         for task_name, extractor_type, task_dir in self._TASKS:

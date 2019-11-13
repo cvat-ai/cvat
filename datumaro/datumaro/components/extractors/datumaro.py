@@ -5,14 +5,20 @@
 
 from collections import defaultdict
 import json
-import os
 import os.path as osp
 
-from datumaro.components.extractor import *
-from datumaro.components.formats.datumaro import *
+from datumaro.components.converter import Converter
+from datumaro.components.extractor import (Extractor, DatasetItem,
+    DEFAULT_SUBSET_NAME,
+    AnnotationType, Annotation,
+    LabelObject, MaskObject, PointsObject, PolygonObject,
+    PolyLineObject, BboxObject, CaptionObject,
+    LabelCategories, MaskCategories, PointsCategories
+)
+from datumaro.components.formats.datumaro import DatumaroPath
+from datumaro.util import dir_items
 from datumaro.util.image import lazy_image
 from datumaro.util.mask_tools import lazy_mask
-from datumaro.util import dir_items
 
 
 class DatumaroExtractor(Extractor):
@@ -50,7 +56,7 @@ class DatumaroExtractor(Extractor):
             with open(subset_path, 'r') as f:
                 parsed_anns = json.load(f)
 
-            for index, item in enumerate(parsed_anns['items']):
+            for index, _ in enumerate(parsed_anns['items']):
                 subset.items.append(index)
 
             annotations[subset_name] = parsed_anns

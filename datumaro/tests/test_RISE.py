@@ -1,15 +1,12 @@
 from collections import namedtuple
 import cv2
 import numpy as np
-import os
-import os.path as osp
 
 from unittest import TestCase
 
-from datumaro.components.extractor import *
+from datumaro.components.extractor import LabelObject, BboxObject
 from datumaro.components.launcher import Launcher
 from datumaro.components.algorithms.rise import RISE
-from datumaro.util.test_utils import *
 
 
 class RiseTest(TestCase):
@@ -20,8 +17,8 @@ class RiseTest(TestCase):
                 self.roi = roi
 
             def launch(self, inputs):
-                for input in inputs:
-                    yield self._process(input)
+                for inp in inputs:
+                    yield self._process(inp)
 
             def _process(self, image):
                 roi = self.roi
@@ -79,8 +76,8 @@ class RiseTest(TestCase):
                     image[roi.y:roi.y + roi.h, roi.x:roi.x + roi.w, :])
 
             def launch(self, inputs):
-                for input in inputs:
-                    yield self._process(input)
+                for inp in inputs:
+                    yield self._process(inp)
 
             def _process(self, image):
                 detections = []

@@ -9,15 +9,21 @@ import os
 import os.path as osp
 from xml.etree import ElementTree as ET
 
-from datumaro.components.extractor import *
+from datumaro.components.extractor import (Extractor, DatasetItem,
+    DEFAULT_SUBSET_NAME,
+    AnnotationType, Annotation,
+    LabelObject, MaskObject, PointsObject, PolygonObject,
+    PolyLineObject, BboxObject, CaptionObject,
+    LabelCategories, MaskCategories, PointsCategories
+)
+from datumaro.components.formats.voc import VocLabel, VocAction, \
+    VocBodyPart, VocPose, VocTask, VocPath, VocColormap, VocInstColormap
+from datumaro.util import dir_items
 from datumaro.util.image import load_image, lazy_image
 from datumaro.util.mask_tools import lazy_mask, invert_colormap
-from datumaro.components.formats.voc import *
-from datumaro.util import dir_items
 
 
-_inst_colormap = generate_colormap()
-_inverse_inst_colormap = invert_colormap(_inst_colormap)
+_inverse_inst_colormap = invert_colormap(VocInstColormap)
 
 def _make_voc_categories():
     categories = {}

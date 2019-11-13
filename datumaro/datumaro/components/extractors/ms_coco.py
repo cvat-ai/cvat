@@ -3,16 +3,20 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections import defaultdict
 import numpy as np
-import os
 import os.path as osp
 
 from pycocotools.coco import COCO
 import pycocotools.mask as mask_utils
 
-from datumaro.components.extractor import *
-from datumaro.components.formats.ms_coco import *
+from datumaro.components.extractor import (Extractor, DatasetItem,
+    DEFAULT_SUBSET_NAME,
+    AnnotationType, Annotation,
+    LabelObject, MaskObject, PointsObject, PolygonObject,
+    PolyLineObject, BboxObject, CaptionObject,
+    LabelCategories, MaskCategories, PointsCategories
+)
+from datumaro.components.formats.ms_coco import CocoAnnotationType, CocoPath
 from datumaro.util.image import lazy_image
 
 

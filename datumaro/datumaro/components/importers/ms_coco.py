@@ -46,8 +46,7 @@ class CocoImporter:
         ann_dir = os.path.join(dataset_dir, CocoPath.ANNOTATIONS_DIR)
         if not osp.isdir(ann_dir):
             raise NotADirectoryError(
-                'COCO annotations directory not found at "%s"' % \
-                ann_dir)
+                'COCO annotations directory not found at "%s"' % ann_dir)
 
         subsets = defaultdict(dict)
         for ann_file in os.listdir(ann_dir):

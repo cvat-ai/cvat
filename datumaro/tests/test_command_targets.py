@@ -6,7 +6,8 @@ import os.path as osp
 from unittest import TestCase
 
 from datumaro.components.project import Project
-from datumaro.util.command_targets import *
+from datumaro.util.command_targets import ProjectTarget, \
+    ImageTarget, SourceTarget
 from datumaro.util.test_utils import current_function_name, TestDir
 
 

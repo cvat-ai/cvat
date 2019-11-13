@@ -10,8 +10,15 @@ import os.path as osp
 from lxml import etree as ET
 
 from datumaro.components.converter import Converter
-from datumaro.components.extractor import *
-from datumaro.components.formats.voc import *
+from datumaro.components.extractor import (
+    DEFAULT_SUBSET_NAME,
+    AnnotationType, Annotation,
+    LabelObject, MaskObject, PointsObject, PolygonObject,
+    PolyLineObject, BboxObject, CaptionObject,
+    LabelCategories, MaskCategories, PointsCategories
+)
+from datumaro.components.formats.voc import VocLabel, VocAction, \
+    VocBodyPart, VocPose, VocTask, VocPath, VocColormap, VocInstColormap
 from datumaro.util import find
 from datumaro.util.mask_tools import apply_colormap
 

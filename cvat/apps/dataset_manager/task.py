@@ -325,9 +325,9 @@ def export_project(task_id, user, dst_format=None, server_url=None):
                 "The task '{}' is exported as '{}' "
                 "and available for downloading for next '{}'. "
                 "Export cache cleaning job is enqueued, "
-                "id '{}', start in '{}'" \
-                    .format(db_task.name, dst_format, CACHE_TTL,
-                        cleaning_job.id, CACHE_TTL))
+                "id '{}', start in '{}'".format(
+                    db_task.name, dst_format, CACHE_TTL,
+                    cleaning_job.id, CACHE_TTL))
 
         return archive_path
     except Exception:
