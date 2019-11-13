@@ -964,4 +964,14 @@ var Broadway = (function broadway() {
   return constructor;
 })();
 
+
+return {
+  Size,
+  Track,
+  MP4Reader,
+  MP4Player,
+  Bytestream,
+  Broadway,
+}
+
 })();
