@@ -154,7 +154,7 @@ class TaskProject:
                 attributes=anno_attr, group=anno_group)
             item_anno.append(anno)
 
-            patch[item.id] = item_anno
+            patch[item_id] = item_anno
 
         for shape_obj in annotations['shapes']:
             item_id = str(shape_obj['frame'])
@@ -188,12 +188,12 @@ class TaskProject:
 
             item_anno.append(anno)
 
-            patch[item.id] = item_anno
+            patch[item_id] = item_anno
 
         # TODO: support track annotations
 
         patch = [datumaro.DatasetItem(id=id, annotations=anno) \
-            for id, anno in patch.items()]
+            for id, ann in patch.items()]
 
         self._dataset.update(patch)
 
