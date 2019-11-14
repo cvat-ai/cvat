@@ -50,6 +50,10 @@ class FileManagerContainer extends React.PureComponent<StateToProps & DispatchTo
         return this.managerComponentRef.getFiles();
     }
 
+    public reset(): Files {
+        return this.managerComponentRef.reset();
+    }
+
     public render() {
         return (
             <FileManagerComponent

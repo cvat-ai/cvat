@@ -195,6 +195,8 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 this.advancedConfigurationComponent.resetFields();
             }
 
+            this.fileManagerContainer.reset();
+
             this.setState({
                 ...defaultState,
             });
@@ -214,6 +216,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 { this.renderAdvancedBlock() }
 
                 <Col span={24}>
+                    {this.props.status !== 'CREATED' ? <Text>{this.props.status}</Text> : null}
                     <Button type='danger' onClick={this.handleSubmitClick}> Submit </Button>
                 </Col>
             </Row>

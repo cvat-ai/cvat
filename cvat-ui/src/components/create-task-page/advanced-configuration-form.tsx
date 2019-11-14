@@ -12,6 +12,8 @@ import {
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 import Text from 'antd/lib/typography/Text';
 
+import patterns from '../../utils/validation-patterns';
+
 export interface AdvancedConfiguration {
     bugTracker?: string;
     zOrder: boolean;
@@ -34,7 +36,13 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return new Promise((resolve, reject) => {
             this.props.form.validateFields((error, values) => {
                 if (!error) {
-                    this.props.onSubmit({...values});
+                    const filteredValues = { ...values };
+                    delete filteredValues.frameStep;
+
+                    this.props.onSubmit({
+                        ...values,
+                        frameFilter: values.frameStep ? `step=${values.frameStep}` : undefined,
+                    });
                     resolve();
                 } else {
                     reject();
@@ -57,6 +65,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         <Form.Item style={{marginBottom: '0px'}}>
                             <Tooltip overlay='Enable order for shapes. Useful for segmentation tasks'>
                                 {getFieldDecorator('zOrder', {
+                                    initialValue: false,
                                     valuePropName: 'checked',
                                 })(
                                     <Checkbox>
@@ -71,12 +80,16 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Row>
 
                 <Row type='flex' justify='start'>
-                    <Col span={4}>
+                    <Col span={7}>
                         <Form.Item style={{marginBottom: '0px'}}>
                             <Tooltip overlay='Defines image compression level'>
                                 <Text className='cvat-black-color'> Image quality </Text>
                                 {getFieldDecorator('imageQuality', {
                                     initialValue: 70,
+                                    rules: [{
+                                        required: true,
+                                        message: 'This field is required'
+                                    }],
                                 })(
                                     <Input
                                         size='large'
@@ -90,7 +103,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         </Form.Item>
                     </Col>
 
-                    <Col span={4} offset={1}>
+                    <Col span={7} offset={1}>
                         <Form.Item style={{marginBottom: '0px'}}>
                             <Tooltip overlay='Defines a number of intersected frames between different segments'>
                                 <Text className='cvat-black-color'> Overlap size </Text>
@@ -101,7 +114,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         </Form.Item>
                     </Col>
 
-                    <Col span={4} offset={1}>
+                    <Col span={7} offset={1}>
                         <Form.Item style={{marginBottom: '0px'}}>
                             <Tooltip overlay='Defines a number of frames in a segment'>
                                 <Text className='cvat-black-color'> Segment size </Text>
@@ -114,7 +127,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 </Row>
 
                 <Row type='flex' justify='start'>
-                    <Col span={4}>
+                    <Col span={7}>
                         <Form.Item style={{marginBottom: '0px'}}>
                             <Text className='cvat-black-color'> Start frame </Text>
                             {getFieldDecorator('startFrame')(
@@ -128,7 +141,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         </Form.Item>
                     </Col>
 
-                    <Col span={4} offset={1}>
+                    <Col span={7} offset={1}>
                         <Form.Item style={{marginBottom: '0px'}}>
                             <Text className='cvat-black-color'> Stop frame </Text>
                             {getFieldDecorator('stopFrame')(
@@ -142,7 +155,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         </Form.Item>
                     </Col>
 
-                    <Col span={4} offset={1}>
+                    <Col span={7} offset={1}>
                         <Form.Item style={{marginBottom: '0px'}}>
                             <Text className='cvat-black-color'> Frame step </Text>
                             {getFieldDecorator('frameStep')(
@@ -181,6 +194,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             <Tooltip overlay='If annotation files are large, you can use git LFS feature'>
                                 {getFieldDecorator('lfs', {
                                     valuePropName: 'checked',
+                                    initialValue: false,
                                 })(
                                     <Checkbox>
                                         <Text className='cvat-black-color'>
@@ -199,7 +213,9 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                             <Tooltip overlay='Attach issue tracker where the task is described'>
                                 <Text className='cvat-black-color'> Issue tracker </Text>
                                 {getFieldDecorator('bugTracker', {
-                                    // TODO: Add pattern
+                                    rules: [{
+                                        ...patterns.validateURL,
+                                    }]
                                 })(
                                     <Input
                                         size='large'

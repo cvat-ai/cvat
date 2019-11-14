@@ -19,6 +19,7 @@ export interface Files {
 
 interface State {
     files: Files;
+    expandedKeys: string[];
     active: 'local' | 'share' | 'remote';
 }
 
@@ -37,6 +38,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 share: [],
                 remote: [],
             },
+            expandedKeys: [],
             active: 'local',
         };
 
@@ -113,15 +115,22 @@ export default class FileManager extends React.PureComponent<Props, State> {
                         checkable
                         showLine
                         checkStrictly={false}
+                        expandedKeys={this.state.expandedKeys}
+                        checkedKeys={this.state.files.share}
                         loadData={(node: AntTreeNode) => {
                             return this.loadData(node.props.dataRef.key);
                         }}
+                        onExpand={(expandedKeys: string[]) => {
+                            this.setState({
+                                expandedKeys,
+                            });
+                        }}
                         onCheck={(checkedKeys: string[] | {checked: string[], halfChecked: string[]}) => {
-                            const share = checkedKeys as string[];
+                            const keys = checkedKeys as string[];
                             this.setState({
                                 files: {
                                     ...this.state.files,
-                                    share,
+                                    share: keys,
                                 },
                             });
                         }}>
@@ -138,13 +147,12 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 <Input.TextArea
                     placeholder='Enter one URL per line'
                     rows={6}
+                    value={[...this.state.files.remote].join('\n')}
                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
                         this.setState({
                             files: {
                                 ...this.state.files,
-                                remote: event.target.value.split('\n').filter(
-                                    (nonEmpty) => nonEmpty,
-                                ),
+                                remote: event.target.value.split('\n'),
                             },
                         });
                     }}/>
@@ -158,6 +166,18 @@ export default class FileManager extends React.PureComponent<Props, State> {
             share: this.state.active === 'share' ? this.state.files.share : [],
             remote: this.state.active === 'remote' ? this.state.files.remote : [],
         };
+    }
+
+    public reset() {
+        this.setState({
+            expandedKeys: [],
+            active: 'local',
+            files: {
+                local: [],
+                share: [],
+                remote: [],
+            },
+        });
     }
 
     public render() {
