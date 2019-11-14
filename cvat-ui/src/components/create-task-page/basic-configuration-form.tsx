@@ -31,6 +31,10 @@ class BasicConfigurationForm extends React.PureComponent<Props> {
         })
     }
 
+    public resetFields() {
+        this.props.form.resetFields();
+    }
+
     public render() {
         const { getFieldDecorator } = this.props.form;
         return (

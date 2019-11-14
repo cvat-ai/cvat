@@ -53,15 +53,44 @@ export default class FileManager extends React.PureComponent<Props, State> {
         return promise;
     }
 
-    public getFiles(): Files {
-        return {
-            local: this.state.active === 'local' ? this.state.files.local : [],
-            share: this.state.active === 'share' ? this.state.files.share : [],
-            remote: this.state.active === 'remote' ? this.state.files.remote : [],
-        };
+    private renderLocalSelector() {
+        return (
+            <Tabs.TabPane key='local' tab='My computer'>
+                <Upload.Dragger
+                    multiple
+                    fileList={this.state.files.local as any[]}
+                    showUploadList={false}
+                    beforeUpload={(_: RcFile, files: RcFile[]) => {
+                        this.setState({
+                            files: {
+                                ...this.state.files,
+                                local: files
+                            },
+                        });
+                        return false;
+                    }
+                }>
+                    <p className='ant-upload-drag-icon'>
+                        <Icon type='inbox' />
+                    </p>
+                    <p className='ant-upload-text'>Click or drag files to this area</p>
+                    <p className='ant-upload-hint'>
+                        Support for a bulk images or a single video
+                    </p>
+                </Upload.Dragger>
+                { this.state.files.local.length ?
+                    <>
+                        <br/>
+                        <Text className='cvat-black-color'>
+                            {this.state.files.local.length} file(s) selected
+                        </Text>
+                    </> : null
+                }
+            </Tabs.TabPane>
+        );
     }
 
-    public render() {
+    private renderShareSelector() {
         function renderTreeNodes(data: TreeNodeNormal[]) {
             return data.map((item: TreeNodeNormal) => {
                 if (item.children) {
@@ -77,78 +106,70 @@ export default class FileManager extends React.PureComponent<Props, State> {
         }
 
         return (
+            <Tabs.TabPane key='share' tab='Connected file share'>
+                { this.props.treeData.length ?
+                    <Tree
+                        className='cvat-share-tree'
+                        checkable
+                        showLine
+                        checkStrictly={false}
+                        loadData={(node: AntTreeNode) => {
+                            return this.loadData(node.props.dataRef.key);
+                        }}
+                        onCheck={(checkedKeys: string[] | {checked: string[], halfChecked: string[]}) => {
+                            const share = checkedKeys as string[];
+                            this.setState({
+                                files: {
+                                    ...this.state.files,
+                                    share,
+                                },
+                            });
+                        }}>
+                        { renderTreeNodes(this.props.treeData) }
+                    </Tree> : <Text className='cvat-black-color'> No data found </Text>
+                }
+            </Tabs.TabPane>
+        );
+    }
+
+    private renderRemoteSelector() {
+        return (
+            <Tabs.TabPane key='remote' tab='Remote sources'>
+                <Input.TextArea
+                    placeholder='Enter one URL per line'
+                    rows={6}
+                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                        this.setState({
+                            files: {
+                                ...this.state.files,
+                                remote: event.target.value.split('\n').filter(
+                                    (nonEmpty) => nonEmpty,
+                                ),
+                            },
+                        });
+                    }}/>
+            </Tabs.TabPane>
+        );
+    }
+
+    public getFiles(): Files {
+        return {
+            local: this.state.active === 'local' ? this.state.files.local : [],
+            share: this.state.active === 'share' ? this.state.files.share : [],
+            remote: this.state.active === 'remote' ? this.state.files.remote : [],
+        };
+    }
+
+    public render() {
+        return (
             <>
                 <Text type='secondary'> Select files </Text>
                 <Tabs type='card' tabBarGutter={5} onChange={(activeKey: string) => this.setState({
                     active: activeKey as any,
                 })}>
-                    <Tabs.TabPane key='local' tab='My computer'>
-                        <Upload.Dragger
-                            multiple
-                            fileList={this.state.files.local as any[]}
-                            showUploadList={false}
-                            beforeUpload={(_: RcFile, files: RcFile[]) => {
-                                this.setState({
-                                    files: {
-                                        ...this.state.files,
-                                        local: files
-                                    },
-                                });
-                                return false;
-                            }
-                        }>
-                            <p className='ant-upload-drag-icon'>
-                                <Icon type='inbox' />
-                            </p>
-                            <p className='ant-upload-text'>Click or drag files to this area</p>
-                            <p className='ant-upload-hint'>
-                                Support for a bulk images or a single video
-                            </p>
-                        </Upload.Dragger>
-                        { this.state.files.local.length ?
-                            <Text> {this.state.files.local.length} files selected </Text> : null
-                        }
-                    </Tabs.TabPane>
-
-                    <Tabs.TabPane key='share' tab='Connected file share'>
-                        { this.props.treeData.length ?
-                            <Tree
-                                className='cvat-share-tree'
-                                checkable
-                                showLine
-                                checkStrictly={false}
-                                loadData={(node: AntTreeNode) => {
-                                    return this.loadData(node.props.dataRef.key);
-                                }}
-                                onCheck={(checkedKeys: string[] | {checked: string[], halfChecked: string[]}) => {
-                                    const share = checkedKeys as string[];
-                                    this.setState({
-                                        files: {
-                                            ...this.state.files,
-                                            share,
-                                        },
-                                    });
-                                }}>
-                                { renderTreeNodes(this.props.treeData) }
-                            </Tree> : <Text className='cvat-black-color'> No data found </Text>
-                        }
-                    </Tabs.TabPane>
-
-                    <Tabs.TabPane key='remote' tab='Remote sources'>
-                        <Input.TextArea
-                            placeholder='Enter one URL per line'
-                            rows={6}
-                            onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
-                                this.setState({
-                                    files: {
-                                        ...this.state.files,
-                                        remote: event.target.value.split('\n').filter(
-                                            (nonEmpty) => nonEmpty,
-                                        ),
-                                    },
-                                });
-                            }}/>
-                    </Tabs.TabPane>
+                    { this.renderLocalSelector() }
+                    { this.renderShareSelector() }
+                    { this.renderRemoteSelector() }
                 </Tabs>
             </>
         );

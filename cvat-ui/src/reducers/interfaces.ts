@@ -52,6 +52,10 @@ export interface TasksState {
                 [tid: number]: boolean; // deleted (deleting if in dictionary)
             };
         };
+        creates: {
+            creatingError: any;
+            status: string;
+        };
     };
 }
 

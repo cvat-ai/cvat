@@ -34,13 +34,17 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return new Promise((resolve, reject) => {
             this.props.form.validateFields((error, values) => {
                 if (!error) {
-                    //this.props.onSubmit();
+                    this.props.onSubmit({...values});
                     resolve();
                 } else {
                     reject();
                 }
             });
         })
+    }
+
+    public resetFields() {
+        this.props.form.resetFields();
     }
 
     public render() {
@@ -69,40 +73,42 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Row type='flex' justify='start'>
                     <Col span={4}>
                         <Form.Item style={{marginBottom: '0px'}}>
-                            {getFieldDecorator('imageQuality')(
-                                <Tooltip overlay='Defines image compression level'>
-                                    <Text className='cvat-black-color'> Image quality </Text>
+                            <Tooltip overlay='Defines image compression level'>
+                                <Text className='cvat-black-color'> Image quality </Text>
+                                {getFieldDecorator('imageQuality', {
+                                    initialValue: 70,
+                                })(
                                     <Input
                                         size='large'
                                         type='number'
-                                        min={0}
+                                        min={5}
                                         max={100}
                                         suffix={<Icon type='percentage'/>}
                                     />
-                                </Tooltip>
-                            )}
+                                )}
+                            </Tooltip>
                         </Form.Item>
                     </Col>
 
                     <Col span={4} offset={1}>
                         <Form.Item style={{marginBottom: '0px'}}>
-                            {getFieldDecorator('overlapSize')(
-                                <Tooltip overlay='Defines a number of intersected frames between different segments'>
-                                    <Text className='cvat-black-color'> Overlap size </Text>
+                            <Tooltip overlay='Defines a number of intersected frames between different segments'>
+                                <Text className='cvat-black-color'> Overlap size </Text>
+                                {getFieldDecorator('overlapSize')(
                                     <Input size='large' type='number'/>
-                                </Tooltip>
-                            )}
+                                )}
+                            </Tooltip>
                         </Form.Item>
                     </Col>
 
                     <Col span={4} offset={1}>
                         <Form.Item style={{marginBottom: '0px'}}>
-                            {getFieldDecorator('segmentSize')(
-                                <Tooltip overlay='Defines a number of frames in a segment'>
-                                    <Text className='cvat-black-color'> Segment size </Text>
+                            <Tooltip overlay='Defines a number of frames in a segment'>
+                                <Text className='cvat-black-color'> Segment size </Text>
+                                {getFieldDecorator('segmentSize')(
                                     <Input size='large' type='number'/>
-                                </Tooltip>
-                            )}
+                                )}
+                            </Tooltip>
                         </Form.Item>
                     </Col>
                 </Row>
@@ -110,48 +116,42 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Row type='flex' justify='start'>
                     <Col span={4}>
                         <Form.Item style={{marginBottom: '0px'}}>
+                            <Text className='cvat-black-color'> Start frame </Text>
                             {getFieldDecorator('startFrame')(
-                                <>
-                                    <Text className='cvat-black-color'> Start frame </Text>
-                                    <Input
-                                        size='large'
-                                        type='number'
-                                        min={0}
-                                        step={1}
-                                    />
-                                </>
+                                <Input
+                                    size='large'
+                                    type='number'
+                                    min={0}
+                                    step={1}
+                                />
                             )}
                         </Form.Item>
                     </Col>
 
                     <Col span={4} offset={1}>
                         <Form.Item style={{marginBottom: '0px'}}>
+                            <Text className='cvat-black-color'> Stop frame </Text>
                             {getFieldDecorator('stopFrame')(
-                                <>
-                                    <Text className='cvat-black-color'> Stop frame </Text>
-                                    <Input
-                                        size='large'
-                                        type='number'
-                                        min={0}
-                                        step={1}
-                                    />
-                                </>
+                                <Input
+                                    size='large'
+                                    type='number'
+                                    min={0}
+                                    step={1}
+                                />
                             )}
                         </Form.Item>
                     </Col>
 
                     <Col span={4} offset={1}>
                         <Form.Item style={{marginBottom: '0px'}}>
+                            <Text className='cvat-black-color'> Frame step </Text>
                             {getFieldDecorator('frameStep')(
-                                <>
-                                    <Text className='cvat-black-color'> Frame step </Text>
-                                    <Input
-                                        size='large'
-                                        type='number'
-                                        min={1}
-                                        step={1}
-                                    />
-                                </>
+                                <Input
+                                    size='large'
+                                    type='number'
+                                    min={1}
+                                    step={1}
+                                />
                             )}
                         </Form.Item>
                     </Col>
@@ -160,18 +160,18 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Row>
                     <Col>
                         <Form.Item style={{marginBottom: '0px'}}>
-                            {getFieldDecorator('repository', {
-                                // TODO: Add pattern
-                            })(
-                                <Tooltip overlay={`Attach a git repository to store annotations.
-                                                    Path is specified in square brackets`}>
-                                    <Text className='cvat-black-color'> Dataset repository URL </Text>
+                            <Tooltip overlay={`Attach a git repository to store annotations.
+                                            Path is specified in square brackets`}>
+                                <Text className='cvat-black-color'> Dataset repository URL </Text>
+                                {getFieldDecorator('repository', {
+                                    // TODO: Add pattern
+                                })(
                                     <Input
                                         placeholder='e.g. https//github.com/user/repos [annotation/<anno_file_name>.zip]'
                                         size='large'
                                     />
-                                </Tooltip>
-                            )}
+                                )}
+                            </Tooltip>
                         </Form.Item>
                     </Col>
                 </Row>
@@ -196,16 +196,16 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Row>
                     <Col>
                         <Form.Item style={{marginBottom: '0px'}}>
-                            {getFieldDecorator('bugTracker', {
-                                // TODO: Add pattern
-                            })(
-                                <Tooltip overlay='Attach issue tracker where the task is described'>
-                                    <Text className='cvat-black-color'> Issue tracker </Text>
+                            <Tooltip overlay='Attach issue tracker where the task is described'>
+                                <Text className='cvat-black-color'> Issue tracker </Text>
+                                {getFieldDecorator('bugTracker', {
+                                    // TODO: Add pattern
+                                })(
                                     <Input
                                         size='large'
                                     />
-                                </Tooltip>
-                            )}
+                                )}
+                            </Tooltip>
                         </Form.Item>
                     </Col>
                 </Row>

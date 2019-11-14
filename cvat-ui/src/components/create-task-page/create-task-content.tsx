@@ -16,16 +16,36 @@ import LabelsEditor from '../labels-editor/labels-editor';
 import FileManagerContainer from '../../containers/file-manager/file-manager';
 import { Files } from '../file-manager/file-manager';
 
-interface Props {
-    // on create task callback
-}
-
-interface State {
+export interface CreateTaskData {
     basic: BaseConfiguration;
     advanced: AdvancedConfiguration;
     labels: any[];
     files: Files,
 }
+
+interface Props {
+    onCreate: (data: CreateTaskData) => void;
+    status: string;
+    error: string;
+}
+
+type State = CreateTaskData;
+
+const defaultState = {
+    basic: {
+        name: '',
+    },
+    advanced: {
+        zOrder: false,
+        lfs: false,
+    },
+    labels: [],
+    files: {
+        local: [],
+        share: [],
+        remote: [],
+    },
+};
 
 export default class CreateTaskContent extends React.PureComponent<Props, State> {
     private basicConfigurationComponent: any;
@@ -34,22 +54,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
 
     public constructor(props: Props) {
         super(props);
-
-        this.state = {
-            basic: {
-                name: '',
-            },
-            advanced: {
-                zOrder: false,
-                lfs: false,
-            },
-            labels: [],
-            files: {
-                local: [],
-                share: [],
-                remote: [],
-            },
-        };
+        this.state = { ...defaultState };
     }
 
     private validateLabels = () => {
@@ -81,27 +86,12 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
     };
 
     private handleSubmitClick = () => {
-        this.basicConfigurationComponent.submit()
-            .catch((_: any) => {
-                Modal.error({
-                    title: 'Could not create a task',
-                    content: 'Please, check basic configuration you specified',
-                });
-            });
-
-        this.advancedConfigurationComponent ? this.advancedConfigurationComponent.submit()
-            .catch((_: any) => {
-                Modal.error({
-                    title: 'Could not create a task',
-                    content: 'Please, check advanced configuration you specified',
-                });
-            }) : null;
-
         if (!this.validateLabels()) {
             Modal.error({
                 title: 'Could not create a task',
                 content: 'A task must contain at least one label',
             });
+            return;
         }
 
         if (!this.validateFiles()) {
@@ -109,7 +99,26 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 title: 'Could not create a task',
                 content: 'A task must contain at least one file',
             });
+            return;
         }
+
+        this.basicConfigurationComponent.submit()
+            .then(() => {
+                return this.advancedConfigurationComponent ?
+                    this.advancedConfigurationComponent.submit() :
+                    new Promise((resolve) => {
+                        resolve();
+                    })
+            })
+            .then(() => {
+                this.props.onCreate(this.state);
+            })
+            .catch((_: any) => {
+                Modal.error({
+                    title: 'Could not create a task',
+                    content: 'Please, check configuration you specified',
+                });
+            });
     }
 
     private renderBasicBlock() {
@@ -166,6 +175,30 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 </Collapse>
             </Col>
         );
+    }
+
+    public componentDidUpdate(prevProps: Props) {
+        if (this.props.error && prevProps.error !== this.props.error) {
+            Modal.error({
+                title: 'Could not create task',
+                content: this.props.error,
+            });
+        }
+
+        if (this.props.status === 'CREATED' && prevProps.status !== 'CREATED') {
+            Modal.info({
+                title: 'Task has been created',
+            });
+
+            this.basicConfigurationComponent.resetFields();
+            if (this.advancedConfigurationComponent) {
+                this.advancedConfigurationComponent.resetFields();
+            }
+
+            this.setState({
+                ...defaultState,
+            });
+        }
     }
 
     public render() {
