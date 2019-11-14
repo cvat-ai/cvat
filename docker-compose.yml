@@ -29,15 +29,6 @@ services:
           - redis
     restart: always
 
-  cvat_redis_scheduler:
-    container_name: cvat_redis_scheduler
-    image: cvat
-    restart: always
-    depends_on:
-      - cvat_redis
-    entrypoint: '/usr/local/bin/rqscheduler'
-    command: ['--host', 'redis']
-
   cvat:
     container_name: cvat
     image: cvat
