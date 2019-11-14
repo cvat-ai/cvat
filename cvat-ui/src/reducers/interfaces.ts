@@ -88,3 +88,19 @@ export interface UsersState {
     initialized: boolean;
     gettingUsersError: any;
 }
+
+export interface ShareFileInfo {
+    name: string;
+    type: 'DIR' | 'REG';
+}
+
+export interface ShareItem {
+    name: string;
+    type: 'DIR' | 'REG';
+    children?: ShareItem[];
+}
+
+export interface ShareState {
+    tree: ShareItem;
+    error: any;
+}

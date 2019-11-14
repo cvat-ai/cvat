@@ -175,7 +175,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
             );
         } else {
             return (
-                <div className='tasks-page'>
+                <div className='cvat-tasks-page'>
                     <TopBar
                         onSearch={this.handleSearch}
                         searchValue={this.getSearchField(this.props.gettingQuery)}

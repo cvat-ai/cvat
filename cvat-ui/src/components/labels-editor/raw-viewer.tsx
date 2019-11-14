@@ -12,12 +12,8 @@ import {
 import { FormComponentProps } from 'antd/lib/form/Form';
 
 import {
-    Attribute,
     Label,
-    equalArrayHead,
 } from './common';
-
-
 
 type Props = FormComponentProps & {
     labels: Label[];
@@ -25,7 +21,6 @@ type Props = FormComponentProps & {
 }
 
 interface State {
-    labels: object[];
     valid: boolean;
 }
 
@@ -33,21 +28,7 @@ class RawViewer extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
         super(props);
 
-        const labels = JSON.parse(JSON.stringify(this.props.labels));
-        for (const label of labels) {
-            for (const attr of label.attributes) {
-                if (attr.id < 0) {
-                    delete attr.id;
-                }
-            }
-
-            if (label.id < 0) {
-                delete label.id;
-            }
-        }
-
         this.state = {
-            labels,
             valid: true,
         };
     }
@@ -72,7 +53,20 @@ class RawViewer extends React.PureComponent<Props, State> {
     }
 
     public render() {
-        const textLabels = JSON.stringify(this.state.labels, null, 2);
+        const labels = this.props.labels.map((label: any) => {
+            return {
+                ...label,
+                id: label.id < 0 ? undefined : label.id,
+                attributes: label.attributes.map((attribute: any) => {
+                    return {
+                        ...attribute,
+                        id: attribute.id < 0 ? undefined : attribute.id,
+                    };
+                }),
+            };
+        });
+
+        const textLabels = JSON.stringify(labels, null, 2);
 
         return (
             <Form onSubmit={this.handleSubmit}>

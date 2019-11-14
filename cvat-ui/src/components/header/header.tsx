@@ -50,24 +50,22 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
             <div className='cvat-left-header'>
                 <Icon className='cvat-logo-icon' component={cvatLogo}/>
 
-                <Radio.Group size='default' value={activeTab} className='cvat-header-buttons'>
-                    <Radio.Button value='tasks'onChange={
-                        () => props.history.push('/tasks')
-                    }> Tasks </Radio.Button>
-                    { props.installedAutoAnnotation ?
-                        <Radio.Button value='models' onChange={
-                            () => props.history.push('/models')
-                        }> Models </Radio.Button> : null
-                    }
-                    { props.installedAnalytics ?
-                        <Button className='cvat-header-button' type='link' onClick={
-                            () => {
-                                const serverHost = core.config.backendAPI.slice(0, -7);
-                                window.open(`${serverHost}/analytics/app/kibana`, '_blank');
-                            }
-                        }> Analytics </Button> : null
-                    }
-                </Radio.Group>
+                <Button className='cvat-header-button' type='link' value='tasks' onClick={
+                    () => props.history.push('/tasks')
+                }> Tasks </Button>
+                { props.installedAutoAnnotation ?
+                    <Button className='cvat-header-button' type='link' value='models' onClick={
+                        () => props.history.push('/models')
+                    }> Models </Button> : null
+                }
+                { props.installedAnalytics ?
+                    <Button className='cvat-header-button' type='link' onClick={
+                        () => {
+                            const serverHost = core.config.backendAPI.slice(0, -7);
+                            window.open(`${serverHost}/analytics/app/kibana`, '_blank');
+                        }
+                    }> Analytics </Button> : null
+                }
             </div>
             <div className='cvat-right-header'>
                 <Button className='cvat-header-button' type='link' onClick={
@@ -84,7 +82,9 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
                         <span>
                             <Icon className='cvat-header-user-icon' component={userLogo} />
                             <span>
-                                <Text strong>{props.username}</Text>
+                                <Text strong>
+                                    {props.username.length > 14 ? `${props.username.slice(0, 10)} ...` : props.username}
+                                </Text>
                                 <Icon className='cvat-header-menu-icon' type='caret-down'/>
                             </span>
                         </span>
