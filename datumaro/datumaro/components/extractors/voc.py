@@ -10,11 +10,8 @@ import os.path as osp
 from xml.etree import ElementTree as ET
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    DEFAULT_SUBSET_NAME,
-    AnnotationType, Annotation,
-    LabelObject, MaskObject, PointsObject, PolygonObject,
-    PolyLineObject, BboxObject, CaptionObject,
-    LabelCategories, MaskCategories, PointsCategories
+    AnnotationType, LabelObject, MaskObject, BboxObject,
+    LabelCategories, MaskCategories
 )
 from datumaro.components.formats.voc import VocLabel, VocAction, \
     VocBodyPart, VocPose, VocTask, VocPath, VocColormap, VocInstColormap
@@ -69,8 +66,6 @@ class VocExtractor(Extractor):
 
         subsets = {}
         for subset_name in subset_names:
-            if subset_name == DEFAULT_SUBSET_NAME:
-                subset_name = None
             subset = __class__.Subset(subset_name, self)
 
             with open(osp.join(subsets_dir, subset_name + '.txt'), 'r') as f:
@@ -411,8 +406,6 @@ class VocResultsExtractor(Extractor):
             comp, mark, subset_name, label = ann_parts
             if mark != task_desc['mark']:
                 continue
-            if subset_name == DEFAULT_SUBSET_NAME:
-                subset_name = None
 
             label_id = VocLabel[label].value
             anns = defaultdict(list)

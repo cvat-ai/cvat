@@ -7,8 +7,10 @@ import argparse
 import os.path as osp
 
 from datumaro.components.project import Project
-from datumaro.util.command_targets import TargetKinds, ProjectTarget, \
-    SourceTarget, ImageTarget, ExternalDatasetTarget
+from datumaro.util.command_targets import (TargetKinds, target_selector,
+    ProjectTarget, SourceTarget, ImageTarget, ExternalDatasetTarget,
+    is_project_path
+)
 
 from . import project as project_module
 from . import source as source_module

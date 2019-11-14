@@ -1,5 +1,4 @@
 import cv2
-import json
 from itertools import zip_longest
 import numpy as np
 import os
@@ -9,12 +8,10 @@ import shutil
 
 from unittest import TestCase
 
-from datumaro.components.project import Project
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, Annotation,
-    LabelObject, MaskObject, PointsObject, PolygonObject,
-    PolyLineObject, BboxObject, CaptionObject,
-    LabelCategories, MaskCategories, PointsCategories
+    AnnotationType,
+    LabelObject, MaskObject, BboxObject,
+    LabelCategories, MaskCategories
 )
 import datumaro.components.formats.voc as VOC
 from datumaro.components.extractors.voc import (
@@ -25,6 +22,7 @@ from datumaro.components.extractors.voc import (
     VocActionExtractor,
 )
 from datumaro.components.converters.voc import (
+    VocConverter,
     VocClassificationConverter,
     VocDetectionConverter,
     VocLayoutConverter,
@@ -183,11 +181,11 @@ class VocExtractorTest(TestCase):
 
             subset_name = 'train'
             generated_subset = generated_subsets[subset_name]
-            for id in generated_subset:
+            for id_ in generated_subset:
                 parsed_subset = extractor.get_subset(subset_name)
                 self.assertEqual(len(generated_subset), len(parsed_subset))
 
-                item = find(parsed_subset, lambda x: x.id == id)
+                item = find(parsed_subset, lambda x: x.id == id_)
                 self.assertFalse(item is None)
 
                 count = 0
@@ -202,11 +200,11 @@ class VocExtractorTest(TestCase):
 
             subset_name = 'test'
             generated_subset = generated_subsets[subset_name]
-            for id in generated_subset:
+            for id_ in generated_subset:
                 parsed_subset = extractor.get_subset(subset_name)
                 self.assertEqual(len(generated_subset), len(parsed_subset))
 
-                item = find(parsed_subset, lambda x: x.id == id)
+                item = find(parsed_subset, lambda x: x.id == id_)
                 self.assertFalse(item is None)
 
                 self.assertEqual(0, len(item.annotations))
@@ -221,11 +219,11 @@ class VocExtractorTest(TestCase):
 
             subset_name = 'train'
             generated_subset = generated_subsets[subset_name]
-            for id in generated_subset:
+            for id_ in generated_subset:
                 parsed_subset = extractor.get_subset(subset_name)
                 self.assertEqual(len(generated_subset), len(parsed_subset))
 
-                item = find(parsed_subset, lambda x: x.id == id)
+                item = find(parsed_subset, lambda x: x.id == id_)
                 self.assertFalse(item is None)
 
                 obj1 = find(item.annotations,
@@ -251,11 +249,11 @@ class VocExtractorTest(TestCase):
 
             subset_name = 'test'
             generated_subset = generated_subsets[subset_name]
-            for id in generated_subset:
+            for id_ in generated_subset:
                 parsed_subset = extractor.get_subset(subset_name)
                 self.assertEqual(len(generated_subset), len(parsed_subset))
 
-                item = find(parsed_subset, lambda x: x.id == id)
+                item = find(parsed_subset, lambda x: x.id == id_)
                 self.assertFalse(item is None)
 
                 self.assertEqual(0, len(item.annotations))
@@ -270,11 +268,11 @@ class VocExtractorTest(TestCase):
 
             subset_name = 'train'
             generated_subset = generated_subsets[subset_name]
-            for id in generated_subset:
+            for id_ in generated_subset:
                 parsed_subset = extractor.get_subset(subset_name)
                 self.assertEqual(len(generated_subset), len(parsed_subset))
 
-                item = find(parsed_subset, lambda x: x.id == id)
+                item = find(parsed_subset, lambda x: x.id == id_)
                 self.assertFalse(item is None)
 
                 cls_mask = find(item.annotations,
@@ -293,11 +291,11 @@ class VocExtractorTest(TestCase):
 
             subset_name = 'test'
             generated_subset = generated_subsets[subset_name]
-            for id in generated_subset:
+            for id_ in generated_subset:
                 parsed_subset = extractor.get_subset(subset_name)
                 self.assertEqual(len(generated_subset), len(parsed_subset))
 
-                item = find(parsed_subset, lambda x: x.id == id)
+                item = find(parsed_subset, lambda x: x.id == id_)
                 self.assertFalse(item is None)
 
                 self.assertEqual(0, len(item.annotations))
@@ -312,11 +310,11 @@ class VocExtractorTest(TestCase):
 
             subset_name = 'train'
             generated_subset = generated_subsets[subset_name]
-            for id in generated_subset:
+            for id_ in generated_subset:
                 parsed_subset = extractor.get_subset(subset_name)
                 self.assertEqual(len(generated_subset), len(parsed_subset))
 
-                item = find(parsed_subset, lambda x: x.id == id)
+                item = find(parsed_subset, lambda x: x.id == id_)
                 self.assertFalse(item is None)
 
                 obj2 = find(item.annotations,
@@ -335,11 +333,11 @@ class VocExtractorTest(TestCase):
 
             subset_name = 'test'
             generated_subset = generated_subsets[subset_name]
-            for id in generated_subset:
+            for id_ in generated_subset:
                 parsed_subset = extractor.get_subset(subset_name)
                 self.assertEqual(len(generated_subset), len(parsed_subset))
 
-                item = find(parsed_subset, lambda x: x.id == id)
+                item = find(parsed_subset, lambda x: x.id == id_)
                 self.assertFalse(item is None)
 
                 self.assertEqual(0, len(item.annotations))
@@ -354,11 +352,11 @@ class VocExtractorTest(TestCase):
 
             subset_name = 'train'
             generated_subset = generated_subsets[subset_name]
-            for id in generated_subset:
+            for id_ in generated_subset:
                 parsed_subset = extractor.get_subset(subset_name)
                 self.assertEqual(len(generated_subset), len(parsed_subset))
 
-                item = find(parsed_subset, lambda x: x.id == id)
+                item = find(parsed_subset, lambda x: x.id == id_)
                 self.assertFalse(item is None)
 
                 obj2 = find(item.annotations,
@@ -380,11 +378,11 @@ class VocExtractorTest(TestCase):
 
             subset_name = 'test'
             generated_subset = generated_subsets[subset_name]
-            for id in generated_subset:
+            for id_ in generated_subset:
                 parsed_subset = extractor.get_subset(subset_name)
                 self.assertEqual(len(generated_subset), len(parsed_subset))
 
-                item = find(parsed_subset, lambda x: x.id == id)
+                item = find(parsed_subset, lambda x: x.id == id_)
                 self.assertFalse(item is None)
 
                 self.assertEqual(0, len(item.annotations))
@@ -435,6 +433,47 @@ class VocConverterTest(TestCase):
             self._test_can_save_voc(
                 VocActionExtractor, VocActionConverter,
                 test_dir.path)
+
+    def test_can_save_dataset_with_no_subsets(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                items = [
+                    DatasetItem(id_=1, annotations=[
+                        LabelObject(2, id_=1),
+                        BboxObject(2, 3, 4, 5, label=2, id_=2),
+                    ]),
+
+                    DatasetItem(id_=2, annotations=[
+                        LabelObject(3, id_=1),
+                        BboxObject(5, 4, 6, 5, label=3, id_=2),
+                    ]),
+                ]
+
+                for item in items:
+                    yield item
+
+            def categories(self):
+                label_cat = LabelCategories()
+                for label in VOC.VocLabel:
+                    label_cat.add(label.name)
+                return {
+                    AnnotationType.label: label_cat,
+                }
+
+        with TestDir() as test_dir:
+            src_extractor = TestExtractor()
+            converter = VocConverter()
+
+            converter(src_extractor, test_dir.path)
+
+            dst_extractor = VocImporter()(test_dir.path).make_dataset()
+
+            self.assertEqual(len(src_extractor), len(dst_extractor))
+            for item_a, item_b in zip_longest(src_extractor, dst_extractor):
+                self.assertEqual(item_a.id, item_b.id)
+                self.assertEqual(len(item_a.annotations), len(item_b.annotations))
+                for ann_a, ann_b in zip(item_a.annotations, item_b.annotations):
+                    self.assertEqual(ann_a.type, ann_b.type)
 
 class VocImporterTest(TestCase):
     def test_can_import(self):

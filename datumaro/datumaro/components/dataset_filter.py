@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from lxml import etree as ET
-from datumaro.components.extractor import (AnnotationType, Annotation,
+from datumaro.components.extractor import (DatasetItem, Annotation,
     LabelObject, MaskObject, PointsObject, PolygonObject,
     PolyLineObject, BboxObject, CaptionObject,
 )

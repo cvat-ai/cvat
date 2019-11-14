@@ -149,8 +149,8 @@ class OpenVinoLauncher(Launcher):
         n, c, h, w = self._input_layout
         if inputs.shape[1:3] != (h, w):
             resized_inputs = np.empty((n, h, w, c), dtype=inputs.dtype)
-            for input, resized_input in zip(inputs, resized_inputs):
-                cv2.resize(input, (w, h), resized_input)
+            for inp, resized_input in zip(inputs, resized_inputs):
+                cv2.resize(inp, (w, h), resized_input)
             inputs = resized_inputs
         inputs = inputs.transpose((0, 3, 1, 2)) # NHWC to NCHW
         inputs = {self._input_blob_name: inputs}

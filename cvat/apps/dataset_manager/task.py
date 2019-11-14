@@ -192,8 +192,8 @@ class TaskProject:
 
         # TODO: support track annotations
 
-        patch = [datumaro.DatasetItem(id=id, annotations=anno) \
-            for id, ann in patch.items()]
+        patch = [datumaro.DatasetItem(id_=id_, annotations=anno) \
+            for id_, ann in patch.items()]
 
         self._dataset.update(patch)
 

@@ -12,10 +12,8 @@ from lxml import etree as ET
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
     DEFAULT_SUBSET_NAME,
-    AnnotationType, Annotation,
-    LabelObject, MaskObject, PointsObject, PolygonObject,
-    PolyLineObject, BboxObject, CaptionObject,
-    LabelCategories, MaskCategories, PointsCategories
+    AnnotationType, LabelObject, MaskObject, BboxObject, CaptionObject,
+    LabelCategories, MaskCategories
 )
 from datumaro.components.formats.voc import VocLabel, VocAction, \
     VocBodyPart, VocPose, VocTask, VocPath, VocColormap, VocInstColormap
@@ -33,7 +31,6 @@ def _write_xml_bbox(bbox, parent_elem):
     return bbox_elem
 
 class _Converter:
-    _DEFAULT_SUBSET_NAME = 'default'
     _LABELS = set([entry.name for entry in VocLabel])
     _BODY_PARTS = set([entry.name for entry in VocBodyPart])
     _ACTIONS = set([entry.name for entry in VocAction])
@@ -96,10 +93,16 @@ class _Converter:
         return self._label_categories.items[label_id].name
 
     def save_subsets(self):
-        for subset_name in self._extractor.subsets():
-            subset = self._extractor.get_subset(subset_name)
-            if not subset_name:
-                subset_name = self._DEFAULT_SUBSET_NAME
+        subsets = self._extractor.subsets()
+        if len(subsets) == 0:
+            subsets = [ None ]
+
+        for subset_name in subsets:
+            if subset_name:
+                subset = self._extractor.get_subset(subset_name)
+            else:
+                subset_name = DEFAULT_SUBSET_NAME
+                subset = self._extractor
 
             class_lists = OrderedDict()
             clsdet_list = OrderedDict()

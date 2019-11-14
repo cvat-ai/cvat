@@ -7,7 +7,6 @@ from collections import defaultdict
 import json
 import os.path as osp
 
-from datumaro.components.converter import Converter
 from datumaro.components.extractor import (Extractor, DatasetItem,
     DEFAULT_SUBSET_NAME,
     AnnotationType, Annotation,

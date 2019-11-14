@@ -320,8 +320,8 @@ class _Converter:
             task: self.make_task_converter(task) for task in self._task
         }
 
-    def save_image(self, item, filename):
-        path = osp.join(self._images_dir, filename)
+    def save_image(self, item, subset_name, filename):
+        path = osp.join(self._images_dir, subset_name, filename)
         cv2.imwrite(path, item.image)
 
         return path
@@ -329,10 +329,16 @@ class _Converter:
     def convert(self):
         self.make_dirs()
 
-        for subset_name in self._extractor.subsets():
-            subset = self._extractor.get_subset(subset_name)
-            if not subset_name:
+        subsets = self._extractor.subsets()
+        if len(subsets) == 0:
+            subsets = [ None ]
+
+        for subset_name in subsets:
+            if subset_name:
+                subset = self._extractor.get_subset(subset_name)
+            else:
                 subset_name = DEFAULT_SUBSET_NAME
+                subset = self._extractor
 
             task_converters = self.make_task_converters()
             for task_conv in task_converters.values():
@@ -342,7 +348,7 @@ class _Converter:
                 if item.has_image:
                     filename = str(item.id) + CocoPath.IMAGE_EXT
                     if self._save_images:
-                        self.save_image(item, filename)
+                        self.save_image(item, subset_name, filename)
                 for task_conv in task_converters.values():
                     task_conv.save_image_info(item, filename)
                     task_conv.save_annotations(item)

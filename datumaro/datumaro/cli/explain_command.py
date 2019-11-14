@@ -12,8 +12,8 @@ import os.path as osp
 
 from datumaro.components.project import Project
 from datumaro.components.algorithms.rise import RISE
-from datumaro.util.command_targets import TargetKinds, \
-    ProjectTarget, SourceTarget, ImageTarget
+from datumaro.util.command_targets import (TargetKinds, target_selector,
+    ProjectTarget, SourceTarget, ImageTarget, is_project_path)
 from datumaro.util.image import load_image
 from .util.project import load_project
 

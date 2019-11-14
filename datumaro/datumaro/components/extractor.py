@@ -526,4 +526,4 @@ class Extractor(_ExtractorBase):
             _DatasetFilter(self, pred), self.categories())
 
 
-DEFAULT_SUBSET_NAME = '_default'
+DEFAULT_SUBSET_NAME = 'default'

@@ -62,7 +62,7 @@ class DatumaroConverterTest(TestCase):
                 generate_colormap(len(label_categories.items)))
 
             points_categories = PointsCategories()
-            for index, label in enumerate(label_categories.items):
+            for index, _ in enumerate(label_categories.items):
                 points_categories.add(index, ['cat1', 'cat2'], adjacent=[0, 1])
 
             return {

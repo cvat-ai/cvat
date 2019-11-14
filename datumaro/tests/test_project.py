@@ -143,8 +143,8 @@ class ProjectTest(TestCase):
                 pass
 
             def launch(self, inputs):
-                for i, input in enumerate(inputs):
-                    yield [ LabelObject(attributes={'idx': i, 'data': input}) ]
+                for i, inp in enumerate(inputs):
+                    yield [ LabelObject(attributes={'idx': i, 'data': inp}) ]
 
         model_name = 'model'
         launcher_name = 'custom_launcher'

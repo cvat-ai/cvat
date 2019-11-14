@@ -10,10 +10,9 @@ from pycocotools.coco import COCO
 import pycocotools.mask as mask_utils
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    DEFAULT_SUBSET_NAME,
-    AnnotationType, Annotation,
+    AnnotationType,
     LabelObject, MaskObject, PointsObject, PolygonObject,
-    PolyLineObject, BboxObject, CaptionObject,
+    BboxObject, CaptionObject,
     LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.components.formats.ms_coco import CocoAnnotationType, CocoPath
@@ -70,8 +69,6 @@ class CocoExtractor(Extractor):
 
         subset_name = osp.splitext(osp.basename(path))[0] \
             .rsplit('_', maxsplit=1)[1]
-        if subset_name == DEFAULT_SUBSET_NAME:
-            subset_name = None
         subset = CocoExtractor.Subset(subset_name, self)
         loader = self._make_subset_loader(path)
         subset.loaders[task] = loader

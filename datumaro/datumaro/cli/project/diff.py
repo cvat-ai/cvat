@@ -19,7 +19,7 @@ with warnings.catch_warnings():
     import tensorboardX as tb
     _formats.append('tensorboard')
 
-from datumaro.components.extractor import *
+from datumaro.components.extractor import AnnotationType
 
 
 Format = Enum('Formats', _formats)
@@ -37,7 +37,7 @@ class DiffVisualizer:
         if isinstance(output_format, str):
             output_format = Format[output_format]
         assert output_format in Format
-        self.format = output_format
+        self.output_format = output_format
 
         self.save_dir = save_dir
         if output_format is Format.tensorboard:
@@ -81,7 +81,7 @@ class DiffVisualizer:
         self.label_confusion_matrix = Counter()
         self.bbox_confusion_matrix = Counter()
 
-        if format is Format.tensorboard:
+        if self.output_format is Format.tensorboard:
             self.file_writer.reopen()
 
         for i, (item_a, item_b) in enumerate(zip(extractor_a, extractor_b)):
@@ -106,10 +106,10 @@ class DiffVisualizer:
             self.save_conf_matrix(self.bbox_confusion_matrix,
                 'bbox_confusion.png')
 
-        if format is Format.tensorboard:
+        if self.output_format is Format.tensorboard:
             self.file_writer.flush()
             self.file_writer.close()
-        elif format is Format.simple:
+        elif self.output_format is Format.simple:
             if self.label_diff_writer:
                 self.label_diff_writer.flush()
                 self.label_diff_writer.close()
@@ -181,14 +181,14 @@ class DiffVisualizer:
         matches, a_unmatched, b_unmatched = diff
 
         if 0 < len(a_unmatched) + len(b_unmatched):
-            if self.format is Format.simple:
+            if self.output_format is Format.simple:
                 f = self.get_label_diff_file()
                 f.write(item_a.id + '\n')
                 for a_label in a_unmatched:
                     f.write('  >%s\n' % self.get_label(a_label))
                 for b_label in b_unmatched:
                     f.write('  <%s\n' % self.get_label(b_label))
-            elif self.format is Format.tensorboard:
+            elif self.output_format is Format.tensorboard:
                 tag = item_a.id
                 for a_label in a_unmatched:
                     self.file_writer.add_text(tag,
@@ -215,9 +215,9 @@ class DiffVisualizer:
 
             path = osp.join(self.save_dir, 'diff_%s' % item_a.id)
 
-            if self.format is Format.simple:
+            if self.output_format is Format.simple:
                 cv2.imwrite(path + '.png', img)
-            elif self.format is Format.tensorboard:
+            elif self.output_format is Format.tensorboard:
                 self.save_as_tensorboard(img, path)
 
     def save_as_tensorboard(self, img, name):

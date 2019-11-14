@@ -2,16 +2,20 @@ import json
 import numpy as np
 import os
 import os.path as osp
+from PIL import Image
 
 from unittest import TestCase
 
 from datumaro.components.project import Project
-from datumaro.components.extractor import (Extractor, DatasetItem,
+from datumaro.components.extractor import (
+    DEFAULT_SUBSET_NAME,
+    Extractor, DatasetItem,
     AnnotationType, LabelObject, MaskObject, PointsObject, PolygonObject,
-    PolyLineObject, BboxObject, CaptionObject,
+    BboxObject, CaptionObject,
     LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.components.converters.ms_coco import (
+    CocoConverter,
     CocoImageInfoConverter,
     CocoCaptionsConverter,
     CocoInstancesConverter,
@@ -89,9 +93,6 @@ class CocoImporterTest(TestCase):
         return annotation
 
     def COCO_dataset_generate(self, path):
-        import numpy as np
-        from PIL import Image
-
         img_dir = osp.join(path, 'images', 'val')
         ann_dir = osp.join(path, 'annotations')
         os.makedirs(img_dir)
@@ -139,8 +140,10 @@ class CocoConverterTest(TestCase):
         project = Project.import_from(test_dir.path, 'ms_coco')
         parsed_dataset = project.make_dataset()
 
+        source_subsets = [s if s else DEFAULT_SUBSET_NAME
+            for s in source_dataset.subsets()]
         self.assertListEqual(
-            sorted(source_dataset.subsets()),
+            sorted(source_subsets),
             sorted(parsed_dataset.subsets()),
         )
 
@@ -342,3 +345,45 @@ class CocoConverterTest(TestCase):
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
                 CocoPersonKeypointsConverter, test_dir)
+
+    def test_can_save_dataset_with_no_subsets(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                items = [
+                    DatasetItem(id_=1, annotations=[
+                        LabelObject(2, id_=1),
+                    ]),
+
+                    DatasetItem(id_=2, image=np.zeros((5, 5, 3)), annotations=[
+                        LabelObject(3, id_=3),
+                        BboxObject(0, 0, 5, 5, label=3,
+                            attributes={ 'is_crowd': False }, id_=4, group=4),
+                        PolygonObject([0, 0, 4, 0, 4, 4],
+                                label=3, group=4),
+                        MaskObject(np.array([
+                                [0, 1, 1, 1, 0],
+                                [0, 0, 1, 1, 0],
+                                [0, 0, 0, 1, 0],
+                                [0, 0, 0, 0, 0],
+                                [0, 0, 0, 0, 0]],
+                                # only internal fragment (without the border),
+                                # but not everywhere...
+                                dtype=np.bool),
+                            label=3, group=4),
+                    ]),
+                ]
+
+                for item in items:
+                    yield item
+
+            def categories(self):
+                label_cat = LabelCategories()
+                for label in range(10):
+                    label_cat.add('label_' + str(label))
+                return {
+                    AnnotationType.label: label_cat,
+                }
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                CocoConverter, test_dir)

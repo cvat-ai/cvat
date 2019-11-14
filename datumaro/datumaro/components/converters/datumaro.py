@@ -88,8 +88,8 @@ class _SubsetWriter:
                 raise NotImplementedError()
             self.categories[ann_type.name] = converted_desc
 
-    def write(self, dir):
-        with open(osp.join(dir, '%s.json' % (self._name)), 'w') as f:
+    def write(self, save_dir):
+        with open(osp.join(save_dir, '%s.json' % (self._name)), 'w') as f:
             json.dump(self._data, f)
 
     def _convert_annotation(self, obj):
@@ -250,7 +250,7 @@ class _Converter:
 
         subsets = self._extractor.subsets()
         if len(subsets) == 0:
-            subsets = [ DEFAULT_SUBSET_NAME ]
+            subsets = [ None ]
         subsets = [n if n else DEFAULT_SUBSET_NAME for n in subsets]
         subsets = { name: _SubsetWriter(name, self) for name in subsets }
 
