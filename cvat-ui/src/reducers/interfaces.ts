@@ -89,7 +89,7 @@ export interface UsersState {
     gettingUsersError: any;
 }
 
-export interface ShareFileInfo {
+export interface ShareFileInfo { // get this data from cvat-core
     name: string;
     type: 'DIR' | 'REG';
 }
@@ -97,10 +97,10 @@ export interface ShareFileInfo {
 export interface ShareItem {
     name: string;
     type: 'DIR' | 'REG';
-    children?: ShareItem[];
+    children: ShareItem[];
 }
 
 export interface ShareState {
-    tree: ShareItem;
+    root: ShareItem;
     error: any;
 }

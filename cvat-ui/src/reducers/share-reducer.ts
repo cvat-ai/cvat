@@ -4,7 +4,7 @@ import { ShareActionTypes } from '../actions/share-actions';
 import { ShareState, ShareFileInfo, ShareItem } from './interfaces';
 
 const defaultState: ShareState = {
-    tree: {
+    root: {
         name: '/',
         type: 'DIR',
         children: [],
@@ -24,21 +24,22 @@ export default function (state = defaultState, action: AnyAction): ShareState {
             const { values } = action.payload;
             const { directory } = action.payload;
 
-            let dir = state.tree;
+            // Find directory item in storage
+            let dir = state.root;
             for (const dirName of directory.split('/')) {
-                if (dirName && dir.children) {
-                    [dir] = dir.children.filter((child): boolean => child.name === dirName);
+                if (dirName) {
+                    [dir] = dir.children.filter(
+                        (child): boolean => child.name === dirName,
+                    );
                 }
             }
 
-            dir.children = (values as ShareFileInfo[]).map((value): ShareItem => (
-                value.type === 'DIR' ? {
+            // Update its children
+            dir.children = (values as ShareFileInfo[])
+                .map((value): ShareItem => ({
                     ...value,
                     children: [],
-                } : {
-                    ...value,
-                }
-            ));
+                }));
 
             return {
                 ...state,

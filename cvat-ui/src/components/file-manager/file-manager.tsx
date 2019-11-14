@@ -112,16 +112,42 @@ export default class FileManager extends React.PureComponent<Props, State> {
 
                     <Tabs.TabPane key='share' tab='Connected file share'>
                         { this.props.treeData.length ?
-                            <Tree className='cvat-share-tree' checkable loadData={(node: AntTreeNode) => {
-                                return this.loadData(node.props.dataRef.key);
-                            }}>
+                            <Tree
+                                className='cvat-share-tree'
+                                checkable
+                                showLine
+                                checkStrictly={false}
+                                loadData={(node: AntTreeNode) => {
+                                    return this.loadData(node.props.dataRef.key);
+                                }}
+                                onCheck={(checkedKeys: string[] | {checked: string[], halfChecked: string[]}) => {
+                                    const share = checkedKeys as string[];
+                                    this.setState({
+                                        files: {
+                                            ...this.state.files,
+                                            share,
+                                        },
+                                    });
+                                }}>
                                 { renderTreeNodes(this.props.treeData) }
                             </Tree> : <Text className='cvat-black-color'> No data found </Text>
                         }
                     </Tabs.TabPane>
 
                     <Tabs.TabPane key='remote' tab='Remote sources'>
-                        <Input.TextArea placeholder='Enter one URL per line' rows={6}/>
+                        <Input.TextArea
+                            placeholder='Enter one URL per line'
+                            rows={6}
+                            onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                                this.setState({
+                                    files: {
+                                        ...this.state.files,
+                                        remote: event.target.value.split('\n').filter(
+                                            (nonEmpty) => nonEmpty,
+                                        ),
+                                    },
+                                });
+                            }}/>
                     </Tabs.TabPane>
                 </Tabs>
             </>

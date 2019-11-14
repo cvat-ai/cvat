@@ -513,7 +513,9 @@
 }
 
 .cvat-share-tree {
-    height: 10em;
+    height: fit-content;
+    min-height: 10em;
+    max-height: 20em;
     overflow: auto;
 }
 
