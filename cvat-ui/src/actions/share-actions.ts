@@ -35,7 +35,7 @@ function loadShareDataSuccess(values: ShareFileInfo[], directory: string): AnyAc
 
 function loadShareDataFailed(error: any): AnyAction {
     const action = {
-        type: ShareActionTypes.LOAD_SHARE_DATA_SUCCESS,
+        type: ShareActionTypes.LOAD_SHARE_DATA_FAILED,
         payload: {
             error,
         },

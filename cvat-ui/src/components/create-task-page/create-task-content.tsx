@@ -204,6 +204,8 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
     }
 
     public render() {
+        const loading = !!this.props.status && this.props.status !== 'CREATED';
+
         return (
             <Row type='flex' justify='start' align='middle' className='cvat-create-task-content'>
                 <Col span={24}>
@@ -217,7 +219,12 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
 
                 <Col span={24}>
                     {this.props.status !== 'CREATED' ? <Text>{this.props.status}</Text> : null}
-                    <Button type='danger' onClick={this.handleSubmitClick}> Submit </Button>
+                    <Button
+                        loading={loading}
+                        disabled={loading}
+                        type='danger'
+                        onClick={this.handleSubmitClick}
+                    > Submit </Button>
                 </Col>
             </Row>
         );
