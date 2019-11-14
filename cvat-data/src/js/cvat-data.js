@@ -200,6 +200,7 @@ class FrameProvider {
                     // console.log("stop decoding " + event.data.start + " to " + event.data.end + " frames");
                     // console.log(this._decodeThreadCount);
                     delete this._decodingBlocks[`${start}:${end}`];
+                    worker.terminate();
                 }
                 index++;
             };
