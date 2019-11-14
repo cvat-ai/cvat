@@ -7,7 +7,6 @@
     require:true
 */
 // require("./decode_video")
-const Decoder = require('./Decoder');
 const { MP4Reader, Bytestream } = require('./mp4');
 
 const BlockType = Object.freeze({
@@ -171,14 +170,14 @@ class FrameProvider {
 
 
             const release = await this._mutex.acquireQueued();
-            let start = this._requestedBlockDecode.start;
-            let end = this._requestedBlockDecode.end;
-            let block = this._requestedBlockDecode.block;
+            const start = this._requestedBlockDecode.start;
+            const end = this._requestedBlockDecode.end;
+            const block = this._requestedBlockDecode.block;
             this._blocks_ranges.push(`${start}:${end}`);
             this._decodingBlocks[`${start}:${end}`] = this._requestedBlockDecode;
             this._requestedBlockDecode = null;
 
-            for (let i = start; i <= end * 100; i++){
+            for (let i = start; i <= end; i++){
                 this._frames[i] = 'loading';
             }
 
@@ -186,107 +185,52 @@ class FrameProvider {
 
             this._cleanup();
 
-            // const decoder = new Decoder({ rgb: true });
+            const worker = new Worker('/static/engine/js/Decoder.js');
 
+            let index = start;
+            worker.onmessage = e => {
+                if (e.data.consoleLog) {
+                  return;
+                }
 
-            let index = 0;
-            const onPictureDecoded = (buffer, width, height, infos) => {
-                console.log(infos);
-                this._frames[index] = new Uint8ClampedArray(buffer);
+                this._frames[index] = new Uint8ClampedArray(e.data.buf);
                 this._decodingBlocks[`${start}:${end}`].resolveCallback(index);
-                if (index === end * 100) {
+                if (index === end) {
                     this._decodeThreadCount--;
                     // console.log("stop decoding " + event.data.start + " to " + event.data.end + " frames");
                     // console.log(this._decodeThreadCount);
                     delete this._decodingBlocks[`${start}:${end}`];
                 }
                 index++;
-            }
+            };
 
-            var worker = new Worker('/static/engine/js/Decoder.js');
-
-            worker.addEventListener('message', e => {
-                var data = e.data;
-                if (data.consoleLog){
-                  console.log(data.consoleLog);
-                  return;
-                };
-
-                onPictureDecoded(data.buf, data.width, data.height, data.infos);
-
-              }, false);
-
-            worker.postMessage({type: "Broadway.js - Worker init", options: {
-                rgb: true,
-                memsize: this.memsize,
-                // reuseMemory: this._config.reuseMemory ? true : false
-                reuseMemory: false,
-              }});
-
-
-
+            worker.postMessage({
+                type: "Broadway.js - Worker init",
+                options: {
+                    rgb: true,
+                    reuseMemory: false,
+                },
+            });
 
             const reader = new MP4Reader(new Bytestream(block));
             reader.read();
-            var video = reader.tracks[1];
+            const video = reader.tracks[1];
 
-            var avc = reader.tracks[1].trak.mdia.minf.stbl.stsd.avc1.avcC;
-            var sps = avc.sps[0];
-            var pps = avc.pps[0];
+            const avc = reader.tracks[1].trak.mdia.minf.stbl.stsd.avc1.avcC;
+            const sps = avc.sps[0];
+            const pps = avc.pps[0];
 
             /* Decode Sequence & Picture Parameter Sets */
-            // decoder.decode(sps);
-            // decoder.decode(pps);
-            var copyU8_sps = new Uint8Array(sps.length);
-            copyU8_sps.set( sps, 0, sps.length );
-            worker.postMessage({buf: copyU8_sps, offset: 0, length: copyU8_sps.length});
-            var copyU8_pps = new Uint8Array(pps.length);
-            copyU8_pps.set( pps, 0, pps.length );
-
+            worker.postMessage({buf: sps, offset: 0, length: sps.length});
             worker.postMessage({buf: pps, offset: 0, length: pps.length});
 
             /* Decode Pictures */
             for (let sample = 0; sample < video.getSampleCount(); sample++){
-                // video.getSampleNALUnits(sample).forEach(nal => decoder.decode(nal));
-
                 video.getSampleNALUnits(sample).forEach(nal => {
-                    var copyU8_nal = new Uint8Array(nal.length);
-                    copyU8_nal.set( nal, 0, nal.length );
-                    worker.postMessage({buf: copyU8_nal, offset: 0, length: copyU8_nal.length})
+                    worker.postMessage({buf: nal, offset: 0, length: nal.length})
                 });
             }
             this._decodeThreadCount++;
-
-            // const worker = new Worker('/static/engine/js/decode_video.js');
-
-            // worker.onerror = (function (e) {
-            //     console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
-            //     worker.terminate();
-            //     this._decodeThreadCount--;
-            //     // console.log(this._decodeThreadCount);
-            //     this._decodingBlocks[`${start}:${end}`].rejectCallback();
-            //     delete this._decodingBlocks[`${start}:${end}`];
-            // }).bind(this);
-
-            // worker.postMessage({block  : block,
-            //                     start  : start,
-            //                       end  : end,
-            //                     width  : this._width,
-            //                     height : this._height});
-            // this._decodeThreadCount++;
-            // // console.log(this._decodeThreadCount);
-
-            // worker.onmessage = (function (event){
-            //     // console.log("Decoded " + event.data.index + "frame");
-            //     this._frames[event.data.index] = event.data.data;
-            //     this._decodingBlocks[`${event.data.start}:${event.data.end}`].resolveCallback(event.data.index);
-            //     if (event.data.isEnd) {
-            //         this._decodeThreadCount--;
-            //         // console.log("stop decoding " + event.data.start + " to " + event.data.end + " frames");
-            //         // console.log(this._decodeThreadCount);
-            //         delete this._decodingBlocks[`${event.data.start}:${event.data.end}`];
-            //     }
-            // }).bind(this);
             release();
 
         } else {
