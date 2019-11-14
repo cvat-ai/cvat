@@ -36,6 +36,8 @@ TS.prototype.write = function(buffer) {
 
 	while (this.bits.has(188 << 3) && this.parsePacket()) {}
 
+	this.packetComplete(this.pesPacketInfo[0xE0]);
+
 	var leftoverCount = this.bits.byteLength - (this.bits.index >> 3);
 	this.leftoverBytes = leftoverCount > 0
 		? this.bits.bytes.subarray(this.bits.index >> 3)
