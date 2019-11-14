@@ -3,9 +3,11 @@ import React from 'react';
 import {
     Row,
     Col,
+    Alert,
     Modal,
     Button,
     Collapse,
+    message,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -186,9 +188,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         }
 
         if (this.props.status === 'CREATED' && prevProps.status !== 'CREATED') {
-            Modal.info({
-                title: 'Task has been created',
-            });
+            message.success('The task has been created');
 
             this.basicConfigurationComponent.resetFields();
             if (this.advancedConfigurationComponent) {
@@ -219,8 +219,10 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 { this.renderFilesBlock() }
                 { this.renderAdvancedBlock() }
 
-                <Col span={24}>
-                    {loading ? <Text>{this.props.status}</Text> : null}
+                <Col span={14}>
+                    {loading ? <Alert message={this.props.status}/> : null}
+                </Col>
+                <Col span={10}>
                     <Button
                         loading={loading}
                         disabled={loading}
