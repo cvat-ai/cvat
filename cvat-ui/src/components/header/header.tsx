@@ -5,7 +5,6 @@ import { withRouter } from 'react-router-dom';
 
 import {
     Layout,
-    Radio,
     Icon,
     Button,
     Menu,
@@ -70,13 +69,16 @@ function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
             <div className='cvat-right-header'>
                 <Button className='cvat-header-button' type='link' onClick={
                         () => window.open('https://github.com/opencv/cvat', '_blank')
-                }> <Icon type='github' /> GitHub </Button>
+                }>
+                    <Icon type='github'/>
+                    <Text className='cvat-black-color'>GitHub</Text>
+                </Button>
                 <Button className='cvat-header-button' type='link' onClick={
                         () => {
                             const serverHost = core.config.backendAPI.slice(0, -7);
                             window.open(`${serverHost}/documentation/user_guide.html`, '_blank')
                         }
-                }> <Icon type='question-circle' /> Help </Button>
+                }> <Icon type='question-circle'/> Help </Button>
                 <Menu className='cvat-header-menu' subMenuCloseDelay={0.1} mode='horizontal'>
                     <Menu.SubMenu title={
                         <span>

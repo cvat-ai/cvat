@@ -40,6 +40,17 @@
     color: black;
 }
 
+.cvat-feedback-button {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    padding: 0px;
+}
+
+.cvat-feedback-button > i {
+    font-size: 40px;
+}
+
 .anticon.cvat-logo-icon {
     display: flex;
     align-items: center;
@@ -64,21 +75,11 @@
 }
 
 .ant-btn.cvat-header-button {
-    height: 100%;
-    background: rgba(255, 255, 255, 0);
-    border-radius: 0px;
     color: black !important;
-    transition: color 0.5s;
-    padding: 0 30px;
+    padding: 0px 10px;
+    margin-right: 10px;
 }
 
-.ant-btn.cvat-header-button:hover {
-    background: #C3C3C3;
-}
-
-.ant-btn.cvat-header-button:active {
-    background: #C3C3C3;
-}
 
 .ant-menu.cvat-header-menu {
     width: fit-content;
