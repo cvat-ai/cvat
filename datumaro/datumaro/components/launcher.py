@@ -61,7 +61,7 @@ class InferenceWrapper(Extractor):
         while not stop:
             batch_items = []
             try:
-                for i in range(self._batch_size):
+                for _ in range(self._batch_size):
                     item = next(data_iter)
                     batch_items.append(item)
             except StopIteration:

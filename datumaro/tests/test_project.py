@@ -184,8 +184,8 @@ class ProjectTest(TestCase):
                 pass
 
             def launch(self, inputs):
-                for input in inputs:
-                    yield [ LabelObject(input) ]
+                for inp in inputs:
+                    yield [ LabelObject(inp) ]
 
         class TestConverter(Converter):
             def __call__(self, extractor, save_dir):

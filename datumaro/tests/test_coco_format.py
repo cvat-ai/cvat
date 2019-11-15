@@ -12,7 +12,7 @@ from datumaro.components.extractor import (
     Extractor, DatasetItem,
     AnnotationType, LabelObject, MaskObject, PointsObject, PolygonObject,
     BboxObject, CaptionObject,
-    LabelCategories, MaskCategories, PointsCategories
+    LabelCategories, PointsCategories
 )
 from datumaro.components.converters.ms_coco import (
     CocoConverter,

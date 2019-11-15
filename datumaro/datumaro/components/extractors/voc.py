@@ -14,9 +14,9 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     LabelCategories, MaskCategories
 )
 from datumaro.components.formats.voc import VocLabel, VocAction, \
-    VocBodyPart, VocPose, VocTask, VocPath, VocColormap, VocInstColormap
+    VocBodyPart, VocTask, VocPath, VocColormap, VocInstColormap
 from datumaro.util import dir_items
-from datumaro.util.image import load_image, lazy_image
+from datumaro.util.image import lazy_image
 from datumaro.util.mask_tools import lazy_mask, invert_colormap
 
 
