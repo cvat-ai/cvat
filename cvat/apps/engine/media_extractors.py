@@ -281,9 +281,10 @@ class VideoExtractor(IMediaExtractor):
         return [{'name': self._source_path[0], 'size': (frame.width, frame.height)}], frame_count
 
     def save_preview(self, preview_path):
+        # Need fix
         frame_decoder = self._get_av_container().decode()
         preview = next(frame_decoder)
-        preview.to_image().save(preview_path)
+        # preview.to_image().save(preview_path)
 
 def _is_archive(path):
     mime = mimetypes.guess_type(path)
