@@ -13,7 +13,6 @@ from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
     DEFAULT_SUBSET_NAME,
     AnnotationType, LabelObject, MaskObject, BboxObject, CaptionObject,
-    LabelCategories, MaskCategories
 )
 from datumaro.components.formats.voc import VocLabel, VocAction, \
     VocBodyPart, VocPose, VocTask, VocPath, VocColormap, VocInstColormap

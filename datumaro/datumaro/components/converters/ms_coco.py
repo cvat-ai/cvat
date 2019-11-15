@@ -17,7 +17,6 @@ from datumaro.components.extractor import (
     AnnotationType, Annotation,
     LabelObject, MaskObject, PointsObject, PolygonObject,
     PolyLineObject, BboxObject, CaptionObject,
-    LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.components.formats.ms_coco import CocoAnnotationType, CocoPath
 from datumaro.util import find

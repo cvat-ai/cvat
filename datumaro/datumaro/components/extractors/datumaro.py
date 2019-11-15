@@ -9,7 +9,7 @@ import os.path as osp
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
     DEFAULT_SUBSET_NAME,
-    AnnotationType, Annotation,
+    AnnotationType,
     LabelObject, MaskObject, PointsObject, PolygonObject,
     PolyLineObject, BboxObject, CaptionObject,
     LabelCategories, MaskCategories, PointsCategories
