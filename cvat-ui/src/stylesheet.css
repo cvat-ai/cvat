@@ -1,3 +1,10 @@
+#root {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    display: grid;
+}
+
 .cvat-header.ant-layout-header {
     display: flex;
     padding-left: 0px;
@@ -33,36 +40,17 @@
     color: black;
 }
 
-.cvat-header-buttons.ant-radio-group {
-    height: 100%;
-    display: flex;
+.cvat-feedback-button {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    padding: 0px;
 }
 
-.cvat-header-buttons.ant-radio-group > label {
-    height: 100%;
-    background: rgba(255, 255, 255, 0);
-    border-radius: 0px;
-    display: flex;
-    align-items: center;
-    padding: 0 30px;
-
-    /* Important here is used in order to redefine all states :hover, :active, :focus-within, etc */
-    user-select: none !important;
-    border: none !important;
-    border-color: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-    color: black !important;
+.cvat-feedback-button > i {
+    font-size: 40px;
 }
 
-.cvat-header-buttons.ant-radio-group > label::before {
-    background-color: unset !important;
-}
-
-.cvat-header-buttons.ant-radio-group > label.ant-radio-button-wrapper-checked {
-    height: 100%;
-    background: #C3C3C3;
-}
 .anticon.cvat-logo-icon {
     display: flex;
     align-items: center;
@@ -87,17 +75,11 @@
 }
 
 .ant-btn.cvat-header-button {
-    height: 100%;
-    background: rgba(255, 255, 255, 0);
-    border-radius: 0px;
     color: black !important;
-    transition: color 0.5s;
-    padding: 0 30px;
+    padding: 0px 10px;
+    margin-right: 10px;
 }
 
-.ant-btn.cvat-header-button:active {
-    background: #C3C3C3;
-}
 
 .ant-menu.cvat-header-menu {
     width: fit-content;
@@ -126,9 +108,13 @@
     margin: 16px;
 }
 
+.anticon.cvat-header-menu-icon {
+    margin-left: 16px;
+    margin-right: 0px;
+}
+
 .anticon.cvat-header-menu-icon > img {
     width: 14px;
-    margin: 10px;
     transform: rotate(-90deg);
 }
 
@@ -143,72 +129,72 @@
     padding-top: 5px;
 }
 
-.tasks-page {
+.cvat-tasks-page {
     padding-top: 30px;
 }
 
-.tasks-page > div:nth-child(1) {
+.cvat-tasks-page > div:nth-child(1) {
     margin-bottom: 10px;
 }
 
-.tasks-page > div:nth-child(1) > div > span {
+.cvat-tasks-page > div:nth-child(1) > div > span {
     color: black;
 }
 
-.tasks-page > div:nth-child(2) > div:nth-child(1) {
+.cvat-tasks-page > div:nth-child(2) > div:nth-child(1) {
     display: flex;
 }
 
-.tasks-page > div:nth-child(2) > div:nth-child(2) {
+.cvat-tasks-page > div:nth-child(2) > div:nth-child(2) {
     display: flex;
     justify-content: flex-end;
 }
 
-.tasks-page > div:nth-child(2) > div:nth-child(1) > span:nth-child(2) {
+.cvat-tasks-page > div:nth-child(2) > div:nth-child(1) > span:nth-child(2) {
     width: 200px;
     margin-left: 10px;
 }
 
-.tasks-page > span.ant-typography {
+.cvat-tasks-page > span.ant-typography {
     user-select: none;
 }
 
-.tasks-page {
+.cvat-tasks-page {
     height: 100%;
 }
 
-.tasks-page > div:nth-child(4) {
-    margin-top: 28px;
+.cvat-tasks-page > div:nth-child(4) {
+    margin-top: 10px;
 }
 
-.tasks-page > div:nth-child(3) {
-    margin-top: 28px;
+.cvat-tasks-page > div:nth-child(3) {
+    margin-top: 10px;
 }
 
 /* > 1280 */
 @media only screen and (min-height: 1280px) {
-    .tasks-page > div:nth-child(3) {
+    .cvat-tasks-page > div:nth-child(3) {
         height: 80%;
     }
 }
 
 /* 769 => 1280 */
 @media only screen and (max-height: 1280px) {
-    .tasks-page > div:nth-child(3) {
+    .cvat-tasks-page > div:nth-child(3) {
         height: 80%;
     }
 }
 
 /* 0 => 768 */
 @media only screen and (max-height: 768px) {
-    .tasks-page > div:nth-child(3) {
+    .cvat-tasks-page > div:nth-child(3) {
         height: 70%;
     }
 }
 
 /* empty-tasks icon */
 .cvat-empty-task-list > div:nth-child(1) {
-    margin-top: 100px;
+    margin-top: 50px;
 }
 
 .cvat-empty-task-list > div:nth-child(2) > div {
@@ -326,6 +312,11 @@
     margin-right: 5px;
 }
 
+.cvat-task-details-wrapper {
+    overflow-y: auto;
+    height: 100%;
+}
+
 .cvat-task-details {
     width: 100%;
     height: auto;
@@ -370,7 +361,7 @@
     margin-bottom: 20px;
 }
 
-.cvat-task-assignee-selector {
+.cvat-user-selector {
     margin-left: 10px;
     width: 150px;
 }
@@ -489,6 +480,44 @@
 
 .cvat-job-annotation-color {
     color: #C1C1C1;
+}
+
+.cvat-create-task-form-wrapper {
+    text-align: center;
+    margin-top: 40px;
+    overflow-y: auto;
+    height: 90%;
+}
+
+.cvat-create-task-form-wrapper > div > span {
+    font-size: 36px;
+}
+
+.cvat-create-task-content {
+    margin-top: 20px;
+    width: 100%;
+    height: auto;
+    border: 1px solid #c3c3c3;
+    border-radius: 3px;
+    padding: 20px;
+    background: white;
+    text-align: initial;
+}
+
+.cvat-create-task-content > div:not(first-child) {
+    margin-top: 10px;
+}
+
+.cvat-create-task-content > div:nth-child(7) > button {
+    float: right;
+    width: 120px;
+}
+
+.cvat-share-tree {
+    height: fit-content;
+    min-height: 10em;
+    max-height: 20em;
+    overflow: auto;
 }
 
 #cvat-create-task-button {

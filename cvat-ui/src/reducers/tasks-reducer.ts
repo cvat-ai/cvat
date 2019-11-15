@@ -32,6 +32,10 @@ const defaultState: TasksState = {
             deletingError: null,
             byTask: {},
         },
+        creates: {
+            creatingError: null,
+            status: '',
+        },
     },
 };
 
@@ -279,6 +283,58 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                     deletes: {
                         ...deletesActivities,
                         deletingError: error,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.CREATE_TASK: {
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    creates: {
+                        creatingError: null,
+                        status: '',
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.CREATE_TASK_STATUS_UPDATED: {
+            const { status } = action.payload;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    creates: {
+                        ...state.activities.creates,
+                        status,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.CREATE_TASK_SUCCESS: {
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    creates: {
+                        ...state.activities.creates,
+                        status: 'CREATED',
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.CREATE_TASK_FAILED: {
+            const { error } = action.payload;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    creates: {
+                        ...state.activities.creates,
+                        creatingError: error,
                     },
                 },
             };

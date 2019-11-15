@@ -17,6 +17,8 @@ import LoginPageContainer from '../containers/login-page/login-page';
 import RegisterPageContainer from '../containers/register-page/register-page';
 import HeaderContainer from '../containers/header/header';
 
+import FeedbackComponent from './feedback';
+
 type CVATAppProps = {
     loadFormats: () => void;
     loadUsers: () => void;
@@ -110,6 +112,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                                     <Route path='/tasks/:id/jobs/:id' component={AnnotationPageContainer}/>
                                     <Redirect to='/tasks'/>
                                 </Switch>
+                                <FeedbackComponent/>
                             </Layout.Content>
                         </Layout>
                     </BrowserRouter>
@@ -127,7 +130,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             }
         } else {
             return (
-                <Spin size="large" style={{margin: '25% 50%'}}/>
+                <Spin size='large' style={{margin: '25% 50%'}}/>
             );
         }
     }
