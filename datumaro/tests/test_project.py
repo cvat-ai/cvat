@@ -32,10 +32,12 @@ class ProjectTest(TestCase):
             self.assertEqual(
                 src_config.format_version, result_config.format_version)
 
-    def test_default_ctor_is_ok(self):
+    @staticmethod
+    def test_default_ctor_is_ok():
         Project()
 
-    def test_empty_config_is_ok(self):
+    @staticmethod
+    def test_empty_config_is_ok():
         Project(Config())
 
     def test_add_source(self):

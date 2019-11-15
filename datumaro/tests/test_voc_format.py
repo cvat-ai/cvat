@@ -9,9 +9,7 @@ import shutil
 from unittest import TestCase
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType,
-    LabelObject, MaskObject, BboxObject,
-    LabelCategories, MaskCategories
+    AnnotationType, BboxObject, LabelCategories,
 )
 import datumaro.components.formats.voc as VOC
 from datumaro.components.extractors.voc import (
