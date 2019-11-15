@@ -439,13 +439,12 @@ class VocConverterTest(TestCase):
             def __iter__(self):
                 items = [
                     DatasetItem(id_=1, annotations=[
-                        LabelObject(2, id_=1),
-                        BboxObject(2, 3, 4, 5, label=2, id_=2),
+                        BboxObject(2, 3, 4, 5, label=2, id_=1),
+                        BboxObject(2, 3, 4, 5, label=3, id_=2),
                     ]),
 
                     DatasetItem(id_=2, annotations=[
-                        LabelObject(3, id_=1),
-                        BboxObject(5, 4, 6, 5, label=3, id_=2),
+                        BboxObject(5, 4, 6, 5, label=3, id_=1),
                     ]),
                 ]
 
