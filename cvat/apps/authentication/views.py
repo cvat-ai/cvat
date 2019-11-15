@@ -13,6 +13,10 @@ from furl import furl
 from . import forms
 from . import signature
 
+from django.utils.decorators import method_decorator
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 def register_user(request):
     if request.method == 'POST':
         form = forms.NewUserForm(request.POST)
@@ -27,7 +31,24 @@ def register_user(request):
         form = forms.NewUserForm()
     return render(request, 'register.html', {'form': form})
 
+@method_decorator(name='post', decorator=swagger_auto_schema(
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        requared=[
+            'url'
+        ],
+        properties={
+            'url': openapi.Schema(type=openapi.TYPE_STRING)
+        }
+
+    )
+))
 class SigningView(views.APIView):
+    """
+    Returns a token
+
+    Accepts the following POST parameters: url
+    """
     def post(self, request):
         url = request.data.get('url')
         if not url:
