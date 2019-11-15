@@ -50,7 +50,7 @@ export default class Feedback extends React.PureComponent<{}, State> {
             <>
                 <Icon type='star'/>
                 <Text style={{marginLeft: '10px'}}>
-                    Star CVAT on <a target='_blank' href={githubURL}>GitHub</a>
+                    Star us on <a target='_blank' href={githubURL}>GitHub</a>
                 </Text>
                 <br/>
                 <Icon type='like'/>

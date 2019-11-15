@@ -217,12 +217,13 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             <>
                 <Row>
                     <Col>
-                        {this.renderGitLFSBox()}
+                        {this.renderGitRepositoryURL()}
+
                     </Col>
                 </Row>
                 <Row>
                     <Col>
-                        {this.renderGitRepositoryURL()}
+                        {this.renderGitLFSBox()}
                     </Col>
                 </Row>
             </>
