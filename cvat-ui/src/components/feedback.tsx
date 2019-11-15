@@ -50,12 +50,12 @@ export default class Feedback extends React.PureComponent<{}, State> {
             <>
                 <Icon type='star'/>
                 <Text style={{marginLeft: '10px'}}>
-                    Star us on <a target='_blank' href={githubURL}>GitHub</a>
+                    Star CVAT on <a target='_blank' href={githubURL}>GitHub</a>
                 </Text>
                 <br/>
                 <Icon type='like'/>
                 <Text style={{marginLeft: '10px'}}>
-                    Left us a <a target='_blank' href={feedbackURL}>feedback</a>
+                    Left a <a target='_blank' href={feedbackURL}>feedback</a>
                 </Text>
                 <hr/>
                 <div style={{display: 'flex'}}>

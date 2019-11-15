@@ -29,6 +29,7 @@ export interface AdvancedConfiguration {
 
 type Props = FormComponentProps & {
     onSubmit(values: AdvancedConfiguration): void
+    installedGit: boolean;
 };
 
 class AdvancedConfigurationForm extends React.PureComponent<Props> {
@@ -55,174 +56,234 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         this.props.form.resetFields();
     }
 
-    public render() {
-        const { getFieldDecorator } = this.props.form;
+    private renderZOrder() {
+        return (
+            <Form.Item style={{marginBottom: '0px'}}>
+                <Tooltip overlay='Enable order for shapes. Useful for segmentation tasks'>
+                    {this.props.form.getFieldDecorator('zOrder', {
+                        initialValue: false,
+                        valuePropName: 'checked',
+                    })(
+                        <Checkbox>
+                            <Text className='cvat-black-color'>
+                                Z-order
+                            </Text>
+                        </Checkbox>
+                    )}
+                </Tooltip>
+            </Form.Item>
+        );
+    }
 
+    private renderImageQuality() {
+        return (
+            <Form.Item style={{marginBottom: '0px'}}>
+                <Tooltip overlay='Defines image compression level'>
+                    <Text className='cvat-black-color'> Image quality </Text>
+                    {this.props.form.getFieldDecorator('imageQuality', {
+                        initialValue: 70,
+                        rules: [{
+                            required: true,
+                            message: 'This field is required'
+                        }],
+                    })(
+                        <Input
+                            size='large'
+                            type='number'
+                            min={5}
+                            max={100}
+                            suffix={<Icon type='percentage'/>}
+                        />
+                    )}
+                </Tooltip>
+            </Form.Item>
+        );
+    }
+
+    private renderOverlap() {
+        return (
+            <Form.Item style={{marginBottom: '0px'}}>
+                <Tooltip overlay='Defines a number of intersected frames between different segments'>
+                    <Text className='cvat-black-color'> Overlap size </Text>
+                    {this.props.form.getFieldDecorator('overlapSize')(
+                        <Input size='large' type='number'/>
+                    )}
+                </Tooltip>
+            </Form.Item>
+        );
+    }
+
+    private renderSegmentSize() {
+        return (
+            <Form.Item style={{marginBottom: '0px'}}>
+                <Tooltip overlay='Defines a number of frames in a segment'>
+                    <Text className='cvat-black-color'> Segment size </Text>
+                    {this.props.form.getFieldDecorator('segmentSize')(
+                        <Input size='large' type='number'/>
+                    )}
+                </Tooltip>
+            </Form.Item>
+        );
+    }
+
+    private renderStartFrame() {
+        return (
+            <Form.Item style={{marginBottom: '0px'}}>
+                <Text className='cvat-black-color'> Start frame </Text>
+                {this.props.form.getFieldDecorator('startFrame')(
+                    <Input
+                        size='large'
+                        type='number'
+                        min={0}
+                        step={1}
+                    />
+                )}
+            </Form.Item>
+        );
+    }
+
+    private renderStopFrame() {
+        return (
+            <Form.Item style={{marginBottom: '0px'}}>
+                <Text className='cvat-black-color'> Stop frame </Text>
+                {this.props.form.getFieldDecorator('stopFrame')(
+                    <Input
+                        size='large'
+                        type='number'
+                        min={0}
+                        step={1}
+                    />
+                )}
+            </Form.Item>
+        );
+    }
+
+    private renderFrameStep() {
+        return (
+            <Form.Item style={{marginBottom: '0px'}}>
+                <Text className='cvat-black-color'> Frame step </Text>
+                {this.props.form.getFieldDecorator('frameStep')(
+                    <Input
+                        size='large'
+                        type='number'
+                        min={1}
+                        step={1}
+                    />
+                )}
+            </Form.Item>
+        );
+    }
+
+    private renderGitLFSBox() {
+        return (
+            <Form.Item style={{marginBottom: '0px'}}>
+                <Tooltip overlay='If annotation files are large, you can use git LFS feature'>
+                    {this.props.form.getFieldDecorator('lfs', {
+                        valuePropName: 'checked',
+                        initialValue: false,
+                    })(
+                        <Checkbox>
+                            <Text className='cvat-black-color'>
+                                Use LFS (Large File Support)
+                            </Text>
+                        </Checkbox>
+                    )}
+                </Tooltip>
+            </Form.Item>
+        );
+    }
+
+    private renderGitRepositoryURL() {
+        return (
+            <Form.Item style={{marginBottom: '0px'}}>
+                <Tooltip overlay={`Attach a git repository to store annotations.
+                                Path is specified in square brackets`}>
+                    <Text className='cvat-black-color'> Dataset repository URL </Text>
+                    {this.props.form.getFieldDecorator('repository', {
+                        // TODO: Add pattern
+                    })(
+                        <Input
+                            placeholder='e.g. https//github.com/user/repos [annotation/<anno_file_name>.zip]'
+                            size='large'
+                        />
+                    )}
+                </Tooltip>
+            </Form.Item>
+        );
+    }
+
+    private renderGit() {
+        return (
+            <>
+                <Row>
+                    <Col>
+                        {this.renderGitLFSBox()}
+                    </Col>
+                </Row>
+                <Row>
+                    <Col>
+                        {this.renderGitRepositoryURL()}
+                    </Col>
+                </Row>
+            </>
+        );
+    }
+
+    private renderBugTracker() {
+        return (
+            <Form.Item style={{marginBottom: '0px'}}>
+                <Tooltip overlay='Attach issue tracker where the task is described'>
+                    <Text className='cvat-black-color'> Issue tracker </Text>
+                    {this.props.form.getFieldDecorator('bugTracker', {
+                        rules: [{
+                            ...patterns.validateURL,
+                        }]
+                    })(
+                        <Input
+                            size='large'
+                        />
+                    )}
+                </Tooltip>
+            </Form.Item>
+        )
+    }
+
+    public render() {
         return (
             <Form>
-                <Row>
-                    <Col>
-                        <Form.Item style={{marginBottom: '0px'}}>
-                            <Tooltip overlay='Enable order for shapes. Useful for segmentation tasks'>
-                                {getFieldDecorator('zOrder', {
-                                    initialValue: false,
-                                    valuePropName: 'checked',
-                                })(
-                                    <Checkbox>
-                                        <Text className='cvat-black-color'>
-                                            Z-order
-                                        </Text>
-                                    </Checkbox>
-                                )}
-                            </Tooltip>
-                        </Form.Item>
+                <Row><Col>
+                    {this.renderZOrder()}
+                </Col></Row>
+
+                <Row type='flex' justify='start'>
+                    <Col span={7}>
+                        {this.renderImageQuality()}
+                    </Col>
+                    <Col span={7} offset={1}>
+                        {this.renderOverlap()}
+                    </Col>
+                    <Col span={7} offset={1}>
+                        {this.renderSegmentSize()}
                     </Col>
                 </Row>
 
                 <Row type='flex' justify='start'>
                     <Col span={7}>
-                        <Form.Item style={{marginBottom: '0px'}}>
-                            <Tooltip overlay='Defines image compression level'>
-                                <Text className='cvat-black-color'> Image quality </Text>
-                                {getFieldDecorator('imageQuality', {
-                                    initialValue: 70,
-                                    rules: [{
-                                        required: true,
-                                        message: 'This field is required'
-                                    }],
-                                })(
-                                    <Input
-                                        size='large'
-                                        type='number'
-                                        min={5}
-                                        max={100}
-                                        suffix={<Icon type='percentage'/>}
-                                    />
-                                )}
-                            </Tooltip>
-                        </Form.Item>
+                        {this.renderStartFrame()}
                     </Col>
-
                     <Col span={7} offset={1}>
-                        <Form.Item style={{marginBottom: '0px'}}>
-                            <Tooltip overlay='Defines a number of intersected frames between different segments'>
-                                <Text className='cvat-black-color'> Overlap size </Text>
-                                {getFieldDecorator('overlapSize')(
-                                    <Input size='large' type='number'/>
-                                )}
-                            </Tooltip>
-                        </Form.Item>
+                        {this.renderStopFrame()}
                     </Col>
-
                     <Col span={7} offset={1}>
-                        <Form.Item style={{marginBottom: '0px'}}>
-                            <Tooltip overlay='Defines a number of frames in a segment'>
-                                <Text className='cvat-black-color'> Segment size </Text>
-                                {getFieldDecorator('segmentSize')(
-                                    <Input size='large' type='number'/>
-                                )}
-                            </Tooltip>
-                        </Form.Item>
+                        {this.renderFrameStep()}
                     </Col>
                 </Row>
 
-                <Row type='flex' justify='start'>
-                    <Col span={7}>
-                        <Form.Item style={{marginBottom: '0px'}}>
-                            <Text className='cvat-black-color'> Start frame </Text>
-                            {getFieldDecorator('startFrame')(
-                                <Input
-                                    size='large'
-                                    type='number'
-                                    min={0}
-                                    step={1}
-                                />
-                            )}
-                        </Form.Item>
-                    </Col>
-
-                    <Col span={7} offset={1}>
-                        <Form.Item style={{marginBottom: '0px'}}>
-                            <Text className='cvat-black-color'> Stop frame </Text>
-                            {getFieldDecorator('stopFrame')(
-                                <Input
-                                    size='large'
-                                    type='number'
-                                    min={0}
-                                    step={1}
-                                />
-                            )}
-                        </Form.Item>
-                    </Col>
-
-                    <Col span={7} offset={1}>
-                        <Form.Item style={{marginBottom: '0px'}}>
-                            <Text className='cvat-black-color'> Frame step </Text>
-                            {getFieldDecorator('frameStep')(
-                                <Input
-                                    size='large'
-                                    type='number'
-                                    min={1}
-                                    step={1}
-                                />
-                            )}
-                        </Form.Item>
-                    </Col>
-                </Row>
+                { this.props.installedGit ? this.renderGit() : null}
 
                 <Row>
                     <Col>
-                        <Form.Item style={{marginBottom: '0px'}}>
-                            <Tooltip overlay={`Attach a git repository to store annotations.
-                                            Path is specified in square brackets`}>
-                                <Text className='cvat-black-color'> Dataset repository URL </Text>
-                                {getFieldDecorator('repository', {
-                                    // TODO: Add pattern
-                                })(
-                                    <Input
-                                        placeholder='e.g. https//github.com/user/repos [annotation/<anno_file_name>.zip]'
-                                        size='large'
-                                    />
-                                )}
-                            </Tooltip>
-                        </Form.Item>
-                    </Col>
-                </Row>
-                <Row>
-                    <Col>
-                        <Form.Item style={{marginBottom: '0px'}}>
-                            <Tooltip overlay='If annotation files are large, you can use git LFS feature'>
-                                {getFieldDecorator('lfs', {
-                                    valuePropName: 'checked',
-                                    initialValue: false,
-                                })(
-                                    <Checkbox>
-                                        <Text className='cvat-black-color'>
-                                            Use LFS (Large File Support)
-                                        </Text>
-                                    </Checkbox>
-                                )}
-                            </Tooltip>
-                        </Form.Item>
-                    </Col>
-                </Row>
-
-                <Row>
-                    <Col>
-                        <Form.Item style={{marginBottom: '0px'}}>
-                            <Tooltip overlay='Attach issue tracker where the task is described'>
-                                <Text className='cvat-black-color'> Issue tracker </Text>
-                                {getFieldDecorator('bugTracker', {
-                                    rules: [{
-                                        ...patterns.validateURL,
-                                    }]
-                                })(
-                                    <Input
-                                        size='large'
-                                    />
-                                )}
-                            </Tooltip>
-                        </Form.Item>
+                       {this.renderBugTracker()}
                     </Col>
                 </Row>
             </Form>

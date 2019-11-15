@@ -29,6 +29,7 @@ interface Props {
     onCreate: (data: CreateTaskData) => void;
     status: string;
     error: string;
+    installedGit: boolean;
 }
 
 type State = CreateTaskData;
@@ -170,9 +171,15 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                         header={
                             <Text className='cvat-title'> Advanced configuration </Text>
                         } key='1'>
-                        <AdvancedConfigurationForm wrappedComponentRef={
-                            (component: any) => { this.advancedConfigurationComponent = component }
-                        } onSubmit={this.handleSubmitAdvancedConfiguration}/>
+                        <AdvancedConfigurationForm
+                            installedGit={this.props.installedGit}
+                            wrappedComponentRef={
+                                (component: any) => {
+                                    this.advancedConfigurationComponent = component
+                                }
+                            }
+                            onSubmit={this.handleSubmitAdvancedConfiguration}
+                        />
                     </Collapse.Panel>
                 </Collapse>
             </Col>

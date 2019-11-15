@@ -9,6 +9,7 @@ import { createTaskAsync } from '../../actions/tasks-actions';
 interface StateToProps {
     creatingError: string;
     status: string;
+    installedGit: boolean;
 }
 
 interface DispatchToProps {
@@ -25,13 +26,19 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { creates } = state.tasks.activities;
     return {
         ...creates,
+        installedGit: state.plugins.plugins.GIT_INTEGRATION,
         creatingError: creates.creatingError ? creates.creatingError.toString() : '',
     };
 }
 
 function CreateTaskPageContainer(props: StateToProps & DispatchToProps) {
     return (
-        <CreateTaskComponent error={props.creatingError} status={props.status} onCreate={props.create}/>
+        <CreateTaskComponent
+            error={props.creatingError}
+            status={props.status}
+            onCreate={props.create}
+            installedGit={props.installedGit}
+        />
     );
 }
 
