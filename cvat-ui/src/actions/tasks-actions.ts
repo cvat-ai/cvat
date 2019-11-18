@@ -333,6 +333,21 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         taskInstance.serverFiles = data.files.share;
         taskInstance.remoteFiles = data.files.remote;
 
+        if (data.advanced.repository) {
+            const [gitPlugin] = (await cvat.plugins.list()).filter(
+                (plugin: any): boolean => plugin.name === 'Git',
+            );
+
+            if (gitPlugin) {
+                gitPlugin.callbacks.onStatusChange = (status: string): void => {
+                    dispatch(createTaskUpdateStatus(status));
+                };
+                gitPlugin.anchorTask = taskInstance;
+                gitPlugin.data.repos = data.advanced.repository;
+                gitPlugin.data.lfs = data.advanced.lfs;
+            }
+        }
+
         dispatch(createTask());
         try {
             await taskInstance.save((status: string): void => {

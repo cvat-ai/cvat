@@ -200,7 +200,20 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                                 Path is specified in square brackets`}>
                     <Text className='cvat-black-color'> Dataset repository URL </Text>
                     {this.props.form.getFieldDecorator('repository', {
-                        // TODO: Add pattern
+                        rules: [{
+                            validator: (_, value, callback) => {
+                                const [url, path] = value.split(/\s+/);
+                                if (!patterns.validateURL.pattern.test(url)) {
+                                    callback('Git URL is not a valid');
+                                }
+
+                                if (path && !patterns.validatePath.pattern.test(path)) {
+                                    callback('Git path is not a valid');
+                                }
+
+                                callback();
+                            }
+                        }]
                     })(
                         <Input
                             placeholder='e.g. https//github.com/user/repos [annotation/<anno_file_name>.zip]'

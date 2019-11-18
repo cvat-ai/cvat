@@ -182,6 +182,17 @@
                 return true;
             }
 
+            async function serverRequest(url, data) {
+                try {
+                    return (await Axios({
+                        url,
+                        ...data,
+                    })).data;
+                } catch (errorData) {
+                    throw generateError(errorData, 'Could not have done the request');
+                }
+            }
+
             async function getTasks(filter = '') {
                 const { backendAPI } = config;
 
@@ -560,6 +571,7 @@
                         logout,
                         authorized,
                         register,
+                        request: serverRequest,
                     }),
                     writable: false,
                 },

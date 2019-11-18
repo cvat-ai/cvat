@@ -433,11 +433,12 @@ def get(tid, user):
                     response['status']['value'] = str(db_git.status)
                 except git.exc.GitCommandError as ex:
                     _have_no_access_exception(ex)
+            db_git.save()
         except Exception as ex:
             db_git.status = GitStatusChoice.NON_SYNCED
+            db_git.save()
             response['status']['error'] = str(ex)
 
-    db_git.save()
     return response
 
 def update_states():

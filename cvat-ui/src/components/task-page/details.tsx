@@ -3,6 +3,8 @@ import React from 'react';
 import {
     Row,
     Col,
+    Tag,
+    Icon,
     Modal,
     Button,
 } from 'antd';
@@ -16,6 +18,7 @@ import UserSelector from './user-selector';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import getCore from '../../core';
 import patterns from '../../utils/validation-patterns';
+import { getReposData, syncRepos } from '../../utils/git-utils';
 
 const core = getCore();
 
@@ -30,6 +33,8 @@ interface Props {
 interface State {
     name: string;
     bugTracker: string;
+    repository: string;
+    repositoryStatus: string;
 }
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
@@ -41,6 +46,8 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         this.state = {
             name: taskInstance.name,
             bugTracker: taskInstance.bugTracker,
+            repository: '',
+            repositoryStatus: '',
         };
     }
 
@@ -150,6 +157,42 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         );
     }
 
+    private renderDatasetRepository() {
+        const { repository } = this.state;
+        const { repositoryStatus } = this.state;
+
+        return (
+            repository ?
+                <Row>
+                    <Col className='cvat-dataset-repository-url'>
+                        <Text strong className='cvat-black-color'> Dataset Repository </Text>
+                        <br/>
+                        <a href={repository} target='_blank'>{repository}</a>
+                        {repositoryStatus === 'sync' ?
+                            <Tag color='blue'> Synchronized </Tag> : repositoryStatus === 'merged' ?
+                            <Tag color='green'> Merged </Tag> : repositoryStatus === 'syncing' ?
+                            <Tag color='purple'> <Icon type='loading' /> Syncing </Tag> :
+                            <Tag color='red' onClick={() => {
+                                this.setState({
+                                    repositoryStatus: 'syncing',
+                                });
+
+                                syncRepos(this.props.taskInstance.id).then(() => {
+                                    this.setState({
+                                        repositoryStatus: 'sync',
+                                    });
+                                }).catch(() => {
+                                    this.setState({
+                                        repositoryStatus: '!sync',
+                                    });
+                                });
+                            }}> Synchronize </Tag>
+                        }
+                    </Col>
+                </Row> : null
+        );
+    }
+
     private renderBugTracker() {
         const { taskInstance } = this.props;
         const { bugTracker } = this.state;
@@ -219,6 +262,33 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         );
     }
 
+    public componentDidMount() {
+        getReposData(this.props.taskInstance.id)
+            .then((data) => {
+                if (data !== null) {
+                    if (data.status.error) {
+                        Modal.error({
+                            title: 'Could not receive repository status',
+                            content: data.status.error
+                        });
+                    } else {
+                        this.setState({
+                            repositoryStatus: data.status.value,
+                        });
+                    }
+
+                    this.setState({
+                        repository: data.url,
+                    });
+                }
+            }).catch((error) => {
+                Modal.error({
+                    title: 'Could not receive repository status',
+                    content: error.toString(),
+                });
+            })
+    }
+
     public componentDidUpdate(prevProps: Props) {
         if (prevProps !== this.props) {
             this.setState({
@@ -252,6 +322,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                     <Col md={16} lg={17} xl={17} xxl={18}>
                         { this.renderUsers() }
                         { this.renderBugTracker() }
+                        { this.renderDatasetRepository() }
                         { this.renderLabelsEditor() }
                     </Col>
                 </Row>

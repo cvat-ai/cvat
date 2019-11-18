@@ -334,6 +334,23 @@
     margin-top: 20px;
 }
 
+.cvat-dataset-repository-url > a {
+    margin-right: 10px;
+}
+
+.cvat-dataset-repository-url > .ant-tag-red {
+    user-select: none;
+    opacity: 0.4;
+}
+
+.cvat-dataset-repository-url > .ant-tag-red:hover {
+    opacity: 0.8;
+}
+
+.cvat-dataset-repository-url > .ant-tag-red:active {
+    opacity: 1;
+}
+
 .cvat-task-job-list {
     width: 100%;
     height: auto;
