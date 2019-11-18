@@ -172,9 +172,14 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         <br/>
                         <a href={repository} target='_blank'>{repository}</a>
                         {repositoryStatus === 'sync' ?
-                            <Tag color='blue'> Synchronized </Tag> : repositoryStatus === 'merged' ?
-                            <Tag color='green'> Merged </Tag> : repositoryStatus === 'syncing' ?
-                            <Tag color='purple'> <Icon type='loading' /> Syncing </Tag> :
+                            <Tag color='blue'>
+                                <Icon type='check-circle'/> Synchronized
+                            </Tag> : repositoryStatus === 'merged' ?
+                            <Tag color='green'>
+                                <Icon type='check-circle'/> Merged
+                            </Tag> : repositoryStatus === 'syncing' ?
+                            <Tag color='purple'>
+                                <Icon type='loading'/> Syncing </Tag> :
                             <Tag color='red' onClick={() => {
                                 this.setState({
                                     repositoryStatus: 'syncing',
@@ -193,7 +198,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                         });
                                     }
                                 });
-                            }}> Synchronize </Tag>
+                            }}> <Icon type='warning'/> Synchronize </Tag>
                         }
                     </Col>
                 </Row> : null
