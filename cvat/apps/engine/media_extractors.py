@@ -189,8 +189,7 @@ class VideoExtractor(IMediaExtractor):
         )
 
     def _get_av_container(self):
-        container = av.open(av.datasets.curated(self._source_path[0]))
-        return container
+        return av.open(av.datasets.curated(self._source_path[0]))
 
     def save_as_chunks(self, chunk_size, compressed_chunk_path, original_chunk_path, progress_callback=None, quality=100):
         if not self._source_path:
@@ -281,10 +280,10 @@ class VideoExtractor(IMediaExtractor):
         return [{'name': self._source_path[0], 'size': (frame.width, frame.height)}], frame_count
 
     def save_preview(self, preview_path):
-        # Need fix
-        frame_decoder = self._get_av_container().decode()
-        preview = next(frame_decoder)
-        # preview.to_image().save(preview_path)
+        container = self._get_av_container()
+        stream = container.streams.video[0]
+        preview = next(container.decode(stream))
+        preview.to_image().save(preview_path)
 
 def _is_archive(path):
     mime = mimetypes.guess_type(path)
