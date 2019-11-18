@@ -366,7 +366,8 @@ class ShapeSerializer(serializers.Serializer):
     occluded = serializers.BooleanField()
     z_order = serializers.IntegerField(default=0)
     points = serializers.ListField(
-        child=serializers.FloatField()
+        child=serializers.FloatField(),
+        allow_empty=False,
     )
 
 class LabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):

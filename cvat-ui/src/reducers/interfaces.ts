@@ -46,6 +46,16 @@ export interface TasksState {
                 [tid: number]: string; // loader name
             };
         };
+        deletes: {
+            deletingError: any;
+            byTask: {
+                [tid: number]: boolean; // deleted (deleting if in dictionary)
+            };
+        };
+        creates: {
+            creatingError: any;
+            status: string;
+        };
     };
 }
 
@@ -54,4 +64,47 @@ export interface FormatsState {
     dumpers: any[];
     initialized: boolean;
     gettingFormatsError: any;
+}
+
+// eslint-disable-next-line import/prefer-default-export
+export enum SupportedPlugins {
+    GIT_INTEGRATION = 'GIT_INTEGRATION',
+    AUTO_ANNOTATION = 'AUTO_ANNOTATION',
+    TF_ANNOTATION = 'TF_ANNOTATION',
+    ANALYTICS = 'ANALYTICS',
+}
+
+export interface PluginsState {
+    initialized: boolean;
+    plugins: {
+        [name in SupportedPlugins]: boolean;
+    };
+}
+
+export interface TaskState {
+    task: Task | null;
+    taskFetchingError: any;
+    taskUpdatingError: any;
+}
+
+export interface UsersState {
+    users: any[];
+    initialized: boolean;
+    gettingUsersError: any;
+}
+
+export interface ShareFileInfo { // get this data from cvat-core
+    name: string;
+    type: 'DIR' | 'REG';
+}
+
+export interface ShareItem {
+    name: string;
+    type: 'DIR' | 'REG';
+    children: ShareItem[];
+}
+
+export interface ShareState {
+    root: ShareItem;
+    error: any;
 }

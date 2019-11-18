@@ -1,3 +1,10 @@
+#root {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    display: grid;
+}
+
 .cvat-header.ant-layout-header {
     display: flex;
     padding-left: 0px;
@@ -7,58 +14,47 @@
     background: #D8D8D8;
 }
 
-.left-header {
+.cvat-left-header {
     width: 50%;
     display: flex;
     justify-content: flex-start;
     align-items: center;
 }
 
-.right-header {
+.cvat-right-header {
     width: 50%;
     display: flex;
     justify-content: flex-end;
     align-items: center;
 }
 
-.cvat-header-buttons.ant-radio-group {
-    height: 100%;
+.cvat-flex {
     display: flex;
 }
 
-.cvat-header-buttons.ant-radio-group > label {
-    height: 100%;
-    background: rgba(255, 255, 255, 0);
-    border-radius: 0px;
-    display: flex;
+.cvat-flex-center {
     align-items: center;
-    padding: 0 30px;
-
-    /* Important here is used in order to redefine all states :hover, :active, :focus-within, etc */
-    user-select: none !important;
-    border: none !important;
-    border-color: none !important;
-    box-shadow: none !important;
-    outline: none !important;
-    color: black !important;
 }
 
-.cvat-header-buttons.ant-radio-group > label::before {
-    background-color: unset !important;
+.cvat-black-color {
+    color: black;
 }
 
-.cvat-header-buttons.ant-radio-group > label.ant-radio-button-wrapper-checked {
-    height: 100%;
-    background: #C3C3C3;
+.cvat-feedback-button {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    padding: 0px;
 }
+
+.cvat-feedback-button > i {
+    font-size: 40px;
+}
+
 .anticon.cvat-logo-icon {
     display: flex;
     align-items: center;
-}
-
-.anticon.cvat-back-icon {
-    display: flex;
-    align-items: center;
+    margin-right: 20px;
 }
 
 .anticon.cvat-logo-icon > img {
@@ -78,18 +74,12 @@
     filter: invert(0.4);
 }
 
-.ant-btn.header-button {
-    height: 100%;
-    background: rgba(255, 255, 255, 0);
-    border-radius: 0px;
+.ant-btn.cvat-header-button {
     color: black !important;
-    transition: color 0.5s;
-    padding: 0 30px;
+    padding: 0px 10px;
+    margin-right: 10px;
 }
 
-.ant-btn.header-button:active {
-    background: #C3C3C3;
-}
 
 .ant-menu.cvat-header-menu {
     width: fit-content;
@@ -119,12 +109,12 @@
 }
 
 .anticon.cvat-header-menu-icon {
-    display: contents;
+    margin-left: 16px;
+    margin-right: 0px;
 }
 
 .anticon.cvat-header-menu-icon > img {
     width: 14px;
-    margin: 10px;
     transform: rotate(-90deg);
 }
 
@@ -134,77 +124,77 @@
 
 .cvat-title {
     font-weight: 400;
-    font-size: 23px;
+    font-size: 21px;
     color: black;
     padding-top: 5px;
 }
 
-.tasks-page {
+.cvat-tasks-page {
     padding-top: 30px;
 }
 
-.tasks-page > div:nth-child(1) {
+.cvat-tasks-page > div:nth-child(1) {
     margin-bottom: 10px;
 }
 
-.tasks-page > div:nth-child(1) > div > span {
+.cvat-tasks-page > div:nth-child(1) > div > span {
     color: black;
 }
 
-.tasks-page > div:nth-child(2) > div:nth-child(1) {
+.cvat-tasks-page > div:nth-child(2) > div:nth-child(1) {
     display: flex;
 }
 
-.tasks-page > div:nth-child(2) > div:nth-child(2) {
+.cvat-tasks-page > div:nth-child(2) > div:nth-child(2) {
     display: flex;
     justify-content: flex-end;
 }
 
-.tasks-page > div:nth-child(2) > div:nth-child(1) > span:nth-child(2) {
+.cvat-tasks-page > div:nth-child(2) > div:nth-child(1) > span:nth-child(2) {
     width: 200px;
     margin-left: 10px;
 }
 
-.tasks-page > span.ant-typography {
+.cvat-tasks-page > span.ant-typography {
     user-select: none;
 }
 
-.tasks-page {
+.cvat-tasks-page {
     height: 100%;
 }
 
-.tasks-page > div:nth-child(4) {
-    margin-top: 28px;
+.cvat-tasks-page > div:nth-child(4) {
+    margin-top: 10px;
 }
 
-.tasks-page > div:nth-child(3) {
-    margin-top: 28px;
+.cvat-tasks-page > div:nth-child(3) {
+    margin-top: 10px;
 }
 
 /* > 1280 */
 @media only screen and (min-height: 1280px) {
-    .tasks-page > div:nth-child(3) {
+    .cvat-tasks-page > div:nth-child(3) {
         height: 80%;
     }
 }
 
 /* 769 => 1280 */
 @media only screen and (max-height: 1280px) {
-    .tasks-page > div:nth-child(3) {
+    .cvat-tasks-page > div:nth-child(3) {
         height: 80%;
     }
 }
 
 /* 0 => 768 */
 @media only screen and (max-height: 768px) {
-    .tasks-page > div:nth-child(3) {
+    .cvat-tasks-page > div:nth-child(3) {
         height: 70%;
     }
 }
 
 /* empty-tasks icon */
 .cvat-empty-task-list > div:nth-child(1) {
-    margin-top: 100px;
+    margin-top: 50px;
 }
 
 .cvat-empty-task-list > div:nth-child(2) > div {
@@ -283,12 +273,12 @@
     padding: 0px;
 }
 
-.cvat-task-preview {
+.cvat-task-item-preview {
     max-width: 140px;
     max-height: 80px;
 }
 
-.cvat-task-preview-wrapper {
+.cvat-task-item-preview-wrapper {
     display: flex;
     justify-content: center;
     overflow: hidden;
@@ -320,6 +310,214 @@
     color: #C1C1C1;
     fill: #C1C1C1;
     margin-right: 5px;
+}
+
+.cvat-task-details-wrapper {
+    overflow-y: auto;
+    height: 100%;
+}
+
+.cvat-task-details {
+    width: 100%;
+    height: auto;
+    border: 1px solid #c3c3c3;
+    border-radius: 3px;
+    padding: 20px;
+    background: white;
+}
+
+.cvat-task-details > div:nth-child(2) > div:nth-child(2) {
+    padding-left: 20px;
+}
+
+.cvat-task-details > div:nth-child(2) > div:nth-child(2) > div:not(:first-child) {
+    margin-top: 20px;
+}
+
+.cvat-task-job-list {
+    width: 100%;
+    height: auto;
+    border: 1px solid #c3c3c3;
+    border-radius: 3px;
+    margin-top: 20px;
+    padding: 20px;
+    background: white;
+}
+
+.cvat-task-top-bar {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.cvat-task-preview {
+    max-width: 252px;
+    max-height: 144px;
+}
+
+.cvat-task-preview-wrapper {
+    display: flex;
+    justify-content: start;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.cvat-user-selector {
+    margin-left: 10px;
+    width: 150px;
+}
+
+.cvat-open-bug-tracker-button {
+    margin-left: 15px;
+}
+
+.cvat-raw-labels-viewer {
+    border-color: #d9d9d9 !important;
+    box-shadow: none !important;
+    border-top: none;
+    border-radius: 0px 0px 5px 5px;
+    min-height: 9em !important;
+    font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+}
+
+.cvat-constructor-viewer {
+    border: 1px solid #d9d9d9;
+    box-shadow: none;
+    border-top: none;
+    border-radius: 0px 0px 5px 5px;
+    padding: 5px;
+    display: flex;
+    flex-wrap: wrap;
+    overflow-y: auto;
+    min-height: 9em;
+}
+
+.cvat-constructor-viewer-item {
+    height: fit-content;
+    display: flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 2px;
+    margin: 2px;
+    margin-left: 8px;
+    user-select: none;
+    border: 1px solid rgba(0, 0, 0, 0);
+    opacity: 0.6;
+}
+
+.cvat-constructor-viewer-item > span {
+    margin-left: 5px;
+    color: white;
+}
+
+.cvat-constructor-viewer-item > span > i:hover {
+    color: #111111;
+}
+
+.cvat-constructor-viewer-item:hover {
+    opacity: 1;
+    border: 1px solid rgba(0, 0, 0, 255);
+}
+
+.cvat-constructor-viewer-new-item {
+    height: fit-content;
+    display: flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 2px;
+    margin: 2px;
+    margin-left: 8px;
+    user-select: none;
+    opacity: 1;
+}
+
+.labels-editor-new-label-button > i {
+    margin-left: 10px;
+}
+
+.labels-editor-new-label-button > i:hover {
+    color: #111111;
+}
+
+.cvat-label-constructor-creator > form:first-child {
+    margin-top: 10px;
+}
+
+.cvat-label-constructor-updater > form:first-child {
+    margin-top: 10px;
+}
+
+.cvat-attribute-constructor-form > div:first-child > div:nth-child(4) {
+    display: contents;
+}
+
+.cvat-save-attribute-button:hover > i {
+    color: black;
+}
+
+.cvat-delete-attribute-button:hover > i {
+    color: red;
+}
+
+.ant-typography.cvat-jobs-header {
+    margin-bottom: 0px;
+}
+
+/* Pagination in center */
+.cvat-task-jobs-table > div > div {
+    text-align: center;
+}
+.cvat-task-jobs-table > div > div > ul {
+    float: none !important;
+}
+
+.cvat-job-completed-color {
+    color: #61C200;
+}
+
+.cvat-job-validation-color {
+    color: #1890FF;
+}
+
+.cvat-job-annotation-color {
+    color: #C1C1C1;
+}
+
+.cvat-create-task-form-wrapper {
+    text-align: center;
+    margin-top: 40px;
+    overflow-y: auto;
+    height: 90%;
+}
+
+.cvat-create-task-form-wrapper > div > span {
+    font-size: 36px;
+}
+
+.cvat-create-task-content {
+    margin-top: 20px;
+    width: 100%;
+    height: auto;
+    border: 1px solid #c3c3c3;
+    border-radius: 3px;
+    padding: 20px;
+    background: white;
+    text-align: initial;
+}
+
+.cvat-create-task-content > div:not(first-child) {
+    margin-top: 10px;
+}
+
+.cvat-create-task-content > div:nth-child(7) > button {
+    float: right;
+    width: 120px;
+}
+
+.cvat-share-tree {
+    height: fit-content;
+    min-height: 10em;
+    max-height: 20em;
+    overflow: auto;
 }
 
 #cvat-create-task-button {

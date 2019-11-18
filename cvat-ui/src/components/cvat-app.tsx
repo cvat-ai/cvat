@@ -17,13 +17,20 @@ import LoginPageContainer from '../containers/login-page/login-page';
 import RegisterPageContainer from '../containers/register-page/register-page';
 import HeaderContainer from '../containers/header/header';
 
+import FeedbackComponent from './feedback';
+
 type CVATAppProps = {
     loadFormats: () => void;
+    loadUsers: () => void;
     verifyAuthorized: () => void;
+    initPlugins: () => void;
+    pluginsInitialized: boolean;
     userInitialized: boolean;
     formatsInitialized: boolean;
+    usersInitialized: boolean;
     gettingAuthError: string;
     gettingFormatsError: string;
+    gettingUsersError: string;
     user: any;
 }
 
@@ -33,22 +40,64 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
     }
 
     public componentDidMount() {
-        this.props.loadFormats();
         this.props.verifyAuthorized();
     }
 
     public componentDidUpdate() {
+        if (!this.props.userInitialized ||
+            this.props.userInitialized && this.props.user == null) {
+            return;
+        }
+
         if (this.props.gettingAuthError) {
             Modal.error({
                 title: 'Could not check authorization',
                 content: `${this.props.gettingAuthError}`,
             });
+            return;
+        }
+
+        if (!this.props.formatsInitialized) {
+            this.props.loadFormats();
+            return;
+        }
+
+        if (this.props.gettingFormatsError) {
+            Modal.error({
+                title: 'Could not receive annotations formats',
+                content: `${this.props.gettingFormatsError}`,
+            });
+            return;
+        }
+
+        if (!this.props.usersInitialized) {
+            this.props.loadUsers();
+            return;
+        }
+
+        if (this.props.gettingUsersError) {
+            Modal.error({
+                title: 'Could not receive users',
+                content: `${this.props.gettingUsersError}`,
+            });
+
+            return;
+        }
+
+        if (!this.props.pluginsInitialized) {
+            this.props.initPlugins();
+            return;
         }
     }
 
     // Where you go depends on your URL
     public render() {
-        if (this.props.userInitialized && this.props.formatsInitialized) {
+        const readyForRender =
+            (this.props.userInitialized && this.props.user == null) ||
+            (this.props.userInitialized && this.props.formatsInitialized &&
+             this.props.pluginsInitialized &&this.props.usersInitialized);
+
+        if (readyForRender) {
             if (this.props.user) {
                 return (
                     <BrowserRouter>
@@ -59,10 +108,11 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                                     <Route exact path='/tasks' component={TasksPageContainer}/>
                                     <Route exact path='/models' component={ModelsPageContainer}/>
                                     <Route path='/tasks/create' component={CreateTaskPageContainer}/>
-                                    <Route path='/tasks/:number' component={TaskPageContainer}/>
-                                    <Route path='/tasks/:number/jobs/:number' component={AnnotationPageContainer}/>
+                                    <Route path='/tasks/:id' component={TaskPageContainer}/>
+                                    <Route path='/tasks/:id/jobs/:id' component={AnnotationPageContainer}/>
                                     <Redirect to='/tasks'/>
                                 </Switch>
+                                <FeedbackComponent/>
                             </Layout.Content>
                         </Layout>
                     </BrowserRouter>
@@ -80,7 +130,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             }
         } else {
             return (
-                <Spin size="large" style={{margin: '25% 50%'}}/>
+                <Spin size='large' style={{margin: '25% 50%'}}/>
             );
         }
     }

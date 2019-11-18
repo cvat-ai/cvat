@@ -34,7 +34,9 @@ module.exports = {
             use: {
                 loader: 'babel-loader',
                 options: {
-                    plugins: ['@babel/plugin-proposal-class-properties'],
+                    plugins: ['@babel/plugin-proposal-class-properties', ['import', {
+                        'libraryName': 'antd',
+                    }]],
                     presets: [
                         ['@babel/preset-env', {
                             targets: {
@@ -48,7 +50,7 @@ module.exports = {
                 },
             },
         }, {
-            test: /\.(css|scss)$/,
+            test: /\.(css|sass)$/,
             use: ['style-loader', 'css-loader']
         }],
     },

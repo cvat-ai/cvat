@@ -28,6 +28,14 @@ const defaultState: TasksState = {
             loadingDoneMessage: '',
             byTask: {},
         },
+        deletes: {
+            deletingError: null,
+            byTask: {},
+        },
+        creates: {
+            creatingError: null,
+            status: '',
+        },
     },
 };
 
@@ -57,6 +65,13 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
         case TasksActionTypes.GET_TASKS:
             return {
                 ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: {
+                        deletingError: null,
+                        byTask: {},
+                    },
+                },
                 initialized: false,
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
@@ -210,6 +225,116 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                     loads: {
                         ...tasksLoadingActivity,
                         loadingError,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.DELETE_TASK: {
+            const { taskID } = action.payload;
+
+            const deletesActivities = state.activities.deletes;
+
+            const activities = { ...state.activities };
+            activities.deletes = { ...activities.deletes };
+
+            activities.deletes.byTask[taskID] = false;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: deletesActivities,
+                },
+            };
+        }
+        case TasksActionTypes.DELETE_TASK_SUCCESS: {
+            const { taskID } = action.payload;
+
+            const deletesActivities = state.activities.deletes;
+
+            const activities = { ...state.activities };
+            activities.deletes = { ...activities.deletes };
+
+            activities.deletes.byTask[taskID] = true;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: deletesActivities,
+                },
+            };
+        }
+        case TasksActionTypes.DELETE_TASK_FAILED: {
+            const { taskID } = action.payload;
+            const { error } = action.payload;
+
+            const deletesActivities = state.activities.deletes;
+
+            const activities = { ...state.activities };
+            activities.deletes = { ...activities.deletes };
+
+            delete activities.deletes.byTask[taskID];
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    deletes: {
+                        ...deletesActivities,
+                        deletingError: error,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.CREATE_TASK: {
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    creates: {
+                        creatingError: null,
+                        status: '',
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.CREATE_TASK_STATUS_UPDATED: {
+            const { status } = action.payload;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    creates: {
+                        ...state.activities.creates,
+                        status,
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.CREATE_TASK_SUCCESS: {
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    creates: {
+                        ...state.activities.creates,
+                        status: 'CREATED',
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.CREATE_TASK_FAILED: {
+            const { error } = action.payload;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    creates: {
+                        ...state.activities.creates,
+                        creatingError: error,
                     },
                 },
             };
