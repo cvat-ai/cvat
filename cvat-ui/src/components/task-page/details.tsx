@@ -38,11 +38,14 @@ interface State {
 }
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
+    private mounted: boolean;
+
     constructor(props: Props) {
         super(props);
 
         const { taskInstance } = props;
 
+        this.mounted = false;
         this.state = {
             name: taskInstance.name,
             bugTracker: taskInstance.bugTracker,
@@ -178,13 +181,17 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                 });
 
                                 syncRepos(this.props.taskInstance.id).then(() => {
-                                    this.setState({
-                                        repositoryStatus: 'sync',
-                                    });
+                                    if (this.mounted) {
+                                        this.setState({
+                                            repositoryStatus: 'sync',
+                                        });
+                                    }
                                 }).catch(() => {
-                                    this.setState({
-                                        repositoryStatus: '!sync',
-                                    });
+                                    if (this.mounted) {
+                                        this.setState({
+                                            repositoryStatus: '!sync',
+                                        });
+                                    }
                                 });
                             }}> Synchronize </Tag>
                         }
@@ -263,9 +270,10 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     }
 
     public componentDidMount() {
+        this.mounted = true;
         getReposData(this.props.taskInstance.id)
             .then((data) => {
-                if (data !== null) {
+                if (data !== null && this.mounted) {
                     if (data.status.error) {
                         Modal.error({
                             title: 'Could not receive repository status',
@@ -282,11 +290,17 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                     });
                 }
             }).catch((error) => {
-                Modal.error({
-                    title: 'Could not receive repository status',
-                    content: error.toString(),
-                });
-            })
+                if (this.mounted) {
+                    Modal.error({
+                        title: 'Could not receive repository status',
+                        content: error.toString(),
+                    });
+                }
+            });
+    }
+
+    public componentWillUnmount() {
+        this.mounted = false;
     }
 
     public componentDidUpdate(prevProps: Props) {
