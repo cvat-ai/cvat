@@ -96,7 +96,7 @@ function setupFrameFilters() {
     const brightnessRange = $('#playerBrightnessRange');
     const contrastRange = $('#playerContrastRange');
     const saturationRange = $('#playerSaturationRange');
-    const frameBackground = $('#frameBackground');
+    const canvasBackground = $('#canvasBackground');
     const reset = $('#resetPlayerFilterButton');
     let brightness = 100;
     let contrast = 100;
@@ -105,7 +105,7 @@ function setupFrameFilters() {
     const { shortkeys } = window.cvat.config;
 
     function updateFilterParameters() {
-        frameBackground.css('filter', `contrast(${contrast}%) brightness(${brightness}%) saturate(${saturation}%)`);
+        canvasBackground.css('filter', `contrast(${contrast}%) brightness(${brightness}%) saturate(${saturation}%)`);
     }
 
     brightnessRange.attr('title', `
