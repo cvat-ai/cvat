@@ -486,7 +486,7 @@ var la=[ob,bb];var ma=[pb,eb,db,cb];var na=[qb,Ea,Da,qb];return{_sbrk:ib,_free:g
       lumaSize = imul(width|0, height|0)|0;
       chromaSize = (lumaSize|0) >> 2;
       outSize = imul(imul(width, height)|0, 4)|0;
-      inpSize = ((lumaSize + chromaSize)|0 + chromaSize)|0;
+      inpSize = (((lumaSize + chromaSize)|0) + chromaSize)|0;
 
       outStart = 0;
       inpStart = (outStart + outSize)|0;
@@ -539,18 +539,18 @@ var la=[ob,bb];var ma=[pb,eb,db,cb];var na=[qb,Ea,Da,qb];return{_sbrk:ib,_free:g
           v = inp[vstart >> 0]|0;
 
           cacheAdr = (((((y << 16)|0) + ((u << 8)|0))|0) + v)|0;
-          o = mem32[((cacheStart + cacheAdr)|0) >> 2]|0;
+          o = mem32[((cacheStart >> 2) + cacheAdr)|0]|0;
           if (o){}else{
             o = yuv2rgbcalc(y,u,v)|0;
-            mem32[((cacheStart + cacheAdr)|0) >> 2] = o|0;
+            mem32[((cacheStart >> 2) + cacheAdr)|0] = o|0;
           };
           mem32[ostart >> 2] = o;
 
           cacheAdr = (((((yn << 16)|0) + ((u << 8)|0))|0) + v)|0;
-          o = mem32[((cacheStart + cacheAdr)|0) >> 2]|0;
+          o = mem32[((cacheStart >> 2) + cacheAdr)|0]|0;
           if (o){}else{
             o = yuv2rgbcalc(yn,u,v)|0;
-            mem32[((cacheStart + cacheAdr)|0) >> 2] = o|0;
+            mem32[((cacheStart >> 2) + cacheAdr)|0] = o|0;
           };
           mem32[((ostart + widthFour)|0) >> 2] = o;
 
@@ -565,19 +565,19 @@ var la=[ob,bb];var ma=[pb,eb,db,cb];var na=[qb,Ea,Da,qb];return{_sbrk:ib,_free:g
 
           //yuv2rgb5(y, u, v, ostart);
           cacheAdr = (((((y << 16)|0) + ((u << 8)|0))|0) + v)|0;
-          o = mem32[((cacheStart + cacheAdr)|0) >> 2]|0;
+          o = mem32[((cacheStart >> 2) + cacheAdr)|0]|0;
           if (o){}else{
             o = yuv2rgbcalc(y,u,v)|0;
-            mem32[((cacheStart + cacheAdr)|0) >> 2] = o|0;
+            mem32[((cacheStart >> 2) + cacheAdr)|0] = o|0;
           };
           mem32[ostart >> 2] = o;
 
           //yuv2rgb5(yn, u, v, (ostart + widthFour)|0);
           cacheAdr = (((((yn << 16)|0) + ((u << 8)|0))|0) + v)|0;
-          o = mem32[((cacheStart + cacheAdr)|0) >> 2]|0;
+          o = mem32[((cacheStart >> 2) + cacheAdr)|0]|0;
           if (o){}else{
             o = yuv2rgbcalc(yn,u,v)|0;
-            mem32[((cacheStart + cacheAdr)|0) >> 2] = o|0;
+            mem32[((cacheStart >> 2) + cacheAdr)|0] = o|0;
           };
           mem32[((ostart + widthFour)|0) >> 2] = o;
           ostart = (ostart + 4)|0;
