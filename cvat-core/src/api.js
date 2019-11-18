@@ -183,8 +183,8 @@ function build() {
                 * @async
                 * @memberof module:API.cvat.server
                 * @param {string} url
-                * @param {object} data request parameters: method, headers, data, etc.
-                * @returns {object | undefined} response data if exist
+                * @param {Object} data request parameters: method, headers, data, etc.
+                * @returns {Object | undefined} response data if exist
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */

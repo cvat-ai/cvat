@@ -342,7 +342,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 gitPlugin.callbacks.onStatusChange = (status: string): void => {
                     dispatch(createTaskUpdateStatus(status));
                 };
-                gitPlugin.anchorTask = taskInstance;
+                gitPlugin.data.task = taskInstance;
                 gitPlugin.data.repos = data.advanced.repository;
                 gitPlugin.data.lfs = data.advanced.lfs;
             }

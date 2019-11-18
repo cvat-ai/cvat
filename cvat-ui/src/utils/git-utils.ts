@@ -17,8 +17,8 @@ interface GitPlugin {
             };
         };
     };
-    anchorTask: any;
     data: {
+        task: any;
         lfs: boolean;
         repos: string;
     };
@@ -75,7 +75,7 @@ async function cloneRepository(
     createdTask: any,
 ): Promise<void> {
     return new Promise((resolve, reject): void => {
-        if (typeof (this.id) !== 'undefined' || plugin.anchorTask !== this) {
+        if (typeof (this.id) !== 'undefined' || plugin.data.task !== this) {
             // not the first save, we do not need to clone the repository
             // or anchor set for another task
             resolve();
@@ -125,8 +125,8 @@ export function registerGitPlugin(): void {
                 },
             },
         },
-        anchorTask: null,
         data: {
+            task: null,
             lfs: false,
             repos: '',
         },
