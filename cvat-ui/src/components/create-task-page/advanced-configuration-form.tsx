@@ -79,7 +79,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item style={{marginBottom: '0px'}}>
                 <Tooltip overlay='Defines image compression level'>
-                    <Text className='cvat-black-color'> Image quality </Text>
+                    <Text className='cvat-black-color'>{'Image quality'}</Text>
                     {this.props.form.getFieldDecorator('imageQuality', {
                         initialValue: 70,
                         rules: [{
@@ -104,7 +104,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item style={{marginBottom: '0px'}}>
                 <Tooltip overlay='Defines a number of intersected frames between different segments'>
-                    <Text className='cvat-black-color'> Overlap size </Text>
+                    <Text className='cvat-black-color'>{'Overlap size'}</Text>
                     {this.props.form.getFieldDecorator('overlapSize')(
                         <Input size='large' type='number'/>
                     )}
@@ -117,7 +117,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item style={{marginBottom: '0px'}}>
                 <Tooltip overlay='Defines a number of frames in a segment'>
-                    <Text className='cvat-black-color'> Segment size </Text>
+                    <Text className='cvat-black-color'>{'Segment size'}</Text>
                     {this.props.form.getFieldDecorator('segmentSize')(
                         <Input size='large' type='number'/>
                     )}
@@ -129,7 +129,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private renderStartFrame() {
         return (
             <Form.Item style={{marginBottom: '0px'}}>
-                <Text className='cvat-black-color'> Start frame </Text>
+                <Text className='cvat-black-color'>{'Start frame'}</Text>
                 {this.props.form.getFieldDecorator('startFrame')(
                     <Input
                         size='large'
@@ -145,7 +145,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private renderStopFrame() {
         return (
             <Form.Item style={{marginBottom: '0px'}}>
-                <Text className='cvat-black-color'> Stop frame </Text>
+                <Text className='cvat-black-color'>{'Stop frame'}</Text>
                 {this.props.form.getFieldDecorator('stopFrame')(
                     <Input
                         size='large'
@@ -161,7 +161,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     private renderFrameStep() {
         return (
             <Form.Item style={{marginBottom: '0px'}}>
-                <Text className='cvat-black-color'> Frame step </Text>
+                <Text className='cvat-black-color'>{'Frame step'}</Text>
                 {this.props.form.getFieldDecorator('frameStep')(
                     <Input
                         size='large'
@@ -198,7 +198,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             <Form.Item style={{marginBottom: '0px'}}>
                 <Tooltip overlay={`Attach a git repository to store annotations.
                                 Path is specified in square brackets`}>
-                    <Text className='cvat-black-color'> Dataset repository URL </Text>
+                    <Text className='cvat-black-color'>{'Dataset repository URL'}</Text>
                     {this.props.form.getFieldDecorator('repository', {
                         rules: [{
                             validator: (_, value, callback) => {
@@ -247,7 +247,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item style={{marginBottom: '0px'}}>
                 <Tooltip overlay='Attach issue tracker where the task is described'>
-                    <Text className='cvat-black-color'> Issue tracker </Text>
+                    <Text className='cvat-black-color'>{'Issue tracker'}</Text>
                     {this.props.form.getFieldDecorator('bugTracker', {
                         rules: [{
                             ...patterns.validateURL,

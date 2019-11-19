@@ -137,7 +137,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
     private renderLabelsBlock() {
         return (
             <Col span={24}>
-                <Text type='secondary'> Labels </Text>
+                <Text type='secondary'>Labels</Text>
                 <LabelsEditor
                     labels={this.state.labels}
                     onSubmit={
@@ -169,7 +169,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 <Collapse>
                     <Collapse.Panel
                         header={
-                            <Text className='cvat-title'> Advanced configuration </Text>
+                            <Text className='cvat-title'>{'Advanced configuration'}</Text>
                         } key='1'>
                         <AdvancedConfigurationForm
                             installedGit={this.props.installedGit}
@@ -218,7 +218,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         return (
             <Row type='flex' justify='start' align='middle' className='cvat-create-task-content'>
                 <Col span={24}>
-                    <Text className='cvat-title'> Basic configuration </Text>
+                    <Text className='cvat-title'>{'Basic configuration'}</Text>
                 </Col>
 
                 { this.renderBasicBlock() }

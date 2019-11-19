@@ -135,7 +135,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                             });
                         }}>
                         { renderTreeNodes(this.props.treeData) }
-                    </Tree> : <Text className='cvat-black-color'> No data found </Text>
+                    </Tree> : <Text className='cvat-black-color'>{'No data found'}</Text>
                 }
             </Tabs.TabPane>
         );
@@ -183,7 +183,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
     public render() {
         return (
             <>
-                <Text type='secondary'> Select files </Text>
+                <Text type='secondary'>{'Select files'}</Text>
                 <Tabs type='card' tabBarGutter={5} onChange={(activeKey: string) => this.setState({
                     active: activeKey as any,
                 })}>

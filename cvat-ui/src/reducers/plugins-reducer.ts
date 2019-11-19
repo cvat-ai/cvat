@@ -13,6 +13,7 @@ const defaultState: PluginsState = {
         GIT_INTEGRATION: false,
         AUTO_ANNOTATION: false,
         TF_ANNOTATION: false,
+        TF_SEGMENTATION: false,
         ANALYTICS: false,
     },
 };

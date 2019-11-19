@@ -21,6 +21,8 @@ interface HeaderContainerProps {
     onLogout: () => void;
     installedAnalytics: boolean;
     installedAutoAnnotation: boolean;
+    installedTFAnnotation: boolean;
+    installedTFSegmentation: boolean;
     username: string;
     logoutError: string;
 }
@@ -48,6 +50,9 @@ class HeaderContainer extends React.PureComponent<Props> {
 
     public render() {
         const { props } = this;
+        const renderModels = props.installedAutoAnnotation
+            || props.installedTFAnnotation
+            || props.installedTFSegmentation;
         return (
             <Layout.Header className='cvat-header'>
                 <div className='cvat-left-header'>
@@ -56,7 +61,7 @@ class HeaderContainer extends React.PureComponent<Props> {
                     <Button className='cvat-header-button' type='link' value='tasks' onClick={
                         () => props.history.push('/tasks')
                     }> Tasks </Button>
-                    { props.installedAutoAnnotation ?
+                    { renderModels ?
                         <Button className='cvat-header-button' type='link' value='models' onClick={
                             () => props.history.push('/models')
                         }> Models </Button> : null

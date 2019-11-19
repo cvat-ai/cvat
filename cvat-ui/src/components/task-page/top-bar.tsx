@@ -32,7 +32,7 @@ export default function DetailsComponent(props: DetailsComponentProps) {
     return (
         <Row className='cvat-task-top-bar' type='flex' justify='space-between' align='middle'>
             <Col>
-                <Text className='cvat-title'> Task details #{id} </Text>
+                <Text className='cvat-title'>{`Task details #${id}`}</Text>
             </Col>
             <Col>
                 <Dropdown overlay={
@@ -50,7 +50,7 @@ export default function DetailsComponent(props: DetailsComponentProps) {
                         })
                     }>
                     <Button size='large' className='cvat-flex cvat-flex-center'>
-                        <Text className='cvat-black-color'> Actions </Text>
+                        <Text className='cvat-black-color'>Actions</Text>
                         <Icon className='cvat-task-item-menu-icon' component={subMenuIcon}/>
                     </Button>
                 </Dropdown>

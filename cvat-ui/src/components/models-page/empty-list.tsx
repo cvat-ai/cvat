@@ -20,17 +20,17 @@ export default function EmptyListComponent() {
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Text strong> No models uploaded yet ... </Text>
+                    <Text strong>{'No models uploaded yet ...'}</Text>
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Text type='secondary'> To annotate your tasks automatically </Text>
+                    <Text type='secondary'>{'To annotate your tasks automatically'}</Text>
                 </Col>
             </Row>
             <Row  type='flex' justify='center' align='middle'>
                 <Col>
-                    <Link to='/models/create'> upload a new model </Link>
+                    <Link to='/models/create'>{'upload a new model'}</Link>
                 </Col>
             </Row>
         </div>

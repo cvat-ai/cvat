@@ -67,7 +67,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                         </Text> <br/>
                     </> : null
                 }
-                <Text type='secondary'> Last updated {updated} </Text>
+                <Text type='secondary'>{`Last updated ${updated}`}</Text>
             </Col>
         )
     }
@@ -92,10 +92,10 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                             <circle cx='4' cy='4' r='4' strokeWidth='0'/>
                         </svg>
                         { numOfCompleted === numOfJobs ?
-                            <Text strong className={progressColor}> Completed </Text>
+                            <Text strong className={progressColor}>{'Completed'}</Text>
                             : numOfCompleted ?
-                            <Text strong className={progressColor}> In Progress </Text>
-                            : <Text strong className={progressColor}> Pending </Text>
+                            <Text strong className={progressColor}>{'In Progress'}</Text>
+                            : <Text strong className={progressColor}>{'Pending'}</Text>
                         }
                     </Col>
                     <Col>
@@ -131,7 +131,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 </Row>
                 <Row type='flex' justify='end'>
                     <Col>
-                        <Text className='cvat-black-color'> Actions </Text>
+                        <Text className='cvat-black-color'>Actions</Text>
                         <Dropdown overlay={
                             ActionsMenu({
                                 taskInstance: this.props.taskInstance,

@@ -127,7 +127,11 @@ def delete_model(request, mid):
 @login_required
 def get_meta_info(request):
     try:
-        tids = json.loads(request.body.decode('utf-8'))
+        tids = []
+        try:
+            tids = json.loads(request.body.decode('utf-8'))
+        except Exception:
+            pass
         response = {
             "admin": has_admin_role(request.user),
             "models": [],

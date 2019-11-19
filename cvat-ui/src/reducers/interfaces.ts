@@ -72,6 +72,7 @@ export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     AUTO_ANNOTATION = 'AUTO_ANNOTATION',
     TF_ANNOTATION = 'TF_ANNOTATION',
+    TF_SEGMENTATION = 'TF_SEGMENTATION',
     ANALYTICS = 'ANALYTICS',
 }
 
@@ -102,4 +103,28 @@ export interface ShareItem {
 export interface ShareState {
     root: ShareItem;
     error: any;
+}
+
+export interface Model {
+    id: number | null; // null for preinstalled and not saved models
+    name: string;
+    primary: boolean;
+    uploadDate: string;
+    updateDate: string;
+    labels: string[];
+}
+
+export interface Running {
+    [tid: string]: {
+        status: string;
+        processId: string;
+        error: any;
+    };
+}
+
+export interface ModelsState {
+    initialized: boolean;
+    fetchingError: any;
+    models: Model[];
+    runnings: Running[];
 }

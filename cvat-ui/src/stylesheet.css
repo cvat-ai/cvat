@@ -1,11 +1,3 @@
-#root {
-    width: 100%;
-    height: 100%;
-    min-height: 100%;
-    display: -ms-grid;
-    display: grid;
-}
-
 .cvat-header.ant-layout-header {
     display: -webkit-box;
     display: -ms-flexbox;
@@ -687,8 +679,54 @@
     margin-top: 10px;
 }
 
+.cvat-models-list {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.cvat-models-list-item {
+    width: 100%;
+    height: 60px;
+    border: 1px solid #c3c3c3;
+    border-radius: 3px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: white;
+}
+
+.cvat-models-list-item:hover {
+    border: 1px solid #40a9ff;
+}
+
+.cvat-models-list-item > div:nth-child(1) {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+}
+
+/* a name of a model */
+.cvat-models-list-item > div:nth-child(1) > span:nth-child(2) {
+    margin-left: 10px;
+}
+
+/* labels text */
+.cvat-models-list-item > div:nth-child(2) > span:nth-child(1) {
+    margin-right: 10px;
+}
+
 .anticon.cvat-empty-models-icon > img {
     width: 90px;
+}
+
+#root {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    display: -ms-grid;
+    display: grid;
 }
 
 #cvat-create-task-button {

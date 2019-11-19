@@ -94,24 +94,24 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             <>
                 <Row type='flex' justify='start' align='middle'>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'> Overlap size </Text>
+                        <Text strong className='cvat-black-color'>{'Overlap size'}</Text>
                         <br/>
                         <Text className='cvat-black-color'>{overlap}</Text>
                     </Col>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'> Segment size </Text>
+                        <Text strong className='cvat-black-color'>{'Segment size'}</Text>
                         <br/>
                         <Text className='cvat-black-color'>{segmentSize}</Text>
                     </Col>
                 </Row>
                 <Row type='flex' justify='space-between' align='middle'>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'> Image quality </Text>
+                        <Text strong className='cvat-black-color'>{'Image quality'}</Text>
                         <br/>
                         <Text className='cvat-black-color'>{imageQuality}</Text>
                     </Col>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'> Z-order </Text>
+                        <Text strong className='cvat-black-color'>{'Z-order'}</Text>
                         <br/>
                         <Text className='cvat-black-color'>{zOrder}</Text>
                     </Col>
@@ -168,7 +168,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             repository ?
                 <Row>
                     <Col className='cvat-dataset-repository-url'>
-                        <Text strong className='cvat-black-color'> Dataset Repository </Text>
+                        <Text strong className='cvat-black-color'>{'Dataset Repository'}</Text>
                         <br/>
                         <a href={repository} target='_blank'>{repository}</a>
                         {repositoryStatus === 'sync' ?
@@ -229,7 +229,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             return (
                 <Row>
                     <Col>
-                        <Text strong className='cvat-black-color'> Issue Tracker </Text>
+                        <Text strong className='cvat-black-color'>{'Issue Tracker'}</Text>
                         <br/>
                         <Text editable={{onChange: onChangeValue}}>{bugTracker}</Text>
                         <Button type='ghost' size='small' onClick={() => {
@@ -242,7 +242,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             return (
                 <Row>
                     <Col>
-                        <Text strong className='cvat-black-color'> Issue Tracker </Text>
+                        <Text strong className='cvat-black-color'>{'Issue Tracker'}</Text>
                         <br/>
                         <Text editable={{onChange: onChangeValue}}>{'Not specified'}</Text>
                     </Col>

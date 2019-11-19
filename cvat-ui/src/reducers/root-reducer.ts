@@ -5,6 +5,7 @@ import usersReducer from './users-reducer';
 import shareReducer from './share-reducer';
 import formatsReducer from './formats-reducer';
 import pluginsReducer from './plugins-reducer';
+import modelsReducer from './models-reducer';
 
 import {
     AuthState,
@@ -13,6 +14,7 @@ import {
     ShareState,
     FormatsState,
     PluginsState,
+    ModelsState,
 } from './interfaces';
 
 export interface CombinedState {
@@ -22,6 +24,7 @@ export interface CombinedState {
     share: ShareState;
     formats: FormatsState;
     plugins: PluginsState;
+    models: ModelsState;
 }
 
 export default function createRootReducer(): Reducer {
@@ -32,5 +35,6 @@ export default function createRootReducer(): Reducer {
         share: shareReducer,
         formats: formatsReducer,
         plugins: pluginsReducer,
+        models: modelsReducer,
     });
 }
