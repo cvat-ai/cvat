@@ -2,10 +2,13 @@
     width: 100%;
     height: 100%;
     min-height: 100%;
+    display: -ms-grid;
     display: grid;
 }
 
 .cvat-header.ant-layout-header {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
     padding-left: 0px;
     padding-right: 0px;
@@ -16,24 +19,40 @@
 
 .cvat-left-header {
     width: 50%;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: flex-start;
-    align-items: center;
+    -webkit-box-pack: start;
+        -ms-flex-pack: start;
+            justify-content: flex-start;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
 }
 
 .cvat-right-header {
     width: 50%;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: flex-end;
-    align-items: center;
+    -webkit-box-pack: end;
+        -ms-flex-pack: end;
+            justify-content: flex-end;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
 }
 
 .cvat-flex {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
 }
 
 .cvat-flex-center {
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
 }
 
 .cvat-black-color {
@@ -52,18 +71,26 @@
 }
 
 .anticon.cvat-logo-icon {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
     margin-right: 20px;
 }
 
 .anticon.cvat-logo-icon > img {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
     height: 15.8px;
     margin-left: 18px;
 }
 
 .anticon.cvat-back-icon > img {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
     height: 15.8px;
     margin-left: 18px;
@@ -71,7 +98,8 @@
 }
 
 .anticon.cvat-back-icon:hover > img {
-    filter: invert(0.4);
+    -webkit-filter: invert(0.4);
+            filter: invert(0.4);
 }
 
 .ant-btn.cvat-header-button {
@@ -82,8 +110,12 @@
 
 
 .ant-menu.cvat-header-menu {
+    width: -webkit-fit-content;
+    width: -moz-fit-content;
     width: fit-content;
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
     border: 0px;
     border-left: 1px solid #c3c3c3;
     height: 100%;
@@ -115,7 +147,9 @@
 
 .anticon.cvat-header-menu-icon > img {
     width: 14px;
-    transform: rotate(-90deg);
+    -webkit-transform: rotate(-90deg);
+        -ms-transform: rotate(-90deg);
+            transform: rotate(-90deg);
 }
 
 .anticon.cvat-empty-tasks-icon > img {
@@ -142,12 +176,18 @@
 }
 
 .cvat-tasks-page > div:nth-child(2) > div:nth-child(1) {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
 }
 
 .cvat-tasks-page > div:nth-child(2) > div:nth-child(2) {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: flex-end;
+    -webkit-box-pack: end;
+        -ms-flex-pack: end;
+            justify-content: flex-end;
 }
 
 .cvat-tasks-page > div:nth-child(2) > div:nth-child(1) > span:nth-child(2) {
@@ -156,7 +196,10 @@
 }
 
 .cvat-tasks-page > span.ant-typography {
-    user-select: none;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
 }
 
 .cvat-tasks-page {
@@ -213,8 +256,12 @@
 }
 
 .ant-pagination.cvat-tasks-pagination {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: center;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
 }
 
 .cvat-task-list {
@@ -246,6 +293,8 @@
 }
 
 .cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) > div {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
 }
 
@@ -254,7 +303,8 @@
 }
 
 .cvat-task-item-menu-icon > img:hover {
-    filter: invert(0.5);
+    -webkit-filter: invert(0.5);
+            filter: invert(0.5);
 }
 
 .cvat-task-item-menu > hr {
@@ -279,8 +329,12 @@
 }
 
 .cvat-task-item-preview-wrapper {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: center;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
     overflow: hidden;
     margin: 20px;
     margin-top: 0px;
@@ -339,7 +393,10 @@
 }
 
 .cvat-dataset-repository-url > .ant-tag-red {
-    user-select: none;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
     opacity: 0.4;
 }
 
@@ -372,8 +429,12 @@
 }
 
 .cvat-task-preview-wrapper {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: start;
+    -webkit-box-pack: start;
+        -ms-flex-pack: start;
+            justify-content: start;
     overflow: hidden;
     margin-bottom: 20px;
 }
@@ -389,7 +450,8 @@
 
 .cvat-raw-labels-viewer {
     border-color: #d9d9d9 !important;
-    box-shadow: none !important;
+    -webkit-box-shadow: none !important;
+            box-shadow: none !important;
     border-top: none;
     border-radius: 0px 0px 5px 5px;
     min-height: 9em !important;
@@ -398,25 +460,38 @@
 
 .cvat-constructor-viewer {
     border: 1px solid #d9d9d9;
-    box-shadow: none;
+    -webkit-box-shadow: none;
+            box-shadow: none;
     border-top: none;
     border-radius: 0px 0px 5px 5px;
     padding: 5px;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
     overflow-y: auto;
     min-height: 9em;
 }
 
 .cvat-constructor-viewer-item {
+    height: -webkit-fit-content;
+    height: -moz-fit-content;
     height: fit-content;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
     padding: 2px 10px;
     border-radius: 2px;
     margin: 2px;
     margin-left: 8px;
-    user-select: none;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
     border: 1px solid rgba(0, 0, 0, 0);
     opacity: 0.6;
 }
@@ -436,14 +511,23 @@
 }
 
 .cvat-constructor-viewer-new-item {
+    height: -webkit-fit-content;
+    height: -moz-fit-content;
     height: fit-content;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
     padding: 2px 10px;
     border-radius: 2px;
     margin: 2px;
     margin-left: 8px;
-    user-select: none;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
     opacity: 1;
 }
 
@@ -531,6 +615,8 @@
 }
 
 .cvat-share-tree {
+    height: -webkit-fit-content;
+    height: -moz-fit-content;
     height: fit-content;
     min-height: 10em;
     max-height: 20em;
@@ -546,12 +632,18 @@
 }
 
 .cvat-models-page > div:nth-child(1) > div:nth-child(1) {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
 }
 
 .cvat-models-page > div:nth-child(1) > div:nth-child(2) {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: flex-end;
+    -webkit-box-pack: end;
+        -ms-flex-pack: end;
+            justify-content: flex-end;
 }
 
 /* > 1280 */
