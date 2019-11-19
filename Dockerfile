@@ -59,7 +59,8 @@ RUN apt-get update && \
     dpkg-reconfigure -f noninteractive tzdata && \
     add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \
     add-apt-repository --remove ppa:mc3man/xerus-media -y && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    echo 'application/wasm                                wasm' >> /etc/mime.types
 
 # Add a non-root user
 ENV USER=${USER}

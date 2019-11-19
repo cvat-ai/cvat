@@ -10,6 +10,7 @@
     "babel": "^5.8.23",
     "babel-core": "^6.26.3",
     "babel-loader": "^8.0.6",
+    "copy-webpack-plugin": "^5.0.5",
     "core-js": "^3.2.1",
     "eslint": "^6.4.0",
     "eslint-config-airbnb-base": "^14.0.0",

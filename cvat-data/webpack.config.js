@@ -1,8 +1,9 @@
 const path = require('path');
-
+const CopyPlugin = require('copy-webpack-plugin');
 
 const _module = {
-        rules: [{
+    rules: [
+        {
             test: /.js?$/,
             exclude: /node_modules/,
             use: {
@@ -25,8 +26,9 @@ const _module = {
                     sourceType: 'unambiguous',
                 },
             },
-        }],
-    }
+        },
+    ],
+}
 
 const cvatData = {
     target: 'web',
@@ -34,7 +36,7 @@ const cvatData = {
     entry: './src/js/cvat-data.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'cvat-data.min.js',      
+        filename: 'cvat-data.min.js',
         library: 'cvatData',
         libraryTarget: 'window',
     },
@@ -47,14 +49,13 @@ const cvatData = {
     module: _module
 };
 
-
 const workerImg = {
     target: 'web',
     mode: 'production',
     entry: './src/js/unzip_imgs.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'unzip_imgs.js',      
+        filename: 'unzip_imgs.js',
     },
     module: _module
 }
@@ -62,12 +63,17 @@ const workerImg = {
 const workerVideo = {
     target: 'web',
     mode: 'production',
-    entry: './src/js/decode_video.js',
+    entry: './src/js/3rdparty/Decoder.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
-        filename: 'decode_video.js',      
+        filename: 'Decoder.js',
     },
-    module: _module
+    module: _module,
+    plugins: [
+        new CopyPlugin([
+            './src/js/3rdparty/avc.wasm',
+        ]),
+    ],
 }
 
 module.exports = [cvatData, workerImg, workerVideo]
