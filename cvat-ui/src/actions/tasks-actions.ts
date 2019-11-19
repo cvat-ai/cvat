@@ -23,6 +23,9 @@ export enum TasksActionTypes {
     CREATE_TASK_STATUS_UPDATED = 'CREATE_TASK_STATUS_UPDATED',
     CREATE_TASK_SUCCESS = 'CREATE_TASK_SUCCESS',
     CREATE_TASK_FAILED = 'CREATE_TASK_FAILED',
+    UPDATE_TASK = 'UPDATE_TASK',
+    UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
+    UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
 }
 
 function getTasks(): AnyAction {
@@ -356,6 +359,86 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             dispatch(createTaskSuccess());
         } catch (error) {
             dispatch(createTaskFailed(error));
+        }
+    };
+}
+
+function updateTask(): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_TASK,
+        payload: {},
+    };
+
+    return action;
+}
+
+function updateTaskSuccess(taskInstance: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_TASK_SUCCESS,
+        payload: {
+            taskInstance,
+        },
+    };
+
+    return action;
+}
+
+function updateTaskFailed(error: any, taskInstance: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.UPDATE_TASK_FAILED,
+        payload: {
+            error,
+            taskInstance,
+        },
+    };
+
+    return action;
+}
+
+export function updateTaskAsync(taskInstance: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch(updateTask());
+            await taskInstance.save();
+            const [task] = await cvat.tasks.get({ id: taskInstance.id });
+            dispatch(updateTaskSuccess(task));
+        } catch (error) {
+            // try abort all changes
+            let task = null;
+            try {
+                [task] = await cvat.tasks.get({ id: taskInstance.id });
+            } catch (fetchError) {
+                dispatch(updateTaskFailed(error, taskInstance));
+                return;
+            }
+
+            dispatch(updateTaskFailed(error, task));
+        }
+    };
+}
+
+// a job is a part of a task, so for simplify we consider
+// updating the job as updating a task
+export function updateJobAsync(jobInstance: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        try {
+            dispatch(updateTask());
+            await jobInstance.save();
+            const [task] = await cvat.tasks.get({ id: jobInstance.task.id });
+            dispatch(updateTaskSuccess(task));
+        } catch (error) {
+            // try abort all changes
+            let task = null;
+            try {
+                [task] = await cvat.tasks.get({ id: jobInstance.task.id });
+            } catch (fetchError) {
+                dispatch(updateTaskFailed(error, jobInstance.task));
+                return;
+            }
+
+            dispatch(updateTaskFailed(error, task));
         }
     };
 }

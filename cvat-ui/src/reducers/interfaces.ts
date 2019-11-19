@@ -27,6 +27,7 @@ export interface Task {
 export interface TasksState {
     initialized: boolean;
     tasksFetchingError: any;
+    taskUpdatingError: any;
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
@@ -79,12 +80,6 @@ export interface PluginsState {
     plugins: {
         [name in SupportedPlugins]: boolean;
     };
-}
-
-export interface TaskState {
-    task: Task | null;
-    taskFetchingError: any;
-    taskUpdatingError: any;
 }
 
 export interface UsersState {

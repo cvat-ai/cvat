@@ -9,9 +9,13 @@ import {
 
 import TopBarComponent from '../../components/task-page/top-bar';
 import { CombinedState } from '../../reducers/root-reducer';
+import { Task } from '../../reducers/interfaces';
+
+interface OwnProps {
+    task: Task;
+}
 
 interface StateToProps {
-    taskInstance: any;
     loaders: any[];
     dumpers: any[];
     loadActivity: string | null;
@@ -26,20 +30,17 @@ interface DispatchToProps {
     loadAnnotations: (task: any, format: string, file: File) => void;
 }
 
-function mapStateToProps(state: CombinedState): StateToProps {
-    const taskInstance = (state.activeTask.task as any).instance;
-
+function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const { plugins } = state.plugins;
     const { formats } = state;
     const { dumps } = state.tasks.activities;
     const { loads } = state.tasks.activities;
 
-    const { id } = taskInstance;
+    const { id } = own.task.instance;
     const dumpActivities = dumps.byTask[id] ? dumps.byTask[id] : null;
     const loadActivity = loads.byTask[id] ? loads.byTask[id] : null;
 
     return {
-        taskInstance,
         loaders: formats.loaders,
         dumpers: formats.dumpers,
         dumpActivities,
@@ -63,10 +64,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function TaskPageContainer(props: StateToProps & DispatchToProps) {
+function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps) {
     return (
         <TopBarComponent
-            taskInstance={props.taskInstance}
+            taskInstance={props.task.instance}
             loaders={props.loaders}
             dumpers={props.dumpers}
             loadActivity={props.loadActivity}
