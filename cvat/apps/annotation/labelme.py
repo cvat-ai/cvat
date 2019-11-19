@@ -7,7 +7,7 @@ format_spec = {
     "dumpers": [
         {
             "display_name": "{name} {format} {version} for images",
-            "format": "XML",
+            "format": "ZIP",
             "version": "3.0",
             "handler": "dump_as_labelme_annotation"
         }
@@ -15,7 +15,7 @@ format_spec = {
     "loaders": [
         {
             "display_name": "{name} {format} {version}",
-            "format": "XML",
+            "format": "ZIP",
             "version": "3.0",
             "handler": "load",
         }
@@ -31,7 +31,7 @@ def dump_frame_anno(frame_annotation):
     ET.SubElement(root_elem, 'folder').text = ''
 
     source_elem = ET.SubElement(root_elem, 'source')
-    ET.SubElement(source_elem, 'sourceImage').text = 'task #'
+    ET.SubElement(source_elem, 'sourceImage').text = ''
     ET.SubElement(source_elem, 'sourceAnnotation').text = 'CVAT'
 
     image_elem = ET.SubElement(root_elem, 'imagesize')
@@ -59,10 +59,7 @@ def dump_frame_anno(frame_annotation):
             ET.SubElement(obj_elem, 'type').text = 'bounding_box'
 
             poly_elem = ET.SubElement(obj_elem, 'polygon')
-            x0 = shape.points[0]
-            y0 = shape.points[1]
-            x1 = shape.points[2]
-            y1 = shape.points[4]
+            x0, y0, x1, y1 = shape.points
             points = [ (x0, y0), (x1, y0), (x1, y1), (x0, y1) ]
             for x, y in points:
                 point_elem = ET.SubElement(poly_elem, 'pt')
@@ -91,9 +88,9 @@ def dump_frame_anno(frame_annotation):
     return ET.tostring(root_elem, encoding='unicode', pretty_print=True)
 
 def dump_as_labelme_annotation(file_object, annotations):
-    from zipfile import ZipFile
+    from zipfile import ZipFile, ZIP_DEFLATED
 
-    with ZipFile(file_object, 'w') as output_zip:
+    with ZipFile(file_object, 'w', compression=ZIP_DEFLATED) as output_zip:
         for frame_annotation in annotations.group_by_frame():
             xml_data = dump_frame_anno(frame_annotation)
             output_zip.writestr(frame_annotation.name + '.xml', xml_data)
