@@ -12,25 +12,25 @@ export default function EmptyListComponent() {
     const emptyTasksIcon = () => (<img src='/assets/empty-tasks-icon.svg'/>);
 
     return (
-        <div className='cvat-empty-task-list'>
+        <div className='cvat-empty-models-list'>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Icon className='cvat-empty-tasks-icon' component={emptyTasksIcon}/>
+                    <Icon className='cvat-empty-models-icon' component={emptyTasksIcon}/>
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Text strong> No tasks created yet ... </Text>
+                    <Text strong> No models uploaded yet ... </Text>
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Text type='secondary'> To get started with your annotation project </Text>
+                    <Text type='secondary'> To annotate your tasks automatically </Text>
                 </Col>
             </Row>
             <Row  type='flex' justify='center' align='middle'>
                 <Col>
-                    <Link to='/tasks/create'> create a new task </Link>
+                    <Link to='/models/create'> upload a new model </Link>
                 </Col>
             </Row>
         </div>

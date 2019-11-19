@@ -1,13 +1,9 @@
 import React from 'react';
 
-export default class ModelsPageContainer extends React.PureComponent {
-    constructor(props: any) {
-        super(props);
-    }
+import ModelsPageComponent from '../../components/models-page/models-page';
 
-    public render() {
-        return (
-            <div> Models page </div>
-        )
-    }
+export default function ModelsPageContainer() {
+    return (
+        <ModelsPageComponent/>
+    );
 }

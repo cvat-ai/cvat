@@ -537,6 +537,72 @@
     overflow: auto;
 }
 
+.cvat-models-page {
+    padding-top: 30px;
+}
+
+.cvat-models-page > div:nth-child(1) {
+    margin-bottom: 10px;
+}
+
+.cvat-models-page > div:nth-child(1) > div:nth-child(1) {
+    display: flex;
+}
+
+.cvat-models-page > div:nth-child(1) > div:nth-child(2) {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* > 1280 */
+@media only screen and (min-height: 1280px) {
+    .cvat-models-page > div:nth-child(3) {
+        height: 80%;
+    }
+}
+
+/* 769 => 1280 */
+@media only screen and (max-height: 1280px) {
+    .cvat-models-page > div:nth-child(3) {
+        height: 80%;
+    }
+}
+
+/* 0 => 768 */
+@media only screen and (max-height: 768px) {
+    .cvat-models-page > div:nth-child(3) {
+        height: 70%;
+    }
+}
+
+/* empty-models icon */
+.cvat-empty-models-list > div:nth-child(1) {
+    margin-top: 50px;
+}
+
+.cvat-empty-models-list > div:nth-child(2) > div {
+    margin-top: 20px;
+}
+
+/* No models uploaded yet */
+.cvat-empty-models-list > div:nth-child(2) > div > span {
+    font-size: 20px;
+    color: #4A4A4A;
+}
+
+/* To annotate your task automatically */
+.cvat-empty-models-list > div:nth-child(3) {
+    margin-top: 10px;
+}
+
+.anticon.cvat-empty-models-icon > img {
+    width: 90px;
+}
+
 #cvat-create-task-button {
+    padding: 0 30px;
+}
+
+#cvat-create-model-button {
     padding: 0 30px;
 }
