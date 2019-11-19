@@ -47,7 +47,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     private renderDescription() {
-    // Task info
+        // Task info
         const task = this.props.taskInstance;
         const { id } = task;
         const owner = task.owner ? task.owner.username : null;

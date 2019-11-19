@@ -124,6 +124,12 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
                         gettingQuery[field] = value;
                     }
                 }
+            } else {
+                if (field === 'page') {
+                    gettingQuery[field] = 1;
+                } else {
+                    gettingQuery[field] = null;
+                }
             }
         }
 
