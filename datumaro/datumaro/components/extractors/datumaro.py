@@ -49,7 +49,7 @@ class DatumaroExtractor(Extractor):
         parsed_anns = None
         subsets = {}
         for subset_name, subset_path in found_subsets.items():
-            if subset_name == DatumaroPath.DEFAULT_SUBSET:
+            if subset_name == DEFAULT_SUBSET_NAME:
                 subset_name = None
             subset = self.Subset(subset_name, self)
             with open(subset_path, 'r') as f:

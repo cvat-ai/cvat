@@ -22,6 +22,7 @@ from datumaro.util.mask_tools import lazy_mask, invert_colormap
 
 _inverse_inst_colormap = invert_colormap(VocInstColormap)
 
+# pylint: disable=pointless-statement
 def _make_voc_categories():
     categories = {}
 
@@ -41,6 +42,7 @@ def _make_voc_categories():
     categories[AnnotationType.mask] = mask_categories
 
     return categories
+# pylint: enable=pointless-statement
 
 class VocExtractor(Extractor):
     class Subset(Extractor):
@@ -558,7 +560,7 @@ class VocComp_5_6_Extractor(VocResultsExtractor):
             ann_parts = filter(None, ann_dir.strip().split('_'))
             if len(ann_parts) != 4:
                 continue
-            comp, subset_name, mark = ann_parts
+            _, subset_name, mark = ann_parts
             if mark not in ['cls', 'inst']:
                 continue
 
@@ -617,7 +619,7 @@ class VocComp_7_8_Extractor(VocResultsExtractor):
             ann_parts = filter(None, ann_file.strip().split('_'))
             if len(ann_parts) != 4:
                 continue
-            comp, mark, subset_name, label = ann_parts
+            comp, mark, subset_name, _ = ann_parts
             if mark != task_desc['mark']:
                 continue
 

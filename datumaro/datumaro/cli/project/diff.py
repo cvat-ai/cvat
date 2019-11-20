@@ -134,7 +134,8 @@ class DiffVisualizer:
         for b_bbox in b_unmatched:
             self.bbox_confusion_matrix[(self._UNMATCHED_LABEL, b_bbox.label)] += 1
 
-    def draw_text_with_background(self, frame, text, origin,
+    @classmethod
+    def draw_text_with_background(cls, frame, text, origin,
             font=cv2.FONT_HERSHEY_SIMPLEX, scale=1.0,
             color=(0, 0, 0), thickness=1, bgcolor=(1, 1, 1)):
         text_size, baseline = cv2.getTextSize(text, font, scale, thickness)
@@ -178,7 +179,7 @@ class DiffVisualizer:
         return self.label_diff_writer
 
     def save_item_label_diff(self, item_a, item_b, diff):
-        matches, a_unmatched, b_unmatched = diff
+        _, a_unmatched, b_unmatched = diff
 
         if 0 < len(a_unmatched) + len(b_unmatched):
             if self.output_format is Format.simple:
@@ -198,7 +199,7 @@ class DiffVisualizer:
                         '<%s\n' % self.get_label(b_label))
 
     def save_item_bbox_diff(self, item_a, item_b, diff):
-        matches, mispred, a_unmatched, b_unmatched = diff
+        _, mispred, a_unmatched, b_unmatched = diff
 
         if 0 < len(a_unmatched) + len(b_unmatched) + len(mispred):
             img_a = item_a.image.copy()

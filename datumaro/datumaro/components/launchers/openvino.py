@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+# pylint: disable=exec-used
+
 import cv2
 import os
 import os.path as osp
@@ -25,11 +27,11 @@ class InterpreterScript:
 
         process_outputs = context['process_outputs']
         assert callable(process_outputs)
-        self.process_outputs = process_outputs
+        self.__dict__['process_outputs'] = process_outputs
 
         get_categories = context.get('get_categories')
         assert callable(get_categories) or get_categories is None
-        self.get_categories = get_categories
+        self.__dict__['get_categories'] = get_categories
 
     @staticmethod
     def get_categories():

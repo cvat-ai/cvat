@@ -13,7 +13,7 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType,
     LabelObject, MaskObject, PointsObject, PolygonObject,
     BboxObject, CaptionObject,
-    LabelCategories, MaskCategories, PointsCategories
+    LabelCategories, PointsCategories
 )
 from datumaro.components.formats.ms_coco import CocoAnnotationType, CocoPath
 from datumaro.util.image import lazy_image
@@ -117,6 +117,7 @@ class CocoExtractor(Extractor):
                 self._load_person_kp_categories(person_kp_loader)
             self._categories[AnnotationType.points] = person_kp_categories
 
+    # pylint: disable=no-self-use
     def _load_label_categories(self, loader):
         catIds = loader.getCatIds()
         cats = loader.loadCats(catIds)
@@ -128,6 +129,7 @@ class CocoExtractor(Extractor):
             categories.add(name=cat['name'], parent=cat['supercategory'])
 
         return categories, label_map
+    # pylint: enable=no-self-use
 
     def _load_person_kp_categories(self, loader):
         catIds = loader.getCatIds()

@@ -8,7 +8,5 @@ class DatumaroPath:
     ANNOTATIONS_DIR = 'annotations'
     MASKS_DIR = 'masks'
 
-    DEFAULT_SUBSET = '_default'
-
     IMAGE_EXT = '.jpg'
     MASK_EXT = '.png'

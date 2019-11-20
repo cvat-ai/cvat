@@ -13,10 +13,7 @@ import pycocotools.mask as mask_utils
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME,
-    AnnotationType, Annotation,
-    LabelObject, MaskObject, PointsObject, PolygonObject,
-    PolyLineObject, BboxObject, CaptionObject,
+    DEFAULT_SUBSET_NAME, AnnotationType, PointsObject, BboxObject
 )
 from datumaro.components.formats.ms_coco import CocoAnnotationType, CocoPath
 from datumaro.util import find

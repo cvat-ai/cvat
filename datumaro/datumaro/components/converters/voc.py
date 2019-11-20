@@ -10,10 +10,7 @@ import os.path as osp
 from lxml import etree as ET
 
 from datumaro.components.converter import Converter
-from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME,
-    AnnotationType, LabelObject, MaskObject, BboxObject, CaptionObject,
-)
+from datumaro.components.extractor import DEFAULT_SUBSET_NAME, AnnotationType
 from datumaro.components.formats.voc import VocLabel, VocAction, \
     VocBodyPart, VocPose, VocTask, VocPath, VocColormap, VocInstColormap
 from datumaro.util import find

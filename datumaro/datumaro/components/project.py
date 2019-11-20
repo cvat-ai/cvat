@@ -705,6 +705,8 @@ class Project:
     def local_source_dir(self, source_name):
         return osp.join(self.config.sources_dir, source_name)
 
+# pylint: disable=function-redefined
 def load_project_as_dataset(url):
     # implement the function declared above
     return Project.load(url).make_dataset()
+# pylint: enable=function-redefined

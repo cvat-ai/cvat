@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+# pylint: disable=no-self-use
+
 import cv2
 import json
 import os

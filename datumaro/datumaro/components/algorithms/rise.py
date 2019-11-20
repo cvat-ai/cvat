@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+# pylint: disable=unused-variable
+
 import cv2
 import numpy as np
 from math import ceil

@@ -21,11 +21,13 @@ class FileRemover:
     def __enter__(self):
         return self
 
+    # pylint: disable=redefined-builtin
     def __exit__(self, type=None, value=None, traceback=None):
         if self.is_dir:
             shutil.rmtree(self.path, ignore_errors=self.ignore_errors)
         else:
             os.remove(self.path)
+    # pylint: enable=redefined-builtin
 
 class TestDir(FileRemover):
     def __init__(self, path=None, ignore_errors=False):

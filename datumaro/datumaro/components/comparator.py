@@ -19,6 +19,7 @@ class Comparator:
     def iou(box_a, box_b):
         return box_a.iou(box_b)
 
+    # pylint: disable=no-self-use
     def compare_dataset_labels(self, extractor_a, extractor_b):
         a_label_cat = extractor_a.categories().get(AnnotationType.label)
         b_label_cat = extractor_b.categories().get(AnnotationType.label)
@@ -34,6 +35,7 @@ class Comparator:
             if a_label != b_label:
                 mismatches.append((a_label, b_label))
         return mismatches
+    # pylint: enable=no-self-use
 
     def compare_item_labels(self, item_a, item_b):
         conf_threshold = self.conf_threshold

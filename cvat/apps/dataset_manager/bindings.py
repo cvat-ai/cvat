@@ -32,6 +32,8 @@ class CvatImagesDirExtractor(datumaro.Extractor):
         items = OrderedDict(items)
         self._items = items
 
+        self._subsets = None
+
     def __iter__(self):
         for item in self._items.values():
             yield item
@@ -40,7 +42,7 @@ class CvatImagesDirExtractor(datumaro.Extractor):
         return len(self._items)
 
     def subsets(self):
-        return None
+        return self._subsets
 
     def get(self, item_id, subset=None, path=None):
         if path or subset:
@@ -75,6 +77,8 @@ class CvatTaskExtractor(datumaro.Extractor):
         dm_annotations = sorted(dm_annotations, key=lambda e: e[0])
         self._items = OrderedDict(dm_annotations)
 
+        self._subsets = None
+
     def __iter__(self):
         for item in self._items.values():
             yield item
@@ -83,7 +87,7 @@ class CvatTaskExtractor(datumaro.Extractor):
         return len(self._items)
 
     def subsets(self):
-        return None
+        return self._subsets
 
     def get(self, item_id, subset=None, path=None):
         if path or subset:

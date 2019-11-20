@@ -8,6 +8,7 @@ import numpy as np
 from datumaro.components.extractor import DatasetItem, Extractor
 
 
+# pylint: disable=no-self-use
 class Launcher:
     def __init__(self):
         pass
@@ -20,6 +21,7 @@ class Launcher:
 
     def get_categories(self):
         return None
+# pylint: enable=no-self-use
 
 class InferenceWrapper(Extractor):
     class ItemWrapper(DatasetItem):
