@@ -107,6 +107,7 @@ python -m datumaro project import \
 
 An _MS COCO_-like dataset should have the following directory structure:
 
+<!--lint disable fenced-code-flag-->
 ```
 COCO/
 ├── annotations/
@@ -116,6 +117,7 @@ COCO/
 │   ├── val2017
 │   ├── train2017
 ```
+<!--lint enable fenced-code-flag-->
 
 Everything after the last `_` is considered as a subset name.
 
