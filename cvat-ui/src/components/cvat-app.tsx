@@ -95,7 +95,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         const readyForRender =
             (this.props.userInitialized && this.props.user == null) ||
             (this.props.userInitialized && this.props.formatsInitialized &&
-             this.props.pluginsInitialized &&this.props.usersInitialized);
+             this.props.pluginsInitialized && this.props.usersInitialized);
 
         if (readyForRender) {
             if (this.props.user) {

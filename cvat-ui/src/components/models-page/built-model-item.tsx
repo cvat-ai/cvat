@@ -15,21 +15,22 @@ interface Props {
     model: Model;
 }
 
-export default function (props: Props) {
+export default function BuiltModelItemComponent(props: Props) {
     return (
         <Row className='cvat-models-list-item' type='flex'>
-            <Col span={18}>
+            <Col span={4} xxl={3}>
                 <Tag color='orange'>Tensorflow</Tag>
+            </Col>
+            <Col span={6} xxl={7}>
                 <Text className='cvat-black-color'>
                     {props.model.name}
                 </Text>
             </Col>
-            <Col span={6}>
-                <Text type='secondary' className='cvat-black-color'>Labels:</Text>
+            <Col span={5} offset={7}>
                 <Select
                     showSearch
                     placeholder='Supported labels'
-                    style={{width: '200px'}}
+                    style={{width: '90%'}}
                     value='Supported labels'
                 >
                     {props.model.labels.map(
@@ -39,6 +40,7 @@ export default function (props: Props) {
                     }
                 </Select>
             </Col>
+            <Col span={2}/>
         </Row>
     );
 }

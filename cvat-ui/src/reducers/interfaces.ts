@@ -106,7 +106,8 @@ export interface ShareState {
 }
 
 export interface Model {
-    id: number | null; // null for preinstalled and not saved models
+    id: number | null; // null for preinstalled models
+    ownerID: number | null; // null for preinstalled models
     name: string;
     primary: boolean;
     uploadDate: string;
@@ -125,6 +126,9 @@ export interface Running {
 export interface ModelsState {
     initialized: boolean;
     fetchingError: any;
+    deletingErrors: { // by id
+        [index: number]: any;
+    };
     models: Model[];
     runnings: Running[];
 }

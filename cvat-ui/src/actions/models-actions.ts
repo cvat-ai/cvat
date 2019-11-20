@@ -8,6 +8,9 @@ export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
     GET_MODELS_SUCCESS = 'GET_MODELS_SUCCESS',
     GET_MODELS_FAILED = 'GET_MODELS_FAILED',
+    DELETE_MODEL = 'DELETE_MODEL',
+    DELETE_MODEL_SUCCESS = 'DELETE_MODEL_SUCCESS',
+    DELETE_MODEL_FAILED = 'DELETE_MODEL_FAILED',
     CREATE_MODEL = 'CREATE_MODEL',
     CREATE_MODEL_SUCCESS = 'CREATE_MODEL_SUCCESS',
     CREATE_MODEL_FAILED = 'CREATE_MODEL_FAILED',
@@ -23,8 +26,8 @@ export enum ModelsActionTypes {
 }
 
 export enum PreinstalledModels {
-    RCNN = 'COCO Tensorflow RCNN',
-    MaskRCNN = 'COCO Tensorflow Mask RCNN',
+    RCNN = 'RCNN Object Detector',
+    MaskRCNN = 'Mask RCNN Object Detector',
 }
 
 const core = getCore();
@@ -78,6 +81,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 for (const model of response.models) {
                     models.push({
                         id: model.id,
+                        ownerID: model.owner,
                         primary: model.primary,
                         name: model.name,
                         uploadDate: model.uploadDate,
@@ -90,6 +94,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             if (RCNN) {
                 models.push({
                     id: null,
+                    ownerID: null,
                     primary: true,
                     name: PreinstalledModels.RCNN,
                     uploadDate: '',
@@ -119,6 +124,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             if (MaskRCNN) {
                 models.push({
                     id: null,
+                    ownerID: null,
                     primary: true,
                     name: PreinstalledModels.MaskRCNN,
                     uploadDate: '',
@@ -148,6 +154,56 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         dispatch(getModelsSuccess(models));
     };
 }
+
+function deleteModel(id: number): AnyAction {
+    const action = {
+        type: ModelsActionTypes.DELETE_MODEL,
+        payload: {
+            id,
+        },
+    };
+
+    return action;
+}
+
+function deleteModelSuccess(id: number): AnyAction {
+    const action = {
+        type: ModelsActionTypes.DELETE_MODEL_SUCCESS,
+        payload: {
+            id,
+        },
+    };
+
+    return action;
+}
+
+function deleteModelFailed(id: number, error: any): AnyAction {
+    const action = {
+        type: ModelsActionTypes.DELETE_MODEL_FAILED,
+        payload: {
+            error,
+            id,
+        },
+    };
+
+    return action;
+}
+
+export function deleteModelAsync(id: number): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(deleteModel(id));
+        try {
+            await core.server.request(`${baseURL}/auto_annotation/delete/${id}`, {
+                method: 'DELETE',
+            });
+        } catch (error) {
+            dispatch(deleteModelFailed(id, error));
+        }
+
+        dispatch(deleteModelSuccess(id));
+    };
+}
+
 
 function createModel(): AnyAction {
     const action = {

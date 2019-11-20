@@ -6,6 +6,7 @@ import { ModelsState } from './interfaces';
 const defaultState: ModelsState = {
     initialized: false,
     fetchingError: null,
+    deletingErrors: {},
     models: [],
     runnings: [],
 };
@@ -23,7 +24,6 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
             return {
                 ...state,
                 models: action.payload.models,
-                isAdmin: action.payload.isAdmin,
                 initialized: true,
             };
         }
@@ -32,6 +32,30 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
                 ...state,
                 fetchingError: action.payload.error,
                 initialized: true,
+            };
+        }
+        case ModelsActionTypes.DELETE_MODEL: {
+            const errors = { ...state.deletingErrors };
+            delete errors[action.payload.id];
+            return {
+                ...state,
+                deletingErrors: errors,
+            };
+        }
+        case ModelsActionTypes.DELETE_MODEL_SUCCESS: {
+            return {
+                ...state,
+                models: state.models.filter(
+                    (model): boolean => model.id !== action.payload.id,
+                ),
+            };
+        }
+        case ModelsActionTypes.DELETE_MODEL_FAILED: {
+            const errors = { ...state.deletingErrors };
+            errors[action.payload.id] = action.payload.error;
+            return {
+                ...state,
+                deletingErrors: errors,
             };
         }
         default: {

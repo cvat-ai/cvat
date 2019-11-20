@@ -617,6 +617,8 @@
 
 .cvat-models-page {
     padding-top: 30px;
+    height: 100%;
+    overflow: auto;
 }
 
 .cvat-models-page > div:nth-child(1) {
@@ -636,27 +638,6 @@
     -webkit-box-pack: end;
         -ms-flex-pack: end;
             justify-content: flex-end;
-}
-
-/* > 1280 */
-@media only screen and (min-height: 1280px) {
-    .cvat-models-page > div:nth-child(3) {
-        height: 80%;
-    }
-}
-
-/* 769 => 1280 */
-@media only screen and (max-height: 1280px) {
-    .cvat-models-page > div:nth-child(3) {
-        height: 80%;
-    }
-}
-
-/* 0 => 768 */
-@media only screen and (max-height: 768px) {
-    .cvat-models-page > div:nth-child(3) {
-        height: 70%;
-    }
 }
 
 /* empty-models icon */
@@ -698,7 +679,7 @@
     border: 1px solid #40a9ff;
 }
 
-.cvat-models-list-item > div:nth-child(1) {
+.cvat-models-list-item > div {
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
@@ -707,14 +688,18 @@
             align-items: center;
 }
 
-/* a name of a model */
-.cvat-models-list-item > div:nth-child(1) > span:nth-child(2) {
-    margin-left: 10px;
+.cvat-models-list-item > div:nth-child(2) > span {
+    -o-text-overflow: ellipsis;
+       text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
-/* labels text */
-.cvat-models-list-item > div:nth-child(2) > span:nth-child(1) {
-    margin-right: 10px;
+.cvat-models-list-item > div:nth-child(3) > span {
+    -o-text-overflow: ellipsis;
+       text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .anticon.cvat-empty-models-icon > img {

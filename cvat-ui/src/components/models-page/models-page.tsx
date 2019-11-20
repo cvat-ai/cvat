@@ -6,7 +6,7 @@ import {
 
 import TopBarComponent from './top-bar';
 import UploadedModelsList from './uploaded-models-list';
-import IntegratedModelsList from './integrated-models-list';
+import BuiltModelsList from './built-models-list';
 import EmptyListComponent from './empty-list';
 import { Model } from '../../reducers/interfaces';
 
@@ -14,8 +14,10 @@ interface Props {
     installedAutoAnnotation: boolean;
     modelsAreBeingFetched: boolean;
     modelsFetchingError: any;
+    registeredUsers: any[];
     models: Model[];
-    getModels: () => void;
+    getModels(): void;
+    deleteModel(id: number): void;
 }
 
 export default function ModelsPageComponent(props: Props) {
@@ -31,9 +33,15 @@ export default function ModelsPageComponent(props: Props) {
         return (
             <div className='cvat-models-page'>
                 <TopBarComponent installedAutoAnnotation={props.installedAutoAnnotation}/>
-                { integratedModels.length ? <IntegratedModelsList models={integratedModels}/> : null }
-                { uploadedModels.length ? <UploadedModelsList models={uploadedModels}/>
-                    : props.installedAutoAnnotation ? <EmptyListComponent/> : null
+                { integratedModels.length ?
+                    <BuiltModelsList models={integratedModels}/> : null }
+                { uploadedModels.length ?
+                    <UploadedModelsList
+                        registeredUsers={props.registeredUsers}
+                        models={uploadedModels}
+                        deleteModel={props.deleteModel}
+                    /> : props.installedAutoAnnotation ?
+                    <EmptyListComponent/> : null
                 }
             </div>
         );
