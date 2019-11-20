@@ -165,21 +165,27 @@ class FrameProvider {
         this._blocks[chunkNumber] = "loading";
     }
 
-    cropImage(imageBuffer, imageWidth, imageHeight, x_offset, y_offset, width, height) {
-        if (x_offset + width === imageWidth &&
-            y_offset + height === imageHeight) {
+    cropImage(imageBuffer, imageWidth, imageHeight, xOffset, yOffset, width, height) {
+        if (xOffset + width === imageWidth &&
+            yOffset + height === imageHeight) {
                 return new Uint8ClampedArray(imageBuffer);
         }
         const source = new Uint32Array(imageBuffer);
-        const buffer = new ArrayBuffer(width * height * 4);
+
+        const bufferSize = width * height * 4;
+        const buffer = new ArrayBuffer(bufferSize);
         const rgbaInt32 = new Uint32Array(buffer);
         const rgbaInt8Clamped = new Uint8ClampedArray(buffer);
 
-        let out = 0;
-        for (let row = y_offset; row < height; row++) {
-            const start = row * imageWidth + x_offset;
-            rgbaInt32.set(source.subarray(start, start + width), out);
-            out += width;
+        if (imageWidth === width) {
+            return new Uint8ClampedArray(imageBuffer, yOffset * 4, bufferSize);
+        }
+
+        let writeIdx = 0;
+        for (let row = yOffset; row < height; row++) {
+            const start = row * imageWidth + xOffset;
+            rgbaInt32.set(source.subarray(start, start + width), writeIdx);
+            writeIdx += width;
         }
 
         return rgbaInt8Clamped;
@@ -187,8 +193,6 @@ class FrameProvider {
 
     async startDecode() {
          if (this._blockType === BlockType.TSVIDEO){
-
-
             const release = await this._mutex.acquireQueued();
             const start = this._requestedBlockDecode.start;
             const end = this._requestedBlockDecode.end;
@@ -213,7 +217,6 @@ class FrameProvider {
                 if (e.data.consoleLog) { // ignore initialization message
                   return;
                 }
-
                 this._frames[index] = this.cropImage(e.data.buf, e.data.width, e.data.height, 0, 0, this._width, this._height);
                 this._decodingBlocks[`${start}:${end}`].resolveCallback(index);
                 if (index === end) {

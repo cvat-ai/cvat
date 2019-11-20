@@ -249,7 +249,7 @@ class VideoExtractor(IMediaExtractor):
                 rate=self._output_fps,
                 pix_format='yuv420p',
                 options={
-                    "crf": "0",
+                    "crf": "10",
                     "preset": "ultrafast",
                 },
             )
