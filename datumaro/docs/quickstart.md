@@ -105,7 +105,7 @@ python -m datumaro project import \
      -t ms_coco
 ```
 
-An *MS COCO*-like dataset should have the following directory structure:
+An _MS COCO_-like dataset should have the following directory structure:
 
 ```
 COCO/

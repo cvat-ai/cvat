@@ -171,7 +171,8 @@ class RiseTest(TestCase):
             self.assertLess(hrest_den, roi_den)
         # cv2.waitKey(0)
 
-    def DISABLED_test_roi_nms(self):
+    @staticmethod
+    def DISABLED_test_roi_nms():
         ROI = namedtuple('ROI',
             ['conf', 'x', 'y', 'w', 'h', 'label'])
 
