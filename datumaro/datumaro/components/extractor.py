@@ -20,13 +20,14 @@ AnnotationType = Enum('AnnotationType',
     ])
 
 class Annotation:
-    def __init__(self, id_=None, type_=None, attributes=None, group=None):
-        if id_ is not None:
-            id_ = int(id_)
-        self.id = id_
+    # pylint: disable=redefined-builtin
+    def __init__(self, id=None, type=None, attributes=None, group=None):
+        if id is not None:
+            id = int(id)
+        self.id = id
 
-        assert type_ in AnnotationType
-        self.type = type_
+        assert type in AnnotationType
+        self.type = type
 
         if attributes is None:
             attributes = {}
@@ -37,6 +38,7 @@ class Annotation:
         if group is not None:
             group = int(group)
         self.group = group
+    # pylint: enable=redefined-builtin
 
     def __eq__(self, other):
         if not isinstance(other, Annotation):
@@ -99,11 +101,13 @@ class LabelCategories(Categories):
             (self.items == other.items)
 
 class LabelObject(Annotation):
+    # pylint: disable=redefined-builtin
     def __init__(self, label=None,
-            id_=None, attributes=None, group=None):
-        super().__init__(id_=id_, type_=AnnotationType.label,
+            id=None, attributes=None, group=None):
+        super().__init__(id=id, type=AnnotationType.label,
             attributes=attributes, group=group)
         self.label = label
+    # pylint: enable=redefined-builtin
 
     def __eq__(self, other):
         if not super().__eq__(other):
@@ -142,12 +146,14 @@ class MaskCategories(Categories):
         return True
 
 class MaskObject(Annotation):
+    # pylint: disable=redefined-builtin
     def __init__(self, image=None, label=None,
-            id_=None, attributes=None, group=None):
-        super().__init__(id_=id_, type_=AnnotationType.mask,
+            id=None, attributes=None, group=None):
+        super().__init__(id=id, type=AnnotationType.mask,
             attributes=attributes, group=group)
         self._image = image
         self._label = label
+    # pylint: enable=redefined-builtin
 
     @property
     def label(self):
@@ -197,12 +203,14 @@ def compute_iou(bbox_a, bbox_b):
     return intersection / max(1.0, union)
 
 class ShapeObject(Annotation):
-    def __init__(self, type_, points=None, label=None,
-            id_=None, attributes=None, group=None):
-        super().__init__(id_=id_, type_=type_,
+    # pylint: disable=redefined-builtin
+    def __init__(self, type, points=None, label=None,
+            id=None, attributes=None, group=None):
+        super().__init__(id=id, type=type,
             attributes=attributes, group=group)
         self.points = points
         self.label = label
+    # pylint: enable=redefined-builtin
 
     def area(self):
         raise NotImplementedError()
@@ -237,11 +245,13 @@ class ShapeObject(Annotation):
             (self.label == other.label)
 
 class PolyLineObject(ShapeObject):
+    # pylint: disable=redefined-builtin
     def __init__(self, points=None,
-            label=None, id_=None, attributes=None, group=None):
-        super().__init__(type_=AnnotationType.polyline,
+            label=None, id=None, attributes=None, group=None):
+        super().__init__(type=AnnotationType.polyline,
             points=points, label=label,
-            id_=id_, attributes=attributes, group=group)
+            id=id, attributes=attributes, group=group)
+    # pylint: enable=redefined-builtin
 
     def get_polygon(self):
         return self.get_points()
@@ -250,21 +260,25 @@ class PolyLineObject(ShapeObject):
         return 0
 
 class PolygonObject(ShapeObject):
+    # pylint: disable=redefined-builtin
     def __init__(self, points=None,
-            label=None, id_=None, attributes=None, group=None):
-        super().__init__(type_=AnnotationType.polygon,
+            label=None, id=None, attributes=None, group=None):
+        super().__init__(type=AnnotationType.polygon,
             points=points, label=label,
-            id_=id_, attributes=attributes, group=group)
+            id=id, attributes=attributes, group=group)
+    # pylint: enable=redefined-builtin
 
     def get_polygon(self):
         return self.get_points()
 
 class BboxObject(ShapeObject):
+    # pylint: disable=redefined-builtin
     def __init__(self, x=0, y=0, w=0, h=0,
-            label=None, id_=None, attributes=None, group=None):
-        super().__init__(type_=AnnotationType.bbox,
+            label=None, id=None, attributes=None, group=None):
+        super().__init__(type=AnnotationType.bbox,
             points=[x, y, x + w, y + h], label=label,
-            id_=id_, attributes=attributes, group=group)
+            id=id, attributes=attributes, group=group)
+    # pylint: enable=redefined-builtin
 
     @property
     def x(self):
@@ -330,8 +344,9 @@ class PointsObject(ShapeObject):
         ('visible', 2),
     ])
 
+    # pylint: disable=redefined-builtin
     def __init__(self, points=None, visibility=None, label=None,
-            id_=None, attributes=None, group=None):
+            id=None, attributes=None, group=None):
         if points is not None:
             assert len(points) % 2 == 0
 
@@ -345,11 +360,12 @@ class PointsObject(ShapeObject):
                 for _ in range(len(points) // 2):
                     visibility.append(self.Visibility.absent)
 
-        super().__init__(type_=AnnotationType.points,
+        super().__init__(type=AnnotationType.points,
             points=points, label=label,
-            id_=id_, attributes=attributes, group=group)
+            id=id, attributes=attributes, group=group)
 
         self.visibility = visibility
+    # pylint: enable=redefined-builtin
 
     def area(self):
         return 0
@@ -361,14 +377,16 @@ class PointsObject(ShapeObject):
             (self.visibility == other.visibility)
 
 class CaptionObject(Annotation):
+    # pylint: disable=redefined-builtin
     def __init__(self, caption=None,
-            id_=None, attributes=None, group=None):
-        super().__init__(id_=id_, type_=AnnotationType.caption,
+            id=None, attributes=None, group=None):
+        super().__init__(id=id, type=AnnotationType.caption,
             attributes=attributes, group=group)
 
         if caption is None:
             caption = ''
         self.caption = caption
+    # pylint: enable=redefined-builtin
 
     def __eq__(self, other):
         if not super().__eq__(other):
@@ -377,13 +395,14 @@ class CaptionObject(Annotation):
             (self.caption == other.caption)
 
 class DatasetItem:
-    def __init__(self, id_, annotations=None,
+    # pylint: disable=redefined-builtin
+    def __init__(self, id, annotations=None,
             subset=None, path=None, image=None):
-        assert id_ is not None
-        if not isinstance(id_, str):
-            id_ = str(id_)
-        assert len(id_) != 0
-        self._id = id_
+        assert id is not None
+        if not isinstance(id, str):
+            id = str(id)
+        assert len(id) != 0
+        self._id = id
 
         if subset is None:
             subset = ''
@@ -399,6 +418,7 @@ class DatasetItem:
         self._annotations = annotations
 
         self._image = image
+    # pylint: enable=redefined-builtin
 
     @property
     def id(self):

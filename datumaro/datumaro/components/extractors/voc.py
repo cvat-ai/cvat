@@ -151,7 +151,7 @@ class VocExtractor(Extractor):
         annotations = self._get_annotations(item)
 
         return DatasetItem(annotations=annotations,
-            id_=item, subset=subset_name, image=image)
+            id=item, subset=subset_name, image=image)
 
     def _get_label_id(self, label):
         label_id, _ = self._categories[AnnotationType.label].find(label)
@@ -261,7 +261,7 @@ class VocExtractor(Extractor):
                         continue
 
                 item_annotations.append(BboxObject(*obj_bbox, label=obj_label_id,
-                    attributes=attributes, id_=obj_id, group=group))
+                    attributes=attributes, id=obj_id, group=group))
 
         return item_annotations
 
@@ -405,7 +405,7 @@ class VocResultsExtractor(Extractor):
             ann_parts = filter(None, ann_file.strip().split('_'))
             if len(ann_parts) != 4:
                 continue
-            comp, mark, subset_name, label = ann_parts
+            _, mark, subset_name, label = ann_parts
             if mark != task_desc['mark']:
                 continue
 
@@ -482,7 +482,7 @@ class VocResultsExtractor(Extractor):
         annotations = self._get_annotations(item, subset_name)
 
         return DatasetItem(annotations=annotations,
-            id_=item, subset=subset_name, image=image)
+            id=item, subset=subset_name, image=image)
 
     def _get_annotations(self, item, subset_name):
         raise NotImplementedError()
@@ -584,8 +584,10 @@ class VocComp_5_6_Extractor(VocResultsExtractor):
         segm_ann = self._annotations[subset_name]
         cls_image_path = segm_ann.get(item)
         if cls_image_path and osp.isfile(cls_image_path):
+            inverse_cls_colormap = \
+                self._categories[AnnotationType.mask].inverse_colormap
             annotations.append(MaskObject(
-                image=lazy_mask(cls_image_path, _inverse_cls_colormap),
+                image=lazy_mask(cls_image_path, inverse_cls_colormap),
                 attributes={ 'class': True }
             ))
 
@@ -619,7 +621,7 @@ class VocComp_7_8_Extractor(VocResultsExtractor):
             ann_parts = filter(None, ann_file.strip().split('_'))
             if len(ann_parts) != 4:
                 continue
-            comp, mark, subset_name, _ = ann_parts
+            _, mark, subset_name, _ = ann_parts
             if mark != task_desc['mark']:
                 continue
 

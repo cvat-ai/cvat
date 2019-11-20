@@ -163,19 +163,19 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 items = [
-                    DatasetItem(id_=0, subset='train',
+                    DatasetItem(id=0, subset='train',
                         annotations=[
-                            CaptionObject('hello', id_=1),
-                            CaptionObject('world', id_=2),
+                            CaptionObject('hello', id=1),
+                            CaptionObject('world', id=2),
                         ]),
-                    DatasetItem(id_=1, subset='train',
+                    DatasetItem(id=1, subset='train',
                         annotations=[
-                            CaptionObject('test', id_=3),
+                            CaptionObject('test', id=3),
                         ]),
 
-                    DatasetItem(id_=2, subset='val',
+                    DatasetItem(id=2, subset='val',
                         annotations=[
-                            CaptionObject('word', id_=1),
+                            CaptionObject('word', id=1),
                         ]
                     ),
                 ]
@@ -192,10 +192,10 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 items = [
-                    DatasetItem(id_=0, subset='train', image=np.ones((4, 4, 3)),
+                    DatasetItem(id=0, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
                             BboxObject(0, 1, 2, 3, label=2, group=1,
-                                attributes={ 'is_crowd': False }, id_=1),
+                                attributes={ 'is_crowd': False }, id=1),
                             PolygonObject([0, 1, 2, 1, 2, 3, 0, 3],
                                 label=2, group=1),
                             MaskObject(np.array([[0, 0, 0, 0], [1, 1, 0, 0],
@@ -204,20 +204,20 @@ class CocoConverterTest(TestCase):
                                                  dtype=np.bool),
                                 label=2, group=1),
                         ]),
-                    DatasetItem(id_=1, subset='train',
+                    DatasetItem(id=1, subset='train',
                         annotations=[
                             BboxObject(0, 1, 3, 3, label=4, group=3,
-                                attributes={ 'is_crowd': True }, id_=3),
+                                attributes={ 'is_crowd': True }, id=3),
                             MaskObject(np.array([[0, 0, 0, 0], [1, 0, 1, 0],
                                                  [1, 1, 0, 0], [0, 0, 1, 0]],
                                                  dtype=np.bool),
                                 label=4, group=3),
                         ]),
 
-                    DatasetItem(id_=2, subset='val',
+                    DatasetItem(id=2, subset='val',
                         annotations=[
                             BboxObject(0, 1, 3, 2, label=4, group=3,
-                                attributes={ 'is_crowd': True }, id_=3),
+                                attributes={ 'is_crowd': True }, id=3),
                             MaskObject(np.array([[0, 0, 0, 0], [1, 0, 1, 0],
                                                  [1, 1, 0, 0], [0, 0, 0, 0]],
                                                  dtype=np.bool),
@@ -245,14 +245,14 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 items = [
-                    DatasetItem(id_=0, subset='train'),
-                    DatasetItem(id_=1, subset='train'),
+                    DatasetItem(id=0, subset='train'),
+                    DatasetItem(id=1, subset='train'),
 
-                    DatasetItem(id_=2, subset='val'),
-                    DatasetItem(id_=3, subset='val'),
-                    DatasetItem(id_=4, subset='val'),
+                    DatasetItem(id=2, subset='val'),
+                    DatasetItem(id=3, subset='val'),
+                    DatasetItem(id=4, subset='val'),
 
-                    DatasetItem(id_=5, subset='test'),
+                    DatasetItem(id=5, subset='test'),
                 ]
                 return iter(items)
 
@@ -267,19 +267,19 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 items = [
-                    DatasetItem(id_=0, subset='train',
+                    DatasetItem(id=0, subset='train',
                         annotations=[
-                            LabelObject(4, id_=1),
-                            LabelObject(9, id_=2),
+                            LabelObject(4, id=1),
+                            LabelObject(9, id=2),
                         ]),
-                    DatasetItem(id_=1, subset='train',
+                    DatasetItem(id=1, subset='train',
                         annotations=[
-                            LabelObject(4, id_=4),
+                            LabelObject(4, id=4),
                         ]),
 
-                    DatasetItem(id_=2, subset='val',
+                    DatasetItem(id=2, subset='val',
                         annotations=[
-                            LabelObject(2, id_=1),
+                            LabelObject(2, id=1),
                         ]),
                 ]
                 return iter(items)
@@ -303,25 +303,25 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 items = [
-                    DatasetItem(id_=0, subset='train',
+                    DatasetItem(id=0, subset='train',
                         annotations=[
                             PointsObject([1, 2, 0, 2, 4, 1], [0, 1, 2],
-                                label=3, group=1, id_=1),
+                                label=3, group=1, id=1),
                             BboxObject(1, 2, 3, 4, label=3, group=1),
-                            PointsObject([5, 6, 0, 7], group=2, id_=2),
+                            PointsObject([5, 6, 0, 7], group=2, id=2),
                             BboxObject(1, 2, 3, 4, group=2),
                         ]),
-                    DatasetItem(id_=1, subset='train',
+                    DatasetItem(id=1, subset='train',
                         annotations=[
                             PointsObject([1, 2, 0, 2, 4, 1], label=5,
-                                group=3, id_=3),
+                                group=3, id=3),
                             BboxObject(1, 2, 3, 4, label=5, group=3),
                         ]),
 
-                    DatasetItem(id_=2, subset='val',
+                    DatasetItem(id=2, subset='val',
                         annotations=[
                             PointsObject([0, 2, 0, 2, 4, 1], label=2,
-                                group=3, id_=3),
+                                group=3, id=3),
                             BboxObject(0, 2, 4, 4, label=2, group=3),
                         ]),
                 ]
@@ -350,14 +350,14 @@ class CocoConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 items = [
-                    DatasetItem(id_=1, annotations=[
-                        LabelObject(2, id_=1),
+                    DatasetItem(id=1, annotations=[
+                        LabelObject(2, id=1),
                     ]),
 
-                    DatasetItem(id_=2, image=np.zeros((5, 5, 3)), annotations=[
-                        LabelObject(3, id_=3),
+                    DatasetItem(id=2, image=np.zeros((5, 5, 3)), annotations=[
+                        LabelObject(3, id=3),
                         BboxObject(0, 0, 5, 5, label=3,
-                            attributes={ 'is_crowd': False }, id_=4, group=4),
+                            attributes={ 'is_crowd': False }, id=4, group=4),
                         PolygonObject([0, 0, 4, 0, 4, 4],
                                 label=3, group=4),
                         MaskObject(np.array([

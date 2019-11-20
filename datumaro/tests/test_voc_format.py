@@ -436,13 +436,13 @@ class VocConverterTest(TestCase):
         class TestExtractor(Extractor):
             def __iter__(self):
                 items = [
-                    DatasetItem(id_=1, annotations=[
-                        BboxObject(2, 3, 4, 5, label=2, id_=1),
-                        BboxObject(2, 3, 4, 5, label=3, id_=2),
+                    DatasetItem(id=1, annotations=[
+                        BboxObject(2, 3, 4, 5, label=2, id=1),
+                        BboxObject(2, 3, 4, 5, label=3, id=2),
                     ]),
 
-                    DatasetItem(id_=2, annotations=[
-                        BboxObject(5, 4, 6, 5, label=3, id_=1),
+                    DatasetItem(id=2, annotations=[
+                        BboxObject(5, 4, 6, 5, label=3, id=1),
                     ]),
                 ]
 

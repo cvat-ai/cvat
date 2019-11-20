@@ -135,7 +135,7 @@ class ProjectTest(TestCase):
 
             def __iter__(self):
                 for i in range(self.n):
-                    yield DatasetItem(id_=i, subset='train', image=i)
+                    yield DatasetItem(id=i, subset='train', image=i)
 
             def subsets(self):
                 return ['train']
@@ -175,7 +175,7 @@ class ProjectTest(TestCase):
 
             def __iter__(self):
                 for i in range(self.n):
-                    yield DatasetItem(id_=i, subset='train', image=i,
+                    yield DatasetItem(id=i, subset='train', image=i,
                         annotations=[ LabelObject(i) ])
 
             def subsets(self):
@@ -208,7 +208,7 @@ class ProjectTest(TestCase):
                         subset = f.readline()[:-1]
                         label = int(f.readline()[:-1])
                         assert(subset == 'train')
-                        yield DatasetItem(id_=index, subset=subset,
+                        yield DatasetItem(id=index, subset=subset,
                             annotations=[ LabelObject(label) ])
 
             def __len__(self):
@@ -249,7 +249,7 @@ class ProjectTest(TestCase):
 
             def __iter__(self):
                 for i in range(self.n):
-                    yield DatasetItem(id_=self.s + i, subset='train')
+                    yield DatasetItem(id=self.s + i, subset='train')
 
             def subsets(self):
                 return ['train']
@@ -277,7 +277,7 @@ class ProjectTest(TestCase):
 
             def __iter__(self):
                 for i in range(self.n):
-                    yield DatasetItem(id_=i, subset='train')
+                    yield DatasetItem(id=i, subset='train')
 
             def subsets(self):
                 return ['train']
@@ -296,7 +296,7 @@ class ProjectTest(TestCase):
         project = Project()
         dataset = project.make_dataset()
 
-        item = DatasetItem(id_=1)
+        item = DatasetItem(id=1)
         dataset.put(item)
 
         self.assertEqual(item, next(iter(dataset)))
@@ -322,8 +322,8 @@ class ProjectTest(TestCase):
             })
             dataset = parent.make_dataset()
 
-            item1 = DatasetItem(id_='ch1', path=['child1'])
-            item2 = DatasetItem(id_='ch2', path=['child2'])
+            item1 = DatasetItem(id='ch1', path=['child1'])
+            item2 = DatasetItem(id='ch2', path=['child2'])
             dataset.put(item1)
             dataset.put(item2)
 
@@ -338,14 +338,14 @@ class ProjectTest(TestCase):
                 self.v = v
 
             def __iter__(self):
-                v1_item = DatasetItem(id_=1, subset='train', annotations=[
-                    LabelObject(2, id_=3),
+                v1_item = DatasetItem(id=1, subset='train', annotations=[
+                    LabelObject(2, id=3),
                     LabelObject(3, attributes={ 'x': 1 }),
                 ])
 
-                v2_item = DatasetItem(id_=1, subset='train', annotations=[
+                v2_item = DatasetItem(id=1, subset='train', annotations=[
                     LabelObject(3, attributes={ 'x': 1 }),
-                    LabelObject(4, id_=4),
+                    LabelObject(4, id=4),
                 ])
 
                 if self.v == 1:
@@ -377,7 +377,7 @@ class DatasetFilterTest(TestCase):
 
         def __iter__(self):
             for i in range(self.n):
-                yield DatasetItem(id_=i, subset='train')
+                yield DatasetItem(id=i, subset='train')
 
         def subsets(self):
             return ['train']
@@ -426,11 +426,11 @@ class ExtractorTest(TestCase):
 
             def __iter__(self):
                 return iter([
-                    DatasetItem(id_=0, subset='train'),
-                    DatasetItem(id_=1, subset='train'),
-                    DatasetItem(id_=2, subset='train'),
+                    DatasetItem(id=0, subset='train'),
+                    DatasetItem(id=1, subset='train'),
+                    DatasetItem(id=2, subset='train'),
 
-                    DatasetItem(id_=3, subset='test'),
+                    DatasetItem(id=3, subset='test'),
                 ])
 
             def subsets(self):

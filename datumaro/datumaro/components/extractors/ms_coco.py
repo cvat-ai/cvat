@@ -20,13 +20,15 @@ from datumaro.util.image import lazy_image
 
 
 class RleMask(MaskObject):
+    # pylint: disable=redefined-builtin
     def __init__(self, rle=None, label=None,
-            id_=None, attributes=None, group=None):
+            id=None, attributes=None, group=None):
         lazy_decode = lambda: mask_utils.decode(rle).astype(np.bool)
         super().__init__(image=lazy_decode, label=label,
-            id_=id_, attributes=attributes, group=group)
+            id=id, attributes=attributes, group=group)
 
         self._rle = rle
+    # pylint: enable=redefined-builtin
 
     def area(self):
         return mask_utils.area(self._rle)
@@ -183,7 +185,7 @@ class CocoExtractor(Extractor):
 
             for ann in anns:
                 self._parse_annotation(ann, ann_type, annotations, image_info)
-        return DatasetItem(id_=img_id, subset=subset,
+        return DatasetItem(id=img_id, subset=subset,
             image=image, annotations=annotations)
 
     def _parse_label(self, ann):
@@ -238,13 +240,13 @@ class CocoExtractor(Extractor):
 
             parsed_annotations.append(
                 BboxObject(x, y, w, h, label=label_id,
-                    id_=ann_id, attributes=attributes, group=group)
+                    id=ann_id, attributes=attributes, group=group)
             )
         elif ann_type is CocoAnnotationType.labels:
             label_id = self._parse_label(ann)
             parsed_annotations.append(
                 LabelObject(label=label_id,
-                    id_=ann_id, attributes=attributes)
+                    id=ann_id, attributes=attributes)
             )
         elif ann_type is CocoAnnotationType.person_keypoints:
             keypoints = ann['keypoints']
@@ -257,7 +259,7 @@ class CocoExtractor(Extractor):
                 group = ann_id
             parsed_annotations.append(
                 PointsObject(points, visibility, label=label_id,
-                    id_=ann_id, attributes=attributes, group=group)
+                    id=ann_id, attributes=attributes, group=group)
             )
             if bbox is not None:
                 parsed_annotations.append(
@@ -267,7 +269,7 @@ class CocoExtractor(Extractor):
             caption = ann['caption']
             parsed_annotations.append(
                 CaptionObject(caption,
-                    id_=ann_id, attributes=attributes)
+                    id=ann_id, attributes=attributes)
             )
         else:
             raise NotImplementedError()
