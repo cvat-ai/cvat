@@ -43,6 +43,7 @@ Format selection is possible after clicking on the Upload annotation / Dump anno
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)                    | X      | X      |
 | PNG mask                                                                           | X      |        |
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)              | X      | X      |
+| [LabelMe](http://labelme.csail.mit.edu/Release3.0)                                 | X      | X      |
 
 ## Links
 - [Intel AI blog: New Computer Vision Tool Accelerates Annotation of Digital Images and Video](https://www.intel.ai/introducing-cvat)
