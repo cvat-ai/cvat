@@ -6,7 +6,6 @@
 import argparse
 import cv2
 import logging as log
-from matplotlib import cm
 import os
 import os.path as osp
 
@@ -61,6 +60,8 @@ def build_parser(parser=argparse.ArgumentParser()):
     return parser
 
 def explain_command(args):
+    from matplotlib import cm
+
     project = load_project(args.project_dir)
 
     model = project.make_executable_model(args.model)

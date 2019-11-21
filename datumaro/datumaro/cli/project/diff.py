@@ -6,7 +6,6 @@
 from collections import Counter
 import cv2
 from enum import Enum
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 import os.path as osp
@@ -228,6 +227,8 @@ class DiffVisualizer:
         self.file_writer.add_image(name, img)
 
     def save_conf_matrix(self, conf_matrix, filename):
+        import matplotlib.pyplot as plt
+
         classes = None
         label_categories = self.categories.get(AnnotationType.label)
         if label_categories is not None:
