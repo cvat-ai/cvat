@@ -1,5 +1,7 @@
 # Datumaro
 
+<!--lint disable list-item-indent-->
+
 ## Table of contents
 
 - [Concept](#concept)
@@ -141,8 +143,6 @@ can be downloaded by user to be operated on with Datumaro CLI.
 - [x] A command-line tool for dataset manipulations
 
 ### Features
-
-Currently planned features include:
 
 - Dataset format support (reading, exporting)
   - [x] Own format
