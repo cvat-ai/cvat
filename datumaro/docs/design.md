@@ -53,7 +53,7 @@ Datumaro is:
 - Dataset debugging (run inference, generate dataset slices, compute statistics)
 - "Explainable AI" - highlight network attention areas ([paper](https://arxiv.org/abs/1901.04592))
   - Black-box approach
-      - Classification, Detection, Segmentation, Captioning
+    - Classification, Detection, Segmentation, Captioning
     - White-box approach
 
 ### Research topics
@@ -67,7 +67,6 @@ Datumaro is:
   Use case: add only important data
 - guidance for key frame selection for tracking ([paper](https://arxiv.org/abs/1903.11779))
   Use case: more effective annotation, better predictions
-
 
 ## Design
 
@@ -118,8 +117,6 @@ which are hard to be put into specific context.
 
 ## RC 1 vision
 
-### Design
-
 In the first version Datumaro should be a project manager for CVAT.
 It should only consume data from CVAT. The collected dataset
 can be downloaded by user to be operated on with Datumaro CLI.
@@ -144,6 +141,8 @@ can be downloaded by user to be operated on with Datumaro CLI.
 - [x] A command-line tool for dataset manipulations
 
 ### Features
+
+Currently planned features include:
 
 - Dataset format support (reading, exporting)
   - [x] Own format
