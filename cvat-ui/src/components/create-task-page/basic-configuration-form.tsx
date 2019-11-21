@@ -16,7 +16,7 @@ type Props = FormComponentProps & {
 };
 
 class BasicConfigurationForm extends React.PureComponent<Props> {
-    public async submit() {
+    public submit() {
         return new Promise((resolve, reject) => {
             this.props.form.validateFields((error, values) => {
                 if (!error) {
@@ -45,7 +45,7 @@ class BasicConfigurationForm extends React.PureComponent<Props> {
                         rules: [{
                             required: true,
                             message: 'Please, specify a name',
-                        }] // TODO: Add task name pattern
+                        }]
                     })(
                         <Input/>
                     ) }

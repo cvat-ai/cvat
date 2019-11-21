@@ -22,6 +22,7 @@ interface StateToProps {
     gettingAuthError: any;
     gettingFormatsError: any;
     gettingUsersError: any;
+    installedAutoAnnotation: boolean;
     user: any;
 }
 
@@ -46,6 +47,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         gettingAuthError: auth.authError,
         gettingUsersError: users.gettingUsersError,
         gettingFormatsError: formats.gettingFormatsError,
+        installedAutoAnnotation: plugins.plugins.AUTO_ANNOTATION,
         user: auth.user,
     };
 }
@@ -73,6 +75,7 @@ function reduxAppWrapper(props: StateToProps & DispatchToProps) {
             gettingAuthError={props.gettingAuthError ? props.gettingAuthError.toString() : ''}
             gettingFormatsError={props.gettingFormatsError ? props.gettingFormatsError.toString() : ''}
             gettingUsersError={props.gettingUsersError ? props.gettingUsersError.toString() : ''}
+            installedAutoAnnotation={props.installedAutoAnnotation}
             user={props.user}
         />
     )

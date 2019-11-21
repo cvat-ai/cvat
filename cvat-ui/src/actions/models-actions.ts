@@ -2,7 +2,7 @@ import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 
 import getCore from '../core';
-import { Model } from '../reducers/interfaces';
+import { Model, ModelFiles } from '../reducers/interfaces';
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
@@ -14,6 +14,7 @@ export enum ModelsActionTypes {
     CREATE_MODEL = 'CREATE_MODEL',
     CREATE_MODEL_SUCCESS = 'CREATE_MODEL_SUCCESS',
     CREATE_MODEL_FAILED = 'CREATE_MODEL_FAILED',
+    CREATE_MODEL_STATUS_UPDATED = 'CREATE_MODEL_STATUS_UPDATED',
     UPDATE_MODEL = 'UPDATE_MODEL',
     UPDATE_MODEL_SUCCESS = 'UPDATE_MODEL_SUCCESS',
     UPDATE_MODEL_FAILED = 'UPDATE_MODEL_FAILED',
@@ -223,18 +224,90 @@ function createModelSuccess(): AnyAction {
     return action;
 }
 
-function createModelFailed(): AnyAction {
+function createModelFailed(error: any): AnyAction {
     const action = {
         type: ModelsActionTypes.CREATE_MODEL_FAILED,
-        payload: {},
+        payload: {
+            error,
+        },
     };
 
     return action;
 }
 
-export function createModelAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+function createModelUpdateStatus(status: string): AnyAction {
+    const action = {
+        type: ModelsActionTypes.CREATE_MODEL_STATUS_UPDATED,
+        payload: {
+            status,
+        },
+    };
 
+    return action;
+}
+
+export function createModelAsync(name: string, files: ModelFiles, global: boolean):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        async function checkCallback(id: string): Promise<void> {
+            try {
+                const data = await core.server.request(
+                    `${baseURL}/auto_annotation/check/${id}`, {
+                        method: 'GET',
+                    },
+                );
+
+                switch (data.status) {
+                    case 'failed':
+                        dispatch(createModelFailed(
+                            `Checking request has returned the "${data.status}" status. Message: ${data.error}`,
+                        ));
+                        break;
+                    case 'unknown':
+                        dispatch(createModelFailed(
+                            `Checking request has returned the "${data.status}" status.`,
+                        ));
+                        break;
+                    case 'finished':
+                        dispatch(createModelSuccess());
+                        break;
+                    default:
+                        if ('progress' in data) {
+                            createModelUpdateStatus(data.progress);
+                        }
+                        setTimeout(checkCallback.bind(null, id), 1000);
+                }
+            } catch (error) {
+                dispatch(createModelFailed(error));
+            }
+        }
+
+        dispatch(createModel());
+        const data = new FormData();
+        data.append('name', name);
+        data.append('storage', typeof files.bin === 'string' ? 'shared' : 'local');
+        data.append('shared', global.toString());
+        Object.keys(files).reduce((acc, key: string): FormData => {
+            acc.append(key, files[key]);
+            return acc;
+        }, data);
+
+        try {
+            dispatch(createModelUpdateStatus('Request is beign sent..'));
+            const response = await core.server.request(
+                `${baseURL}/auto_annotation/create`, {
+                    method: 'POST',
+                    data,
+                    contentType: false,
+                    processData: false,
+                },
+            );
+
+            dispatch(createModelUpdateStatus('Request is being processed..'));
+            setTimeout(checkCallback.bind(null, response.id), 1000);
+        } catch (error) {
+            dispatch(createModelFailed(error));
+        }
     };
 }
 

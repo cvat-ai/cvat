@@ -158,7 +158,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 <FileManagerContainer ref={
                     (container: any) =>
                         this.fileManagerContainer = container
-                }/>
+                } withRemote={true}/>
             </Col>
         );
     }
@@ -226,10 +226,10 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 { this.renderFilesBlock() }
                 { this.renderAdvancedBlock() }
 
-                <Col span={14}>
+                <Col span={18}>
                     {loading ? <Alert message={this.props.status}/> : null}
                 </Col>
-                <Col span={10}>
+                <Col span={6}>
                     <Button
                         loading={loading}
                         disabled={loading}

@@ -33,7 +33,7 @@ type Props = FormComponentProps & {
 };
 
 class AdvancedConfigurationForm extends React.PureComponent<Props> {
-    public async submit() {
+    public submit() {
         return new Promise((resolve, reject) => {
             this.props.form.validateFields((error, values) => {
                 if (!error) {

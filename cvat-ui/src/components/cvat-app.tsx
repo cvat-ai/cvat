@@ -12,6 +12,7 @@ import TasksPageContainer from '../containers/tasks-page/tasks-page';
 import CreateTaskPageContainer from '../containers/create-task-page/create-task-page';
 import TaskPageContainer from '../containers/task-page/task-page';
 import ModelsPageContainer from '../containers/models-page/models-page';
+import CreateModelPageContainer from '../containers/create-model-page/create-model-page';
 import AnnotationPageContainer from '../containers/annotation-page/annotation-page';
 import LoginPageContainer from '../containers/login-page/login-page';
 import RegisterPageContainer from '../containers/register-page/register-page';
@@ -31,6 +32,7 @@ type CVATAppProps = {
     gettingAuthError: string;
     gettingFormatsError: string;
     gettingUsersError: string;
+    installedAutoAnnotation: boolean;
     user: any;
 }
 
@@ -106,10 +108,16 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                             <Layout.Content>
                                 <Switch>
                                     <Route exact path='/tasks' component={TasksPageContainer}/>
-                                    <Route exact path='/models' component={ModelsPageContainer}/>
                                     <Route path='/tasks/create' component={CreateTaskPageContainer}/>
                                     <Route path='/tasks/:id' component={TaskPageContainer}/>
                                     <Route path='/tasks/:id/jobs/:id' component={AnnotationPageContainer}/>
+                                    { this.props.installedAutoAnnotation ?
+                                        <>
+                                            <Route exact path='/models' component={ModelsPageContainer}/>
+                                            <Route path='/models/create' component={CreateModelPageContainer}/>
+                                        </>
+                                        : null
+                                    }
                                     <Redirect to='/tasks'/>
                                 </Switch>
                                 <FeedbackComponent/>

@@ -5,6 +5,8 @@ import { ModelsState } from './interfaces';
 
 const defaultState: ModelsState = {
     initialized: false,
+    creatingStatus: '',
+    creatingError: null,
     fetchingError: null,
     deletingErrors: {},
     models: [],
@@ -56,6 +58,32 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
             return {
                 ...state,
                 deletingErrors: errors,
+            };
+        }
+        case ModelsActionTypes.CREATE_MODEL: {
+            return {
+                ...state,
+                creatingError: null,
+                creatingStatus: '',
+            };
+        }
+        case ModelsActionTypes.CREATE_MODEL_STATUS_UPDATED: {
+            return {
+                ...state,
+                creatingStatus: action.payload.status,
+            };
+        }
+        case ModelsActionTypes.CREATE_MODEL_FAILED: {
+            return {
+                ...state,
+                creatingError: action.payload.error,
+                creatingStatus: '',
+            };
+        }
+        case ModelsActionTypes.CREATE_MODEL_SUCCESS: {
+            return {
+                ...state,
+                creatingStatus: 'CREATED',
             };
         }
         default: {

@@ -4,7 +4,10 @@ import { connect } from 'react-redux';
 import ModelsPageComponent from '../../components/models-page/models-page';
 import { CombinedState } from '../../reducers/root-reducer';
 import { Model } from '../../reducers/interfaces';
-import { getModelsAsync, deleteModelAsync } from '../../actions/models-actions';
+import {
+    getModelsAsync,
+    deleteModelAsync,
+} from '../../actions/models-actions';
 
 interface StateToProps {
     installedAutoAnnotation: boolean;

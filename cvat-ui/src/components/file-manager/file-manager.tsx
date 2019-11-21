@@ -24,6 +24,7 @@ interface State {
 }
 
 interface Props {
+    withRemote: boolean;
     treeData: TreeNodeNormal[];
     onLoadData: (key: string, success: () => void, failure: () => void) => void;
 }
@@ -189,7 +190,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 })}>
                     { this.renderLocalSelector() }
                     { this.renderShareSelector() }
-                    { this.renderRemoteSelector() }
+                    { this.props.withRemote ? this.renderRemoteSelector() : null }
                 </Tabs>
             </>
         );
