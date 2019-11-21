@@ -294,7 +294,7 @@ def parse_xml_annotations(xml_data, annotations, input_zip):
                 raise NotImplementedError()
 
 def load(file_object, annotations):
-    from zipfile import ZipFile, ZIP_DEFLATED
+    from zipfile import ZipFile
 
     with ZipFile(file_object, 'r') as input_zip:
         for filename in input_zip.namelist():
