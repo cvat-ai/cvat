@@ -53,7 +53,7 @@ def dump_frame_anno(frame_annotation):
         ET.SubElement(obj_elem, 'verified').text = '0'
         ET.SubElement(obj_elem, 'occluded').text = \
             'yes' if shape.occluded else 'no'
-        ET.SubElement(obj_elem, 'date').text = '0'
+        ET.SubElement(obj_elem, 'date').text = ''
         ET.SubElement(obj_elem, 'id').text = str(obj_id)
 
         parts_elem = ET.SubElement(obj_elem, 'parts')
@@ -112,7 +112,9 @@ def dump_as_labelme_annotation(file_object, annotations):
     with ZipFile(file_object, 'w', compression=ZIP_DEFLATED) as output_zip:
         for frame_annotation in annotations.group_by_frame():
             xml_data = dump_frame_anno(frame_annotation)
-            output_zip.writestr(frame_annotation.name + '.xml', xml_data)
+            filename = frame_annotation.name
+            filename = filename[ : filename.rfind('.')] + '.xml'
+            output_zip.writestr(filename, xml_data)
 
 def parse_xml_annotations(xml_data, annotations, input_zip):
     from cvat.apps.annotation.coco import mask_to_polygon
