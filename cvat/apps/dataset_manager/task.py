@@ -18,7 +18,6 @@ _DATUMARO_REPO_PATH = osp.join(__file__[:__file__.rfind('cvat/')], 'datumaro')
 sys.path.append(_DATUMARO_REPO_PATH)
 from datumaro.components.project import Project
 import datumaro.components.extractor as datumaro
-
 from .bindings import CvatImagesDirExtractor, CvatTaskExtractor
 
 
@@ -34,8 +33,14 @@ _TASK_IMAGES_EXTRACTOR = '_cvat_task_images'
 _TASK_ANNO_EXTRACTOR = '_cvat_task_anno'
 _TASK_IMAGES_REMOTE_EXTRACTOR = 'cvat_rest_api_task_images'
 
+def get_export_cache_dir(db_task):
+    return osp.join(db_task.get_task_dirname(), 'export_cache')
 
 class TaskProject:
+    @staticmethod
+    def _get_datumaro_project_dir(db_task):
+        return osp.join(db_task.get_task_dirname(), 'datumaro')
+
     @staticmethod
     def create(db_task):
         task_project = TaskProject(db_task)
@@ -57,7 +62,7 @@ class TaskProject:
 
     def __init__(self, db_task):
         self._db_task = db_task
-        self._project_dir = self._db_task.get_datumaro_project_dir()
+        self._project_dir = self._get_datumaro_project_dir(db_task)
         self._project = None
         self._dataset = None
 
@@ -298,7 +303,7 @@ def export_project(task_id, user, dst_format=None, server_url=None):
         if not dst_format:
             dst_format = DEFAULT_FORMAT
 
-        cache_dir = db_task.get_export_cache_dir()
+        cache_dir = get_export_cache_dir(db_task)
         save_dir = osp.join(cache_dir, dst_format)
         archive_path = osp.normpath(save_dir) + '.zip'
 

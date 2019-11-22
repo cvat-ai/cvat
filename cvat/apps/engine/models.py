@@ -119,12 +119,6 @@ class Task(models.Model):
     def get_task_dirname(self):
         return os.path.join(settings.DATA_ROOT, str(self.id))
 
-    def get_datumaro_project_dir(self):
-        return os.path.join(self.get_task_dirname(), "datumaro")
-
-    def get_export_cache_dir(self):
-        return os.path.join(self.get_task_dirname(), "export_cache")
-
     def __str__(self):
         return self.name
 
