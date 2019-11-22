@@ -3,7 +3,6 @@ import React from 'react';
 import {
     Row,
     Col,
-    Icon,
     Table,
 } from 'antd';
 
@@ -12,13 +11,17 @@ import Title from 'antd/lib/typography/Title';
 
 import moment from 'moment';
 
+import UserSelector from './user-selector';
 import getCore from '../../core';
+
 const core = getCore();
 
 const baseURL = core.config.backendAPI.slice(0, -7);
 
 interface Props {
     taskInstance: any;
+    registeredUsers: any[];
+    onJobUpdate(jobInstance: any): void;
 }
 
 export default function JobListComponent(props: Props) {
@@ -63,7 +66,26 @@ export default function JobListComponent(props: Props) {
         title: 'Assignee',
         dataIndex: 'assignee',
         key: 'assignee',
-        className: 'cvat-black-color',
+        render: (jobInstance: any) => {
+            const assignee = jobInstance.assignee ? jobInstance.assignee.username : null
+            return (
+                <UserSelector
+                    users={props.registeredUsers}
+                    value={assignee}
+                    onChange={(value: string) => {
+                        let [userInstance] = props.registeredUsers
+                                .filter((user: any) => user.username === value);
+
+                        if (userInstance === undefined) {
+                            userInstance = null;
+                        }
+
+                        jobInstance.assignee = userInstance;
+                        props.onJobUpdate(jobInstance);
+                    }}
+                />
+            );
+        },
     }];
 
     let completed = 0;
@@ -81,7 +103,7 @@ export default function JobListComponent(props: Props) {
             status: `${job.status}`,
             started: `${created.format('MMMM Do YYYY HH:MM')}`,
             duration: `${moment.duration(moment(moment.now()).diff(created)).humanize()}`,
-            assignee: `${job.assignee ? job.assignee.username : ''}`,
+            assignee: job,
         });
 
         return acc;

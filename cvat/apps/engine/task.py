@@ -251,7 +251,7 @@ def _create_thread(tid, data):
         _copy_data_from_share(data['server_files'], upload_dir)
 
     job = rq.get_current_job()
-    job.meta['status'] = 'Media files is being extracted...'
+    job.meta['status'] = 'Media files are being extracted...'
     job.save_meta()
 
     db_images = []

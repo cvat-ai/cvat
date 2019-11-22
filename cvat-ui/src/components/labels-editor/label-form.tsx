@@ -370,7 +370,7 @@ class LabelForm extends React.PureComponent<Props, State> {
 
     private renderDoneButton() {
         return (
-            <Col span={4}>
+            <Col>
                 <Tooltip overlay='Save the label and return'>
                     <Button
                         style={{width: '150px'}}
@@ -388,7 +388,7 @@ class LabelForm extends React.PureComponent<Props, State> {
     private renderContinueButton() {
         return (
             this.props.label ? <div/> :
-                <Col span={4}>
+                <Col  offset={1}>
                     <Tooltip overlay='Save the label and create one more'>
                         <Button
                             style={{width: '150px'}}
@@ -405,7 +405,7 @@ class LabelForm extends React.PureComponent<Props, State> {
 
     private renderCancelButton() {
         return (
-            <Col span={4}>
+            <Col offset={1}>
                 <Tooltip overlay='Do not save the label and return'>
                     <Button
                         style={{width: '150px'}}
@@ -446,9 +446,7 @@ class LabelForm extends React.PureComponent<Props, State> {
                 { attributeItems.reverse() }
                 <Row type='flex' justify='start' align='middle'>
                     { this.renderDoneButton() }
-                    <Col span={1}/>
                     { this.renderContinueButton() }
-                    <Col span={1}/>
                     { this.renderCancelButton() }
                 </Row>
             </Form>

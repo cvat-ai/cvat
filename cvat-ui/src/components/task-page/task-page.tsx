@@ -63,7 +63,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
             )
         } else {
             return (
-                <Row type='flex' justify='center' align='middle'>
+                <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
                     <Col md={22} lg={18} xl={16} xxl={14}>
                         <TopBarContainer/>
                         <DetailsContainer/>
