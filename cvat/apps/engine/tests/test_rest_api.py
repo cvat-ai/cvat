@@ -2662,6 +2662,9 @@ class TaskAnnotationAPITestCase(JobAnnotationAPITestCase):
                 annotations["shapes"] = rectangle_shapes_with_attrs + rectangle_shapes_wo_attrs + polygon_shapes_wo_attrs
                 annotations["tracks"] = rectangle_tracks_with_attrs + rectangle_tracks_wo_attrs
 
+            elif annotation_format == "MOT CSV 1.0":
+                annotations["tracks"] = rectangle_tracks_wo_attrs
+
             return annotations
 
         response = self._get_annotation_formats(annotator)

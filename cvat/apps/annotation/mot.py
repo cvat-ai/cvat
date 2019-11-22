@@ -47,7 +47,7 @@ def dump(file_object, annotations):
         for i, track in enumerate(annotations.tracks):
             for shape in track.shapes:
                 # MOT doesn't support polygons or 'outside' property
-                if shape.type != 'rectangle' or shape.outside:
+                if shape.type != 'rectangle':
                     continue
                 writer.writerow({
                     "frame_id": shape.frame,
@@ -93,9 +93,8 @@ def load(file_object, annotations):
                 tracks[track_id] = annotations.Track(row["class_id"], track_id, [])
             tracks[track_id].shapes.append(shape)
         for track in tracks.values():
-            # MOT doesn't support the outside flag so we duplicate each
-            # track's last shape, increment frame_id and set outside=True
-            # to end the track
+            # Set outside=True for the last shape since MOT has no support
+            # for this flag
             last = annotations.TrackedShape(
                 type=track.shapes[-1].type,
                 points=track.shapes[-1].points,
@@ -103,8 +102,8 @@ def load(file_object, annotations):
                 outside=True,
                 keyframe=track.shapes[-1].keyframe,
                 z_order=track.shapes[-1].z_order,
-                frame=track.shapes[-1].frame + 1,
+                frame=track.shapes[-1].frame,
                 attributes=track.shapes[-1].attributes,
             )
-            track.shapes.append(last)
+            track.shapes[-1] = last
             annotations.add_track(track)
