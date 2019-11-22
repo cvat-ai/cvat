@@ -13,6 +13,7 @@ https://github.com/opencv/cvat/issues/750).
 - Mask-RCNN Auto Annotation Script in OpenVINO format
 - Yolo Auto Annotation Script
 - Auto segmentation using Mask_RCNN component (Keras+Tensorflow Mask R-CNN Segmentation)
+- Added MOT CSV format support
 - Ability to dump/load annotations in LabelMe format from UI
 
 ### Changed
