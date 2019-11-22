@@ -95,7 +95,7 @@
 }
 
 .ant-btn.cvat-header-button {
-    color: black !important;
+    color: black;
     padding: 0px 10px;
     margin-right: 10px;
 }
@@ -115,7 +115,7 @@
 }
 
 .ant-menu.cvat-header-menu > li.ant-menu-submenu {
-    border-bottom: unset !important;
+    border-bottom: unset;
 }
 
 
@@ -342,8 +342,8 @@
     margin-right: 5px;
 }
 
-.cvat-task-completed-progress > div > div > div > div {
-    background: #52c41a !important;
+.cvat-task-completed-progress > div > div > div > div.ant-progress-bg {
+    background: #52c41a !important; /* csslint allow: important */
 }
 
 .cvat-task-progress-progress {
@@ -440,14 +440,26 @@
     margin-left: 15px;
 }
 
-.cvat-raw-labels-viewer {
-    border-color: #d9d9d9 !important;
-    -webkit-box-shadow: none !important;
-            box-shadow: none !important;
+textarea.ant-input.cvat-raw-labels-viewer {
+    border-color: #d9d9d9;
+    -webkit-box-shadow: none;
+            box-shadow: none;
     border-top: none;
     border-radius: 0px 0px 5px 5px;
-    min-height: 9em !important;
+    min-height: 9em;
     font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+}
+
+.cvat-raw-labels-viewer:focus {
+    border-color: #d9d9d9;
+    -webkit-box-shadow: none;
+            box-shadow: none;
+}
+
+.cvat-raw-labels-viewer:hover {
+    border-color: #d9d9d9;
+    -webkit-box-shadow: none;
+            box-shadow: none;
 }
 
 .cvat-constructor-viewer {
@@ -559,8 +571,8 @@
 .cvat-task-jobs-table > div > div {
     text-align: center;
 }
-.cvat-task-jobs-table > div > div > ul {
-    float: none !important;
+.cvat-task-jobs-table > div > div > .ant-table-pagination.ant-pagination {
+    float: none;
 }
 
 .cvat-job-completed-color {
