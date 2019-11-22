@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import os.path as osp
 import re
 import traceback
 from ast import literal_eval
@@ -25,6 +26,7 @@ from rest_framework import mixins
 from django_filters import rest_framework as filters
 import django_rq
 from django.db import IntegrityError
+from django.utils import timezone
 
 
 from . import annotation, task, models
@@ -45,6 +47,7 @@ from cvat.apps.authentication import auth
 from rest_framework.permissions import SAFE_METHODS
 from cvat.apps.annotation.models import AnnotationDumper, AnnotationLoader
 from cvat.apps.annotation.format import get_annotation_formats
+import cvat.apps.dataset_manager.task as DatumaroTask
 
 # Server REST API
 @login_required
@@ -442,6 +445,66 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             slogger.task[pk].error(
                 "cannot get frame #{}".format(frame), exc_info=True)
             return HttpResponseBadRequest(str(e))
+
+    @action(detail=True, methods=['GET'], serializer_class=None,
+        url_path='export/')
+    def dataset_export(self, request, pk):
+        """Export task as a dataset in a specific format"""
+
+        db_task = self.get_object()
+
+        action = request.query_params.get("action", "")
+        action = action.lower()
+        if action not in ["", "download"]:
+            raise serializers.ValidationError(
+                "Unexpected parameter 'action' specified for the request")
+
+        dst_format = request.query_params.get("format", "")
+        if not dst_format:
+            dst_format = DatumaroTask.DEFAULT_FORMAT
+        dst_format = dst_format.lower()
+        if 100 < len(dst_format) or not re.fullmatch(r"^[\w_-]+$", dst_format):
+            raise serializers.ValidationError(
+                "Unexpected parameter 'format' specified for the request")
+
+        rq_id = "task_dataset_export.{}.{}".format(pk, dst_format)
+        queue = django_rq.get_queue("default")
+
+        rq_job = queue.fetch_job(rq_id)
+        if rq_job:
+            task_time = timezone.localtime(db_task.updated_date)
+            request_time = timezone.localtime(rq_job.meta.get('request_time', datetime.min))
+            if request_time < task_time:
+                rq_job.cancel()
+                rq_job.delete()
+            else:
+                if rq_job.is_finished:
+                    file_path = rq_job.return_value
+                    if action == "download" and osp.exists(file_path):
+                        rq_job.delete()
+
+                        timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+                        filename = "task_{}-{}-{}.zip".format(
+                            db_task.name, timestamp, dst_format)
+                        return sendfile(request, file_path, attachment=True,
+                            attachment_filename=filename.lower())
+                    else:
+                        if osp.exists(file_path):
+                            return Response(status=status.HTTP_201_CREATED)
+                elif rq_job.is_failed:
+                    exc_info = str(rq_job.exc_info)
+                    rq_job.delete()
+                    return Response(exc_info,
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                else:
+                    return Response(status=status.HTTP_202_ACCEPTED)
+
+        ttl = DatumaroTask.CACHE_TTL.total_seconds()
+        queue.enqueue_call(func=DatumaroTask.export_project,
+            args=(pk, request.user, dst_format), job_id=rq_id,
+            meta={ 'request_time': timezone.localtime() },
+            result_ttl=ttl, failure_ttl=ttl)
+        return Response(status=status.HTTP_201_CREATED)
 
 class JobViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):

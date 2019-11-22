@@ -154,6 +154,10 @@ COPY utils ${HOME}/utils
 COPY cvat/ ${HOME}/cvat
 COPY cvat-core/ ${HOME}/cvat-core
 COPY tests ${HOME}/tests
+COPY datumaro/ ${HOME}/datumaro
+
+RUN sed -r "s/^(.*)#.*$/\1/g" ${HOME}/datumaro/requirements.txt | xargs -n 1 -L 1 pip3 install --no-cache-dir
+
 # Binary option is necessary to correctly apply the patch on Windows platform.
 # https://unix.stackexchange.com/questions/239364/how-to-fix-hunk-1-failed-at-1-different-line-endings-message
 RUN patch --binary -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch

@@ -15,6 +15,8 @@ https://github.com/opencv/cvat/issues/750).
 - Auto segmentation using Mask_RCNN component (Keras+Tensorflow Mask R-CNN Segmentation)
 - Added MOT CSV format support
 - Ability to dump/load annotations in LabelMe format from UI
+- REST API to export an annotation task (images + annotations)
+- Datumaro is an experimental framework to build, analyze, debug and visualize datasets for DL algorithms
 
 ### Changed
 -
