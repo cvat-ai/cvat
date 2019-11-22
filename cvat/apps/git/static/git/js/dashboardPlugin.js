@@ -287,3 +287,4 @@ window.addEventListener('DOMContentLoaded', () => {
 
     window.cvat.plugins.register(gitPlugin);
 });
+ 

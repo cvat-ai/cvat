@@ -52,6 +52,10 @@ export interface TasksState {
                 [tid: number]: boolean; // deleted (deleting if in dictionary)
             };
         };
+        creates: {
+            creatingError: any;
+            status: string;
+        };
     };
 }
 
@@ -87,4 +91,20 @@ export interface UsersState {
     users: any[];
     initialized: boolean;
     gettingUsersError: any;
+}
+
+export interface ShareFileInfo { // get this data from cvat-core
+    name: string;
+    type: 'DIR' | 'REG';
+}
+
+export interface ShareItem {
+    name: string;
+    type: 'DIR' | 'REG';
+    children: ShareItem[];
+}
+
+export interface ShareState {
+    root: ShareItem;
+    error: any;
 }

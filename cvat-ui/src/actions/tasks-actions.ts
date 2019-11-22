@@ -19,6 +19,10 @@ export enum TasksActionTypes {
     DELETE_TASK = 'DELETE_TASK',
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
+    CREATE_TASK = 'CREATE_TASK',
+    CREATE_TASK_STATUS_UPDATED = 'CREATE_TASK_STATUS_UPDATED',
+    CREATE_TASK_SUCCESS = 'CREATE_TASK_SUCCESS',
+    CREATE_TASK_FAILED = 'CREATE_TASK_FAILED',
 }
 
 function getTasks(): AnyAction {
@@ -249,5 +253,94 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
 
         dispatch(deleteTaskSuccess(taskInstance.id));
+    };
+}
+
+function createTask(): AnyAction {
+    const action = {
+        type: TasksActionTypes.CREATE_TASK,
+        payload: {},
+    };
+
+    return action;
+}
+
+function createTaskSuccess(): AnyAction {
+    const action = {
+        type: TasksActionTypes.CREATE_TASK_SUCCESS,
+        payload: {},
+    };
+
+    return action;
+}
+
+function createTaskFailed(error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.CREATE_TASK_FAILED,
+        payload: {
+            error,
+        },
+    };
+
+    return action;
+}
+
+function createTaskUpdateStatus(status: string): AnyAction {
+    const action = {
+        type: TasksActionTypes.CREATE_TASK_STATUS_UPDATED,
+        payload: {
+            status,
+        },
+    };
+
+    return action;
+}
+
+export function createTaskAsync(data: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const description: any = {
+            name: data.basic.name,
+            labels: data.labels,
+            z_order: data.advanced.zOrder,
+            image_quality: 70,
+        };
+
+        if (data.advanced.bugTracker) {
+            description.bug_tracker = data.advanced.bugTracker;
+        }
+        if (data.advanced.segmentSize) {
+            description.segment_size = data.advanced.segmentSize;
+        }
+        if (data.advanced.overlapSize) {
+            description.overlap = data.advanced.overlapSize;
+        }
+        if (data.advanced.startFrame) {
+            description.start_frame = data.advanced.startFrame;
+        }
+        if (data.advanced.stopFrame) {
+            description.stop_frame = data.advanced.stopFrame;
+        }
+        if (data.advanced.frameFilter) {
+            description.frame_filter = data.advanced.frameFilter;
+        }
+        if (data.advanced.imageQuality) {
+            description.image_quality = data.advanced.imageQuality;
+        }
+
+        const taskInstance = new cvat.classes.Task(description);
+        taskInstance.clientFiles = data.files.local;
+        taskInstance.serverFiles = data.files.share;
+        taskInstance.remoteFiles = data.files.remote;
+
+        dispatch(createTask());
+        try {
+            await taskInstance.save((status: string): void => {
+                dispatch(createTaskUpdateStatus(status));
+            });
+            dispatch(createTaskSuccess());
+        } catch (error) {
+            dispatch(createTaskFailed(error));
+        }
     };
 }

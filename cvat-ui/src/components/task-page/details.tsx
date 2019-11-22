@@ -5,7 +5,6 @@ import {
     Col,
     Modal,
     Button,
-    Select,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -13,6 +12,7 @@ import Title from 'antd/lib/typography/Title';
 
 import moment from 'moment';
 
+import UserSelector from './user-selector';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import getCore from '../../core';
 import patterns from '../../utils/validation-patterns';
@@ -30,7 +30,6 @@ interface Props {
 interface State {
     name: string;
     bugTracker: string;
-    assignee: any;
 }
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
@@ -42,7 +41,6 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         this.state = {
             name: taskInstance.name,
             bugTracker: taskInstance.bugTracker,
-            assignee: taskInstance.assignee,
         };
     }
 
@@ -115,15 +113,13 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
     private renderUsers() {
         const { taskInstance } = this.props;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
-        const assignee = this.state.assignee ? this.state.assignee.username : null;
+        const assignee = taskInstance.assignee ? taskInstance.assignee.username : null;
         const created = moment(taskInstance.createdDate).format('MMMM Do YYYY');
-        const assigneeSelect = (
-            <Select
-                value={assignee ? assignee : '\0'}
-                size='small'
-                showSearch
-                className='cvat-task-assignee-selector'
-                onChange={(value: string) => {
+        const assigneeSelect = <UserSelector
+            users={this.props.registeredUsers}
+            value={assignee}
+            onChange={
+                (value: string) => {
                     let [userInstance] = this.props.registeredUsers
                         .filter((user: any) => user.username === value);
 
@@ -131,24 +127,11 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         userInstance = null;
                     }
 
-                    this.setState({
-                        assignee: userInstance,
-                    });
-
                     taskInstance.assignee = userInstance;
                     this.props.onTaskUpdate(taskInstance);
-                }}
-            >
-                <Select.Option key='-1' value='\0'>{'\0'}</Select.Option>
-                { this.props.registeredUsers.map((user) => {
-                    return (
-                        <Select.Option key={user.id} value={user.username}>
-                            {user.username}
-                        </Select.Option>
-                    );
-                })}
-            </Select>
-        );
+                }
+            }
+        />
 
         return (
             <Row type='flex' justify='space-between' align='middle'>
@@ -241,7 +224,6 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             this.setState({
                 name: this.props.taskInstance.name,
                 bugTracker: this.props.taskInstance.bugTracker,
-                assignee: this.props.taskInstance.assignee,
             });
         }
     }
