@@ -1,6 +1,8 @@
 import React from 'react';
 
 import {
+    Row,
+    Col,
     Form,
     Input,
     Tooltip,
@@ -41,26 +43,40 @@ export class CreateModelForm extends React.PureComponent<Props> {
 
         return (
             <Form onSubmit={(e: React.FormEvent) => e.preventDefault()}>
-                <Text type='secondary'>Name</Text>
-                <Form.Item>
-                    { getFieldDecorator('name', {
-                        rules: [{
-                            required: true,
-                            message: 'Please, specify a model name',
-                        }],
-                    })(<Input placeholder='Model name'/>)}
-                </Form.Item>
-                <Form.Item>
-                    <Tooltip overlay='Will this model be availabe for everyone?'>
-                        { getFieldDecorator('global', {
-                            valuePropName: 'checked',
-                        })(<Checkbox>
-                            <Text className='cvat-black-color'>
-                                Load globally
-                            </Text>
-                        </Checkbox>)}
-                    </Tooltip>
-                </Form.Item>
+                <Row type='flex'>
+                    <Col>
+                        <Text type='secondary'>Name</Text>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col span={14}>
+                        <Form.Item>
+                            { getFieldDecorator('name', {
+                                rules: [{
+                                    required: true,
+                                    message: 'Please, specify a model name',
+                                }],
+                            })(<Input placeholder='Model name'/>)}
+                        </Form.Item>
+                    </Col>
+                    <Col span={8} offset={2}>
+                        <Form.Item>
+                            <Tooltip overlay='Will this model be availabe for everyone?'>
+                                { getFieldDecorator('global', {
+                                    initialValue: false,
+                                    valuePropName: 'checked',
+                                })(<Checkbox>
+                                    <Text className='cvat-black-color'>
+                                        Load globally
+                                    </Text>
+                                </Checkbox>)}
+                            </Tooltip>
+                        </Form.Item>
+                    </Col>
+                </Row>
+
+
+
             </Form>
         );
     }

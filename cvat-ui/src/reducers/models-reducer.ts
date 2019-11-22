@@ -83,6 +83,7 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
         case ModelsActionTypes.CREATE_MODEL_SUCCESS: {
             return {
                 ...state,
+                initialized: false,
                 creatingStatus: 'CREATED',
             };
         }
