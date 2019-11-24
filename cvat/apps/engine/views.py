@@ -40,7 +40,7 @@ from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    RqStatusSerializer, TaskDataSerializer, LabeledDataSerializer,
    PluginSerializer, FileInfoSerializer, LogEventSerializer,
    ProjectSerializer, BasicUserSerializer)
-from cvat.apps.annotation.serializers import AnnotationFileSerializer
+from cvat.apps.annotation.serializers import AnnotationFileSerializer, AnnotationFormatSerializer
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.authentication import auth
@@ -75,12 +75,11 @@ class ServerViewSet(viewsets.ViewSet):
         pass
 
     @staticmethod
+    @swagger_auto_schema(method='get', responses={'200': AboutSerializer})
     @action(detail=False, methods=['GET'], serializer_class=AboutSerializer)
     def about(request):
         """
-        Returns a description of CVAT
-
-        Accepts nothing
+        Method provides basic CVAT information
         """
         from cvat import __version__ as cvat_version
         about = {
@@ -103,10 +102,9 @@ class ServerViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
     def exception(request):
         """
-        Takes an exception object and stores it on the server
+        Saves an exception from a client on the server
 
         Sends logs to the ELK if it is connected
-        Accepts the following POST parameters: data
         """
         serializer = ExceptionSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
@@ -127,14 +125,13 @@ class ServerViewSet(viewsets.ViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @staticmethod
-    @swagger_auto_schema(method='post', request_body=LogEventSerializer)
+    @swagger_auto_schema(method='post', request_body=LogEventSerializer(many=True))
     @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
     def logs(request):
         """
-        Saves client logs on the server to specific files
+        Saves logs from a client on the server
 
         Sends logs to the ELK if it is connected
-        Accepts the following POST parameters: data
         """
         serializer = LogEventSerializer(many=True, data=request.data)
         if serializer.is_valid(raise_exception=True):
@@ -151,18 +148,16 @@ class ServerViewSet(viewsets.ViewSet):
                     clogger.glob.info(message)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-
     @staticmethod
     @swagger_auto_schema(
         method='get',
-        manual_parameters=[openapi.Parameter('directory',openapi.IN_QUERY,type=openapi.TYPE_STRING)]
+        manual_parameters=[openapi.Parameter('directory', openapi.IN_QUERY, type=openapi.TYPE_STRING, description='Directory to browse')],
+        responses={'200' : FileInfoSerializer(many=True)}
     )
     @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
     def share(request):
         """
         Returns all files and folders that are on the server along specified path
-
-        Accepts the following GET parameters: directory
         """
         param = request.query_params.get('directory', '/')
         if param.startswith("/"):
@@ -190,12 +185,11 @@ class ServerViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
+    @swagger_auto_schema(method='get', responses={'200': AnnotationFormatSerializer(many=True)})
     @action(detail=False, methods=['GET'], url_path='annotation/formats')
     def formats(request):
         """
-        Returns the list of available formats with information about each
-
-        Accepts nothing
+        Method provides the list of available annotations formats supported by the server
         """
         data = get_annotation_formats()
         return Response(data)
@@ -215,7 +209,8 @@ class ProjectFilter(filters.FilterSet):
         openapi.Parameter('id',openapi.IN_QUERY,description="A unique number value identifying this task",type=openapi.TYPE_NUMBER),
         openapi.Parameter('name', openapi.IN_QUERY, description="Project name", type=openapi.TYPE_STRING),
         openapi.Parameter('owner', openapi.IN_QUERY, description="User who created the project", type=openapi.TYPE_STRING),
-        openapi.Parameter('status', openapi.IN_QUERY, description="", type=openapi.TYPE_STRING,enum=['annotation','validation','completed']),
+        openapi.Parameter('status', openapi.IN_QUERY, description="", type=openapi.TYPE_STRING,
+        enum=[str(i) for i in StatusChoice]),
         openapi.Parameter('assignee', openapi.IN_QUERY, description="", type=openapi.TYPE_STRING)
     ]
 ))
@@ -225,30 +220,18 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     Returns information about projects with the specified parameters
 
     Without specifying parameters returns information about all projects
-    Accepts the following GET parameters:
-    search, id, name, ownner, status, assignee, ordering, page
 
     create:
     Creates the new project
 
-    Accepts the following POST parameters: data
-
     retrieve:
     Returns details of the project with the selected id
-
-    Accepts the following GET parameters: id
 
     destroy:
     Deletes the project with the selected id
 
-    Accepts the following DELETE parameters: id
-
     partial_update:
     Updates chosen fields of the project with the selected id
-
-    Accepts the following PATCH parameters: data, id
-
-
     """
     queryset = models.Project.objects.all().order_by('-id')
     serializer_class = ProjectSerializer
@@ -280,12 +263,11 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         else:
             serializer.save(owner=self.request.user)
 
+    @swagger_auto_schema(method='get', responses={'200': TaskSerializer(many=True)})
     @action(detail=True, methods=['GET'], serializer_class=TaskSerializer)
     def tasks(self, request, pk):
         """
         Returns information of the tasks of the project with the selected id
-
-        Accepts the following GET parameters: id
         """
         self.get_object() # force to call check_object_permissions
         queryset = Task.objects.filter(project_id=pk).order_by('-id')
@@ -332,34 +314,21 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     Returns information about tasks with the specified parameters
 
     Without specifying parameters returns information about all tasks
-    Accepts the following GET parameters:
-    search, id, project_id, project, name, owner, mode, status, assignee, ordering, page
 
     create:
     Creates a new task
 
-    Accepts the following POST parameters: data
-
     retrieve:
     Returns  details of the task with the selected id
-
-    Accepts the following GET parameters: id
 
     update:
     Updates all information about task with selected id
 
-    Accepts the following PUT parameters: data, id
-
     destroy:
     Deletes the task with selected id
 
-    Accepts the following DELETE parameters: id
-
     partial_update:
     Updates chosen fields of task with selected id
-
-    Accepts the following PATCH parameters: data, id
-
     """
     queryset = Task.objects.all().prefetch_related(
             "label_set__attributespec_set",
@@ -398,12 +367,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         super().perform_destroy(instance)
         shutil.rmtree(task_dirname, ignore_errors=True)
 
+    @swagger_auto_schema(method='get', responses={'200': JobSerializer(many=True)})
     @action(detail=True, methods=['GET'], serializer_class=JobSerializer)
     def jobs(self, request, pk):
         """
         Returns the job information of task with the selected id
-
-        Accepts the following GET parameters: id
         """
         self.get_object() # force to call check_object_permissions
         queryset = Job.objects.filter(segment__task_id=pk)
@@ -416,8 +384,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     def data(self, request, pk):
         """
         Creates a new task with the selected id
-
-        Accepts the following POST parameters: data, id
         """
         db_task = self.get_object() # call check_object_permissions as well
         serializer = TaskDataSerializer(db_task, data=request.data)
@@ -433,22 +399,14 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         get:
         Returns details of all task annotations with the selected id
 
-        Accepts the following GET parameters: id
-
         put:
         Updates all task annotations with selected id
-
-        Accepts the following PUT parameters: data, id
 
         patch:
         Updates chosen task annotations with selected id
 
-        Accepts the following PATCH parameters: data, id
-
         delete:
         Deletes task annotations with selected id
-
-        Accepts the following DELETE parameters: id
         """
         self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
@@ -499,16 +457,15 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                                 description="dumpers format",
                                 type=openapi.TYPE_STRING,
                                 required=True,
-                                enum=["CVAT XML 1.1 for videos", "CVAT XML 1.1 for images"]
-                            )]
+                                enum=[format.display_name for format in AnnotationDumper.objects.order_by("display_name")]
+                            )],
+                            responses={'200': openapi.Response(description='Annotation downloaded')}
                         )
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='annotations/(?P<filename>[^/]+)')
     def dump(self, request, pk, filename):
         """
         Allows to download the annotation of the task with the selected id and save it to file with the specified filename
-
-        Accepts the following GET parameters: filename, format, id
         """
         filename = re.sub(r'[\\/*?:"<>|]', '_', filename)
         username = request.user.username
@@ -572,8 +529,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     def status(self, request, pk):
         """
         Returns information about the status of the task with the selected id
-
-        Accepts the following GET parameters: id
         """
         self.get_object() # force to call check_object_permissions
         response = self._get_rq_response(queue="default",
@@ -601,13 +556,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return response
 
+    @swagger_auto_schema(method='get', responses={'200': ImageMetaSerializer(many=True)})
     @action(detail=True, methods=['GET'], serializer_class=ImageMetaSerializer,
         url_path='frames/meta')
     def data_info(self, request, pk):
         """
         Returns the details of the frames of the task with the selected id
-
-        Accepts the following GET parameters: id
         """
         try:
             db_task = self.get_object() # call check_object_permissions as well
@@ -627,16 +581,14 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                                                 required=True,
                                                 description="A unique string value identifying this frame",
                                                 type=openapi.TYPE_STRING)],
+            responses={'200': openapi.Response(description='frame')}
             )
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='frames/(?P<frame>\d+)')
     def frame(self, request, pk, frame):
         """
         Get a frame for the task
-
-        Accepts the following GET parameters: frame, id
         """
-
         try:
             # Follow symbol links if the frame is a link on a real image otherwise
             # mimetype detection inside sendfile will work incorrectly.
@@ -714,18 +666,11 @@ class JobViewSet(viewsets.GenericViewSet,
     retrieve:
     Returns details of job with selected id
 
-    Accepts the following GET parameters: id
-
     update:
     Updates all fields of job with selected id
 
-    Accepts the following PUT parameters: data, id
-
     partial_update:
     Updates chosen fields of job with selected id
-
-    Accepts the following PATCH parameters: data, id
-
     """
     queryset = Job.objects.all().order_by('id')
     serializer_class = JobSerializer
@@ -750,22 +695,14 @@ class JobViewSet(viewsets.GenericViewSet,
         get:
         Returns annotation detatils of job with the selected id
 
-        Accepts the following GET parameters: id
-
         put:
         Updates annotation of job with the selected id
-
-        Accepts the following PUT parameters: data, id
 
         patch:
         Updates chosen field of annotation of job with the selected id
 
-        Accepts the following PATCH parameters: data, id
-
         delete:
         Deletes annotation of job with the selected id
-
-        Accepts the following DELETE parameters: id
         """
         self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
@@ -810,22 +747,14 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     list:
     Returns infomation about all users
 
-    Accepts the following GET parameters: search, ordering, page
-
     retrieve:
     Returns information about the user with the selected id
-
-    Accepts the following GET parameters: id
 
     partial_update:
     Updates chosen fields of user with the selected id
 
-    Accepts the following PATCH parameters: data, id
-
     destroy:
     Deletes user with the selected id
-
-    Accepts the following DELETE parameters: id
     """
 
     queryset = User.objects.all().order_by('id')
@@ -858,8 +787,6 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     def self(self, request):
         """
         Returns information about the authorized user
-
-        Accepts the following GET parameters: search, ordering, page
         """
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.user, context={ "request": request })

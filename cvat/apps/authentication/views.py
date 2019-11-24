@@ -34,20 +34,21 @@ def register_user(request):
 @method_decorator(name='post', decorator=swagger_auto_schema(
     request_body=openapi.Schema(
         type=openapi.TYPE_OBJECT,
-        requared=[
+        required=[
             'url'
         ],
         properties={
             'url': openapi.Schema(type=openapi.TYPE_STRING)
         }
-
-    )
+    ),
+    responses={'200': openapi.Response(description='text URL')}
 ))
 class SigningView(views.APIView):
     """
-    Returns a token
+    This method signs URL for access to the server.
 
-    Accepts the following POST parameters: url
+    Signed URL contains a token which authenticates a user on the server.
+    Signed URL is valid during 30 seconds since signing.
     """
     def post(self, request):
         url = request.data.get('url')
