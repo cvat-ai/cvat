@@ -7,7 +7,7 @@ django-compressor==2.2
 django-rq==2.0.0
 EasyProcess==0.2.3
 ffmpy==0.2.2
-Pillow==5.1.0
+Pillow==6.2.0
 numpy==1.16.2
 patool==1.12
 python-ldap==3.0.0
@@ -38,5 +38,11 @@ pascal_voc_writer==0.1.4
 django-rest-auth[with_social]==0.9.5
 cython==0.29.13
 matplotlib==3.0.3
-scikit-image>=0.14.0
+scikit-image==0.15.0
 tensorflow==1.12.3
+keras==2.2.5
+opencv-python==4.1.0.25
+h5py==2.9.0
+imgaug==0.2.9
+django-cors-headers==3.0.2
+furl==2.0.0

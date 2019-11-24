@@ -342,14 +342,20 @@
                 }
             }
 
-            async function getUsers() {
+            async function getUsers(id = null) {
                 const { backendAPI } = config;
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/users`, {
-                        proxy: config.proxy,
-                    });
+                    if (id === null) {
+                        response = await Axios.get(`${backendAPI}/users`, {
+                            proxy: config.proxy,
+                        });
+                    } else {
+                        response = await Axios.get(`${backendAPI}/users/${id}`, {
+                            proxy: config.proxy,
+                        });
+                    }
                 } catch (errorData) {
                     throw generateError(errorData, 'Could not get users from the server');
                 }
@@ -367,6 +373,27 @@
                     });
                 } catch (errorData) {
                     throw generateError(errorData, 'Could not get user data from the server');
+                }
+
+                return response.data;
+            }
+
+            async function getPreview(tid) {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    // TODO: change 0 frame to preview
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/0`, {
+                        proxy: config.proxy,
+                        responseType: 'blob',
+                    });
+                } catch (errorData) {
+                    const code = errorData.response ? errorData.response.status : errorData.code;
+                    throw new ServerError(
+                        `Could not get preview frame for the task ${tid} from the server`,
+                        code,
+                    );
                 }
 
                 return response.data;
@@ -567,6 +594,7 @@
                     value: Object.freeze({
                         getData,
                         getMeta,
+                        getPreview,
                     }),
                     writable: false,
                 },

@@ -1,82 +1,56 @@
-import React, { PureComponent } from 'react';
+import React from 'react';
 
-import { connect } from 'react-redux';
-import { loginAsync } from '../../actions/auth.actions';
+import { RouteComponentProps } from 'react-router';
+import { Link, withRouter } from 'react-router-dom';
 
-import { Button, Icon, Input, Form, Col, Row } from 'antd';
 import Title from 'antd/lib/typography/Title';
+import Text from 'antd/lib/typography/Text';
+import {
+    Col,
+    Row,
+    Modal,
+} from 'antd';
 
-import './login-page.scss';
+import LoginForm, { LoginData } from './login-form';
 
-
-class LoginForm extends PureComponent<any, any> {
-  componentWillMount() {
-    if (localStorage.getItem('session')) {
-      this.props.history.push('/dashboard');
-    }
-  }
-
-  render() {
-    const { getFieldDecorator } = this.props.form;
-
-    return (
-      <Row type="flex" justify="center" align="middle">
-        <Col xs={12} md={10} lg={8} xl={6}>
-          <Form className="login-form" onSubmit={ this.onSubmit }>
-            <Title className="login-form__title">Login</Title>
-
-            <Form.Item>
-              {getFieldDecorator('username', {
-                rules: [{ required: true, message: 'Please enter your username!' }],
-              })(
-                <Input
-                  prefix={ <Icon type="user" /> }
-                  type="text"
-                  name="username"
-                  placeholder="Username"
-                />,
-              )}
-            </Form.Item>
-
-            <Form.Item>
-              {getFieldDecorator('password', {
-                rules: [{ required: true, message: 'Please enter your password!' }],
-              })(
-                <Input
-                  prefix={ <Icon type="lock" /> }
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                />,
-              )}
-            </Form.Item>
-
-            <Form.Item>
-              <Button type="primary" htmlType="submit" loading={ this.props.isFetching }>
-                Log in
-              </Button>
-            </Form.Item>
-
-            Have not registered yet? <a href="/register">Register here.</a>
-          </Form>
-        </Col>
-      </Row>
-    );
-  }
-
-  private onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    this.props.form.validateFields((error: any, values: any) => {
-      if (!error) {
-        this.props.dispatch(loginAsync(values.username, values.password, this.props.history));
-      }
-    });
-  }
+interface LoginPageComponentProps {
+    loginError: string;
+    onLogin: (username: string, password: string) => void;
 }
 
-const mapStateToProps = (state: any) => {
-  return state.authContext;
-};
+function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps) {
+    const sizes = {
+        xs: { span: 14 },
+        sm: { span: 14 },
+        md: { span: 10 },
+        lg: { span: 4 },
+        xl: { span: 4 },
+    }
 
-export default Form.create()(connect(mapStateToProps)(LoginForm));
+    if (props.loginError) {
+        Modal.error({
+            title: 'Could not login',
+            content: props.loginError,
+        });
+    }
+
+    return (
+        <Row type='flex' justify='center' align='middle'>
+            <Col {...sizes}>
+                <Title level={2}> Login </Title>
+                <LoginForm onSubmit={(loginData: LoginData) => {
+                    props.onLogin(loginData.username, loginData.password);
+                }}/>
+                <Row type='flex' justify='start' align='top'>
+                    <Col>
+                        <Text strong>
+                            New to CVAT? Create <Link to="/auth/register">an account</Link>
+                        </Text>
+                    </Col>
+                </Row>
+            </Col>
+        </Row>
+    );
+}
+
+export default withRouter(LoginPageComponent);

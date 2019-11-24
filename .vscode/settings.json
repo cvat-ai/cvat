@@ -15,6 +15,10 @@
             "changeProcessCWD": true
         },
         {
+            "directory":  "./cvat-ui",
+            "changeProcessCWD": true
+        },
+        {
             "directory":  ".",
             "changeProcessCWD": true
         }

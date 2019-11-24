@@ -10,10 +10,11 @@
 (() => {
     const PluginRegistry = require('./plugins');
     const serverProxy = require('./server-proxy');
-    const { getFrame } = require('./frames');
+    const { getFrame, getPreview } = require('./frames');
     const { ArgumentError } = require('./exceptions');
     const { TaskStatus } = require('./enums');
     const { Label } = require('./labels');
+    const User = require('./user');
 
     function buildDublicatedAPI(prototype) {
         Object.defineProperties(prototype, {
@@ -109,6 +110,11 @@
                             .apiWrapper.call(this, prototype.frames.get, frame);
                         return result;
                     },
+                    async preview() {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.frames.preview);
+                        return result;
+                    },
                 },
                 writable: true,
             }),
@@ -182,7 +188,7 @@
                 * You need upload annotations from a server again after successful executing
                 * @method upload
                 * @memberof Session.annotations
-                * @param {File} annotations - a text file with annotations
+                * @param {File} annotations - a file with annotations
                 * @param {module:API.cvat.classes.Loader} loader - a loader
                 * which will be used to upload
                 * @instance
@@ -380,6 +386,17 @@
                 * @throws {module:API.cvat.exceptions.ServerError}
                 * @throws {module:API.cvat.exceptions.ArgumentError}
             */
+            /**
+                * Get the first frame of a task for preview
+                * @method preview
+                * @memberof Session.frames
+                * @returns {string} - jpeg encoded image
+                * @instance
+                * @async
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
+            */
 
             /**
                 * Namespace is used for an interaction with logs
@@ -520,19 +537,19 @@
                     get: () => data.id,
                 },
                 /**
-                    * Identifier of a user who is responsible for the job
+                    * Instance of a user who is responsible for the job
                     * @name assignee
-                    * @type {integer}
+                    * @type {module:API.cvat.classes.User}
                     * @memberof module:API.cvat.classes.Job
                     * @instance
                     * @throws {module:API.cvat.exceptions.ArgumentError}
                 */
                 assignee: {
                     get: () => data.assignee,
-                    set: () => (assignee) => {
-                        if (!Number.isInteger(assignee) || assignee < 0) {
+                    set: (assignee) => {
+                        if (assignee !== null && !(assignee instanceof User)) {
                             throw new ArgumentError(
-                                'Value must be a non negative integer',
+                                'Value must be a user instance',
                             );
                         }
                         data.assignee = assignee;
@@ -619,6 +636,7 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             };
         }
 
@@ -780,9 +798,9 @@
                     get: () => data.mode,
                 },
                 /**
-                    * Identificator of a user who has created the task
+                    * Instance of a user who has created the task
                     * @name owner
-                    * @type {integer}
+                    * @type {module:API.cvat.classes.User}
                     * @memberof module:API.cvat.classes.Task
                     * @readonly
                     * @instance
@@ -791,19 +809,19 @@
                     get: () => data.owner,
                 },
                 /**
-                    * Identificator of a user who is responsible for the task
+                    * Instance of a user who is responsible for the task
                     * @name assignee
-                    * @type {integer}
+                    * @type {module:API.cvat.classes.User}
                     * @memberof module:API.cvat.classes.Task
                     * @instance
                     * @throws {module:API.cvat.exceptions.ArgumentError}
                 */
                 assignee: {
                     get: () => data.assignee,
-                    set: () => (assignee) => {
-                        if (!Number.isInteger(assignee) || assignee < 0) {
+                    set: (assignee) => {
+                        if (assignee !== null && !(assignee instanceof User)) {
                             throw new ArgumentError(
-                                'Value must be a non negative integer',
+                                'Value must be a user instance',
                             );
                         }
                         data.assignee = assignee;
@@ -940,11 +958,7 @@
                             }
                         }
 
-                        if (typeof (data.id) === 'undefined') {
-                            data.labels = [...labels];
-                        } else {
-                            data.labels = data.labels.concat([...labels]);
-                        }
+                        data.labels = [...labels];
                     },
                 },
                 /**
@@ -1122,6 +1136,7 @@
 
             this.frames = {
                 get: Object.getPrototypeOf(this).frames.get.bind(this),
+                preview: Object.getPrototypeOf(this).frames.preview.bind(this),
             };
         }
 
@@ -1190,6 +1205,7 @@
         if (this.id) {
             const jobData = {
                 status: this.status,
+                assignee: this.assignee ? this.assignee.id : null,
             };
 
             await serverProxy.jobs.saveJob(this.id, jobData);
@@ -1215,6 +1231,11 @@
         }
 
         const frameData = await getFrame(this.task.id, this.task.mode, frame);
+        return frameData;
+    };
+
+    Job.prototype.frames.preview.implementation = async function () {
+        const frameData = await getPreview(this.task.id);
         return frameData;
     };
 
@@ -1290,10 +1311,11 @@
         if (typeof (this.id) !== 'undefined') {
             // If the task has been already created, we update it
             const taskData = {
+                assignee: this.assignee ? this.assignee.id : null,
                 name: this.name,
                 bug_tracker: this.bugTracker,
                 z_order: this.zOrder,
-                labels: [...this.labels.map(el => el.toJSON())],
+                labels: [...this.labels.map((el) => el.toJSON())],
             };
 
             await serverProxy.tasks.saveTask(this.id, taskData);
@@ -1302,7 +1324,7 @@
 
         const taskData = {
             name: this.name,
-            labels: this.labels.map(el => el.toJSON()),
+            labels: this.labels.map((el) => el.toJSON()),
             image_quality: this.imageQuality,
             z_order: Boolean(this.zOrder),
         };
@@ -1356,6 +1378,11 @@
 
         const result = await getFrame(this.id, this.mode, frame);
         return result;
+    };
+
+    Task.prototype.frames.preview.implementation = async function () {
+        const frameData = await getPreview(this.id);
+        return frameData;
     };
 
     // TODO: Check filter for annotations

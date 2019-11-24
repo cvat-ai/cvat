@@ -39,6 +39,7 @@ module.exports = {
         'no-console': 0, // this rule deprecates console.log, console.warn etc. because 'it is not good in production code'
         'lines-between-class-members': 0,
         'import/prefer-default-export': 0, // works incorrect with interfaces
+        'newline-per-chained-call': 0, // makes code uglier
     },
     'settings': {
         'import/resolver': {

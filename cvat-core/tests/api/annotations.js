@@ -17,6 +17,7 @@ jest.mock('../../src/server-proxy', () => {
 
 // Initialize api
 window.cvat = require('../../src/api');
+const serverProxy = require('../../src/server-proxy');
 
 // Test cases
 describe('Feature: get annotations', () => {
@@ -373,6 +374,30 @@ describe('Feature: save annotations', () => {
         await job.annotations.save();
         expect(await job.annotations.hasUnsavedChanges()).toBe(false);
     });
+
+    test('delete & save annotations for a job when there are a track and a shape with the same id', async () => {
+        const job = (await window.cvat.jobs.get({ jobID: 112 }))[0];
+        const annotations = await job.annotations.get(0);
+        let okay = false;
+
+        // Temporary override this method because we need to know what data
+        // have been sent to a server
+        const oldImplementation = serverProxy.annotations.updateAnnotations;
+        serverProxy.annotations.updateAnnotations = async (session, id, data, action) => {
+            const result = await oldImplementation
+                .call(serverProxy.annotations, session, id, data, action);
+            if (action === 'delete') {
+                okay = okay || (action === 'delete' && !!(data.shapes.length || data.tracks.length));
+            }
+            return result;
+        };
+
+        await annotations[0].delete();
+        await job.annotations.save();
+
+        serverProxy.annotations.updateAnnotations = oldImplementation;
+        expect(okay).toBe(true);
+    });
 });
 
 describe('Feature: merge annotations', () => {
@@ -383,9 +408,9 @@ describe('Feature: merge annotations', () => {
         const states = [annotations0[0], annotations1[0]];
         await task.annotations.merge(states);
         const merged0 = (await task.annotations.get(0))
-            .filter(state => state.objectType === window.cvat.enums.ObjectType.TRACK);
+            .filter((state) => state.objectType === window.cvat.enums.ObjectType.TRACK);
         const merged1 = (await task.annotations.get(1))
-            .filter(state => state.objectType === window.cvat.enums.ObjectType.TRACK);
+            .filter((state) => state.objectType === window.cvat.enums.ObjectType.TRACK);
         expect(merged0).toHaveLength(1);
         expect(merged1).toHaveLength(1);
 
@@ -400,9 +425,9 @@ describe('Feature: merge annotations', () => {
         const states = [annotations0[0], annotations1[0]];
         await job.annotations.merge(states);
         const merged0 = (await job.annotations.get(0))
-            .filter(state => state.objectType === window.cvat.enums.ObjectType.TRACK);
+            .filter((state) => state.objectType === window.cvat.enums.ObjectType.TRACK);
         const merged1 = (await job.annotations.get(1))
-            .filter(state => state.objectType === window.cvat.enums.ObjectType.TRACK);
+            .filter((state) => state.objectType === window.cvat.enums.ObjectType.TRACK);
         expect(merged0).toHaveLength(1);
         expect(merged1).toHaveLength(1);
 
@@ -456,7 +481,7 @@ describe('Feature: merge annotations', () => {
         const task = (await window.cvat.tasks.get({ id: 100 }))[0];
         const annotations0 = await task.annotations.get(0);
         const annotations1 = (await task.annotations.get(1))
-            .filter(state => state.shapeType === window.cvat.enums.ObjectShape.POLYGON);
+            .filter((state) => state.shapeType === window.cvat.enums.ObjectShape.POLYGON);
         const states = [annotations0[0], annotations1[0]];
 
         expect(task.annotations.merge(states))
@@ -488,7 +513,7 @@ describe('Feature: split annotations', () => {
         expect(annotations4[0].clientID).toBe(annotations5[0].clientID);
         await task.annotations.split(annotations5[0], 5);
         const splitted4 = await task.annotations.get(4);
-        const splitted5 = (await task.annotations.get(5)).filter(state => !state.outside);
+        const splitted5 = (await task.annotations.get(5)).filter((state) => !state.outside);
         expect(splitted4[0].clientID).not.toBe(splitted5[0].clientID);
     });
 
@@ -500,7 +525,7 @@ describe('Feature: split annotations', () => {
         expect(annotations4[0].clientID).toBe(annotations5[0].clientID);
         await job.annotations.split(annotations5[0], 5);
         const splitted4 = await job.annotations.get(4);
-        const splitted5 = (await job.annotations.get(5)).filter(state => !state.outside);
+        const splitted5 = (await job.annotations.get(5)).filter((state) => !state.outside);
         expect(splitted4[0].clientID).not.toBe(splitted5[0].clientID);
     });
 

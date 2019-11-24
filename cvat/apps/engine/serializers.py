@@ -196,7 +196,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         fields = ('url', 'id', 'name', 'size', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'z_order', 'status', 'labels', 'segments',
-            'image_quality', 'start_frame', 'stop_frame', 'frame_filter')
+            'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
+            'project')
         read_only_fields = ('size', 'mode', 'created_date', 'updated_date',
             'status')
         write_once_fields = ('overlap', 'segment_size', 'image_quality')
@@ -245,6 +246,7 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         instance.start_frame = validated_data.get('start_frame', instance.start_frame)
         instance.stop_frame = validated_data.get('stop_frame', instance.stop_frame)
         instance.frame_filter = validated_data.get('frame_filter', instance.frame_filter)
+        instance.project = validated_data.get('project', instance.project)
         labels = validated_data.get('label_set', [])
         for label in labels:
             attributes = label.pop('attributespec_set', [])
@@ -273,7 +275,34 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
                     db_attr.values = attr.get('values', db_attr.values)
                     db_attr.save()
 
+        instance.save()
         return instance
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Project
+        fields = ('url', 'id', 'name', 'owner', 'assignee', 'bug_tracker',
+            'created_date', 'updated_date', 'status')
+        read_only_fields = ('created_date', 'updated_date', 'status')
+        ordering = ['-id']
+
+class BasicUserSerializer(serializers.ModelSerializer):
+    def validate(self, data):
+        if hasattr(self, 'initial_data'):
+            unknown_keys = set(self.initial_data.keys()) - set(self.fields.keys())
+            if unknown_keys:
+                if set(['is_staff', 'is_superuser', 'groups']) & unknown_keys:
+                    message = 'You do not have permissions to access some of' + \
+                        ' these fields: {}'.format(unknown_keys)
+                else:
+                    message = 'Got unknown fields: {}'.format(unknown_keys)
+                raise serializers.ValidationError(message)
+        return data
+
+    class Meta:
+        model = User
+        fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email')
+        ordering = ['-id']
 
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(many=True,
@@ -283,7 +312,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('url', 'id', 'username', 'first_name', 'last_name', 'email',
             'groups', 'is_staff', 'is_superuser', 'is_active', 'last_login',
-            'date_joined', 'groups')
+            'date_joined')
         read_only_fields = ('last_login', 'date_joined')
         write_only_fields = ('password', )
         ordering = ['-id']
@@ -337,7 +366,8 @@ class ShapeSerializer(serializers.Serializer):
     occluded = serializers.BooleanField()
     z_order = serializers.IntegerField(default=0)
     points = serializers.ListField(
-        child=serializers.FloatField()
+        child=serializers.FloatField(),
+        allow_empty=False,
     )
 
 class LabeledShapeSerializer(ShapeSerializer, AnnotationSerializer):

@@ -22,10 +22,6 @@ format_spec = {
     ],
 }
 
-def get_filename(path):
-    import os
-    return os.path.splitext(os.path.basename(path))[0]
-
 def load(file_object, annotations):
     from pyunpack import Archive
     import os
@@ -49,24 +45,8 @@ def load(file_object, annotations):
         label_id, x, y, w, h = obj.split(" ")
         return int(label_id), convert_from_yolo(img_size, (float(x), float(y), float(w), float(h)))
 
-    def match_frame(frame_info, filename):
-        import re
-        # try to match by filename
-        yolo_filename = get_filename(filename)
-        for frame_number, info in frame_info.items():
-            cvat_filename = get_filename(info["path"])
-            if cvat_filename == yolo_filename:
-                return frame_number
-
-        # try to extract frame number from filename
-        numbers = re.findall(r"\d+", filename)
-        if numbers and len(numbers) == 1:
-            return int(numbers[0])
-
-        raise Exception("Cannot match filename or determinate framenumber for {} filename".format(filename))
-
     def parse_yolo_file(annotation_file, labels_mapping):
-        frame_number = match_frame(annotations.frame_info, annotation_file)
+        frame_number = annotations.match_frame(annotation_file)
         with open(annotation_file, "r") as fp:
             line = fp.readline()
             while line:
@@ -105,6 +85,7 @@ def load(file_object, annotations):
 
 def dump(file_object, annotations):
     from zipfile import ZipFile
+    import os
 
     # convertation formulas are based on https://github.com/pjreddie/darknet/blob/master/scripts/voc_label.py
     # <x> <y> <width> <height> - float values relative to width and height of image
@@ -122,7 +103,7 @@ def dump(file_object, annotations):
     with ZipFile(file_object, "w") as output_zip:
         for frame_annotation in annotations.group_by_frame():
             image_name = frame_annotation.name
-            annotation_name = "{}.txt".format(get_filename(image_name))
+            annotation_name = "{}.txt".format(os.path.splitext(os.path.basename(image_name))[0])
             width = frame_annotation.width
             height = frame_annotation.height
 

@@ -1,0 +1,13 @@
+#
+# Copyright (C) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: MIT
+#
+version: "2.3"
+
+services:
+  cvat:
+    build:
+      context: .
+      args:
+        AUTO_SEGMENTATION: "yes"

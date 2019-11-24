@@ -12,7 +12,7 @@
 /ssh/*
 !/ssh/README.md
 node_modules
-
+/Mask_RCNN/
 
 # Ignore temporary files
 docker-compose.override.yml
@@ -21,7 +21,6 @@ __pycache__
 ._*
 
 # Ignore development npm files
-package-lock.json
 node_modules
 
 .DS_Store

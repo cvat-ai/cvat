@@ -232,7 +232,7 @@ def dump_as_cvat_annotation(file_object, annotations):
 
             if annotations.meta["task"]["z_order"] != "False":
                 dump_data['z_order'] = str(shape.z_order)
-            if "group" in shape and shape.group:
+            if shape.group:
                 dump_data['group_id'] = str(shape.group)
 
 
@@ -436,7 +436,8 @@ def load(file_object, annotations):
                         shape['points'].extend(map(float, pair.split(',')))
 
                 if track is not None:
-                    track.shapes.append(annotations.TrackedShape(**shape))
+                    if shape["keyframe"]:
+                        track.shapes.append(annotations.TrackedShape(**shape))
                 else:
                     annotations.add_shape(annotations.LabeledShape(**shape))
                 shape = None

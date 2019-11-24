@@ -38,7 +38,14 @@ class Results():
             "tracks": []
         }
 
-    def add_box(self, xtl, ytl, xbr, ybr, label, frame_number, attributes=None):
+    # https://stackoverflow.com/a/50928627/2701402
+    def add_box(self, xtl: float, ytl: float, xbr: float, ybr: float, label: int, frame_number: int, attributes: dict=None):
+        """
+        xtl - x coordinate, top left
+        ytl - y coordinate, top left
+        xbr - x coordinate, bottom right
+        ybr - y coordinate, bottom right
+        """
         self.get_shapes().append({
             "label": label,
             "frame": frame_number,
@@ -47,17 +54,17 @@ class Results():
             "attributes": attributes or {},
         })
 
-    def add_points(self, points, label, frame_number, attributes=None):
+    def add_points(self, points: list, label: int, frame_number: int, attributes: dict=None):
         points = self._create_polyshape(points, label, frame_number, attributes)
         points["type"] = "points"
         self.get_shapes().append(points)
 
-    def add_polygon(self, points, label, frame_number, attributes=None):
+    def add_polygon(self, points: list, label: int, frame_number: int, attributes: dict=None):
         polygon = self._create_polyshape(points, label, frame_number, attributes)
         polygon["type"] = "polygon"
         self.get_shapes().append(polygon)
 
-    def add_polyline(self, points, label, frame_number, attributes=None):
+    def add_polyline(self, points: list, label: int, frame_number: int, attributes: dict=None):
         polyline = self._create_polyshape(points, label, frame_number, attributes)
         polyline["type"] = "polyline"
         self.get_shapes().append(polyline)
@@ -69,7 +76,7 @@ class Results():
         return self._results["tracks"]
 
     @staticmethod
-    def _create_polyshape(points, label, frame_number, attributes=None):
+    def _create_polyshape(points: list, label: int, frame_number: int, attributes: dict=None):
         return {
             "label": label,
             "frame": frame_number,

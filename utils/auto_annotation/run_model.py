@@ -28,6 +28,7 @@ def _get_kwargs():
 
     parser.add_argument('--show-images', action='store_true', help='Show the results of the annotation in a window')
     parser.add_argument('--show-image-delay', default=0, type=int, help='Displays the images for a set duration in milliseconds, default is until a key is pressed')
+    parser.add_argument('--serialize', default=False, action='store_true', help='Try to serialize the result')
     
     return vars(parser.parse_args())
 
@@ -70,7 +71,11 @@ def main():
         return
 
     with open(mapping_file) as json_file:
-        mapping = json.load(json_file)
+        try:
+            mapping = json.load(json_file)
+        except json.decoder.JSONDecodeError:
+            logging.critical('JSON file not able to be parsed! Check file')
+            return
 
     try:
         mapping = mapping['label_map']
@@ -98,6 +103,33 @@ def main():
                                               attribute_spec,
                                               py_file,
                                               restricted=restricted)
+
+    if kwargs['serialize']:
+        os.environ['DJANGO_SETTINGS_MODULE'] = 'cvat.settings.production'
+        import django
+        django.setup()
+
+        from cvat.apps.engine.serializers import LabeledDataSerializer
+
+        # NOTE: We're actually using `run_inference_engine_annotation`
+        # incorrectly here. The `mapping` dict is supposed to be a mapping
+        # of integers -> integers and represents the transition from model
+        # integers to the labels in the database. We're using a mapping of
+        # integers -> strings. For testing purposes, this shortcut is fine.
+        # We just want to make sure everything works. Until, that is....
+        # we want to test using the label serializer. Then we have to transition
+        # back to integers, otherwise the serializer complains about have a string
+        # where an integer is expected. We'll just brute force that.
+
+        for shape in results['shapes']:
+            # Change the english label to an integer for serialization validation
+            shape['label_id'] = 1
+
+        serializer = LabeledDataSerializer(data=results)
+
+        if not serializer.is_valid():
+            logging.critical('Data unable to be serialized correctly!')
+            serializer.is_valid(raise_exception=True)
 
     logging.warning('Program didn\'t have any errors.')
     show_images = kwargs.get('show_images', False)
