@@ -22,7 +22,7 @@
 */
 
 const MIN_EDGE_LENGTH = 5;
-const EDGE_MARGIN = 0.5;
+const EDGE_MARGIN = 20;
 
 class CuboidController extends PolyShapeController {
     constructor(cuboidModel) {
@@ -194,39 +194,46 @@ class CuboidController extends PolyShapeController {
 
         // Controllable "horizontal" edges
         view.ft_center.draggable(function (x,y) {
-            return { x: x==this.cx(), y:y };
+            return { x: x==this.cx(), y:y<view.fb_center.cy()-MIN_EDGE_LENGTH};
         }).on('dragmove', function () {
             view.front_top_edge.center(this.cx(),this.cy());
             controller.horizontalEdgeControl(viewModel.top, view.front_top_edge.attr('x2'), view.front_top_edge.attr('y2'));
         });
 
         view.rt_center.draggable(function (x, y) {
-            return { x:x==this.cx(),y:y };
+            return { x:x==this.cx(),y:y<view.rb_center.cy()-MIN_EDGE_LENGTH };
         }).on('dragmove', function () {
             view.right_top_edge.center(this.cx(),this.cy());
             controller.horizontalEdgeControl(viewModel.top, view.right_top_edge.attr('x1'), view.right_top_edge.attr('y1'));
         });
 
         view.fb_center.draggable(function (x, y) {
-            return { x:x==this.cx(),y:y };
+            return { x:x==this.cx(),y:y>view.ft_center.cy()+MIN_EDGE_LENGTH};
         }).on('dragmove', function () {
             view.front_bot_edge.center(this.cx(),this.cy());
             controller.horizontalEdgeControl(viewModel.bot, view.front_bot_edge.attr('x2'), view.front_bot_edge.attr('y2'));
         });
 
         view.rb_center.draggable(function (x, y) {
-            return { x:x==this.cx(),y:y };
+            return { x:x==this.cx(),y:y>view.rt_center.cy()+MIN_EDGE_LENGTH };
         }).on('dragmove', function () {
             view.right_bot_edge.center(this.cx(),this.cy());
             controller.horizontalEdgeControl(viewModel.bot, view.right_bot_edge.attr('x1'), view.right_bot_edge.attr('y1'));
         });
 
         // Controllable faces
-        view.left.draggable().on('dragmove', function () {
+        view.left.draggable(function (x,y){
+            return { x:x<Math.min(viewModel.dr.canvasPoints[0].x,viewModel.fr.canvasPoints[0].x)-MIN_EDGE_LENGTH,y:y };
+        }).on('dragmove', function () {
             controller.faceDragControl(viewModel.left, this.attr('points'));
         });
         view.dorsal.draggable().on('dragmove', function () {
             controller.faceDragControl(viewModel.dorsal, this.attr('points'));
+        });
+        view.right.draggable(function (x,y){
+            return { x:x>Math.min(viewModel.dl.canvasPoints[0].x,viewModel.fl.canvasPoints[0].x)+MIN_EDGE_LENGTH,y:y };
+        }).on('dragmove', function () {
+            controller.faceDragControl(viewModel.right, this.attr('points'),true);
         });
     }
 
@@ -234,9 +241,9 @@ class CuboidController extends PolyShapeController {
     faceDragControl(face, points) {
         points = window.cvat.translate.points.canvasToActual(points);
         points = PolylineModel.convertStringToNumberArray(points);
-
         face.points = points;
-        this.updateViewAndVM();
+        this.refreshView();
+        this.viewModel.updatePoints();
     }
 
     // Drag controls for the non-vertical edges
@@ -304,7 +311,7 @@ class CuboidController extends PolyShapeController {
         else{
             this.viewModel.buildBackRightEdge();
         }
-        this.refreshView(this.cuboidView._uis.shape);
+        this.refreshView();
     }
 
     // Given a midpoint of the cuboid, calculates where the left and right point should fall using the vanishing points
@@ -540,7 +547,6 @@ class Cuboid2PointViewModel {
         this.botIsClockwise = false;
         this.updatePoints();
         this.buildBackEdge();
-        this._updateRotations();
     }
 
     getPoints() {
@@ -553,10 +559,14 @@ class Cuboid2PointViewModel {
 
     updatePoints() {
         this._updateVanishingPoints();
+        // making sure that the edges are vertical
+        this.fr.points[0].x = this.fr.points[1].x;
+        this.fl.points[0].x = this.fl.points[1].x;
+        this.dr.points[0].x = this.dr.points[1].x;
     }
 
     computeSideEdgeConstraints(edge) {
-        let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y - EDGE_MARGIN;
+        let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y + EDGE_MARGIN;
 
         let minY = edge.canvasPoints[1].y-mid_length;
         let maxY = edge.canvasPoints[0].y+mid_length;
@@ -564,7 +574,7 @@ class Cuboid2PointViewModel {
         const y1 = edge.points[0].y;
         const y2 = edge.points[1].y;
 
-        const miny1 = y2 - mid_length
+        const miny1 = y2 - mid_length;
         const maxy1 = y2 - MIN_EDGE_LENGTH;
 
         const miny2 = y1 + MIN_EDGE_LENGTH;
@@ -619,13 +629,7 @@ class Cuboid2PointViewModel {
         }
 
     }
-    _updateRotations() {
-        const rotations = this._getRotations();
-        this.topIsClockwise = rotations.topRotation;
-        this.botIsClockwise = rotations.botRotation;
-    }
 
-    // Computes the vanishing points with current geometry of the cuboid
     _updateVanishingPoints() {
         const leftEdge = convertToArray(this.fl.points);
         const rightEdge = convertToArray(this.dr.points);
@@ -647,71 +651,6 @@ class Cuboid2PointViewModel {
             rightEdge[1][0] -= 0.001;
             this.vpr = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
         }
-    }
-
-    // calculates if the polygon formed by the top points and bottom points are ordered in
-    // clockwise or anticlockwise manner
-    _getRotations() {
-        const top_points = [this.points[0], this.points[2], this.points[4], this.points[6]];
-        const bot_points = [this.points[1], this.points[3], this.points[5], this.points[7]];
-        return { topRotation: this._isClockwise(top_points), botRotation: this._isClockwise(bot_points) };
-    }
-
-    // Sorts the points such that the ordering remains consistent
-    sortEdges() {
-        const rotations = this._getRotations();
-
-        if (this._isFlipped(this.fl)) {
-            swap(0, 1, this.points);
-            swap(2, 3, this.points);
-            swap(4, 5, this.points);
-            swap(6, 7, this.points);
-        }
-
-        // The cuboid is considered badly oriented if both the rotation of the bottom face and the top face have changed
-        if (rotations.botRotation !== this.botIsClockwise && rotations.topRotation !== this.topIsClockwise) {
-            swap(0, 6, this.points);
-            swap(1, 7, this.points);
-            swap(2, 4, this.points);
-            swap(3, 5, this.points);
-        }
-
-        // getting the top points only, by taking every second point
-        const filteredPoints = this.points.filter((value, index) => (index % 2 === 0));
-        const min_x = filteredPoints.reduce((min, p) => (p.x < min ? p.x : min), filteredPoints[0].x);
-        while (this.points[0].x !== min_x) {
-            rotate(-2, this.points);
-        }
-
-        this._updateRotations();
-
-        function swap(a, b, arr) {
-            [arr[a], arr[b]] = [arr[b], arr[a]];
-        }
-
-        // simple function to rotate arrays
-        function rotate(count, array) {
-            const len = array.length;
-            // convert count to value in range [0, len)
-            count = ((count % len) + len) % len;
-
-            Array.prototype.push.apply(array, Array.prototype.splice.call(array, 0, count));
-            return array;
-        }
-    }
-
-    _isFlipped(edge) {
-        return edge.points[0].y > edge.points[1].y;
-    }
-
-    // determines if a list of points are in clockwise order
-    _isClockwise(points) {
-        let sum = 0;
-        const len = points.length;
-        for (let i = 0; i < len; i++) {
-            sum += (points[(i + 1) % len].x - points[i].x) * (points[(i + 1) % len].y + points[i].y);
-        }
-        return sum < 0;
     }
 
     _initEdges() {
@@ -788,7 +727,6 @@ class Cuboid2PointViewModel {
         let p1 = intersection(vp_left, leftPoints[0], vp_right, rightPoints[0]);
         let p2 = intersection(vp_left, leftPoints[1], vp_right, rightPoints[1]);
 
-
         if (p1 === null) {
             p1 = [];
             p1[0] = p2[0];
@@ -799,7 +737,6 @@ class Cuboid2PointViewModel {
             p2[1] = vp_left[1];
         }
 
-        //
         this.points[4] = { x: p1[0], y: p1[1] };
         this.points[5] = { x: p2[0], y: p2[1] };
         this.updatePoints();
@@ -1192,6 +1129,11 @@ SVG.Cube = SVG.invent({
             }).on('mouseout', function () {
                 this.attr({ 'fill-opacity': group.attr('fill-opacity') });
             });
+            this.right.on('mouseover', function () {
+                this.attr({ 'fill-opacity': 0.5 });
+            }).on('mouseout', function () {
+                this.attr({ 'fill-opacity': group.attr('fill-opacity') });
+            });
         },
 
         removeMouseOverEvents() {
@@ -1201,12 +1143,14 @@ SVG.Cube = SVG.invent({
             });
             this.left.off('mouseover').off('mouseout');
             this.dorsal.off('mouseover').off('mouseout');
+            this.right.off('mouseover').off('mouseout');
         },
 
         resetFaceOpacity() {
             const group = this;
             this.left.attr({ 'fill-opacity': group.attr('fill-opacity') });
             this.dorsal.attr({ 'fill-opacity': group.attr('fill-opacity') });
+            this.right.attr({ 'fill-opacity': group.attr('fill-opacity') });
         },
 
         addOccluded(){

@@ -385,7 +385,7 @@ def load(file_object, annotations):
     context = iter(context)
     ev, _ = next(context)
 
-    supported_shapes = ('box', 'polygon', 'polyline', 'points','cuboid')
+    supported_shapes = ('box', 'polygon', 'polyline', 'points', 'cuboid')
 
     track = None
     shape = None
@@ -431,6 +431,24 @@ def load(file_object, annotations):
                     shape['points'].append(el.attrib['ytl'])
                     shape['points'].append(el.attrib['xbr'])
                     shape['points'].append(el.attrib['ybr'])
+                elif el.tag == 'cuboid':
+                    shape['points'].append(el.attrib['xtl1'])
+                    shape['points'].append(el.attrib['ytl1'])
+                    shape['points'].append(el.attrib['xbl1'])
+                    shape['points'].append(el.attrib['ybl1'])
+                    shape['points'].append(el.attrib['xtr1'])
+                    shape['points'].append(el.attrib['ytr1'])
+                    shape['points'].append(el.attrib['xbr1'])
+                    shape['points'].append(el.attrib['ybr1'])
+
+                    shape['points'].append(el.attrib['xtl2'])
+                    shape['points'].append(el.attrib['ytl2'])
+                    shape['points'].append(el.attrib['xbl2'])
+                    shape['points'].append(el.attrib['ybl2'])
+                    shape['points'].append(el.attrib['xtr2'])
+                    shape['points'].append(el.attrib['ytr2'])
+                    shape['points'].append(el.attrib['xbr2'])
+                    shape['points'].append(el.attrib['ybr2'])
                 else:
                     for pair in el.attrib['points'].split(';'):
                         shape['points'].extend(map(float, pair.split(',')))

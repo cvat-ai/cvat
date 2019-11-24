@@ -3327,6 +3327,7 @@ function buildShapeModel(data, type, clientID, color) {
         case 'interpolation_polygon':
         case 'annotation_polygon':
             return new PolygonModel(data, type, clientID, color);
+        case 'interpolation_cuboid':
         case 'annotation_cuboid':
             return new CuboidModel(data, type, clientID, color);
     }
@@ -3347,6 +3348,7 @@ function buildShapeController(shapeModel) {
         case 'interpolation_polygon':
         case 'annotation_polygon':
             return new PolygonController(shapeModel);
+        case 'interpolation_cuboid':
         case 'annotation_cuboid':
             return new CuboidController(shapeModel);
     }
@@ -3368,6 +3370,7 @@ function buildShapeView(shapeModel, shapeController, svgContent, UIContent, text
         case 'interpolation_polygon':
         case 'annotation_polygon':
             return new PolygonView(shapeModel, shapeController, svgContent, UIContent, textsContent);
+        case 'interpolation_cuboid':
         case 'annotation_cuboid':
             return new CuboidView(shapeModel, shapeController, svgContent, UIContent, textsContent);
     }
