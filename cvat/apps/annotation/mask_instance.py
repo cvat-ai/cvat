@@ -9,7 +9,7 @@ format_spec = {
             "display_name": "{name} {format} {version}",
             "format": "ZIP",
             "version": "1.0",
-            "handler": "dump as VOC mask instance"
+            "handler": "dump"
         },
     ],
     "loaders": [
@@ -46,8 +46,7 @@ def dump(file_object, annotations):
         return [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr]
 
     colormap = genearte_pascal_colormap()
-    # 0 is background color
-    instance_colors = OrderedDict((idx, colormap[idx]) for idx in range(1, len(colormap)))
+    instance_colors = OrderedDict((idx, colormap[idx]) for idx in range(len(colormap)))
 
     with ZipFile(file_object, "w") as output_zip:
         for frame_annotation in annotations.group_by_frame():
@@ -69,7 +68,8 @@ def dump(file_object, annotations):
                 rles = maskUtils.frPyObjects([points], height, width)
                 rle = maskUtils.merge(rles)
                 mask = maskUtils.decode(rle)
-                color = instance_colors[cnt] / 255
+                # 0 is used background color. instance mask color started from 1
+                color = instance_colors[cnt+1] / 255
                 idx = (mask > 0)
                 img[idx] = color
 
