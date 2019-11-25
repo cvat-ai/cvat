@@ -17,7 +17,7 @@ format_spec = {
 }
 
 def dump(file_object, annotations):
-    from zipfile import ZipFile
+    from zipfile import ZipFile, ZIP_STORED
     import numpy as np
     import os
     from pycocotools import mask as maskUtils
@@ -26,7 +26,7 @@ def dump(file_object, annotations):
     from collections import OrderedDict
 
     # RGB format, (0, 0, 0) used for background
-    def genearte_pascal_colormap(size=256):
+    def generate_pascal_colormap(size=256):
         colormap = np.zeros((size, 3), dtype=int)
         ind = np.arange(size, dtype=int)
 
@@ -45,12 +45,13 @@ def dump(file_object, annotations):
 
         return [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr]
 
-    colormap = genearte_pascal_colormap()
+    colormap = generate_pascal_colormap()
     labels = [label[1]["name"] for label in annotations.meta["task"]["labels"] if label[1]["name"] != 'background']
     labels.insert(0, 'background')
     label_colors = OrderedDict((label, colormap[idx]) for idx, label in enumerate(labels))
+    instance_colors = OrderedDict((idx, colormap[idx]) for idx in range(len(colormap)))
 
-    with ZipFile(file_object, "w") as output_zip:
+    with ZipFile(file_object, "w", ZIP_STORED) as output_zip:
         for frame_annotation in annotations.group_by_frame():
             image_name = frame_annotation.name
             annotation_name = "{}.png".format(os.path.splitext(os.path.basename(image_name))[0])
@@ -63,18 +64,31 @@ def dump(file_object, annotations):
             if not shapes:
                 continue
             shapes = sorted(shapes, key=lambda x: int(x.z_order))
-            img = np.zeros((height, width, 3))
-            buf = io.BytesIO()
-            for shape in shapes:
+            img_class_mask = np.zeros((height, width, 3))
+            img_instance_mask = np.zeros((height, width, 3))
+            buf_class_mask = io.BytesIO()
+            buf_instance_mask = io.BytesIO()
+            for shape_index, shape in enumerate(shapes):
                 points = shape.points if shape.type != 'rectangle' else convert_box_to_polygon(shape.points)
                 rles = maskUtils.frPyObjects([points], height, width)
                 rle = maskUtils.merge(rles)
                 mask = maskUtils.decode(rle)
-                color = label_colors[shape.label] / 255
                 idx = (mask > 0)
-                img[idx] = color
+                # get corresponding color for each class
+                label_color = label_colors[shape.label] / 255
+                img_class_mask[idx] = label_color
+                # get corresponding instance color for each shape
+                instance_color = instance_colors[shape_index+1] / 255
+                img_instance_mask[idx] = instance_color
 
-            matplotlib.image.imsave(buf, img, format='png')
-            output_zip.writestr(annotation_name, buf.getvalue())
+            # write class mask into SegmentationClass
+            matplotlib.image.imsave(buf_class_mask, img_class_mask, format='png')
+            output_zip.writestr(os.path.join("SegmentationClass", annotation_name), buf_class_mask.getvalue())
+            # write instance mask into SegmentationObject
+            matplotlib.image.imsave(buf_instance_mask, img_instance_mask, format='png')
+            output_zip.writestr(os.path.join("SegmentationObject", annotation_name), buf_instance_mask.getvalue())
+        # Store color map for each class
         labels = '\n'.join('{}:{}'.format(label, ','.join(str(i) for i in color)) for label, color in label_colors.items())
-        output_zip.writestr('colormap.txt', labels)
+        output_zip.writestr('class_colormap.txt', labels)
+        labels = '\n'.join('{}:{}'.format(label, ','.join(str(i) for i in color)) for label, color in instance_colors.items())
+        output_zip.writestr('instance_colormap.txt', labels)
