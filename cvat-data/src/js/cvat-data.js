@@ -166,9 +166,9 @@ class FrameProvider {
     }
 
     cropImage(imageBuffer, imageWidth, imageHeight, xOffset, yOffset, width, height) {
-        if (xOffset + width === imageWidth &&
-            yOffset + height === imageHeight) {
-                return new Uint8ClampedArray(imageBuffer);
+        if (xOffset === 0 && width === imageWidth &&
+            yOffset === 0 && height === imageHeight) {
+                return new ImageData(new Uint8ClampedArray(imageBuffer), width, height);
         }
         const source = new Uint32Array(imageBuffer);
 
@@ -178,7 +178,7 @@ class FrameProvider {
         const rgbaInt8Clamped = new Uint8ClampedArray(buffer);
 
         if (imageWidth === width) {
-            return new Uint8ClampedArray(imageBuffer, yOffset * 4, bufferSize);
+            return new ImageData(new Uint8ClampedArray(imageBuffer, yOffset * 4, bufferSize), width, height);
         }
 
         let writeIdx = 0;
@@ -188,34 +188,13 @@ class FrameProvider {
             writeIdx += width;
         }
 
-        return rgbaInt8Clamped;
-    }
-
-    upscale(imageBuffer, imageWidth, imageHeight) {
-        const scaleFactor = Math.ceil(this._height / imageHeight);
-        if (scaleFactor === 1) {
-            return {
-                data: imageBuffer,
-                width: imageWidth,
-                height: imageHeight,
-            }
-        }
-        const targetWidth = imageWidth * scaleFactor;
-        const targetHeight = imageHeight * scaleFactor;
-        const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d');
-        const imData = ctx.createImageData(imageWidth, imageHeight);
-        imData.data.set(new Uint8ClampedArray(imageBuffer));
-        ctx.putImageData(imData, 0, 0);
-        ctx.scale(scaleFactor, scaleFactor);
-        ctx.drawImage(canvas, 0, 0);
-        return ctx.getImageData(0, 0, targetWidth, targetHeight);
+        return new ImageData(rgbaInt8Clamped, width, height);
     }
 
     async startDecode() {
-         if (this._blockType === BlockType.TSVIDEO){
+        const height = this._height;
+        const width = this._width;
+        if (this._blockType === BlockType.TSVIDEO){
             const release = await this._mutex.acquireQueued();
             const start = this._requestedBlockDecode.start;
             const end = this._requestedBlockDecode.end;
@@ -239,16 +218,18 @@ class FrameProvider {
             const t0 = performance.now();
             worker.onmessage = (e) => {
                 if (e.data.consoleLog) { // ignore initialization message
-
                   return;
                 }
-                const imData = this.upscale(e.data.buf, e.data.width, e.data.height);
-                console.log(`imData.len: ${imData.data.length}; w: ${imData.width}; h: ${imData.height}`);
-                this._frames[index] = this.cropImage(imData.data.buffer, imData.width, imData.height, 0, 0, this._width, this._height);
+
+                const scaleFactor = Math.ceil(this._height / e.data.height);
+                this._frames[index] = this.cropImage(
+                    e.data.buf, e.data.width, e.data.height, 0, 0,
+                    Math.floor(width / scaleFactor), Math.floor(height / scaleFactor));
+
                 this._decodingBlocks[`${start}:${end}`].resolveCallback(index);
                 if (index === end) {
                     const t = performance.now() - t0;
-                    console.log(`Chunk decode time: ${t}; fps: ${36000/t}`);
+                    console.log(`Decode time : ${t}; fps: ${36000/t}`);
                     this._decodeThreadCount--;
                     delete this._decodingBlocks[`${start}:${end}`];
                     worker.terminate();
@@ -295,7 +276,6 @@ class FrameProvider {
             release();
 
         } else {
-
             const release = await this._mutex.acquireQueued();
             let start = this._requestedBlockDecode.start;
             let end = this._requestedBlockDecode.end;
@@ -306,25 +286,29 @@ class FrameProvider {
 
             const worker = new Worker('/static/engine/js/unzip_imgs.js');
 
-            worker.onerror = (function (e) {
+            worker.onerror = (e) => {
                 console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
                 this._decodingBlocks[`${start}:${end}`].rejectCallback();
                 this._decodeThreadCount--;
-            });
+            };
 
             worker.postMessage({block : block,
                                 start : start,
                                   end : end });
             this._decodeThreadCount++;
 
-            worker.onmessage = (function (event){
-               this._frames[event.data.index] = event.data.data;
-               this._decodingBlocks[`${start}:${end}`].resolveCallback(event.data.index);
-               if (event.data.isEnd){
-                    delete this._decodingBlocks[`${start}:${end}`];
-                    this._decodeThreadCount--;
-               }
-            }).bind(this);
+            worker.onmessage = (event) => {
+                this._frames[event.data.index] = {
+                    data: event.data.data,
+                    width,
+                    height,
+                };
+                this._decodingBlocks[`${start}:${end}`].resolveCallback(event.data.index);
+                if (event.data.isEnd){
+                        delete this._decodingBlocks[`${start}:${end}`];
+                        this._decodeThreadCount--;
+                }
+            };
 
             release();
         }

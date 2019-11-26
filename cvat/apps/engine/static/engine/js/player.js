@@ -33,15 +33,11 @@ class FrameProviderWrapper extends Listener {
             if (frameNumber >= start && frameNumber <= stop) {
                 const data = await frameData.data();
                 this._loaded = frameNumber;
-                if (window.cvatTask.dataChunkType === 'video'){
-                    this._result = new ImageData(data, frameData.width, frameData.height);
-                } else {
-                    this._result = {
-                        data,
-                        width: frameData.width,
-                        height: frameData.height,
-                    };
-                }
+                this._result = {
+                    data,
+                    renderWidth: frameData.width,
+                    renderHeight: frameData.height,
+                };
                 return this._result;
             }
         }
@@ -53,15 +49,11 @@ class FrameProviderWrapper extends Listener {
         // but we promise to notify the player when frame is loaded
         frameData.data().then((data) => {
             this._loaded = frameNumber;
-            if (window.cvatTask.dataChunkType === 'video'){
-               this._result = new ImageData(data, frameData.width, frameData.height);
-            } else {
-                this._result = {
-                   data,
-                   width: frameData.width,
-                   height: frameData.height,
-                };
-            }
+            this._result = {
+                data,
+                renderWidth: frameData.width,
+                renderHeight: frameData.height,
+            };
 
             this.notify();
         }).catch((error) => {
@@ -276,8 +268,8 @@ class PlayerModel extends Listener {
         }
 
         window.cvat.player.frames.current = this._frame.current;
-        window.cvat.player.geometry.frameWidth = frame.width;
-        window.cvat.player.geometry.frameHeight = frame.height;
+        window.cvat.player.geometry.frameWidth = frame.renderWidth;
+        window.cvat.player.geometry.frameHeight = frame.renderHeight;
         this._image = frame;
 
         Logger.addEvent(Logger.EventType.changeFrame, {
@@ -312,16 +304,16 @@ class PlayerModel extends Listener {
 
         if ((rotation / 90) % 2) {
             // 90, 270, ..
-            this._geometry.scale = Math.min(this._geometry.width / this._image.height,
-                this._geometry.height / this._image.width);
+            this._geometry.scale = Math.min(this._geometry.width / this._image.renderHeight,
+                this._geometry.height / this._image.renderWidth);
         } else {
             // 0, 180, ..
-            this._geometry.scale = Math.min(this._geometry.width / this._image.width,
-                this._geometry.height / this._image.height);
+            this._geometry.scale = Math.min(this._geometry.width / this._image.renderWidth,
+                this._geometry.height / this._image.renderHeight);
         }
 
-        this._geometry.top = (this._geometry.height - this._image.height * this._geometry.scale) / 2;
-        this._geometry.left = (this._geometry.width - this._image.width * this._geometry.scale) / 2;
+        this._geometry.top = (this._geometry.height - this._image.renderHeight * this._geometry.scale) / 2;
+        this._geometry.left = (this._geometry.width - this._image.renderWidth * this._geometry.scale) / 2;
 
         window.cvat.player.rotation = rotation;
         window.cvat.player.geometry.scale = this._geometry.scale;
@@ -330,8 +322,8 @@ class PlayerModel extends Listener {
 
     focus(xtl, xbr, ytl, ybr) {
         if (!this._image) return;
-        const fittedScale = Math.min(this._geometry.width / this._image.width,
-            this._geometry.height / this._image.height);
+        const fittedScale = Math.min(this._geometry.width / this._image.renderWidth,
+            this._geometry.height / this._image.renderHeight);
 
         const boxWidth = xbr - xtl;
         const boxHeight = ybr - ytl;
@@ -343,8 +335,8 @@ class PlayerModel extends Listener {
 
         if (this._geometry.scale < fittedScale) {
             this._geometry.scale = fittedScale;
-            this._geometry.top = (this._geometry.height - this._image.height * this._geometry.scale) / 2;
-            this._geometry.left = (this._geometry.width - this._image.width * this._geometry.scale) / 2;
+            this._geometry.top = (this._geometry.height - this._image.renderHeight * this._geometry.scale) / 2;
+            this._geometry.left = (this._geometry.width - this._image.renderWidth * this._geometry.scale) / 2;
         } else {
             this._geometry.left = (this._geometry.width / this._geometry.scale - xtl * 2 - boxWidth) * this._geometry.scale / 2;
             this._geometry.top = (this._geometry.height / this._geometry.scale - ytl * 2 - boxHeight) * this._geometry.scale / 2;
@@ -899,22 +891,22 @@ class PlayerView {
         this._loadingUI.addClass('hidden');
         if (this._latestDrawnImage !== image) {
             this._latestDrawnImage = image;
+            const ctx = this._playerCanvasBackground[0].getContext('2d');
             if (window.cvatTask.dataChunkType === 'video') {
-                this._playerCanvasBackground.attr('width', image.width);
-                this._playerCanvasBackground.attr('height', image.height);
-                const ctx = this._playerCanvasBackground[0].getContext('2d');
-                const imageData = ctx.createImageData(image.width, image.height);
-                imageData.data.set(image.data);
+                this._playerCanvasBackground.attr('width', image.renderWidth);
+                this._playerCanvasBackground.attr('height', image.renderHeight);
+                const imageData = image.data;
+                ctx.scale(image.renderWidth / image.data.width, image.renderHeight / image.data.height);
                 ctx.putImageData(imageData, 0, 0);
+                ctx.drawImage(this._playerCanvasBackground[0], 0, 0);
             } else {
-                const ctx = this._playerCanvasBackground[0].getContext('2d');
                 var img = new Image();
                 img.onload = function() {
                     this._playerCanvasBackground.attr('width', img.width);
                     this._playerCanvasBackground.attr('height', img.height);
                     ctx.drawImage(img, 0, 0);
                 }.bind(this);
-                img.src = image.data;
+                img.src = image.data.data;
             }
         }
 
