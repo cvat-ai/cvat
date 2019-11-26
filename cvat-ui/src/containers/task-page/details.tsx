@@ -2,9 +2,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import DetailsComponent from '../../components/task-page/details';
-import { CombinedState } from '../../reducers/root-reducer';
 import { updateTaskAsync } from '../../actions/tasks-actions';
-import { Task } from '../../reducers/interfaces';
+import {
+    Task,
+    CombinedState,
+} from '../../reducers/interfaces';
 
 interface OwnProps {
     task: Task;

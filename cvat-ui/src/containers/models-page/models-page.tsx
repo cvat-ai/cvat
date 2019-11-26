@@ -2,8 +2,10 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import ModelsPageComponent from '../../components/models-page/models-page';
-import { CombinedState } from '../../reducers/root-reducer';
-import { Model } from '../../reducers/interfaces';
+import {
+    Model,
+    CombinedState,
+} from '../../reducers/interfaces';
 import {
     getModelsAsync,
     deleteModelAsync,
@@ -20,7 +22,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    getModels(OpenVINO: boolean, RCNN: boolean, MaskRCNN: boolean): void;
+    getModels(): void;
     deleteModel(id: number): void;
 }
 
@@ -41,8 +43,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        getModels(OpenVINO: boolean, RCNN: boolean, MaskRCNN: boolean) {
-            dispatch(getModelsAsync(OpenVINO, RCNN, MaskRCNN));
+        getModels() {
+            dispatch(getModelsAsync());
         },
         deleteModel(id: number) {
             dispatch(deleteModelAsync(id));
@@ -63,12 +65,7 @@ function ModelsPageContainer(props: DispatchToProps & StateToProps) {
                 modelsFetchingError={props.modelsFetchingError}
                 registeredUsers={props.registeredUsers}
                 models={props.models}
-                getModels={props.getModels.bind(
-                    null,
-                    props.installedAutoAnnotation,
-                    props.installedTFAnnotation,
-                    props.installedTFSegmentation
-                )}
+                getModels={props.getModels}
                 deleteModel={props.deleteModel}
             /> : null
     );

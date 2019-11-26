@@ -2,7 +2,8 @@ import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 
 import getCore from '../core';
-import { Model, ModelFiles } from '../reducers/interfaces';
+import { getCVATStore } from '../store';
+import { Model, ModelFiles, CombinedState } from '../reducers/interfaces';
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
@@ -15,15 +16,14 @@ export enum ModelsActionTypes {
     CREATE_MODEL_SUCCESS = 'CREATE_MODEL_SUCCESS',
     CREATE_MODEL_FAILED = 'CREATE_MODEL_FAILED',
     CREATE_MODEL_STATUS_UPDATED = 'CREATE_MODEL_STATUS_UPDATED',
-    UPDATE_MODEL = 'UPDATE_MODEL',
-    UPDATE_MODEL_SUCCESS = 'UPDATE_MODEL_SUCCESS',
-    UPDATE_MODEL_FAILED = 'UPDATE_MODEL_FAILED',
     INFER_MODEL = 'INFER_MODEL',
     INFER_MODEL_SUCCESS = 'INFER_MODEL_SUCCESS',
     INFER_MODEL_FAILED = 'INFER_MODEL_FAILED',
-    COLLECT_INFERENCE_STATUS = 'COLLECT_INFERENCE_STATUS',
-    COLLECT_INFERENCE_STATUS_SUCCESS = 'COLLECT_INFERENCE_STATUS_SUCCESS',
-    COLLECT_INFERENCE_STATUS_FAILED = 'COLLECT_INFERENCE_STATUS_FAILED',
+    GET_INFERENCE_STATUS = 'GET_INFERENCE_STATUS',
+    GET_INFERENCE_STATUS_SUCCESS = 'GET_INFERENCE_STATUS_SUCCESS',
+    GET_INFERENCE_STATUS_FAILED = 'GET_INFERENCE_STATUS_FAILED',
+    SHOW_RUN_MODEL_DIALOG = 'SHOW_RUN_MODEL_DIALOG',
+    CLOSE_RUN_MODEL_DIALOG = 'CLOSE_RUN_MODEL_DIALOG',
 }
 
 export enum PreinstalledModels {
@@ -65,9 +65,15 @@ function getModelsFailed(error: any): AnyAction {
     return action;
 }
 
-export function getModelsAsync(OpenVINO: boolean, RCNN: boolean, MaskRCNN: boolean):
+export function getModelsAsync():
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        const store = getCVATStore();
+        const state: CombinedState = store.getState();
+        const OpenVINO = state.plugins.plugins.AUTO_ANNOTATION;
+        const RCNN = state.plugins.plugins.TF_ANNOTATION;
+        const MaskRCNN = state.plugins.plugins.TF_SEGMENTATION;
+
         dispatch(getModels());
         const models: Model[] = [];
 
@@ -75,7 +81,11 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             if (OpenVINO) {
                 const response = await core.server.request(
                     `${baseURL}/auto_annotation/meta/get`, {
-                        method: 'GET',
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        data: JSON.stringify([]),
                     },
                 );
 
@@ -150,6 +160,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             }
         } catch (error) {
             dispatch(getModelsFailed(error));
+            return;
         }
 
         dispatch(getModelsSuccess(models));
@@ -199,6 +210,7 @@ export function deleteModelAsync(id: number): ThunkAction<Promise<void>, {}, {},
             });
         } catch (error) {
             dispatch(deleteModelFailed(id, error));
+            return;
         }
 
         dispatch(deleteModelSuccess(id));
@@ -311,39 +323,6 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
-function updateModel(): AnyAction {
-    const action = {
-        type: ModelsActionTypes.UPDATE_MODEL,
-        payload: {},
-    };
-
-    return action;
-}
-
-function updateModelSuccess(): AnyAction {
-    const action = {
-        type: ModelsActionTypes.UPDATE_MODEL_SUCCESS,
-        payload: {},
-    };
-
-    return action;
-}
-
-function updateModelFailed(): AnyAction {
-    const action = {
-        type: ModelsActionTypes.UPDATE_MODEL_FAILED,
-        payload: {},
-    };
-
-    return action;
-}
-
-export function updateModelAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
-    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-
-    };
-}
-
 function inferModel(): AnyAction {
     const action = {
         type: ModelsActionTypes.INFER_MODEL,
@@ -362,26 +341,76 @@ function inferModelSuccess(): AnyAction {
     return action;
 }
 
-function inferModelFailed(): AnyAction {
+function inferModelFailed(error: any): AnyAction {
     const action = {
         type: ModelsActionTypes.INFER_MODEL_FAILED,
-        payload: {},
+        payload: {
+            error,
+        },
     };
 
     return action;
 }
 
-function updateInferStatus(): AnyAction {
-    const action = {
-        type: ModelsActionTypes.UPDATE_INFER_STATUS,
-        payload: {},
-    };
-
-    return action;
-}
-
-export function inferModelAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function inferModelAsync(
+    taskInstance: any,
+    model: Model,
+    mapping: {
+        [index: string]: string;
+    },
+    cleanOut: boolean,
+): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(inferModel());
 
+        try {
+            if (model.name === PreinstalledModels.RCNN) {
+                await core.server.request(
+                    `${baseURL}/tensorflow/annotation/create/task/${taskInstance.id}`,
+                );
+            } else if (model.name === PreinstalledModels.MaskRCNN) {
+                await core.server.request(
+                    `${baseURL}/tensorflow/segmentation/create/task/${taskInstance.id}`,
+                );
+            } else {
+                await core.server.request(
+                    `${baseURL}/auto_annotation/start/${model.id}/${taskInstance.id}`, {
+                        method: 'POST',
+                        data: JSON.stringify({
+                            reset: cleanOut,
+                            labels: mapping,
+                        }),
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    },
+                );
+            }
+        } catch (error) {
+            dispatch(inferModelFailed(error));
+            return;
+        }
+
+        dispatch(inferModelSuccess());
     };
+}
+
+export function closeRunModelDialog(): AnyAction {
+    const action = {
+        type: ModelsActionTypes.CLOSE_RUN_MODEL_DIALOG,
+        payload: {},
+    };
+
+    return action;
+}
+
+export function showRunModelDialog(taskInstance: any): AnyAction {
+    const action = {
+        type: ModelsActionTypes.SHOW_RUN_MODEL_DIALOG,
+        payload: {
+            taskInstance,
+        },
+    };
+
+    return action;
 }

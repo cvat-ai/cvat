@@ -3,8 +3,10 @@ import { connect } from 'react-redux';
 
 import CreateModelPageComponent from '../../components/create-model-page/create-model-page';
 import { createModelAsync } from '../../actions/models-actions';
-import { CombinedState } from '../../reducers/root-reducer';
-import { ModelFiles } from '../../reducers/interfaces';
+import {
+    ModelFiles,
+    CombinedState,
+} from '../../reducers/interfaces';
 
 interface StateToProps {
     isAdmin: boolean;

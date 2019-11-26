@@ -3,8 +3,8 @@ import { connect } from 'react-redux';
 
 import {
     TasksQuery,
+    CombinedState
 } from '../../reducers/interfaces';
-import { CombinedState } from '../../reducers/root-reducer';
 
 import TasksPageComponent from '../../components/tasks-page/tasks-page';
 

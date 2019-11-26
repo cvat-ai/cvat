@@ -123,7 +123,7 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                     }/>
                 </Col>
                 <Col span={18}>
-                    {status ? <Alert message={`${status}`}/> : null}
+                    {status && <Alert message={`${status}`}/>}
                 </Col>
                 <Col span={6}>
                     <Button

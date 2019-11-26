@@ -2,14 +2,18 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import { logoutAsync } from '../../actions/auth-actions';
-import { CombinedState } from '../../reducers/root-reducer';
-import { SupportedPlugins } from '../../reducers/interfaces';
+import {
+    SupportedPlugins,
+    CombinedState,
+} from '../../reducers/interfaces';
 
 import HeaderComponent from '../../components/header/header';
 
 interface StateToProps {
     installedAnalytics: boolean;
     installedAutoAnnotation: boolean;
+    installedTFSegmentation: boolean;
+    installedTFAnnotation: boolean;
     username: string;
     logoutError: any;
 }
@@ -24,6 +28,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         installedAnalytics: plugins[SupportedPlugins.ANALYTICS],
         installedAutoAnnotation: plugins[SupportedPlugins.AUTO_ANNOTATION],
+        installedTFSegmentation: plugins[SupportedPlugins.TF_SEGMENTATION],
+        installedTFAnnotation: plugins[SupportedPlugins.TF_ANNOTATION],
         username: auth.user.username,
         logoutError: auth.logoutError,
     };
@@ -39,6 +45,8 @@ function HeaderContainer(props: StateToProps & DispatchToProps) {
     return (
         <HeaderComponent
             installedAnalytics={props.installedAnalytics}
+            installedTFAnnotation={props.installedTFAnnotation}
+            installedTFSegmentation={props.installedTFSegmentation}
             installedAutoAnnotation={props.installedAutoAnnotation}
             onLogout={props.logout}
             username={props.username}

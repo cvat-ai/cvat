@@ -14,21 +14,12 @@ import {
 
 import moment from 'moment';
 
-import ActionsMenu from '../actions-menu/actions-menu';
+import ActionsMenuContainer from '../../containers/actions-menu/actions-menu';
 
 export interface TaskItemProps {
-    installedTFAnnotation: boolean;
-    installedAutoAnnotation: boolean;
     taskInstance: any;
     previewImage: string;
-    dumpActivities: string[] | null;
-    loadActivity: string | null;
-    loaders: any[];
-    dumpers: any[];
     deleted: boolean;
-    onDeleteTask: (taskInstance: any) => void;
-    onDumpAnnotation: (task: any, dumper: any) => void;
-    onLoadAnnotation: (task: any, loader: any, file: File) => void;
 }
 
 class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps> {
@@ -133,18 +124,9 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     <Col>
                         <Text className='cvat-black-color'>Actions</Text>
                         <Dropdown overlay={
-                            ActionsMenu({
-                                taskInstance: this.props.taskInstance,
-                                loaders: this.props.loaders,
-                                dumpers: this.props.dumpers,
-                                loadActivity: this.props.loadActivity,
-                                dumpActivities: this.props.dumpActivities,
-                                installedTFAnnotation: this.props.installedTFAnnotation,
-                                installedAutoAnnotation: this.props.installedAutoAnnotation,
-                                onLoadAnnotation: this.props.onLoadAnnotation,
-                                onDumpAnnotation: this.props.onDumpAnnotation,
-                                onDeleteTask: this.props.onDeleteTask,
-                            })
+                            <ActionsMenuContainer
+                                taskInstance={this.props.taskInstance}
+                            />
                         }>
                             <Icon className='cvat-task-item-menu-icon' component={subMenuIcon}/>
                         </Dropdown>

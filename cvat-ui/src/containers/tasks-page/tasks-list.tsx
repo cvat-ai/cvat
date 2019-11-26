@@ -4,11 +4,8 @@ import { connect } from 'react-redux';
 import {
     TasksState,
     TasksQuery,
-} from '../../reducers/interfaces';
-
-import {
     CombinedState,
-} from '../../reducers/root-reducer';
+} from '../../reducers/interfaces';
 
 import TasksListComponent from '../../components/tasks-page/task-list';
 

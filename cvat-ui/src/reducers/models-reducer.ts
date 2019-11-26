@@ -7,9 +7,12 @@ const defaultState: ModelsState = {
     initialized: false,
     creatingStatus: '',
     creatingError: null,
+    startingError: null,
     fetchingError: null,
     deletingErrors: {},
     models: [],
+    visibleRunWindows: false,
+    activeRunTask: null,
     runnings: [],
 };
 
@@ -85,6 +88,32 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
                 ...state,
                 initialized: false,
                 creatingStatus: 'CREATED',
+            };
+        }
+        case ModelsActionTypes.INFER_MODEL: {
+            return {
+                ...state,
+                startingError: null,
+            };
+        }
+        case ModelsActionTypes.INFER_MODEL_FAILED: {
+            return {
+                ...state,
+                startingError: action.payload.error,
+            };
+        }
+        case ModelsActionTypes.SHOW_RUN_MODEL_DIALOG: {
+            return {
+                ...state,
+                visibleRunWindows: true,
+                activeRunTask: action.payload.taskInstance,
+            };
+        }
+        case ModelsActionTypes.CLOSE_RUN_MODEL_DIALOG: {
+            return {
+                ...state,
+                visibleRunWindows: false,
+                activeRunTask: null,
             };
         }
         default: {

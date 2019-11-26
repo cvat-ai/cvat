@@ -127,12 +127,15 @@ export interface ModelsState {
     initialized: boolean;
     creatingStatus: string;
     creatingError: any;
+    startingError: any;
     fetchingError: any;
     deletingErrors: { // by id
         [index: number]: any;
     };
     models: Model[];
     runnings: Running[];
+    visibleRunWindows: boolean;
+    activeRunTask: any;
 }
 
 export interface ModelFiles {
@@ -141,4 +144,14 @@ export interface ModelFiles {
     bin: string | File;
     py: string | File;
     json: string | File;
+}
+
+export interface CombinedState {
+    auth: AuthState;
+    tasks: TasksState;
+    users: UsersState;
+    share: ShareState;
+    formats: FormatsState;
+    plugins: PluginsState;
+    models: ModelsState;
 }

@@ -2,9 +2,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import JobListComponent from '../../components/task-page/job-list';
-import { CombinedState } from '../../reducers/root-reducer';
 import { updateJobAsync } from '../../actions/tasks-actions';
-import { Task } from '../../reducers/interfaces';
+import {
+    Task,
+    CombinedState,
+} from '../../reducers/interfaces';
 
 interface OwnProps {
     task: Task;

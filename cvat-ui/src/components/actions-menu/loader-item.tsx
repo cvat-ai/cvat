@@ -27,7 +27,7 @@ export default function LoaderItemComponent(props: LoaderItemComponentProps) {
     const pending = !!loadingWithThisLoader;
 
     return (
-        <Menu.Item className='cvat-task-item-load-submenu-item' key={loader.name}>
+        <Menu.Item className='cvat-actions-menu-load-submenu-item' key={loader.name}>
             <Upload
                 accept={`.${loader.format}`}
                 multiple={false}
@@ -44,7 +44,7 @@ export default function LoaderItemComponent(props: LoaderItemComponentProps) {
                 <Button block={true} type='link' disabled={!!props.loadActivity}>
                     <Icon type='upload'/>
                     <Text>{loader.name}</Text>
-                    {pending ? <Icon type='loading'/> : null}
+                    {pending && <Icon type='loading'/>}
                 </Button>
             </Upload>
         </Menu.Item>

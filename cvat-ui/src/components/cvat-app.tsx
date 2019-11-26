@@ -17,6 +17,7 @@ import AnnotationPageContainer from '../containers/annotation-page/annotation-pa
 import LoginPageContainer from '../containers/login-page/login-page';
 import RegisterPageContainer from '../containers/register-page/register-page';
 import HeaderContainer from '../containers/header/header';
+import ModelRunnerModalContainer from '../containers/model-runner-dialog/model-runner-dialog';
 
 import FeedbackComponent from './feedback';
 
@@ -118,6 +119,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                                     <Redirect push to='/tasks'/>
                                 </Switch>
                                 <FeedbackComponent/>
+                                <ModelRunnerModalContainer/>
                             </Layout.Content>
                         </Layout>
                     </BrowserRouter>

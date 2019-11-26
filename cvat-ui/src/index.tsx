@@ -3,16 +3,19 @@ import ReactDOM from 'react-dom';
 import { connect, Provider } from 'react-redux';
 
 import CVATApplication from './components/cvat-app';
-import createCVATStore from './store';
+
+import createRootReducer from './reducers/root-reducer';
+import createCVATStore, { getCVATStore } from './store';
 
 import { authorizedAsync } from './actions/auth-actions';
 import { gettingFormatsAsync } from './actions/formats-actions';
 import { checkPluginsAsync } from './actions/plugins-actions';
 import { getUsersAsync } from './actions/users-actions';
 
-import { CombinedState } from './reducers/root-reducer';
+import { CombinedState } from './reducers/interfaces';
 
-const cvatStore = createCVATStore();
+createCVATStore(createRootReducer);
+const cvatStore = getCVATStore();
 
 interface StateToProps {
     pluginsInitialized: boolean;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { registerAsync } from '../../actions/auth-actions';
-import { CombinedState } from '../../reducers/root-reducer';
+import { CombinedState } from '../../reducers/interfaces';
 import RegisterPageComponent from '../../components/register-page/register-page';
 
 interface StateToProps {

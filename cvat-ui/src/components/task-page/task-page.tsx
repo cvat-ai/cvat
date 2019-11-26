@@ -9,7 +9,7 @@ import {
     Modal,
 } from 'antd';
 
-import TopBarContainer from '../../containers/task-page/top-bar';
+import TopBarComponent from './top-bar';
 import DetailsContainer from '../../containers/task-page/details';
 import JobListContainer from '../../containers/task-page/job-list';
 import { Task } from '../../reducers/interfaces';
@@ -73,7 +73,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
             return (
                 <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
                     <Col md={22} lg={18} xl={16} xxl={14}>
-                        <TopBarContainer task={this.props.task}/>
+                        <TopBarComponent taskInstance={this.props.task.instance}/>
                         <DetailsContainer task={this.props.task}/>
                         <JobListContainer task={this.props.task}/>
                     </Col>

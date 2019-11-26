@@ -5,8 +5,10 @@ import { TreeNodeNormal } from 'antd/lib/tree/Tree'
 import FileManagerComponent, { Files } from '../../components/file-manager/file-manager';
 
 import { loadShareDataAsync } from '../../actions/share-actions';
-import { ShareItem } from '../../reducers/interfaces';
-import { CombinedState } from '../../reducers/root-reducer';
+import {
+    ShareItem,
+    CombinedState,
+} from '../../reducers/interfaces';
 
 interface OwnProps {
     withRemote: boolean;

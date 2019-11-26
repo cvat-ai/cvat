@@ -299,20 +299,29 @@
             filter: invert(0.5);
 }
 
-.cvat-task-item-menu > hr {
+.ant-menu.cvat-actions-menu {
+    -webkit-box-shadow: 0 0 17px rgba(0,0,0,0.2);
+            box-shadow: 0 0 17px rgba(0,0,0,0.2);
+}
+
+.cvat-actions-menu > hr {
     border: 0.5px solid #D6D6D6;
 }
 
-.cvat-task-item-load-submenu-item {
-    padding: 0px;
+.cvat-actions-menu > *:hover {
+    background-color: rgba(24,144,255,0.05);
 }
 
-.cvat-task-item-load-submenu-item > span > .ant-upload {
-    width: 100%;
+.cvat-actions-menu-load-submenu-item:hover {
+    background-color: rgba(24,144,255,0.05);
 }
 
-.cvat-task-item-dump-submenu-item {
-    padding: 0px;
+.cvat-actions-menu-dump-submenu-item:hover {
+    background-color: rgba(24,144,255,0.05);
+}
+
+.cvat-actions-menu > li:nth-child(2) > div > span {
+    margin-right: 15px;
 }
 
 .cvat-task-item-preview {
@@ -754,6 +763,18 @@ textarea.ant-input.cvat-raw-labels-viewer {
     margin-top: 10px;
     float: right;
     width: 120px;
+}
+
+.cvat-run-model-dialog > div:not(first-child) {
+    margin-top: 10px;
+}
+
+.cvat-run-model-dialog-info-icon {
+    color: blue;
+}
+
+.cvat-run-model-dialog-remove-mapping-icon {
+    color: red;
 }
 
 #root {
