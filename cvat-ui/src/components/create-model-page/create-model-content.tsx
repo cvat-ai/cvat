@@ -108,7 +108,9 @@ export default class CreateModelContent extends React.PureComponent<Props> {
             <Row type='flex' justify='start' align='middle' className='cvat-create-model-content'>
                 <Col span={24}>
                     <Tooltip overlay='Click to open guide'>
-                        <Icon onClick={() => {window.open(guideLink, '_blank')}} type='question-circle'/>
+                        <Icon onClick={() => {
+                            window.open(guideLink, '_blank')
+                        }} type='question-circle'/>
                     </Tooltip>
                 </Col>
                 <Col span={24}>

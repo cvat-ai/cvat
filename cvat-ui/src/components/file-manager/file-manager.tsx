@@ -81,13 +81,13 @@ export default class FileManager extends React.PureComponent<Props, State> {
                         Support for a bulk images or a single video
                     </p>
                 </Upload.Dragger>
-                { this.state.files.local.length ?
+                { !!this.state.files.local.length &&
                     <>
                         <br/>
                         <Text className='cvat-black-color'>
-                            {this.state.files.local.length} file(s) selected
+                            {`${this.state.files.local.length} file(s) selected`}
                         </Text>
-                    </> : null
+                    </>
                 }
             </Tabs.TabPane>
         );
@@ -189,7 +189,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                 })}>
                     { this.renderLocalSelector() }
                     { this.renderShareSelector() }
-                    { this.props.withRemote ? this.renderRemoteSelector() : null }
+                    { this.props.withRemote && this.renderRemoteSelector() }
                 </Tabs>
             </>
         );
