@@ -236,8 +236,8 @@ def _create_thread(tid, data):
             stop=db_data.stop_frame,
         ))
     db_task.mode = task_mode
-    db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
-    db_data.original_chunk_type = db_data.compressed_chunk_type
+    db_data.compressed_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' and not data['use_zip_chunks'] else models.DataChoice.IMAGESET
+    db_data.original_chunk_type = models.DataChoice.VIDEO if task_mode == 'interpolation' else models.DataChoice.IMAGESET
 
     def update_progress(progress):
         job.meta['status'] = 'Images are being compressed... {}%'.format(round(progress * 100))
@@ -249,6 +249,8 @@ def _create_thread(tid, data):
             chunk_size=db_data.chunk_size,
             compressed_chunk_path=db_data.get_compressed_chunk_path,
             original_chunk_path=db_data.get_original_chunk_path,
+            compressed_chunk_type=db_data.compressed_chunk_type,
+            original_chunk_type=db_data.original_chunk_type,
             progress_callback=update_progress,
             quality=db_data.image_quality,
         )

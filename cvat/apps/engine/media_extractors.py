@@ -12,6 +12,8 @@ from pyunpack import Archive
 from PIL import Image
 import mimetypes
 
+from cvat.apps.engine.models import DataChoice
+
 _SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
 MEDIA_MIMETYPES_FILES = [
     os.path.join(_SCRIPT_DIR, "media.mimetypes"),
@@ -77,7 +79,8 @@ class ImageListExtractor(IMediaExtractor):
         converted_image.close()
         return width, height, buf
 
-    def save_as_chunks(self, chunk_size, compressed_chunk_path, original_chunk_path, progress_callback=None, quality=100):
+    def save_as_chunks(self, chunk_size, compressed_chunk_path, original_chunk_path, compressed_chunk_type,
+            original_chunk_type, progress_callback=None, quality=100):
         counter = 0
         image_sizes = []
         total_length = len(self._source_path)
@@ -191,7 +194,8 @@ class VideoExtractor(IMediaExtractor):
     def _get_av_container(self):
         return av.open(av.datasets.curated(self._source_path[0]))
 
-    def save_as_chunks(self, chunk_size, compressed_chunk_path, original_chunk_path, progress_callback=None, quality=100):
+    def save_as_chunks(self, chunk_size, compressed_chunk_path, original_chunk_path, compressed_chunk_type,
+            original_chunk_type, progress_callback=None, quality=100):
         if not self._source_path:
             raise Exception('No data to compress')
 
@@ -233,21 +237,26 @@ class VideoExtractor(IMediaExtractor):
         output_h = source_video_stream.height // downscale_factor
         output_w = source_video_stream.width // downscale_factor
 
+        idx = 0
         for chunk_idx, frames in enumerate(generate_chunks(container, chunk_size)):
-            output_compressed_container, output_compressed_v_stream = create_av_container(
-                path=compressed_chunk_path(chunk_idx),
-                w=output_w,
-                h=output_h,
-                rate=self._output_fps,
-                pix_format='yuv420p',
-                options={
-                    'profile': 'baseline',
-                    'coder': '0',
-                    'crf': str(translated_quality),
-                    'wpredp': '0',
-                    'flags': '-loop'
-                },
-            )
+            if compressed_chunk_type == DataChoice.VIDEO:
+                output_compressed_container, output_compressed_v_stream = create_av_container(
+                    path=compressed_chunk_path(chunk_idx),
+                    w=output_w,
+                    h=output_h,
+                    rate=self._output_fps,
+                    pix_format='yuv420p',
+                    options={
+                        'profile': 'baseline',
+                        'coder': '0',
+                        'crf': str(translated_quality),
+                        'wpredp': '0',
+                        'flags': '-loop'
+                    },
+                )
+            else:
+                output_compressed_container = zipfile.ZipFile(compressed_chunk_path(chunk_idx), 'w')
+
 
             output_original_container, output_original_v_stream = create_av_container(
                 path=original_chunk_path(chunk_idx),
@@ -256,7 +265,7 @@ class VideoExtractor(IMediaExtractor):
                 rate=self._output_fps,
                 pix_format='yuv420p',
                 options={
-                    "crf": "10",
+                    "crf": "15",
                     "preset": "ultrafast",
                 },
             )
@@ -265,16 +274,27 @@ class VideoExtractor(IMediaExtractor):
                 # let libav set the correct pts and time_base
                 frame.pts = None
                 frame.time_base = None
-                for packet in output_compressed_v_stream.encode(frame):
-                    output_compressed_container.mux(packet)
+                if compressed_chunk_type == DataChoice.VIDEO:
+                    for packet in output_compressed_v_stream.encode(frame):
+                        output_compressed_container.mux(packet)
+                else:
+                    buf = BytesIO()
+                    img = frame.to_image()
+                    img.save(buf, format='JPEG', quality=quality, optimize=True)
+                    buf.seek(0)
+                    arcname = '{:06d}.jpeg'.format(idx)
+                    output_compressed_container.writestr(arcname, buf.getvalue())
 
                 for packet in output_original_v_stream.encode(frame):
                     output_original_container.mux(packet)
+                idx += 1
 
             # Flush streams
-            for packet in output_compressed_v_stream.encode():
-                output_compressed_container.mux(packet)
+            if compressed_chunk_type == DataChoice.VIDEO:
+                for packet in output_compressed_v_stream.encode():
+                    output_compressed_container.mux(packet)
             output_compressed_container.close()
+
             for packet in output_original_v_stream.encode():
                 output_original_container.mux(packet)
             output_original_container.close()

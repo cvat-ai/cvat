@@ -352,6 +352,7 @@ class DashboardView {
         const cancelBrowseServer = $('#dashboardCancelBrowseServer');
         const submitBrowseServer = $('#dashboardSubmitBrowseServer');
         const zOrderBox = $('#dashboardZOrder');
+        const useZipChunkBox = $('#dashboardUseZipChunks');
         const segmentSizeInput = $('#dashboardSegmentSize');
         const customSegmentSize = $('#dashboardCustomSegment');
         const overlapSizeInput = $('#dashboardOverlap');
@@ -374,6 +375,7 @@ class DashboardView {
         let bugTrackerLink = bugTrackerInput.prop('value').trim();
         let source = 'local';
         let zOrder = false;
+        let useZipChunks = false;
         let segmentSize = 5000;
         let overlapSize = 0;
         let compressQuality = 50;
@@ -534,6 +536,10 @@ class DashboardView {
             zOrder = e.target.checked;
         });
 
+        useZipChunkBox.on('click', (e) => {
+            useZipChunks = e.target.checked;
+        });
+
         customSegmentSize.on('change', e => segmentSizeInput.prop('disabled', !e.target.checked));
         customOverlapSize.on('change', e => overlapSizeInput.prop('disabled', !e.target.checked));
         customCompressQuality.on('change', e => imageQualityInput.prop('disabled', !e.target.checked));
@@ -666,6 +672,7 @@ class DashboardView {
                 labels: LabelsInfo.deserialize(labels),
                 image_quality: compressQuality,
                 z_order: zOrder,
+                use_zip_chunks: useZipChunks,
                 bug_tracker: bugTrackerLink,
             };
 

@@ -714,6 +714,7 @@
                 data_chunk_size: undefined,
                 data_compressed_chunk_type: undefined,
                 data_original_chunk_type: undefined,
+                use_zip_chunks: undefined,
             };
 
             for (const property in data) {
@@ -951,6 +952,17 @@
                         data.image_quality = quality;
                     },
                 },
+                useZipChunks: {
+                    get: () => data.use_zip_chunks,
+                    set: (useZipChunks) => {
+                        if (typeof (useZipChunks) !== 'boolean') {
+                            throw new ArgumentError(
+                                'Value must be a boolean',
+                            );
+                        }
+                        data.use_zip_chunks = useZipChunks;
+                    },
+                },
                 /**
                     * After task has been created value can be appended only.
                     * @name labels
@@ -1145,7 +1157,7 @@
                     },
                 },
                 dataChunkType: {
-                    get: () => { console.log(data); return data.data_compressed_chunk_type},
+                    get: () => data.data_compressed_chunk_type,
                 },
             }));
 
@@ -1385,6 +1397,7 @@
             server_files: this.serverFiles,
             remote_files: this.remoteFiles,
             image_quality: this.imageQuality,
+            use_zip_chunks: this.useZipChunks,
         };
 
         if (typeof (this.startFrame) !== 'undefined') {

@@ -287,7 +287,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         db_data = serializer.save()
         db_task.data = db_data
         db_task.save()
-        task.create(db_task.id, serializer.data)
+        # FIXME
+        data = {k:v for k, v in serializer.data.items()}
+        data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+        task.create(db_task.id, data)
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
@@ -427,7 +430,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         db_task = models.Task.objects.prefetch_related('data__images').select_related('data__video').get(pk=pk)
 
-        if db_task.mode == 'interpolation':
+        if db_task.data.compressed_chunk_type == models.DataChoice.VIDEO:
             media = [db_task.data.video]
         else:
             media = list(db_task.data.images.order_by('frame'))
