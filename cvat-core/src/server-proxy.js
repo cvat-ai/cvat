@@ -101,7 +101,7 @@
                 return response.data;
             }
 
-            async function datasetExportFormats() {
+            async function datasetFormats() {
                 const { backendAPI } = config;
 
                 let response = null;
@@ -600,7 +600,7 @@
                         about,
                         share,
                         formats,
-                        datasetExportFormats,
+                        datasetFormats,
                         exception,
                         login,
                         logout,

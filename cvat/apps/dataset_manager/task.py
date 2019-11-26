@@ -350,13 +350,34 @@ def clear_export_cache(task_id, file_path, file_ctime):
         log_exception(slogger.task[task_id])
         raise
 
+
+EXPORT_FORMATS = [
+    {
+        'name': 'Datumaro',
+        'tag': EXPORT_FORMAT_DATUMARO_PROJECT,
+        'is_default': True,
+    },
+    {
+        'name': 'PASCAL VOC 2012',
+        'tag': 'voc',
+        'is_default': False,
+    },
+    {
+        'name': 'MS COCO',
+        'tag': 'coco',
+        'is_default': False,
+    }
+]
+
 def get_export_formats():
     from datumaro.components import converters
 
-    formats = [
-        EXPORT_FORMAT_DATUMARO_PROJECT,
-    ]
+    available_formats = set(name for name, _ in converters.items)
+    available_formats.add(EXPORT_FORMAT_DATUMARO_PROJECT)
 
-    for name, _ in converters.items:
-        formats.append(name)
-    return formats
+    public_formats = []
+    for fmt in EXPORT_FORMATS:
+        if fmt['tag'] in available_formats:
+            public_formats.append(fmt)
+
+    return public_formats

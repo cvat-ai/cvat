@@ -132,10 +132,6 @@ class TaskView {
         }
     }
 
-    _isDefaultExportFormat(formatTag) {
-        return formatTag == 'datumaro_project';
-    }
-
     init(task) {
         this._task = task;
     }
@@ -201,7 +197,7 @@ class TaskView {
         $('<option selected disabled> Export as Dataset </option>').appendTo(exportButton);
         for (const format of this._exportFormats) {
             const item = $(`<option>${format.name}</li>`);
-            if (this._isDefaultExportFormat(format.tag)) {
+            if (format.is_default) {
                 item.addClass('bold');
             }
             item.appendTo(exportButton);
@@ -258,37 +254,11 @@ class DashboardView {
         this._sharePath = metaData.share_path;
         this._params = {};
         this._annotationFormats = annotationFormats;
-        this._exportFormats = [];
+        this._exportFormats = exportFormats;
 
-        this._setupExportFormats(exportFormats);
         this._setupList();
         this._setupTaskSearch();
         this._setupCreateDialog();
-    }
-
-    _setupExportFormats(availableFormats) {
-        const publicFormats = [];
-
-        if (-1 != availableFormats.indexOf('datumaro_project')) {
-            publicFormats.push({
-                tag: 'datumaro_project',
-                name: 'Datumaro',
-            });
-        }
-        if (-1 != availableFormats.indexOf('voc')) {
-            publicFormats.push({
-                tag: 'voc',
-                name: 'PASCAL VOC 2012',
-            });
-        }
-        if (-1 != availableFormats.indexOf('coco')) {
-            publicFormats.push({
-                tag: 'coco',
-                name: 'MS COCO',
-            });
-        }
-
-        this._exportFormats = publicFormats;
     }
 
     _setupList() {
@@ -806,7 +776,7 @@ window.addEventListener('DOMContentLoaded', () => {
         $.get('/dashboard/meta'),
         $.get(`/api/v1/tasks${window.location.search}`),
         window.cvat.server.formats(),
-        window.cvat.server.datasetExportFormats(),
+        window.cvat.server.datasetFormats(),
     ).then((metaData, taskData, annotationFormats, exportFormats) => {
         try {
             new DashboardView(metaData[0], taskData[0],

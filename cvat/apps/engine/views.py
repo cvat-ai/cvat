@@ -454,7 +454,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             return HttpResponseBadRequest(str(e))
 
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='export/')
+        url_path='dataset/')
     def dataset_export(self, request, pk):
         """Export task as a dataset in a specific format"""
 
@@ -470,7 +470,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if not dst_format:
             dst_format = DatumaroTask.DEFAULT_FORMAT
         dst_format = dst_format.lower()
-        if dst_format not in DatumaroTask.get_export_formats():
+        if dst_format not in [f['tag']
+                for f in DatumaroTask.get_export_formats()]:
             raise serializers.ValidationError(
                 "Unexpected parameter 'format' specified for the request")
 

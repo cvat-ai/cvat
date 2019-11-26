@@ -124,9 +124,9 @@ function build() {
                 * @throws {module:API.cvat.exceptions.PluginError}
                 * @throws {module:API.cvat.exceptions.ServerError}
             */
-            async datasetExportFormats() {
+            async datasetFormats() {
                 const result = await PluginRegistry
-                    .apiWrapper(cvat.server.datasetExportFormats);
+                    .apiWrapper(cvat.server.datasetFormats);
                 return result;
             },
             /**
