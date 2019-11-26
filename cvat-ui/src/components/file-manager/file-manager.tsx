@@ -184,7 +184,6 @@ export default class FileManager extends React.PureComponent<Props, State> {
     public render() {
         return (
             <>
-                <Text type='secondary'>{'Select files'}</Text>
                 <Tabs type='card' tabBarGutter={5} onChange={(activeKey: string) => this.setState({
                     active: activeKey as any,
                 })}>

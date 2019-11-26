@@ -39,8 +39,7 @@ class BasicConfigurationForm extends React.PureComponent<Props> {
         const { getFieldDecorator } = this.props.form;
         return (
             <Form onSubmit={(e: React.FormEvent) => e.preventDefault()}>
-                <Text type='secondary'>Name</Text>
-                <Form.Item style={{marginBottom: '0px'}}>
+                <Form.Item hasFeedback label='Name'>
                     { getFieldDecorator('name', {
                         rules: [{
                             required: true,

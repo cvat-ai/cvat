@@ -50,7 +50,7 @@ export class CreateModelForm extends React.PureComponent<Props> {
                 </Row>
                 <Row>
                     <Col span={14}>
-                        <Form.Item>
+                        <Form.Item hasFeedback>
                             { getFieldDecorator('name', {
                                 rules: [{
                                     required: true,
