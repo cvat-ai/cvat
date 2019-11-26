@@ -22,7 +22,7 @@ class CocoImporter:
     def __init__(self, task_filter=None):
         self._task_filter = task_filter
 
-    def __call__(self, path):
+    def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
         project = Project()
 
@@ -37,6 +37,7 @@ class CocoImporter:
                 project.add_source(source_name, {
                     'url': ann_file,
                     'format': self._COCO_EXTRACTORS[ann_type],
+                    'options': extra_params,
                 })
 
         return project

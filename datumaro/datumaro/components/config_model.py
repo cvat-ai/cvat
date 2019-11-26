@@ -11,7 +11,7 @@ from datumaro.components.config import Config, \
 SOURCE_SCHEMA = _SchemaBuilder() \
     .add('url', str) \
     .add('format', str) \
-    .add('options', str) \
+    .add('options', dict) \
     .build()
 
 class Source(Config):
