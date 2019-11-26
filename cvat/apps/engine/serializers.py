@@ -206,14 +206,15 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     data_chunk_type = serializers.ReadOnlyField(source='data.type')
     size = serializers.ReadOnlyField(source='data.size')
     image_quality = serializers.ReadOnlyField(source='data.image_quality')
+    data = serializers.ReadOnlyField(source='data.id')
 
     class Meta:
         model = models.Task
         fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'z_order', 'status', 'labels', 'segments',
-            'project', 'data_chunk_size', 'data_chunk_type', 'size', 'image_quality')
-        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size', 'data_chunk_type', 'size', 'image_quality')
+            'project', 'data_chunk_size', 'data_chunk_type', 'size', 'image_quality', 'data')
+        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size', 'data_chunk_type', 'size', 'image_quality', 'data')
         write_once_fields = ('overlap', 'segment_size')
         ordering = ['-id']
 

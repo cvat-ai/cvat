@@ -226,11 +226,18 @@ class VideoExtractor(IMediaExtractor):
             return container, video_stream
 
         frame_count = 0
+        downscale_factor = 1
+        while source_video_stream.height / downscale_factor >= 1080:
+            downscale_factor *= 2
+
+        output_h = source_video_stream.height // downscale_factor
+        output_w = source_video_stream.width // downscale_factor
+
         for chunk_idx, frames in enumerate(generate_chunks(container, chunk_size)):
             output_compressed_container, output_compressed_v_stream = create_av_container(
                 path=compressed_chunk_path(chunk_idx),
-                w=source_video_stream.width,
-                h=source_video_stream.height,
+                w=output_w,
+                h=output_h,
                 rate=self._output_fps,
                 pix_format='yuv420p',
                 options={
@@ -244,8 +251,8 @@ class VideoExtractor(IMediaExtractor):
 
             output_original_container, output_original_v_stream = create_av_container(
                 path=original_chunk_path(chunk_idx),
-                w=source_video_stream.width,
-                h=source_video_stream.height,
+                w=output_w,
+                h=output_h,
                 rate=self._output_fps,
                 pix_format='yuv420p',
                 options={
@@ -277,7 +284,7 @@ class VideoExtractor(IMediaExtractor):
             if progress_callback and container.streams.video[0].frames:
                 progress_callback(chunk_idx * chunk_size / container.streams.video[0].frames)
 
-        return [{'name': self._source_path[0], 'size': (frame.width, frame.height)}], frame_count
+        return [{'name': self._source_path[0], 'size': (source_video_stream.width, source_video_stream.height)}], frame_count
 
     def save_preview(self, preview_path):
         container = self._get_av_container()

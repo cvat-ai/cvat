@@ -191,6 +191,29 @@ class FrameProvider {
         return rgbaInt8Clamped;
     }
 
+    upscale(imageBuffer, imageWidth, imageHeight) {
+        const scaleFactor = Math.ceil(this._height / imageHeight);
+        if (scaleFactor === 1) {
+            return {
+                data: imageBuffer,
+                width: imageWidth,
+                height: imageHeight,
+            }
+        }
+        const targetWidth = imageWidth * scaleFactor;
+        const targetHeight = imageHeight * scaleFactor;
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+        const imData = ctx.createImageData(imageWidth, imageHeight);
+        imData.data.set(new Uint8ClampedArray(imageBuffer));
+        ctx.putImageData(imData, 0, 0);
+        ctx.scale(scaleFactor, scaleFactor);
+        ctx.drawImage(canvas, 0, 0);
+        return ctx.getImageData(0, 0, targetWidth, targetHeight);
+    }
+
     async startDecode() {
          if (this._blockType === BlockType.TSVIDEO){
             const release = await this._mutex.acquireQueued();
@@ -213,13 +236,19 @@ class FrameProvider {
 
             let index = start;
 
+            const t0 = performance.now();
             worker.onmessage = (e) => {
                 if (e.data.consoleLog) { // ignore initialization message
+
                   return;
                 }
-                this._frames[index] = this.cropImage(e.data.buf, e.data.width, e.data.height, 0, 0, this._width, this._height);
+                const imData = this.upscale(e.data.buf, e.data.width, e.data.height);
+                console.log(`imData.len: ${imData.data.length}; w: ${imData.width}; h: ${imData.height}`);
+                this._frames[index] = this.cropImage(imData.data.buffer, imData.width, imData.height, 0, 0, this._width, this._height);
                 this._decodingBlocks[`${start}:${end}`].resolveCallback(index);
                 if (index === end) {
+                    const t = performance.now() - t0;
+                    console.log(`Chunk decode time: ${t}; fps: ${36000/t}`);
                     this._decodeThreadCount--;
                     delete this._decodingBlocks[`${start}:${end}`];
                     worker.terminate();
