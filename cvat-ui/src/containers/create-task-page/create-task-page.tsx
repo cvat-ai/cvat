@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { CombinedState } from '../../reducers/root-reducer';
+import { CombinedState } from '../../reducers/interfaces';
 import CreateTaskComponent from '../../components/create-task-page/create-task-page';
 import { CreateTaskData } from '../../components/create-task-page/create-task-content';
 import { createTaskAsync } from '../../actions/tasks-actions';

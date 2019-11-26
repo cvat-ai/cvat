@@ -30,6 +30,13 @@ class PluginChecker {
                 }
                 return false;
             }
+            case SupportedPlugins.TF_SEGMENTATION: {
+                const response = await fetch(`${serverHost}/tensorflow/segmentation/meta/get`);
+                if (response.ok) {
+                    return true;
+                }
+                return false;
+            }
             case SupportedPlugins.ANALYTICS: {
                 const response = await fetch(`${serverHost}/analytics/app/kibana`);
                 if (response.ok) {

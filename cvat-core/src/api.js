@@ -177,6 +177,22 @@ function build() {
                     .apiWrapper(cvat.server.authorized);
                 return result;
             },
+            /**
+                * Method allows to do requests via cvat-core with authorization headers
+                * @method request
+                * @async
+                * @memberof module:API.cvat.server
+                * @param {string} url
+                * @param {Object} data request parameters: method, headers, data, etc.
+                * @returns {Object | undefined} response data if exist
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+            */
+            async request(url, data) {
+                const result = await PluginRegistry
+                    .apiWrapper(cvat.server.request, url, data);
+                return result;
+            },
         },
         /**
             * Namespace is used for getting tasks

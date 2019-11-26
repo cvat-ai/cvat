@@ -439,7 +439,7 @@ class LabelForm extends React.PureComponent<Props, State> {
                 { attributeItems.length > 0 ?
                     <Row type='flex' justify='start' align='middle'>
                         <Col>
-                            <Text> Attributes </Text>
+                            <Text>Attributes</Text>
                         </Col>
                     </Row> : null
                 }

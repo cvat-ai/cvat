@@ -5,6 +5,7 @@ import {
     Modal,
 } from 'antd';
 
+import Text from 'antd/lib/typography/Text';
 import { ClickParam } from 'antd/lib/menu/index';
 
 import LoaderItemComponent from './loader-item';
@@ -18,15 +19,18 @@ interface ActionsMenuComponentProps {
     loadActivity: string | null;
     dumpActivities: string[] | null;
     installedTFAnnotation: boolean;
+    installedTFSegmentation: boolean;
     installedAutoAnnotation: boolean;
     onLoadAnnotation: (taskInstance: any, loader: any, file: File) => void;
-    onDumpAnnotation: (task: any, dumper: any) => void;
-    onDeleteTask: (task: any) => void;
+    onDumpAnnotation: (taskInstance: any, dumper: any) => void;
+    onDeleteTask: (taskInstance: any) => void;
+    onOpenRunWindow: (taskInstance: any) => void;
 }
 
 interface MinActionsMenuProps {
     taskInstance: any;
     onDeleteTask: (task: any) => void;
+    onOpenRunWindow: (taskInstance: any) => void;
 }
 
 export function handleMenuClick(props: MinActionsMenuProps, params: ClickParam) {
@@ -38,11 +42,8 @@ export function handleMenuClick(props: MinActionsMenuProps, params: ClickParam) 
             case 'tracker': {
                 window.open(`${tracker}`, '_blank')
                 return;
-            } case 'auto': {
-
-                return;
-            } case 'tf': {
-
+            } case 'auto_annotation': {
+                props.onOpenRunWindow(taskInstance);
                 return;
             } case 'delete': {
                 const taskID = taskInstance.id;
@@ -63,12 +64,15 @@ export function handleMenuClick(props: MinActionsMenuProps, params: ClickParam) 
 
 export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
     const tracker = props.taskInstance.bugTracker;
-
+    const renderModelRunner = props.installedAutoAnnotation ||
+        props.installedTFAnnotation || props.installedTFSegmentation;
     return (
-        <Menu subMenuCloseDelay={0.15} className='cvat-task-item-menu' onClick={
+        <Menu selectable={false} className='cvat-actions-menu' onClick={
             (params: ClickParam) => handleMenuClick(props, params)
         }>
-            <Menu.SubMenu key='dump' title='Dump annotations'>
+            <Menu.SubMenu key='dump' title={<
+                Text>{'Dump annotations'}</Text>
+            }>
                 {
                     props.dumpers.map((dumper) => DumperItemComponent({
                         dumper,
@@ -77,7 +81,9 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
                         onDumpAnnotation: props.onDumpAnnotation,
                 }   ))}
             </Menu.SubMenu>
-            <Menu.SubMenu key='load' title='Upload annotations'>
+            <Menu.SubMenu key='load' title={
+                <Text>{'Upload annotations'}</Text>
+            }>
                 {
                     props.loaders.map((loader) => LoaderItemComponent({
                         loader,
@@ -87,13 +93,8 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
                     }))
                 }
             </Menu.SubMenu>
-            {tracker ? <Menu.Item key='tracker'>Open bug tracker</Menu.Item> : null}
-            { props.installedTFAnnotation ?
-                <Menu.Item key='tf'>Run TF annotation</Menu.Item> : null
-            }
-            { props.installedAutoAnnotation ?
-                <Menu.Item key='auto'>Run auto annotation</Menu.Item> : null
-            }
+            {tracker && <Menu.Item key='tracker'>Open bug tracker</Menu.Item>}
+            {renderModelRunner && <Menu.Item key='auto_annotation'>Automatic annotation</Menu.Item>}
             <hr/>
             <Menu.Item key='delete'>Delete</Menu.Item>
         </Menu>

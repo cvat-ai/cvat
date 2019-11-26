@@ -137,7 +137,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
     private renderLabelsBlock() {
         return (
             <Col span={24}>
-                <Text type='secondary'> Labels </Text>
+                <Text type='secondary'>Labels</Text>
                 <LabelsEditor
                     labels={this.state.labels}
                     onSubmit={
@@ -158,7 +158,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 <FileManagerContainer ref={
                     (container: any) =>
                         this.fileManagerContainer = container
-                }/>
+                } withRemote={true}/>
             </Col>
         );
     }
@@ -169,7 +169,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 <Collapse>
                     <Collapse.Panel
                         header={
-                            <Text className='cvat-title'> Advanced configuration </Text>
+                            <Text className='cvat-title'>{'Advanced configuration'}</Text>
                         } key='1'>
                         <AdvancedConfigurationForm
                             installedGit={this.props.installedGit}
@@ -218,7 +218,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         return (
             <Row type='flex' justify='start' align='middle' className='cvat-create-task-content'>
                 <Col span={24}>
-                    <Text className='cvat-title'> Basic configuration </Text>
+                    <Text className='cvat-title'>{'Basic configuration'}</Text>
                 </Col>
 
                 { this.renderBasicBlock() }
@@ -226,10 +226,10 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 { this.renderFilesBlock() }
                 { this.renderAdvancedBlock() }
 
-                <Col span={14}>
+                <Col span={18}>
                     {loading ? <Alert message={this.props.status}/> : null}
                 </Col>
-                <Col span={10}>
+                <Col span={6}>
                     <Button
                         loading={loading}
                         disabled={loading}

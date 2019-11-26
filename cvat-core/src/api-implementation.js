@@ -89,6 +89,11 @@
             return result;
         };
 
+        cvat.server.request.implementation = async (url, data) => {
+            const result = await serverProxy.server.request(url, data);
+            return result;
+        };
+
         cvat.users.get.implementation = async (filter) => {
             checkFilter(filter, {
                 self: isBoolean,

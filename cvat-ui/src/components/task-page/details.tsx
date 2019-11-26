@@ -3,6 +3,8 @@ import React from 'react';
 import {
     Row,
     Col,
+    Tag,
+    Icon,
     Modal,
     Button,
 } from 'antd';
@@ -16,6 +18,7 @@ import UserSelector from './user-selector';
 import LabelsEditorComponent from '../labels-editor/labels-editor';
 import getCore from '../../core';
 import patterns from '../../utils/validation-patterns';
+import { getReposData, syncRepos } from '../../utils/git-utils';
 
 const core = getCore();
 
@@ -30,17 +33,24 @@ interface Props {
 interface State {
     name: string;
     bugTracker: string;
+    repository: string;
+    repositoryStatus: string;
 }
 
 export default class DetailsComponent extends React.PureComponent<Props, State> {
+    private mounted: boolean;
+
     constructor(props: Props) {
         super(props);
 
         const { taskInstance } = props;
 
+        this.mounted = false;
         this.state = {
             name: taskInstance.name,
             bugTracker: taskInstance.bugTracker,
+            repository: '',
+            repositoryStatus: '',
         };
     }
 
@@ -84,24 +94,24 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             <>
                 <Row type='flex' justify='start' align='middle'>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'> Overlap size </Text>
+                        <Text strong className='cvat-black-color'>{'Overlap size'}</Text>
                         <br/>
                         <Text className='cvat-black-color'>{overlap}</Text>
                     </Col>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'> Segment size </Text>
+                        <Text strong className='cvat-black-color'>{'Segment size'}</Text>
                         <br/>
                         <Text className='cvat-black-color'>{segmentSize}</Text>
                     </Col>
                 </Row>
                 <Row type='flex' justify='space-between' align='middle'>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'> Image quality </Text>
+                        <Text strong className='cvat-black-color'>{'Image quality'}</Text>
                         <br/>
                         <Text className='cvat-black-color'>{imageQuality}</Text>
                     </Col>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'> Z-order </Text>
+                        <Text strong className='cvat-black-color'>{'Z-order'}</Text>
                         <br/>
                         <Text className='cvat-black-color'>{zOrder}</Text>
                     </Col>
@@ -150,6 +160,51 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         );
     }
 
+    private renderDatasetRepository() {
+        const { repository } = this.state;
+        const { repositoryStatus } = this.state;
+
+        return (
+            repository ?
+                <Row>
+                    <Col className='cvat-dataset-repository-url'>
+                        <Text strong className='cvat-black-color'>{'Dataset Repository'}</Text>
+                        <br/>
+                        <a href={repository} target='_blank'>{repository}</a>
+                        {repositoryStatus === 'sync' ?
+                            <Tag color='blue'>
+                                <Icon type='check-circle'/> Synchronized
+                            </Tag> : repositoryStatus === 'merged' ?
+                            <Tag color='green'>
+                                <Icon type='check-circle'/> Merged
+                            </Tag> : repositoryStatus === 'syncing' ?
+                            <Tag color='purple'>
+                                <Icon type='loading'/> Syncing </Tag> :
+                            <Tag color='red' onClick={() => {
+                                this.setState({
+                                    repositoryStatus: 'syncing',
+                                });
+
+                                syncRepos(this.props.taskInstance.id).then(() => {
+                                    if (this.mounted) {
+                                        this.setState({
+                                            repositoryStatus: 'sync',
+                                        });
+                                    }
+                                }).catch(() => {
+                                    if (this.mounted) {
+                                        this.setState({
+                                            repositoryStatus: '!sync',
+                                        });
+                                    }
+                                });
+                            }}> <Icon type='warning'/> Synchronize </Tag>
+                        }
+                    </Col>
+                </Row> : null
+        );
+    }
+
     private renderBugTracker() {
         const { taskInstance } = this.props;
         const { bugTracker } = this.state;
@@ -174,7 +229,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             return (
                 <Row>
                     <Col>
-                        <Text strong className='cvat-black-color'> Issue Tracker </Text>
+                        <Text strong className='cvat-black-color'>{'Issue Tracker'}</Text>
                         <br/>
                         <Text editable={{onChange: onChangeValue}}>{bugTracker}</Text>
                         <Button type='ghost' size='small' onClick={() => {
@@ -187,7 +242,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             return (
                 <Row>
                     <Col>
-                        <Text strong className='cvat-black-color'> Issue Tracker </Text>
+                        <Text strong className='cvat-black-color'>{'Issue Tracker'}</Text>
                         <br/>
                         <Text editable={{onChange: onChangeValue}}>{'Not specified'}</Text>
                     </Col>
@@ -217,6 +272,40 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                 </Col>
             </Row>
         );
+    }
+
+    public componentDidMount() {
+        this.mounted = true;
+        getReposData(this.props.taskInstance.id)
+            .then((data) => {
+                if (data !== null && this.mounted) {
+                    if (data.status.error) {
+                        Modal.error({
+                            title: 'Could not receive repository status',
+                            content: data.status.error
+                        });
+                    } else {
+                        this.setState({
+                            repositoryStatus: data.status.value,
+                        });
+                    }
+
+                    this.setState({
+                        repository: data.url,
+                    });
+                }
+            }).catch((error) => {
+                if (this.mounted) {
+                    Modal.error({
+                        title: 'Could not receive repository status',
+                        content: error.toString(),
+                    });
+                }
+            });
+    }
+
+    public componentWillUnmount() {
+        this.mounted = false;
     }
 
     public componentDidUpdate(prevProps: Props) {
@@ -252,6 +341,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                     <Col md={16} lg={17} xl={17} xxl={18}>
                         { this.renderUsers() }
                         { this.renderBugTracker() }
+                        { this.renderDatasetRepository() }
                         { this.renderLabelsEditor() }
                     </Col>
                 </Row>

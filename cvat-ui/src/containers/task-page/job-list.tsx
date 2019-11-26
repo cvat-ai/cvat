@@ -2,11 +2,17 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import JobListComponent from '../../components/task-page/job-list';
-import { CombinedState } from '../../reducers/root-reducer';
-import { updateJobAsync } from '../../actions/task-actions';
+import { updateJobAsync } from '../../actions/tasks-actions';
+import {
+    Task,
+    CombinedState,
+} from '../../reducers/interfaces';
+
+interface OwnProps {
+    task: Task;
+}
 
 interface StateToProps {
-    taskInstance: any;
     registeredUsers: any[];
 }
 
@@ -16,7 +22,6 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     return {
-        taskInstance: state.activeTask.task ? state.activeTask.task.instance : null,
         registeredUsers: state.users.users,
     };
 }
@@ -27,10 +32,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function TaskPageContainer(props: StateToProps & DispatchToProps) {
+function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps) {
     return (
         <JobListComponent
-            taskInstance={props.taskInstance}
+            taskInstance={props.task.instance}
             registeredUsers={props.registeredUsers}
             onJobUpdate={props.onJobUpdate}
         />

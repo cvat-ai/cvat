@@ -1,11 +1,6 @@
-#root {
-    width: 100%;
-    height: 100%;
-    min-height: 100%;
-    display: grid;
-}
-
 .cvat-header.ant-layout-header {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
     padding-left: 0px;
     padding-right: 0px;
@@ -16,24 +11,40 @@
 
 .cvat-left-header {
     width: 50%;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: flex-start;
-    align-items: center;
+    -webkit-box-pack: start;
+        -ms-flex-pack: start;
+            justify-content: flex-start;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
 }
 
 .cvat-right-header {
     width: 50%;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: flex-end;
-    align-items: center;
+    -webkit-box-pack: end;
+        -ms-flex-pack: end;
+            justify-content: flex-end;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
 }
 
 .cvat-flex {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
 }
 
 .cvat-flex-center {
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
 }
 
 .cvat-black-color {
@@ -52,18 +63,26 @@
 }
 
 .anticon.cvat-logo-icon {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
     margin-right: 20px;
 }
 
 .anticon.cvat-logo-icon > img {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
     height: 15.8px;
     margin-left: 18px;
 }
 
 .anticon.cvat-back-icon > img {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
     height: 15.8px;
     margin-left: 18px;
@@ -71,19 +90,24 @@
 }
 
 .anticon.cvat-back-icon:hover > img {
-    filter: invert(0.4);
+    -webkit-filter: invert(0.4);
+            filter: invert(0.4);
 }
 
 .ant-btn.cvat-header-button {
-    color: black !important;
+    color: black;
     padding: 0px 10px;
     margin-right: 10px;
 }
 
 
 .ant-menu.cvat-header-menu {
+    width: -webkit-fit-content;
+    width: -moz-fit-content;
     width: fit-content;
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
     border: 0px;
     border-left: 1px solid #c3c3c3;
     height: 100%;
@@ -91,7 +115,7 @@
 }
 
 .ant-menu.cvat-header-menu > li.ant-menu-submenu {
-    border-bottom: unset !important;
+    border-bottom: unset;
 }
 
 
@@ -115,7 +139,9 @@
 
 .anticon.cvat-header-menu-icon > img {
     width: 14px;
-    transform: rotate(-90deg);
+    -webkit-transform: rotate(-90deg);
+        -ms-transform: rotate(-90deg);
+            transform: rotate(-90deg);
 }
 
 .anticon.cvat-empty-tasks-icon > img {
@@ -142,12 +168,18 @@
 }
 
 .cvat-tasks-page > div:nth-child(2) > div:nth-child(1) {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
 }
 
 .cvat-tasks-page > div:nth-child(2) > div:nth-child(2) {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: flex-end;
+    -webkit-box-pack: end;
+        -ms-flex-pack: end;
+            justify-content: flex-end;
 }
 
 .cvat-tasks-page > div:nth-child(2) > div:nth-child(1) > span:nth-child(2) {
@@ -156,7 +188,10 @@
 }
 
 .cvat-tasks-page > span.ant-typography {
-    user-select: none;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
 }
 
 .cvat-tasks-page {
@@ -213,8 +248,12 @@
 }
 
 .ant-pagination.cvat-tasks-pagination {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: center;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
 }
 
 .cvat-task-list {
@@ -246,6 +285,8 @@
 }
 
 .cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) > div {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
 }
 
@@ -254,23 +295,33 @@
 }
 
 .cvat-task-item-menu-icon > img:hover {
-    filter: invert(0.5);
+    -webkit-filter: invert(0.5);
+            filter: invert(0.5);
 }
 
-.cvat-task-item-menu > hr {
+.ant-menu.cvat-actions-menu {
+    -webkit-box-shadow: 0 0 17px rgba(0,0,0,0.2);
+            box-shadow: 0 0 17px rgba(0,0,0,0.2);
+}
+
+.cvat-actions-menu > hr {
     border: 0.5px solid #D6D6D6;
 }
 
-.cvat-task-item-load-submenu-item {
-    padding: 0px;
+.cvat-actions-menu > *:hover {
+    background-color: rgba(24,144,255,0.05);
 }
 
-.cvat-task-item-load-submenu-item > span > .ant-upload {
-    width: 100%;
+.cvat-actions-menu-load-submenu-item:hover {
+    background-color: rgba(24,144,255,0.05);
 }
 
-.cvat-task-item-dump-submenu-item {
-    padding: 0px;
+.cvat-actions-menu-dump-submenu-item:hover {
+    background-color: rgba(24,144,255,0.05);
+}
+
+.cvat-actions-menu > li:nth-child(2) > div > span {
+    margin-right: 15px;
 }
 
 .cvat-task-item-preview {
@@ -279,8 +330,12 @@
 }
 
 .cvat-task-item-preview-wrapper {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: center;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
     overflow: hidden;
     margin: 20px;
     margin-top: 0px;
@@ -296,8 +351,8 @@
     margin-right: 5px;
 }
 
-.cvat-task-completed-progress > div > div > div > div {
-    background: #52c41a !important;
+.cvat-task-completed-progress > div > div > div > div.ant-progress-bg {
+    background: #52c41a !important; /* csslint allow: important */
 }
 
 .cvat-task-progress-progress {
@@ -334,6 +389,26 @@
     margin-top: 20px;
 }
 
+.cvat-dataset-repository-url > a {
+    margin-right: 10px;
+}
+
+.cvat-dataset-repository-url > .ant-tag-red {
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+    opacity: 0.4;
+}
+
+.cvat-dataset-repository-url > .ant-tag-red:hover {
+    opacity: 0.8;
+}
+
+.cvat-dataset-repository-url > .ant-tag-red:active {
+    opacity: 1;
+}
+
 .cvat-task-job-list {
     width: 100%;
     height: auto;
@@ -355,8 +430,12 @@
 }
 
 .cvat-task-preview-wrapper {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    justify-content: start;
+    -webkit-box-pack: start;
+        -ms-flex-pack: start;
+            justify-content: start;
     overflow: hidden;
     margin-bottom: 20px;
 }
@@ -370,36 +449,62 @@
     margin-left: 15px;
 }
 
-.cvat-raw-labels-viewer {
-    border-color: #d9d9d9 !important;
-    box-shadow: none !important;
+textarea.ant-input.cvat-raw-labels-viewer {
+    border-color: #d9d9d9;
+    -webkit-box-shadow: none;
+            box-shadow: none;
     border-top: none;
     border-radius: 0px 0px 5px 5px;
-    min-height: 9em !important;
+    min-height: 9em;
     font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+}
+
+.cvat-raw-labels-viewer:focus {
+    border-color: #d9d9d9;
+    -webkit-box-shadow: none;
+            box-shadow: none;
+}
+
+.cvat-raw-labels-viewer:hover {
+    border-color: #d9d9d9;
+    -webkit-box-shadow: none;
+            box-shadow: none;
 }
 
 .cvat-constructor-viewer {
     border: 1px solid #d9d9d9;
-    box-shadow: none;
+    -webkit-box-shadow: none;
+            box-shadow: none;
     border-top: none;
     border-radius: 0px 0px 5px 5px;
     padding: 5px;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    flex-wrap: wrap;
+    -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
     overflow-y: auto;
     min-height: 9em;
 }
 
 .cvat-constructor-viewer-item {
+    height: -webkit-fit-content;
+    height: -moz-fit-content;
     height: fit-content;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
     padding: 2px 10px;
     border-radius: 2px;
     margin: 2px;
     margin-left: 8px;
-    user-select: none;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
     border: 1px solid rgba(0, 0, 0, 0);
     opacity: 0.6;
 }
@@ -419,14 +524,23 @@
 }
 
 .cvat-constructor-viewer-new-item {
+    height: -webkit-fit-content;
+    height: -moz-fit-content;
     height: fit-content;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
     padding: 2px 10px;
     border-radius: 2px;
     margin: 2px;
     margin-left: 8px;
-    user-select: none;
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
     opacity: 1;
 }
 
@@ -466,8 +580,8 @@
 .cvat-task-jobs-table > div > div {
     text-align: center;
 }
-.cvat-task-jobs-table > div > div > ul {
-    float: none !important;
+.cvat-task-jobs-table > div > div > .ant-table-pagination.ant-pagination {
+    float: none;
 }
 
 .cvat-job-completed-color {
@@ -514,12 +628,167 @@
 }
 
 .cvat-share-tree {
+    height: -webkit-fit-content;
+    height: -moz-fit-content;
     height: fit-content;
     min-height: 10em;
     max-height: 20em;
     overflow: auto;
 }
 
+.cvat-models-page {
+    padding-top: 30px;
+    height: 100%;
+    overflow: auto;
+}
+
+.cvat-models-page > div:nth-child(1) {
+    margin-bottom: 10px;
+}
+
+.cvat-models-page > div:nth-child(1) > div:nth-child(1) {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+}
+
+.cvat-models-page > div:nth-child(1) > div:nth-child(2) {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: end;
+        -ms-flex-pack: end;
+            justify-content: flex-end;
+}
+
+/* empty-models icon */
+.cvat-empty-models-list > div:nth-child(1) {
+    margin-top: 50px;
+}
+
+.cvat-empty-models-list > div:nth-child(2) > div {
+    margin-top: 20px;
+}
+
+/* No models uploaded yet */
+.cvat-empty-models-list > div:nth-child(2) > div > span {
+    font-size: 20px;
+    color: #4A4A4A;
+}
+
+/* To annotate your task automatically */
+.cvat-empty-models-list > div:nth-child(3) {
+    margin-top: 10px;
+}
+
+.cvat-models-list {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.cvat-models-list-item {
+    width: 100%;
+    height: 60px;
+    border: 1px solid #c3c3c3;
+    border-radius: 3px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: white;
+}
+
+.cvat-models-list-item:hover {
+    border: 1px solid #40a9ff;
+}
+
+.cvat-models-list-item > div {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+}
+
+.cvat-models-list-item > div:nth-child(2) > span {
+    -o-text-overflow: ellipsis;
+       text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.cvat-models-list-item > div:nth-child(3) > span {
+    -o-text-overflow: ellipsis;
+       text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.anticon.cvat-empty-models-icon > img {
+    width: 90px;
+}
+
+.cvat-create-model-form-wrapper {
+    text-align: center;
+    margin-top: 40px;
+    overflow-y: auto;
+    height: 90%;
+}
+
+.cvat-create-model-form-wrapper > div > span {
+    font-size: 36px;
+}
+
+.cvat-create-model-content {
+    margin-top: 20px;
+    width: 100%;
+    height: auto;
+    border: 1px solid #c3c3c3;
+    border-radius: 3px;
+    padding: 20px;
+    background: white;
+    text-align: initial;
+}
+
+.cvat-create-model-content > div:nth-child(1) > i {
+    float: right;
+    font-size: 20px;
+    color: red;
+}
+
+.cvat-create-model-content > div:nth-child(4) {
+    margin-top: 10px;
+}
+
+.cvat-create-model-content > div:nth-child(5) > button {
+    margin-top: 10px;
+    float: right;
+    width: 120px;
+}
+
+.cvat-run-model-dialog > div:not(first-child) {
+    margin-top: 10px;
+}
+
+.cvat-run-model-dialog-info-icon {
+    color: blue;
+}
+
+.cvat-run-model-dialog-remove-mapping-icon {
+    color: red;
+}
+
+#root {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    display: -ms-grid;
+    display: grid;
+}
+
 #cvat-create-task-button {
+    padding: 0 30px;
+}
+
+#cvat-create-model-button {
     padding: 0 30px;
 }

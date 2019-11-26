@@ -20,17 +20,17 @@ export default function EmptyListComponent() {
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Text strong> No tasks created yet ... </Text>
+                    <Text strong>{'No tasks created yet ...'}</Text>
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Text type='secondary'> To get started with your annotation project </Text>
+                    <Text type='secondary'>{'To get started with your annotation project'}</Text>
                 </Col>
             </Row>
             <Row  type='flex' justify='center' align='middle'>
                 <Col>
-                    <Link to='/tasks/create'> create new task </Link>
+                    <Link to='/tasks/create'>{'create a new task'}</Link>
                 </Col>
             </Row>
         </div>

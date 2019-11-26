@@ -6,6 +6,7 @@ import { TasksState, Task } from './interfaces';
 const defaultState: TasksState = {
     initialized: false,
     tasksFetchingError: null,
+    taskUpdatingError: null,
     count: 0,
     current: [],
     gettingQuery: {
@@ -44,6 +45,7 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
         return {
             ...stateToResetErrors,
             tasksFetchingError: null,
+            taskUpdatingError: null,
             activities: {
                 ...stateToResetErrors.activities,
                 dumps: {
@@ -54,6 +56,10 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                     ...stateToResetErrors.activities.loads,
                     loadingError: null,
                     loadingDoneMessage: '',
+                },
+                deletes: {
+                    ...stateToResetErrors.activities.deletes,
+                    deletingError: null,
                 },
             },
         };
@@ -337,6 +343,43 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                         creatingError: error,
                     },
                 },
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK: {
+            return {
+                ...state,
+                taskUpdatingError: null,
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_SUCCESS: {
+            return {
+                ...state,
+                current: state.current.map((task): Task => {
+                    if (task.instance.id === action.payload.taskInstance.id) {
+                        return {
+                            ...task,
+                            instance: action.payload.taskInstance,
+                        };
+                    }
+
+                    return task;
+                }),
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_FAILED: {
+            return {
+                ...state,
+                taskUpdatingError: action.payload.error,
+                current: state.current.map((task): Task => {
+                    if (task.instance.id === action.payload.taskInstance.id) {
+                        return {
+                            ...task,
+                            instance: action.payload.taskInstance,
+                        };
+                    }
+
+                    return task;
+                }),
             };
         }
         default:

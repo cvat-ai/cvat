@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { loginAsync } from '../../actions/auth-actions';
-import { CombinedState } from '../../reducers/root-reducer';
+import { CombinedState } from '../../reducers/interfaces';
 import LoginPageComponent from '../../components/login-page/login-page';
 
 interface StateToProps {

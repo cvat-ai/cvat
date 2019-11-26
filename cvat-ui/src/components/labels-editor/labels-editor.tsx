@@ -204,7 +204,7 @@ export default class LabelsEditor
                 <Tabs.TabPane tab={
                     <span>
                         <Icon type='edit'/>
-                        <Text> Raw </Text>
+                        <Text>Raw</Text>
                     </span>
                 } key='1'>
                     <RawViewer
@@ -216,7 +216,7 @@ export default class LabelsEditor
                 <Tabs.TabPane tab={
                     <span>
                         <Icon type='build'/>
-                        <Text> Constructor </Text>
+                        <Text>Constructor</Text>
                     </span>
                 } key='2'>
                     {

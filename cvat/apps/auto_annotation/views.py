@@ -147,6 +147,7 @@ def get_meta_info(request):
                 "uploadDate": dl_model.created_date,
                 "updateDate": dl_model.updated_date,
                 "labels": labels,
+                "owner": dl_model.owner.id,
             })
 
         queue = django_rq.get_queue("low")

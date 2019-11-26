@@ -27,6 +27,7 @@ export interface Task {
 export interface TasksState {
     initialized: boolean;
     tasksFetchingError: any;
+    taskUpdatingError: any;
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
@@ -71,6 +72,7 @@ export enum SupportedPlugins {
     GIT_INTEGRATION = 'GIT_INTEGRATION',
     AUTO_ANNOTATION = 'AUTO_ANNOTATION',
     TF_ANNOTATION = 'TF_ANNOTATION',
+    TF_SEGMENTATION = 'TF_SEGMENTATION',
     ANALYTICS = 'ANALYTICS',
 }
 
@@ -79,12 +81,6 @@ export interface PluginsState {
     plugins: {
         [name in SupportedPlugins]: boolean;
     };
-}
-
-export interface TaskState {
-    task: Task | null;
-    taskFetchingError: any;
-    taskUpdatingError: any;
 }
 
 export interface UsersState {
@@ -107,4 +103,55 @@ export interface ShareItem {
 export interface ShareState {
     root: ShareItem;
     error: any;
+}
+
+export interface Model {
+    id: number | null; // null for preinstalled models
+    ownerID: number | null; // null for preinstalled models
+    name: string;
+    primary: boolean;
+    uploadDate: string;
+    updateDate: string;
+    labels: string[];
+}
+
+export interface Running {
+    [tid: string]: {
+        status: string;
+        processId: string;
+        error: any;
+    };
+}
+
+export interface ModelsState {
+    initialized: boolean;
+    creatingStatus: string;
+    creatingError: any;
+    startingError: any;
+    fetchingError: any;
+    deletingErrors: { // by id
+        [index: number]: any;
+    };
+    models: Model[];
+    runnings: Running[];
+    visibleRunWindows: boolean;
+    activeRunTask: any;
+}
+
+export interface ModelFiles {
+    [key: string]: string | File;
+    xml: string | File;
+    bin: string | File;
+    py: string | File;
+    json: string | File;
+}
+
+export interface CombinedState {
+    auth: AuthState;
+    tasks: TasksState;
+    users: UsersState;
+    share: ShareState;
+    formats: FormatsState;
+    plugins: PluginsState;
+    models: ModelsState;
 }

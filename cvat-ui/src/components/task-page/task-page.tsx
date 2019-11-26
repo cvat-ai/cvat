@@ -9,14 +9,16 @@ import {
     Modal,
 } from 'antd';
 
-import TopBarContainer from '../../containers/task-page/top-bar';
+import TopBarComponent from './top-bar';
 import DetailsContainer from '../../containers/task-page/details';
 import JobListContainer from '../../containers/task-page/job-list';
+import { Task } from '../../reducers/interfaces';
 
 interface TaskPageComponentProps {
-    taskInstance: any;
+    task: Task;
     taskFetchingError: string;
     taskUpdatingError: string;
+    taskDeletingError: string;
     deleteActivity: boolean | null;
     installedGit: boolean;
     onFetchTask: (tid: number) => void;
@@ -45,12 +47,18 @@ class TaskPageComponent extends React.PureComponent<Props> {
                 content: this.props.taskUpdatingError,
             });
         }
+
+        if (this.props.taskDeletingError) {
+            Modal.error({
+                title: `Could not delete the task ${id}`,
+                content: this.props.taskDeletingError,
+            });
+        }
     }
 
     public render() {
         const { id } = this.props.match.params;
-        const fetchTask = !this.props.taskInstance && !this.props.taskFetchingError
-            || (this.props.taskInstance && this.props.taskInstance.id !== +id );
+        const fetchTask = !this.props.task && !this.props.taskFetchingError;
 
         if (fetchTask) {
             this.props.onFetchTask(+id);
@@ -65,9 +73,9 @@ class TaskPageComponent extends React.PureComponent<Props> {
             return (
                 <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
                     <Col md={22} lg={18} xl={16} xxl={14}>
-                        <TopBarContainer/>
-                        <DetailsContainer/>
-                        <JobListContainer/>
+                        <TopBarComponent taskInstance={this.props.task.instance}/>
+                        <DetailsContainer task={this.props.task}/>
+                        <JobListContainer task={this.props.task}/>
                     </Col>
                 </Row>
             );

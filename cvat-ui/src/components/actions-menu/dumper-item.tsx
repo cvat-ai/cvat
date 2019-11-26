@@ -31,7 +31,7 @@ export default function DumperItemComponent(props: DumperItemComponentProps) {
     const pending = !!dumpingWithThisDumper;
 
     return (
-        <Menu.Item className='cvat-task-item-dump-submenu-item' key={dumper.name}>
+        <Menu.Item className='cvat-actions-menu-dump-submenu-item' key={dumper.name}>
             <Button block={true} type='link' disabled={pending}
                 onClick={() => {
                     props.onDumpAnnotation(task, dumper);
@@ -40,7 +40,7 @@ export default function DumperItemComponent(props: DumperItemComponentProps) {
                 <Text strong={isDefaultFormat(dumper.name, mode)}>
                     {dumper.name}
                 </Text>
-                {pending ? <Icon type='loading'/> : null}
+                {pending && <Icon type='loading'/>}
             </Button>
         </Menu.Item>
     );

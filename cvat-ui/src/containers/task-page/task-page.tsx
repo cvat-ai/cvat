@@ -1,15 +1,23 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router-dom';
+import { RouteComponentProps } from 'react-router';
 
-import { getTaskAsync } from '../../actions/task-actions';
+import { getTasksAsync } from '../../actions/tasks-actions';
 
 import TaskPageComponent from '../../components/task-page/task-page';
-import { CombinedState } from '../../reducers/root-reducer';
+import {
+    Task,
+    CombinedState,
+} from '../../reducers/interfaces';
+
+type Props = RouteComponentProps<{id: string}>;
 
 interface StateToProps {
+    task: Task;
     taskFetchingError: any;
     taskUpdatingError: any;
-    taskInstance: any;
+    taskDeletingError: any;
     deleteActivity: boolean | null;
     installedGit: boolean;
 }
@@ -18,23 +26,25 @@ interface DispatchToProps {
     fetchTask: (tid: number) => void;
 }
 
-function mapStateToProps(state: CombinedState): StateToProps {
+function mapStateToProps(state: CombinedState, own: Props): StateToProps {
     const { plugins } = state.plugins;
-    const { activeTask } = state;
     const { deletes } = state.tasks.activities;
+    const taskDeletingError = deletes.deletingError;
+    const id = +own.match.params.id;
 
-    const taskInstance = activeTask.task ? activeTask.task.instance : null;
+    const filtered = state.tasks.current.filter((task) => task.instance.id === id);
+    const task = filtered[0] || null;
 
     let deleteActivity = null;
-    if (taskInstance) {
-        const { id } = taskInstance;
-        deleteActivity = deletes.byTask[id] ? deletes.byTask[id] : null;
+    if (task && id in deletes.byTask) {
+        deleteActivity = deletes.byTask[id];
     }
 
     return {
-        taskInstance,
-        taskFetchingError: activeTask.taskFetchingError,
-        taskUpdatingError: activeTask.taskUpdatingError,
+        task,
+        taskFetchingError: state.tasks.tasksFetchingError,
+        taskUpdatingError: state.tasks.taskUpdatingError,
+        taskDeletingError,
         deleteActivity,
         installedGit: plugins.GIT_INTEGRATION,
     };
@@ -43,7 +53,16 @@ function mapStateToProps(state: CombinedState): StateToProps {
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         fetchTask: (tid: number) => {
-            dispatch(getTaskAsync(tid));
+            dispatch(getTasksAsync({
+                id: tid,
+                page: 1,
+                search: null,
+                owner: null,
+                assignee: null,
+                name: null,
+                status: null,
+                mode: null,
+            }));
         },
     };
 }
@@ -51,7 +70,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 function TaskPageContainer(props: StateToProps & DispatchToProps) {
     return (
         <TaskPageComponent
-            taskInstance={props.taskInstance}
+            task={props.task}
+            taskDeletingError={props.taskDeletingError ? props.taskDeletingError.toString() : ''}
             taskFetchingError={props.taskFetchingError ? props.taskFetchingError.toString() : ''}
             taskUpdatingError={props.taskUpdatingError ? props.taskUpdatingError.toString() : ''}
             deleteActivity={props.deleteActivity}
@@ -61,7 +81,7 @@ function TaskPageContainer(props: StateToProps & DispatchToProps) {
     );
 }
 
-export default connect(
+export default withRouter(connect(
     mapStateToProps,
     mapDispatchToProps,
-)(TaskPageContainer);
+)(TaskPageContainer));

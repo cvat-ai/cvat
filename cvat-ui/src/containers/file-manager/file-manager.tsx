@@ -5,8 +5,14 @@ import { TreeNodeNormal } from 'antd/lib/tree/Tree'
 import FileManagerComponent, { Files } from '../../components/file-manager/file-manager';
 
 import { loadShareDataAsync } from '../../actions/share-actions';
-import { ShareItem } from '../../reducers/interfaces';
-import { CombinedState } from '../../reducers/root-reducer';
+import {
+    ShareItem,
+    CombinedState,
+} from '../../reducers/interfaces';
+
+interface OwnProps {
+    withRemote: boolean;
+}
 
 interface StateToProps {
     treeData: TreeNodeNormal[];
@@ -43,7 +49,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-class FileManagerContainer extends React.PureComponent<StateToProps & DispatchToProps> {
+type Props = StateToProps & DispatchToProps & OwnProps;
+
+export class FileManagerContainer extends React.PureComponent<Props> {
     private managerComponentRef: any;
 
     public getFiles(): Files {
@@ -59,6 +67,7 @@ class FileManagerContainer extends React.PureComponent<StateToProps & DispatchTo
             <FileManagerComponent
                 treeData={this.props.treeData}
                 onLoadData={this.props.getTreeData}
+                withRemote={this.props.withRemote}
                 ref={(component) => this.managerComponentRef = component}
             />
         );

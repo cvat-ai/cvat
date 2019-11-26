@@ -3,16 +3,19 @@ import ReactDOM from 'react-dom';
 import { connect, Provider } from 'react-redux';
 
 import CVATApplication from './components/cvat-app';
-import createCVATStore from './store';
+
+import createRootReducer from './reducers/root-reducer';
+import createCVATStore, { getCVATStore } from './store';
 
 import { authorizedAsync } from './actions/auth-actions';
 import { gettingFormatsAsync } from './actions/formats-actions';
 import { checkPluginsAsync } from './actions/plugins-actions';
 import { getUsersAsync } from './actions/users-actions';
 
-import { CombinedState } from './reducers/root-reducer';
+import { CombinedState } from './reducers/interfaces';
 
-const cvatStore = createCVATStore();
+createCVATStore(createRootReducer);
+const cvatStore = getCVATStore();
 
 interface StateToProps {
     pluginsInitialized: boolean;
@@ -22,6 +25,9 @@ interface StateToProps {
     gettingAuthError: any;
     gettingFormatsError: any;
     gettingUsersError: any;
+    installedAutoAnnotation: boolean;
+    installedTFSegmentation: boolean;
+    installedTFAnnotation: boolean;
     user: any;
 }
 
@@ -46,6 +52,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         gettingAuthError: auth.authError,
         gettingUsersError: users.gettingUsersError,
         gettingFormatsError: formats.gettingFormatsError,
+        installedAutoAnnotation: plugins.plugins.AUTO_ANNOTATION,
+        installedTFSegmentation: plugins.plugins.TF_SEGMENTATION,
+        installedTFAnnotation: plugins.plugins.TF_ANNOTATION,
         user: auth.user,
     };
 }
@@ -73,6 +82,9 @@ function reduxAppWrapper(props: StateToProps & DispatchToProps) {
             gettingAuthError={props.gettingAuthError ? props.gettingAuthError.toString() : ''}
             gettingFormatsError={props.gettingFormatsError ? props.gettingFormatsError.toString() : ''}
             gettingUsersError={props.gettingUsersError ? props.gettingUsersError.toString() : ''}
+            installedAutoAnnotation={props.installedAutoAnnotation}
+            installedTFSegmentation={props.installedTFSegmentation}
+            installedTFAnnotation={props.installedTFAnnotation}
             user={props.user}
         />
     )

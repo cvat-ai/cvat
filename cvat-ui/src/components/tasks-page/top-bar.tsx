@@ -16,37 +16,35 @@ interface VisibleTopBarProps {
     searchValue: string;
 }
 
-class TopBarComponent extends React.PureComponent<VisibleTopBarProps & RouteComponentProps> {
-    public render() {
-        return (
-            <>
-                <Row type='flex' justify='center' align='middle'>
-                    <Col md={22} lg={18} xl={16} xxl={14}>
-                        <Text strong> Default project </Text>
-                    </Col>
-                </Row>
-                <Row type='flex' justify='center' align='middle'>
-                    <Col md={11} lg={9} xl={8} xxl={7}>
-                        <Text className='cvat-title'> Tasks </Text>
-                        <Input.Search
-                            defaultValue={this.props.searchValue}
-                            onSearch={this.props.onSearch}
-                            size='large' placeholder='Search'
-                        />
-                    </Col>
-                    <Col
-                        md={{span: 11}}
-                        lg={{span: 9}}
-                        xl={{span: 8}}
-                        xxl={{span: 7}}>
-                        <Button size='large' id='cvat-create-task-button' type='primary' onClick={
-                            () => this.props.history.push('/tasks/create')
-                        }> Create new task </Button>
-                    </Col>
-                </Row>
-            </>
-        )
-    }
+function TopBarComponent(props: VisibleTopBarProps & RouteComponentProps) {
+    return (
+        <>
+            <Row type='flex' justify='center' align='middle'>
+                <Col md={22} lg={18} xl={16} xxl={14}>
+                    <Text strong>{'Default project'}</Text>
+                </Col>
+            </Row>
+            <Row type='flex' justify='center' align='middle'>
+                <Col md={11} lg={9} xl={8} xxl={7}>
+                    <Text className='cvat-title'>Tasks</Text>
+                    <Input.Search
+                        defaultValue={props.searchValue}
+                        onSearch={props.onSearch}
+                        size='large' placeholder='Search'
+                    />
+                </Col>
+                <Col
+                    md={{span: 11}}
+                    lg={{span: 9}}
+                    xl={{span: 8}}
+                    xxl={{span: 7}}>
+                    <Button size='large' id='cvat-create-task-button' type='primary' onClick={
+                        () => props.history.push('/tasks/create')
+                    }> Create new task </Button>
+                </Col>
+            </Row>
+        </>
+    )
 }
 
 export default withRouter(TopBarComponent);
