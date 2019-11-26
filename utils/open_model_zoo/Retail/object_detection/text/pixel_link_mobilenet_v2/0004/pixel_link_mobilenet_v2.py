@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT`
+
 import cv2
 import numpy as np
 
