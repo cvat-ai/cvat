@@ -17,6 +17,7 @@ https://github.com/opencv/cvat/issues/750).
 - Ability to dump/load annotations in LabelMe format from UI
 - REST API to export an annotation task (images + annotations)
 - Datumaro is an experimental framework to build, analyze, debug and visualize datasets for DL algorithms
+- Text Detection Auto Annoation Script in OpenVINO format for version 4
 
 ### Changed
 -
