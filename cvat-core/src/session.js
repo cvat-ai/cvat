@@ -712,7 +712,8 @@
                 stop_frame: undefined,
                 frame_filter: undefined,
                 data_chunk_size: undefined,
-                data_chunk_type: undefined,
+                data_compressed_chunk_type: undefined,
+                data_original_chunk_type: undefined,
             };
 
             for (const property in data) {
@@ -1144,7 +1145,7 @@
                     },
                 },
                 dataChunkType: {
-                    get: () => data.data_chunk_type,
+                    get: () => { console.log(data); return data.data_compressed_chunk_type},
                 },
             }));
 

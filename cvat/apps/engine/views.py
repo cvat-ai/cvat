@@ -266,7 +266,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         task_dirname = instance.get_task_dirname()
         super().perform_destroy(instance)
         shutil.rmtree(task_dirname, ignore_errors=True)
-        if not instance.data.tasks.all():
+        if instance.data and not instance.data.tasks.all():
             shutil.rmtree(instance.data.get_data_dirname(), ignore_errors=True)
             instance.data.delete()
 

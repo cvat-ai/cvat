@@ -50,7 +50,9 @@ class Data(models.Model):
     start_frame = models.PositiveIntegerField(default=0)
     stop_frame = models.PositiveIntegerField(default=0)
     frame_filter = models.CharField(max_length=256, default="", blank=True)
-    type = models.CharField(max_length=32, choices=DataChoice.choices(),
+    compressed_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
+        default=DataChoice.IMAGESET)
+    original_chunk_type = models.CharField(max_length=32, choices=DataChoice.choices(),
         default=DataChoice.IMAGESET)
 
     class Meta:
@@ -75,23 +77,30 @@ class Data(models.Model):
     def get_original_cache_dirname(self):
         return os.path.join(self.get_cache_dirname(), "original")
 
-    def _get_chunk_name(self, chunk_number):
-        if self.type == DataChoice.VIDEO:
+    @staticmethod
+    def _get_chunk_name(chunk_number, chunk_type):
+        if chunk_type == DataChoice.VIDEO:
             ext = 'mp4'
-        elif self.type == DataChoice.IMAGESET:
+        elif chunk_type == DataChoice.IMAGESET:
             ext = 'zip'
         else:
             ext = 'list'
 
         return '{}.{}'.format(chunk_number, ext)
 
+    def _get_compressed_chunk_name(self, chunk_number):
+        return self._get_chunk_name(chunk_number, self.compressed_chunk_type)
+
+    def _get_original_chunk_name(self, chunk_number):
+        return self._get_chunk_name(chunk_number, self.original_chunk_type)
+
     def get_original_chunk_path(self, chunk_number):
         return os.path.join(self.get_original_cache_dirname(),
-            self._get_chunk_name(chunk_number))
+            self._get_original_chunk_name(chunk_number))
 
     def get_compressed_chunk_path(self, chunk_number):
         return os.path.join(self.get_compressed_cache_dirname(),
-            self._get_chunk_name(chunk_number))
+            self._get_compressed_chunk_name(chunk_number))
 
     def get_preview_path(self):
         return os.path.join(self.get_data_dirname(), 'preview.jpeg')

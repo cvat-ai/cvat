@@ -162,8 +162,8 @@ class DataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Data
-        fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter', 'type',
-                  'client_files', 'server_files', 'remote_files')
+        fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
+            'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files')
 
     def validate_frame_filter(self, value):
         match = re.search("step\s*=\s*([1-9]\d*)", value)
@@ -203,7 +203,8 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
     labels = LabelSerializer(many=True, source='label_set', partial=True)
     segments = SegmentSerializer(many=True, source='segment_set', read_only=True)
     data_chunk_size = serializers.ReadOnlyField(source='data.chunk_size')
-    data_chunk_type = serializers.ReadOnlyField(source='data.type')
+    data_compressed_chunk_type = serializers.ReadOnlyField(source='data.compressed_chunk_type')
+    data_original_chunk_type = serializers.ReadOnlyField(source='data.original_chunk_type')
     size = serializers.ReadOnlyField(source='data.size')
     image_quality = serializers.ReadOnlyField(source='data.image_quality')
     data = serializers.ReadOnlyField(source='data.id')
@@ -213,8 +214,9 @@ class TaskSerializer(WriteOnceMixin, serializers.ModelSerializer):
         fields = ('url', 'id', 'name', 'mode', 'owner', 'assignee',
             'bug_tracker', 'created_date', 'updated_date', 'overlap',
             'segment_size', 'z_order', 'status', 'labels', 'segments',
-            'project', 'data_chunk_size', 'data_chunk_type', 'size', 'image_quality', 'data')
-        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size', 'data_chunk_type', 'size', 'image_quality', 'data')
+            'project', 'data_chunk_size', 'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
+        read_only_fields = ('mode', 'created_date', 'updated_date', 'status', 'data_chunk_size',
+            'data_compressed_chunk_type', 'data_original_chunk_type', 'size', 'image_quality', 'data')
         write_once_fields = ('overlap', 'segment_size')
         ordering = ['-id']
 

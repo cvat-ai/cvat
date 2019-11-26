@@ -200,11 +200,10 @@
                 size = frameDataCache[taskID].meta[frame];
             }
         } else {
-                throw new ArgumentError(
-                    `Invalid mode is specified ${mode}`,
-                );
-            }
-
+            throw new ArgumentError(
+                `Invalid mode is specified ${mode}`,
+            );
+        }
         frameDataCache[taskID].provider.setRenderSize(size.width, size.height);
         return new FrameData(size.width, size.height, taskID, frame);
     };

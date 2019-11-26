@@ -146,7 +146,8 @@ class Migration(migrations.Migration):
                 ('start_frame', models.PositiveIntegerField(default=0)),
                 ('stop_frame', models.PositiveIntegerField(default=0)),
                 ('frame_filter', models.CharField(blank=True, default='', max_length=256)),
-                ('type', models.CharField(choices=[('video', 'VIDEO'), ('imageset', 'IMAGESET'), ('list', 'LIST')], default=cvat.apps.engine.models.DataChoice('imageset'), max_length=32)),
+                ('compressed_chunk_type', models.CharField(choices=[('video', 'VIDEO'), ('imageset', 'IMAGESET'), ('list', 'LIST')], default=cvat.apps.engine.models.DataChoice('imageset'), max_length=32)),
+                ('original_chunk_type', models.CharField(choices=[('video', 'VIDEO'), ('imageset', 'IMAGESET'), ('list', 'LIST')], default=cvat.apps.engine.models.DataChoice('imageset'), max_length=32)),
             ],
             options={
                 'default_permissions': (),

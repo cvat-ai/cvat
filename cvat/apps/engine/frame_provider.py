@@ -9,10 +9,9 @@ from cvat.apps.engine.models import DataChoice
 class FrameProvider():
     def __init__(self, db_data):
         self._db_data = db_data
-        # self._chunk_type = db_data.type
-        if db_data.type == DataChoice.IMAGESET:
+        if db_data.compressed_chunk_type == DataChoice.IMAGESET:
             self._chunk_extractor_class = ArchiveExtractor
-        elif db_data.type == DataChoice.VIDEO:
+        elif db_data.compressed_chunk_type == DataChoice.VIDEO:
             self._chunk_extractor_class = VideoExtractor
         else:
             pass # TODO
@@ -44,7 +43,7 @@ class FrameProvider():
             raise Exception('requested chunk does not exist')
 
         path = self._db_data.get_compressed_chunk_path(chunk_number)
-        if self._db_data.type == DataChoice.LIST:
+        if self._db_data.compressed_chunk_type == DataChoice.LIST:
             zip_chunk_path = '{}.zip'.format(os.path.splitext(path)[0])
             if not os.path.exists(zip_chunk_path):
                 with zipfile.ZipFile(zip_chunk_path, 'x') as zip_chunk:
