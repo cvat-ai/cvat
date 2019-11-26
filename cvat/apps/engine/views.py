@@ -163,8 +163,8 @@ class ServerViewSet(viewsets.ViewSet):
         return Response(data)
 
     @staticmethod
-    @action(detail=False, methods=['GET'], url_path='annotation/dataset_export_formats')
-    def annotation_export_formats(request):
+    @action(detail=False, methods=['GET'], url_path='dataset/formats')
+    def dataset_formats(request):
         data = DatumaroTask.get_export_formats()
         data = JSONRenderer().render(data)
         return Response(data)

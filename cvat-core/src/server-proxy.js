@@ -106,7 +106,7 @@
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/server/annotation/dataset_export_formats`, {
+                    response = await Axios.get(`${backendAPI}/server/dataset/formats`, {
                         proxy: config.proxy,
                     });
                     response = JSON.parse(response.data);
@@ -241,7 +241,7 @@
 
             async function exportDataset(id, format) {
                 const { backendAPI } = config;
-                let url = `${backendAPI}/tasks/${id}/export?format=${format}`;
+                let url = `${backendAPI}/tasks/${id}/dataset?format=${format}`;
 
                 return new Promise((resolve, reject) => {
                     async function request() {
