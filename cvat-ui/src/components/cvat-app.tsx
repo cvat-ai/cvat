@@ -34,6 +34,8 @@ type CVATAppProps = {
     gettingFormatsError: string;
     gettingUsersError: string;
     installedAutoAnnotation: boolean;
+    installedTFAnnotation: boolean;
+    installedTFSegmentation: boolean;
     user: any;
 }
 
@@ -100,6 +102,9 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             (this.props.userInitialized && this.props.formatsInitialized &&
              this.props.pluginsInitialized && this.props.usersInitialized);
 
+        const withModels = this.props.installedAutoAnnotation
+            || this.props.installedTFAnnotation || this.props.installedTFSegmentation;
+
         if (readyForRender) {
             if (this.props.user) {
                 return (
@@ -112,7 +117,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                                     <Route path='/tasks/create' component={CreateTaskPageContainer}/>
                                     <Route exact path='/tasks/:id' component={TaskPageContainer}/>
                                     <Route path='/tasks/:id/jobs/:id' component={AnnotationPageContainer}/>
-                                    { this.props.installedAutoAnnotation &&
+                                    { withModels &&
                                         <Route exact path='/models' component={ModelsPageContainer}/> }
                                     { this.props.installedAutoAnnotation &&
                                         <Route path='/models/create' component={CreateModelPageContainer}/> }

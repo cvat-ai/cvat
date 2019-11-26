@@ -12,6 +12,8 @@ import { Model } from '../../reducers/interfaces';
 
 interface Props {
     installedAutoAnnotation: boolean;
+    installedTFSegmentation: boolean;
+    installedTFAnnotation: boolean;
     modelsAreBeingFetched: boolean;
     modelsFetchingError: any;
     registeredUsers: any[];
@@ -35,13 +37,16 @@ export default function ModelsPageComponent(props: Props) {
                 <TopBarComponent installedAutoAnnotation={props.installedAutoAnnotation}/>
                 { integratedModels.length ?
                     <BuiltModelsList models={integratedModels}/> : null }
-                { uploadedModels.length ?
+                { uploadedModels.length &&
                     <UploadedModelsList
                         registeredUsers={props.registeredUsers}
                         models={uploadedModels}
                         deleteModel={props.deleteModel}
-                    /> : props.installedAutoAnnotation ?
-                    <EmptyListComponent/> : null
+                    />
+                } { props.installedAutoAnnotation &&
+                    !props.installedTFAnnotation &&
+                    !props.installedTFSegmentation &&
+                    <EmptyListComponent/>
                 }
             </div>
         );

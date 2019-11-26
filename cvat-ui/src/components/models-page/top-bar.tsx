@@ -20,17 +20,18 @@ function TopBarComponent(props: Props) {
             <Col md={11} lg={9} xl={8} xxl={7}>
                 <Text className='cvat-title'>Models</Text>
             </Col>
-            { props.installedAutoAnnotation ?
-                <Col
-                    md={{span: 11}}
-                    lg={{span: 9}}
-                    xl={{span: 8}}
-                    xxl={{span: 7}}>
+            <Col
+                md={{span: 11}}
+                lg={{span: 9}}
+                xl={{span: 8}}
+                xxl={{span: 7}}
+            >
+                { props.installedAutoAnnotation &&
                     <Button size='large' id='cvat-create-model-button' type='primary' onClick={
                         () => props.history.push('/models/create')
                     }> Create new model </Button>
-                </Col>: null
-            }
+                }
+            </Col>
         </Row>
     )
 }

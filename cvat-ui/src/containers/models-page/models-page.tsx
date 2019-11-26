@@ -61,6 +61,8 @@ function ModelsPageContainer(props: DispatchToProps & StateToProps) {
         render ?
             <ModelsPageComponent
                 installedAutoAnnotation={props.installedAutoAnnotation}
+                installedTFSegmentation={props.installedTFSegmentation}
+                installedTFAnnotation={props.installedTFAnnotation}
                 modelsAreBeingFetched={props.modelsAreBeingFetched}
                 modelsFetchingError={props.modelsFetchingError}
                 registeredUsers={props.registeredUsers}

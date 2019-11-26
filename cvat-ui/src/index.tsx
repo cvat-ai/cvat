@@ -26,6 +26,8 @@ interface StateToProps {
     gettingFormatsError: any;
     gettingUsersError: any;
     installedAutoAnnotation: boolean;
+    installedTFSegmentation: boolean;
+    installedTFAnnotation: boolean;
     user: any;
 }
 
@@ -51,6 +53,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         gettingUsersError: users.gettingUsersError,
         gettingFormatsError: formats.gettingFormatsError,
         installedAutoAnnotation: plugins.plugins.AUTO_ANNOTATION,
+        installedTFSegmentation: plugins.plugins.TF_SEGMENTATION,
+        installedTFAnnotation: plugins.plugins.TF_ANNOTATION,
         user: auth.user,
     };
 }
@@ -79,6 +83,8 @@ function reduxAppWrapper(props: StateToProps & DispatchToProps) {
             gettingFormatsError={props.gettingFormatsError ? props.gettingFormatsError.toString() : ''}
             gettingUsersError={props.gettingUsersError ? props.gettingUsersError.toString() : ''}
             installedAutoAnnotation={props.installedAutoAnnotation}
+            installedTFSegmentation={props.installedTFSegmentation}
+            installedTFAnnotation={props.installedTFAnnotation}
             user={props.user}
         />
     )
