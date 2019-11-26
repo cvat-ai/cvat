@@ -11,6 +11,8 @@ import {
     message,
 } from 'antd';
 
+import Text from 'antd/lib/typography/Text';
+
 import CreateModelForm, {
     CreateModelForm as WrappedCreateModelForm
 } from './create-model-form';
@@ -115,6 +117,10 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                             (ref: WrappedCreateModelForm) => this.modelForm = ref
                         }
                     />
+                </Col>
+                <Col span={24}>
+                    <Text type='danger'>* </Text>
+                    <Text className='cvat-black-color'>Select files:</Text>
                 </Col>
                 <Col span={24}>
                     <ConnectedFileManager ref={
