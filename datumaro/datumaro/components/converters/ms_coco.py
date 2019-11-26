@@ -121,32 +121,88 @@ class _InstancesConverter(_TaskConverter):
             })
 
     def save_annotations(self, item):
-        for ann in item.annotations:
-            if ann.type != AnnotationType.bbox:
+        annotations = item.annotations.copy()
+
+        while len(annotations) != 0:
+            ann = annotations.pop()
+
+            if ann.type == AnnotationType.bbox and ann.label is not None:
+                pass
+            elif ann.type == AnnotationType.polygon and ann.label is not None:
+                pass
+            elif ann.type == AnnotationType.mask and ann.label is not None:
+                pass
+            else:
                 continue
 
-            is_crowd = ann.attributes.get('is_crowd', False)
+            bbox = None
             segmentation = None
-            if ann.group is not None:
+
+            if ann.type == AnnotationType.bbox:
+                is_crowd = ann.attributes.get('is_crowd', False)
+                bbox = ann.get_bbox()
+            elif ann.type == AnnotationType.polygon:
+                is_crowd = ann.attributes.get('is_crowd', False)
+            elif ann.type == AnnotationType.mask:
+                is_crowd = ann.attributes.get('is_crowd', True)
                 if is_crowd:
-                    segmentation = find(item.annotations, lambda x: \
-                        x.group == ann.group and x.type == AnnotationType.mask)
-                    if segmentation is not None:
-                        binary_mask = np.array(segmentation.image, dtype=np.bool)
-                        binary_mask = np.asfortranarray(binary_mask, dtype=np.uint8)
-                        segmentation = mask_utils.encode(binary_mask)
-                        area = mask_utils.area(segmentation)
-                        segmentation = mask_tools.convert_mask_to_rle(binary_mask)
-                else:
-                    segmentation = find(item.annotations, lambda x: \
-                        x.group == ann.group and x.type == AnnotationType.polygon)
-                    if segmentation is not None:
-                        area = ann.area()
-                        segmentation = [segmentation.get_points()]
+                    segmentation = ann
+            area = None
+
+            # If ann in a group, try to find corresponding annotations in
+            # this group, otherwise try to infer them.
+
+            if bbox is None and ann.group is not None:
+                bbox = find(annotations, lambda x: \
+                    x.group == ann.group and \
+                    x.type == AnnotationType.bbox and \
+                    x.label == ann.label)
+                if bbox is not None:
+                    bbox = bbox.get_bbox()
+
+            if is_crowd:
+                # is_crowd=True means there should be a mask
+                if segmentation is None and ann.group is not None:
+                    segmentation = find(annotations, lambda x: \
+                        x.group == ann.group and \
+                        x.type == AnnotationType.mask and \
+                        x.label == ann.label)
+                if segmentation is not None:
+                    binary_mask = np.array(segmentation.image, dtype=np.bool)
+                    binary_mask = np.asfortranarray(binary_mask, dtype=np.uint8)
+                    segmentation = mask_utils.encode(binary_mask)
+                    area = mask_utils.area(segmentation)
+                    segmentation = mask_tools.convert_mask_to_rle(binary_mask)
+            else:
+                # is_crowd=False means there are some polygons
+                polygons = []
+                if ann.type == AnnotationType.polygon:
+                    polygons = [ ann ]
+                if ann.group is not None:
+                    # A single object can consist of several polygons
+                    polygons += [p for p in annotations
+                        if p.group == ann.group and \
+                           p.type == AnnotationType.polygon and \
+                           p.label == ann.label]
+                if polygons:
+                    segmentation = [p.get_points() for p in polygons]
+                    h, w, _ = item.image.shape
+                    rles = mask_utils.frPyObjects(segmentation, h, w)
+                    rle = mask_utils.merge(rles)
+                    area = mask_utils.area(rle)
+
+            if ann.group is not None:
+                # Mark the group as visited to prevent repeats
+                for a in annotations[:]:
+                    if a.group == ann.group:
+                        annotations.remove(a)
+
             if segmentation is None:
                 is_crowd = False
                 segmentation = [ann.get_polygon()]
                 area = ann.area()
+            if bbox is None:
+                bbox = ann.get_bbox()
 
             elem = {
                 'id': self._get_ann_id(ann),
@@ -154,7 +210,7 @@ class _InstancesConverter(_TaskConverter):
                 'category_id': _cast(ann.label, int, -1) + 1,
                 'segmentation': segmentation,
                 'area': float(area),
-                'bbox': ann.get_bbox(),
+                'bbox': bbox,
                 'iscrowd': int(is_crowd),
             }
             if 'score' in ann.attributes:

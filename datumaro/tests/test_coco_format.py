@@ -34,12 +34,12 @@ class CocoImporterTest(TestCase):
             'info': {},
             'categories': [],
             'images': [],
-            'annotations': []
+            'annotations': [],
         }
         annotation['licenses'].append({
             'name': '',
             'id': 0,
-            'url': ''
+            'url': '',
         })
         annotation['info'] = {
             'contributor': '',
@@ -47,37 +47,41 @@ class CocoImporterTest(TestCase):
             'description': '',
             'url': '',
             'version': '',
-            'year': ''
+            'year': '',
         }
         annotation['licenses'].append({
             'name': '',
             'id': 0,
-            'url': ''
+            'url': '',
         })
-        annotation['categories'].append({'id': 0, 'name': 'TEST', 'supercategory': ''})
+        annotation['categories'].append({
+            'id': 1,
+            'name': 'TEST',
+            'supercategory': '',
+        })
         annotation['images'].append({
-            "id": 0,
+            "id": 1,
             "width": 10,
             "height": 5,
             "file_name": '000000000001.jpg',
             "license": 0,
             "flickr_url": '',
             "coco_url": '',
-            "date_captured": 0
-            })
-        annotation['annotations'].append({
-            "id": 0,
-            "image_id": 0,
-            "category_id": 0,
-            "segmentation": [[0, 0, 1, 0, 1, 2, 0, 2]],
-            "area": 2,
-            "bbox": [0, 0, 1, 2],
-            "iscrowd": 0
+            "date_captured": 0,
         })
         annotation['annotations'].append({
             "id": 1,
-            "image_id": 0,
-            "category_id": 0,
+            "image_id": 1,
+            "category_id": 1,
+            "segmentation": [[0, 0, 1, 0, 1, 2, 0, 2]],
+            "area": 2,
+            "bbox": [0, 0, 1, 2],
+            "iscrowd": 0,
+        })
+        annotation['annotations'].append({
+            "id": 2,
+            "image_id": 1,
+            "category_id": 1,
             "segmentation": {
                 "counts": [
                     0, 10,
@@ -88,7 +92,7 @@ class CocoImporterTest(TestCase):
                 "size": [10, 5]},
             "area": 30,
             "bbox": [0, 0, 10, 4],
-            "iscrowd": 0
+            "iscrowd": 1,
         })
         return annotation
 
@@ -115,29 +119,30 @@ class CocoImporterTest(TestCase):
 
             item = next(iter(dataset))
             self.assertTrue(item.has_image)
-            self.assertEqual(5, len(item.annotations))
-
-            ann_0 = find(item.annotations, lambda x: x.id == 0)
-            ann_0_poly = find(item.annotations, lambda x: \
-                x.group == ann_0.id and x.type == AnnotationType.polygon)
-            ann_0_mask = find(item.annotations, lambda x: \
-                x.group == ann_0.id and x.type == AnnotationType.mask)
-            self.assertFalse(ann_0 is None)
-            self.assertFalse(ann_0_poly is None)
-            self.assertFalse(ann_0_mask is None)
+            self.assertEqual(4, len(item.annotations))
 
             ann_1 = find(item.annotations, lambda x: x.id == 1)
-            ann_1_mask = find(item.annotations, lambda x: \
-                x.group == ann_1.id and x.type == AnnotationType.mask)
+            ann_1_poly = find(item.annotations, lambda x: \
+                x.group == ann_1.id and x.type == AnnotationType.polygon)
             self.assertFalse(ann_1 is None)
-            self.assertFalse(ann_1_mask is None)
+            self.assertFalse(ann_1_poly is None)
+
+            ann_2 = find(item.annotations, lambda x: x.id == 2)
+            ann_2_mask = find(item.annotations, lambda x: \
+                x.group == ann_2.id and x.type == AnnotationType.mask)
+            self.assertFalse(ann_2 is None)
+            self.assertFalse(ann_2_mask is None)
 
 class CocoConverterTest(TestCase):
-    def _test_save_and_load(self, source_dataset, converter_type, test_dir):
+    def _test_save_and_load(self, source_dataset, converter_type, test_dir,
+            importer_params=None):
         converter = converter_type()
         converter(source_dataset, test_dir.path)
 
-        project = Project.import_from(test_dir.path, 'ms_coco')
+        if not importer_params:
+            importer_params = {}
+        project = Project.import_from(test_dir.path, 'ms_coco',
+            **importer_params)
         parsed_dataset = project.make_dataset()
 
         source_subsets = [s if s else DEFAULT_SUBSET_NAME
@@ -155,9 +160,9 @@ class CocoConverterTest(TestCase):
             self.assertEqual(len(item_a.annotations), len(item_b.annotations))
             for ann_a in item_a.annotations:
                 ann_b = find(item_b.annotations, lambda x: \
-                    x.id == ann_a.id if ann_a.id else \
+                    x.id == ann_a.id and \
                     x.type == ann_a.type and x.group == ann_a.group)
-                self.assertEqual(ann_a, ann_b)
+                self.assertEqual(ann_a, ann_b, 'id: ' + str(ann_a.id))
 
     def test_can_save_and_load_captions(self):
         class TestExtractor(Extractor):
@@ -194,34 +199,35 @@ class CocoConverterTest(TestCase):
                 items = [
                     DatasetItem(id=0, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
-                            BboxObject(0, 1, 2, 3, label=2, group=1,
-                                attributes={ 'is_crowd': False }, id=1),
+                            # Bbox + single polygon
+                            BboxObject(0, 1, 2, 3, label=2, group=1, id=1,
+                                attributes={ 'is_crowd': False }),
                             PolygonObject([0, 1, 2, 1, 2, 3, 0, 3],
-                                label=2, group=1),
-                            MaskObject(np.array([[0, 0, 0, 0], [1, 1, 0, 0],
-                                                 [1, 1, 0, 0], [0, 0, 0, 0]],
-                                                 # does not include lower row
-                                                 dtype=np.bool),
-                                label=2, group=1),
+                                attributes={ 'is_crowd': False },
+                                label=2, group=1, id=1),
                         ]),
                     DatasetItem(id=1, subset='train',
                         annotations=[
-                            BboxObject(0, 1, 3, 3, label=4, group=3,
-                                attributes={ 'is_crowd': True }, id=3),
+                            # Mask + bbox
                             MaskObject(np.array([[0, 0, 0, 0], [1, 0, 1, 0],
                                                  [1, 1, 0, 0], [0, 0, 1, 0]],
                                                  dtype=np.bool),
-                                label=4, group=3),
+                                attributes={ 'is_crowd': True },
+                                label=4, group=3, id=3),
+                            BboxObject(0, 1, 3, 3, label=4, group=3, id=3,
+                                attributes={ 'is_crowd': True }),
                         ]),
 
-                    DatasetItem(id=2, subset='val',
+                    DatasetItem(id=3, subset='val',
                         annotations=[
-                            BboxObject(0, 1, 3, 2, label=4, group=3,
-                                attributes={ 'is_crowd': True }, id=3),
+                            # Bbox + mask
+                            BboxObject(0, 1, 3, 2, label=4, group=3, id=3,
+                                attributes={ 'is_crowd': True }),
                             MaskObject(np.array([[0, 0, 0, 0], [1, 0, 1, 0],
                                                  [1, 1, 0, 0], [0, 0, 0, 0]],
                                                  dtype=np.bool),
-                                label=4, group=3),
+                                attributes={ 'is_crowd': True },
+                                label=4, group=3, id=3),
                         ]),
                 ]
                 return iter(items)
@@ -240,6 +246,49 @@ class CocoConverterTest(TestCase):
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
                 CocoInstancesConverter, test_dir)
+
+    def test_can_save_and_load_instances_with_mask_conversion(self):
+        class TestExtractor(Extractor):
+            def __iter__(self):
+                items = [
+                    DatasetItem(id=0, image=np.zeros((5, 5, 3)), subset='train',
+                        annotations=[
+                            BboxObject(0, 0, 5, 5, label=3, id=4, group=4,
+                                attributes={ 'is_crowd': False }),
+                            PolygonObject([0, 0, 4, 0, 4, 4],
+                                label=3, id=4, group=4,
+                                attributes={ 'is_crowd': False }),
+                            MaskObject(np.array([
+                                    [0, 1, 1, 1, 0],
+                                    [0, 0, 1, 1, 0],
+                                    [0, 0, 0, 1, 0],
+                                    [0, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0]],
+                                    # only internal fragment (without the border),
+                                    # but not everywhere...
+                                    dtype=np.bool),
+                                attributes={ 'is_crowd': False },
+                                label=3, id=4, group=4),
+                        ]
+                    ),
+                ]
+                return iter(items)
+
+            def subsets(self):
+                return ['train']
+
+            def categories(self):
+                label_categories = LabelCategories()
+                for i in range(10):
+                    label_categories.add(str(i))
+                return {
+                    AnnotationType.label: label_categories,
+                }
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(TestExtractor(),
+                CocoInstancesConverter, test_dir,
+                {'merge_instance_polygons': True})
 
     def test_can_save_and_load_images(self):
         class TestExtractor(Extractor):
@@ -356,20 +405,10 @@ class CocoConverterTest(TestCase):
 
                     DatasetItem(id=2, image=np.zeros((5, 5, 3)), annotations=[
                         LabelObject(3, id=3),
-                        BboxObject(0, 0, 5, 5, label=3,
-                            attributes={ 'is_crowd': False }, id=4, group=4),
-                        PolygonObject([0, 0, 4, 0, 4, 4],
-                                label=3, group=4),
-                        MaskObject(np.array([
-                                [0, 1, 1, 1, 0],
-                                [0, 0, 1, 1, 0],
-                                [0, 0, 0, 1, 0],
-                                [0, 0, 0, 0, 0],
-                                [0, 0, 0, 0, 0]],
-                                # only internal fragment (without the border),
-                                # but not everywhere...
-                                dtype=np.bool),
-                            label=3, group=4),
+                        BboxObject(0, 0, 5, 5, label=3, id=4, group=4,
+                            attributes={ 'is_crowd': False }),
+                        PolygonObject([0, 0, 4, 0, 4, 4], label=3, id=4, group=4,
+                            attributes={ 'is_crowd': False }),
                     ]),
                 ]
 

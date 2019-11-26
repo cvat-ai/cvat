@@ -271,6 +271,14 @@ class PolygonObject(ShapeObject):
     def get_polygon(self):
         return self.get_points()
 
+    def area(self):
+        import pycocotools.mask as mask_utils
+
+        _, _, w, h = self.get_bbox()
+        rle = mask_utils.frPyObjects([self.get_points()], h, w)
+        area = mask_utils.area(rle)
+        return area
+
 class BboxObject(ShapeObject):
     # pylint: disable=redefined-builtin
     def __init__(self, x=0, y=0, w=0, h=0,

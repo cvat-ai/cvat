@@ -61,7 +61,7 @@ class CocoExtractor(Extractor):
         def categories(self):
             return self._parent.categories()
 
-    def __init__(self, path, task):
+    def __init__(self, path, task, merge_instance_polygons=False):
         super().__init__()
 
         rootpath = path.rsplit(CocoPath.ANNOTATIONS_DIR, maxsplit=1)[0]
@@ -79,6 +79,8 @@ class CocoExtractor(Extractor):
         self._subsets[subset_name] = subset
 
         self._load_categories()
+
+        self._merge_instance_polygons = merge_instance_polygons
 
     @staticmethod
     def _make_subset_loader(path):
@@ -212,20 +214,22 @@ class CocoExtractor(Extractor):
             segmentation = ann.get('segmentation')
             if segmentation is not None:
                 group = ann_id
+                rle = None
 
                 if isinstance(segmentation, list):
-                    # polygon -- a single object might consist of multiple parts
+                    # polygon - a single object can consist of multiple parts
                     for polygon_points in segmentation:
                         parsed_annotations.append(PolygonObject(
                             points=polygon_points, label=label_id,
-                            group=group
+                            id=ann_id, group=group, attributes=attributes
                         ))
 
-                    # we merge all parts into one mask RLE code
-                    img_h = image_info['height']
-                    img_w = image_info['width']
-                    rles = mask_utils.frPyObjects(segmentation, img_h, img_w)
-                    rle = mask_utils.merge(rles)
+                    if self._merge_instance_polygons:
+                        # merge all parts into a single mask RLE
+                        img_h = image_info['height']
+                        img_w = image_info['width']
+                        rles = mask_utils.frPyObjects(segmentation, img_h, img_w)
+                        rle = mask_utils.merge(rles)
                 elif isinstance(segmentation['counts'], list):
                     # uncompressed RLE
                     img_h, img_w = segmentation['size']
@@ -234,9 +238,10 @@ class CocoExtractor(Extractor):
                     # compressed RLE
                     rle = segmentation
 
-                parsed_annotations.append(RleMask(rle=rle, label=label_id,
-                    group=group
-                ))
+                if rle is not None:
+                    parsed_annotations.append(RleMask(rle=rle, label=label_id,
+                        id=ann_id, group=group, attributes=attributes
+                    ))
 
             parsed_annotations.append(
                 BboxObject(x, y, w, h, label=label_id,
@@ -277,21 +282,22 @@ class CocoExtractor(Extractor):
         return parsed_annotations
 
 class CocoImageInfoExtractor(CocoExtractor):
-    def __init__(self, path):
-        super().__init__(path, task=CocoAnnotationType.image_info)
+    def __init__(self, path, **kwargs):
+        super().__init__(path, task=CocoAnnotationType.image_info, **kwargs)
 
 class CocoCaptionsExtractor(CocoExtractor):
-    def __init__(self, path):
-        super().__init__(path, task=CocoAnnotationType.captions)
+    def __init__(self, path, **kwargs):
+        super().__init__(path, task=CocoAnnotationType.captions, **kwargs)
 
 class CocoInstancesExtractor(CocoExtractor):
-    def __init__(self, path):
-        super().__init__(path, task=CocoAnnotationType.instances)
+    def __init__(self, path, **kwargs):
+        super().__init__(path, task=CocoAnnotationType.instances, **kwargs)
 
 class CocoPersonKeypointsExtractor(CocoExtractor):
-    def __init__(self, path):
-        super().__init__(path, task=CocoAnnotationType.person_keypoints)
+    def __init__(self, path, **kwargs):
+        super().__init__(path, task=CocoAnnotationType.person_keypoints,
+            **kwargs)
 
 class CocoLabelsExtractor(CocoExtractor):
-    def __init__(self, path):
-        super().__init__(path, task=CocoAnnotationType.labels)
+    def __init__(self, path, **kwargs):
+        super().__init__(path, task=CocoAnnotationType.labels, **kwargs)
