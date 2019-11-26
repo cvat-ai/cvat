@@ -100,6 +100,12 @@
                                 objectStates, reset);
                         return result;
                     },
+
+                    async exportDataset(format) {
+                        const result = await PluginRegistry
+                            .apiWrapper.call(this, prototype.annotations.exportDataset, format);
+                        return result;
+                    },
                 },
                 writable: true,
             }),
@@ -364,6 +370,19 @@
                 * @memberof Session.annotations
                 * @returns {boolean}
                 * @throws {module:API.cvat.exceptions.PluginError}
+                * @instance
+                * @async
+            */
+            /**
+                * Export as a dataset.
+                * Method builds a dataset in the specified format.
+                * @method exportDataset
+                * @memberof Session.annotations
+                * @param {module:String} format - a format
+                * @returns {string} An URL to the dataset file
+                * @throws {module:API.cvat.exceptions.PluginError}
+                * @throws {module:API.cvat.exceptions.ServerError}
+                * @throws {module:API.cvat.exceptions.ArgumentError}
                 * @instance
                 * @async
             */
@@ -1132,6 +1151,8 @@
                 statistics: Object.getPrototypeOf(this).annotations.statistics.bind(this),
                 hasUnsavedChanges: Object.getPrototypeOf(this)
                     .annotations.hasUnsavedChanges.bind(this),
+                exportDataset: Object.getPrototypeOf(this)
+                    .annotations.exportDataset.bind(this),
             };
 
             this.frames = {
@@ -1195,6 +1216,7 @@
         annotationsStatistics,
         uploadAnnotations,
         dumpAnnotations,
+        exportDataset,
     } = require('./annotations');
 
     buildDublicatedAPI(Job.prototype);
@@ -1455,6 +1477,11 @@
 
     Task.prototype.annotations.dump.implementation = async function (name, dumper) {
         const result = await dumpAnnotations(this, name, dumper);
+        return result;
+    };
+
+    Task.prototype.annotations.exportDataset.implementation = async function (format) {
+        const result = await exportDataset(this, format);
         return result;
     };
 })();

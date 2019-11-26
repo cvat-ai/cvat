@@ -70,6 +70,11 @@
             return result.map((el) => new AnnotationFormat(el));
         };
 
+        cvat.server.datasetFormats.implementation = async () => {
+            const result = await serverProxy.server.datasetFormats();
+            return result;
+        };
+
         cvat.server.register.implementation = async (username, firstName, lastName,
             email, password1, password2) => {
             await serverProxy.server.register(username, firstName, lastName, email,

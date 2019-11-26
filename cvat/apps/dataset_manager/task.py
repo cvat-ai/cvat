@@ -36,6 +36,9 @@ _TASK_IMAGES_REMOTE_EXTRACTOR = 'cvat_rest_api_task_images'
 def get_export_cache_dir(db_task):
     return osp.join(db_task.get_task_dirname(), 'export_cache')
 
+EXPORT_FORMAT_DATUMARO_PROJECT = "datumaro_project"
+
+
 class TaskProject:
     @staticmethod
     def _get_datumaro_project_dir(db_task):
@@ -211,9 +214,7 @@ class TaskProject:
     def export(self, dst_format, save_dir, save_images=False, server_url=None):
         if self._dataset is None:
             self._init_dataset()
-        if dst_format == DEFAULT_FORMAT:
-            self._dataset.save(save_dir=save_dir, save_images=save_images)
-        elif dst_format == DEFAULT_FORMAT_REMOTE:
+        if dst_format == EXPORT_FORMAT_DATUMARO_PROJECT:
             self._remote_export(save_dir=save_dir, server_url=server_url)
         else:
             self._dataset.export(output_format=dst_format,
@@ -291,8 +292,7 @@ class TaskProject:
             ])
 
 
-DEFAULT_FORMAT = "datumaro_project"
-DEFAULT_FORMAT_REMOTE = "datumaro_project_remote"
+DEFAULT_FORMAT = EXPORT_FORMAT_DATUMARO_PROJECT
 DEFAULT_CACHE_TTL = timedelta(hours=10)
 CACHE_TTL = DEFAULT_CACHE_TTL
 
@@ -349,3 +349,35 @@ def clear_export_cache(task_id, file_path, file_ctime):
     except Exception:
         log_exception(slogger.task[task_id])
         raise
+
+
+EXPORT_FORMATS = [
+    {
+        'name': 'Datumaro',
+        'tag': EXPORT_FORMAT_DATUMARO_PROJECT,
+        'is_default': True,
+    },
+    {
+        'name': 'PASCAL VOC 2012',
+        'tag': 'voc',
+        'is_default': False,
+    },
+    {
+        'name': 'MS COCO',
+        'tag': 'coco',
+        'is_default': False,
+    }
+]
+
+def get_export_formats():
+    from datumaro.components import converters
+
+    available_formats = set(name for name, _ in converters.items)
+    available_formats.add(EXPORT_FORMAT_DATUMARO_PROJECT)
+
+    public_formats = []
+    for fmt in EXPORT_FORMATS:
+        if fmt['tag'] in available_formats:
+            public_formats.append(fmt)
+
+    return public_formats

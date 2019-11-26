@@ -158,8 +158,15 @@ class ServerViewSet(viewsets.ViewSet):
 
     @staticmethod
     @action(detail=False, methods=['GET'], url_path='annotation/formats')
-    def formats(request):
+    def annotation_formats(request):
         data = get_annotation_formats()
+        return Response(data)
+
+    @staticmethod
+    @action(detail=False, methods=['GET'], url_path='dataset/formats')
+    def dataset_formats(request):
+        data = DatumaroTask.get_export_formats()
+        data = JSONRenderer().render(data)
         return Response(data)
 
 class ProjectFilter(filters.FilterSet):
@@ -447,7 +454,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             return HttpResponseBadRequest(str(e))
 
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='export/')
+        url_path='dataset/')
     def dataset_export(self, request, pk):
         """Export task as a dataset in a specific format"""
 
@@ -463,7 +470,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if not dst_format:
             dst_format = DatumaroTask.DEFAULT_FORMAT
         dst_format = dst_format.lower()
-        if 100 < len(dst_format) or not re.fullmatch(r"^[\w_-]+$", dst_format):
+        if dst_format not in [f['tag']
+                for f in DatumaroTask.get_export_formats()]:
             raise serializers.ValidationError(
                 "Unexpected parameter 'format' specified for the request")
 
@@ -473,7 +481,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         rq_job = queue.fetch_job(rq_id)
         if rq_job:
             task_time = timezone.localtime(db_task.updated_date)
-            request_time = timezone.localtime(rq_job.meta.get('request_time', datetime.min))
+            request_time = timezone.localtime(
+                rq_job.meta.get('request_time', datetime.min))
             if request_time < task_time:
                 rq_job.cancel()
                 rq_job.delete()
@@ -504,7 +513,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             args=(pk, request.user, dst_format), job_id=rq_id,
             meta={ 'request_time': timezone.localtime() },
             result_ttl=ttl, failure_ttl=ttl)
-        return Response(status=status.HTTP_201_CREATED)
+        return Response(status=status.HTTP_202_ACCEPTED)
 
 class JobViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):

@@ -13,9 +13,10 @@
 */
 
 class TaskView {
-    constructor(task, annotationFormats) {
+    constructor(task, annotationFormats, exportFormats) {
         this.init(task);
         this._annotationFormats = annotationFormats;
+        this._exportFormats = exportFormats;
 
         this._UI = null;
     }
@@ -109,6 +110,28 @@ class TaskView {
         }
     }
 
+    async _exportDataset(button, formatName) {
+        button.disabled = true;
+        try {
+            const format = this._exportFormats.find((x) => {
+                return x.name == formatName;
+            });
+            if (!format) {
+                throw `Unknown dataset export format '${formatName}'`;
+            }
+            const url = await this._task.annotations.exportDataset(format.tag);
+            const tempElem = document.createElement('a');
+            tempElem.href = `${url}`;
+            document.body.appendChild(tempElem);
+            tempElem.click();
+            tempElem.remove();
+        } catch (error) {
+            showMessage(error.message);
+        } finally {
+            button.disabled = false;
+        }
+    }
+
     init(task) {
         this._task = task;
     }
@@ -169,6 +192,22 @@ class TaskView {
         downloadButton.appendTo(buttonsContainer);
         uploadButton.appendTo(buttonsContainer);
 
+        const exportButton = $('<select class="regular dashboardButtonUI"'
+            + 'style="text-align-last: center;"> Export as Dataset </select>');
+        $('<option selected disabled> Export as Dataset </option>').appendTo(exportButton);
+        for (const format of this._exportFormats) {
+            const item = $(`<option>${format.name}</li>`);
+            if (format.is_default) {
+                item.addClass('bold');
+            }
+            item.appendTo(exportButton);
+        }
+        exportButton.on('change', (e) => {
+            this._exportDataset(e.target, e.target.value);
+            exportButton.prop('value', 'Export as Dataset');
+        });
+        exportButton.appendTo(buttonsContainer)
+
         $('<button class="regular dashboardButtonUI"> Update Task </button>').on('click', () => {
             this._update();
         }).appendTo(buttonsContainer);
@@ -207,7 +246,7 @@ class TaskView {
 
 
 class DashboardView {
-    constructor(metaData, taskData, annotationFormats) {
+    constructor(metaData, taskData, annotationFormats, exportFormats) {
         this._dashboardList = taskData.results;
         this._maxUploadSize = metaData.max_upload_size;
         this._maxUploadCount = metaData.max_upload_count;
@@ -215,6 +254,7 @@ class DashboardView {
         this._sharePath = metaData.share_path;
         this._params = {};
         this._annotationFormats = annotationFormats;
+        this._exportFormats = exportFormats;
 
         this._setupList();
         this._setupTaskSearch();
@@ -273,7 +313,8 @@ class DashboardView {
                 }));
 
                 for (const task of tasks) {
-                    const taskView = new TaskView(task, this._annotationFormats);
+                    const taskView = new TaskView(task,
+                        this._annotationFormats, this._exportFormats);
                     dashboardList.append(taskView.render(baseURL));
                 }
 
@@ -735,9 +776,11 @@ window.addEventListener('DOMContentLoaded', () => {
         $.get('/dashboard/meta'),
         $.get(`/api/v1/tasks${window.location.search}`),
         window.cvat.server.formats(),
-    ).then((metaData, taskData, annotationFormats) => {
+        window.cvat.server.datasetFormats(),
+    ).then((metaData, taskData, annotationFormats, exportFormats) => {
         try {
-            new DashboardView(metaData[0], taskData[0], annotationFormats);
+            new DashboardView(metaData[0], taskData[0],
+                annotationFormats, exportFormats);
         } catch (exception) {
             $('#content').empty();
             const message = `Can not build CVAT dashboard. Exception: ${exception}.`;

@@ -101,6 +101,22 @@
                 return response.data;
             }
 
+            async function datasetFormats() {
+                const { backendAPI } = config;
+
+                let response = null;
+                try {
+                    response = await Axios.get(`${backendAPI}/server/dataset/formats`, {
+                        proxy: config.proxy,
+                    });
+                    response = JSON.parse(response.data);
+                } catch (errorData) {
+                    throw generateError(errorData, 'Could not get export formats from the server');
+                }
+
+                return response;
+            }
+
             async function register(username, firstName, lastName, email, password1, password2) {
                 let response = null;
                 try {
@@ -232,6 +248,35 @@
                 } catch (errorData) {
                     throw generateError(errorData, 'Could not delete the task from the server');
                 }
+            }
+
+            async function exportDataset(id, format) {
+                const { backendAPI } = config;
+                let url = `${backendAPI}/tasks/${id}/dataset?format=${format}`;
+
+                return new Promise((resolve, reject) => {
+                    async function request() {
+                        try {
+                            const response = await Axios
+                                .get(`${url}`, {
+                                    proxy: config.proxy,
+                                });
+                            if (response.status === 202) {
+                                setTimeout(request, 3000);
+                            } else {
+                                url = `${url}&action=download`;
+                                resolve(url);
+                            }
+                        } catch (errorData) {
+                            reject(generateError(
+                                errorData,
+                                `Failed to export the task ${id} as a dataset`,
+                            ));
+                        }
+                    }
+
+                    setTimeout(request);
+                });
             }
 
             async function createTask(taskData, files, onUpdate) {
@@ -566,6 +611,7 @@
                         about,
                         share,
                         formats,
+                        datasetFormats,
                         exception,
                         login,
                         logout,
@@ -582,6 +628,7 @@
                         saveTask,
                         createTask,
                         deleteTask,
+                        exportDataset,
                     }),
                     writable: false,
                 },
