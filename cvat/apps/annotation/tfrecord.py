@@ -98,7 +98,7 @@ def dump(file_object, annotations):
         with codecs.open(os.path.join(out_dir, labelmap_file), 'w', encoding='utf8') as f:
             for label, idx in label_ids.items():
                 f.write(u'item {\n')
-                f.write(u'\tid: {}\n'.format(idx))
+                f.write(u'\tid: {}\n'.format(idx+1))
                 f.write(u"\tname: '{}'\n".format(label))
                 f.write(u'}\n\n')
 
