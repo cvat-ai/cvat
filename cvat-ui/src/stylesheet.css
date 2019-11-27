@@ -316,6 +316,10 @@
     background-color: rgba(24,144,255,0.05);
 }
 
+.cvat-actions-menu-dump-submenu-item > button {
+    text-align: start;
+}
+
 .cvat-actions-menu-dump-submenu-item:hover {
     background-color: rgba(24,144,255,0.05);
 }

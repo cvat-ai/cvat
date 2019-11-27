@@ -147,6 +147,7 @@
                     `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
                 ]).join('&').replace(/%20/g, '+');
 
+                Axios.defaults.headers.common.Authorization = '';
                 let authenticationResponse = null;
                 try {
                     authenticationResponse = await Axios.post(

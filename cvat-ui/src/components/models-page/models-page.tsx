@@ -35,15 +35,18 @@ export default function ModelsPageComponent(props: Props) {
         return (
             <div className='cvat-models-page'>
                 <TopBarComponent installedAutoAnnotation={props.installedAutoAnnotation}/>
-                { integratedModels.length ?
-                    <BuiltModelsList models={integratedModels}/> : null }
-                { uploadedModels.length &&
+                { !!integratedModels.length &&
+                    <BuiltModelsList models={integratedModels}/>
+                }
+                { !!uploadedModels.length &&
                     <UploadedModelsList
                         registeredUsers={props.registeredUsers}
                         models={uploadedModels}
                         deleteModel={props.deleteModel}
                     />
-                } { props.installedAutoAnnotation &&
+                }
+                { props.installedAutoAnnotation &&
+                    !uploadedModels.length &&
                     !props.installedTFAnnotation &&
                     !props.installedTFSegmentation &&
                     <EmptyListComponent/>
