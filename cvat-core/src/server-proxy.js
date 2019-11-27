@@ -247,7 +247,7 @@
                 try {
                     await Axios.delete(`${backendAPI}/tasks/${id}`);
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not delete the task from the server');
+                    throw generateError(errorData, `Could not delete the task ${id} from the server`);
                 }
             }
 

@@ -15,7 +15,6 @@ interface StateToProps {
     installedTFSegmentation: boolean;
     installedTFAnnotation: boolean;
     username: string;
-    logoutError: any;
 }
 
 interface DispatchToProps {
@@ -31,7 +30,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         installedTFSegmentation: plugins[SupportedPlugins.TF_SEGMENTATION],
         installedTFAnnotation: plugins[SupportedPlugins.TF_ANNOTATION],
         username: auth.user.username,
-        logoutError: auth.logoutError,
     };
 }
 
@@ -50,7 +48,6 @@ function HeaderContainer(props: StateToProps & DispatchToProps) {
             installedAutoAnnotation={props.installedAutoAnnotation}
             onLogout={props.logout}
             username={props.username}
-            logoutError={props.logoutError ? props.logoutError.toString() : ''}
         />
     );
 }

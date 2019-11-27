@@ -6,18 +6,8 @@ import getCore from '../core';
 const core = getCore();
 
 export enum UsersActionTypes {
-    GET_USERS = 'GET_USERS',
     GET_USERS_SUCCESS = 'GET_USERS_SUCCESS',
     GET_USERS_FAILED = 'GET_USERS_FAILED',
-}
-
-function getUsers(): AnyAction {
-    const action = {
-        type: UsersActionTypes.GET_USERS,
-        payload: { },
-    };
-
-    return action;
 }
 
 function getUsersSuccess(users: any[]): AnyAction {
@@ -42,7 +32,6 @@ export function getUsersAsync():
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
         try {
-            dispatch(getUsers());
             const users = await core.users.get();
             dispatch(
                 getUsersSuccess(

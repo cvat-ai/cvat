@@ -11,11 +11,6 @@ import TasksPageComponent from '../../components/tasks-page/tasks-page';
 import { getTasksAsync } from '../../actions/tasks-actions';
 
 interface StateToProps {
-    deletingError: any;
-    dumpingError: any;
-    loadingError: any;
-    tasksFetchingError: any;
-    loadingDoneMessage: string;
     tasksAreBeingFetched: boolean;
     gettingQuery: TasksQuery;
     numberOfTasks: number;
@@ -28,17 +23,8 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const { tasks } = state;
-    const { activities } = tasks;
-    const { dumps } = activities;
-    const { loads } = activities;
-    const { deletes } = activities;
 
     return {
-        deletingError: deletes.deletingError,
-        dumpingError: dumps.dumpingError,
-        loadingError: loads.loadingError,
-        tasksFetchingError: tasks.tasksFetchingError,
-        loadingDoneMessage: loads.loadingDoneMessage,
         tasksAreBeingFetched: !state.tasks.initialized,
         gettingQuery: tasks.gettingQuery,
         numberOfTasks: state.tasks.count,
@@ -57,11 +43,6 @@ type TasksPageContainerProps = StateToProps & DispatchToProps;
 function TasksPageContainer(props: TasksPageContainerProps) {
     return (
         <TasksPageComponent
-            deletingError={props.deletingError ? props.deletingError.toString() : ''}
-            dumpingError={props.dumpingError ? props.dumpingError.toString() : ''}
-            loadingError={props.loadingError ? props.loadingError.toString() : ''}
-            tasksFetchingError={props.tasksFetchingError ? props.tasksFetchingError.toString(): ''}
-            loadingDoneMessage={props.loadingDoneMessage}
             tasksAreBeingFetched={props.tasksAreBeingFetched}
             gettingQuery={props.gettingQuery}
             numberOfTasks={props.numberOfTasks}

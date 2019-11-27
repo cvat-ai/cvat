@@ -24,7 +24,6 @@ interface Props {
     activeProcesses: StringObject;
     visible: boolean;
     taskInstance: any;
-    startingError: string;
     getModels(): void;
     closeDialog(): void;
     runInference(
@@ -283,13 +282,6 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     task: '',
                 },
                 cleanOut: false,
-            });
-        }
-
-        if (!prevProps.startingError && this.props.startingError) {
-            Modal.error({
-                title: 'Could not start model inference',
-                content: this.props.startingError,
             });
         }
 

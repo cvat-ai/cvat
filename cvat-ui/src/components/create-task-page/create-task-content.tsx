@@ -7,7 +7,7 @@ import {
     Modal,
     Button,
     Collapse,
-    message,
+    notification,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -28,7 +28,6 @@ export interface CreateTaskData {
 interface Props {
     onCreate: (data: CreateTaskData) => void;
     status: string;
-    error: string;
     installedGit: boolean;
 }
 
@@ -190,15 +189,10 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
     }
 
     public componentDidUpdate(prevProps: Props) {
-        if (this.props.error && prevProps.error !== this.props.error) {
-            Modal.error({
-                title: 'Could not create task',
-                content: this.props.error,
-            });
-        }
-
         if (this.props.status === 'CREATED' && prevProps.status !== 'CREATED') {
-            message.success('The task has been created');
+            notification.info({
+                message: 'The task has been created',
+            });
 
             this.basicConfigurationComponent.resetFields();
             if (this.advancedConfigurationComponent) {
@@ -216,7 +210,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
     public render() {
         const loading = !!this.props.status
             && this.props.status !== 'CREATED'
-            && !this.props.error;
+            && this.props.status !== 'FAILED';
 
         return (
             <Row type='flex' justify='start' align='middle' className='cvat-create-task-content'>

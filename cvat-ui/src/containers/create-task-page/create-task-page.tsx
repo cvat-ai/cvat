@@ -7,7 +7,6 @@ import { CreateTaskData } from '../../components/create-task-page/create-task-co
 import { createTaskAsync } from '../../actions/tasks-actions';
 
 interface StateToProps {
-    creatingError: string;
     status: string;
     installedGit: boolean;
 }
@@ -27,14 +26,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         ...creates,
         installedGit: state.plugins.plugins.GIT_INTEGRATION,
-        creatingError: creates.creatingError ? creates.creatingError.toString() : '',
     };
 }
 
 function CreateTaskPageContainer(props: StateToProps & DispatchToProps) {
     return (
         <CreateTaskComponent
-            error={props.creatingError}
             status={props.status}
             onCreate={props.create}
             installedGit={props.installedGit}

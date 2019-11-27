@@ -11,7 +11,7 @@ import Text from 'antd/lib/typography/Text';
 interface DumperItemComponentProps {
     taskInstance: any;
     dumper: any;
-    dumpActivities: string[] | null;
+    dumpActivity: string | null;
     onDumpAnnotation: (task: any, dumper: any) => void;
 }
 
@@ -24,11 +24,7 @@ export default function DumperItemComponent(props: DumperItemComponentProps) {
     const task = props.taskInstance;
     const { mode } = task;
     const { dumper } = props;
-
-    const dumpingWithThisDumper = (props.dumpActivities || [])
-        .filter((_dumper: string) => _dumper === dumper.name)[0];
-
-    const pending = !!dumpingWithThisDumper;
+    const pending = !!props.dumpActivity;
 
     return (
         <Menu.Item className='cvat-actions-menu-dump-submenu-item' key={dumper.name}>

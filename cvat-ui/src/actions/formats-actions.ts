@@ -10,11 +10,15 @@ export enum FormatsActionTypes {
     GETTING_FORMATS_FAILED = 'GETTING_FORMATS_FAILED',
 }
 
-export function gettingFormatsSuccess(formats: any): AnyAction {
+export function gettingFormatsSuccess(
+    annotationFormats: any[],
+    datasetFormats: any[],
+): AnyAction {
     return {
         type: FormatsActionTypes.GETTING_FORMATS_SUCCESS,
         payload: {
-            formats,
+            annotationFormats,
+            datasetFormats,
         },
     };
 }
@@ -30,14 +34,16 @@ export function gettingFormatsFailed(error: any): AnyAction {
 
 export function gettingFormatsAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        let formats = null;
+        let annotationFormats = null;
+        let datasetFormats = null;
         try {
-            formats = await cvat.server.formats();
+            annotationFormats = await cvat.server.formats();
+            datasetFormats = await cvat.server.datasetFormats();
         } catch (error) {
             dispatch(gettingFormatsFailed(error));
             return;
         }
 
-        dispatch(gettingFormatsSuccess(formats));
+        dispatch(gettingFormatsSuccess(annotationFormats, datasetFormats));
     };
 }

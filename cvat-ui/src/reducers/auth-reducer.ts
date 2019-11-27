@@ -5,10 +5,6 @@ import { AuthState } from './interfaces';
 
 const defaultState: AuthState = {
     initialized: false,
-    authError: null,
-    loginError: null,
-    logoutError: null,
-    registerError: null,
     user: null,
 };
 
@@ -19,48 +15,21 @@ export default (state = defaultState, action: AnyAction): AuthState => {
                 ...state,
                 initialized: true,
                 user: action.payload.user,
-                authError: null,
-            };
-        case AuthActionTypes.AUTHORIZED_FAILED:
-            return {
-                ...state,
-                initialized: true,
-                authError: action.payload.error,
             };
         case AuthActionTypes.LOGIN_SUCCESS:
             return {
                 ...state,
                 user: action.payload.user,
-                loginError: null,
-            };
-        case AuthActionTypes.LOGIN_FAILED:
-            return {
-                ...state,
-                user: null,
-                loginError: action.payload.error,
             };
         case AuthActionTypes.LOGOUT_SUCCESS:
             return {
                 ...state,
                 user: null,
-                logoutError: null,
-            };
-        case AuthActionTypes.LOGOUT_FAILED:
-            return {
-                ...state,
-                logoutError: action.payload.error,
             };
         case AuthActionTypes.REGISTER_SUCCESS:
             return {
                 ...state,
                 user: action.payload.user,
-                registerError: null,
-            };
-        case AuthActionTypes.REGISTER_FAILED:
-            return {
-                ...state,
-                user: null,
-                registerError: action.payload.error,
             };
         default:
             return state;

@@ -6,10 +6,6 @@ import { ModelsState } from './interfaces';
 const defaultState: ModelsState = {
     initialized: false,
     creatingStatus: '',
-    creatingError: null,
-    startingError: null,
-    fetchingError: null,
-    deletingErrors: {},
     models: [],
     visibleRunWindows: false,
     activeRunTask: null,
@@ -21,7 +17,6 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
         case ModelsActionTypes.GET_MODELS: {
             return {
                 ...state,
-                fetchingError: null,
                 initialized: false,
             };
         }
@@ -35,16 +30,7 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
         case ModelsActionTypes.GET_MODELS_FAILED: {
             return {
                 ...state,
-                fetchingError: action.payload.error,
                 initialized: true,
-            };
-        }
-        case ModelsActionTypes.DELETE_MODEL: {
-            const errors = { ...state.deletingErrors };
-            delete errors[action.payload.id];
-            return {
-                ...state,
-                deletingErrors: errors,
             };
         }
         case ModelsActionTypes.DELETE_MODEL_SUCCESS: {
@@ -55,18 +41,9 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
                 ),
             };
         }
-        case ModelsActionTypes.DELETE_MODEL_FAILED: {
-            const errors = { ...state.deletingErrors };
-            errors[action.payload.id] = action.payload.error;
-            return {
-                ...state,
-                deletingErrors: errors,
-            };
-        }
         case ModelsActionTypes.CREATE_MODEL: {
             return {
                 ...state,
-                creatingError: null,
                 creatingStatus: '',
             };
         }
@@ -79,7 +56,6 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
         case ModelsActionTypes.CREATE_MODEL_FAILED: {
             return {
                 ...state,
-                creatingError: action.payload.error,
                 creatingStatus: '',
             };
         }
@@ -88,18 +64,6 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
                 ...state,
                 initialized: false,
                 creatingStatus: 'CREATED',
-            };
-        }
-        case ModelsActionTypes.INFER_MODEL: {
-            return {
-                ...state,
-                startingError: null,
-            };
-        }
-        case ModelsActionTypes.INFER_MODEL_FAILED: {
-            return {
-                ...state,
-                startingError: action.payload.error,
             };
         }
         case ModelsActionTypes.SHOW_RUN_MODEL_DIALOG: {

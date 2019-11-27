@@ -15,7 +15,6 @@ interface Props {
     installedTFSegmentation: boolean;
     installedTFAnnotation: boolean;
     modelsAreBeingFetched: boolean;
-    modelsFetchingError: any;
     registeredUsers: any[];
     models: Model[];
     getModels(): void;

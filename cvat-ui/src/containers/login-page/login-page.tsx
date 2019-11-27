@@ -1,21 +1,16 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { loginAsync } from '../../actions/auth-actions';
-import { CombinedState } from '../../reducers/interfaces';
 import LoginPageComponent from '../../components/login-page/login-page';
 
-interface StateToProps {
-    loginError: any;
-}
+interface StateToProps {}
 
 interface DispatchToProps {
     login(username: string, password: string): void;
 }
 
-function mapStateToProps(state: CombinedState): StateToProps {
-    return {
-        loginError: state.auth.loginError,
-    };
+function mapStateToProps(): StateToProps {
+    return {};
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -24,11 +19,10 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function LoginPageContainer(props: StateToProps & DispatchToProps) {
+function LoginPageContainer(props: DispatchToProps) {
     return (
         <LoginPageComponent
             onLogin={props.login}
-            loginError={props.loginError ? props.loginError.toString() : ''}
         />
     );
 }

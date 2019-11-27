@@ -16,6 +16,9 @@ export enum TasksActionTypes {
     DUMP_ANNOTATIONS = 'DUMP_ANNOTATIONS',
     DUMP_ANNOTATIONS_SUCCESS = 'DUMP_ANNOTATIONS_SUCCESS',
     DUMP_ANNOTATIONS_FAILED = 'DUMP_ANNOTATIONS_FAILED',
+    EXPORT_DATASET = 'EXPORT_DATASET',
+    EXPORT_DATASET_SUCCESS = 'EXPORT_DATASET_SUCCESS',
+    EXPORT_DATASET_FAILED = 'EXPORT_DATASET_FAILED',
     DELETE_TASK = 'DELETE_TASK',
     DELETE_TASK_SUCCESS = 'DELETE_TASK_SUCCESS',
     DELETE_TASK_FAILED = 'DELETE_TASK_FAILED',
@@ -26,6 +29,7 @@ export enum TasksActionTypes {
     UPDATE_TASK = 'UPDATE_TASK',
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
+    RESET_ERROR = 'RESET_ERROR',
 }
 
 function getTasks(): AnyAction {
@@ -150,7 +154,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             dispatch(dumpAnnotation(task, dumper));
             const url = await task.annotations.dump(task.name, dumper);
-            window.location.assign(url);
+            // false positive
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
+            window.open(url);
         } catch (error) {
             dispatch(dumpAnnotationFailed(task, dumper, error));
             return;
@@ -207,6 +213,61 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         }
 
         dispatch(loadAnnotationsSuccess(task));
+    };
+}
+
+function exportDataset(task: any, exporter: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.EXPORT_DATASET,
+        payload: {
+            task,
+            exporter,
+        },
+    };
+
+    return action;
+}
+
+function exportDatasetSuccess(task: any, exporter: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.EXPORT_DATASET_SUCCESS,
+        payload: {
+            task,
+            exporter,
+        },
+    };
+
+    return action;
+}
+
+function exportDatasetFailed(task: any, exporter: any, error: any): AnyAction {
+    const action = {
+        type: TasksActionTypes.EXPORT_DATASET_FAILED,
+        payload: {
+            task,
+            exporter,
+            error,
+        },
+    };
+
+    return action;
+}
+
+export function exportDatasetAsync(task: any, exporter: any):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(exportDataset(task, exporter));
+
+        try {
+            const url = await task.annotations.exportDataset(task.name, exporter);
+            // false positive
+            // eslint-disable-next-line security/detect-non-literal-fs-filename
+            window.open(url, '_blank');
+        } catch (error) {
+            dispatch(exportDatasetFailed(task, exporter, error));
+        }
+
+        dispatch(exportDatasetSuccess(task, exporter));
     };
 }
 

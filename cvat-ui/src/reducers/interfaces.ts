@@ -1,9 +1,5 @@
 export interface AuthState {
     initialized: boolean;
-    authError: any;
-    loginError: any;
-    logoutError: any;
-    registerError: any;
     user: any;
 }
 
@@ -26,45 +22,43 @@ export interface Task {
 
 export interface TasksState {
     initialized: boolean;
-    tasksFetchingError: any;
-    taskUpdatingError: any;
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
     activities: {
         dumps: {
-            dumpingError: any;
             byTask: {
                 // dumps in different formats at the same time
                 [tid: number]: string[]; // dumper names
             };
         };
+        exports: {
+            byTask: {
+                // exports in different formats at the same time
+                [tid: number]: string[]; // dumper names
+            };
+        };
         loads: {
-            loadingError: any;
-            loadingDoneMessage: string;
             byTask: {
                 // only one loading simultaneously
                 [tid: number]: string; // loader name
             };
         };
         deletes: {
-            deletingError: any;
             byTask: {
                 [tid: number]: boolean; // deleted (deleting if in dictionary)
             };
         };
         creates: {
-            creatingError: any;
             status: string;
         };
     };
 }
 
 export interface FormatsState {
-    loaders: any[];
-    dumpers: any[];
+    annotationFormats: any[];
+    datasetFormats: any[];
     initialized: boolean;
-    gettingFormatsError: any;
 }
 
 // eslint-disable-next-line import/prefer-default-export
@@ -86,7 +80,6 @@ export interface PluginsState {
 export interface UsersState {
     users: any[];
     initialized: boolean;
-    gettingUsersError: any;
 }
 
 export interface ShareFileInfo { // get this data from cvat-core
@@ -102,7 +95,6 @@ export interface ShareItem {
 
 export interface ShareState {
     root: ShareItem;
-    error: any;
 }
 
 export interface Model {
@@ -126,12 +118,6 @@ export interface Running {
 export interface ModelsState {
     initialized: boolean;
     creatingStatus: string;
-    creatingError: any;
-    startingError: any;
-    fetchingError: any;
-    deletingErrors: { // by id
-        [index: number]: any;
-    };
     models: Model[];
     runnings: Running[];
     visibleRunWindows: boolean;
@@ -146,6 +132,47 @@ export interface ModelFiles {
     json: string | File;
 }
 
+export interface NotificationsState {
+    errors: {
+        auth: {
+            authorized: any;
+            login: any;
+            logout: any;
+            register: any;
+        };
+        tasks: {
+            fetching: any;
+            updating: any;
+            dumping: any;
+            loading: any;
+            exporting: any;
+            deleting: any;
+            creating: any;
+        };
+        formats: {
+            fetching: any;
+        };
+        users: {
+            fetching: any;
+        };
+        share: {
+            fetching: any;
+        };
+        models: {
+            creating: any;
+            starting: any;
+            fetching: any;
+            deleting: any;
+            inferenceStatusFetching: any;
+        };
+    };
+    messages: {
+        tasks: {
+            loading: string;
+        };
+    };
+}
+
 export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
@@ -154,4 +181,5 @@ export interface CombinedState {
     formats: FormatsState;
     plugins: PluginsState;
     models: ModelsState;
+    notifications: NotificationsState;
 }

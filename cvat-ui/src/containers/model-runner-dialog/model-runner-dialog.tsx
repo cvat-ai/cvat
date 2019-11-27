@@ -14,7 +14,6 @@ import {
 
 
 interface StateToProps {
-    startingError: any;
     modelsInitialized: boolean;
     models: Model[];
     activeProcesses: {
@@ -46,7 +45,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activeProcesses: {},
         taskInstance: models.activeRunTask,
         visible: models.visibleRunWindows,
-        startingError: models.startingError,
     };
 }
 
@@ -82,7 +80,6 @@ function ModelRunnerModalContainer(props: StateToProps & DispatchToProps) {
             getModels={props.getModels}
             closeDialog={props.closeDialog}
             runInference={props.inferModelAsync}
-            startingError={props.startingError ? props.startingError.toString() : ''}
         />
     );
 }

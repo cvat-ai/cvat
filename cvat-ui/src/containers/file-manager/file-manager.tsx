@@ -12,6 +12,7 @@ import {
 
 interface OwnProps {
     withRemote: boolean;
+    ref: any;
 }
 
 interface StateToProps {
