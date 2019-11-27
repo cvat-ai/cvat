@@ -481,8 +481,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         rq_job = queue.fetch_job(rq_id)
         if rq_job:
             task_time = timezone.localtime(db_task.updated_date)
-            request_time = timezone.localtime(
-                rq_job.meta.get('request_time', datetime.min))
+            request_time = rq_job.meta.get('request_time',
+                timezone.make_aware(datetime.min))
             if request_time < task_time:
                 rq_job.cancel()
                 rq_job.delete()
@@ -508,9 +508,14 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 else:
                     return Response(status=status.HTTP_202_ACCEPTED)
 
+        try:
+            server_address = request.get_host()
+        except Exception:
+            server_address = None
+
         ttl = DatumaroTask.CACHE_TTL.total_seconds()
         queue.enqueue_call(func=DatumaroTask.export_project,
-            args=(pk, request.user, dst_format), job_id=rq_id,
+            args=(pk, request.user, dst_format, server_address), job_id=rq_id,
             meta={ 'request_time': timezone.localtime() },
             result_ttl=ttl, failure_ttl=ttl)
         return Response(status=status.HTTP_202_ACCEPTED)
