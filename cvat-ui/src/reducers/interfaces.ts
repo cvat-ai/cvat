@@ -22,6 +22,7 @@ export interface Task {
 
 export interface TasksState {
     initialized: boolean;
+    fetching: boolean;
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
@@ -58,6 +59,7 @@ export interface TasksState {
 export interface FormatsState {
     annotationFormats: any[];
     datasetFormats: any[];
+    fetching: boolean;
     initialized: boolean;
 }
 
@@ -71,6 +73,7 @@ export enum SupportedPlugins {
 }
 
 export interface PluginsState {
+    fetching: boolean;
     initialized: boolean;
     plugins: {
         [name in SupportedPlugins]: boolean;
@@ -79,6 +82,7 @@ export interface PluginsState {
 
 export interface UsersState {
     users: any[];
+    fetching: boolean;
     initialized: boolean;
 }
 
@@ -117,6 +121,7 @@ export interface Running {
 
 export interface ModelsState {
     initialized: boolean;
+    fetching: boolean;
     creatingStatus: string;
     models: Model[];
     runnings: Running[];

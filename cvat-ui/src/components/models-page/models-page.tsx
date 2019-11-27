@@ -14,7 +14,8 @@ interface Props {
     installedAutoAnnotation: boolean;
     installedTFSegmentation: boolean;
     installedTFAnnotation: boolean;
-    modelsAreBeingFetched: boolean;
+    modelsInitialized: boolean;
+    modelsFetching: boolean;
     registeredUsers: any[];
     models: Model[];
     getModels(): void;
@@ -22,7 +23,7 @@ interface Props {
 }
 
 export default function ModelsPageComponent(props: Props) {
-    if (props.modelsAreBeingFetched) {
+    if (!props.modelsInitialized && !props.modelsFetching) {
         props.getModels();
         return (
             <Spin size='large' style={{margin: '25% 45%'}}/>

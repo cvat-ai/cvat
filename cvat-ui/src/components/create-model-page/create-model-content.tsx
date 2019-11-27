@@ -9,6 +9,7 @@ import {
     Tooltip,
     Modal,
     message,
+    notification,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -24,7 +25,6 @@ import { ModelFiles } from '../../reducers/interfaces';
 interface Props {
     createModel(name: string, files: ModelFiles, global: boolean): void;
     isAdmin: boolean;
-    modelCreatingError: string;
     modelCreatingStatus: string;
 }
 
@@ -66,17 +66,17 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                 if (Object.keys(grouppedFiles)
                     .map((key: string) => grouppedFiles[key])
                     .filter((val) => !!val).length !== 4) {
-                        Modal.error({
-                            title: 'Could not upload a model',
-                            content: 'Please, specify correct files',
+                        notification.error({
+                            message: 'Could not upload a model',
+                            description: 'Please, specify correct files',
                         });
                     } else {
                         this.props.createModel(data.name, grouppedFiles, data.global);
                     }
             }).catch(() => {
-                Modal.error({
-                    title: 'Could not upload a model',
-                    content: 'Please, check input fields',
+                notification.error({
+                    message: 'Could not upload a model',
+                    description: 'Please, check input fields',
                 });
             })
     }
@@ -88,13 +88,6 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                 this.modelForm.resetFields();
                 this.fileManagerContainer.reset();
             }
-
-        if (!prevProps.modelCreatingError && this.props.modelCreatingError) {
-            Modal.error({
-                title: 'Could not create task',
-                content: this.props.modelCreatingError,
-            });
-        }
     }
 
     public render() {
@@ -128,7 +121,7 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                     <ConnectedFileManager ref={
                         (container: FileManagerContainer) =>
                             this.fileManagerContainer = container
-                    }/>
+                    } withRemote={true}/>
                 </Col>
                 <Col span={18}>
                     {status && <Alert message={`${status}`}/>}

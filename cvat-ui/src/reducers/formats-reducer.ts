@@ -7,21 +7,31 @@ const defaultState: FormatsState = {
     annotationFormats: [],
     datasetFormats: [],
     initialized: false,
+    fetching: false,
 };
 
 export default (state = defaultState, action: AnyAction): FormatsState => {
     switch (action.type) {
-        case FormatsActionTypes.GETTING_FORMATS_SUCCESS:
+        case FormatsActionTypes.GET_FORMATS: {
+            return {
+                ...state,
+                fetching: true,
+                initialized: false,
+            };
+        }
+        case FormatsActionTypes.GET_FORMATS_SUCCESS:
             return {
                 ...state,
                 initialized: true,
+                fetching: false,
                 annotationFormats: action.payload.annotationFormats,
                 datasetFormats: action.payload.datasetFormats,
             };
-        case FormatsActionTypes.GETTING_FORMATS_FAILED:
+        case FormatsActionTypes.GET_FORMATS_FAILED:
             return {
                 ...state,
                 initialized: true,
+                fetching: false,
             };
         default:
             return state;

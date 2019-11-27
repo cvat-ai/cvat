@@ -6,16 +6,24 @@ import getCore from '../core';
 const cvat = getCore();
 
 export enum FormatsActionTypes {
-    GETTING_FORMATS_SUCCESS = 'GETTING_FORMATS_SUCCESS',
-    GETTING_FORMATS_FAILED = 'GETTING_FORMATS_FAILED',
+    GET_FORMATS = 'GET_FORMATS',
+    GET_FORMATS_SUCCESS = 'GET_FORMATS_SUCCESS',
+    GET_FORMATS_FAILED = 'GET_FORMATS_FAILED',
 }
 
-export function gettingFormatsSuccess(
+function getFormats(): AnyAction {
+    return {
+        type: FormatsActionTypes.GET_FORMATS,
+        payload: {},
+    };
+}
+
+function getFormatsSuccess(
     annotationFormats: any[],
     datasetFormats: any[],
 ): AnyAction {
     return {
-        type: FormatsActionTypes.GETTING_FORMATS_SUCCESS,
+        type: FormatsActionTypes.GET_FORMATS_SUCCESS,
         payload: {
             annotationFormats,
             datasetFormats,
@@ -23,27 +31,28 @@ export function gettingFormatsSuccess(
     };
 }
 
-export function gettingFormatsFailed(error: any): AnyAction {
+function getFormatsFailed(error: any): AnyAction {
     return {
-        type: FormatsActionTypes.GETTING_FORMATS_FAILED,
+        type: FormatsActionTypes.GET_FORMATS_FAILED,
         payload: {
             error,
         },
     };
 }
 
-export function gettingFormatsAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getFormatsAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(getFormats());
         let annotationFormats = null;
         let datasetFormats = null;
         try {
             annotationFormats = await cvat.server.formats();
             datasetFormats = await cvat.server.datasetFormats();
         } catch (error) {
-            dispatch(gettingFormatsFailed(error));
+            dispatch(getFormatsFailed(error));
             return;
         }
 
-        dispatch(gettingFormatsSuccess(annotationFormats, datasetFormats));
+        dispatch(getFormatsSuccess(annotationFormats, datasetFormats));
     };
 }

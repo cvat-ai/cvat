@@ -11,8 +11,8 @@ import {
 } from '../../reducers/interfaces';
 
 interface OwnProps {
-    withRemote: boolean;
     ref: any;
+    withRemote: boolean;
 }
 
 interface StateToProps {

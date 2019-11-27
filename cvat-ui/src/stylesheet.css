@@ -771,7 +771,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     margin-top: 10px;
 }
 
-.cvat-create-model-content > div:nth-child(5) > button {
+.cvat-create-model-content > div:nth-child(6) > button {
     margin-top: 10px;
     float: right;
     width: 120px;

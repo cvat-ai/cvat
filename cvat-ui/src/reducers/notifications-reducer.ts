@@ -198,7 +198,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case FormatsActionTypes.GETTING_FORMATS_FAILED: {
+        case FormatsActionTypes.GET_FORMATS_FAILED: {
             return {
                 ...state,
                 errors: {

@@ -5,6 +5,7 @@ import { TasksState, Task } from './interfaces';
 
 const defaultState: TasksState = {
     initialized: false,
+    fetching: false,
     count: 0,
     current: [],
     gettingQuery: {
@@ -48,6 +49,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                     },
                 },
                 initialized: false,
+                fetching: true,
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
             const combinedWithPreviews = action.payload.array
@@ -59,6 +61,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             return {
                 ...state,
                 initialized: true,
+                fetching: false,
                 count: action.payload.count,
                 current: combinedWithPreviews,
                 gettingQuery: { ...action.payload.query },
@@ -68,6 +71,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
             return {
                 ...state,
                 initialized: true,
+                fetching: false,
                 count: 0,
                 current: [],
                 gettingQuery: { ...action.payload.query },

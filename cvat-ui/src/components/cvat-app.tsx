@@ -10,7 +10,6 @@ import {
 import {
     Spin,
     Layout,
-    Icon,
     notification,
 } from 'antd';
 
@@ -35,10 +34,13 @@ type CVATAppProps = {
     initPlugins: () => void;
     resetErrors: () => void;
     resetMessages: () => void;
-    pluginsInitialized: boolean;
     userInitialized: boolean;
+    pluginsInitialized: boolean;
+    pluginsFetching: boolean;
     formatsInitialized: boolean;
+    formatsFetching: boolean;
     usersInitialized: boolean;
+    usersFetching: boolean;
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
@@ -172,15 +174,15 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             return;
         }
 
-        if (!this.props.formatsInitialized) {
+        if (!this.props.formatsInitialized && !this.props.formatsFetching) {
             this.props.loadFormats();
         }
 
-        if (!this.props.usersInitialized) {
+        if (!this.props.usersInitialized && !this.props.usersFetching) {
             this.props.loadUsers();
         }
 
-        if (!this.props.pluginsInitialized) {
+        if (!this.props.pluginsInitialized && !this.props.pluginsFetching) {
             this.props.initPlugins();
         }
     }

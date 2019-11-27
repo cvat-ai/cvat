@@ -14,7 +14,8 @@ import {
 type Props = RouteComponentProps<{id: string}>;
 
 interface StateToProps {
-    task: Task | undefined | null;
+    task: Task | null;
+    fetching: boolean;
     deleteActivity: boolean | null;
     installedGit: boolean;
 }
@@ -29,12 +30,7 @@ function mapStateToProps(state: CombinedState, own: Props): StateToProps {
     const id = +own.match.params.id;
 
     const filtered = state.tasks.current.filter((task) => task.instance.id === id);
-    let task = null;
-    if (filtered.length) {
-        task = filtered[0];
-    } else if (state.notifications.errors.tasks.fetching) {
-        task = undefined;
-    }
+    const task = filtered[0] || null;
 
     let deleteActivity = null;
     if (task && id in deletes.byTask) {
@@ -44,6 +40,7 @@ function mapStateToProps(state: CombinedState, own: Props): StateToProps {
     return {
         task,
         deleteActivity,
+        fetching: state.tasks.fetching,
         installedGit: plugins.GIT_INTEGRATION,
     };
 }
@@ -69,6 +66,7 @@ function TaskPageContainer(props: StateToProps & DispatchToProps) {
     return (
         <TaskPageComponent
             task={props.task}
+            fetching={props.fetching}
             deleteActivity={props.deleteActivity}
             installedGit={props.installedGit}
             onFetchTask={props.fetchTask}

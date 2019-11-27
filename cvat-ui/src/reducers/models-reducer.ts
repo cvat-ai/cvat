@@ -5,6 +5,7 @@ import { ModelsState } from './interfaces';
 
 const defaultState: ModelsState = {
     initialized: false,
+    fetching: false,
     creatingStatus: '',
     models: [],
     visibleRunWindows: false,
@@ -18,6 +19,7 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
             return {
                 ...state,
                 initialized: false,
+                fetching: true,
             };
         }
         case ModelsActionTypes.GET_MODELS_SUCCESS: {
@@ -25,12 +27,14 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
                 ...state,
                 models: action.payload.models,
                 initialized: true,
+                fetching: false,
             };
         }
         case ModelsActionTypes.GET_MODELS_FAILED: {
             return {
                 ...state,
                 initialized: true,
+                fetching: false,
             };
         }
         case ModelsActionTypes.DELETE_MODEL_SUCCESS: {

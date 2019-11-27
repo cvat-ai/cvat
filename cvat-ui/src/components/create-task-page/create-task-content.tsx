@@ -4,7 +4,6 @@ import {
     Row,
     Col,
     Alert,
-    Modal,
     Button,
     Collapse,
     notification,
@@ -89,17 +88,17 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
 
     private handleSubmitClick = () => {
         if (!this.validateLabels()) {
-            Modal.error({
-                title: 'Could not create a task',
-                content: 'A task must contain at least one label',
+            notification.error({
+                message: 'Could not create a task',
+                description: 'A task must contain at least one label',
             });
             return;
         }
 
         if (!this.validateFiles()) {
-            Modal.error({
-                title: 'Could not create a task',
-                content: 'A task must contain at least one file',
+            notification.error({
+                message: 'Could not create a task',
+                description: 'A task must contain at least one file',
             });
             return;
         }
@@ -116,9 +115,9 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 this.props.onCreate(this.state);
             })
             .catch((_: any) => {
-                Modal.error({
-                    title: 'Could not create a task',
-                    content: 'Please, check configuration you specified',
+                notification.error({
+                    message: 'Could not create a task',
+                    description: 'Please, check configuration you specified',
                 });
             });
     }

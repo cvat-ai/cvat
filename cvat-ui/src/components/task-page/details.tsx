@@ -7,6 +7,7 @@ import {
     Icon,
     Modal,
     Button,
+    notification,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -287,9 +288,9 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             .then((data) => {
                 if (data !== null && this.mounted) {
                     if (data.status.error) {
-                        Modal.error({
-                            title: 'Could not receive repository status',
-                            content: data.status.error
+                        notification.error({
+                            message: 'Could not receive repository status',
+                            description: data.status.error
                         });
                     } else {
                         this.setState({
@@ -303,9 +304,9 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                 }
             }).catch((error) => {
                 if (this.mounted) {
-                    Modal.error({
-                        title: 'Could not receive repository status',
-                        content: error.toString(),
+                    notification.error({
+                        message: 'Could not receive repository status',
+                        description: error.toString(),
                     });
                 }
             });

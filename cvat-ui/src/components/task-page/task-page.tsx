@@ -6,6 +6,7 @@ import {
     Col,
     Row,
     Spin,
+    notification,
 } from 'antd';
 
 import TopBarComponent from './top-bar';
@@ -14,7 +15,8 @@ import JobListContainer from '../../containers/task-page/job-list';
 import { Task } from '../../reducers/interfaces';
 
 interface TaskPageComponentProps {
-    task: Task | undefined | null;
+    task: Task | null;
+    fetching: boolean;
     deleteActivity: boolean | null;
     installedGit: boolean;
     onFetchTask: (tid: number) => void;
@@ -23,18 +25,33 @@ interface TaskPageComponentProps {
 type Props = TaskPageComponentProps & RouteComponentProps<{id: string}>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
+    private attempts: number = 0;
+
     public componentDidUpdate() {
         if (this.props.deleteActivity) {
             this.props.history.replace('/tasks');
+        }
+
+        if (this.attempts > 1) {
+            notification.warning({
+                message: 'Something wrong with the task. It cannot be fetched from the server',
+            });
         }
     }
 
     public render() {
         const { id } = this.props.match.params;
-        const fetchTask = !this.props.task && !(typeof(this.props.task) === 'undefined');
+        const fetchTask = !this.props.task;
 
         if (fetchTask) {
-            this.props.onFetchTask(+id);
+            if (!this.props.fetching) {
+                if (!this.attempts) {
+                    this.attempts ++;
+                    this.props.onFetchTask(+id);
+                } else {
+                    this.attempts ++;
+                }
+            }
             return (
                 <Spin size='large' style={{margin: '25% 50%'}}/>
             );

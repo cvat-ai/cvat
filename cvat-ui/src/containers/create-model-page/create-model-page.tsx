@@ -10,7 +10,6 @@ import {
 
 interface StateToProps {
     isAdmin: boolean;
-    modelCreatingError: any;
     modelCreatingStatus: string;
 }
 
@@ -23,7 +22,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
     return {
         isAdmin: state.auth.user.isAdmin,
-        modelCreatingError: models.creatingError,
         modelCreatingStatus: models.creatingStatus,
     };
 }
@@ -40,7 +38,6 @@ function CreateModelPageContainer(props: StateToProps & DispatchToProps) {
     return (
         <CreateModelPageComponent
             isAdmin={props.isAdmin}
-            modelCreatingError={props.modelCreatingError ? props.modelCreatingError.toString() : ''}
             modelCreatingStatus={props.modelCreatingStatus}
             createModel={props.createModel}
         />

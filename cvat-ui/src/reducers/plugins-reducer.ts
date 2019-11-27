@@ -8,6 +8,7 @@ import {
 
 
 const defaultState: PluginsState = {
+    fetching: false,
     initialized: false,
     plugins: {
         GIT_INTEGRATION: false,
@@ -19,6 +20,13 @@ const defaultState: PluginsState = {
 };
 export default function (state = defaultState, action: AnyAction): PluginsState {
     switch (action.type) {
+        case PluginsActionTypes.CHECK_PLUGINS: {
+            return {
+                ...state,
+                initialized: false,
+                fetching: true,
+            };
+        }
         case PluginsActionTypes.CHECKED_ALL_PLUGINS: {
             const { plugins } = action.payload;
 
@@ -29,6 +37,7 @@ export default function (state = defaultState, action: AnyAction): PluginsState 
             return {
                 ...state,
                 initialized: true,
+                fetching: false,
                 plugins,
             };
         }

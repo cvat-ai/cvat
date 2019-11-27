@@ -13,7 +13,6 @@ import { ModelFiles } from '../../reducers/interfaces';
 interface Props {
     createModel(name: string, files: ModelFiles, global: boolean): void;
     isAdmin: boolean;
-    modelCreatingError: string;
     modelCreatingStatus: string;
 }
 
@@ -24,7 +23,6 @@ export default function CreateModelPageComponent(props: Props) {
                 <Text className='cvat-title'>Upload a new model</Text>
                 <CreateModelContent
                     isAdmin={props.isAdmin}
-                    modelCreatingError={props.modelCreatingError}
                     modelCreatingStatus={props.modelCreatingStatus}
                     createModel={props.createModel}
                 />
