@@ -13,6 +13,7 @@ from ast import literal_eval
 from urllib import error as urlerror
 from urllib import parse as urlparse
 from urllib import request as urlrequest
+from collections import OrderedDict
 
 from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES
 
@@ -163,7 +164,7 @@ def _validate_data(data):
         if not os.path.dirname(v[0]).startswith(v[1])]
 
     def count_files(file_mapping, counter):
-        for rel_path, full_path in file_mapping.items():
+        for rel_path, full_path in file_mapping:
             mime = get_mime(full_path)
             if mime in counter:
                 counter[mime].append(rel_path)
@@ -175,12 +176,12 @@ def _validate_data(data):
     counter = { media_type: [] for media_type in MEDIA_TYPES.keys() }
 
     count_files(
-        file_mapping={ f:f for f in data['remote_files'] or data['client_files']},
+        file_mapping=((f, f) for f in data['remote_files'] or data['client_files']),
         counter=counter,
     )
 
     count_files(
-        file_mapping={ f:os.path.abspath(os.path.join(share_root, f)) for f in data['server_files']},
+        file_mapping=((f, os.path.abspath(os.path.join(share_root, f))) for f in data['server_files']),
         counter=counter,
     )
 
@@ -207,7 +208,7 @@ def _validate_data(data):
 
 def _download_data(urls, upload_dir):
     job = rq.get_current_job()
-    local_files = {}
+    local_files = OrderedDict()
     for url in urls:
         name = os.path.basename(urlrequest.url2pathname(urlparse.urlparse(url).path))
         if name in local_files:

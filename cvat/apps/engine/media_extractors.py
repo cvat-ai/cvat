@@ -39,7 +39,7 @@ class ImageListExtractor(MediaExtractor):
         if not source_path:
             raise Exception('No image found')
         super().__init__(
-            source_path=sorted(source_path),
+            source_path=source_path,
             dest_path=dest_path,
             image_quality=image_quality,
             step=1,
