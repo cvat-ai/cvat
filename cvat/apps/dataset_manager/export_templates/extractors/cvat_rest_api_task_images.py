@@ -19,6 +19,10 @@ CONFIG_SCHEMA = _SchemaBuilder() \
     .add('server_port', int) \
     .build()
 
+DEFAULT_CONFIG = Config({
+    'server_port': 80
+}, schema=CONFIG_SCHEMA, mutable=False)
+
 class cvat_rest_api_task_images(datumaro.Extractor):
     def _image_local_path(self, item_id):
         task_id = self._config.task_id
@@ -83,7 +87,8 @@ class cvat_rest_api_task_images(datumaro.Extractor):
 
         with open(osp.join(url, 'config.json'), 'r') as config_file:
             config = json.load(config_file)
-            config = Config(config, schema=CONFIG_SCHEMA)
+            config = Config(config,
+                fallback=DEFAULT_CONFIG, schema=CONFIG_SCHEMA)
         self._config = config
 
         with open(osp.join(url, 'images_meta.json'), 'r') as images_file:

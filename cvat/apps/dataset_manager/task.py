@@ -227,15 +227,16 @@ class TaskProject:
         items = []
         config = {
             'server_host': 'localhost',
-            'server_port': '',
             'task_id': db_task.id,
         }
         if server_url:
-            parsed_url = urlsplit(server_url)
-            config['server_host'] = parsed_url.netloc
-            port = 80
-            if parsed_url.port:
-                port = parsed_url.port
+            if ':' in server_url:
+                host, port = server_url.rsplit(':', maxsplit=1)
+            else:
+                host = server_url
+                port = None
+            config['server_host'] = host
+            if port is not None:
                 config['server_port'] = int(port)
 
         images_meta = {
