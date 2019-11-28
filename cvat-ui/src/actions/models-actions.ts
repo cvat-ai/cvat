@@ -498,7 +498,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
             if (MaskRCNN) {
                 const response = await core.server.request(
-                    `${baseURL}/tensorflow/annotation/meta/get`, {
+                    `${baseURL}/tensorflow/segmentation/meta/get`, {
                         method: 'POST',
                         data: JSON.stringify(tasks),
                         headers: {
