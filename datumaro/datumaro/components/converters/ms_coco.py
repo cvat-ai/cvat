@@ -372,8 +372,8 @@ class _Converter:
             task: self.make_task_converter(task) for task in self._task
         }
 
-    def save_image(self, item, subset_name, filename):
-        path = osp.join(self._images_dir, subset_name, filename)
+    def save_image(self, item, filename):
+        path = osp.join(self._images_dir, filename)
         cv2.imwrite(path, item.image)
 
         return path
@@ -400,7 +400,7 @@ class _Converter:
                 if item.has_image:
                     filename = str(item.id) + CocoPath.IMAGE_EXT
                     if self._save_images:
-                        self.save_image(item, subset_name, filename)
+                        self.save_image(item, filename)
                 for task_conv in task_converters.values():
                     task_conv.save_image_info(item, filename)
                     task_conv.save_annotations(item)
