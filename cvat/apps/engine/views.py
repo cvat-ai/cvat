@@ -454,7 +454,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             return HttpResponseBadRequest(str(e))
 
     @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='dataset/')
+        url_path='dataset')
     def dataset_export(self, request, pk):
         """Export task as a dataset in a specific format"""
 
