@@ -1,6 +1,7 @@
 import { AnyAction, Dispatch, ActionCreator } from 'redux';
 import { ThunkAction } from 'redux-thunk';
 import { TasksQuery } from '../reducers/interfaces';
+import { getInferenceStatusAsync } from './models-actions';
 
 import getCore from '../core';
 
@@ -93,6 +94,13 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         const previews = [];
         const promises = array
             .map((task): string => (task as any).frames.preview());
+        dispatch(
+            getInferenceStatusAsync(
+                array.map(
+                    (task: any): number => task.id,
+                ),
+            ),
+        );
 
         for (const promise of promises) {
             try {

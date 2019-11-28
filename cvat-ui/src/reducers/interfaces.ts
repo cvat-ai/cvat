@@ -111,12 +111,18 @@ export interface Model {
     labels: string[];
 }
 
-export interface Running {
-    [tid: string]: {
-        status: string;
-        processId: string;
-        error: any;
-    };
+export enum RQStatus {
+    unknown = 'unknown',
+    queued = 'queued',
+    started = 'started',
+    finished = 'finished',
+    failed = 'failed',
+}
+
+export interface ActiveInference {
+    status: RQStatus;
+    progress: number;
+    error: string;
 }
 
 export interface ModelsState {
@@ -124,7 +130,9 @@ export interface ModelsState {
     fetching: boolean;
     creatingStatus: string;
     models: Model[];
-    runnings: Running[];
+    inferences: {
+        [index: number]: ActiveInference;
+    };
     visibleRunWindows: boolean;
     activeRunTask: any;
 }
@@ -173,7 +181,10 @@ export interface NotificationsState {
     };
     messages: {
         tasks: {
-            loading: string;
+            loadingDone: string;
+        };
+        models: {
+            inferenceDone: string;
         };
     };
 }

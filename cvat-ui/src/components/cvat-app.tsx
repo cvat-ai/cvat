@@ -62,10 +62,14 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         }
 
         const { tasks } = this.props.notifications.messages;
-        let shown = !!tasks.loading;
+        const { models } = this.props.notifications.messages;
+        let shown = !!tasks.loadingDone || !!models.inferenceDone;
 
-        if (tasks.loading) {
-            showMessage(tasks.loading);
+        if (tasks.loadingDone) {
+            showMessage(tasks.loadingDone);
+        }
+        if (models.inferenceDone) {
+            showMessage(models.inferenceDone);
         }
 
         if (shown) {

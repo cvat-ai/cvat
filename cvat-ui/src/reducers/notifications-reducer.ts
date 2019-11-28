@@ -46,7 +46,10 @@ const defaultState: NotificationsState = {
     },
     messages: {
         tasks: {
-            loading: '',
+            loadingDone: '',
+        },
+        models: {
+            inferenceDone: '',
         },
     },
 };
@@ -145,7 +148,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...state.messages,
                     tasks: {
                         ...state.messages.tasks,
-                        loading: `Annotations have been loaded to the task ${task.id}`,
+                        loadingDone: `Annotations have been loaded to the task ${task.id}`,
                     },
                 },
             };
@@ -256,6 +259,24 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         deleting: action.payload.error,
                     },
                 },
+            };
+        }
+        case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
+            if (action.payload.activeInference.status === 'finished') {
+                return {
+                    ...state,
+                    messages: {
+                        ...state.messages,
+                        models: {
+                            ...state.messages.models,
+                            inferenceDone: `Automatic annotation finished for the task ${action.payload.taskID}`,
+                        },
+                    },
+                };
+            }
+
+            return {
+                ...state,
             };
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_FAILED: {

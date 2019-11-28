@@ -15,11 +15,13 @@ import {
 import moment from 'moment';
 
 import ActionsMenuContainer from '../../containers/actions-menu/actions-menu';
+import { ActiveInference } from '../../reducers/interfaces';
 
 export interface TaskItemProps {
     taskInstance: any;
     previewImage: string;
     deleted: boolean;
+    activeInference: ActiveInference | null;
 }
 
 class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteComponentProps> {
@@ -94,7 +96,8 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     </Col>
                 </Row>
                 <Row>
-                    <Progress
+                    <Col>
+                        <Progress
                             className={`${progressColor} cvat-task-progress`}
                             percent={numOfCompleted * 100 / numOfJobs}
                             strokeColor='#1890FF'
@@ -102,7 +105,31 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                             strokeWidth={5}
                             size='small'
                         />
+                    </Col>
                 </Row>
+                { this.props.activeInference ?
+                    <>
+                        <Row>
+                            <Col>
+                                <Text strong>Automatic annotation</Text>
+                            </Col>
+                        </Row>
+                        <Row>
+                            <Col>
+                                <Progress
+                                    percent={Math.floor(this.props.activeInference.progress)}
+                                    strokeColor={{
+                                        from: '#108ee9',
+                                        to: '#87d068',
+                                    }}
+                                    showInfo={false}
+                                    strokeWidth={5}
+                                    size='small'
+                                />
+                            </Col>
+                        </Row>
+                    </> : null
+                }
             </Col>
         )
     }

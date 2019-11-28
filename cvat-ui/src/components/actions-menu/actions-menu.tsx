@@ -11,7 +11,6 @@ import LoaderItemComponent from './loader-item';
 import DumperItemComponent from './dumper-item';
 import ExportItemComponent from './export-item';
 
-
 interface ActionsMenuComponentProps {
     taskInstance: any;
     loaders: any[];
@@ -23,6 +22,7 @@ interface ActionsMenuComponentProps {
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
     installedAutoAnnotation: boolean;
+    inferenceIsActive: boolean;
     onLoadAnnotation: (taskInstance: any, loader: any, file: File) => void;
     onDumpAnnotation: (taskInstance: any, dumper: any) => void;
     onExportDataset: (taskInstance: any, exporter: any) => void;
@@ -106,7 +106,10 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
                 }
             </Menu.SubMenu>
             {tracker && <Menu.Item key='tracker'>Open bug tracker</Menu.Item>}
-            {renderModelRunner && <Menu.Item key='auto_annotation'>Automatic annotation</Menu.Item>}
+            {
+                renderModelRunner &&
+                <Menu.Item disabled={props.inferenceIsActive} key='auto_annotation'>Automatic annotation</Menu.Item>
+            }
             <hr/>
             <Menu.Item key='delete'>Delete</Menu.Item>
         </Menu>

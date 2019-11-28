@@ -2,7 +2,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import ActionsMenuComponent from '../../components/actions-menu/actions-menu';
-import { CombinedState } from '../../reducers/interfaces';
+import {
+    CombinedState,
+    ActiveInference,
+} from '../../reducers/interfaces';
+
 import { showRunModelDialog } from '../../actions/models-actions';
 import {
     dumpAnnotationsAsync,
@@ -25,6 +29,7 @@ interface StateToProps {
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
     installedAutoAnnotation: boolean;
+    inferenceIsActive: boolean;
 };
 
 interface DispatchToProps {
@@ -56,6 +61,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         dumpers: formats.annotationFormats
             .map((format: any): any[] => format.dumpers).flat(),
         exporters: formats.datasetFormats,
+        inferenceIsActive: id in state.models.inferences,
    };
 }
 
@@ -97,6 +103,7 @@ function ActionsMenuContainer(props: OwnProps & StateToProps & DispatchToProps) 
             onExportDataset={props.onExportDataset}
             onDeleteTask={props.onDeleteTask}
             onOpenRunWindow={props.onOpenRunWindow}
+            inferenceIsActive={props.inferenceIsActive}
         />
     );
 }

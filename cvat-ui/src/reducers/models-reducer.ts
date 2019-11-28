@@ -10,7 +10,7 @@ const defaultState: ModelsState = {
     models: [],
     visibleRunWindows: false,
     activeRunTask: null,
-    runnings: [],
+    inferences: {},
 };
 
 export default function (state = defaultState, action: AnyAction): ModelsState {
@@ -82,6 +82,28 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
                 ...state,
                 visibleRunWindows: false,
                 activeRunTask: null,
+            };
+        }
+        case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
+            const inferences = { ...state.inferences };
+            if (action.payload.activeInference.status === 'finished') {
+                delete inferences[action.payload.taskID];
+            } else {
+                inferences[action.payload.taskID] = action.payload.activeInference;
+            }
+
+            return {
+                ...state,
+                inferences,
+            };
+        }
+        case ModelsActionTypes.GET_INFERENCE_STATUS_FAILED: {
+            const inferences = { ...state.inferences };
+            delete inferences[action.payload.taskID];
+
+            return {
+                ...state,
+                inferences,
             };
         }
         default: {

@@ -98,7 +98,7 @@ export default class Feedback extends React.PureComponent<{}, State> {
                 <Popover
                     placement='leftTop'
                     title={
-                        <Text className='cvat-title'>Help to make CVAT better</Text>
+                        <Text className='cvat-black-color'>Help to make CVAT better</Text>
                     }
                     content={this.renderContent()}
                     visible={this.state.active}

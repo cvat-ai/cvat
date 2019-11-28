@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import {
     TasksQuery,
     CombinedState,
+    ActiveInference,
 } from '../../reducers/interfaces';
 
 import TaskItemComponent from '../../components/tasks-page/task-item'
@@ -16,6 +17,7 @@ interface StateToProps {
     deleteActivity: boolean | null;
     previewImage: string;
     taskInstance: any;
+    activeInference: ActiveInference | null;
 }
 
 interface DispatchToProps {
@@ -36,6 +38,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         deleteActivity: deletes.byTask[id] ? deletes.byTask[id] : null,
         previewImage: task.preview,
         taskInstance: task.instance,
+        activeInference: state.models.inferences[id] || null,
     };
 }
 
@@ -55,6 +58,7 @@ function TaskItemContainer(props: TasksItemContainerProps) {
             deleted={props.deleteActivity === true}
             taskInstance={props.taskInstance}
             previewImage={props.previewImage}
+            activeInference={props.activeInference}
         />
     );
 }
