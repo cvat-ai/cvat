@@ -101,10 +101,13 @@ class CocoImporterTest(TestCase):
         ann_dir = osp.join(path, 'annotations')
         os.makedirs(img_dir)
         os.makedirs(ann_dir)
-        a = np.random.rand(100, 100, 3) * 255
-        im_out = Image.fromarray(a.astype('uint8')).convert('RGB')
-        im_out.save(osp.join(img_dir, '000000000001.jpg'))
+
+        image = np.ones((10, 5, 3), dtype=np.uint8)
+        image = Image.fromarray(image).convert('RGB')
+        image.save(osp.join(img_dir, '000000000001.jpg'))
+
         annotation = self.generate_annotation()
+
         with open(osp.join(ann_dir, 'instances_val.json'), 'w') as outfile:
             json.dump(annotation, outfile)
 
@@ -119,6 +122,7 @@ class CocoImporterTest(TestCase):
 
             item = next(iter(dataset))
             self.assertTrue(item.has_image)
+            self.assertEqual(np.sum(item.image), np.prod(item.image.shape))
             self.assertEqual(4, len(item.annotations))
 
             ann_1 = find(item.annotations, lambda x: x.id == 1)
