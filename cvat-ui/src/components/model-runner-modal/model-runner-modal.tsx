@@ -19,6 +19,7 @@ interface StringObject {
 }
 
 interface Props {
+    modelsFetching: boolean;
     modelsInitialized: boolean;
     models: Model[];
     activeProcesses: StringObject;
@@ -273,6 +274,10 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State) {
+        if (!this.props.modelsInitialized && !this.props.modelsFetching) {
+            this.props.getModels();
+        }
+
         if (!prevProps.visible && this.props.visible) {
             this.setState({
                 selectedModel: null,
@@ -305,12 +310,6 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     mapping: defaultMapping,
                 });
             }
-        }
-    }
-
-    public componentDidMount() {
-        if (!this.props.modelsInitialized) {
-            this.props.getModels();
         }
     }
 

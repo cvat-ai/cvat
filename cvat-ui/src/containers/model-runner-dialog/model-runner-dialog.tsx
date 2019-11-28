@@ -14,6 +14,7 @@ import {
 
 
 interface StateToProps {
+    modelsFetching: boolean;
     modelsInitialized: boolean;
     models: Model[];
     activeProcesses: {
@@ -40,6 +41,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
 
     return {
+        modelsFetching: models.fetching,
         modelsInitialized: models.initialized,
         models: models.models,
         activeProcesses: {},
@@ -72,6 +74,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 function ModelRunnerModalContainer(props: StateToProps & DispatchToProps) {
     return (
         <ModelRunnerModalComponent
+            modelsFetching={props.modelsFetching}
             modelsInitialized={props.modelsInitialized}
             models={props.models}
             activeProcesses={props.activeProcesses}
