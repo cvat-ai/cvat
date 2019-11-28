@@ -299,12 +299,7 @@ class CuboidController extends PolyShapeController {
 
     // refreshes the view and updates the viewmodel
     updateViewAndVM(build) {
-        if(build == null){
-            this.viewModel.buildBackEdge();
-        }
-        else{
-            this.viewModel.buildBackRightEdge();
-        }
+        this.viewModel.buildBackEdge(build);
         this.refreshView();
     }
 
@@ -331,7 +326,6 @@ class CuboidController extends PolyShapeController {
         const position = this._model._interpolatePosition(frame);
 
         const viewModelpoints = this.viewModel.getPoints();
-        // this.viewModel.sortEdges();
         position.points = PolylineModel.convertNumberArrayToString(viewModelpoints);
 
         this.updatePosition(frame, position);
@@ -694,13 +688,29 @@ class Cuboid2PointViewModel {
         this.facesList = [this.front, this.right, this.dorsal, this.left];
     }
 
-    buildBackEdge() {
-        this._updateVanishingPoints();
+    buildBackEdge(buildRight) {
+        let leftPoints = 0;
+        let rightPoints = 0;
+
+        let top_index = 0;
+        let bot_index = 0;
+
+        if(buildRight==null){
+            this._updateVanishingPoints();
+            leftPoints = this.dr.points;
+            rightPoints = this.fl.points;
+            top_index = 6;
+            bot_index = 7;
+        }else{
+           this._updateVanishingPoints(true);
+            leftPoints = this.dl.points;
+            rightPoints = this.fr.points;
+            top_index = 4;
+            bot_index = 5;
+        }
+
         const vp_left = this.vpl;
         const vp_right = this.vpr;
-
-        let leftPoints = this.dr.points;
-        let rightPoints = this.fl.points;
 
         leftPoints = convertToArray(leftPoints);
         rightPoints = convertToArray(rightPoints);
@@ -718,38 +728,14 @@ class Cuboid2PointViewModel {
             p2[1] = vp_left[1];
         }
 
-        this.points[6] = { x: p1[0], y: p1[1] };
-        this.points[7] = { x: p2[0], y: p2[1] };
+        this.points[top_index] = { x: p1[0], y: p1[1] };
+        this.points[bot_index] = { x: p2[0], y: p2[1] };
 
-    }
+        //Making sure that the vertical edges stay vertical
+        this.fr.points[0].x = this.fr.points[1].x;
+        this.fl.points[0].x = this.fl.points[1].x;
+        this.dr.points[0].x = this.dr.points[1].x;
 
-    buildBackRightEdge(){
-        this._updateVanishingPoints(true);
-        const vp_left = this.vpl;
-        const vp_right = this.vpr;
-
-        let leftPoints = this.dl.points;
-        let rightPoints = this.fr.points;
-
-        leftPoints = convertToArray(leftPoints);
-        rightPoints = convertToArray(rightPoints);
-
-        let p1 = intersection(vp_left, leftPoints[0], vp_right, rightPoints[0]);
-        let p2 = intersection(vp_left, leftPoints[1], vp_right, rightPoints[1]);
-
-        if (p1 === null) {
-            p1 = [];
-            p1[0] = p2[0];
-            p1[1] = vp_left[1];
-        } else if (p2 === null) {
-            p2 = [];
-            p2[0] = p1[0];
-            p2[1] = vp_left[1];
-        }
-
-        this.points[4] = { x: p1[0], y: p1[1] };
-        this.points[5] = { x: p2[0], y: p2[1] };
-        this.updatePoints();
     }
 
     get vplCanvas() {
@@ -895,9 +881,6 @@ class CuboidView extends PolyShapeView {
 
     updateShapeTextPosition() {
         super.updateShapeTextPosition();
-        // if (this._uis.shape && !this._controller.lock) {
-        //     this._uis.shape.updateThickness();
-        // }
     }
 
     switchProjectionLine(enable) {
@@ -920,6 +903,7 @@ SVG.Cube = SVG.invent({
             this.setupProjections(viewModel);
             this.setupGrabPoints();
             this.hideProjections();
+            this.hideGrabPoints();
 
             return this;
         },
