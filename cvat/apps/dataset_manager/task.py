@@ -5,7 +5,6 @@ import os.path as osp
 import shutil
 import sys
 import tempfile
-from urllib.parse import urlsplit
 
 from django.utils import timezone
 import django_rq
@@ -14,7 +13,8 @@ from cvat.apps.engine.log import slogger
 from cvat.apps.engine.models import Task, ShapeType
 from .util import current_function_name, make_zip_archive
 
-_DATUMARO_REPO_PATH = osp.join(__file__[:__file__.rfind('cvat/')], 'datumaro')
+_CVAT_ROOT_DIR = __file__[:__file__.rfind('cvat/')]
+_DATUMARO_REPO_PATH = osp.join(_CVAT_ROOT_DIR, 'datumaro')
 sys.path.append(_DATUMARO_REPO_PATH)
 from datumaro.components.project import Project
 import datumaro.components.extractor as datumaro
@@ -227,16 +227,17 @@ class TaskProject:
         items = []
         config = {
             'server_host': 'localhost',
-            'server_port': '',
             'task_id': db_task.id,
         }
         if server_url:
-            parsed_url = urlsplit(server_url)
-            config['server_host'] = parsed_url.netloc
-            port = 80
-            if parsed_url.port:
-                port = parsed_url.port
-            config['server_port'] = int(port)
+            if ':' in server_url:
+                host, port = server_url.rsplit(':', maxsplit=1)
+            else:
+                host = server_url
+                port = None
+            config['server_host'] = host
+            if port is not None:
+                config['server_port'] = int(port)
 
         images_meta = {
             'images': items,
@@ -271,10 +272,16 @@ class TaskProject:
             server_url=server_url)
         exported_project.save()
 
-        templates_dir = osp.join(osp.dirname(__file__),
-            'export_templates', 'extractors')
-        target_dir = osp.join(
-            exported_project.config.project_dir,
+
+        templates_dir = osp.join(osp.dirname(__file__), 'export_templates')
+        target_dir = exported_project.config.project_dir
+        os.makedirs(target_dir, exist_ok=True)
+        shutil.copyfile(
+            osp.join(templates_dir, 'README.md'),
+            osp.join(target_dir, 'README.md'))
+
+        templates_dir = osp.join(templates_dir, 'extractors')
+        target_dir = osp.join(target_dir,
             exported_project.config.env_dir,
             exported_project.env.config.extractors_dir)
         os.makedirs(target_dir, exist_ok=True)
@@ -290,6 +297,12 @@ class TaskProject:
                 if sum([int(n.endswith(ext)) for ext in
                         ['.pyx', '.pyo', '.pyd', '.pyc']])
             ])
+
+        # include CVAT CLI module also
+        cvat_utils_dst_dir = osp.join(save_dir, 'cvat', 'utils')
+        os.makedirs(cvat_utils_dst_dir)
+        shutil.copytree(osp.join(_CVAT_ROOT_DIR, 'utils', 'cli'),
+            osp.join(cvat_utils_dst_dir, 'cli'))
 
 
 DEFAULT_FORMAT = EXPORT_FORMAT_DATUMARO_PROJECT
