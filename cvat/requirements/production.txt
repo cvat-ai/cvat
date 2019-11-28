@@ -1,4 +1,3 @@
 -r base.txt
 psycopg2-binary==2.7.4
 mod-wsgi==4.6.2
-supervisor==4.1.0

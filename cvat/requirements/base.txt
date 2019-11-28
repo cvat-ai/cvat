@@ -47,3 +47,4 @@ h5py==2.9.0
 imgaug==0.2.9
 django-cors-headers==3.0.2
 furl==2.0.0
+supervisor==4.1.0
