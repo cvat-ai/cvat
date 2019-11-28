@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM debian:jessie-slim
 
 ARG http_proxy
 ARG https_proxy
@@ -19,29 +19,32 @@ ARG USER
 ARG DJANGO_CONFIGURATION
 ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
 
+# Install ffmpeg on debian jessie (https://www.deb-multimedia.org/)
+# It is not available on official repositories (https://wiki.debian.org/ffmpeg)
+RUN echo "deb http://www.deb-multimedia.org jessie main non-free" > /etc/apt/sources.list.d/deb-multimedia.list \
+  && apt-get update \
+  && apt-get install -y --force-yes deb-multimedia-keyring \
+  && apt-get update \
+  && apt-get install -y ffmpeg \
+  && apt-get install -y gstreamer0.10-ffmpeg
+
 # Install necessary apt packages
 RUN apt-get update && \
     apt-get install -yq \
-        python-software-properties \
         software-properties-common \
         wget && \
-    add-apt-repository ppa:mc3man/xerus-media -y && \
-    add-apt-repository ppa:mc3man/gstffmpeg-keep -y && \
-    apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -yq \
         apache2 \
         apache2-dev \
         libapache2-mod-xsendfile \
         supervisor \
-        ffmpeg \
-        gstreamer0.10-ffmpeg \
         libldap2-dev \
         libsasl2-dev \
         python3-dev \
         python3-pip \
         tzdata \
         unzip \
-        unrar \
+        unrar-free \
         p7zip-full \
         vim \
         git-core \
@@ -50,8 +53,6 @@ RUN apt-get update && \
     pip3 install -U setuptools && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
-    add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \
-    add-apt-repository --remove ppa:mc3man/xerus-media -y && \
     rm -rf /var/lib/apt/lists/*
 
 # Add a non-root user
@@ -154,20 +155,19 @@ COPY utils ${HOME}/utils
 COPY cvat/ ${HOME}/cvat
 COPY cvat-core/ ${HOME}/cvat-core
 COPY tests ${HOME}/tests
-COPY datumaro/ ${HOME}/datumaro
-
-RUN sed -r "s/^(.*)#.*$/\1/g" ${HOME}/datumaro/requirements.txt | xargs -n 1 -L 1 pip3 install --no-cache-dir
 
 # Binary option is necessary to correctly apply the patch on Windows platform.
 # https://unix.stackexchange.com/questions/239364/how-to-fix-hunk-1-failed-at-1-different-line-endings-message
 RUN patch --binary -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
-RUN chown -R ${USER}:${USER} .
+RUN chown -R ${USER}:${USER} ${HOME}
+RUN chown -R ${USER}:${USER} /var/log/
+RUN chown -R ${USER}:${USER} /tmp/
 
 # RUN all commands below as 'django' user
 USER ${USER}
 
 RUN mkdir data share media keys logs /tmp/supervisord
-RUN python3 manage.py collectstatic
+RUN python3 manage.py collectstatic || python3 manage.py collectstatic
 
 EXPOSE 8080 8443
 ENTRYPOINT ["/usr/bin/supervisord"]
