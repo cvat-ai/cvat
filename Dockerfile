@@ -1,4 +1,4 @@
-FROM python:3.6.9-slim-jessie
+FROM python:3.6.9-jessie
 
 ARG http_proxy
 ARG https_proxy
@@ -37,7 +37,6 @@ RUN apt-get update && \
         apache2 \
         apache2-dev \
         libapache2-mod-xsendfile \
-        supervisor \
         libldap2-dev \
         libsasl2-dev \
         tzdata \
@@ -153,13 +152,14 @@ COPY utils ${HOME}/utils
 COPY cvat/ ${HOME}/cvat
 COPY cvat-core/ ${HOME}/cvat-core
 COPY tests ${HOME}/tests
+COPY datumaro/ ${HOME}/datumaro
+
+RUN sed -r "s/^(.*)#.*$/\1/g" ${HOME}/datumaro/requirements.txt | xargs -n 1 -L 1 pip3 install --no-cache-dir
 
 # Binary option is necessary to correctly apply the patch on Windows platform.
 # https://unix.stackexchange.com/questions/239364/how-to-fix-hunk-1-failed-at-1-different-line-endings-message
 RUN patch --binary -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
-RUN chown -R ${USER}:${USER} ${HOME}
-RUN chown -R ${USER}:${USER} /var/log/
-RUN chown -R ${USER}:${USER} /tmp/
+RUN chown -R ${USER}:${USER} .
 
 # RUN all commands below as 'django' user
 USER ${USER}
@@ -168,4 +168,4 @@ RUN mkdir data share media keys logs /tmp/supervisord
 RUN python3 manage.py collectstatic || python3 manage.py collectstatic
 
 EXPOSE 8080 8443
-ENTRYPOINT ["/usr/bin/supervisord"]
+ENTRYPOINT ["supervisord"]
