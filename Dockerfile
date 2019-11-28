@@ -1,4 +1,4 @@
-FROM debian:jessie-slim
+FROM python:3.6.9-slim-jessie
 
 ARG http_proxy
 ARG https_proxy
@@ -40,8 +40,6 @@ RUN apt-get update && \
         supervisor \
         libldap2-dev \
         libsasl2-dev \
-        python3-dev \
-        python3-pip \
         tzdata \
         unzip \
         unrar-free \
@@ -116,7 +114,7 @@ RUN if [ "$WITH_TESTS" = "yes" ]; then \
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
-RUN pip3 install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
+RUN pip3 install -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 # pycocotools package is impossible to install with its dependencies by one pip install command
 RUN pip3 install --no-cache-dir pycocotools==2.0.0
 
