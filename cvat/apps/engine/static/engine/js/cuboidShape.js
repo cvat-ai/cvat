@@ -21,7 +21,7 @@
     convertPlainArrayToActual:false
 */
 
-const MIN_EDGE_LENGTH = 5;
+const MIN_EDGE_LENGTH = 7;
 const EDGE_MARGIN = 20;
 
 class CuboidController extends PolyShapeController {
@@ -131,8 +131,8 @@ class CuboidController extends PolyShapeController {
 
         // Controllable vertical edges
         view.fl_center.draggable(function (x) {
-            return { x:x<viewModel.fr.canvasPoints[0].x && x>viewModel.vpl[0], y: this.attr('y1') };
-
+            let vp_x = this.cx()-viewModel.vplCanvas.x >0 ? viewModel.vplCanvas.x : 0;
+            return { x:x<viewModel.fr.canvasPoints[0].x && x>vp_x+MIN_EDGE_LENGTH};
         }).on('dragmove', function () {
             view.front_left_edge.center(this.cx(),this.cy());
 
@@ -150,7 +150,18 @@ class CuboidController extends PolyShapeController {
         })
 
         view.dr_center.draggable(function (x) {
-            return { x:x>viewModel.fr.canvasPoints[0].x, y: this.attr('y1') };
+            let vp_x  = Math.abs(viewModel.vprCanvas.x-x) > Math.abs(viewModel.vplCanvas.x-x) ? viewModel.vplCanvas.x : viewModel.vprCanvas.x;
+            if(this.cx()>viewModel.fr.canvasPoints[0].x){
+                return {
+                    x:x>viewModel.fr.canvasPoints[0].x+MIN_EDGE_LENGTH && x<vp_x-MIN_EDGE_LENGTH,
+                    y: this.attr('y1')
+                };
+            }else{
+                return {
+                    x: x < viewModel.fr.canvasPoints[0].x - MIN_EDGE_LENGTH && x>vp_x+MIN_EDGE_LENGTH,
+                    y: this.attr('y1')
+                };
+            }
         }).on('dragmove', function () {
             view.dorsal_right_edge.center(this.cx(),this.cy());
 
