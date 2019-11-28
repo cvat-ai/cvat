@@ -177,10 +177,15 @@ class CocoExtractor(Extractor):
                 image_info = loader.loadImgs(img_id)[0]
                 file_name = image_info['file_name']
                 if file_name != '':
-                    file_path = osp.join(
-                        self._path, CocoPath.IMAGES_DIR, subset, file_name)
-                    if osp.exists(file_path):
-                        image = lazy_image(file_path)
+                    image_dir = osp.join(self._path, CocoPath.IMAGES_DIR)
+                    search_paths = [
+                        osp.join(image_dir, file_name),
+                        osp.join(image_dir, subset, file_name),
+                    ]
+                    for image_path in search_paths:
+                        if osp.exists(image_path):
+                            image = lazy_image(image_path)
+                            break
 
             annIds = loader.getAnnIds(imgIds=img_id)
             anns = loader.loadAnns(annIds)
