@@ -238,12 +238,12 @@ class CuboidController extends PolyShapeController {
     }
 
     // Drag controls for the faces
-    faceDragControl(face, points) {
+    faceDragControl(face, points,buildright) {
         points = window.cvat.translate.points.canvasToActual(points);
         points = PolylineModel.convertStringToNumberArray(points);
         face.points = points;
-        this.refreshView();
-        this.viewModel.updatePoints();
+
+        this.updateViewAndVM(buildright);
     }
 
     // Drag controls for the non-vertical edges
@@ -630,10 +630,20 @@ class Cuboid2PointViewModel {
 
     }
 
-    _updateVanishingPoints() {
-        const leftEdge = convertToArray(this.fl.points);
-        const rightEdge = convertToArray(this.dr.points);
-        const midEdge = convertToArray(this.fr.points);
+    // boolean value parameter controls which edges should be used to recalculate vaninishing points
+    _updateVanishingPoints(buildright) {
+        let leftEdge =0;
+        let rightEdge = 0;
+        let midEdge = 0;
+        if(buildright){
+             leftEdge = convertToArray(this.fr.points);
+             rightEdge = convertToArray(this.dl.points);
+             midEdge = convertToArray(this.fl.points);
+        }else{
+             leftEdge = convertToArray(this.fl.points);
+             rightEdge = convertToArray(this.dr.points);
+             midEdge = convertToArray(this.fr.points);
+        }
 
         this.vpl = intersection(leftEdge[0], midEdge[0], leftEdge[1], midEdge[1]);
         this.vpr = intersection(rightEdge[0], midEdge[0], rightEdge[1], midEdge[1]);
@@ -685,7 +695,7 @@ class Cuboid2PointViewModel {
     }
 
     buildBackEdge() {
-        this.updatePoints();
+        this._updateVanishingPoints();
         const vp_left = this.vpl;
         const vp_right = this.vpr;
 
@@ -714,7 +724,7 @@ class Cuboid2PointViewModel {
     }
 
     buildBackRightEdge(){
-        // this.updatePoints();
+        this._updateVanishingPoints(true);
         const vp_left = this.vpl;
         const vp_right = this.vpr;
 
