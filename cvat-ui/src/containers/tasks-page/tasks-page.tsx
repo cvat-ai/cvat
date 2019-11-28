@@ -11,7 +11,7 @@ import TasksPageComponent from '../../components/tasks-page/tasks-page';
 import { getTasksAsync } from '../../actions/tasks-actions';
 
 interface StateToProps {
-    tasksAreBeingFetched: boolean;
+    tasksFetching: boolean;
     gettingQuery: TasksQuery;
     numberOfTasks: number;
     numberOfVisibleTasks: number;
@@ -25,7 +25,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { tasks } = state;
 
     return {
-        tasksAreBeingFetched: !state.tasks.initialized,
+        tasksFetching: state.tasks.fetching,
         gettingQuery: tasks.gettingQuery,
         numberOfTasks: state.tasks.count,
         numberOfVisibleTasks: state.tasks.current.length,
@@ -43,7 +43,7 @@ type TasksPageContainerProps = StateToProps & DispatchToProps;
 function TasksPageContainer(props: TasksPageContainerProps) {
     return (
         <TasksPageComponent
-            tasksAreBeingFetched={props.tasksAreBeingFetched}
+            tasksFetching={props.tasksFetching}
             gettingQuery={props.gettingQuery}
             numberOfTasks={props.numberOfTasks}
             numberOfVisibleTasks={props.numberOfVisibleTasks}

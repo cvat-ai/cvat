@@ -4,7 +4,6 @@ import { withRouter } from 'react-router-dom';
 
 import {
     Spin,
-    Modal,
 } from 'antd';
 
 import {
@@ -16,7 +15,7 @@ import EmptyListComponent from './empty-list';
 import TaskListContainer from '../../containers/tasks-page/tasks-list';
 
 interface TasksPageProps {
-    tasksAreBeingFetched: boolean;
+    tasksFetching: boolean;
     gettingQuery: TasksQuery;
     numberOfTasks: number;
     numberOfVisibleTasks: number;
@@ -133,7 +132,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
     }
 
     public render() {
-        if (this.props.tasksAreBeingFetched) {
+        if (this.props.tasksFetching) {
             return (
                 <Spin size='large' style={{margin: '25% 45%'}}/>
             );

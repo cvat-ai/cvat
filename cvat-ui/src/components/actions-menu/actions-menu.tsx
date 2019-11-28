@@ -94,7 +94,7 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
                     }))
                 }
             </Menu.SubMenu>
-            <Menu.SubMenu key='export' title='Export as dataset'>
+            <Menu.SubMenu key='export' title='Export as a dataset'>
                 {
                     props.exporters.map((exporter) => ExportItemComponent({
                         exporter,
