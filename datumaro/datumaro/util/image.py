@@ -19,12 +19,17 @@ def load_image(path):
     return image
 
 class lazy_image:
-    def __init__(self, path, loader=load_image):
+    def __init__(self, path, loader=load_image, cache=None):
         self.path = path
         self.loader = loader
         self.image = None
+        self.cache = bool(cache)
 
     def __call__(self):
         if self.image is None:
-            self.image = self.loader(self.path)
-        return self.image
+            image = self.loader(self.path)
+            if self.cache:
+                self.image = image
+        else:
+            image = self.image
+        return image
