@@ -1,4 +1,4 @@
-FROM ubuntu:18.04 AS cvat-ui
+FROM node:10.16.3-buster-slim AS cvat-ui
 
 ARG http_proxy
 ARG https_proxy
@@ -13,10 +13,6 @@ ENV TERM=xterm \
 
 ENV LANG='C.UTF-8'  \
     LC_ALL='C.UTF-8'
-
-# Install necessary apt packages
-RUN apt update && apt install -yq nodejs npm curl && \
-    npm install -g n && n 10.16.3
 
 # Create output directories
 RUN mkdir /tmp/cvat-ui /tmp/cvat-core
