@@ -23,7 +23,7 @@ ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
 # It is not available on official repositories (https://wiki.debian.org/ffmpeg)
 RUN echo "deb http://www.deb-multimedia.org jessie main non-free" > /etc/apt/sources.list.d/deb-multimedia.list && \
   apt-get update && \
-  apt-get install -yq --force-yes && \
+  apt-get install -yq --force-yes \
       deb-multimedia-keyring && \
   apt-get update && \
   apt-get install -yq \
