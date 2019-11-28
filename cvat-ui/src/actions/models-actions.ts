@@ -3,7 +3,12 @@ import { ThunkAction } from 'redux-thunk';
 
 import getCore from '../core';
 import { getCVATStore } from '../store';
-import { Model, ModelFiles, CombinedState } from '../reducers/interfaces';
+import {
+    Model,
+    ModelFiles,
+    ActiveInference,
+    CombinedState,
+} from '../reducers/interfaces';
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',
@@ -324,6 +329,199 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
+
+function getInferenceStatusSuccess(
+    taskID: number,
+    activeInference: ActiveInference,
+): AnyAction {
+    const action = {
+        type: ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS,
+        payload: {
+            taskID,
+            activeInference,
+        },
+    };
+
+    return action;
+}
+
+function getInferenceStatusFailed(taskID: number, error: any): AnyAction {
+    const action = {
+        type: ModelsActionTypes.GET_INFERENCE_STATUS_FAILED,
+        payload: {
+            taskID,
+            error,
+        },
+    };
+
+    return action;
+}
+
+interface InferenceMeta {
+    active: boolean;
+    taskID: number;
+    requestID: string;
+}
+
+const timers: any = {};
+
+async function timeoutCallback(
+    url: string,
+    taskID: number,
+    dispatch: ActionCreator<Dispatch>,
+): Promise<void> {
+    try {
+        delete timers[taskID];
+
+        const response = await core.server.request(url, {
+            method: 'GET',
+        });
+
+        const activeInference: ActiveInference = {
+            status: response.status,
+            progress: +response.progress || 0,
+            error: response.error || response.stderr || '',
+        };
+
+
+        if (activeInference.status === 'unknown') {
+            dispatch(getInferenceStatusFailed(
+                taskID,
+                new Error(
+                    `Inference status for the task ${taskID} is unknown.`,
+                ),
+            ));
+
+            return;
+        }
+
+        if (activeInference.status === 'failed') {
+            dispatch(getInferenceStatusFailed(
+                taskID,
+                new Error(
+                    `Inference status for the task ${taskID} is failed. ${activeInference.error}`,
+                ),
+            ));
+
+            return;
+        }
+
+        if (activeInference.status !== 'finished') {
+            timers[taskID] = setTimeout(
+                timeoutCallback.bind(
+                    null,
+                    url,
+                    taskID,
+                    dispatch,
+                ), 3000,
+            );
+        }
+
+        dispatch(getInferenceStatusSuccess(taskID, activeInference));
+    } catch (error) {
+        dispatch(getInferenceStatusFailed(taskID, error));
+    }
+}
+
+function subscribe(
+    urlPath: string,
+    inferenceMeta: InferenceMeta,
+    dispatch: ActionCreator<Dispatch>,
+): void {
+    if (!(inferenceMeta.taskID in timers)) {
+        const requestURL = `${baseURL}/${urlPath}/${inferenceMeta.requestID}`;
+        timers[inferenceMeta.taskID] = setTimeout(
+            timeoutCallback.bind(
+                null,
+                requestURL,
+                inferenceMeta.taskID,
+                dispatch,
+            ),
+        );
+    }
+}
+
+export function getInferenceStatusAsync(tasks: number[]):
+ThunkAction<Promise<void>, {}, {}, AnyAction> {
+    return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        function parse(response: any): InferenceMeta[] {
+            return Object.keys(response).map((key: string): InferenceMeta => ({
+                taskID: +key,
+                requestID: response[key].rq_id || key,
+                active: typeof (response[key].active) === 'undefined' ? ['queued', 'started']
+                    .includes(response[key].status.toLowerCase()) : response[key].active,
+            }));
+        }
+
+        const store = getCVATStore();
+        const state: CombinedState = store.getState();
+        const OpenVINO = state.plugins.plugins.AUTO_ANNOTATION;
+        const RCNN = state.plugins.plugins.TF_ANNOTATION;
+        const MaskRCNN = state.plugins.plugins.TF_SEGMENTATION;
+
+        try {
+            if (OpenVINO) {
+                const response = await core.server.request(
+                    `${baseURL}/auto_annotation/meta/get`, {
+                        method: 'POST',
+                        data: JSON.stringify(tasks),
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    },
+                );
+
+                parse(response.run)
+                    .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
+                    .forEach((inferenceMeta: InferenceMeta): void => {
+                        subscribe('auto_annotation/check', inferenceMeta, dispatch);
+                    });
+            }
+
+            if (RCNN) {
+                const response = await core.server.request(
+                    `${baseURL}/tensorflow/annotation/meta/get`, {
+                        method: 'POST',
+                        data: JSON.stringify(tasks),
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    },
+                );
+
+                parse(response)
+                    .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
+                    .forEach((inferenceMeta: InferenceMeta): void => {
+                        subscribe('tensorflow/annotation/check/task', inferenceMeta, dispatch);
+                    });
+            }
+
+            if (MaskRCNN) {
+                const response = await core.server.request(
+                    `${baseURL}/tensorflow/segmentation/meta/get`, {
+                        method: 'POST',
+                        data: JSON.stringify(tasks),
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    },
+                );
+
+                parse(response)
+                    .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
+                    .forEach((inferenceMeta: InferenceMeta): void => {
+                        subscribe('tensorflow/segmentation/check/task', inferenceMeta, dispatch);
+                    });
+            }
+        } catch (error) {
+            tasks.forEach((task: number): void => {
+                dispatch(getInferenceStatusFailed(task, error));
+            });
+        }
+    };
+}
+
+
 function inferModel(): AnyAction {
     const action = {
         type: ModelsActionTypes.INFER_MODEL,
@@ -387,6 +585,8 @@ export function inferModelAsync(
                     },
                 );
             }
+
+            dispatch(getInferenceStatusAsync([taskInstance.id]));
         } catch (error) {
             dispatch(inferModelFailed(error));
             return;

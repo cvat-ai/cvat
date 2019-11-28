@@ -147,6 +147,7 @@
                     `${encodeURIComponent('password')}=${encodeURIComponent(password)}`,
                 ]).join('&').replace(/%20/g, '+');
 
+                Axios.defaults.headers.common.Authorization = '';
                 let authenticationResponse = null;
                 try {
                     authenticationResponse = await Axios.post(
@@ -246,7 +247,7 @@
                 try {
                     await Axios.delete(`${backendAPI}/tasks/${id}`);
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not delete the task from the server');
+                    throw generateError(errorData, `Could not delete the task ${id} from the server`);
                 }
             }
 

@@ -4,7 +4,6 @@ import { withRouter } from 'react-router-dom';
 
 import {
     Spin,
-    Modal,
 } from 'antd';
 
 import {
@@ -16,12 +15,7 @@ import EmptyListComponent from './empty-list';
 import TaskListContainer from '../../containers/tasks-page/tasks-list';
 
 interface TasksPageProps {
-    deletingError: string;
-    dumpingError: string;
-    loadingError: string;
-    tasksFetchingError: string;
-    loadingDoneMessage: string;
-    tasksAreBeingFetched: boolean;
+    tasksFetching: boolean;
     gettingQuery: TasksQuery;
     numberOfTasks: number;
     numberOfVisibleTasks: number;
@@ -137,45 +131,8 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         this.props.onGetTasks(gettingQuery);
     }
 
-    public componentDidUpdate() {
-        if (this.props.tasksFetchingError) {
-            Modal.error({
-                title: 'Could not receive tasks',
-                content: this.props.tasksFetchingError,
-            });
-        }
-
-        if (this.props.dumpingError) {
-            Modal.error({
-                title: 'Could not dump annotations',
-                content: this.props.dumpingError,
-            });
-        }
-
-        if (this.props.loadingError) {
-            Modal.error({
-                title: 'Could not load annotations',
-                content: this.props.loadingError,
-            });
-        }
-
-        if (this.props.deletingError) {
-            Modal.error({
-                title: 'Could not delete the task',
-                content: this.props.deletingError,
-            });
-        }
-
-        if (this.props.loadingDoneMessage) {
-            Modal.info({
-                title: 'Successful loading of annotations',
-                content: this.props.loadingDoneMessage,
-            });
-        }
-    }
-
     public render() {
-        if (this.props.tasksAreBeingFetched) {
+        if (this.props.tasksFetching) {
             return (
                 <Spin size='large' style={{margin: '25% 45%'}}/>
             );

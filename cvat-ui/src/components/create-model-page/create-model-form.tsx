@@ -43,14 +43,13 @@ export class CreateModelForm extends React.PureComponent<Props> {
 
         return (
             <Form onSubmit={(e: React.FormEvent) => e.preventDefault()}>
-                <Row type='flex'>
-                    <Col>
-                        <Text type='secondary'>Name</Text>
-                    </Col>
-                </Row>
                 <Row>
+                    <Col span={24}>
+                        <Text type='danger'>* </Text>
+                        <Text className='cvat-black-color'>Name:</Text>
+                    </Col>
                     <Col span={14}>
-                        <Form.Item>
+                        <Form.Item hasFeedback>
                             { getFieldDecorator('name', {
                                 rules: [{
                                     required: true,
@@ -74,9 +73,6 @@ export class CreateModelForm extends React.PureComponent<Props> {
                         </Form.Item>
                     </Col>
                 </Row>
-
-
-
             </Form>
         );
     }

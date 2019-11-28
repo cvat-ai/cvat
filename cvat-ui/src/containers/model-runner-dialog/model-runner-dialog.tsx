@@ -14,7 +14,7 @@ import {
 
 
 interface StateToProps {
-    startingError: any;
+    modelsFetching: boolean;
     modelsInitialized: boolean;
     models: Model[];
     activeProcesses: {
@@ -41,12 +41,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { models } = state;
 
     return {
+        modelsFetching: models.fetching,
         modelsInitialized: models.initialized,
         models: models.models,
         activeProcesses: {},
         taskInstance: models.activeRunTask,
         visible: models.visibleRunWindows,
-        startingError: models.startingError,
     };
 }
 
@@ -74,6 +74,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 function ModelRunnerModalContainer(props: StateToProps & DispatchToProps) {
     return (
         <ModelRunnerModalComponent
+            modelsFetching={props.modelsFetching}
             modelsInitialized={props.modelsInitialized}
             models={props.models}
             activeProcesses={props.activeProcesses}
@@ -82,7 +83,6 @@ function ModelRunnerModalContainer(props: StateToProps & DispatchToProps) {
             getModels={props.getModels}
             closeDialog={props.closeDialog}
             runInference={props.inferModelAsync}
-            startingError={props.startingError ? props.startingError.toString() : ''}
         />
     );
 }

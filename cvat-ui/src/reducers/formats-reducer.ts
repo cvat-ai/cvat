@@ -4,27 +4,34 @@ import { FormatsActionTypes } from '../actions/formats-actions';
 import { FormatsState } from './interfaces';
 
 const defaultState: FormatsState = {
-    loaders: [],
-    dumpers: [],
-    gettingFormatsError: null,
+    annotationFormats: [],
+    datasetFormats: [],
     initialized: false,
+    fetching: false,
 };
 
 export default (state = defaultState, action: AnyAction): FormatsState => {
     switch (action.type) {
-        case FormatsActionTypes.GETTING_FORMATS_SUCCESS:
+        case FormatsActionTypes.GET_FORMATS: {
             return {
                 ...state,
-                initialized: true,
-                gettingFormatsError: null,
-                dumpers: action.payload.formats.map((format: any): any[] => format.dumpers).flat(),
-                loaders: action.payload.formats.map((format: any): any[] => format.loaders).flat(),
+                fetching: true,
+                initialized: false,
             };
-        case FormatsActionTypes.GETTING_FORMATS_FAILED:
+        }
+        case FormatsActionTypes.GET_FORMATS_SUCCESS:
             return {
                 ...state,
                 initialized: true,
-                gettingFormatsError: action.payload.error,
+                fetching: false,
+                annotationFormats: action.payload.annotationFormats,
+                datasetFormats: action.payload.datasetFormats,
+            };
+        case FormatsActionTypes.GET_FORMATS_FAILED:
+            return {
+                ...state,
+                initialized: true,
+                fetching: false,
             };
         default:
             return state;

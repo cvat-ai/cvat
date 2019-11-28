@@ -58,28 +58,25 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderZOrder() {
         return (
-            <Form.Item style={{marginBottom: '0px'}}>
-                <Tooltip overlay='Enable order for shapes. Useful for segmentation tasks'>
-                    {this.props.form.getFieldDecorator('zOrder', {
-                        initialValue: false,
-                        valuePropName: 'checked',
-                    })(
-                        <Checkbox>
-                            <Text className='cvat-black-color'>
-                                Z-order
-                            </Text>
-                        </Checkbox>
-                    )}
-                </Tooltip>
+            <Form.Item help='Enables order for shapes. Useful for segmentation tasks'>
+                {this.props.form.getFieldDecorator('zOrder', {
+                    initialValue: false,
+                    valuePropName: 'checked',
+                })(
+                    <Checkbox>
+                        <Text className='cvat-black-color'>
+                            Z-order
+                        </Text>
+                    </Checkbox>
+                )}
             </Form.Item>
         );
     }
 
     private renderImageQuality() {
         return (
-            <Form.Item style={{marginBottom: '0px'}}>
+            <Form.Item label='Image quality'>
                 <Tooltip overlay='Defines image compression level'>
-                    <Text className='cvat-black-color'>{'Image quality'}</Text>
                     {this.props.form.getFieldDecorator('imageQuality', {
                         initialValue: 70,
                         rules: [{
@@ -102,9 +99,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderOverlap() {
         return (
-            <Form.Item style={{marginBottom: '0px'}}>
+            <Form.Item label='Overlap size'>
                 <Tooltip overlay='Defines a number of intersected frames between different segments'>
-                    <Text className='cvat-black-color'>{'Overlap size'}</Text>
                     {this.props.form.getFieldDecorator('overlapSize')(
                         <Input size='large' type='number'/>
                     )}
@@ -115,9 +111,8 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderSegmentSize() {
         return (
-            <Form.Item style={{marginBottom: '0px'}}>
+            <Form.Item label='Segment size'>
                 <Tooltip overlay='Defines a number of frames in a segment'>
-                    <Text className='cvat-black-color'>{'Segment size'}</Text>
                     {this.props.form.getFieldDecorator('segmentSize')(
                         <Input size='large' type='number'/>
                     )}
@@ -128,8 +123,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderStartFrame() {
         return (
-            <Form.Item style={{marginBottom: '0px'}}>
-                <Text className='cvat-black-color'>{'Start frame'}</Text>
+            <Form.Item label='Start frame'>
                 {this.props.form.getFieldDecorator('startFrame')(
                     <Input
                         size='large'
@@ -144,8 +138,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderStopFrame() {
         return (
-            <Form.Item style={{marginBottom: '0px'}}>
-                <Text className='cvat-black-color'>{'Stop frame'}</Text>
+            <Form.Item label='Stop frame'>
                 {this.props.form.getFieldDecorator('stopFrame')(
                     <Input
                         size='large'
@@ -160,8 +153,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderFrameStep() {
         return (
-            <Form.Item style={{marginBottom: '0px'}}>
-                <Text className='cvat-black-color'>{'Frame step'}</Text>
+            <Form.Item label='Frame step'>
                 {this.props.form.getFieldDecorator('frameStep')(
                     <Input
                         size='large'
@@ -176,32 +168,34 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderGitLFSBox() {
         return (
-            <Form.Item style={{marginBottom: '0px'}}>
-                <Tooltip overlay='If annotation files are large, you can use git LFS feature'>
-                    {this.props.form.getFieldDecorator('lfs', {
-                        valuePropName: 'checked',
-                        initialValue: false,
-                    })(
-                        <Checkbox>
-                            <Text className='cvat-black-color'>
-                                Use LFS (Large File Support)
-                            </Text>
-                        </Checkbox>
-                    )}
-                </Tooltip>
+            <Form.Item help='If annotation files are large, you can use git LFS feature'>
+                {this.props.form.getFieldDecorator('lfs', {
+                    valuePropName: 'checked',
+                    initialValue: false,
+                })(
+                    <Checkbox>
+                        <Text className='cvat-black-color'>
+                            Use LFS (Large File Support):
+                        </Text>
+                    </Checkbox>
+                )}
             </Form.Item>
         );
     }
 
     private renderGitRepositoryURL() {
         return (
-            <Form.Item style={{marginBottom: '0px'}}>
-                <Tooltip overlay={`Attach a git repository to store annotations.
-                                Path is specified in square brackets`}>
-                    <Text className='cvat-black-color'>{'Dataset repository URL'}</Text>
-                    {this.props.form.getFieldDecorator('repository', {
-                        rules: [{
-                            validator: (_, value, callback) => {
+            <Form.Item
+                hasFeedback
+                label='Dataset repository URL'
+                extra='Attach a repository to store annotations there'
+            >
+                {this.props.form.getFieldDecorator('repository', {
+                    rules: [{
+                        validator: (_, value, callback) => {
+                            if (!value) {
+                                callback();
+                            } else {
                                 const [url, path] = value.split(/\s+/);
                                 if (!patterns.validateURL.pattern.test(url)) {
                                     callback('Git URL is not a valid');
@@ -213,14 +207,13 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
                                 callback();
                             }
-                        }]
-                    })(
-                        <Input
-                            placeholder='e.g. https//github.com/user/repos [annotation/<anno_file_name>.zip]'
-                            size='large'
-                        />
-                    )}
-                </Tooltip>
+                        }
+                    }]
+                })(
+                    <Input size='large'
+                        placeholder='e.g. https//github.com/user/repos [annotation/<anno_file_name>.zip]'
+                    />
+                )}
             </Form.Item>
         );
     }
@@ -231,7 +224,6 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 <Row>
                     <Col>
                         {this.renderGitRepositoryURL()}
-
                     </Col>
                 </Row>
                 <Row>
@@ -245,19 +237,24 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
 
     private renderBugTracker() {
         return (
-            <Form.Item style={{marginBottom: '0px'}}>
-                <Tooltip overlay='Attach issue tracker where the task is described'>
-                    <Text className='cvat-black-color'>{'Issue tracker'}</Text>
-                    {this.props.form.getFieldDecorator('bugTracker', {
-                        rules: [{
-                            ...patterns.validateURL,
-                        }]
-                    })(
-                        <Input
-                            size='large'
-                        />
-                    )}
-                </Tooltip>
+            <Form.Item
+                hasFeedback
+                label='Issue tracker'
+                extra='Attach issue tracker where the task is described'
+            >
+                {this.props.form.getFieldDecorator('bugTracker', {
+                    rules: [{
+                        validator: (_, value, callback) => {
+                            if (value && !patterns.validateURL.pattern.test(value)) {
+                                callback('Issue tracker must be URL');
+                            } else {
+                                callback();
+                            }
+                        }
+                    }]
+                })(
+                    <Input size='large'/>
+                )}
             </Form.Item>
         )
     }

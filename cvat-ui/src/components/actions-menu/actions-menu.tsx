@@ -5,24 +5,27 @@ import {
     Modal,
 } from 'antd';
 
-import Text from 'antd/lib/typography/Text';
 import { ClickParam } from 'antd/lib/menu/index';
 
 import LoaderItemComponent from './loader-item';
 import DumperItemComponent from './dumper-item';
-
+import ExportItemComponent from './export-item';
 
 interface ActionsMenuComponentProps {
     taskInstance: any;
     loaders: any[];
     dumpers: any[];
+    exporters: any[];
     loadActivity: string | null;
     dumpActivities: string[] | null;
+    exportActivities: string[] | null;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
     installedAutoAnnotation: boolean;
+    inferenceIsActive: boolean;
     onLoadAnnotation: (taskInstance: any, loader: any, file: File) => void;
     onDumpAnnotation: (taskInstance: any, dumper: any) => void;
+    onExportDataset: (taskInstance: any, exporter: any) => void;
     onDeleteTask: (taskInstance: any) => void;
     onOpenRunWindow: (taskInstance: any) => void;
 }
@@ -66,24 +69,22 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
     const tracker = props.taskInstance.bugTracker;
     const renderModelRunner = props.installedAutoAnnotation ||
         props.installedTFAnnotation || props.installedTFSegmentation;
+
     return (
         <Menu selectable={false} className='cvat-actions-menu' onClick={
             (params: ClickParam) => handleMenuClick(props, params)
         }>
-            <Menu.SubMenu key='dump' title={<
-                Text>{'Dump annotations'}</Text>
-            }>
+            <Menu.SubMenu key='dump' title='Dump annotations'>
                 {
                     props.dumpers.map((dumper) => DumperItemComponent({
                         dumper,
                         taskInstance: props.taskInstance,
-                        dumpActivities: props.dumpActivities,
+                        dumpActivity: (props.dumpActivities || [])
+                            .filter((_dumper: string) => _dumper === dumper.name)[0] || null,
                         onDumpAnnotation: props.onDumpAnnotation,
                 }   ))}
             </Menu.SubMenu>
-            <Menu.SubMenu key='load' title={
-                <Text>{'Upload annotations'}</Text>
-            }>
+            <Menu.SubMenu key='load' title='Upload annotations'>
                 {
                     props.loaders.map((loader) => LoaderItemComponent({
                         loader,
@@ -93,8 +94,22 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
                     }))
                 }
             </Menu.SubMenu>
+            <Menu.SubMenu key='export' title='Export as a dataset'>
+                {
+                    props.exporters.map((exporter) => ExportItemComponent({
+                        exporter,
+                        taskInstance: props.taskInstance,
+                        exportActivity: (props.exportActivities || [])
+                            .filter((_exporter: string) => _exporter === exporter.name)[0] || null,
+                        onExportDataset: props.onExportDataset,
+                    }))
+                }
+            </Menu.SubMenu>
             {tracker && <Menu.Item key='tracker'>Open bug tracker</Menu.Item>}
-            {renderModelRunner && <Menu.Item key='auto_annotation'>Automatic annotation</Menu.Item>}
+            {
+                renderModelRunner &&
+                <Menu.Item disabled={props.inferenceIsActive} key='auto_annotation'>Automatic annotation</Menu.Item>
+            }
             <hr/>
             <Menu.Item key='delete'>Delete</Menu.Item>
         </Menu>

@@ -7,7 +7,6 @@ import {
     Select,
     Menu,
     Dropdown,
-    Button,
     Icon,
 } from 'antd';
 
@@ -62,7 +61,7 @@ export default function UploadedModelItem(props: Props) {
             <Col span={2}>
                 <Text className='cvat-black-color'>Actions</Text>
                 <Dropdown overlay={
-                        <Menu subMenuCloseDelay={0.15} className='cvat-task-item-menu'>
+                        <Menu className='cvat-task-item-menu'>
                             <Menu.Item onClick={() => {
                                 props.onDelete();
                             }}key='delete'>Delete</Menu.Item>

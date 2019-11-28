@@ -4,10 +4,9 @@ import {
     Row,
     Col,
     Alert,
-    Modal,
     Button,
     Collapse,
-    message,
+    notification,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -28,7 +27,6 @@ export interface CreateTaskData {
 interface Props {
     onCreate: (data: CreateTaskData) => void;
     status: string;
-    error: string;
     installedGit: boolean;
 }
 
@@ -90,17 +88,17 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
 
     private handleSubmitClick = () => {
         if (!this.validateLabels()) {
-            Modal.error({
-                title: 'Could not create a task',
-                content: 'A task must contain at least one label',
+            notification.error({
+                message: 'Could not create a task',
+                description: 'A task must contain at least one label',
             });
             return;
         }
 
         if (!this.validateFiles()) {
-            Modal.error({
-                title: 'Could not create a task',
-                content: 'A task must contain at least one file',
+            notification.error({
+                message: 'Could not create a task',
+                description: 'A task must contain at least one file',
             });
             return;
         }
@@ -117,9 +115,9 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 this.props.onCreate(this.state);
             })
             .catch((_: any) => {
-                Modal.error({
-                    title: 'Could not create a task',
-                    content: 'Please, check configuration you specified',
+                notification.error({
+                    message: 'Could not create a task',
+                    description: 'Please, check configuration you specified',
                 });
             });
     }
@@ -137,7 +135,8 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
     private renderLabelsBlock() {
         return (
             <Col span={24}>
-                <Text type='secondary'>Labels</Text>
+                <Text type='danger'>* </Text>
+                <Text className='cvat-black-color'>Labels:</Text>
                 <LabelsEditor
                     labels={this.state.labels}
                     onSubmit={
@@ -155,6 +154,8 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
     private renderFilesBlock() {
         return (
             <Col span={24}>
+                <Text type='danger'>* </Text>
+                <Text className='cvat-black-color'>Select files:</Text>
                 <FileManagerContainer ref={
                     (container: any) =>
                         this.fileManagerContainer = container
@@ -169,7 +170,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 <Collapse>
                     <Collapse.Panel
                         header={
-                            <Text className='cvat-title'>{'Advanced configuration'}</Text>
+                            <Text className='cvat-title'>Advanced configuration</Text>
                         } key='1'>
                         <AdvancedConfigurationForm
                             installedGit={this.props.installedGit}
@@ -187,15 +188,10 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
     }
 
     public componentDidUpdate(prevProps: Props) {
-        if (this.props.error && prevProps.error !== this.props.error) {
-            Modal.error({
-                title: 'Could not create task',
-                content: this.props.error,
-            });
-        }
-
         if (this.props.status === 'CREATED' && prevProps.status !== 'CREATED') {
-            message.success('The task has been created');
+            notification.info({
+                message: 'The task has been created',
+            });
 
             this.basicConfigurationComponent.resetFields();
             if (this.advancedConfigurationComponent) {
@@ -213,12 +209,12 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
     public render() {
         const loading = !!this.props.status
             && this.props.status !== 'CREATED'
-            && !this.props.error;
+            && this.props.status !== 'FAILED';
 
         return (
             <Row type='flex' justify='start' align='middle' className='cvat-create-task-content'>
                 <Col span={24}>
-                    <Text className='cvat-title'>{'Basic configuration'}</Text>
+                    <Text className='cvat-title'>Basic configuration</Text>
                 </Col>
 
                 { this.renderBasicBlock() }

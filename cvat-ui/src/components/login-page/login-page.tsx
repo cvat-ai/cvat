@@ -8,13 +8,11 @@ import Text from 'antd/lib/typography/Text';
 import {
     Col,
     Row,
-    Modal,
 } from 'antd';
 
 import LoginForm, { LoginData } from './login-form';
 
 interface LoginPageComponentProps {
-    loginError: string;
     onLogin: (username: string, password: string) => void;
 }
 
@@ -25,13 +23,6 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
         md: { span: 10 },
         lg: { span: 4 },
         xl: { span: 4 },
-    }
-
-    if (props.loginError) {
-        Modal.error({
-            title: 'Could not login',
-            content: props.loginError,
-        });
     }
 
     return (

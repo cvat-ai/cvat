@@ -1,12 +1,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { registerAsync } from '../../actions/auth-actions';
-import { CombinedState } from '../../reducers/interfaces';
 import RegisterPageComponent from '../../components/register-page/register-page';
 
-interface StateToProps {
-    registerError: any;
-}
+interface StateToProps {}
 
 interface DispatchToProps {
     register: (username: string, firstName: string,
@@ -14,10 +11,8 @@ interface DispatchToProps {
         password1: string, password2: string) => void;
 }
 
-function mapStateToProps(state: CombinedState): StateToProps {
-    return {
-        registerError: state.auth.registerError,
-    };
+function mapStateToProps(): StateToProps {
+    return {};
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
@@ -26,11 +21,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     }
 }
 
-type RegisterPageContainerProps = StateToProps & DispatchToProps;
-function RegisterPageContainer(props: RegisterPageContainerProps) {
+function RegisterPageContainer(props: StateToProps & DispatchToProps) {
     return (
         <RegisterPageComponent
-            registerError={props.registerError ? props.registerError.toString() : ''}
             onRegister={props.register}
         />
     );

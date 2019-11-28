@@ -5,30 +5,31 @@ import { UsersActionTypes } from '../actions/users-actions';
 
 const initialState: UsersState = {
     users: [],
+    fetching: false,
     initialized: false,
-    gettingUsersError: null,
 };
 
 export default function (state: UsersState = initialState, action: AnyAction): UsersState {
     switch (action.type) {
-        case UsersActionTypes.GET_USERS:
+        case UsersActionTypes.GET_USERS: {
             return {
                 ...state,
+                fetching: true,
                 initialized: false,
-                gettingUsersError: null,
             };
+        }
         case UsersActionTypes.GET_USERS_SUCCESS:
             return {
                 ...state,
+                fetching: false,
                 initialized: true,
                 users: action.payload.users,
             };
         case UsersActionTypes.GET_USERS_FAILED:
             return {
                 ...state,
+                fetching: false,
                 initialized: true,
-                users: [],
-                gettingUsersError: action.payload.error,
             };
         default:
             return {

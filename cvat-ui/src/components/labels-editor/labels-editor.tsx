@@ -3,7 +3,7 @@ import React from 'react';
 import {
     Tabs,
     Icon,
-    Modal,
+    notification,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -128,9 +128,9 @@ export default class LabelsEditor
     private handleDelete = (label: Label) => {
         // the label is saved on the server, cannot delete it
         if (typeof(label.id) !== 'undefined' && label.id >= 0) {
-            Modal.error({
-                title: 'Could not delete the label',
-                content: 'It has been already saved on the server',
+            notification.error({
+                message: 'Could not delete the label',
+                description: 'It has been already saved on the server',
             });
         }
 

@@ -1,9 +1,5 @@
 export interface AuthState {
     initialized: boolean;
-    authError: any;
-    loginError: any;
-    logoutError: any;
-    registerError: any;
     user: any;
 }
 
@@ -26,45 +22,45 @@ export interface Task {
 
 export interface TasksState {
     initialized: boolean;
-    tasksFetchingError: any;
-    taskUpdatingError: any;
+    fetching: boolean;
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
     activities: {
         dumps: {
-            dumpingError: any;
             byTask: {
                 // dumps in different formats at the same time
                 [tid: number]: string[]; // dumper names
             };
         };
+        exports: {
+            byTask: {
+                // exports in different formats at the same time
+                [tid: number]: string[]; // dumper names
+            };
+        };
         loads: {
-            loadingError: any;
-            loadingDoneMessage: string;
             byTask: {
                 // only one loading simultaneously
                 [tid: number]: string; // loader name
             };
         };
         deletes: {
-            deletingError: any;
             byTask: {
                 [tid: number]: boolean; // deleted (deleting if in dictionary)
             };
         };
         creates: {
-            creatingError: any;
             status: string;
         };
     };
 }
 
 export interface FormatsState {
-    loaders: any[];
-    dumpers: any[];
+    annotationFormats: any[];
+    datasetFormats: any[];
+    fetching: boolean;
     initialized: boolean;
-    gettingFormatsError: any;
 }
 
 // eslint-disable-next-line import/prefer-default-export
@@ -77,6 +73,7 @@ export enum SupportedPlugins {
 }
 
 export interface PluginsState {
+    fetching: boolean;
     initialized: boolean;
     plugins: {
         [name in SupportedPlugins]: boolean;
@@ -85,8 +82,8 @@ export interface PluginsState {
 
 export interface UsersState {
     users: any[];
+    fetching: boolean;
     initialized: boolean;
-    gettingUsersError: any;
 }
 
 export interface ShareFileInfo { // get this data from cvat-core
@@ -102,7 +99,6 @@ export interface ShareItem {
 
 export interface ShareState {
     root: ShareItem;
-    error: any;
 }
 
 export interface Model {
@@ -115,25 +111,28 @@ export interface Model {
     labels: string[];
 }
 
-export interface Running {
-    [tid: string]: {
-        status: string;
-        processId: string;
-        error: any;
-    };
+export enum RQStatus {
+    unknown = 'unknown',
+    queued = 'queued',
+    started = 'started',
+    finished = 'finished',
+    failed = 'failed',
+}
+
+export interface ActiveInference {
+    status: RQStatus;
+    progress: number;
+    error: string;
 }
 
 export interface ModelsState {
     initialized: boolean;
+    fetching: boolean;
     creatingStatus: string;
-    creatingError: any;
-    startingError: any;
-    fetchingError: any;
-    deletingErrors: { // by id
-        [index: number]: any;
-    };
     models: Model[];
-    runnings: Running[];
+    inferences: {
+        [index: number]: ActiveInference;
+    };
     visibleRunWindows: boolean;
     activeRunTask: any;
 }
@@ -146,6 +145,50 @@ export interface ModelFiles {
     json: string | File;
 }
 
+export interface NotificationsState {
+    errors: {
+        auth: {
+            authorized: any;
+            login: any;
+            logout: any;
+            register: any;
+        };
+        tasks: {
+            fetching: any;
+            updating: any;
+            dumping: any;
+            loading: any;
+            exporting: any;
+            deleting: any;
+            creating: any;
+        };
+        formats: {
+            fetching: any;
+        };
+        users: {
+            fetching: any;
+        };
+        share: {
+            fetching: any;
+        };
+        models: {
+            creating: any;
+            starting: any;
+            fetching: any;
+            deleting: any;
+            inferenceStatusFetching: any;
+        };
+    };
+    messages: {
+        tasks: {
+            loadingDone: string;
+        };
+        models: {
+            inferenceDone: string;
+        };
+    };
+}
+
 export interface CombinedState {
     auth: AuthState;
     tasks: TasksState;
@@ -154,4 +197,5 @@ export interface CombinedState {
     formats: FormatsState;
     plugins: PluginsState;
     models: ModelsState;
+    notifications: NotificationsState;
 }

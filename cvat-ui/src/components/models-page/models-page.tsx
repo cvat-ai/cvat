@@ -14,8 +14,8 @@ interface Props {
     installedAutoAnnotation: boolean;
     installedTFSegmentation: boolean;
     installedTFAnnotation: boolean;
-    modelsAreBeingFetched: boolean;
-    modelsFetchingError: any;
+    modelsInitialized: boolean;
+    modelsFetching: boolean;
     registeredUsers: any[];
     models: Model[];
     getModels(): void;
@@ -23,7 +23,7 @@ interface Props {
 }
 
 export default function ModelsPageComponent(props: Props) {
-    if (props.modelsAreBeingFetched) {
+    if (!props.modelsInitialized && !props.modelsFetching) {
         props.getModels();
         return (
             <Spin size='large' style={{margin: '25% 45%'}}/>
@@ -35,15 +35,18 @@ export default function ModelsPageComponent(props: Props) {
         return (
             <div className='cvat-models-page'>
                 <TopBarComponent installedAutoAnnotation={props.installedAutoAnnotation}/>
-                { integratedModels.length ?
-                    <BuiltModelsList models={integratedModels}/> : null }
-                { uploadedModels.length &&
+                { !!integratedModels.length &&
+                    <BuiltModelsList models={integratedModels}/>
+                }
+                { !!uploadedModels.length &&
                     <UploadedModelsList
                         registeredUsers={props.registeredUsers}
                         models={uploadedModels}
                         deleteModel={props.deleteModel}
                     />
-                } { props.installedAutoAnnotation &&
+                }
+                { props.installedAutoAnnotation &&
+                    !uploadedModels.length &&
                     !props.installedTFAnnotation &&
                     !props.installedTFSegmentation &&
                     <EmptyListComponent/>

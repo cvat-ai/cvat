@@ -14,23 +14,23 @@ import {
 
 import { Model } from '../../reducers/interfaces';
 
+interface StringObject {
+    [index: string]: string;
+}
+
 interface Props {
+    modelsFetching: boolean;
     modelsInitialized: boolean;
     models: Model[];
-    activeProcesses: {
-        [index: string]: string;
-    };
+    activeProcesses: StringObject;
     visible: boolean;
     taskInstance: any;
-    startingError: string;
     getModels(): void;
     closeDialog(): void;
     runInference(
         taskInstance: any,
         model: Model,
-        mapping: {
-            [index: string]: string
-        },
+        mapping: StringObject,
         cleanOut: boolean,
     ): void;
 }
@@ -38,12 +38,8 @@ interface Props {
 interface State {
     selectedModel: string | null;
     cleanOut: boolean;
-    mapping: {
-        [index: string]: string;
-    };
-    colors: {
-        [index: string]: string;
-    };
+    mapping: StringObject;
+    colors: StringObject;
     matching: {
         model: string,
         task: string,
@@ -277,7 +273,11 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
         );
     }
 
-    public componentDidUpdate(prevProps: Props) {
+    public componentDidUpdate(prevProps: Props, prevState: State) {
+        if (!this.props.modelsInitialized && !this.props.modelsFetching) {
+            this.props.getModels();
+        }
+
         if (!prevProps.visible && this.props.visible) {
             this.setState({
                 selectedModel: null,
@@ -290,17 +290,26 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
             });
         }
 
-        if (!prevProps.startingError && this.props.startingError) {
-            Modal.error({
-                title: 'Could not start model inference',
-                content: this.props.startingError,
-            });
-        }
-    }
+        if (this.state.selectedModel && prevState.selectedModel !== this.state.selectedModel) {
+            const model = this.props.models
+                .filter((model) => model.name === this.state.selectedModel)[0];
+            if (!model.primary) {
+                let taskLabels: string[] = this.props.taskInstance.labels
+                    .map((label: any) => label.name);
+                const defaultMapping: StringObject = model.labels
+                    .reduce((acc: StringObject, label) => {
+                        if (taskLabels.includes(label)) {
+                            acc[label] = label;
+                            taskLabels = taskLabels.filter((_label) => _label !== label)
+                        }
 
-    public componentDidMount() {
-        if (!this.props.modelsInitialized) {
-            this.props.getModels();
+                        return acc;
+                    }, {});
+
+                this.setState({
+                    mapping: defaultMapping,
+                });
+            }
         }
     }
 

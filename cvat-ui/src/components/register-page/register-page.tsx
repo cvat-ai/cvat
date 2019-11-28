@@ -14,7 +14,6 @@ import {
 import RegisterForm, { RegisterData } from '../../components/register-page/register-form';
 
 interface RegisterPageComponentProps {
-    registerError: string;
     onRegister: (username: string, firstName: string,
         lastName: string, email: string,
         password1: string, password2: string) => void;
@@ -27,13 +26,6 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
         md: { span: 10 },
         lg: { span: 4 },
         xl: { span: 4 },
-    }
-
-    if (props.registerError) {
-        Modal.error({
-            title: 'Could not register',
-            content: props.registerError,
-        });
     }
 
     return (

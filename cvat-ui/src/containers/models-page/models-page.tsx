@@ -15,8 +15,8 @@ interface StateToProps {
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
     installedTFSegmentation: boolean;
-    modelsAreBeingFetched: boolean;
-    modelsFetchingError: any;
+    modelsInitialized: boolean;
+    modelsFetching: boolean;
     models: Model[];
     registeredUsers: any[];
 }
@@ -34,8 +34,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         installedAutoAnnotation: plugins.AUTO_ANNOTATION,
         installedTFAnnotation: plugins.TF_ANNOTATION,
         installedTFSegmentation: plugins.TF_SEGMENTATION,
-        modelsAreBeingFetched: !models.initialized,
-        modelsFetchingError: models.fetchingError,
+        modelsInitialized: models.initialized,
+        modelsFetching: models.fetching,
         models: models.models,
         registeredUsers: state.users.users,
     };
@@ -63,8 +63,8 @@ function ModelsPageContainer(props: DispatchToProps & StateToProps) {
                 installedAutoAnnotation={props.installedAutoAnnotation}
                 installedTFSegmentation={props.installedTFSegmentation}
                 installedTFAnnotation={props.installedTFAnnotation}
-                modelsAreBeingFetched={props.modelsAreBeingFetched}
-                modelsFetchingError={props.modelsFetchingError}
+                modelsInitialized={props.modelsInitialized}
+                modelsFetching={props.modelsFetching}
                 registeredUsers={props.registeredUsers}
                 models={props.models}
                 getModels={props.getModels}

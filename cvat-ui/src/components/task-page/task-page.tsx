@@ -6,7 +6,7 @@ import {
     Col,
     Row,
     Spin,
-    Modal,
+    notification,
 } from 'antd';
 
 import TopBarComponent from './top-bar';
@@ -15,10 +15,8 @@ import JobListContainer from '../../containers/task-page/job-list';
 import { Task } from '../../reducers/interfaces';
 
 interface TaskPageComponentProps {
-    task: Task;
-    taskFetchingError: string;
-    taskUpdatingError: string;
-    taskDeletingError: string;
+    task: Task | null;
+    fetching: boolean;
     deleteActivity: boolean | null;
     installedGit: boolean;
     onFetchTask: (tid: number) => void;
@@ -27,55 +25,48 @@ interface TaskPageComponentProps {
 type Props = TaskPageComponentProps & RouteComponentProps<{id: string}>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
+    private attempts: number = 0;
+
     public componentDidUpdate() {
         if (this.props.deleteActivity) {
             this.props.history.replace('/tasks');
         }
 
-        const { id } = this.props.match.params;
-
-        if (this.props.taskFetchingError) {
-            Modal.error({
-                title: `Could not receive the task ${id}`,
-                content: this.props.taskFetchingError,
-            });
-        }
-
-        if (this.props.taskUpdatingError) {
-            Modal.error({
-                title: `Could not update the task ${id}`,
-                content: this.props.taskUpdatingError,
-            });
-        }
-
-        if (this.props.taskDeletingError) {
-            Modal.error({
-                title: `Could not delete the task ${id}`,
-                content: this.props.taskDeletingError,
+        if (this.attempts > 1) {
+            notification.warning({
+                message: 'Something wrong with the task. It cannot be fetched from the server',
             });
         }
     }
 
     public render() {
         const { id } = this.props.match.params;
-        const fetchTask = !this.props.task && !this.props.taskFetchingError;
+        const fetchTask = !this.props.task;
 
         if (fetchTask) {
-            this.props.onFetchTask(+id);
+            if (!this.props.fetching) {
+                if (!this.attempts) {
+                    this.attempts ++;
+                    this.props.onFetchTask(+id);
+                } else {
+                    this.attempts ++;
+                }
+            }
             return (
                 <Spin size='large' style={{margin: '25% 50%'}}/>
             );
-        } else if (this.props.taskFetchingError) {
+        } else if (typeof(this.props.task) === 'undefined') {
             return (
                 <div> </div>
             )
         } else {
+            const task = this.props.task as Task;
             return (
                 <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
                     <Col md={22} lg={18} xl={16} xxl={14}>
-                        <TopBarComponent taskInstance={this.props.task.instance}/>
-                        <DetailsContainer task={this.props.task}/>
-                        <JobListContainer task={this.props.task}/>
+                        <TopBarComponent taskInstance={task.instance}/>
+                        <DetailsContainer task={task}/>
+                        <JobListContainer task={task}/>
                     </Col>
                 </Row>
             );

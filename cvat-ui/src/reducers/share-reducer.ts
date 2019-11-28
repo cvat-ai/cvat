@@ -9,17 +9,10 @@ const defaultState: ShareState = {
         type: 'DIR',
         children: [],
     },
-    error: null,
 };
 
 export default function (state = defaultState, action: AnyAction): ShareState {
     switch (action.type) {
-        case ShareActionTypes.LOAD_SHARE_DATA: {
-            return {
-                ...state,
-                error: null,
-            };
-        }
         case ShareActionTypes.LOAD_SHARE_DATA_SUCCESS: {
             const { values } = action.payload;
             const { directory } = action.payload;
@@ -43,14 +36,6 @@ export default function (state = defaultState, action: AnyAction): ShareState {
 
             return {
                 ...state,
-            };
-        }
-        case ShareActionTypes.LOAD_SHARE_DATA_FAILED: {
-            const { error } = action.payload;
-
-            return {
-                ...state,
-                error,
             };
         }
         default:
