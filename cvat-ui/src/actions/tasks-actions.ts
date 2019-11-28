@@ -259,7 +259,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         dispatch(exportDataset(task, exporter));
 
         try {
-            const url = await task.annotations.exportDataset(task.name, exporter);
+            const url = await task.annotations.exportDataset(exporter.tag);
             // false positive
             // eslint-disable-next-line security/detect-non-literal-fs-filename
             window.open(url, '_blank');
