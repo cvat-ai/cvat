@@ -23,10 +23,14 @@ ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
 # It is not available on official repositories (https://wiki.debian.org/ffmpeg)
 RUN echo "deb http://www.deb-multimedia.org jessie main non-free" > /etc/apt/sources.list.d/deb-multimedia.list \
   && apt-get update \
-  && apt-get install -y --force-yes deb-multimedia-keyring \
+  && apt-get install -yq --force-yes \
+      deb-multimedia-keyring \
   && apt-get update \
-  && apt-get install -y ffmpeg \
-  && apt-get install -y gstreamer0.10-ffmpeg
+  && apt-get install -yq \
+      ffmpeg \
+      gstreamer0.10-ffmpeg \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install necessary apt packages
 RUN apt-get update && \
