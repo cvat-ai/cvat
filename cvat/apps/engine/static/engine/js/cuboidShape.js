@@ -48,22 +48,14 @@ class CuboidController extends PolyShapeController {
         const controller = this;
         const cuboidview = this.cuboidView;
         const edges = cuboidview._uis.shape.getEdges();
+        const grabPoints=  cuboidview._uis.shape.getGrabPoints();
+        const draggableFaces = [cuboidview._uis.shape.left,cuboidview._uis.shape.dorsal,cuboidview._uis.shape.right];
 
         cuboidview._uis.shape.on('mousedown', () => {
             ShapeView.prototype._positionateMenus.call(cuboidview);
         });
         edges.forEach((edge) => {
-            edge.on('dragstart', () => {
-                cuboidview._flags.dragging = true;
-                cuboidview._hideShapeText();
-                cuboidview.notify('drag');
-            }).on('dragend', () => {
-                cuboidview._flags.dragging = false;
-                cuboidview._showShapeText();
-                cuboidview.notify('drag');
-                controller.updateModel();
-                controller.updateViewModel();
-            }).on('resizestart', () => {
+            edge.on('resizestart', () => {
                 cuboidview._flags.resizing = true;
                 cuboidview._hideShapeText();
                 cuboidview.notify('resize');
@@ -74,31 +66,33 @@ class CuboidController extends PolyShapeController {
                 cuboidview.notify('resize');
             });
         });
-
-        cuboidview._uis.shape.left.on('dragstart', () => {
-            cuboidview._flags.dragging = true;
-            ShapeView.prototype._positionateMenus.call(cuboidview);
-            cuboidview._hideShapeText();
-            cuboidview.notify('drag');
-        }).on('dragend', () => {
-            cuboidview._flags.dragging = false;
-            cuboidview._showShapeText();
-            cuboidview.notify('drag');
-            controller.updateModel();
-            controller.updateViewModel();
+        grabPoints.forEach((grabPoint) =>{
+            grabPoint.on('dragstart', () => {
+                cuboidview._flags.dragging = true;
+                cuboidview._hideShapeText();
+                cuboidview.notify('drag');
+            }).on('dragend', () => {
+                cuboidview._flags.dragging = false;
+                cuboidview._showShapeText();
+                cuboidview.notify('drag');
+                controller.updateModel();
+                controller.updateViewModel();
+            })
         });
 
-        cuboidview._uis.shape.dorsal.on('dragstart', () => {
-            cuboidview._flags.dragging = true;
-            ShapeView.prototype._positionateMenus.call(cuboidview);
-            cuboidview._hideShapeText();
-            cuboidview.notify('drag');
-        }).on('dragend', () => {
-            cuboidview._flags.dragging = false;
-            cuboidview._showShapeText();
-            cuboidview.notify('drag');
-            controller.updateModel();
-            controller.updateViewModel();
+        draggableFaces.forEach((face)=> {
+            face.on('dragstart', () => {
+                cuboidview._flags.dragging = true;
+                ShapeView.prototype._positionateMenus.call(cuboidview);
+                cuboidview._hideShapeText();
+                cuboidview.notify('drag');
+            }).on('dragend', () => {
+                cuboidview._flags.dragging = false;
+                cuboidview._showShapeText();
+                cuboidview.notify('drag');
+                controller.updateModel();
+                controller.updateViewModel();
+            });
         });
 
         this.makeDraggable();
@@ -349,19 +343,25 @@ class CuboidController extends PolyShapeController {
 
     static removeEventsFromCube(view) {
         const edges = view.getEdges();
+        const grab_points = view.getGrabPoints();
         view.off('dragmove').off('dragend').off('dragstart').off('mousedown');
         for (let i = 0; i < edges.length; i++) {
-            CuboidController.removeEventsFromEdge(edges[i]);
+            CuboidController.removeEventsFromElement(edges[i]);
         }
+        grab_points.forEach((grab_point)=>{
+            CuboidController.removeEventsFromElement(grab_point);
+        });
+
         view.front_left_edge.selectize(false);
         view.front_right_edge.selectize(false);
         view.dorsal_right_edge.selectize(false);
 
         view.dorsal.off();
         view.left.off();
+        view.right.off();
     }
 
-    static removeEventsFromEdge(edge) {
+    static removeEventsFromElement(edge) {
         edge.off().draggable(false);
     }
 
