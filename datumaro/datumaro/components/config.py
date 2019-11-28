@@ -234,5 +234,4 @@ class DefaultConfig(Config):
             return super().set(key, value)
 
 
-VERSION = '0.1.0'
 DEFAULT_FORMAT = 'datumaro'
