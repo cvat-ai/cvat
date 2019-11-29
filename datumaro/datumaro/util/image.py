@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+# pylint: disable=unused-import
+
 import numpy as np
 
 from enum import Enum
