@@ -344,6 +344,11 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return {
+                ...defaultState,
+            }
+        }
         default: {
             return {
                 ...state,

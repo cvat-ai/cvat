@@ -1,15 +1,16 @@
 import { AnyAction } from 'redux';
 import { UsersState } from './interfaces';
 
+import { AuthActionTypes } from '../actions/auth-actions';
 import { UsersActionTypes } from '../actions/users-actions';
 
-const initialState: UsersState = {
+const defaultState: UsersState = {
     users: [],
     fetching: false,
     initialized: false,
 };
 
-export default function (state: UsersState = initialState, action: AnyAction): UsersState {
+export default function (state: UsersState = defaultState, action: AnyAction): UsersState {
     switch (action.type) {
         case UsersActionTypes.GET_USERS: {
             return {
@@ -31,6 +32,11 @@ export default function (state: UsersState = initialState, action: AnyAction): U
                 fetching: false,
                 initialized: true,
             };
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return {
+                ...defaultState,
+            }
+        }
         default:
             return {
                 ...state,

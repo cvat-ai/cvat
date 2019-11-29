@@ -1,5 +1,6 @@
 import { AnyAction } from 'redux';
 import { FormatsActionTypes } from '../actions/formats-actions';
+import { AuthActionTypes } from '../actions/auth-actions';
 
 import { FormatsState } from './interfaces';
 
@@ -33,6 +34,11 @@ export default (state = defaultState, action: AnyAction): FormatsState => {
                 initialized: true,
                 fetching: false,
             };
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return {
+                ...defaultState,
+            }
+        }
         default:
             return state;
     }

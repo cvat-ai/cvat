@@ -1,6 +1,7 @@
 import { AnyAction } from 'redux';
 
 import { ModelsActionTypes } from '../actions/models-actions';
+import { AuthActionTypes } from '../actions/auth-actions';
 import { ModelsState } from './interfaces';
 
 const defaultState: ModelsState = {
@@ -105,6 +106,11 @@ export default function (state = defaultState, action: AnyAction): ModelsState {
                 ...state,
                 inferences,
             };
+        }
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return {
+                ...defaultState,
+            }
         }
         default: {
             return {
