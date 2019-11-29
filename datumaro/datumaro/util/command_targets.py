@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
-import cv2
 from enum import Enum
 
 from datumaro.components.project import Project
+from datumaro.util.image import load_image
 
 
 TargetKinds = Enum('TargetKinds',
@@ -50,7 +50,10 @@ def is_inference_path(value):
     return False
 
 def is_image_path(value):
-    return cv2.imread(value) is not None
+    try:
+        return load_image(value) is not None
+    except Exception:
+        return False
 
 
 class Target:

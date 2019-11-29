@@ -182,7 +182,8 @@ class MaskObject(Annotation):
             return False
         return \
             (self.label == other.label) and \
-            (np.all(self.image == other.image))
+            (self.image is not None and other.image is not None and \
+                np.all(self.image == other.image))
 
 def compute_iou(bbox_a, bbox_b):
     aX, aY, aW, aH = bbox_a
@@ -461,7 +462,9 @@ class DatasetItem:
             (self.id == other.id) and \
             (self.subset == other.subset) and \
             (self.annotations == other.annotations) and \
-            (self.image == other.image)
+            (self.has_image == other.has_image) and \
+            (self.has_image and np.all(self.image == other.image) or \
+                not self.has_image)
 
 class IExtractor:
     def __iter__(self):
