@@ -39,6 +39,7 @@ RUN npm install
 # Build source code
 COPY cvat-core/ /tmp/cvat-core/
 COPY cvat-ui/ /tmp/cvat-ui/
+RUN npm run build
 
 FROM nginx
 # Replace default.conf configuration to remove unnecessary rules
