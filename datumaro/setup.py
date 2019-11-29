@@ -48,11 +48,11 @@ setuptools.setup(
     ],
     python_requires='>=3.5',
     install_requires=[
-        'cv2',
         'GitPython',
         'lxml',
         'matplotlib',
         'numpy',
+        'opencv-python',
         'Pillow',
         'PyYAML',
         'pycocotools',
