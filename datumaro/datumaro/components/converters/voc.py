@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import cv2
 from collections import OrderedDict, defaultdict
 import os
 import os.path as osp
@@ -14,6 +13,7 @@ from datumaro.components.extractor import DEFAULT_SUBSET_NAME, AnnotationType
 from datumaro.components.formats.voc import VocLabel, VocAction, \
     VocBodyPart, VocPose, VocTask, VocPath, VocColormap, VocInstColormap
 from datumaro.util import find
+from datumaro.util.image import save_image
 from datumaro.util.mask_tools import apply_colormap
 
 
@@ -111,7 +111,7 @@ class _Converter:
                 if self._save_images:
                     data = item.image
                     if data is not None:
-                        cv2.imwrite(osp.join(self._images_dir,
+                        save_image(osp.join(self._images_dir,
                                 str(item_id) + VocPath.IMAGE_EXT),
                             data)
 
@@ -334,7 +334,7 @@ class _Converter:
             if colormap is None:
                 colormap = VocColormap
             data = apply_colormap(data, colormap)
-        cv2.imwrite(path, data)
+        save_image(path, data)
 
 class VocConverter(Converter):
     def __init__(self, task=None, save_images=False, apply_colormap=False):

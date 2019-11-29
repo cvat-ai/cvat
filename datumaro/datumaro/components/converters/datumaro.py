@@ -5,7 +5,6 @@
 
 # pylint: disable=no-self-use
 
-import cv2
 import json
 import os
 import os.path as osp
@@ -19,6 +18,7 @@ from datumaro.components.extractor import (
     LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.components.formats.datumaro import DatumaroPath
+from datumaro.util.image import save_image
 from datumaro.util.mask_tools import apply_colormap
 
 
@@ -133,7 +133,7 @@ class _SubsetWriter:
             DatumaroPath.MASKS_DIR)
         os.makedirs(masks_dir, exist_ok=True)
         path = osp.join(masks_dir, filename)
-        cv2.imwrite(path, mask)
+        save_image(path, mask)
         return mask_id
 
     def _convert_mask_object(self, obj):
@@ -279,7 +279,7 @@ class _Converter:
 
         image_path = osp.join(self._images_dir,
             str(item.id) + DatumaroPath.IMAGE_EXT)
-        cv2.imwrite(image_path, image)
+        save_image(image_path, image)
 
 class DatumaroConverter(Converter):
     def __init__(self, save_images=False, apply_colormap=False):

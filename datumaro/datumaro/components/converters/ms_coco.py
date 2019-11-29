@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import cv2
 import json
 import numpy as np
 import os
@@ -17,6 +16,7 @@ from datumaro.components.extractor import (
 )
 from datumaro.components.formats.ms_coco import CocoAnnotationType, CocoPath
 from datumaro.util import find
+from datumaro.util.image import save_image
 import datumaro.util.mask_tools as mask_tools
 
 
@@ -374,7 +374,7 @@ class _Converter:
 
     def save_image(self, item, filename):
         path = osp.join(self._images_dir, filename)
-        cv2.imwrite(path, item.image)
+        save_image(path, item.image)
 
         return path
 

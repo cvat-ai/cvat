@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from lxml import etree as ET
+from lxml import etree as ET # NOTE: lxml has proper XPath implementation
 from datumaro.components.extractor import (DatasetItem, Annotation,
     LabelObject, MaskObject, PointsObject, PolygonObject,
     PolyLineObject, BboxObject, CaptionObject,

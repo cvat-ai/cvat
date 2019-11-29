@@ -5,7 +5,6 @@
 
 # pylint: disable=unused-variable
 
-import cv2
 import numpy as np
 from math import ceil
 
@@ -79,6 +78,8 @@ class RISE:
         return np.reshape(mhmaps, heatmaps.shape)
 
     def apply(self, image, progressive=False):
+        import cv2
+
         assert len(image.shape) == 3, \
             "Expected an input image in (H, W, C) format"
         assert image.shape[2] in [3, 4], \

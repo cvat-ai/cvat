@@ -23,7 +23,7 @@ from .cli import (
     stats_command as stats_command_module,
     explain_command as explain_command_module,
 )
-from .components.config import VERSION
+from .version import VERSION
 
 
 KNOWN_COMMANDS = {

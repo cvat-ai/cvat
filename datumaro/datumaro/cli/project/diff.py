@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 from collections import Counter
-import cv2
 from enum import Enum
 import numpy as np
 import os
@@ -19,6 +18,7 @@ with warnings.catch_warnings():
     _formats.append('tensorboard')
 
 from datumaro.components.extractor import AnnotationType
+from datumaro.util.image import save_image
 
 
 Format = Enum('Formats', _formats)
@@ -135,8 +135,13 @@ class DiffVisualizer:
 
     @classmethod
     def draw_text_with_background(cls, frame, text, origin,
-            font=cv2.FONT_HERSHEY_SIMPLEX, scale=1.0,
+            font=None, scale=1.0,
             color=(0, 0, 0), thickness=1, bgcolor=(1, 1, 1)):
+        import cv2
+
+        if not font:
+            font = cv2.FONT_HERSHEY_SIMPLEX
+
         text_size, baseline = cv2.getTextSize(text, font, scale, thickness)
         cv2.rectangle(frame,
             tuple((origin + (0, baseline)).astype(int)),
@@ -148,6 +153,8 @@ class DiffVisualizer:
         return text_size, baseline
 
     def draw_detection_roi(self, frame, x, y, w, h, label, conf, color):
+        import cv2
+
         cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
 
         text = '%s %.2f%%' % (label, 100.0 * conf)
@@ -216,7 +223,7 @@ class DiffVisualizer:
             path = osp.join(self.save_dir, 'diff_%s' % item_a.id)
 
             if self.output_format is Format.simple:
-                cv2.imwrite(path + '.png', img)
+                save_image(path + '.png', img)
             elif self.output_format is Format.tensorboard:
                 self.save_as_tensorboard(img, path)
 

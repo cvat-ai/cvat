@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: MIT
 
 import argparse
-import cv2
 import logging as log
 import os
 import os.path as osp
@@ -13,7 +12,7 @@ from datumaro.components.project import Project
 from datumaro.components.algorithms.rise import RISE
 from datumaro.util.command_targets import (TargetKinds, target_selector,
     ProjectTarget, SourceTarget, ImageTarget, is_project_path)
-from datumaro.util.image import load_image
+from datumaro.util.image import load_image, save_image
 from .util.project import load_project
 
 
@@ -60,6 +59,7 @@ def build_parser(parser=argparse.ArgumentParser()):
     return parser
 
 def explain_command(args):
+    import cv2
     from matplotlib import cm
 
     project = load_project(args.project_dir)
@@ -110,7 +110,7 @@ def explain_command(args):
             for j, heatmap in enumerate(heatmaps):
                 save_path = osp.join(args.save_dir,
                     file_name + '-heatmap-%s.png' % j)
-                cv2.imwrite(save_path, heatmap * 255.0)
+                save_image(save_path, heatmap * 255.0)
         else:
             for j, heatmap in enumerate(heatmaps):
                 disp = (image + cm.jet(heatmap)[:, :, 2::-1]) / 2
@@ -151,7 +151,7 @@ def explain_command(args):
                 for j, heatmap in enumerate(heatmaps):
                     save_path = osp.join(args.save_dir,
                         file_name + '-heatmap-%s.png' % j)
-                    cv2.imwrite(save_path, heatmap * 255.0)
+                    save_image(save_path, heatmap * 255.0)
 
             if args.progressive:
                 for j, heatmap in enumerate(heatmaps):
