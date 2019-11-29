@@ -59,7 +59,9 @@ module.exports = {
           template: "./src/index.html",
           inject: false,
         }),
-        new Dotenv(),
+        new Dotenv({
+            systemvars: true,
+        }),
     ],
     node: { fs: 'empty' },
 };
