@@ -1,6 +1,7 @@
 import { AnyAction } from 'redux';
 
 import { PluginsActionTypes } from '../actions/plugins-actions';
+import { AuthActionTypes } from '../actions/auth-actions';
 import { registerGitPlugin } from '../utils/git-utils';
 import {
     PluginsState,
@@ -40,6 +41,11 @@ export default function (state = defaultState, action: AnyAction): PluginsState 
                 fetching: false,
                 plugins,
             };
+        }
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return {
+                ...defaultState,
+            }
         }
         default:
             return { ...state };

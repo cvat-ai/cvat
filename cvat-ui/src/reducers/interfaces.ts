@@ -1,5 +1,6 @@
 export interface AuthState {
     initialized: boolean;
+    fetching: boolean;
     user: any;
 }
 
@@ -174,8 +175,9 @@ export interface NotificationsState {
         models: {
             creating: any;
             starting: any;
-            fetching: any;
             deleting: any;
+            fetching: any;
+            metaFetching: any;
             inferenceStatusFetching: any;
         };
     };

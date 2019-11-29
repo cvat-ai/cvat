@@ -18,6 +18,7 @@ const core = getCore();
 
 interface HeaderContainerProps {
     onLogout: () => void;
+    logoutFetching: boolean;
     installedAnalytics: boolean;
     installedAutoAnnotation: boolean;
     installedTFAnnotation: boolean;
@@ -81,7 +82,13 @@ function HeaderContainer(props: Props) {
                             </span>
                         </span>
                     }>
-                        <Menu.Item onClick={props.onLogout}>Logout</Menu.Item>
+                        <Menu.Item
+                            onClick={props.onLogout}
+                            disabled={props.logoutFetching}
+                            className='cvat-header-button'
+                        >
+                            {props.logoutFetching && <Icon type='loading'/>} Logout
+                        </Menu.Item>
                     </Menu.SubMenu>
                 </Menu>
             </div>

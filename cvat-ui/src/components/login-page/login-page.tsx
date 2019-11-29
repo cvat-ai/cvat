@@ -13,6 +13,7 @@ import {
 import LoginForm, { LoginData } from './login-form';
 
 interface LoginPageComponentProps {
+    fetching: boolean;
     onLogin: (username: string, password: string) => void;
 }
 
@@ -29,7 +30,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
         <Row type='flex' justify='center' align='middle'>
             <Col {...sizes}>
                 <Title level={2}> Login </Title>
-                <LoginForm onSubmit={(loginData: LoginData) => {
+                <LoginForm fetching={props.fetching} onSubmit={(loginData: LoginData) => {
                     props.onLogin(loginData.username, loginData.password);
                 }}/>
                 <Row type='flex' justify='start' align='top'>

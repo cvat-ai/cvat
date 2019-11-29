@@ -8,12 +8,12 @@ import Text from 'antd/lib/typography/Text';
 import {
     Col,
     Row,
-    Modal,
 } from 'antd';
 
 import RegisterForm, { RegisterData } from '../../components/register-page/register-form';
 
 interface RegisterPageComponentProps {
+    fetching: boolean;
     onRegister: (username: string, firstName: string,
         lastName: string, email: string,
         password1: string, password2: string) => void;
@@ -32,7 +32,7 @@ function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponen
         <Row type='flex' justify='center' align='middle'>
             <Col {...sizes}>
                 <Title level={2}> Create an account </Title>
-                <RegisterForm onSubmit={(registerData: RegisterData) => {
+                <RegisterForm fetching={props.fetching} onSubmit={(registerData: RegisterData) => {
                     props.onRegister(
                         registerData.username,
                         registerData.firstName,

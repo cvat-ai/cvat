@@ -8,10 +8,13 @@ const cvat = getCore();
 export enum AuthActionTypes {
     AUTHORIZED_SUCCESS = 'AUTHORIZED_SUCCESS',
     AUTHORIZED_FAILED = 'AUTHORIZED_FAILED',
+    LOGIN = 'LOGIN',
     LOGIN_SUCCESS = 'LOGIN_SUCCESS',
     LOGIN_FAILED = 'LOGIN_FAILED',
+    REGISTER = 'REGISTER',
     REGISTER_SUCCESS = 'REGISTER_SUCCESS',
     REGISTER_FAILED = 'REGISTER_FAILED',
+    LOGOUT = 'LOGOUT',
     LOGOUT_SUCCESS = 'LOGOUT_SUCCESS',
     LOGOUT_FAILED = 'LOGOUT_FAILED',
 }
@@ -95,6 +98,11 @@ export function registerAsync(
     password2: string,
 ): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch({
+            type: AuthActionTypes.REGISTER,
+            payload: {},
+        });
+
         let users = null;
         try {
             await cvat.server.register(username, firstName, lastName,
@@ -112,6 +120,11 @@ export function registerAsync(
 export function loginAsync(username: string, password: string):
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch({
+            type: AuthActionTypes.LOGIN,
+            payload: {},
+        });
+
         let users = null;
         try {
             await cvat.server.login(username, password);
@@ -127,6 +140,11 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
 export function logoutAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch({
+            type: AuthActionTypes.LOGOUT,
+            payload: {},
+        });
+
         try {
             await cvat.server.logout();
         } catch (error) {

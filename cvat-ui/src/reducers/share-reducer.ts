@@ -1,7 +1,12 @@
 import { AnyAction } from 'redux';
 
 import { ShareActionTypes } from '../actions/share-actions';
-import { ShareState, ShareFileInfo, ShareItem } from './interfaces';
+import { AuthActionTypes } from '../actions/auth-actions';
+import {
+    ShareState,
+    ShareFileInfo,
+    ShareItem,
+} from './interfaces';
 
 const defaultState: ShareState = {
     root: {
@@ -37,6 +42,11 @@ export default function (state = defaultState, action: AnyAction): ShareState {
             return {
                 ...state,
             };
+        }
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return {
+                ...defaultState,
+            }
         }
         default:
             return {

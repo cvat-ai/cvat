@@ -100,7 +100,8 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             || !!tasks.fetching || !!tasks.updating || !!tasks.dumping || !!tasks.loading
             || !!tasks.exporting || !!tasks.deleting || !!tasks.creating || !!formats.fetching
             || !!users.fetching || !!share.fetching || !!models.creating || !!models.starting
-            || !!models.fetching || !!models.deleting || !!models.inferenceStatusFetching;
+            || !!models.fetching || !!models.deleting || !!models.inferenceStatusFetching
+            || !!models.metaFetching;
 
         if (auth.authorized) {
             showError('Could not check authorization on the server', auth.authorized);
@@ -155,6 +156,9 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         }
         if (models.deleting) {
             showError('Could not delete model from the server', models.deleting);
+        }
+        if (models.metaFetching) {
+            showError('Could not fetch models meta information from the server', models.metaFetching);
         }
         if (models.inferenceStatusFetching) {
             showError('Could not fetch inference status from the server', models.inferenceStatusFetching);

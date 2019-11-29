@@ -39,8 +39,9 @@ const defaultState: NotificationsState = {
         models: {
             creating: null,
             starting: null,
-            fetching: null,
             deleting: null,
+            fetching: null,
+            metaFetching: null,
             inferenceStatusFetching: null,
         },
     },
@@ -279,6 +280,18 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 ...state,
             };
         }
+        case ModelsActionTypes.FETCH_META_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    models: {
+                        ...state.errors.models,
+                        metaFetching: action.payload.error,
+                    },
+                },
+            };
+        }
         case ModelsActionTypes.GET_INFERENCE_STATUS_FAILED: {
             return {
                 ...state,
@@ -330,6 +343,11 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     ...defaultState.messages,
                 },
             };
+        }
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return {
+                ...defaultState,
+            }
         }
         default: {
             return {
