@@ -945,16 +945,16 @@ class PlayerView {
         this._rotationWrapperUI.css('transform', `rotate(${geometry.rotation}deg)`);
 
         for (const obj of [this._playerBackgroundUI, this._playerGridUI]) {
-            obj.css('width', image.width);
-            obj.css('height', image.height);
+            obj.css('width', image.renderWidth);
+            obj.css('height', image.renderHeight);
             obj.css('top', geometry.top);
             obj.css('left', geometry.left);
             obj.css('transform', `scale(${geometry.scale})`);
         }
 
         for (const obj of [this._playerContentUI, this._playerTextUI]) {
-            obj.css('width', image.width + geometry.frameOffset * 2);
-            obj.css('height', image.height + geometry.frameOffset * 2);
+            obj.css('width', image.renderWidth + geometry.frameOffset * 2);
+            obj.css('height', image.renderHeight + geometry.frameOffset * 2);
             obj.css('top', geometry.top - geometry.frameOffset * geometry.scale);
             obj.css('left', geometry.left - geometry.frameOffset * geometry.scale);
         }
