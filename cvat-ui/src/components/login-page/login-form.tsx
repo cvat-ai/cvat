@@ -13,6 +13,7 @@ export interface LoginData {
 }
 
 type LoginFormProps = {
+    fetching: boolean;
     onSubmit(loginData: LoginData): void;
 } & FormComponentProps;
 
@@ -80,7 +81,13 @@ class LoginFormComponent extends React.PureComponent<LoginFormProps> {
                 {this.renderPasswordField()}
 
                 <Form.Item>
-                    <Button type='primary' htmlType='submit' className='login-form-button'>
+                    <Button
+                        type='primary'
+                        loading={this.props.fetching}
+                        disabled={this.props.fetching}
+                        htmlType='submit'
+                        className='login-form-button'
+                    >
                         Sign in
                     </Button>
                 </Form.Item>

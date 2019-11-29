@@ -24,6 +24,7 @@ export enum ModelsActionTypes {
     INFER_MODEL = 'INFER_MODEL',
     INFER_MODEL_SUCCESS = 'INFER_MODEL_SUCCESS',
     INFER_MODEL_FAILED = 'INFER_MODEL_FAILED',
+    FETCH_META_FAILED = 'FETCH_META_FAILED',
     GET_INFERENCE_STATUS = 'GET_INFERENCE_STATUS',
     GET_INFERENCE_STATUS_SUCCESS = 'GET_INFERENCE_STATUS_SUCCESS',
     GET_INFERENCE_STATUS_FAILED = 'GET_INFERENCE_STATUS_FAILED',
@@ -329,6 +330,16 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
     };
 }
 
+function fetchMetaFailed(error: any): AnyAction {
+    const action = {
+        type: ModelsActionTypes.FETCH_META_FAILED,
+        payload: {
+            error,
+        },
+    };
+
+    return action;
+}
 
 function getInferenceStatusSuccess(
     taskID: number,
@@ -419,7 +430,9 @@ async function timeoutCallback(
 
         dispatch(getInferenceStatusSuccess(taskID, activeInference));
     } catch (error) {
-        dispatch(getInferenceStatusFailed(taskID, error));
+        dispatch(getInferenceStatusFailed(taskID, new Error(
+            `Server request for the task ${taskID} was failed`
+        )));
     }
 }
 
@@ -514,9 +527,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                     });
             }
         } catch (error) {
-            tasks.forEach((task: number): void => {
-                dispatch(getInferenceStatusFailed(task, error));
-            });
+            dispatch(fetchMetaFailed(error));
         }
     };
 }

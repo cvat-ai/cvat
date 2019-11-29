@@ -19,6 +19,7 @@ export interface RegisterData {
 import patterns from '../../utils/validation-patterns';
 
 type RegisterFormProps = {
+    fetching: boolean;
     onSubmit(registerData: RegisterData): void;
 } & FormComponentProps;
 
@@ -212,7 +213,13 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                 {this.renderPasswordConfirmationField()}
 
                 <Form.Item>
-                    <Button type='primary' htmlType='submit' className='register-form-button'>
+                    <Button
+                        type='primary'
+                        htmlType='submit'
+                        className='register-form-button'
+                        loading={this.props.fetching}
+                        disabled={this.props.fetching}
+                    >
                         Submit
                     </Button>
                 </Form.Item>

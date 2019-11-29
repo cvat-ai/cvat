@@ -10,6 +10,7 @@ import {
 import HeaderComponent from '../../components/header/header';
 
 interface StateToProps {
+    logoutFetching: boolean;
     installedAnalytics: boolean;
     installedAutoAnnotation: boolean;
     installedTFSegmentation: boolean;
@@ -25,6 +26,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { auth } = state;
     const { plugins } = state.plugins;
     return {
+        logoutFetching: state.auth.fetching,
         installedAnalytics: plugins[SupportedPlugins.ANALYTICS],
         installedAutoAnnotation: plugins[SupportedPlugins.AUTO_ANNOTATION],
         installedTFSegmentation: plugins[SupportedPlugins.TF_SEGMENTATION],
@@ -42,6 +44,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 function HeaderContainer(props: StateToProps & DispatchToProps) {
     return (
         <HeaderComponent
+            logoutFetching={props.logoutFetching}
             installedAnalytics={props.installedAnalytics}
             installedTFAnnotation={props.installedTFAnnotation}
             installedTFSegmentation={props.installedTFSegmentation}

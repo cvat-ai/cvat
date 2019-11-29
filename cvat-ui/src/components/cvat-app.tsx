@@ -156,6 +156,9 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         if (models.deleting) {
             showError('Could not delete model from the server', models.deleting);
         }
+        if (models.metaFetching) {
+            showError('Could not fetch models meta information from the server', models.metaFetching);
+        }
         if (models.inferenceStatusFetching) {
             showError('Could not fetch inference status from the server', models.inferenceStatusFetching);
         }
