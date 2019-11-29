@@ -60,7 +60,7 @@ setuptools.setup(
     ],
     entry_points={
         'console_scripts': [
-            'datum=datum:main',
+            'datum=datumaro:main',
         ],
     },
 )
