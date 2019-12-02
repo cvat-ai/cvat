@@ -124,11 +124,12 @@ def process_cvat_xml(xml_file, image_dir, output_dir):
             image_name = img_tag.get('name')
             width = img_tag.get('width')
             height = img_tag.get('height')
+            depth = img_tag.get('depth', 3)
             image_path = os.path.join(image_dir, image_name)
             if not os.path.exists(image_path):
                 log.warn('{} image cannot be found. Is `{}` image directory correct?'.
                     format(image_path, image_dir))
-            writer = Writer(image_path, width, height)
+            writer = Writer(image_path, width, height, depth=depth)
 
             unknown_tags = {x.tag for x in img_tag.iter()}.difference(KNOWN_TAGS)
             if unknown_tags:
