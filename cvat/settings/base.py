@@ -137,7 +137,7 @@ REST_FRAMEWORK = {
     # Need to add 'api-docs' here as a workaround for include_docs_urls.
     'ALLOWED_VERSIONS': ('v1', 'api-docs'),
     'DEFAULT_PAGINATION_CLASS':
-        'rest_framework.pagination.PageNumberPagination',
+        'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': (
         'rest_framework.filters.SearchFilter',
