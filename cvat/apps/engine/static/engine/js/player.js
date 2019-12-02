@@ -91,7 +91,7 @@ class PlayerModel extends Listener {
             start: window.cvat.player.frames.start,
             stop: window.cvat.player.frames.stop,
             current: window.cvat.player.frames.current,
-            received: undefined,
+            requested: new Set(),
             chunkSize: 36,
             previous: null,
         };
@@ -136,7 +136,6 @@ class PlayerModel extends Listener {
             stop: this._frame.stop,
             current: this._frame.current,
             previous: this._frame.previous,
-            received: this._frame.received,
         };
     }
 
@@ -236,7 +235,7 @@ class PlayerModel extends Listener {
             }
             const skip = Math.max(Math.floor(this._settings.fps / 25), 1);
             const requestedFrame = this._frame.current + skip;
-            if ((requestedFrame) % this._frame.chunkSize === 0 && this._frame.received !== this._frame.current) {
+            if ((requestedFrame) % this._frame.chunkSize === 0 && this._frame.requested.size) {
                 // console.log(`finish chunk, stop generate requests on frame ${requestedFrame}`);
                 if (this._playInterval) {
                     clearInterval(this._playInterval);
@@ -260,7 +259,7 @@ class PlayerModel extends Listener {
                     this.pause(); // if not changed, pause
                 } else {
                     // console.log(`check for continue: current: ${this._frame.current}, received: ${this._frame.received}, playint: ${Boolean(this._playInterval)}`);
-                    if (this._frame.current === this._frame.received && !this._playInterval) {
+                    if (this._frame.requested.size === 0 && !this._playInterval) {
                         // console.log(`continue generate requests ${requestedFrame}`);
                         this._playInterval = setInterval(playFunc, timeout);
                     }
@@ -279,6 +278,7 @@ class PlayerModel extends Listener {
             this._playInterval = null;
             this._pauseFlag = true;
             this._playing = false;
+            this._frame.requested.clear();
             this.notify();
         }
     }
@@ -290,11 +290,10 @@ class PlayerModel extends Listener {
 
         this._continueAfterLoad = false; // default reset continue
 
-        this._frame.current = Math.clamp(absolute ? delta : this._frame.current + delta,
+        const requestedFrame = Math.clamp(absolute ? delta : this._frame.current + delta,
             this._frame.start,
             this._frame.stop);
-        const receivedFrame = this._frame.current;
-
+        this._frame.requested.add(requestedFrame);
         // console.log(`Set current frame ${this._frame.current}`);
 
         if (!is_load_frame) {
@@ -304,42 +303,49 @@ class PlayerModel extends Listener {
             this.notify();
             return false;
         }
-        const requestedFrame = this._frame.current;
-        const frame = await this._frameProvider.require(requestedFrame);
-        this._frame.received = receivedFrame;
-        // console.log(`shift: got frame ${requestedFrame}`);
-        if (!frame) {
-            this._image = null;
-            this._continueAfterLoad = this.playing;
-            this._pauseFlag = true;
-            this.notify();
-            return false;
+        try {
+            const frame = await this._frameProvider.require(requestedFrame);
+            if (!this._frame.requested.has(requestedFrame)) {
+                return false;
+            }
+            this._frame.requested.delete(requestedFrame);
+            this._frame.current = requestedFrame;
+            // console.log(`shift: got frame ${requestedFrame}`);
+            if (!frame) {
+                this._image = null;
+                this._continueAfterLoad = this.playing;
+                this._pauseFlag = true;
+                this.notify();
+                return false;
+            }
+
+            window.cvat.player.frames.current = requestedFrame;
+            window.cvat.player.geometry.frameWidth = frame.renderWidth;
+            window.cvat.player.geometry.frameHeight = frame.renderHeight;
+            this._image = frame;
+
+            Logger.addEvent(Logger.EventType.changeFrame, {
+                from: this._frame.previous,
+                to: this._frame.current,
+            });
+
+            // console.log(`SHIFT: set previous from ${this._frame.previous} to ${this._frame.current}`);
+            const changed = this._frame.previous !== this._frame.current;
+            const curFrameRotation = this._framewiseRotation[this._frame.current];
+            const prevFrameRotation = this._framewiseRotation[this._frame.previous];
+            const differentRotation = curFrameRotation !== prevFrameRotation;
+            // fit if tool is in the annotation mode or frame loading is first in the interpolation mode
+            if (this._settings.resetZoom || this._frame.previous === null || differentRotation) {
+                this.fit(); // notify() inside the fit()
+            } else {
+                this.notify();
+            }
+            this._frame.previous = requestedFrame;
+
+            return changed;
+        } catch (error) {
+            console.log(error);
         }
-
-        window.cvat.player.frames.current = receivedFrame;
-        window.cvat.player.geometry.frameWidth = frame.renderWidth;
-        window.cvat.player.geometry.frameHeight = frame.renderHeight;
-        this._image = frame;
-
-        Logger.addEvent(Logger.EventType.changeFrame, {
-            from: this._frame.previous,
-            to: this._frame.current,
-        });
-
-        // console.log(`SHIFT: set previous from ${this._frame.previous} to ${this._frame.current}`);
-        const changed = this._frame.previous !== this._frame.current;
-        const curFrameRotation = this._framewiseRotation[this._frame.current];
-        const prevFrameRotation = this._framewiseRotation[this._frame.previous];
-        const differentRotation = curFrameRotation !== prevFrameRotation;
-        // fit if tool is in the annotation mode or frame loading is first in the interpolation mode
-        if (this._settings.resetZoom || this._frame.previous === null || differentRotation) {
-            this.fit(); // notify() inside the fit()
-        } else {
-            this.notify();
-        }
-        this._frame.previous = receivedFrame;
-
-        return changed;
     }
 
     updateGeometry(geometry) {
@@ -967,7 +973,7 @@ class PlayerView {
             this._playButtonUI.removeClass('hidden');
         }
 
-        if (frames.received === frames.start) {
+        if (frames.current === frames.start) {
             this._firstButtonUI.addClass('disabledPlayerButton');
             this._prevButtonUI.addClass('disabledPlayerButton');
             this._multiplePrevButtonUI.addClass('disabledPlayerButton');
@@ -977,7 +983,7 @@ class PlayerView {
             this._multiplePrevButtonUI.removeClass('disabledPlayerButton');
         }
 
-        if (frames.received === frames.stop) {
+        if (frames.current === frames.stop) {
             this._lastButtonUI.addClass('disabledPlayerButton');
             this._nextButtonUI.addClass('disabledPlayerButton');
             this._playButtonUI.addClass('disabledPlayerButton');
@@ -989,7 +995,7 @@ class PlayerView {
             this._multipleNextButtonUI.removeClass('disabledPlayerButton');
         }
 
-        this._progressUI['0'].value = frames.received - frames.start;
+        this._progressUI['0'].value = frames.current - frames.start;
 
         this._rotationWrapperUI.css('transform', `rotate(${geometry.rotation}deg)`);
 
@@ -1015,6 +1021,6 @@ class PlayerView {
         this._playerContentUI.css('transform', `scale(${geometry.scale})`);
         this._playerTextUI.css('transform', `scale(10) rotate(${-geometry.rotation}deg)`);
         this._playerGridPath.attr('stroke-width', 2 / geometry.scale);
-        this._frameNumber.prop('value', frames.received);
+        this._frameNumber.prop('value', frames.current);
     }
 }

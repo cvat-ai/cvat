@@ -1282,6 +1282,8 @@
             this.task.dataChunkType,
             this.task.mode,
             frame,
+            this.startFrame,
+            this.stopFrame,
         );
         return frameData;
     };
@@ -1438,6 +1440,8 @@
             this.dataChunkType,
             this.mode,
             frame,
+            0,
+            this.size - 1,
         );
         return result;
     };

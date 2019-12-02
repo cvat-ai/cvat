@@ -26,7 +26,7 @@
         * @hideconstructor
     */
     class FrameData {
-        constructor(width, height, tid, number) {
+        constructor(width, height, tid, number, startFrame, stopFrame) {
             Object.defineProperties(this, Object.freeze({
                 /**
                     * @name width
@@ -56,6 +56,14 @@
                 },
                 number: {
                     value: number,
+                    writable: false,
+                },
+                startFrame: {
+                    value: startFrame,
+                    writable: false,
+                },
+                stopFrame: {
+                    value: stopFrame,
                     writable: false,
                 },
             }));
@@ -102,14 +110,20 @@
                     let frame = await provider.frame(this.number);
                     if (frame === null) {
                         onServerRequest();
-                        const start = parseInt(this.number / chunkSize, 10) * chunkSize;
-                        const stop = (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1;
+                        const start = Math.max(this.startFrame, parseInt(this.number / chunkSize, 10) * chunkSize);
+                        const stop =  Math.min(this.stopFrame, (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1);
                         const chunkNumber = Math.floor(this.number / chunkSize);
 
                         if (frame === null) {
                             if (!provider.is_chunk_cached(start, stop)){
-                                serverProxy.frames.getData(this.tid, chunkNumber).then(chunk =>{
+                                serverProxy.frames.getData(this.tid, chunkNumber).then(chunk => {
                                     provider.requestDecodeBlock(chunk, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
+                                }).catch(exception => {
+                                    if (exception instanceof Exception) {
+                                        reject(exception);
+                                    } else {
+                                        reject(new Exception(exception.message));
+                                    }
                                 });
                             } else {
                                 provider.requestDecodeBlock(null, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
@@ -118,18 +132,26 @@
                     } else {
                         if (this.number % chunkSize > 1 && !provider.isNextChunkExists(this.number)) {
                             const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
-                            provider.setReadyToLoading(nextChunkNumber);
+                            const start = Math.max(this.startFrame, nextChunkNumber * chunkSize);
+                            const stop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
 
-                            const start = nextChunkNumber * chunkSize;
-                            const stop = (nextChunkNumber + 1) * chunkSize - 1;
-                            if (!provider.is_chunk_cached(start, stop)){
-                                serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
-                                    provider.requestDecodeBlock(nextChunk, start, stop,
-                                                                onDecode.bind(this, provider), rejectRequest.bind(this, provider));
-                                });
-                            } else {
-                                provider.requestDecodeBlock(null, start, stop,
-                                                                onDecode.bind(this, provider), rejectRequest.bind(this, provider));
+                            if (start < this.stopFrame) {
+                                provider.setReadyToLoading(nextChunkNumber);
+                                if (!provider.is_chunk_cached(start, stop)){
+                                    serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
+                                        provider.requestDecodeBlock(nextChunk, start, stop,
+                                                                    onDecode.bind(this, provider), rejectRequest.bind(this, provider));
+                                    }).catch(exception => {
+                                        if (exception instanceof Exception) {
+                                            reject(exception);
+                                        } else {
+                                            reject(new Exception(exception.message));
+                                        }
+                                    });
+                                } else {
+                                    provider.requestDecodeBlock(null, start, stop,
+                                                                    onDecode.bind(this, provider), rejectRequest.bind(this, provider));
+                                }
                             }
                         }
                         resolve(frame);
@@ -168,7 +190,7 @@
         });
     }
 
-    async function getFrame(taskID, chunkSize, chunkType, mode, frame) {
+    async function getFrame(taskID, chunkSize, chunkType, mode, frame, startFrame, stopFrame) {
         if (!(taskID in frameDataCache)) {
             const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO
                 : cvatData.BlockType.ARCHIVE;
@@ -201,7 +223,7 @@
             );
         }
         frameDataCache[taskID].provider.setRenderSize(size.width, size.height);
-        return new FrameData(size.width, size.height, taskID, frame);
+        return new FrameData(size.width, size.height, taskID, frame, startFrame, stopFrame);
     };
 
     function getRanges(taskID) {
