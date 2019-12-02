@@ -99,13 +99,12 @@
                     const { provider } = frameDataCache[this.tid];
                     const { chunkSize } = frameDataCache[this.tid];
 
-                    const frame = await provider.frame(this.number);
-                    if (frame === null || frame === 'loading') {
+                    let frame = await provider.frame(this.number);
+                    if (frame === null) {
                         onServerRequest();
                         const start = parseInt(this.number / chunkSize, 10) * chunkSize;
                         const stop = (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1;
                         const chunkNumber = Math.floor(this.number / chunkSize);
-                        let chunk = null;
 
                         if (frame === null) {
                             if (!provider.is_chunk_cached(start, stop)){
@@ -113,27 +112,24 @@
                                     provider.requestDecodeBlock(chunk, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
                                 });
                             } else {
-                                 provider.requestDecodeBlock(null, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
+                                provider.requestDecodeBlock(null, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
                             }
                         }
                     } else {
-                        if (this.number % chunkSize > 1){
-                            if (!provider.isNextChunkExists(this.number)){
-                                const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
-                                provider.setReadyToLoading(nextChunkNumber);
+                        if (this.number % chunkSize > 1 && !provider.isNextChunkExists(this.number)) {
+                            const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
+                            provider.setReadyToLoading(nextChunkNumber);
 
-                                const start = nextChunkNumber * chunkSize;
-                                const stop = (nextChunkNumber + 1) * chunkSize - 1;
-                                if (!provider.is_chunk_cached(start, stop)){
-                                    serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
-                                        provider.requestDecodeBlock(nextChunk, start, stop,
-                                                                    onDecode.bind(this, provider), rejectRequest.bind(this, provider));
-                                    });
-                                } else {
-                                    provider.requestDecodeBlock(null, start, stop,
-                                                                    onDecode.bind(this, provider), rejectRequest.bind(this, provider));
-                                }
-
+                            const start = nextChunkNumber * chunkSize;
+                            const stop = (nextChunkNumber + 1) * chunkSize - 1;
+                            if (!provider.is_chunk_cached(start, stop)){
+                                serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
+                                    provider.requestDecodeBlock(nextChunk, start, stop,
+                                                                onDecode.bind(this, provider), rejectRequest.bind(this, provider));
+                                });
+                            } else {
+                                provider.requestDecodeBlock(null, start, stop,
+                                                                onDecode.bind(this, provider), rejectRequest.bind(this, provider));
                             }
                         }
                         resolve(frame);
@@ -174,7 +170,7 @@
 
     async function getFrame(taskID, chunkSize, chunkType, mode, frame) {
         if (!(taskID in frameDataCache)) {
-            const blockType = chunkType === 'video' ? cvatData.BlockType.TSVIDEO
+            const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO
                 : cvatData.BlockType.ARCHIVE;
 
             const value = {

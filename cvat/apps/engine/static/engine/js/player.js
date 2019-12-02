@@ -91,6 +91,8 @@ class PlayerModel extends Listener {
             start: window.cvat.player.frames.start,
             stop: window.cvat.player.frames.stop,
             current: window.cvat.player.frames.current,
+            received: undefined,
+            chunkSize: 36,
             previous: null,
         };
 
@@ -101,6 +103,7 @@ class PlayerModel extends Listener {
             resetZoom: task.mode === 'annotation',
         };
 
+        this._playing = false;
         this._playInterval = null;
         this._pauseFlag = null;
         this._frameProvider = new FrameProviderWrapper(this._frame.stop);
@@ -133,6 +136,7 @@ class PlayerModel extends Listener {
             stop: this._frame.stop,
             current: this._frame.current,
             previous: this._frame.previous,
+            received: this._frame.received,
         };
     }
 
@@ -144,7 +148,8 @@ class PlayerModel extends Listener {
     }
 
     get playing() {
-        return this._playInterval != null;
+        // return this._playInterval != null;
+        return this._playing;
     }
 
     get image() {
@@ -217,8 +222,11 @@ class PlayerModel extends Listener {
     }
 
     play() {
+        console.log('play click');
         this._pauseFlag = false;
-        this._playInterval = setInterval(async () => {
+        this._playing = true;
+        const timeout = 1000 / this._settings.fps;
+        const playFunc = async () => {
             if (this._pauseFlag) { // pause method without notify (for frame downloading)
                 if (this._playInterval) {
                     clearInterval(this._playInterval);
@@ -226,17 +234,51 @@ class PlayerModel extends Listener {
                 }
                 return;
             }
-
             const skip = Math.max(Math.floor(this._settings.fps / 25), 1);
-            if (!this.shift(skip)) await this.pause(); // if not changed, pause
-        }, 1000 / this._settings.fps);
+            const requestedFrame = this._frame.current + skip;
+            if ((requestedFrame) % this._frame.chunkSize === 0 && this._frame.received !== this._frame.current) {
+                // console.log(`finish chunk, stop generate requests on frame ${requestedFrame}`);
+                if (this._playInterval) {
+                    clearInterval(this._playInterval);
+                    this._playInterval = null;
+                    return;
+                }
+            }
+            try {
+                const res = await this.shift(skip);
+                if (this._pauseFlag) { // pause method without notify (for frame downloading)
+                    if (this._playInterval) {
+                        clearInterval(this._playInterval);
+                        this._playInterval = null;
+                    }
+                    return;
+                }
+                console.log(`play: shift done on frame ${requestedFrame} with res: ${res}`);
+
+                if (!res) {
+                    console.log('pause on');
+                    this.pause(); // if not changed, pause
+                } else {
+                    // console.log(`check for continue: current: ${this._frame.current}, received: ${this._frame.received}, playint: ${Boolean(this._playInterval)}`);
+                    if (this._frame.current === this._frame.received && !this._playInterval) {
+                        // console.log(`continue generate requests ${requestedFrame}`);
+                        this._playInterval = setInterval(playFunc, timeout);
+                    }
+                }
+            } catch (error) {
+                console.log(error);
+            }
+        };
+        this._playInterval = setInterval(playFunc, timeout);
     }
 
     pause() {
         if (this._playInterval) {
+            console.log('pause click');
             clearInterval(this._playInterval);
             this._playInterval = null;
             this._pauseFlag = true;
+            this._playing = false;
             this.notify();
         }
     }
@@ -247,18 +289,25 @@ class PlayerModel extends Listener {
         }
 
         this._continueAfterLoad = false; // default reset continue
+
         this._frame.current = Math.clamp(absolute ? delta : this._frame.current + delta,
             this._frame.start,
             this._frame.stop);
-        if (!is_load_frame)
-        {
+        const receivedFrame = this._frame.current;
+
+        // console.log(`Set current frame ${this._frame.current}`);
+
+        if (!is_load_frame) {
             this._image = null;
             this._continueAfterLoad = this.playing;
             this._pauseFlag = true;
             this.notify();
             return false;
         }
-        const frame = await this._frameProvider.require(this._frame.current);
+        const requestedFrame = this._frame.current;
+        const frame = await this._frameProvider.require(requestedFrame);
+        this._frame.received = receivedFrame;
+        // console.log(`shift: got frame ${requestedFrame}`);
         if (!frame) {
             this._image = null;
             this._continueAfterLoad = this.playing;
@@ -267,7 +316,7 @@ class PlayerModel extends Listener {
             return false;
         }
 
-        window.cvat.player.frames.current = this._frame.current;
+        window.cvat.player.frames.current = receivedFrame;
         window.cvat.player.geometry.frameWidth = frame.renderWidth;
         window.cvat.player.geometry.frameHeight = frame.renderHeight;
         this._image = frame;
@@ -277,18 +326,18 @@ class PlayerModel extends Listener {
             to: this._frame.current,
         });
 
+        // console.log(`SHIFT: set previous from ${this._frame.previous} to ${this._frame.current}`);
         const changed = this._frame.previous !== this._frame.current;
         const curFrameRotation = this._framewiseRotation[this._frame.current];
         const prevFrameRotation = this._framewiseRotation[this._frame.previous];
         const differentRotation = curFrameRotation !== prevFrameRotation;
         // fit if tool is in the annotation mode or frame loading is first in the interpolation mode
         if (this._settings.resetZoom || this._frame.previous === null || differentRotation) {
-            this._frame.previous = this._frame.current;
             this.fit(); // notify() inside the fit()
         } else {
-            this._frame.previous = this._frame.current;
             this.notify();
         }
+        this._frame.previous = receivedFrame;
 
         return changed;
     }
@@ -918,7 +967,7 @@ class PlayerView {
             this._playButtonUI.removeClass('hidden');
         }
 
-        if (frames.current === frames.start) {
+        if (frames.received === frames.start) {
             this._firstButtonUI.addClass('disabledPlayerButton');
             this._prevButtonUI.addClass('disabledPlayerButton');
             this._multiplePrevButtonUI.addClass('disabledPlayerButton');
@@ -928,7 +977,7 @@ class PlayerView {
             this._multiplePrevButtonUI.removeClass('disabledPlayerButton');
         }
 
-        if (frames.current === frames.stop) {
+        if (frames.received === frames.stop) {
             this._lastButtonUI.addClass('disabledPlayerButton');
             this._nextButtonUI.addClass('disabledPlayerButton');
             this._playButtonUI.addClass('disabledPlayerButton');
@@ -940,7 +989,7 @@ class PlayerView {
             this._multipleNextButtonUI.removeClass('disabledPlayerButton');
         }
 
-        this._progressUI['0'].value = frames.current - frames.start;
+        this._progressUI['0'].value = frames.received - frames.start;
 
         this._rotationWrapperUI.css('transform', `rotate(${geometry.rotation}deg)`);
 
@@ -966,6 +1015,6 @@ class PlayerView {
         this._playerContentUI.css('transform', `scale(${geometry.scale})`);
         this._playerTextUI.css('transform', `scale(10) rotate(${-geometry.rotation}deg)`);
         this._playerGridPath.attr('stroke-width', 2 / geometry.scale);
-        this._frameNumber.prop('value', frames.current);
+        this._frameNumber.prop('value', frames.received);
     }
 }

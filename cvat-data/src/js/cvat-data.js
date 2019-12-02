@@ -10,7 +10,7 @@
 const { MP4Reader, Bytestream } = require('./mp4');
 
 const BlockType = Object.freeze({
-    TSVIDEO: 'tsvideo',
+    MP4VIDEO: 'mp4video',
     ARCHIVE: 'archive',
 });
 
@@ -21,7 +21,7 @@ class Mutex {
     }
     _acquire() {
         var release;
-        const lock = this._lock = new Promise(resolve => {
+        this._lock = new Promise(resolve => {
             release = resolve;
         });
         return release;
@@ -50,6 +50,7 @@ class FrameProvider {
         this._decodeThreadCount = 0;
         this._timerId = setTimeout(this._worker.bind(this), 100);
         this._mutex = new Mutex();
+        this._promisedFrames = {};
     };
 
     async _worker()
@@ -123,8 +124,7 @@ class FrameProvider {
         release();
     }
 
-    isRequestExist()
-    {
+    isRequestExist() {
         return this._requestedBlockDecode != null;
     }
 
@@ -135,11 +135,21 @@ class FrameProvider {
 
     /* Method returns frame from collection. Else method returns 0 */
     async frame(frameNumber) {
-        if (frameNumber in this._frames) {
-           this._currFrame = frameNumber;
-           return this._frames[frameNumber];
-        }
-        return null;
+        this._currFrame = frameNumber;
+        return new Promise((resolve, reject) => {
+            if (frameNumber in this._frames) {
+                if (this._frames[frameNumber] !== null) {
+                    resolve(this._frames[frameNumber]);
+                } else {
+                    this._promisedFrames[frameNumber] = {
+                        resolve,
+                        reject,
+                    };
+                }
+            } else {
+                resolve(null);
+            }
+        });
     }
 
     isNextChunkExists(frameNumber) {
@@ -194,7 +204,7 @@ class FrameProvider {
     async startDecode() {
         const height = this._height;
         const width = this._width;
-        if (this._blockType === BlockType.TSVIDEO){
+         if (this._blockType === BlockType.MP4VIDEO){
             const release = await this._mutex.acquireQueued();
             const start = this._requestedBlockDecode.start;
             const end = this._requestedBlockDecode.end;
@@ -204,7 +214,7 @@ class FrameProvider {
             this._requestedBlockDecode = null;
 
             for (let i = start; i <= end; i++){
-                this._frames[i] = 'loading';
+                this._frames[i] = null;
             }
 
             this._blocks[Math.floor((start+1)/ this._blockSize)] = block;
@@ -227,6 +237,10 @@ class FrameProvider {
                     Math.floor(width / scaleFactor), Math.floor(height / scaleFactor));
 
                 this._decodingBlocks[`${start}:${end}`].resolveCallback(index);
+                if (index in this._promisedFrames) {
+                    this._promisedFrames[index].resolve(this._frames[index]);
+                    delete this._promisedFrames[index];
+                }
                 if (index === end) {
                     const t = performance.now() - t0;
                     console.log(`Decode time : ${t}; fps: ${36000/t}`);
@@ -242,6 +256,14 @@ class FrameProvider {
                 worker.terminate();
                 this._decodeThreadCount--;
                 // console.log(this._decodeThreadCount);
+
+                for (let i = index; i <= end; i++){
+                    if (i in this._promisedFrames) {
+                        this._promisedFrames[i].reject();
+                        delete this._promisedFrames[i];
+                    }
+                }
+
                 this._decodingBlocks[`${start}:${end}`].rejectCallback();
                 delete this._decodingBlocks[`${start}:${end}`];
             };
@@ -288,6 +310,13 @@ class FrameProvider {
 
             worker.onerror = (e) => {
                 console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
+
+                for (let i = start; i <= end; i++) {
+                    if (i in this._promisedFrames) {
+                        this._promisedFrames[i].reject();
+                         delete this._promisedFrames[i];
+                    }
+                }
                 this._decodingBlocks[`${start}:${end}`].rejectCallback();
                 this._decodeThreadCount--;
             };
