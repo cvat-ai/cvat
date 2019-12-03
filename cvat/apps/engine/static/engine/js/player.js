@@ -221,7 +221,6 @@ class PlayerModel extends Listener {
     }
 
     play() {
-        console.log('play click');
         this._pauseFlag = false;
         this._playing = true;
         const timeout = 1000 / this._settings.fps;
@@ -236,7 +235,6 @@ class PlayerModel extends Listener {
             const skip = Math.max(Math.floor(this._settings.fps / 25), 1);
             const requestedFrame = this._frame.current + skip;
             if ((requestedFrame) % this._frame.chunkSize === 0 && this._frame.requested.size) {
-                // console.log(`finish chunk, stop generate requests on frame ${requestedFrame}`);
                 if (this._playInterval) {
                     clearInterval(this._playInterval);
                     this._playInterval = null;
@@ -252,20 +250,13 @@ class PlayerModel extends Listener {
                     }
                     return;
                 }
-                console.log(`play: shift done on frame ${requestedFrame} with res: ${res}`);
 
                 if (!res) {
-                    console.log('pause on');
                     this.pause(); // if not changed, pause
-                } else {
-                    // console.log(`check for continue: current: ${this._frame.current}, received: ${this._frame.received}, playint: ${Boolean(this._playInterval)}`);
-                    if (this._frame.requested.size === 0 && !this._playInterval) {
-                        // console.log(`continue generate requests ${requestedFrame}`);
-                        this._playInterval = setInterval(playFunc, timeout);
-                    }
+                } else if (this._frame.requested.size === 0 && !this._playInterval) {
+                    this._playInterval = setInterval(playFunc, timeout);
                 }
             } catch (error) {
-                console.log(error);
             }
         };
         this._playInterval = setInterval(playFunc, timeout);
@@ -273,7 +264,6 @@ class PlayerModel extends Listener {
 
     pause() {
         if (this._playInterval) {
-            console.log('pause click');
             clearInterval(this._playInterval);
             this._playInterval = null;
             this._pauseFlag = true;
@@ -294,7 +284,6 @@ class PlayerModel extends Listener {
             this._frame.start,
             this._frame.stop);
         this._frame.requested.add(requestedFrame);
-        // console.log(`Set current frame ${this._frame.current}`);
 
         if (!is_load_frame) {
             this._image = null;
@@ -310,7 +299,6 @@ class PlayerModel extends Listener {
             }
             this._frame.requested.delete(requestedFrame);
             this._frame.current = requestedFrame;
-            // console.log(`shift: got frame ${requestedFrame}`);
             if (!frame) {
                 this._image = null;
                 this._continueAfterLoad = this.playing;
@@ -329,7 +317,6 @@ class PlayerModel extends Listener {
                 to: this._frame.current,
             });
 
-            // console.log(`SHIFT: set previous from ${this._frame.previous} to ${this._frame.current}`);
             const changed = this._frame.previous !== this._frame.current;
             const curFrameRotation = this._framewiseRotation[this._frame.current];
             const prevFrameRotation = this._framewiseRotation[this._frame.previous];
@@ -345,7 +332,6 @@ class PlayerModel extends Listener {
 
             return changed;
         } catch (error) {
-            console.log(error);
         }
     }
 
