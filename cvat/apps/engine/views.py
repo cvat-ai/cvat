@@ -52,6 +52,8 @@ import cvat.apps.dataset_manager.task as DatumaroTask
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.utils.decorators import method_decorator
+from drf_yasg.inspectors import SwaggerAutoSchema, NotHandled, CoreAPICompatInspector
+from django_filters.rest_framework import DjangoFilterBackend
 
 # Server REST API
 @login_required
@@ -296,39 +298,49 @@ class TaskFilter(filters.FilterSet):
         fields = ("id", "project_id", "project", "name", "owner", "mode", "status",
             "assignee")
 
+class DjangoFilterInspector(CoreAPICompatInspector):
+    def get_filter_parameters(self, filter_backend):
+        if isinstance(filter_backend, DjangoFilterBackend):
+            result = super(DjangoFilterInspector, self).get_filter_parameters(filter_backend)
+            res = result.copy()
+
+            for param in result:
+                if param.get('name') == 'project_id' or param.get('name') == 'project':
+                    res.remove(param)
+            return res
+
+        return NotHandled
+
 @method_decorator(name='list', decorator=swagger_auto_schema(
     manual_parameters=[
-        openapi.Parameter('id',openapi.IN_QUERY,description="A unique number value identifying this task",type=openapi.TYPE_NUMBER),
-        openapi.Parameter('project_id',openapi.IN_QUERY,description="",type=openapi.TYPE_STRING),
-        openapi.Parameter('project', openapi.IN_QUERY, description="", type=openapi.TYPE_STRING),
-        openapi.Parameter('name', openapi.IN_QUERY, description="Task name", type=openapi.TYPE_STRING),
-        openapi.Parameter('owner', openapi.IN_QUERY, description="User who created the task", type=openapi.TYPE_STRING),
-        openapi.Parameter('mode', openapi.IN_QUERY, description="annotation or interpolation", type=openapi.TYPE_STRING),
-        openapi.Parameter('status', openapi.IN_QUERY, description="", type=openapi.TYPE_STRING,enum=['annotation','validation','completed']),
-        openapi.Parameter('assignee', openapi.IN_QUERY, description="", type=openapi.TYPE_STRING)
-    ]
+            openapi.Parameter('id',openapi.IN_QUERY,description="A unique number value identifying this task",type=openapi.TYPE_NUMBER),
+            openapi.Parameter('name', openapi.IN_QUERY, description="Find all tasks where name contains a parameter value", type=openapi.TYPE_STRING),
+            openapi.Parameter('owner', openapi.IN_QUERY, description="Find all tasks where owner name contains a parameter value", type=openapi.TYPE_STRING),
+            openapi.Parameter('mode', openapi.IN_QUERY, description="Find all tasks with a specific mode", type=openapi.TYPE_STRING, enum=['annotation', 'interpolation']),
+            openapi.Parameter('status', openapi.IN_QUERY, description="Find all tasks with a specific status", type=openapi.TYPE_STRING,enum=['annotation','validation','completed']),
+            openapi.Parameter('assignee', openapi.IN_QUERY, description="Find all tasks where assignee name contains a parameter value", type=openapi.TYPE_STRING)
+        ],
+    filter_inspectors=[DjangoFilterInspector]
 ))
 class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     """
     list:
-    Returns information about tasks with the specified parameters
-
-    Without specifying parameters returns information about all tasks
+    Returns a paginated list of tasks according to query parameters (10 tasks per page)
 
     create:
-    Creates a new task
+    Method creates a new task in a database without any attached images and videos
 
     retrieve:
-    Returns  details of the task with the selected id
+    Method returns details of a specific task
 
     update:
-    Updates all information about task with selected id
+    Method updates a task by id
 
     destroy:
-    Deletes the task with selected id
+    Method deletes a specific task, all attached jobs, annotations, and data
 
     partial_update:
-    Updates chosen fields of task with selected id
+    Methods does a partial update of chosen fields in a task
     """
     queryset = Task.objects.all().prefetch_related(
             "label_set__attributespec_set",
@@ -371,7 +383,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], serializer_class=JobSerializer)
     def jobs(self, request, pk):
         """
-        Returns the job information of task with the selected id
+        Returns a list of jobs for a specific task
         """
         self.get_object() # force to call check_object_permissions
         queryset = Job.objects.filter(segment__task_id=pk)
@@ -383,7 +395,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['POST'], serializer_class=TaskDataSerializer)
     def data(self, request, pk):
         """
-        Creates a new task with the selected id
+        Method permanently attaches images or video to a task
+        These data cannot be changed later
         """
         db_task = self.get_object() # call check_object_permissions as well
         serializer = TaskDataSerializer(db_task, data=request.data)
@@ -392,21 +405,22 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             task.create(db_task.id, serializer.data)
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
 
+    @swagger_auto_schema(method='patch', manual_parameters=[openapi.Parameter('action', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING, enum=['create', 'update', 'delete'])])
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
         """
         get:
-        Returns details of all task annotations with the selected id
+        Method returns annotations for a specific task
 
         put:
-        Updates all task annotations with selected id
+        Method performs an update of all annotations in a specific task
 
         patch:
-        Updates chosen task annotations with selected id
+        Method performs a partial update of annotations in a specific task
 
         delete:
-        Deletes task annotations with selected id
+        Method deletes all annotations for a specific task
         """
         self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
@@ -445,27 +459,21 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
     @swagger_auto_schema(method='get',
                         manual_parameters=[
-                            openapi.Parameter(
-                                'filename',
-                                openapi.IN_PATH,
-                                description="Name of the file to which the annotation will be downloaded",
-                                type=openapi.TYPE_STRING,
-                                required=True),
-                            openapi.Parameter(
-                                'format',
-                                openapi.IN_QUERY,
-                                description="dumpers format",
-                                type=openapi.TYPE_STRING,
-                                required=True,
-                                enum=[format.display_name for format in AnnotationDumper.objects.order_by("display_name")]
-                            )],
-                            responses={'200': openapi.Response(description='Annotation downloaded')}
+                            openapi.Parameter('filename',openapi.IN_PATH, description="A name of a file with annotations", type=openapi.TYPE_STRING, required=True),
+                            openapi.Parameter('format',openapi.IN_QUERY, description="A name of a dumper\nYou can get annotation dumpers from this API:\n/server/annotation/formats", type=openapi.TYPE_STRING, required=True),
+                            openapi.Parameter('action',in_=openapi.IN_QUERY, description='Used to start downloading process after annotation file had been created', required=False, enum=['download'], type=openapi.TYPE_STRING)],
+                            responses={'202': openapi.Response(description='Dump of annotations has been started'),
+                                    '201': openapi.Response(description='Annotations file is ready to download'),
+                                    '200': openapi.Response(description='Download of file started')}
                         )
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='annotations/(?P<filename>[^/]+)')
     def dump(self, request, pk, filename):
         """
-        Allows to download the annotation of the task with the selected id and save it to file with the specified filename
+        Method allows to download annotations as a file
+
+        Dump of annotations in common case is a long process which cannot be performed within one request.
+        First request starts dumping process. When the file is ready (code 201) you can get it with query parameter action=download.
         """
         filename = re.sub(r'[\\/*?:"<>|]', '_', filename)
         username = request.user.username
@@ -528,7 +536,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
         """
-        Returns information about the status of the task with the selected id
+        When task is being created the method returns information about a status of the creation process
         """
         self.get_object() # force to call check_object_permissions
         response = self._get_rq_response(queue="default",
@@ -561,7 +569,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         url_path='frames/meta')
     def data_info(self, request, pk):
         """
-        Returns the details of the frames of the task with the selected id
+        Method provides a list of sizes (width, height) of media files which are related with the task
         """
         try:
             db_task = self.get_object() # call check_object_permissions as well
@@ -576,18 +584,14 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             return Response(serializer.data)
 
     @swagger_auto_schema(method='get',
-            manual_parameters=[openapi.Parameter('frame',
-                                                openapi.IN_PATH,
-                                                required=True,
-                                                description="A unique string value identifying this frame",
-                                                type=openapi.TYPE_STRING)],
+            manual_parameters=[openapi.Parameter('frame', openapi.IN_PATH,required=True, description="A unique integer value identifying this frame", type=openapi.TYPE_INTEGER)],
             responses={'200': openapi.Response(description='frame')}
             )
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='frames/(?P<frame>\d+)')
     def frame(self, request, pk, frame):
         """
-        Get a frame for the task
+        Method returns a specific frame for a specific task
         """
         try:
             # Follow symbol links if the frame is a link on a real image otherwise
@@ -600,6 +604,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 "cannot get frame #{}".format(frame), exc_info=True)
             return HttpResponseBadRequest(str(e))
 
+    @swagger_auto_schema(method='get', manual_parameters=[openapi.Parameter('action', in_=openapi.IN_QUERY, required=False,
+        type=openapi.TYPE_STRING, enum=['download']), openapi.Parameter('format', in_=openapi.IN_QUERY,required=False, type=openapi.TYPE_STRING)], responses={'202': openapi.Response(description='Dump of annotations has been started'),
+        '201': openapi.Response(description='Annotations file is ready to download'), '200': openapi.Response(description='Download of file started')})
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='export/')
     def dataset_export(self, request, pk):
@@ -664,13 +671,13 @@ class JobViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     """
     retrieve:
-    Returns details of job with selected id
+    Method returns details of a job
 
     update:
-    Updates all fields of job with selected id
+    Method updates a job by id
 
     partial_update:
-    Updates chosen fields of job with selected id
+    Methods does a partial update of chosen fields in a job
     """
     queryset = Job.objects.all().order_by('id')
     serializer_class = JobSerializer
@@ -688,21 +695,22 @@ class JobViewSet(viewsets.GenericViewSet,
 
         return [perm() for perm in permissions]
 
+    @swagger_auto_schema(method='patch', manual_parameters=[openapi.Parameter('action', in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, required=True, enum=['create', 'update', 'delete'])])
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
         """
         get:
-        Returns annotation detatils of job with the selected id
+        Method returns annotations for a specific job
 
         put:
-        Updates annotation of job with the selected id
+        Method performs an update of all annotations in a specific job
 
         patch:
-        Updates chosen field of annotation of job with the selected id
+        Method performs a partial update of annotations in a specific job
 
         delete:
-        Deletes annotation of job with the selected id
+        Method deletes all annotations for a specific job
         """
         self.get_object() # force to call check_object_permissions
         if request.method == 'GET':
@@ -741,20 +749,27 @@ class JobViewSet(viewsets.GenericViewSet,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+class NoPagingFilterAutoSchema(SwaggerAutoSchema):
+    def should_page(self):
+        return False
+
+    def should_filter(self):
+        return False
+
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     """
     list:
-    Returns infomation about all users
+    Method provides a paginated list of users registered on the server
 
     retrieve:
-    Returns information about the user with the selected id
+    Method provides information of a specific user
 
     partial_update:
-    Updates chosen fields of user with the selected id
+    Method updates chosen fields of a user
 
     destroy:
-    Deletes user with the selected id
+    Method deletes a specific user from the server
     """
 
     queryset = User.objects.all().order_by('id')
@@ -783,10 +798,11 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return [perm() for perm in permissions]
 
+    @swagger_auto_schema(method='get',auto_schema=NoPagingFilterAutoSchema)
     @action(detail=False, methods=['GET'])
     def self(self, request):
         """
-        Returns information about the authorized user
+        Method returns an instance of a user who is currently authorized
         """
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.user, context={ "request": request })
@@ -828,6 +844,11 @@ def rq_handler(job, exc_type, exc_value, tb):
 
     return True
 
+@swagger_auto_schema(manual_parameters=[openapi.Parameter('format', in_=openapi.IN_QUERY,
+        description='', required=True, type=openapi.TYPE_STRING)],
+    operation_description='',
+    responses={'202': openapi.Response(description=''),
+        '201': openapi.Response(description='')})
 def load_data_proxy(request, rq_id, rq_func, pk):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
