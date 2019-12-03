@@ -385,6 +385,11 @@ EXPORT_FORMATS = [
         'tag': 'yolo',
         'is_default': False,
     },
+    {
+        'name': 'TF Detection API TFrecord',
+        'tag': 'tf_detection_api',
+        'is_default': False,
+    },
 ]
 
 def get_export_formats():
