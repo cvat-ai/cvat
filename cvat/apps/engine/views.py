@@ -13,7 +13,7 @@ from tempfile import mkstemp
 
 from django.views.generic import RedirectView
 from django.http import HttpResponseBadRequest, HttpResponseNotFound
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from django.conf import settings
 from sendfile import sendfile
 from rest_framework.permissions import IsAuthenticated
@@ -49,20 +49,13 @@ from cvat.apps.annotation.models import AnnotationDumper, AnnotationLoader
 from cvat.apps.annotation.format import get_annotation_formats
 import cvat.apps.dataset_manager.task as DatumaroTask
 
-
-TASKS_URL = '{}://{}'.format(settings.UI_SCHEME, settings.UI_HOST)
-if len(settings.UI_PORT):
-    TASKS_URL += ':{}'.format(settings.UI_PORT)
-TASKS_URL += '/tasks'
-
 # Server REST API
 @login_required
 def dispatch_request(request):
     """An entry point to dispatch legacy requests"""
     if 'dashboard' in request.path or request.path == '/' and 'id' not in request.GET:
         return RedirectView.as_view(
-            pattern_name='tasks',
-            url=TASKS_URL,
+            url=settings.UI_URL,
             permanent=True,
             query_string=True
         )(request)
