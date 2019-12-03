@@ -12,11 +12,7 @@ class PluginChecker {
                 await core.server.request(url);
                 return true;
             } catch (error) {
-                if (error.code === 404) {
-                    return false;
-                }
-
-                throw error;
+                return [0, 404].includes(error.code);
             }
         };
 

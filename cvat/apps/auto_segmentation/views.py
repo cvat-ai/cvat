@@ -1,5 +1,5 @@
 
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -185,7 +185,7 @@ def create_thread(tid, labels_mapping, user):
         try:
             slogger.task[tid].exception('exception was occured during auto segmentation of the task', exc_info=True)
         except Exception:
-            slogger.glob.exception('exception was occured during auto segmentation of the task {}'.format(tid), exc_into=True)
+            slogger.glob.exception('exception was occured during auto segmentation of the task {}'.format(tid), exc_info=True)
         raise ex
 
 @login_required
@@ -204,7 +204,7 @@ def get_meta_info(request):
 
         return JsonResponse(result)
     except Exception as ex:
-        slogger.glob.exception('exception was occured during tf meta request', exc_into=True)
+        slogger.glob.exception('exception was occured during tf meta request', exc_info=True)
         return HttpResponseBadRequest(str(ex))
 
 

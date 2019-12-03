@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -11,7 +11,8 @@ import shutil
 from datetime import datetime
 from tempfile import mkstemp
 
-from django.http import HttpResponseBadRequest
+from django.views.generic import RedirectView
+from django.http import HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import redirect, render
 from django.conf import settings
 from sendfile import sendfile
@@ -32,7 +33,6 @@ from django.utils import timezone
 from . import annotation, task, models
 from cvat.settings.base import JS_3RDPARTY, CSS_3RDPARTY
 from cvat.apps.authentication.decorators import login_required
-import logging
 from .log import slogger, clogger
 from cvat.apps.engine.models import StatusChoice, Task, Job, Plugin
 from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
@@ -49,18 +49,32 @@ from cvat.apps.annotation.models import AnnotationDumper, AnnotationLoader
 from cvat.apps.annotation.format import get_annotation_formats
 import cvat.apps.dataset_manager.task as DatumaroTask
 
+
+TASKS_URL = '{}://{}'.format(settings.UI_SCHEME, settings.UI_HOST)
+if len(settings.UI_PORT):
+    TASKS_URL += ':{}'.format(settings.UI_PORT)
+TASKS_URL += '/tasks'
+
 # Server REST API
 @login_required
 def dispatch_request(request):
     """An entry point to dispatch legacy requests"""
-    if request.method == 'GET' and 'id' in request.GET:
+    if 'dashboard' in request.path or request.path == '/' and 'id' not in request.GET:
+        return RedirectView.as_view(
+            pattern_name='tasks',
+            url=TASKS_URL,
+            permanent=True,
+            query_string=True
+        )(request)
+    elif request.method == 'GET' and 'id' in request.GET :
         return render(request, 'engine/annotation.html', {
             'css_3rdparty': CSS_3RDPARTY.get('engine', []),
             'js_3rdparty': JS_3RDPARTY.get('engine', []),
             'status_list': [str(i) for i in StatusChoice]
         })
     else:
-        return redirect('/dashboard/')
+        return HttpResponseNotFound()
+
 
 class ServerViewSet(viewsets.ViewSet):
     serializer_class = None

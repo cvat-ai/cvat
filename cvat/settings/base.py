@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -30,8 +30,9 @@ INTERNAL_IPS = ['127.0.0.1']
 
 try:
     sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY
+    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
 except ImportError:
+
     from django.utils.crypto import get_random_string
     keys_dir = os.path.join(BASE_DIR, 'keys')
     if not os.path.isdir(keys_dir):
@@ -91,7 +92,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'cvat.apps.engine',
-    'cvat.apps.dashboard',
     'cvat.apps.authentication',
     'cvat.apps.documentation',
     'cvat.apps.git',
