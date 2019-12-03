@@ -10,6 +10,7 @@ from django.shortcuts import resolve_url, reverse
 from django.http import JsonResponse
 from django.contrib.auth.views import redirect_to_login
 from django.conf import settings
+from rest_framework.authentication import TokenAuthentication
 
 def login_required(function=None, redirect_field_name=REDIRECT_FIELD_NAME,
     login_url=None, redirect_methods=['GET']):
@@ -19,6 +20,12 @@ def login_required(function=None, redirect_field_name=REDIRECT_FIELD_NAME,
             if request.user.is_authenticated:
                 return view_func(request, *args, **kwargs)
             else:
+                tokenAuth = TokenAuthentication()
+                auth = tokenAuth.authenticate(request)
+                if auth is not None:
+                    request.user = auth[0]
+                    return view_func(request, *args, **kwargs)
+
                 if request.method not in redirect_methods:
                     return JsonResponse({'login_page_url': reverse('login')}, status=403)
 
