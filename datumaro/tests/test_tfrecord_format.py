@@ -1,10 +1,4 @@
-import cv2
-from itertools import zip_longest
 import numpy as np
-import os
-import os.path as osp
-from xml.etree import ElementTree as ET
-import shutil
 
 from unittest import TestCase
 

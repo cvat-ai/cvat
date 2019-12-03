@@ -187,8 +187,8 @@ class DetectionApiExtractor(Extractor):
         return self._categories
 
     def __iter__(self):
-        for subset_name, subset in self._subsets.items():
-            for _, item in subset.items.items():
+        for subset in self._subsets.values():
+            for item in subset.items.values():
                 yield item
 
     def __len__(self):
