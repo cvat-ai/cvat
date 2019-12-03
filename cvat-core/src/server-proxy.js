@@ -405,7 +405,7 @@
                 let response = null;
                 try {
                     if (id === null) {
-                        response = await Axios.get(`${backendAPI}/users`, {
+                        response = await Axios.get(`${backendAPI}/users?page_size=all`, {
                             proxy: config.proxy,
                         });
                     } else {
