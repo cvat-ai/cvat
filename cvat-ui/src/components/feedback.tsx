@@ -55,7 +55,7 @@ export default class Feedback extends React.PureComponent<{}, State> {
                 <br/>
                 <Icon type='like'/>
                 <Text style={{marginLeft: '10px'}}>
-                    Left a <a target='_blank' href={feedbackURL}>feedback</a>
+                    Leave a <a target='_blank' href={feedbackURL}>feedback</a>
                 </Text>
                 <hr/>
                 <div style={{display: 'flex'}}>
