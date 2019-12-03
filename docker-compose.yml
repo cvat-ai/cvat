@@ -54,7 +54,10 @@ services:
         OPENVINO_TOOLKIT: "no"
     environment:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
+      UI_SCHEME: http
+      UI_HOST: localhost
       UI_PORT: 7080
+
 
     volumes:
       - cvat_data:/home/django/data
