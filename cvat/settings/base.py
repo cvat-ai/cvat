@@ -174,13 +174,15 @@ if 'yes' == os.environ.get('AUTO_SEGMENTATION', 'no'):
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    # FIXME
+    # 'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 # Cross-Origin Resource Sharing settings for CVAT UI
@@ -191,6 +193,7 @@ CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [UI_HOST]
 UI_URL = '{}://{}:{}'.format(UI_SCHEME, UI_HOST, UI_PORT)
 CORS_ORIGIN_WHITELIST = [UI_URL]
+CORS_REPLACE_HTTPS_REFERER = True
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',

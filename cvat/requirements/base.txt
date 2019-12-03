@@ -45,5 +45,5 @@ keras==2.2.5
 opencv-python==4.1.0.25
 h5py==2.9.0
 imgaug==0.2.9
-django-cors-headers==3.0.2
+django-cors-headers==3.2.0
 furl==2.0.0
