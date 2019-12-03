@@ -85,6 +85,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         let result = null;
         try {
             result = await cvat.tasks.get(filteredQuery);
+            result = result.filter((task: any) => task.jobs.length > 0);
         } catch (error) {
             dispatch(getTasksFailed(error, query));
             return;
@@ -94,6 +95,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         const previews = [];
         const promises = array
             .map((task): string => (task as any).frames.preview());
+
         dispatch(
             getInferenceStatusAsync(
                 array.map(
