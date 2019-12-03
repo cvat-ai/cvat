@@ -231,8 +231,8 @@ class VideoExtractor(IMediaExtractor):
 
         frame_count = 0
         downscale_factor = 1
-        # while source_video_stream.height / downscale_factor >= 1080:
-        #     downscale_factor *= 2
+        while source_video_stream.height / downscale_factor >= 1080:
+            downscale_factor *= 2
 
         output_h = source_video_stream.height // downscale_factor
         output_w = source_video_stream.width // downscale_factor
