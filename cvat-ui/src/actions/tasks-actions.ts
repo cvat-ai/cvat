@@ -85,13 +85,13 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         let result = null;
         try {
             result = await cvat.tasks.get(filteredQuery);
-            result = result.filter((task: any) => task.jobs.length > 0);
         } catch (error) {
             dispatch(getTasksFailed(error, query));
             return;
         }
 
-        const array = Array.from(result);
+        const array = Array.from(result)
+            .filter((task: any) => task.jobs.length > 0);
         const previews = [];
         const promises = array
             .map((task): string => (task as any).frames.preview());
