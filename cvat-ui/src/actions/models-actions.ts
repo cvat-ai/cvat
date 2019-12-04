@@ -551,10 +551,11 @@ function inferModelSuccess(): AnyAction {
     return action;
 }
 
-function inferModelFailed(error: any): AnyAction {
+function inferModelFailed(error: any, taskID: number): AnyAction {
     const action = {
         type: ModelsActionTypes.INFER_MODEL_FAILED,
         payload: {
+            taskID,
             error,
         },
     };
@@ -599,7 +600,7 @@ export function inferModelAsync(
 
             dispatch(getInferenceStatusAsync([taskInstance.id]));
         } catch (error) {
-            dispatch(inferModelFailed(error));
+            dispatch(inferModelFailed(error, taskInstance.id));
             return;
         }
 

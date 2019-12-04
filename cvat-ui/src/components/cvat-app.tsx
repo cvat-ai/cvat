@@ -56,7 +56,11 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
     private showMessages() {
         function showMessage(title: string) {
             notification.info({
-                message: title,
+                message: (
+                    <div dangerouslySetInnerHTML={{
+                        __html: title,
+                    }}/>
+                ),
                 duration: null,
             });
         }
@@ -81,7 +85,11 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         function showError(title: string, _error: any) {
             const error = _error.toString();
             notification.error({
-                message: title,
+                message: (
+                    <div dangerouslySetInnerHTML={{
+                        __html: title,
+                    }}/>
+                ),
                 duration: null,
                 description: error.length > 200 ? '' : error,
             });
@@ -104,64 +112,64 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             || !!models.metaFetching;
 
         if (auth.authorized) {
-            showError('Could not check authorization on the server', auth.authorized);
+            showError(auth.authorized.message, auth.authorized.reason);
         }
         if (auth.login) {
-            showError('Could not login on the server', auth.login);
+            showError(auth.login.message, auth.login.reason);
         }
         if (auth.register) {
-            showError('Could not register on the server', auth.register);
+            showError(auth.register.message, auth.register.reason);
         }
         if (auth.logout) {
-            showError('Could not logout on the server', auth.logout);
+            showError(auth.logout.message, auth.logout.reason);
         }
         if (tasks.fetching) {
-            showError('Could not fetch tasks from the server', tasks.fetching);
+            showError(tasks.fetching.message, tasks.fetching.reason);
         }
         if (tasks.updating) {
-            showError('Could not update task on the server', tasks.updating);
+            showError(tasks.updating.message, tasks.updating.reason);
         }
         if (tasks.dumping) {
-            showError('Could not dump annotations from the server', tasks.dumping);
+            showError(tasks.dumping.message, tasks.dumping.reason);
         }
         if (tasks.loading) {
-            showError('Could not upload annotations to the server', tasks.loading);
+            showError(tasks.loading.message, tasks.loading.reason);
         }
         if (tasks.exporting) {
-            showError('Could not export task from the server', tasks.exporting);
+            showError(tasks.exporting.message, tasks.exporting.reason);
         }
         if (tasks.deleting) {
-            showError('Could not delete task on the server', tasks.deleting);
+            showError(tasks.deleting.message, tasks.deleting.reason);
         }
         if (tasks.creating) {
-            showError('Could not create task on the server', tasks.creating);
+            showError(tasks.creating.message, tasks.creating.reason);
         }
         if (formats.fetching) {
-            showError('Could not get annotations and dataset formats from the server', formats.fetching);
+            showError(formats.fetching.message, formats.fetching.reason);
         }
         if (users.fetching) {
-            showError('Could not get users from the server', users.fetching);
+            showError(users.fetching.message, users.fetching.reason);
         }
         if (share.fetching) {
-            showError('Could not get share info from the server', share.fetching);
+            showError(share.fetching.message, share.fetching.reason);
         }
         if (models.creating) {
-            showError('Could not create model on the server', models.creating);
+            showError(models.creating.message, models.creating.reason);
         }
         if (models.starting) {
-            showError('Could not run model on the server', models.starting);
+            showError(models.starting.message, models.starting.reason);
         }
         if (models.fetching) {
-            showError('Could not get models from the server', models.fetching);
+            showError(models.fetching.message, models.fetching.reason);
         }
         if (models.deleting) {
-            showError('Could not delete model from the server', models.deleting);
+            showError(models.deleting.message, models.deleting.reason);
         }
         if (models.metaFetching) {
-            showError('Could not fetch models meta information from the server', models.metaFetching);
+            showError(models.metaFetching.message, models.metaFetching.reason);
         }
         if (models.inferenceStatusFetching) {
-            showError('Could not fetch inference status from the server', models.inferenceStatusFetching);
+            showError(models.inferenceStatusFetching.message, models.inferenceStatusFetching.reason);
         }
 
         if (shown) {

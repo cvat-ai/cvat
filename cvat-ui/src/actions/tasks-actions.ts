@@ -443,23 +443,23 @@ function updateTask(): AnyAction {
     return action;
 }
 
-function updateTaskSuccess(taskInstance: any): AnyAction {
+function updateTaskSuccess(task: any): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_TASK_SUCCESS,
         payload: {
-            taskInstance,
+            task,
         },
     };
 
     return action;
 }
 
-function updateTaskFailed(error: any, taskInstance: any): AnyAction {
+function updateTaskFailed(error: any, task: any): AnyAction {
     const action = {
         type: TasksActionTypes.UPDATE_TASK_FAILED,
         payload: {
             error,
-            taskInstance,
+            task,
         },
     };
 
