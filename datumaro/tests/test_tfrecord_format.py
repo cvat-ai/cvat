@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from datumaro.components.project import Project
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, BboxObject, LabelCategories, DEFAULT_SUBSET_NAME,
+    AnnotationType, BboxObject, LabelCategories
 )
 from datumaro.components.extractors.tfrecord import (
     DetectionApiExtractor,
@@ -12,7 +12,6 @@ from datumaro.components.extractors.tfrecord import (
 from datumaro.components.converters.tfrecord import (
     DetectionApiConverter,
 )
-from datumaro.components.importers.tfrecord import DetectionApiImporter
 from datumaro.util import find
 from datumaro.util.test_utils import TestDir
 
