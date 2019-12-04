@@ -34,6 +34,9 @@
 
 {% block head_js_cvat %}
     {{ block.super }}
+        <script type="text/javascript">
+            window.UI_URL = "{{ ui_url }}";
+        </script>
         <script type="text/javascript" src="{% static 'engine/js/logger.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/server.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/listener.js' %}"></script>

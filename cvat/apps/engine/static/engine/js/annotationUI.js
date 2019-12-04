@@ -386,7 +386,7 @@ function setupMenu(job, task, shapeCollectionModel,
 
     $('#openTaskButton').on('click', () => {
         const win = window.open(
-            `${window.location.origin}/dashboard?id=${window.cvat.job.task_id}`, '_blank'
+            `${window.UI_URL}/tasks/${window.cvat.job.task_id}`, '_blank'
         );
         win.focus();
     });

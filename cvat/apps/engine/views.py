@@ -53,17 +53,18 @@ import cvat.apps.dataset_manager.task as DatumaroTask
 @login_required
 def dispatch_request(request):
     """An entry point to dispatch legacy requests"""
-    if 'dashboard' in request.path or request.path == '/' and 'id' not in request.GET:
+    if 'dashboard' in request.path or (request.path == '/' and 'id' not in request.GET):
         return RedirectView.as_view(
             url=settings.UI_URL,
             permanent=True,
             query_string=True
         )(request)
-    elif request.method == 'GET' and 'id' in request.GET :
+    elif request.method == 'GET' and 'id' in request.GET and request.path == '/':
         return render(request, 'engine/annotation.html', {
             'css_3rdparty': CSS_3RDPARTY.get('engine', []),
             'js_3rdparty': JS_3RDPARTY.get('engine', []),
-            'status_list': [str(i) for i in StatusChoice]
+            'status_list': [str(i) for i in StatusChoice],
+            'ui_url': settings.UI_URL
         })
     else:
         return HttpResponseNotFound()
