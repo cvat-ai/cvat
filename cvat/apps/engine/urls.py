@@ -34,7 +34,7 @@ router.register('plugins', views.PluginViewSet)
 urlpatterns = [
     # Entry point for a client
     path('', views.dispatch_request),
-    path('dashboard', views.dispatch_request),
+    path('dashboard/', views.dispatch_request),
 
     # documentation for API
     path('api/swagger.<slug:format>$', schema_view.without_ui(cache_timeout=0), name='schema-json'),

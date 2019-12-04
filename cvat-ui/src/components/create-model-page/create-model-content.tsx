@@ -7,7 +7,6 @@ import {
     Alert,
     Button,
     Tooltip,
-    Modal,
     message,
     notification,
 } from 'antd';
