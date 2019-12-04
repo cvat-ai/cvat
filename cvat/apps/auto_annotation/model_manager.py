@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -9,7 +9,6 @@ import os
 import rq
 import shutil
 import tempfile
-import itertools
 
 from django.db import transaction
 from django.utils import timezone
@@ -22,10 +21,9 @@ from cvat.apps.engine.serializers import LabeledDataSerializer
 from cvat.apps.engine.annotation import put_task_data, patch_task_data
 
 from .models import AnnotationModel, FrameworkChoice
-from .model_loader import ModelLoader, load_labelmap
+from .model_loader import load_labelmap
 from .image_loader import ImageLoader
 from .inference import run_inference_engine_annotation
-
 
 
 def _remove_old_file(model_file_field):

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Intel Corporation
+ * Copyright (C) 2018-2019 Intel Corporation
  *
  * SPDX-License-Identifier: MIT
  */
@@ -382,6 +382,13 @@ function setupMenu(job, task, shapeCollectionModel,
     $('#settingsButton').on('click', () => {
         hide();
         $('#settingsWindow').removeClass('hidden');
+    });
+
+    $('#openTaskButton').on('click', () => {
+        const win = window.open(
+            `${window.UI_URL}/tasks/${window.cvat.job.task_id}`, '_blank'
+        );
+        win.focus();
     });
 
     $('#settingsButton').attr('title', `

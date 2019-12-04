@@ -7,7 +7,6 @@ import {
     Alert,
     Button,
     Tooltip,
-    Modal,
     message,
     notification,
 } from 'antd';
@@ -96,7 +95,7 @@ export default class CreateModelContent extends React.PureComponent<Props> {
         const status = this.props.modelCreatingStatus
             && this.props.modelCreatingStatus !== 'CREATED' ? this.props.modelCreatingStatus : '';
 
-        const guideLink = 'https://github.com/opencv/cvat/tree/develop/cvat/apps/auto_annotation';
+        const guideLink = 'https://github.com/opencv/cvat/blob/develop/cvat/apps/auto_annotation/README.md';
         return (
             <Row type='flex' justify='start' align='middle' className='cvat-create-model-content'>
                 <Col span={24}>

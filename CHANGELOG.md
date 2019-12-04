@@ -21,6 +21,7 @@ https://github.com/opencv/cvat/issues/750).
 
 ### Changed
 - page_size parameter for all REST API methods
+- React & Redux & Antd based dashboard
 
 ### Deprecated
 -

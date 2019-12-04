@@ -22,7 +22,7 @@ import {
     VKIcon,
     RedditIcon,
     ViberIcon,
-    LineIcon,
+    LinkedinIcon,
 } from 'react-share';
 
 import Text from 'antd/lib/typography/Text';
@@ -55,7 +55,7 @@ export default class Feedback extends React.PureComponent<{}, State> {
                 <br/>
                 <Icon type='like'/>
                 <Text style={{marginLeft: '10px'}}>
-                    Left a <a target='_blank' href={feedbackURL}>feedback</a>
+                    Leave a <a target='_blank' href={feedbackURL}>feedback</a>
                 </Text>
                 <hr/>
                 <div style={{display: 'flex'}}>
@@ -72,7 +72,7 @@ export default class Feedback extends React.PureComponent<{}, State> {
                         <RedditIcon size={32} round={true} />
                     </RedditShareButton>
                     <LinkedinShareButton url={githubURL}>
-                        <LineIcon size={32} round={true} />
+                        <LinkedinIcon size={32} round={true} />
                     </LinkedinShareButton>
                     <TelegramShareButton url={githubURL} title='Computer Vision Annotation Tool'>
                         <TelegramIcon size={32} round={true} />

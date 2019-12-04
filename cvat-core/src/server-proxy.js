@@ -15,16 +15,14 @@
     const store = require('store');
     const config = require('./config');
 
-    function generateError(errorData, baseMessage) {
+    function generateError(errorData) {
         if (errorData.response) {
-            const message = `${baseMessage}. `
-                + `${errorData.message}. ${JSON.stringify(errorData.response.data) || ''}.`;
+            const message = `${errorData.message}. ${JSON.stringify(errorData.response.data) || ''}.`;
             return new ServerError(message, errorData.response.status);
         }
 
         // Server is unavailable (no any response)
-        const message = `${baseMessage}. `
-        + `${errorData.message}.`; // usually is "Error Network"
+        const message = `${errorData.message}.`; // usually is "Error Network"
         return new ServerError(message, 0);
     }
 
@@ -49,7 +47,7 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get "about" information from the server');
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -65,7 +63,7 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get "share" information from the server');
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -82,7 +80,7 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not send an exception to the server');
+                    throw generateError(errorData);
                 }
             }
 
@@ -95,7 +93,7 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get annotation formats from the server');
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -111,7 +109,7 @@
                     });
                     response = JSON.parse(response.data);
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get export formats from the server');
+                    throw generateError(errorData);
                 }
 
                 return response;
@@ -135,7 +133,7 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, `Could not register '${username}' user on the server`);
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -157,7 +155,7 @@
                         },
                     );
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not login on a server');
+                    throw generateError(errorData);
                 }
 
                 if (authenticationResponse.headers['set-cookie']) {
@@ -178,7 +176,7 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not logout from the server');
+                    throw generateError(errorData);
                 }
 
                 store.remove('token');
@@ -206,7 +204,7 @@
                         ...data,
                     })).data;
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not have done the request');
+                    throw generateError(errorData);
                 }
             }
 
@@ -215,11 +213,11 @@
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks?${filter}`, {
+                    response = await Axios.get(`${backendAPI}/tasks?page_size=10&${filter}`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get tasks from a server');
+                    throw generateError(errorData);
                 }
 
                 response.data.results.count = response.data.count;
@@ -237,7 +235,7 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not save the task on the server');
+                    throw generateError(errorData);
                 }
             }
 
@@ -247,7 +245,7 @@
                 try {
                     await Axios.delete(`${backendAPI}/tasks/${id}`);
                 } catch (errorData) {
-                    throw generateError(errorData, `Could not delete the task ${id} from the server`);
+                    throw generateError(errorData);
                 }
             }
 
@@ -269,10 +267,7 @@
                                 resolve(url);
                             }
                         } catch (errorData) {
-                            reject(generateError(
-                                errorData,
-                                `Failed to export the task ${id} as a dataset`,
-                            ));
+                            reject(generateError(errorData));
                         }
                     }
 
@@ -311,7 +306,7 @@
                                 }
                             } catch (errorData) {
                                 reject(
-                                    generateError(errorData, 'Could not put task to the server'),
+                                    generateError(errorData),
                                 );
                             }
                         }
@@ -340,7 +335,7 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not put task to the server');
+                    throw generateError(errorData);
                 }
 
                 onUpdate('The data is being uploaded to the server..');
@@ -355,7 +350,7 @@
                         // ignore
                     }
 
-                    throw generateError(errorData, 'Could not put data to the server');
+                    throw generateError(errorData);
                 }
 
                 try {
@@ -378,7 +373,7 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get jobs from a server');
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -395,7 +390,7 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not save the job on the server');
+                    throw generateError(errorData);
                 }
             }
 
@@ -405,7 +400,7 @@
                 let response = null;
                 try {
                     if (id === null) {
-                        response = await Axios.get(`${backendAPI}/users`, {
+                        response = await Axios.get(`${backendAPI}/users?page_size=all`, {
                             proxy: config.proxy,
                         });
                     } else {
@@ -414,7 +409,7 @@
                         });
                     }
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get users from the server');
+                    throw generateError(errorData);
                 }
 
                 return response.data.results;
@@ -429,7 +424,7 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(errorData, 'Could not get user data from the server');
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -466,10 +461,7 @@
                         responseType: 'blob',
                     });
                 } catch (errorData) {
-                    throw generateError(
-                        errorData,
-                        `Could not get frame ${frame} for the task ${tid} from the server`,
-                    );
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -484,10 +476,7 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(
-                        errorData,
-                        `Could not get frame meta info for the task ${tid} from the server`,
-                    );
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -503,10 +492,7 @@
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
-                    throw generateError(
-                        errorData,
-                        `Could not get annotations for the ${session} ${id} from the server`,
-                    );
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -534,10 +520,7 @@
                         },
                     });
                 } catch (errorData) {
-                    throw generateError(
-                        errorData,
-                        `Could not ${action} annotations for the ${session} ${id} on the server`,
-                    );
+                    throw generateError(errorData);
                 }
 
                 return response.data;
@@ -564,10 +547,7 @@
                                 resolve();
                             }
                         } catch (errorData) {
-                            reject(generateError(
-                                errorData,
-                                `Could not upload annotations for the ${session} ${id}`,
-                            ));
+                            reject(generateError(errorData));
                         }
                     }
 
@@ -595,10 +575,7 @@
                                 resolve(url);
                             }
                         } catch (errorData) {
-                            reject(generateError(
-                                errorData,
-                                `Could not dump annotations for the task ${id} from the server`,
-                            ));
+                            reject(generateError(errorData));
                         }
                     }
 

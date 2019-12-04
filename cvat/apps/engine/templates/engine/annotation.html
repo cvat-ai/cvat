@@ -1,5 +1,5 @@
 <!--
-    Copyright (C) 2018 Intel Corporation
+    Copyright (C) 2018-2019 Intel Corporation
 
     SPDX-License-Identifier: MIT
 -->
@@ -34,6 +34,9 @@
 
 {% block head_js_cvat %}
     {{ block.super }}
+        <script type="text/javascript">
+            window.UI_URL = "{{ ui_url }}";
+        </script>
         <script type="text/javascript" src="{% static 'engine/js/logger.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/server.js' %}"></script>
         <script type="text/javascript" src="{% static 'engine/js/listener.js' %}"></script>
@@ -338,6 +341,7 @@
                     <option selected disabled> Upload Annotation </option>
             </select>
 
+            <button id="openTaskButton" class="menuButton semiBold h2"> Open Task </button>
             <button id="removeAnnotationButton" class="menuButton semiBold h2"> Remove Annotation </button>
             <button id="settingsButton" class="menuButton semiBold h2"> Settings </button>
             <button id="fullScreenButton" class="menuButton semiBold h2"> Fullscreen Player </button>

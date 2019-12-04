@@ -32,7 +32,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
             this.props.history.replace('/tasks');
         }
 
-        if (this.attempts > 1) {
+        if (this.attempts == 2) {
             notification.warning({
                 message: 'Something wrong with the task. It cannot be fetched from the server',
             });
