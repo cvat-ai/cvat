@@ -9,7 +9,9 @@ class PluginChecker {
         const serverHost = core.config.backendAPI.slice(0, -7);
         const isReachable = async (url: string): Promise<boolean> => {
             try {
-                await core.server.request(url);
+                await core.server.request(url, {
+                    method: 'OPTIONS',
+                });
                 return true;
             } catch (error) {
                 return ![0, 404].includes(error.code);

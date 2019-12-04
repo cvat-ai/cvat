@@ -7,6 +7,7 @@ import json
 import os
 
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from rest_framework.decorators import api_view
 from django.db.models import Q
 from rules.contrib.views import permission_required, objectgetter
 
@@ -124,6 +125,7 @@ def delete_model(request, mid):
     model_manager.delete(mid)
     return HttpResponse()
 
+@api_view(['POST'])
 @login_required
 def get_meta_info(request):
     try:

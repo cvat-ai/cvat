@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from rest_framework.decorators import api_view
 from rules.contrib.views import permission_required, objectgetter
 from cvat.apps.authentication.decorators import login_required
 from cvat.apps.engine.models import Task as TaskModel
@@ -222,6 +223,7 @@ def create_thread(tid, labels_mapping, user):
             slogger.glob.exception('exception was occured during tf annotation of the task {}'.format(tid), exc_info=True)
         raise ex
 
+@api_view(['POST'])
 @login_required
 def get_meta_info(request):
     try:
