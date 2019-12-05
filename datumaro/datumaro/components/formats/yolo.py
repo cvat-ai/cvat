@@ -5,5 +5,5 @@
 
 
 class YoloPath:
-    IMAGES_DIR = 'images'
-    ANNOTATIONS_DIR = 'labels'
+    DEFAULT_SUBSET_NAME = 'train'
+    SUBSET_NAMES = ['train', 'valid']
