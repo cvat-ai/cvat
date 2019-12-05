@@ -8,7 +8,7 @@ from django.views.generic import RedirectView
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.http import JsonResponse
 from django.conf import settings
-from rest_framework.authentication import TokenAuthentication
+from cvat.apps.authentication.auth import TokenAuthentication
 from django.contrib.auth import login
 
 def login_required(function=None, redirect_field_name=REDIRECT_FIELD_NAME,
@@ -22,8 +22,6 @@ def login_required(function=None, redirect_field_name=REDIRECT_FIELD_NAME,
                 tokenAuth = TokenAuthentication()
                 auth = tokenAuth.authenticate(request)
                 if auth is not None:
-                    # If only token is available let's restore session id.
-                    login(request, auth[0], 'django.contrib.auth.backends.ModelBackend')
                     return view_func(request, *args, **kwargs)
 
                 login_url = '{}/login'.format(settings.UI_URL)
