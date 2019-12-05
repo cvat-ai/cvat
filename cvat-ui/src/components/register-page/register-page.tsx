@@ -10,7 +10,7 @@ import {
     Row,
 } from 'antd';
 
-import RegisterForm, { RegisterData } from '../../components/register-page/register-form';
+import RegisterForm, { RegisterData } from './register-form';
 
 interface RegisterPageComponentProps {
     fetching: boolean;
@@ -19,33 +19,44 @@ interface RegisterPageComponentProps {
         password1: string, password2: string) => void;
 }
 
-function RegisterPageComponent(props: RegisterPageComponentProps & RouteComponentProps) {
+function RegisterPageComponent(
+    props: RegisterPageComponentProps & RouteComponentProps,
+): JSX.Element {
     const sizes = {
         xs: { span: 14 },
         sm: { span: 14 },
         md: { span: 10 },
         lg: { span: 4 },
         xl: { span: 4 },
-    }
+    };
+
+    const {
+        fetching,
+        onRegister,
+    } = props;
 
     return (
         <Row type='flex' justify='center' align='middle'>
             <Col {...sizes}>
                 <Title level={2}> Create an account </Title>
-                <RegisterForm fetching={props.fetching} onSubmit={(registerData: RegisterData) => {
-                    props.onRegister(
-                        registerData.username,
-                        registerData.firstName,
-                        registerData.lastName,
-                        registerData.email,
-                        registerData.password1,
-                        registerData.password2,
-                    );
-                }}/>
+                <RegisterForm
+                    fetching={fetching}
+                    onSubmit={(registerData: RegisterData): void => {
+                        onRegister(
+                            registerData.username,
+                            registerData.firstName,
+                            registerData.lastName,
+                            registerData.email,
+                            registerData.password1,
+                            registerData.password2,
+                        );
+                    }}
+                />
                 <Row type='flex' justify='start' align='top'>
                     <Col>
                         <Text strong>
-                            Already have an account? <Link to="/auth/login"> Login </Link>
+                            Already have an account?
+                            <Link to='/auth/login'> Login </Link>
                         </Text>
                     </Col>
                 </Row>
