@@ -84,18 +84,8 @@ class FrameProvider {
         for (let i = 0; i < this._blocks_ranges.length; i++)
         {
             const [start, end] = this._blocks_ranges[i].split(':').map((el) => +el);
-
-            let tmp_v = this._currFrame - 2 * this._blockSize;
-            if (this._currFrame - 2 * this._blockSize < end &&
-                this._currFrame - 2 * this._blockSize > start){
-                for (let j = start; j <= end; j++) {
-                    delete this._frames[j];
-                }
-            }
-
-            tmp_v = this._currFrame + 2 * this._blockSize;
-            if (this._currFrame + 2 * this._blockSize > start &&
-                this._currFrame + 2 * this._blockSize < end){
+            if (end < this._currFrame - 2 * this._blockSize ||
+                start > this._currFrame + 2 * this._blockSize) {
                 for (let j = start; j <= end; j++) {
                     delete this._frames[j];
                 }
