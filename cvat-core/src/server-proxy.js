@@ -563,20 +563,18 @@
 
                 return new Promise((resolve, reject) => {
                     async function request() {
-                        try {
-                            const response = await Axios
-                                .get(`${url}`, {
-                                    proxy: config.proxy,
-                                });
+                        Axios.get(`${url}`, {
+                            proxy: config.proxy,
+                        }).then((response) => {
                             if (response.status === 202) {
                                 setTimeout(request, 3000);
                             } else {
                                 url = `${url}&action=download`;
                                 resolve(url);
                             }
-                        } catch (errorData) {
+                        }).catch((errorData) => {
                             reject(generateError(errorData));
-                        }
+                        });
                     }
 
                     setTimeout(request);
