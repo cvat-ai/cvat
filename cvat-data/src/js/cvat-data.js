@@ -34,9 +34,10 @@ class Mutex {
 };
 
 class FrameProvider {
-    constructor(memory, blockType, blockSize) {
+    constructor(blockType, blockSize, cachedBlockCount, maxWorkerThreadCount=2, decodedBlocksCacheSize=5) {
         this._frames = {};
-        this._memory = Math.max(1, memory); // number of stored blocks
+        this._cachedBlockCount = Math.max(1, cachedBlockCount); // number of stored blocks
+        this._decodedBlocksCacheSize = decodedBlocksCacheSize;
         this._blocks_ranges = [];
         this._blocks = {};
         this._blockSize = blockSize;
@@ -51,13 +52,12 @@ class FrameProvider {
         this._timerId = setTimeout(this._worker.bind(this), 100);
         this._mutex = new Mutex();
         this._promisedFrames = {};
+        this._maxWorkerThreadCount = maxWorkerThreadCount;
     };
 
     async _worker()
     {
-        if (this._requestedBlockDecode != null &&
-            this._decodeThreadCount < 2)
-        {
+        if (this._requestedBlockDecode != null && this._decodeThreadCount < this._maxWorkerThreadCount) {
             await this.startDecode();
         }
         this._timerId = setTimeout(this._worker.bind(this), 100);
@@ -68,10 +68,9 @@ class FrameProvider {
         return (`${start}:${end}` in this._blocks_ranges);
     }
 
-
     /* This method removes extra data from a cache when memory overflow */
     async _cleanup() {
-        if (this._blocks_ranges.length > this._memory) {
+        if (this._blocks_ranges.length > this._cachedBlockCount) {
             const shifted = this._blocks_ranges.shift(); // get the oldest block
             const [start, end] = shifted.split(':').map((el) => +el);
             delete this._blocks[start / this._blockSize];
@@ -81,11 +80,11 @@ class FrameProvider {
         }
 
         // delete frames whose are not in areas of current frame
-        for (let i = 0; i < this._blocks_ranges.length; i++)
-        {
+        const distance = Math.floor(this._decodedBlocksCacheSize / 2);
+        for (let i = 0; i < this._blocks_ranges.length; i++) {
             const [start, end] = this._blocks_ranges[i].split(':').map((el) => +el);
-            if (end < this._currFrame - 2 * this._blockSize ||
-                start > this._currFrame + 2 * this._blockSize) {
+            if (end < this._currFrame - distance * this._blockSize ||
+                start > this._currFrame + distance * this._blockSize) {
                 for (let j = start; j <= end; j++) {
                     delete this._frames[j];
                 }
@@ -192,27 +191,25 @@ class FrameProvider {
     }
 
     async startDecode() {
+        const release = await this._mutex.acquireQueued();
         const height = this._height;
         const width = this._width;
-         if (this._blockType === BlockType.MP4VIDEO){
-            const release = await this._mutex.acquireQueued();
-            const start = this._requestedBlockDecode.start;
-            const end = this._requestedBlockDecode.end;
-            const block = this._requestedBlockDecode.block;
-            this._blocks_ranges.push(`${start}:${end}`);
-            this._decodingBlocks[`${start}:${end}`] = this._requestedBlockDecode;
-            this._requestedBlockDecode = null;
+        const start = this._requestedBlockDecode.start;
+        const end = this._requestedBlockDecode.end;
+        const block = this._requestedBlockDecode.block;
 
-            for (let i = start; i <= end; i++){
-                this._frames[i] = null;
-            }
+        this._blocks_ranges.push(`${start}:${end}`);
+        this._decodingBlocks[`${start}:${end}`] = this._requestedBlockDecode;
+        this._requestedBlockDecode = null;
 
+        for (let i = start; i <= end; i++){
+            this._frames[i] = null;
+        }
+
+        if (this._blockType === BlockType.MP4VIDEO){
             this._blocks[Math.floor((start+1)/ this._blockSize)] = block;
-
             this._cleanup();
-
             const worker = new Worker('/static/engine/js/Decoder.js');
-
             let index = start;
 
             const t0 = performance.now();
@@ -288,14 +285,6 @@ class FrameProvider {
             release();
 
         } else {
-            const release = await this._mutex.acquireQueued();
-            let start = this._requestedBlockDecode.start;
-            let end = this._requestedBlockDecode.end;
-            let block = this._requestedBlockDecode.block;
-            this._blocks_ranges.push(`${start}:${end}`);
-            this._decodingBlocks[`${start}:${end}`] = this._requestedBlockDecode;
-            this._requestedBlockDecode = null;
-
             const worker = new Worker('/static/engine/js/unzip_imgs.js');
 
             worker.onerror = (e) => {

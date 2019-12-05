@@ -17,8 +17,6 @@
 
     // This is the frames storage
     const frameDataCache = {};
-    const frameCache = {};
-    let nextChunk = null;
 
     /**
         * Class provides meta information about specific frame and frame itself
@@ -195,15 +193,12 @@
             const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO
                 : cvatData.BlockType.ARCHIVE;
 
-            const value = {
+            frameDataCache[taskID] = {
                 meta: await serverProxy.frames.getMeta(taskID),
                 chunkSize,
-                provider: new cvatData.FrameProvider(9, blockType, chunkSize),
+                provider: new cvatData.FrameProvider(blockType, chunkSize, 9),
                 lastFrameRequest : frame,
             };
-
-            frameCache[taskID] = {};
-            frameDataCache[taskID] = value;
         }
 
         let size = null;
