@@ -34,7 +34,7 @@ class Mutex {
 };
 
 class FrameProvider {
-    constructor(blockType, blockSize, cachedBlockCount, maxWorkerThreadCount=2, decodedBlocksCacheSize=5) {
+    constructor(blockType, blockSize, cachedBlockCount, decodedBlocksCacheSize=5, maxWorkerThreadCount=2) {
         this._frames = {};
         this._cachedBlockCount = Math.max(1, cachedBlockCount); // number of stored blocks
         this._decodedBlocksCacheSize = decodedBlocksCacheSize;
@@ -94,10 +94,12 @@ class FrameProvider {
 
     async requestDecodeBlock(block, start, end, resolveCallback, rejectCallback){
         const release = await this._mutex.acquireQueued();
-        if (this._requestedBlockDecode != null) {
-            this._requestedBlockDecode.rejectCallback();
+        if (this._requestedBlockDecode !== null) {
+            if (this._requestedBlockDecode.rejectCallback) {
+                this._requestedBlockDecode.rejectCallback();
+            }
         }
-        if (! (`${start}:${end}` in this._decodingBlocks)) {
+        if (!(`${start}:${end}` in this._decodingBlocks)) {
             if (block === null)
             {
                 block = this._blocks[Math.floor((start+1) / chunkSize)];
@@ -109,6 +111,9 @@ class FrameProvider {
                 resolveCallback : resolveCallback,
                 rejectCallback : rejectCallback,
             }
+        } else { // request to decode the same block, update callbacks
+            this._decodingBlocks[`${start}:${end}`].rejectCallback = rejectCallback;
+            this._decodingBlocks[`${start}:${end}`].resolveCallback = resolveCallback;
         }
         release();
     }
@@ -201,14 +206,12 @@ class FrameProvider {
         this._blocks_ranges.push(`${start}:${end}`);
         this._decodingBlocks[`${start}:${end}`] = this._requestedBlockDecode;
         this._requestedBlockDecode = null;
-
+        this._blocks[Math.floor((start+1)/ this._blockSize)] = block;
         for (let i = start; i <= end; i++){
             this._frames[i] = null;
         }
-
-        if (this._blockType === BlockType.MP4VIDEO){
-            this._blocks[Math.floor((start+1)/ this._blockSize)] = block;
-            this._cleanup();
+        this._cleanup();
+        if (this._blockType === BlockType.MP4VIDEO) {
             const worker = new Worker('/static/engine/js/Decoder.js');
             let index = start;
 
@@ -223,14 +226,17 @@ class FrameProvider {
                     e.data.buf, e.data.width, e.data.height, 0, 0,
                     Math.floor(width / scaleFactor), Math.floor(height / scaleFactor));
 
-                this._decodingBlocks[`${start}:${end}`].resolveCallback(index);
+                if (this._decodingBlocks[`${start}:${end}`].resolveCallback) {
+                    this._decodingBlocks[`${start}:${end}`].resolveCallback(index);
+                }
+
                 if (index in this._promisedFrames) {
                     this._promisedFrames[index].resolve(this._frames[index]);
                     delete this._promisedFrames[index];
                 }
                 if (index === end) {
                     const t = performance.now() - t0;
-                    console.log(`Decode time : ${t}; fps: ${36000/t}`);
+                    console.log(`Decode time of chunk ${Math.floor((start+1)/ this._blockSize)}: ${t}; fps: ${36000/t}`);
                     this._decodeThreadCount--;
                     delete this._decodingBlocks[`${start}:${end}`];
                     worker.terminate();
@@ -251,7 +257,9 @@ class FrameProvider {
                     }
                 }
 
-                this._decodingBlocks[`${start}:${end}`].rejectCallback();
+                if (this._decodingBlocks[`${start}:${end}`].rejectCallback) {
+                    this._decodingBlocks[`${start}:${end}`].rejectCallback();
+                }
                 delete this._decodingBlocks[`${start}:${end}`];
             };
 
@@ -296,10 +304,13 @@ class FrameProvider {
                          delete this._promisedFrames[i];
                     }
                 }
-                this._decodingBlocks[`${start}:${end}`].rejectCallback();
+                if (this._decodingBlocks[`${start}:${end}`].rejectCallback) {
+                    this._decodingBlocks[`${start}:${end}`].rejectCallback();
+                }
                 this._decodeThreadCount--;
             };
 
+            const t0 = performance.now();
             worker.postMessage({block : block,
                                 start : start,
                                   end : end });
@@ -311,10 +322,14 @@ class FrameProvider {
                     width,
                     height,
                 };
-                this._decodingBlocks[`${start}:${end}`].resolveCallback(event.data.index);
+                if (this._decodingBlocks[`${start}:${end}`].resolveCallback) {
+                    this._decodingBlocks[`${start}:${end}`].resolveCallback(event.data.index);
+                }
                 if (event.data.isEnd){
-                        delete this._decodingBlocks[`${start}:${end}`];
-                        this._decodeThreadCount--;
+                    const t = performance.now() - t0;
+                    console.log(`Decode time of archive chunk ${Math.floor((start+1)/ this._blockSize)}: ${t}; fps: ${36000/t}`);
+                    delete this._decodingBlocks[`${start}:${end}`];
+                    this._decodeThreadCount--;
                 }
             };
 

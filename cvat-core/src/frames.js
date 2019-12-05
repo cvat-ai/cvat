@@ -104,6 +104,7 @@
                 try {
                     const { provider } = frameDataCache[this.tid];
                     const { chunkSize } = frameDataCache[this.tid];
+                    const { decodedBlocksCacheSize } = frameDataCache[this.tid];
 
                     let frame = await provider.frame(this.number);
                     if (frame === null) {
@@ -128,7 +129,7 @@
                             }
                         }
                     } else {
-                        if (this.number % chunkSize > 1 && !provider.isNextChunkExists(this.number)) {
+                        if (this.number % chunkSize > 1 && !provider.isNextChunkExists(this.number) && decodedBlocksCacheSize > 1) {
                             const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
                             const start = Math.max(this.startFrame, nextChunkNumber * chunkSize);
                             const stop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
@@ -137,8 +138,7 @@
                                 provider.setReadyToLoading(nextChunkNumber);
                                 if (!provider.is_chunk_cached(start, stop)){
                                     serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
-                                        provider.requestDecodeBlock(nextChunk, start, stop,
-                                                                    onDecode.bind(this, provider), rejectRequest.bind(this, provider));
+                                        provider.requestDecodeBlock(nextChunk, start, stop, undefined, undefined);
                                     }).catch(exception => {
                                         if (exception instanceof Exception) {
                                             reject(exception);
@@ -147,8 +147,7 @@
                                         }
                                     });
                                 } else {
-                                    provider.requestDecodeBlock(null, start, stop,
-                                                                    onDecode.bind(this, provider), rejectRequest.bind(this, provider));
+                                    provider.requestDecodeBlock(null, start, stop, undefined, undefined);
                                 }
                             }
                         }
@@ -166,7 +165,6 @@
     }
     return new Promise(getFrameData.bind(this));
 };
-
 
     async function getPreview(taskID) {
         return new Promise(async (resolve, reject) => {
@@ -189,34 +187,49 @@
     }
 
     async function getFrame(taskID, chunkSize, chunkType, mode, frame, startFrame, stopFrame) {
+        const getFrameSize = (meta) => {
+            let size = null;
+            if (mode === 'interpolation') {
+                [size] = meta;
+            } else if (mode === 'annotation') {
+                if (frame >= meta.length) {
+                    throw new ArgumentError(
+                        `Meta information about frame ${frame} can't be received from the server`,
+                    );
+                } else {
+                    size = meta[frame];
+                }
+            } else {
+                throw new ArgumentError(
+                    `Invalid mode is specified ${mode}`,
+                );
+            }
+            return size;
+        };
+
         if (!(taskID in frameDataCache)) {
             const blockType = chunkType === 'video' ? cvatData.BlockType.MP4VIDEO
                 : cvatData.BlockType.ARCHIVE;
 
+            const meta = await serverProxy.frames.getMeta(taskID);
+            const size = getFrameSize(meta);
+            // limit of decoded frames cache by 2GB for video and 500 frames for archive
+            // max size of video frame is 1080
+            const decodedBlocksCacheSize = blockType === cvatData.BlockType.MP4VIDEO ?
+                 Math.floor(2147483648 / 1920 / 1080 / 4 / chunkSize) || 1:
+                 Math.floor(500 / chunkSize) || 1;
+
             frameDataCache[taskID] = {
-                meta: await serverProxy.frames.getMeta(taskID),
+                meta,
                 chunkSize,
-                provider: new cvatData.FrameProvider(blockType, chunkSize, 9),
+                provider: new cvatData.FrameProvider(blockType, chunkSize, 9, decodedBlocksCacheSize, 2),
                 lastFrameRequest : frame,
+                decodedBlocksCacheSize,
             };
         }
 
-        let size = null;
-        if (mode === 'interpolation') {
-            [size] = frameDataCache[taskID].meta;
-        } else if (mode === 'annotation') {
-            if (frame >= frameDataCache[taskID].meta.length) {
-                throw new ArgumentError(
-                    `Meta information about frame ${frame} can't be received from the server`,
-                );
-            } else {
-                size = frameDataCache[taskID].meta[frame];
-            }
-        } else {
-            throw new ArgumentError(
-                `Invalid mode is specified ${mode}`,
-            );
-        }
+        const size = getFrameSize(frameDataCache[taskID].meta);
+
         frameDataCache[taskID].provider.setRenderSize(size.width, size.height);
         return new FrameData(size.width, size.height, taskID, frame, startFrame, stopFrame);
     };
@@ -228,7 +241,6 @@
 
         return frameDataCache[taskID].provider.cachedFrames;
     }
-
 
     module.exports = {
         FrameData,
