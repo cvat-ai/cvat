@@ -137,7 +137,7 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                                 this.fileManagerContainer = container;
                             }
                         }
-                        withRemote
+                        withRemote={false}
                     />
                 </Col>
                 <Col span={18}>
