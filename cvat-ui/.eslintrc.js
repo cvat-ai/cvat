@@ -33,6 +33,8 @@ module.exports = {
         '@typescript-eslint/no-explicit-any': [0],
         'no-restricted-syntax': [0, {'selector': 'ForOfStatement'}],
         'no-plusplus': [0],
+        'lines-between-class-members': 0,
+        'react/no-did-update-set-state': 0, // https://github.com/airbnb/javascript/issues/1875
     },
     'settings': {
         'import/resolver': {
