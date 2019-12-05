@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from django.conf import settings
 from django.db.models import Q
 import rules
