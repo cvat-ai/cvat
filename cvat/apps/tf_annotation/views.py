@@ -228,7 +228,7 @@ def create_thread(tid, labels_mapping, user):
 def get_meta_info(request):
     try:
         queue = django_rq.get_queue('low')
-        tids = json.loads(request.body.decode('utf-8'))
+        tids = request.data
         result = {}
         for tid in tids:
             job = queue.fetch_job('tf_annotation.create/{}'.format(tid))
