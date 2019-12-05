@@ -26,6 +26,10 @@ module.exports = {
     ],
     'rules': {
         '@typescript-eslint/indent': ['warn', 4],
+        'react/jsx-indent': ['warn', 4],
+        'react/jsx-indent-props': ['warn', 4],
+        'jsx-quotes': ['error', 'prefer-single'],
+        'arrow-parens': ['error', 'always'],
         '@typescript-eslint/no-explicit-any': [0],
         'no-restricted-syntax': [0, {'selector': 'ForOfStatement'}],
         'no-plusplus': [0],

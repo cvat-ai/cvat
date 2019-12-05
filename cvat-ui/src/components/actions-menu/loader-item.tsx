@@ -17,12 +17,15 @@ interface LoaderItemComponentProps {
     onLoadAnnotation: (taskInstance: any, loader: any, file: File) => void;
 }
 
-export default function LoaderItemComponent(props: LoaderItemComponentProps) {
-    const { loader } = props;
+export default function LoaderItemComponent(props: LoaderItemComponentProps): JSX.Element {
+    const {
+        loader,
+        loadActivity,
+    } = props;
 
-    const loadingWithThisLoader = props.loadActivity
-        && props.loadActivity === loader.name
-        ? props.loadActivity : null;
+    const loadingWithThisLoader = loadActivity
+        && loadActivity === loader.name
+        ? loadActivity : null;
 
     const pending = !!loadingWithThisLoader;
 
@@ -31,8 +34,8 @@ export default function LoaderItemComponent(props: LoaderItemComponentProps) {
             <Upload
                 accept={`.${loader.format}`}
                 multiple={false}
-                showUploadList={ false }
-                beforeUpload={(file: RcFile) => {
+                showUploadList={false}
+                beforeUpload={(file: RcFile): boolean => {
                     props.onLoadAnnotation(
                         props.taskInstance,
                         loader,
@@ -40,11 +43,12 @@ export default function LoaderItemComponent(props: LoaderItemComponentProps) {
                     );
 
                     return false;
-                }}>
-                <Button block={true} type='link' disabled={!!props.loadActivity}>
-                    <Icon type='upload'/>
+                }}
+            >
+                <Button block type='link' disabled={!!loadActivity}>
+                    <Icon type='upload' />
                     <Text>{loader.name}</Text>
-                    {pending && <Icon type='loading'/>}
+                    {pending && <Icon type='loading' />}
                 </Button>
             </Upload>
         </Menu.Item>

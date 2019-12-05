@@ -15,24 +15,31 @@ interface DumperItemComponentProps {
     onExportDataset: (task: any, exporter: any) => void;
 }
 
-export default function DumperItemComponent(props: DumperItemComponentProps) {
-    const task = props.taskInstance;
-    const { exporter } = props;
-    const pending = !!props.exportActivity;
+export default function DumperItemComponent(props: DumperItemComponentProps): JSX.Element {
+    const {
+        taskInstance,
+        exporter,
+        exportActivity,
+    } = props;
+
+    const pending = !!exportActivity;
 
     return (
         <Menu.Item className='cvat-actions-menu-export-submenu-item' key={exporter.name}>
-            <Button block={true} type='link' disabled={pending}
-                onClick={() => {
-                    props.onExportDataset(task, exporter);
-                }}>
-                <Icon type='export'/>
-                <Text strong={props.exporter.is_default}>
+            <Button
+                block
+                type='link'
+                disabled={pending}
+                onClick={(): void => {
+                    props.onExportDataset(taskInstance, exporter);
+                }}
+            >
+                <Icon type='export' />
+                <Text strong={exporter.is_default}>
                     {exporter.name}
                 </Text>
-                {pending && <Icon type='loading'/>}
+                {pending && <Icon type='loading' />}
             </Button>
         </Menu.Item>
     );
 }
-

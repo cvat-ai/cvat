@@ -431,7 +431,7 @@ async function timeoutCallback(
         dispatch(getInferenceStatusSuccess(taskID, activeInference));
     } catch (error) {
         dispatch(getInferenceStatusFailed(taskID, new Error(
-            `Server request for the task ${taskID} was failed`
+            `Server request for the task ${taskID} was failed`,
         )));
     }
 }
