@@ -364,7 +364,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             "{}.{}.{}.{}".format(filename, username, timestamp, db_dumper.format.lower()))
 
         queue = django_rq.get_queue("default")
-        rq_id = "{}@/api/v1/tasks/{}/annotations/{}".format(username, pk, filename)
+        rq_id = "{}@/api/v1/tasks/{}/annotations/{}/{}".format(username, pk, dump_format, filename)
         rq_job = queue.fetch_job(rq_id)
 
         if rq_job:
