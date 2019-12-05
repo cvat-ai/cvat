@@ -23,6 +23,8 @@ from datumaro.components.converters.voc import (
     VocSegmentationConverter,
 )
 
+from datumaro.components.converters.yolo import YoloV3Converter
+
 
 items = [
     ('datumaro', DatumaroConverter),
@@ -40,4 +42,6 @@ items = [
     ('voc_segm', VocSegmentationConverter),
     ('voc_action', VocActionConverter),
     ('voc_layout', VocLayoutConverter),
+
+    ('yolo_v3', YoloV3Converter),
 ]
