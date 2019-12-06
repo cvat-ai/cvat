@@ -65,11 +65,12 @@ class YoloConverter(Converter):
             subset_dir = osp.join(save_dir, 'obj_%s_data' % subset_name)
             os.makedirs(subset_dir, exist_ok=True)
 
-            subset_images = OrderedDict()
+            image_paths = OrderedDict()
 
             for item in subset:
                 image_name = '%s.jpg' % item.id
-                subset_images[item.id] = osp.join(subset_name, image_name)
+                image_paths[item.id] = osp.join('data',
+                    osp.basename(subset_dir), image_name)
 
                 if self._save_images:
                     image_path = osp.join(subset_dir, image_name)
@@ -96,7 +97,7 @@ class YoloConverter(Converter):
             subset_list_name = '%s.txt' % subset_name
             subset_lists[subset_name] = subset_list_name
             with open(osp.join(save_dir, subset_list_name), 'w') as f:
-                f.writelines('%s\n' % s for s in subset_images.values())
+                f.writelines('%s\n' % s for s in image_paths.values())
 
         with open(osp.join(save_dir, 'obj.data'), 'w') as f:
             f.write('classes = %s\n' % len(label_ids))
