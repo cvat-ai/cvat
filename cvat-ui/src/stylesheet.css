@@ -275,6 +275,10 @@
     border: 1px solid #40a9ff;
 }
 
+.cvat-tasks-list-item > div:nth-child(2) {
+    word-break: break-all;
+}
+
 .cvat-tasks-list-item > div:nth-child(4) > div {
     margin-right: 20px;
 }

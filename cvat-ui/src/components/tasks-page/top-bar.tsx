@@ -16,35 +16,50 @@ interface VisibleTopBarProps {
     searchValue: string;
 }
 
-function TopBarComponent(props: VisibleTopBarProps & RouteComponentProps) {
+function TopBarComponent(props: VisibleTopBarProps & RouteComponentProps): JSX.Element {
+    const {
+        searchValue,
+        history,
+        onSearch,
+    } = props;
+
     return (
         <>
             <Row type='flex' justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
-                    <Text strong>{'Default project'}</Text>
+                    <Text strong>Default project</Text>
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col md={11} lg={9} xl={8} xxl={7}>
                     <Text className='cvat-title'>Tasks</Text>
                     <Input.Search
-                        defaultValue={props.searchValue}
-                        onSearch={props.onSearch}
-                        size='large' placeholder='Search'
+                        defaultValue={searchValue}
+                        onSearch={onSearch}
+                        size='large'
+                        placeholder='Search'
                     />
                 </Col>
                 <Col
-                    md={{span: 11}}
-                    lg={{span: 9}}
-                    xl={{span: 8}}
-                    xxl={{span: 7}}>
-                    <Button size='large' id='cvat-create-task-button' type='primary' onClick={
-                        () => props.history.push('/tasks/create')
-                    }> Create new task </Button>
+                    md={{ span: 11 }}
+                    lg={{ span: 9 }}
+                    xl={{ span: 8 }}
+                    xxl={{ span: 7 }}
+                >
+                    <Button
+                        size='large'
+                        id='cvat-create-task-button'
+                        type='primary'
+                        onClick={
+                            (): void => history.push('/tasks/create')
+                        }
+                    >
+                         Create new task
+                    </Button>
                 </Col>
             </Row>
         </>
-    )
+    );
 }
 
 export default withRouter(TopBarComponent);
