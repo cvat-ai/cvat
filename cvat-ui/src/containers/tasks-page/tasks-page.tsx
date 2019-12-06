@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 
 import {
     TasksQuery,
-    CombinedState
+    CombinedState,
 } from '../../reducers/interfaces';
 
 import TasksPageComponent from '../../components/tasks-page/tasks-page';
@@ -18,7 +18,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    getTasks: (gettingQuery: TasksQuery) => void;
+    onGetTasks: (gettingQuery: TasksQuery) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -34,21 +34,17 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        getTasks: (query: TasksQuery) => {dispatch(getTasksAsync(query))}
-    }
+        onGetTasks: (query: TasksQuery): void => {
+            dispatch(getTasksAsync(query));
+        },
+    };
 }
 
 type TasksPageContainerProps = StateToProps & DispatchToProps;
 
-function TasksPageContainer(props: TasksPageContainerProps) {
+function TasksPageContainer(props: TasksPageContainerProps): JSX.Element {
     return (
-        <TasksPageComponent
-            tasksFetching={props.tasksFetching}
-            gettingQuery={props.gettingQuery}
-            numberOfTasks={props.numberOfTasks}
-            numberOfVisibleTasks={props.numberOfVisibleTasks}
-            onGetTasks={props.getTasks}
-        />
+        <TasksPageComponent {...props} />
     );
 }
 

@@ -9,7 +9,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    login(username: string, password: string): void;
+    onLogin(username: string, password: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -20,16 +20,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        login: (...args) => dispatch(loginAsync(...args)),
+        onLogin: (...args): void => dispatch(loginAsync(...args)),
     };
 }
 
-function LoginPageContainer(props: DispatchToProps & StateToProps) {
+function LoginPageContainer(props: DispatchToProps & StateToProps): JSX.Element {
     return (
-        <LoginPageComponent
-            fetching={props.fetching}
-            onLogin={props.login}
-        />
+        <LoginPageComponent {...props} />
     );
 }
 

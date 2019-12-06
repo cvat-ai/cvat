@@ -12,12 +12,12 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    create: (data: CreateTaskData) => void;
+    onCreate: (data: CreateTaskData) => void;
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        create: (data: CreateTaskData) => dispatch(createTaskAsync(data)),
+        onCreate: (data: CreateTaskData): void => dispatch(createTaskAsync(data)),
     };
 }
 
@@ -29,13 +29,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
     };
 }
 
-function CreateTaskPageContainer(props: StateToProps & DispatchToProps) {
+function CreateTaskPageContainer(props: StateToProps & DispatchToProps): JSX.Element {
     return (
-        <CreateTaskComponent
-            status={props.status}
-            onCreate={props.create}
-            installedGit={props.installedGit}
-        />
+        <CreateTaskComponent {...props} />
     );
 }
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { TreeNodeNormal } from 'antd/lib/tree/Tree'
+import { TreeNodeNormal } from 'antd/lib/tree/Tree';
 import FileManagerComponent, { Files } from '../../components/file-manager/file-manager';
 
 import { loadShareDataAsync } from '../../actions/share-actions';
@@ -44,9 +44,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        getTreeData: (key: string, success: () => void, failure: () => void) => {
+        getTreeData: (key: string, success: () => void, failure: () => void): void => {
             dispatch(loadShareDataAsync(key, success, failure));
-        }
+        },
     };
 }
 
@@ -63,13 +63,21 @@ export class FileManagerContainer extends React.PureComponent<Props> {
         return this.managerComponentRef.reset();
     }
 
-    public render() {
+    public render(): JSX.Element {
+        const {
+            treeData,
+            getTreeData,
+            withRemote,
+        } = this.props;
+
         return (
             <FileManagerComponent
-                treeData={this.props.treeData}
-                onLoadData={this.props.getTreeData}
-                withRemote={this.props.withRemote}
-                ref={(component) => this.managerComponentRef = component}
+                treeData={treeData}
+                onLoadData={getTreeData}
+                withRemote={withRemote}
+                ref={(component): void => {
+                    this.managerComponentRef = component;
+                }}
             />
         );
     }

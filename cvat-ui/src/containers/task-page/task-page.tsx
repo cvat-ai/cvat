@@ -21,7 +21,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    fetchTask: (tid: number) => void;
+    onFetchTask: (tid: number) => void;
 }
 
 function mapStateToProps(state: CombinedState, own: Props): StateToProps {
@@ -47,7 +47,7 @@ function mapStateToProps(state: CombinedState, own: Props): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        fetchTask: (tid: number) => {
+        onFetchTask: (tid: number): void => {
             dispatch(getTasksAsync({
                 id: tid,
                 page: 1,
@@ -62,15 +62,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-function TaskPageContainer(props: StateToProps & DispatchToProps) {
+function TaskPageContainer(props: StateToProps & DispatchToProps): JSX.Element {
     return (
-        <TaskPageComponent
-            task={props.task}
-            fetching={props.fetching}
-            deleteActivity={props.deleteActivity}
-            installedGit={props.installedGit}
-            onFetchTask={props.fetchTask}
-        />
+        <TaskPageComponent {...props} />
     );
 }
 

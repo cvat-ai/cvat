@@ -21,7 +21,7 @@ interface DispatchToProps {
     onTaskUpdate: (taskInstance: any) => void;
 }
 
-function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
+function mapStateToProps(state: CombinedState): StateToProps {
     const { plugins } = state.plugins;
 
     return {
@@ -33,20 +33,26 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onTaskUpdate: (taskInstance: any) =>
-            dispatch(updateTaskAsync(taskInstance))
-    }
+        onTaskUpdate: (taskInstance: any): void => dispatch(updateTaskAsync(taskInstance)),
+    };
 }
 
 
-function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps) {
+function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
+    const {
+        task,
+        installedGit,
+        registeredUsers,
+        onTaskUpdate,
+    } = props;
+
     return (
         <DetailsComponent
-            previewImage={props.task.preview}
-            taskInstance={props.task.instance}
-            installedGit={props.installedGit}
-            onTaskUpdate={props.onTaskUpdate}
-            registeredUsers={props.registeredUsers}
+            previewImage={task.preview}
+            taskInstance={task.instance}
+            installedGit={installedGit}
+            onTaskUpdate={onTaskUpdate}
+            registeredUsers={registeredUsers}
         />
     );
 }
