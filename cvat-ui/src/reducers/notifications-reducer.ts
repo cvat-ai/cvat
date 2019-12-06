@@ -67,7 +67,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         authorized: {
                             message: 'Could not check authorization on the server',
                             reason: action.payload.error.toString(),
-                        }
+                        },
                     },
                 },
             };
@@ -82,7 +82,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         login: {
                             message: 'Could not login on the server',
                             reason: action.payload.error.toString(),
-                        }
+                        },
                     },
                 },
             };
@@ -323,7 +323,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
         }
         case ModelsActionTypes.GET_INFERENCE_STATUS_SUCCESS: {
             if (action.payload.activeInference.status === 'finished') {
-                const taskID = action.payload.taskID;
+                const { taskID } = action.payload;
                 return {
                     ...state,
                     messages: {
@@ -351,7 +351,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         metaFetching: {
                             message: 'Could not fetch models meta information',
                             reason: action.payload.error.toString(),
-                        }
+                        },
                     },
                 },
             };
@@ -368,7 +368,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not fetch inference status for the '
                                 + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
-                        }
+                        },
                     },
                 },
             };
@@ -400,7 +400,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not infer model for the '
                                 + `<a href="/tasks/${taskID}" target="_blank">task ${taskID}</a>`,
                             reason: action.payload.error.toString(),
-                        }
+                        },
                     },
                 },
             };
@@ -424,7 +424,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return {
                 ...defaultState,
-            }
+            };
         }
         default: {
             return {

@@ -46,7 +46,7 @@ export default function (state = defaultState, action: AnyAction): ShareState {
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return {
                 ...defaultState,
-            }
+            };
         }
         default:
             return {

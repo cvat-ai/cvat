@@ -408,7 +408,7 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return {
                 ...defaultState,
-            }
+            };
         }
         default:
             return state;

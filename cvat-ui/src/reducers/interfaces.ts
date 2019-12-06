@@ -147,8 +147,8 @@ export interface ModelFiles {
 }
 
 export interface ErrorState {
-    message: string,
-    reason: string,
+    message: string;
+    reason: string;
 }
 
 export interface NotificationsState {
