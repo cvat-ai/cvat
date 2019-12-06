@@ -137,11 +137,13 @@ class TfrecordConverterTest(TestCase):
                 name: 'qw3'
                 id: 6
             }
+            {name:'qw4' id:7}
         """
         expected = {
             'qw1': 4,
             'qw2': 5,
             'qw3': 6,
+            'qw4': 7,
         }
         parsed = DetectionApiExtractor._parse_labelmap(text)
 
