@@ -45,7 +45,7 @@ function LoginPageComponent(props: LoginPageComponentProps & RouteComponentProps
                     <Col>
                         <Text strong>
                             New to CVAT? Create
-                            <Link to='/auth/register'>an account</Link>
+                            <Link to='/auth/register'> an account</Link>
                         </Text>
                     </Col>
                 </Row>

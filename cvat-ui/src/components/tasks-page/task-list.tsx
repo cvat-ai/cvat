@@ -23,7 +23,7 @@ export default function TaskListComponent(props: ContentListProps): JSX.Element 
         onSwitchPage,
     } = props;
     const taskViews = currentTasksIndexes.map(
-        (tid, id) => <TaskItem idx={id} taskID={tid} key={tid} />,
+        (tid, id): JSX.Element => <TaskItem idx={id} taskID={tid} key={tid} />,
     );
 
     return (

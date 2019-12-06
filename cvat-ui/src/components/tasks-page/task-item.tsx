@@ -74,7 +74,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         // Count number of jobs and performed jobs
         const numOfJobs = taskInstance.jobs.length;
         const numOfCompleted = taskInstance.jobs.filter(
-            (job: any) => job.status === 'completed',
+            (job: any): boolean => job.status === 'completed',
         ).length;
 
         // Progress appearence depends on number of jobs

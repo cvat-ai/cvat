@@ -76,7 +76,7 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
             onSubmit,
         } = this.props;
 
-        form.validateFields((error, values) => {
+        form.validateFields((error, values): void => {
             if (!error) {
                 onSubmit(values);
             }

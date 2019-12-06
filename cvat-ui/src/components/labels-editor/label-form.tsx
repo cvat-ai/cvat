@@ -52,12 +52,12 @@ class LabelForm extends React.PureComponent<Props, {}> {
             onSubmit,
         } = this.props;
 
-        form.validateFields((error, values) => {
+        form.validateFields((error, values): void => {
             if (!error) {
                 onSubmit({
                     name: values.labelName,
                     id: label ? label.id : idGenerator(),
-                    attributes: values.keys.map((key: number, index: number) => (
+                    attributes: values.keys.map((key: number, index: number): Attribute => (
                         {
                             name: values.attrName[key],
                             type: values.type[key],
@@ -223,7 +223,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
         const validator = (_: any, strNumbers: string, callback: any): void => {
             const numbers = strNumbers
                 .split(';')
-                .map((number) => Number.parseFloat(number));
+                .map((number): number => Number.parseFloat(number));
             if (numbers.length !== 3) {
                 callback('Invalid input');
             }
@@ -470,7 +470,7 @@ class LabelForm extends React.PureComponent<Props, {}> {
 
         form.getFieldDecorator('keys', {
             initialValue: label
-                ? label.attributes.map((attr: Attribute) => attr.id)
+                ? label.attributes.map((attr: Attribute): number => attr.id)
                 : [],
         });
 

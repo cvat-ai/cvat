@@ -23,7 +23,7 @@ export default function UploadedModelsListComponent(props: Props): JSX.Element {
         deleteModel,
     } = props;
 
-    const items = models.map((model) => {
+    const items = models.map((model): JSX.Element => {
         const owner = registeredUsers.filter((user) => user.id === model.ownerID)[0];
         return (
             <UploadedModelItem

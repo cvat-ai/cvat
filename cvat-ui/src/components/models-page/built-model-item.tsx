@@ -36,7 +36,7 @@ export default function BuiltModelItemComponent(props: Props): JSX.Element {
                     value='Supported labels'
                 >
                     {model.labels.map(
-                        (label) => (
+                        (label): JSX.Element => (
                             <Select.Option key={label}>
                                 {label}
                             </Select.Option>

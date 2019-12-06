@@ -26,7 +26,7 @@ export default function UserSelector(props: Props): JSX.Element {
             onChange={onChange}
         >
             <Select.Option key='-1' value='—'>—</Select.Option>
-            { users.map((user) => (
+            { users.map((user): JSX.Element => (
                 <Select.Option key={user.id} value={user.username}>
                     {user.username}
                 </Select.Option>

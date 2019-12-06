@@ -131,13 +131,13 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                     return this.advancedConfigurationComponent.submit();
                 }
 
-                return new Promise((resolve) => {
+                return new Promise((resolve): void => {
                     resolve();
                 });
-            }).then(() => {
+            }).then((): void => {
                 const { onCreate } = this.props;
                 onCreate(this.state);
-            }).catch(() => {
+            }).catch((): void => {
                 notification.error({
                     message: 'Could not create a task',
                     description: 'Please, check configuration you specified',

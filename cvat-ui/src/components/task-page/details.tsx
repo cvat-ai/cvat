@@ -60,7 +60,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         this.mounted = true;
 
         getReposData(taskInstance.id)
-            .then((data) => {
+            .then((data): void => {
                 if (data !== null && this.mounted) {
                     if (data.status.error) {
                         notification.error({
@@ -77,7 +77,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         repository: data.url,
                     });
                 }
-            }).catch((error) => {
+            }).catch((error): void => {
                 if (this.mounted) {
                     notification.error({
                         message: 'Could not receive repository status',
@@ -272,13 +272,13 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                                                 repositoryStatus: 'syncing',
                                             });
 
-                                            syncRepos(taskInstance.id).then(() => {
+                                            syncRepos(taskInstance.id).then((): void => {
                                                 if (this.mounted) {
                                                     this.setState({
                                                         repositoryStatus: 'sync',
                                                     });
                                                 }
-                                            }).catch(() => {
+                                            }).catch((): void => {
                                                 if (this.mounted) {
                                                     this.setState({
                                                         repositoryStatus: '!sync',
@@ -374,11 +374,11 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                 <Col>
                     <LabelsEditorComponent
                         labels={taskInstance.labels.map(
-                            (label: any) => label.toJSON(),
+                            (label: any): string => label.toJSON(),
                         )}
                         onSubmit={(labels: any[]): void => {
                             taskInstance.labels = labels
-                                .map((labelData) => new core.classes.Label(labelData));
+                                .map((labelData): any => new core.classes.Label(labelData));
                             onTaskUpdate(taskInstance);
                         }}
                     />

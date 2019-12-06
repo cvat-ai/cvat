@@ -59,7 +59,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
     }
 
     private loadData = (key: string): Promise<void> => new Promise<void>(
-        (resolve, reject) => {
+        (resolve, reject): void => {
             const { onLoadData } = this.props;
 
             const success = (): void => resolve();

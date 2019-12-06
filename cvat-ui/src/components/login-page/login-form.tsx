@@ -25,7 +25,7 @@ class LoginFormComponent extends React.PureComponent<LoginFormProps> {
             onSubmit,
         } = this.props;
 
-        form.validateFields((error, values) => {
+        form.validateFields((error, values): void => {
             if (!error) {
                 onSubmit(values);
             }

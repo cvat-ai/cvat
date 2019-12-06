@@ -16,7 +16,9 @@ interface Props {
 
 export default function IntegratedModelsListComponent(props: Props): JSX.Element {
     const { models } = props;
-    const items = models.map((model) => <BuiltModelItemComponent key={model.name} model={model} />);
+    const items = models.map((model): JSX.Element => (
+        <BuiltModelItemComponent key={model.name} model={model} />
+    ));
 
     return (
         <>

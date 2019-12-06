@@ -50,7 +50,7 @@ function TasksListContainer(props: TasksListContainerProps): JSX.Element {
     return (
         <TasksListComponent
             onSwitchPage={onSwitchPage}
-            currentTasksIndexes={tasks.current.map((task) => task.instance.id)}
+            currentTasksIndexes={tasks.current.map((task): number => task.instance.id)}
             currentPage={tasks.gettingQuery.page}
             numberOfTasks={tasks.count}
         />

@@ -40,7 +40,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 onSubmit,
             } = this.props;
 
-            form.validateFields((error, values) => {
+            form.validateFields((error, values): void => {
                 if (!error) {
                     const filteredValues = { ...values };
                     delete filteredValues.frameStep;

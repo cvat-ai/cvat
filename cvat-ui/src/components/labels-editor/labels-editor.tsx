@@ -179,7 +179,7 @@ export default class LabelsEditor
         } = this.state;
 
         const filteredUnsavedLabels = unsavedLabels.filter(
-            (_label: Label) => _label.id !== label.id,
+            (_label: Label): boolean => _label.id !== label.id,
         );
 
         this.setState({

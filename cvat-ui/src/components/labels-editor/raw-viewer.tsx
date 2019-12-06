@@ -13,6 +13,7 @@ import { FormComponentProps } from 'antd/lib/form/Form';
 
 import {
     Label,
+    Attribute,
 } from './common';
 
 type Props = FormComponentProps & {
@@ -38,7 +39,7 @@ class RawViewer extends React.PureComponent<Props> {
         } = this.props;
 
         e.preventDefault();
-        form.validateFields((error, values) => {
+        form.validateFields((error, values): void => {
             if (!error) {
                 onSubmit(JSON.parse(values.labels));
             }
@@ -47,11 +48,11 @@ class RawViewer extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const { labels } = this.props;
-        const convertedLabels = labels.map((label: any) => (
+        const convertedLabels = labels.map((label: any): Label => (
             {
                 ...label,
                 id: label.id < 0 ? undefined : label.id,
-                attributes: label.attributes.map((attribute: any) => (
+                attributes: label.attributes.map((attribute: any): Attribute => (
                     {
                         ...attribute,
                         id: attribute.id < 0 ? undefined : attribute.id,

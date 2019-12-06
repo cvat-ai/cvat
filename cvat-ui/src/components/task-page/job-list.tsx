@@ -89,10 +89,9 @@ export default function JobListComponent(props: Props): JSX.Element {
                             userInstance = null;
                         }
 
-                        onJobUpdate({
-                            ...jobInstance,
-                            assignee: userInstance,
-                        });
+                        // eslint-disable-next-line
+                        jobInstance.assignee = userInstance;
+                        onJobUpdate(jobInstance);
                     }}
                 />
             );

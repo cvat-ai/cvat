@@ -118,13 +118,13 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
 
             if (!selectedModelInstance.primary) {
                 let taskLabels: string[] = taskInstance.labels
-                    .map((label: any) => label.name);
+                    .map((label: any): string => label.name);
                 const [defaultMapping, defaultColors]: StringObject[] = selectedModelInstance.labels
-                    .reduce((acc: StringObject[], label) => {
+                    .reduce((acc: StringObject[], label): StringObject[] => {
                         if (taskLabels.includes(label)) {
                             acc[0][label] = label;
                             acc[1][label] = nextColor();
-                            taskLabels = taskLabels.filter((_label) => _label !== label);
+                            taskLabels = taskLabels.filter((_label): boolean => _label !== label);
                         }
 
                         return acc;
@@ -153,7 +153,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                             mapping: {},
                         })}
                     >
-                        {models.map((model) => (
+                        {models.map((model): JSX.Element => (
                             <Select.Option key={model.name}>
                                 {model.name}
                             </Select.Option>
@@ -250,7 +250,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     }
                 }}
             >
-                {options.map((label: string) => (
+                {options.map((label: string): JSX.Element => (
                     <Select.Option key={label}>
                         {label}
                     </Select.Option>
@@ -301,7 +301,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
         } = this.props;
 
         const model = selectedModel && models
-            .filter((_model) => _model.name === selectedModel)[0];
+            .filter((_model): boolean => _model.name === selectedModel)[0];
 
         const excludedLabels: {
             model: string[];
@@ -330,7 +330,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
         const availableTaskLabels = taskInstance.labels
             .map(
                 (label: any) => label.name,
-            ).filter((label: string) => !excludedLabels.task.includes(label));
+            ).filter((label: string): boolean => !excludedLabels.task.includes(label));
 
         const mappingISAvailable = !!availableModelLabels.length
             && !!availableTaskLabels.length;
@@ -378,7 +378,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
         } = this.props;
 
         const activeModel = models.filter(
-            (model) => model.name === selectedModel,
+            (model): boolean => model.name === selectedModel,
         )[0];
 
         const enabledSubmit = (!!activeModel
@@ -394,7 +394,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                         runInference(
                             taskInstance,
                             models
-                                .filter((model) => model.name === selectedModel)[0],
+                                .filter((model): boolean => model.name === selectedModel)[0],
                             mapping,
                             cleanOut,
                         );

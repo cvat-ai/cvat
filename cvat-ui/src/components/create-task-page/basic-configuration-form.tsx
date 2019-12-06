@@ -22,7 +22,7 @@ class BasicConfigurationForm extends React.PureComponent<Props> {
                 onSubmit,
             } = this.props;
 
-            form.validateFields((error, values) => {
+            form.validateFields((error, values): void => {
                 if (!error) {
                     onSubmit({
                         name: values.name,

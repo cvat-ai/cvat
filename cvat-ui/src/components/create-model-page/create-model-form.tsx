@@ -18,7 +18,7 @@ export class CreateModelForm extends React.PureComponent<Props> {
     public submit(): Promise<{name: string; global: boolean}> {
         const { form } = this.props;
         return new Promise((resolve, reject) => {
-            form.validateFields((errors, values) => {
+            form.validateFields((errors, values): void => {
                 if (!errors) {
                     resolve({
                         name: values.name,

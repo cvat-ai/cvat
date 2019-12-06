@@ -92,7 +92,7 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps): 
         >
             <Menu.SubMenu key='dump' title='Dump annotations'>
                 {
-                    dumpers.map((dumper) => DumperItemComponent({
+                    dumpers.map((dumper): JSX.Element => DumperItemComponent({
                         dumper,
                         taskInstance: props.taskInstance,
                         dumpActivity: (props.dumpActivities || [])
@@ -103,7 +103,7 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps): 
             </Menu.SubMenu>
             <Menu.SubMenu key='load' title='Upload annotations'>
                 {
-                    loaders.map((loader) => LoaderItemComponent({
+                    loaders.map((loader): JSX.Element => LoaderItemComponent({
                         loader,
                         taskInstance: props.taskInstance,
                         loadActivity: props.loadActivity,
@@ -113,7 +113,7 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps): 
             </Menu.SubMenu>
             <Menu.SubMenu key='export' title='Export as a dataset'>
                 {
-                    exporters.map((exporter) => ExportItemComponent({
+                    exporters.map((exporter): JSX.Element => ExportItemComponent({
                         exporter,
                         taskInstance: props.taskInstance,
                         exportActivity: (props.exportActivities || [])
