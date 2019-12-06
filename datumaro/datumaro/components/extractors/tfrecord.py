@@ -29,8 +29,8 @@ class DetectionApiExtractor(Extractor):
             self.items = OrderedDict()
 
         def __iter__(self):
-            for img_id in self.items.items():
-                yield self._parent._get(img_id, self._name)
+            for item in self.items.values():
+                yield item
 
         def __len__(self):
             return len(self.items)
@@ -188,7 +188,7 @@ class DetectionApiExtractor(Extractor):
 
     def __iter__(self):
         for subset in self._subsets.values():
-            for item in subset.items.values():
+            for item in subset:
                 yield item
 
     def __len__(self):

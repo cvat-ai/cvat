@@ -47,11 +47,10 @@ def _make_tf_example(item, get_label_id, get_label, save_images=False):
             ('%s%s' % (item.id, DetectionApiPath.IMAGE_EXT)).encode('utf-8')),
     }
 
-    if item.has_image:
-        height, width, _ = item.image.shape
-    else:
-        height = 0
-        width = 0
+    if not item.has_image:
+        raise Exception(
+            "Failed to export dataset item '%s': item has no image" % item.id)
+    height, width, _ = item.image.shape
 
     features.update({
         'image/height': int64_feature(height),
