@@ -8,7 +8,7 @@ import os.path as osp
 import re
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
-    AnnotationType, LabelObject, BboxObject, LabelCategories
+    AnnotationType, BboxObject, LabelCategories
 )
 from datumaro.components.formats.yolo import YoloPath
 from datumaro.util.image import lazy_image

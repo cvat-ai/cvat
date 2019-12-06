@@ -7,7 +7,6 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
 )
 from datumaro.components.importers.yolo import YoloImporter
 from datumaro.components.converters.yolo import YoloConverter
-from datumaro.util import find
 from datumaro.util.test_utils import TestDir
 
 
