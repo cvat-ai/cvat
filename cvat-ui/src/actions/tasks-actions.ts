@@ -164,9 +164,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
         try {
             dispatch(dumpAnnotation(task, dumper));
             const url = await task.annotations.dump(task.name, dumper);
-            // false positive
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
-            window.open(url);
+            const downloadAnchor = (window.document.getElementById('downloadAnchor') as HTMLAnchorElement);
+            downloadAnchor.href = url;
+            downloadAnchor.click();
         } catch (error) {
             dispatch(dumpAnnotationFailed(task, dumper, error));
             return;
@@ -270,9 +270,9 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
 
         try {
             const url = await task.annotations.exportDataset(exporter.tag);
-            // false positive
-            // eslint-disable-next-line security/detect-non-literal-fs-filename
-            window.open(url, '_blank');
+            const downloadAnchor = (window.document.getElementById('downloadAnchor') as HTMLAnchorElement);
+            downloadAnchor.href = url;
+            downloadAnchor.click();
         } catch (error) {
             dispatch(exportDatasetFailed(task, exporter, error));
         }

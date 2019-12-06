@@ -273,6 +273,8 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                                 </Switch>
                                 <FeedbackComponent />
                                 <ModelRunnerModalContainer />
+                                {/* eslint-disable-next-line */}
+                                <a id='downloadAnchor' style={{ display: 'none' }} download/>
                             </Layout.Content>
                         </Layout>
                     </BrowserRouter>
