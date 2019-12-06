@@ -57,6 +57,7 @@ setuptools.setup(
         'PyYAML',
         'pycocotools',
         'tensorboardX',
+        'tensorflow',
     ],
     entry_points={
         'console_scripts': [
