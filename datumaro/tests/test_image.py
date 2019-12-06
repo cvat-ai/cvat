@@ -32,7 +32,7 @@ class ImageTest(TestCase):
         backends = image_module._IMAGE_BACKENDS
         for save_backend, load_backend in product(backends, backends):
             with TestDir() as test_dir:
-                src_image = np.random.random_integers(0, 255, (2, 4, 3))
+                src_image = np.random.randint(0, 255 + 1, (2, 4, 3))
                 image_path = osp.join(test_dir.path, 'img.png')
 
                 self._test_can_save_and_load(src_image, image_path,
