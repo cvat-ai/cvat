@@ -124,8 +124,8 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         } = this.props;
         const query = { ...gettingQuery };
 
-        gettingQuery.page = page;
-        this.updateURL(gettingQuery);
+        query.page = page;
+        this.updateURL(query);
         onGetTasks(query);
     };
 
