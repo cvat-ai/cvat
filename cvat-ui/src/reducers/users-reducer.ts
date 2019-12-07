@@ -35,7 +35,7 @@ export default function (state: UsersState = defaultState, action: AnyAction): U
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return {
                 ...defaultState,
-            }
+            };
         }
         default:
             return {

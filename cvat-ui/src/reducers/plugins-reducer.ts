@@ -45,7 +45,7 @@ export default function (state = defaultState, action: AnyAction): PluginsState 
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return {
                 ...defaultState,
-            }
+            };
         }
         default:
             return { ...state };

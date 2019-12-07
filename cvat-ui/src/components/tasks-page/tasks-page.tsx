@@ -22,134 +22,154 @@ interface TasksPageProps {
     onGetTasks: (gettingQuery: TasksQuery) => void;
 }
 
-class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteComponentProps> {
-    constructor(props: any) {
-        super(props);
+function getSearchField(gettingQuery: TasksQuery): string {
+    let searchString = '';
+    for (const field of Object.keys(gettingQuery)) {
+        if (gettingQuery[field] !== null && field !== 'page') {
+            if (field === 'search') {
+                return (gettingQuery[field] as any) as string;
+            }
+
+            // not constant condition
+            // eslint-disable-next-line
+            if (typeof (gettingQuery[field] === 'number')) {
+                searchString += `${field}:${gettingQuery[field]} AND `;
+            } else {
+                searchString += `${field}:"${gettingQuery[field]}" AND `;
+            }
+        }
     }
 
-    private updateURL(gettingQuery: TasksQuery) {
+    return searchString.slice(0, -5);
+}
+
+class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteComponentProps> {
+    public componentDidMount(): void {
+        const {
+            gettingQuery,
+            location,
+            onGetTasks,
+        } = this.props;
+        const params = new URLSearchParams(location.search);
+
+        const query = { ...gettingQuery };
+        for (const field of Object.keys(query)) {
+            if (params.has(field)) {
+                const value = params.get(field);
+                if (value) {
+                    if (field === 'id' || field === 'page') {
+                        if (Number.isInteger(+value)) {
+                            query[field] = +value;
+                        }
+                    } else {
+                        query[field] = value;
+                    }
+                }
+            } else if (field === 'page') {
+                query[field] = 1;
+            } else {
+                query[field] = null;
+            }
+        }
+
+        this.updateURL(query);
+        onGetTasks(query);
+    }
+
+    private handleSearch = (value: string): void => {
+        const {
+            gettingQuery,
+            onGetTasks,
+        } = this.props;
+
+        const query = { ...gettingQuery };
+        const search = value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim();
+
+        const fields = ['name', 'mode', 'owner', 'assignee', 'status', 'id'];
+        for (const field of fields) {
+            query[field] = null;
+        }
+        query.search = null;
+
+        let specificRequest = false;
+        for (const param of search.split(/[\s]+and[\s]+|[\s]+AND[\s]+/)) {
+            if (param.includes(':')) {
+                const [field, fieldValue] = param.split(':');
+                if (fields.includes(field) && !!fieldValue) {
+                    specificRequest = true;
+                    if (field === 'id') {
+                        if (Number.isInteger(+fieldValue)) {
+                            query[field] = +fieldValue;
+                        }
+                    } else {
+                        query[field] = fieldValue;
+                    }
+                }
+            }
+        }
+
+        query.page = 1;
+        if (!specificRequest && value) { // only id
+            query.search = value;
+        }
+
+        this.updateURL(query);
+        onGetTasks(query);
+    };
+
+    private handlePagination = (page: number): void => {
+        const {
+            gettingQuery,
+            onGetTasks,
+        } = this.props;
+        const query = { ...gettingQuery };
+
+        query.page = page;
+        this.updateURL(query);
+        onGetTasks(query);
+    };
+
+    private updateURL(gettingQuery: TasksQuery): void {
+        const { history } = this.props;
         let queryString = '?';
         for (const field of Object.keys(gettingQuery)) {
             if (gettingQuery[field] !== null) {
                 queryString += `${field}=${gettingQuery[field]}&`;
             }
         }
-        this.props.history.replace({
+        history.replace({
             search: queryString.slice(0, -1),
         });
     }
 
-    private getSearchField(gettingQuery: TasksQuery): string {
-        let searchString = '';
-        for (const field of Object.keys(gettingQuery)) {
-            if (gettingQuery[field] !== null && field !== 'page') {
-                if (field === 'search') {
-                    return (gettingQuery[field] as any) as string;
-                } else {
-                    if (typeof (gettingQuery[field] === 'number')) {
-                        searchString += `${field}:${gettingQuery[field]} AND `;
-                    } else {
-                        searchString += `${field}:"${gettingQuery[field]}" AND `;
-                    }
-                }
-            }
-        }
+    public render(): JSX.Element {
+        const {
+            tasksFetching,
+            gettingQuery,
+            numberOfVisibleTasks,
+        } = this.props;
 
-        return searchString.slice(0, -5);
-    }
-
-    private handleSearch = (value: string): void => {
-        const gettingQuery = { ...this.props.gettingQuery };
-        const search = value.replace(/\s+/g, ' ').replace(/\s*:+\s*/g, ':').trim();
-
-        const fields = ['name', 'mode', 'owner', 'assignee', 'status', 'id'];
-        for (const field of fields) {
-            gettingQuery[field] = null;
-        }
-        gettingQuery.search = null;
-
-        let specificRequest = false;
-        for (const param of search.split(/[\s]+and[\s]+|[\s]+AND[\s]+/)) {
-            if (param.includes(':')) {
-                const [name, value] = param.split(':');
-                if (fields.includes(name) && !!value) {
-                    specificRequest = true;
-                    if (name === 'id') {
-                        if (Number.isInteger(+value)) {
-                            gettingQuery[name] = +value;
-                        }
-                    } else {
-                        gettingQuery[name] = value;
-                    }
-                }
-            }
-        }
-
-        gettingQuery.page = 1;
-        if (!specificRequest && value) { // only id
-            gettingQuery.search = value;
-        }
-
-        this.updateURL(gettingQuery);
-        this.props.onGetTasks(gettingQuery);
-    }
-
-    private handlePagination = (page: number): void => {
-        const gettingQuery = { ...this.props.gettingQuery };
-
-        gettingQuery.page = page;
-        this.updateURL(gettingQuery);
-        this.props.onGetTasks(gettingQuery);
-    }
-
-    public componentDidMount() {
-        const gettingQuery = { ...this.props.gettingQuery };
-        const params = new URLSearchParams(this.props.location.search);
-
-        for (const field of Object.keys(gettingQuery)) {
-            if (params.has(field)) {
-                const value = params.get(field);
-                if (value) {
-                    if (field === 'id' || field === 'page') {
-                        if (Number.isInteger(+value)) {
-                            gettingQuery[field] = +value;
-                        }
-                    } else {
-                        gettingQuery[field] = value;
-                    }
-                }
-            } else {
-                if (field === 'page') {
-                    gettingQuery[field] = 1;
-                } else {
-                    gettingQuery[field] = null;
-                }
-            }
-        }
-
-        this.updateURL(gettingQuery);
-        this.props.onGetTasks(gettingQuery);
-    }
-
-    public render() {
-        if (this.props.tasksFetching) {
+        if (tasksFetching) {
             return (
-                <Spin size='large' style={{margin: '25% 45%'}}/>
+                <Spin size='large' style={{ margin: '25% 45%' }} />
             );
-        } else {
-            return (
-                <div className='cvat-tasks-page'>
-                    <TopBar
-                        onSearch={this.handleSearch}
-                        searchValue={this.getSearchField(this.props.gettingQuery)}
-                    />
-                    {this.props.numberOfVisibleTasks ?
+        }
+
+        return (
+            <div className='cvat-tasks-page'>
+                <TopBar
+                    onSearch={this.handleSearch}
+                    searchValue={getSearchField(gettingQuery)}
+                />
+                {numberOfVisibleTasks
+                    ? (
                         <TaskListContainer
                             onSwitchPage={this.handlePagination}
-                        /> : <EmptyListComponent/>}
-                </div>
-            )
-        }
+                        />
+                    ) : <EmptyListComponent />
+                }
+            </div>
+        );
     }
 }
 

@@ -16,10 +16,11 @@ interface DetailsComponentProps {
     taskInstance: any;
 }
 
-export default function DetailsComponent(props: DetailsComponentProps) {
-    const subMenuIcon = () => (<img src='/assets/icon-sub-menu.svg'/>);
+export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {
+    const subMenuIcon = (): JSX.Element => (<img alt='' src='/assets/icon-sub-menu.svg' />);
 
-    const { id } = props.taskInstance;
+    const { taskInstance } = props;
+    const { id } = taskInstance;
 
     return (
         <Row className='cvat-task-top-bar' type='flex' justify='space-between' align='middle'>
@@ -28,13 +29,15 @@ export default function DetailsComponent(props: DetailsComponentProps) {
             </Col>
             <Col>
                 <Dropdown overlay={
-                    <ActionsMenuContainer
-                        taskInstance={props.taskInstance}
-                    />
-                }>
+                    (
+                        <ActionsMenuContainer
+                            taskInstance={taskInstance}
+                        />
+                    )}
+                >
                     <Button size='large' className='cvat-flex cvat-flex-center'>
                         <Text className='cvat-black-color'>Actions</Text>
-                        <Icon className='cvat-task-item-menu-icon' component={subMenuIcon}/>
+                        <Icon className='cvat-task-item-menu-icon' component={subMenuIcon} />
                     </Button>
                 </Dropdown>
             </Col>

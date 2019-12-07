@@ -28,16 +28,22 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onJobUpdate: (jobInstance: any) => dispatch(updateJobAsync(jobInstance)),
+        onJobUpdate: (jobInstance: any): void => dispatch(updateJobAsync(jobInstance)),
     };
 }
 
-function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps) {
+function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
+    const {
+        task,
+        registeredUsers,
+        onJobUpdate,
+    } = props;
+
     return (
         <JobListComponent
-            taskInstance={props.task.instance}
-            registeredUsers={props.registeredUsers}
-            onJobUpdate={props.onJobUpdate}
+            taskInstance={task.instance}
+            registeredUsers={registeredUsers}
+            onJobUpdate={onJobUpdate}
         />
     );
 }

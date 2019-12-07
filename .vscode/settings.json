@@ -3,7 +3,8 @@
     "eslint.enable": true,
     "eslint.validate": [
         "javascript",
-        "typescript"
+        "typescript",
+        "typescriptreact",
     ],
     "eslint.workingDirectories": [
         {

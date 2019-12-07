@@ -15,7 +15,9 @@ interface Props {
     model: Model;
 }
 
-export default function BuiltModelItemComponent(props: Props) {
+export default function BuiltModelItemComponent(props: Props): JSX.Element {
+    const { model } = props;
+
     return (
         <Row className='cvat-models-list-item' type='flex'>
             <Col span={4} xxl={3}>
@@ -23,24 +25,26 @@ export default function BuiltModelItemComponent(props: Props) {
             </Col>
             <Col span={6} xxl={7}>
                 <Text className='cvat-black-color'>
-                    {props.model.name}
+                    {model.name}
                 </Text>
             </Col>
             <Col span={5} offset={7}>
                 <Select
                     showSearch
                     placeholder='Supported labels'
-                    style={{width: '90%'}}
+                    style={{ width: '90%' }}
                     value='Supported labels'
                 >
-                    {props.model.labels.map(
-                        (label) => <Select.Option key={label}>
-                            {label}
-                        </Select.Option>)
-                    }
+                    {model.labels.map(
+                        (label): JSX.Element => (
+                            <Select.Option key={label}>
+                                {label}
+                            </Select.Option>
+                        ),
+                    )}
                 </Select>
             </Col>
-            <Col span={2}/>
+            <Col span={2} />
         </Row>
     );
 }

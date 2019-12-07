@@ -18,21 +18,23 @@ type LoginFormProps = {
 } & FormComponentProps;
 
 class LoginFormComponent extends React.PureComponent<LoginFormProps> {
-    constructor(props: LoginFormProps) {
-        super(props);
-    }
-
-    private handleSubmit = (e: React.FormEvent) => {
+    private handleSubmit = (e: React.FormEvent): void => {
         e.preventDefault();
-        this.props.form.validateFields((error, values) => {
+        const {
+            form,
+            onSubmit,
+        } = this.props;
+
+        form.validateFields((error, values): void => {
             if (!error) {
-                this.props.onSubmit(values);
+                onSubmit(values);
             }
         });
-    }
+    };
 
-    private renderUsernameField() {
-        const { getFieldDecorator } = this.props.form;
+    private renderUsernameField(): JSX.Element {
+        const { form } = this.props;
+        const { getFieldDecorator } = form;
 
         return (
             <Form.Item hasFeedback>
@@ -44,16 +46,17 @@ class LoginFormComponent extends React.PureComponent<LoginFormProps> {
                 })(
                     <Input
                         autoComplete='username'
-                        prefix={<Icon type='user' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        prefix={<Icon type='user' style={{ color: 'rgba(0,0,0,.25)' }} />}
                         placeholder='Username'
-                    />
+                    />,
                 )}
             </Form.Item>
-        )
+        );
     }
 
-    private renderPasswordField() {
-        const { getFieldDecorator } = this.props.form;
+    private renderPasswordField(): JSX.Element {
+        const { form } = this.props;
+        const { getFieldDecorator } = form;
 
         return (
             <Form.Item hasFeedback>
@@ -65,16 +68,17 @@ class LoginFormComponent extends React.PureComponent<LoginFormProps> {
                 })(
                     <Input
                         autoComplete='current-password'
-                        prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)' }} />}
                         placeholder='Password'
                         type='password'
-                    />
+                    />,
                 )}
             </Form.Item>
-        )
+        );
     }
 
-    public render() {
+    public render(): JSX.Element {
+        const { fetching } = this.props;
         return (
             <Form onSubmit={this.handleSubmit} className='login-form'>
                 {this.renderUsernameField()}
@@ -83,8 +87,8 @@ class LoginFormComponent extends React.PureComponent<LoginFormProps> {
                 <Form.Item>
                     <Button
                         type='primary'
-                        loading={this.props.fetching}
-                        disabled={this.props.fetching}
+                        loading={fetching}
+                        disabled={fetching}
                         htmlType='submit'
                         className='login-form-button'
                     >

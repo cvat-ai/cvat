@@ -21,7 +21,7 @@ export interface CreateTaskData {
     basic: BaseConfiguration;
     advanced: AdvancedConfiguration;
     labels: any[];
-    files: Files,
+    files: Files;
 }
 
 interface Props {
@@ -58,11 +58,33 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         this.state = { ...defaultState };
     }
 
-    private validateLabels = () => {
-        return !!this.state.labels.length;
+    public componentDidUpdate(prevProps: Props): void {
+        const { status } = this.props;
+
+        if (status === 'CREATED' && prevProps.status !== 'CREATED') {
+            notification.info({
+                message: 'The task has been created',
+            });
+
+            this.basicConfigurationComponent.resetFields();
+            if (this.advancedConfigurationComponent) {
+                this.advancedConfigurationComponent.resetFields();
+            }
+
+            this.fileManagerContainer.reset();
+
+            this.setState({
+                ...defaultState,
+            });
+        }
     }
 
-    private validateFiles = () => {
+    private validateLabels = (): boolean => {
+        const { labels } = this.state;
+        return !!labels.length;
+    };
+
+    private validateFiles = (): boolean => {
         const files = this.fileManagerContainer.getFiles();
         this.setState({
             files,
@@ -72,21 +94,21 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         );
 
         return !!totalLen;
-    }
+    };
 
-    private handleSubmitBasicConfiguration = (values: BaseConfiguration) => {
+    private handleSubmitBasicConfiguration = (values: BaseConfiguration): void => {
         this.setState({
-            basic: {...values},
+            basic: { ...values },
         });
     };
 
-    private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration) => {
+    private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): void => {
         this.setState({
-            advanced: {...values},
+            advanced: { ...values },
         });
     };
 
-    private handleSubmitClick = () => {
+    private handleSubmitClick = (): void => {
         if (!this.validateLabels()) {
             notification.error({
                 message: 'Could not create a task',
@@ -105,44 +127,50 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
 
         this.basicConfigurationComponent.submit()
             .then(() => {
-                return this.advancedConfigurationComponent ?
-                    this.advancedConfigurationComponent.submit() :
-                    new Promise((resolve) => {
-                        resolve();
-                    })
-            })
-            .then(() => {
-                this.props.onCreate(this.state);
-            })
-            .catch((_: any) => {
+                if (this.advancedConfigurationComponent) {
+                    return this.advancedConfigurationComponent.submit();
+                }
+
+                return new Promise((resolve): void => {
+                    resolve();
+                });
+            }).then((): void => {
+                const { onCreate } = this.props;
+                onCreate(this.state);
+            }).catch((): void => {
                 notification.error({
                     message: 'Could not create a task',
                     description: 'Please, check configuration you specified',
                 });
             });
-    }
+    };
 
-    private renderBasicBlock() {
+    private renderBasicBlock(): JSX.Element {
         return (
             <Col span={24}>
-                <BasicConfigurationForm wrappedComponentRef={
-                    (component: any) => { this.basicConfigurationComponent = component }
-                } onSubmit={this.handleSubmitBasicConfiguration}/>
+                <BasicConfigurationForm
+                    wrappedComponentRef={
+                        (component: any): void => { this.basicConfigurationComponent = component; }
+                    }
+                    onSubmit={this.handleSubmitBasicConfiguration}
+                />
             </Col>
         );
     }
 
-    private renderLabelsBlock() {
+    private renderLabelsBlock(): JSX.Element {
+        const { labels } = this.state;
+
         return (
             <Col span={24}>
                 <Text type='danger'>* </Text>
                 <Text className='cvat-black-color'>Labels:</Text>
                 <LabelsEditor
-                    labels={this.state.labels}
+                    labels={labels}
                     onSubmit={
-                        (labels) => {
+                        (newLabels): void => {
                             this.setState({
-                                labels,
+                                labels: newLabels,
                             });
                         }
                     }
@@ -151,32 +179,37 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         );
     }
 
-    private renderFilesBlock() {
+    private renderFilesBlock(): JSX.Element {
         return (
             <Col span={24}>
                 <Text type='danger'>* </Text>
                 <Text className='cvat-black-color'>Select files:</Text>
-                <FileManagerContainer ref={
-                    (container: any) =>
-                        this.fileManagerContainer = container
-                } withRemote={true}/>
+                <FileManagerContainer
+                    ref={
+                        (container: any): void => { this.fileManagerContainer = container; }
+                    }
+                    withRemote
+                />
             </Col>
         );
     }
 
-    private renderAdvancedBlock() {
+    private renderAdvancedBlock(): JSX.Element {
+        const { installedGit } = this.props;
         return (
             <Col span={24}>
                 <Collapse>
                     <Collapse.Panel
+                        key='1'
                         header={
                             <Text className='cvat-title'>Advanced configuration</Text>
-                        } key='1'>
+                        }
+                    >
                         <AdvancedConfigurationForm
-                            installedGit={this.props.installedGit}
+                            installedGit={installedGit}
                             wrappedComponentRef={
-                                (component: any) => {
-                                    this.advancedConfigurationComponent = component
+                                (component: any): void => {
+                                    this.advancedConfigurationComponent = component;
                                 }
                             }
                             onSubmit={this.handleSubmitAdvancedConfiguration}
@@ -187,29 +220,9 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         );
     }
 
-    public componentDidUpdate(prevProps: Props) {
-        if (this.props.status === 'CREATED' && prevProps.status !== 'CREATED') {
-            notification.info({
-                message: 'The task has been created',
-            });
-
-            this.basicConfigurationComponent.resetFields();
-            if (this.advancedConfigurationComponent) {
-                this.advancedConfigurationComponent.resetFields();
-            }
-
-            this.fileManagerContainer.reset();
-
-            this.setState({
-                ...defaultState,
-            });
-        }
-    }
-
-    public render() {
-        const loading = !!this.props.status
-            && this.props.status !== 'CREATED'
-            && this.props.status !== 'FAILED';
+    public render(): JSX.Element {
+        const { status } = this.props;
+        const loading = !!status && status !== 'CREATED' && status !== 'FAILED';
 
         return (
             <Row type='flex' justify='start' align='middle' className='cvat-create-task-content'>
@@ -223,7 +236,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 { this.renderAdvancedBlock() }
 
                 <Col span={18}>
-                    {loading ? <Alert message={this.props.status}/> : null}
+                    {loading ? <Alert message={status} /> : null}
                 </Col>
                 <Col span={6}>
                     <Button
@@ -231,7 +244,9 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                         disabled={loading}
                         type='danger'
                         onClick={this.handleSubmitClick}
-                    > Submit </Button>
+                    >
+                        Submit
+                    </Button>
                 </Col>
             </Row>
         );

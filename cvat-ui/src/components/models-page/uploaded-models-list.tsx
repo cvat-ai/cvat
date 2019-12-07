@@ -16,15 +16,21 @@ interface Props {
     deleteModel(id: number): void;
 }
 
-export default function UploadedModelsListComponent(props: Props) {
-    const items = props.models.map((model) => {
-        const owner = props.registeredUsers.filter((user) => user.id === model.ownerID)[0];
+export default function UploadedModelsListComponent(props: Props): JSX.Element {
+    const {
+        models,
+        registeredUsers,
+        deleteModel,
+    } = props;
+
+    const items = models.map((model): JSX.Element => {
+        const owner = registeredUsers.filter((user) => user.id === model.ownerID)[0];
         return (
             <UploadedModelItem
                 key={model.id as number}
                 owner={owner}
                 model={model}
-                onDelete={() => props.deleteModel(model.id as number)}
+                onDelete={(): void => deleteModel(model.id as number)}
             />
         );
     });
@@ -33,17 +39,17 @@ export default function UploadedModelsListComponent(props: Props) {
         <>
             <Row type='flex' justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
-                    <Text className='cvat-black-color' strong>{'Uploaded by a user'}</Text>
+                    <Text className='cvat-black-color' strong>Uploaded by a user</Text>
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14} className='cvat-models-list'>
-                    <Row type='flex' align='middle' style={{padding: '10px'}}>
+                    <Row type='flex' align='middle' style={{ padding: '10px' }}>
                         <Col span={4} xxl={3}>
-                            <Text strong>{'Framework'}</Text>
+                            <Text strong>Framework</Text>
                         </Col>
                         <Col span={6} xxl={7}>
-                            <Text strong>{'Name'}</Text>
+                            <Text strong>Name</Text>
                         </Col>
                         <Col span={3}>
                             <Text strong>Owner</Text>
@@ -54,7 +60,7 @@ export default function UploadedModelsListComponent(props: Props) {
                         <Col span={5}>
                             <Text strong>Labels</Text>
                         </Col>
-                        <Col span={2}/>
+                        <Col span={2} />
                     </Row>
                     { items }
                 </Col>

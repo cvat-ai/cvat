@@ -37,7 +37,7 @@ export default (state = defaultState, action: AnyAction): FormatsState => {
         case AuthActionTypes.LOGOUT_SUCCESS: {
             return {
                 ...defaultState,
-            }
+            };
         }
         default:
             return state;

@@ -21,8 +21,13 @@ interface Props {
     onDelete(): void;
 }
 
-export default function UploadedModelItem(props: Props) {
-    const subMenuIcon = () => (<img src='/assets/icon-sub-menu.svg'/>);
+export default function UploadedModelItem(props: Props): JSX.Element {
+    const subMenuIcon = (): JSX.Element => (<img alt='' src='/assets/icon-sub-menu.svg' />);
+    const {
+        model,
+        owner,
+        onDelete,
+    } = props;
 
     return (
         <Row className='cvat-models-list-item' type='flex'>
@@ -31,43 +36,52 @@ export default function UploadedModelItem(props: Props) {
             </Col>
             <Col span={6} xxl={7}>
                 <Text className='cvat-black-color'>
-                    {props.model.name}
+                    {model.name}
                 </Text>
             </Col>
             <Col span={3}>
                 <Text className='cvat-black-color'>
-                    {props.owner ? props.owner.username : 'undefined'}
+                    {owner ? owner.username : 'undefined'}
                 </Text>
             </Col>
             <Col span={4}>
                 <Text className='cvat-black-color'>
-                    {moment(props.model.uploadDate).format('MMMM Do YYYY')}
+                    {moment(model.uploadDate).format('MMMM Do YYYY')}
                 </Text>
             </Col>
             <Col span={5}>
                 <Select
                     showSearch
                     placeholder='Supported labels'
-                    style={{width: '90%'}}
+                    style={{ width: '90%' }}
                     value='Supported labels'
                 >
-                    {props.model.labels.map(
-                        (label) => <Select.Option key={label}>
-                            {label}
-                        </Select.Option>)
-                    }
+                    {model.labels.map(
+                        (label): JSX.Element => (
+                            <Select.Option key={label}>
+                                {label}
+                            </Select.Option>
+                        ),
+                    )}
                 </Select>
             </Col>
             <Col span={2}>
                 <Text className='cvat-black-color'>Actions</Text>
                 <Dropdown overlay={
+                    (
                         <Menu className='cvat-task-item-menu'>
-                            <Menu.Item onClick={() => {
-                                props.onDelete();
-                            }}key='delete'>Delete</Menu.Item>
+                            <Menu.Item
+                                onClick={(): void => {
+                                    onDelete();
+                                }}
+                                key='delete'
+                            >
+                                    Delete
+                            </Menu.Item>
                         </Menu>
-                    }>
-                    <Icon className='cvat-task-item-menu-icon' component={subMenuIcon}/>
+                    )}
+                >
+                    <Icon className='cvat-task-item-menu-icon' component={subMenuIcon} />
                 </Dropdown>
             </Col>
         </Row>

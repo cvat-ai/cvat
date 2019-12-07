@@ -33,19 +33,26 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        getTasks: (query: TasksQuery) => {dispatch(getTasksAsync(query))}
-    }
+        getTasks: (query: TasksQuery): void => {
+            dispatch(getTasksAsync(query));
+        },
+    };
 }
 
 type TasksListContainerProps = StateToProps & DispatchToProps & OwnProps;
 
-function TasksListContainer(props: TasksListContainerProps) {
+function TasksListContainer(props: TasksListContainerProps): JSX.Element {
+    const {
+        tasks,
+        onSwitchPage,
+    } = props;
+
     return (
         <TasksListComponent
-            onSwitchPage={props.onSwitchPage}
-            currentTasksIndexes={props.tasks.current.map((task) => task.instance.id)}
-            currentPage={props.tasks.gettingQuery.page}
-            numberOfTasks={props.tasks.count}
+            onSwitchPage={onSwitchPage}
+            currentTasksIndexes={tasks.current.map((task): number => task.instance.id)}
+            currentPage={tasks.gettingQuery.page}
+            numberOfTasks={tasks.count}
         />
     );
 }

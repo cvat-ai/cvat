@@ -19,7 +19,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    logout(): void;
+    onLogout(): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -37,21 +37,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        logout: () => dispatch(logoutAsync()),
-    }
+        onLogout: (): void => dispatch(logoutAsync()),
+    };
 }
 
-function HeaderContainer(props: StateToProps & DispatchToProps) {
+function HeaderContainer(props: StateToProps & DispatchToProps): JSX.Element {
     return (
-        <HeaderComponent
-            logoutFetching={props.logoutFetching}
-            installedAnalytics={props.installedAnalytics}
-            installedTFAnnotation={props.installedTFAnnotation}
-            installedTFSegmentation={props.installedTFSegmentation}
-            installedAutoAnnotation={props.installedAutoAnnotation}
-            onLogout={props.logout}
-            username={props.username}
-        />
+        <HeaderComponent {...props} />
     );
 }
 

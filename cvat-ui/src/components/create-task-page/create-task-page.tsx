@@ -15,15 +15,21 @@ interface Props {
     installedGit: boolean;
 }
 
-export default function CreateTaskPage(props: Props) {
+export default function CreateTaskPage(props: Props): JSX.Element {
+    const {
+        status,
+        onCreate,
+        installedGit,
+    } = props;
+
     return (
         <Row type='flex' justify='center' align='top' className='cvat-create-task-form-wrapper'>
             <Col md={20} lg={16} xl={14} xxl={9}>
                 <Text className='cvat-title'>Create a new task</Text>
                 <CreateTaskContent
-                    status={props.status}
-                    onCreate={props.onCreate}
-                    installedGit={props.installedGit}
+                    status={status}
+                    onCreate={onCreate}
+                    installedGit={installedGit}
                 />
             </Col>
         </Row>

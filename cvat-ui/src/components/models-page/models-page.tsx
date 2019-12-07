@@ -22,36 +22,48 @@ interface Props {
     deleteModel(id: number): void;
 }
 
-export default function ModelsPageComponent(props: Props) {
-    if (!props.modelsInitialized && !props.modelsFetching) {
+export default function ModelsPageComponent(props: Props): JSX.Element {
+    const {
+        installedAutoAnnotation,
+        installedTFSegmentation,
+        installedTFAnnotation,
+        modelsInitialized,
+        modelsFetching,
+        registeredUsers,
+        models,
+
+        deleteModel,
+    } = props;
+
+    if (!modelsInitialized && !modelsFetching) {
         props.getModels();
         return (
-            <Spin size='large' style={{margin: '25% 45%'}}/>
-        );
-    } else {
-        const uploadedModels = props.models.filter((model) => model.id !== null);
-        const integratedModels = props.models.filter((model) => model.id === null);
-
-        return (
-            <div className='cvat-models-page'>
-                <TopBarComponent installedAutoAnnotation={props.installedAutoAnnotation}/>
-                { !!integratedModels.length &&
-                    <BuiltModelsList models={integratedModels}/>
-                }
-                { !!uploadedModels.length &&
-                    <UploadedModelsList
-                        registeredUsers={props.registeredUsers}
-                        models={uploadedModels}
-                        deleteModel={props.deleteModel}
-                    />
-                }
-                { props.installedAutoAnnotation &&
-                    !uploadedModels.length &&
-                    !props.installedTFAnnotation &&
-                    !props.installedTFSegmentation &&
-                    <EmptyListComponent/>
-                }
-            </div>
+            <Spin size='large' style={{ margin: '25% 45%' }} />
         );
     }
+
+    const uploadedModels = models.filter((model): boolean => model.id !== null);
+    const integratedModels = models.filter((model): boolean => model.id === null);
+
+    return (
+        <div className='cvat-models-page'>
+            <TopBarComponent installedAutoAnnotation={installedAutoAnnotation} />
+            { !!integratedModels.length
+                && <BuiltModelsList models={integratedModels} />
+            }
+            { !!uploadedModels.length && (
+                <UploadedModelsList
+                    registeredUsers={registeredUsers}
+                    models={uploadedModels}
+                    deleteModel={deleteModel}
+                />
+            )}
+            { installedAutoAnnotation
+                && !uploadedModels.length
+                && !installedTFAnnotation
+                && !installedTFSegmentation
+                && <EmptyListComponent />
+            }
+        </div>
+    );
 }

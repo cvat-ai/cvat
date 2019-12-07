@@ -18,18 +18,18 @@ interface StateToProps {
     modelsInitialized: boolean;
     models: Model[];
     activeProcesses: {
-        [index: string]: string
+        [index: string]: string;
     };
     taskInstance: any;
     visible: boolean;
 }
 
 interface DispatchToProps {
-    inferModelAsync(
+    runInference(
         taskInstance: any,
         model: Model,
         mapping: {
-            [index: string]: string
+            [index: string]: string;
         },
         cleanOut: boolean,
     ): void;
@@ -52,42 +52,33 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return ({
-        inferModelAsync(
+        runInference(
             taskInstance: any,
             model: Model,
             mapping: {
-                [index: string]: string
+                [index: string]: string;
             },
-            cleanOut: boolean): void {
-                dispatch(inferModelAsync(taskInstance, model, mapping, cleanOut));
+            cleanOut: boolean,
+        ): void {
+            dispatch(inferModelAsync(taskInstance, model, mapping, cleanOut));
         },
         getModels(): void {
             dispatch(getModelsAsync());
         },
         closeDialog(): void {
             dispatch(closeRunModelDialog());
-        }
+        },
     });
 }
 
 
-function ModelRunnerModalContainer(props: StateToProps & DispatchToProps) {
+function ModelRunnerModalContainer(props: StateToProps & DispatchToProps): JSX.Element {
     return (
-        <ModelRunnerModalComponent
-            modelsFetching={props.modelsFetching}
-            modelsInitialized={props.modelsInitialized}
-            models={props.models}
-            activeProcesses={props.activeProcesses}
-            visible={props.visible}
-            taskInstance={props.taskInstance}
-            getModels={props.getModels}
-            closeDialog={props.closeDialog}
-            runInference={props.inferModelAsync}
-        />
+        <ModelRunnerModalComponent {...props} />
     );
 }
 
 export default connect(
     mapStateToProps,
     mapDispatchToProps,
-) (ModelRunnerModalContainer);
+)(ModelRunnerModalContainer);

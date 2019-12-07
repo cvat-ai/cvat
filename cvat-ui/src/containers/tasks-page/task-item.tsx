@@ -7,14 +7,14 @@ import {
     ActiveInference,
 } from '../../reducers/interfaces';
 
-import TaskItemComponent from '../../components/tasks-page/task-item'
+import TaskItemComponent from '../../components/tasks-page/task-item';
 
 import {
     getTasksAsync,
 } from '../../actions/tasks-actions';
 
 interface StateToProps {
-    deleteActivity: boolean | null;
+    deleted: boolean;
     previewImage: string;
     taskInstance: any;
     activeInference: ActiveInference | null;
@@ -35,7 +35,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const id = own.taskID;
 
     return {
-        deleteActivity: deletes.byTask[id] ? deletes.byTask[id] : null,
+        deleted: deletes.byTask[id] ? deletes.byTask[id] === true : false,
         previewImage: task.preview,
         taskInstance: task.instance,
         activeInference: state.models.inferences[id] || null,
@@ -47,19 +47,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         getTasks: (query: TasksQuery): void => {
             dispatch(getTasksAsync(query));
         },
-    }
+    };
 }
 
 type TasksItemContainerProps = StateToProps & DispatchToProps & OwnProps;
 
-function TaskItemContainer(props: TasksItemContainerProps) {
+function TaskItemContainer(props: TasksItemContainerProps): JSX.Element {
     return (
-        <TaskItemComponent
-            deleted={props.deleteActivity === true}
-            taskInstance={props.taskInstance}
-            previewImage={props.previewImage}
-            activeInference={props.activeInference}
-        />
+        <TaskItemComponent {...props} />
     );
 }
 

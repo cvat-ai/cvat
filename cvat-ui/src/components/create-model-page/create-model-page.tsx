@@ -16,15 +16,21 @@ interface Props {
     modelCreatingStatus: string;
 }
 
-export default function CreateModelPageComponent(props: Props) {
+export default function CreateModelPageComponent(props: Props): JSX.Element {
+    const {
+        isAdmin,
+        modelCreatingStatus,
+        createModel,
+    } = props;
+
     return (
         <Row type='flex' justify='center' align='top' className='cvat-create-model-form-wrapper'>
             <Col md={20} lg={16} xl={14} xxl={9}>
                 <Text className='cvat-title'>Upload a new model</Text>
                 <CreateModelContent
-                    isAdmin={props.isAdmin}
-                    modelCreatingStatus={props.modelCreatingStatus}
-                    createModel={props.createModel}
+                    isAdmin={isAdmin}
+                    modelCreatingStatus={modelCreatingStatus}
+                    createModel={createModel}
                 />
             </Col>
         </Row>

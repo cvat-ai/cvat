@@ -25,52 +25,64 @@ interface TaskPageComponentProps {
 type Props = TaskPageComponentProps & RouteComponentProps<{id: string}>;
 
 class TaskPageComponent extends React.PureComponent<Props> {
-    private attempts: number = 0;
+    private attempts = 0;
 
-    public componentDidUpdate() {
-        if (this.props.deleteActivity) {
-            this.props.history.replace('/tasks');
+    public componentDidUpdate(): void {
+        const {
+            deleteActivity,
+            history,
+        } = this.props;
+
+        if (deleteActivity) {
+            history.replace('/tasks');
         }
 
-        if (this.attempts == 2) {
+        if (this.attempts === 2) {
             notification.warning({
                 message: 'Something wrong with the task. It cannot be fetched from the server',
             });
         }
     }
 
-    public render() {
-        const { id } = this.props.match.params;
-        const fetchTask = !this.props.task;
+    public render(): JSX.Element {
+        const {
+            match,
+            task,
+            fetching,
+            onFetchTask,
+        } = this.props;
+        const { id } = match.params;
+        const fetchTask = !task;
 
         if (fetchTask) {
-            if (!this.props.fetching) {
+            if (!fetching) {
                 if (!this.attempts) {
-                    this.attempts ++;
-                    this.props.onFetchTask(+id);
+                    this.attempts++;
+                    onFetchTask(+id);
                 } else {
-                    this.attempts ++;
+                    this.attempts++;
                 }
             }
             return (
-                <Spin size='large' style={{margin: '25% 50%'}}/>
-            );
-        } else if (typeof(this.props.task) === 'undefined') {
-            return (
-                <div> </div>
-            )
-        } else {
-            const task = this.props.task as Task;
-            return (
-                <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
-                    <Col md={22} lg={18} xl={16} xxl={14}>
-                        <TopBarComponent taskInstance={task.instance}/>
-                        <DetailsContainer task={task}/>
-                        <JobListContainer task={task}/>
-                    </Col>
-                </Row>
+                <Spin size='large' style={{ margin: '25% 50%' }} />
             );
         }
+
+        if (typeof (task) === 'undefined') {
+            return (
+                <div> </div>
+            );
+        }
+
+        return (
+            <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
+                <Col md={22} lg={18} xl={16} xxl={14}>
+                    <TopBarComponent taskInstance={(task as Task).instance} />
+                    <DetailsContainer task={(task as Task)} />
+                    <JobListContainer task={(task as Task)} />
+                </Col>
+            </Row>
+        );
     }
 }
 

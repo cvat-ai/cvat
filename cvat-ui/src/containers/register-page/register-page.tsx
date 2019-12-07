@@ -9,7 +9,7 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    register: (username: string, firstName: string,
+    onRegister: (username: string, firstName: string,
         lastName: string, email: string,
         password1: string, password2: string) => void;
 }
@@ -22,16 +22,13 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        register: (...args) => dispatch(registerAsync(...args))
-    }
+        onRegister: (...args): void => dispatch(registerAsync(...args)),
+    };
 }
 
-function RegisterPageContainer(props: StateToProps & DispatchToProps) {
+function RegisterPageContainer(props: StateToProps & DispatchToProps): JSX.Element {
     return (
-        <RegisterPageComponent
-            fetching={props.fetching}
-            onRegister={props.register}
-        />
+        <RegisterPageComponent {...props} />
     );
 }
 

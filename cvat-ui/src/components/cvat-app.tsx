@@ -46,28 +46,73 @@ type CVATAppProps = {
     installedTFSegmentation: boolean;
     notifications: NotificationsState;
     user: any;
-}
+};
 
 export default class CVATApplication extends React.PureComponent<CVATAppProps> {
-    constructor(props: any) {
-        super(props);
+    public componentDidMount(): void {
+        const { verifyAuthorized } = this.props;
+        verifyAuthorized();
     }
 
-    private showMessages() {
-        function showMessage(title: string) {
+    public componentDidUpdate(): void {
+        const {
+            loadFormats,
+            loadUsers,
+            initPlugins,
+            userInitialized,
+            formatsInitialized,
+            formatsFetching,
+            usersInitialized,
+            usersFetching,
+            pluginsInitialized,
+            pluginsFetching,
+            user,
+        } = this.props;
+
+        this.showErrors();
+        this.showMessages();
+
+        if (!userInitialized || user == null) {
+            // not authorized user
+            return;
+        }
+
+        if (!formatsInitialized && !formatsFetching) {
+            loadFormats();
+        }
+
+        if (!usersInitialized && !usersFetching) {
+            loadUsers();
+        }
+
+        if (!pluginsInitialized && !pluginsFetching) {
+            initPlugins();
+        }
+    }
+
+    private showMessages(): void {
+        function showMessage(title: string): void {
             notification.info({
                 message: (
-                    <div dangerouslySetInnerHTML={{
-                        __html: title,
-                    }}/>
+                    <div
+                        // eslint-disable-next-line
+                        dangerouslySetInnerHTML={{
+                            __html: title,
+                        }}
+                    />
                 ),
                 duration: null,
             });
         }
 
-        const { tasks } = this.props.notifications.messages;
-        const { models } = this.props.notifications.messages;
-        let shown = !!tasks.loadingDone || !!models.inferenceDone;
+        const {
+            notifications,
+            resetMessages,
+        } = this.props;
+
+        const { tasks } = notifications.messages;
+        const { models } = notifications.messages;
+        const shown = !!tasks.loadingDone || !!models.inferenceDone;
 
         if (tasks.loadingDone) {
             showMessage(tasks.loadingDone);
@@ -77,18 +122,21 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         }
 
         if (shown) {
-            this.props.resetMessages();
+            resetMessages();
         }
     }
 
-    private showErrors() {
-        function showError(title: string, _error: any) {
+    private showErrors(): void {
+        function showError(title: string, _error: any): void {
             const error = _error.toString();
             notification.error({
                 message: (
-                    <div dangerouslySetInnerHTML={{
-                        __html: title,
-                    }}/>
+                    <div
+                        // eslint-disable-next-line
+                        dangerouslySetInnerHTML={{
+                            __html: title,
+                        }}
+                    />
                 ),
                 duration: null,
                 description: error.length > 200 ? '' : error,
@@ -97,14 +145,19 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             console.error(error);
         }
 
-        const { auth } = this.props.notifications.errors;
-        const { tasks } = this.props.notifications.errors;
-        const { formats } = this.props.notifications.errors;
-        const { users } = this.props.notifications.errors;
-        const { share } = this.props.notifications.errors;
-        const { models } = this.props.notifications.errors;
+        const {
+            notifications,
+            resetErrors,
+        } = this.props;
 
-        let shown = !!auth.authorized || !!auth.login || !!auth.logout || !!auth.register
+        const { auth } = notifications.errors;
+        const { tasks } = notifications.errors;
+        const { formats } = notifications.errors;
+        const { users } = notifications.errors;
+        const { share } = notifications.errors;
+        const { models } = notifications.errors;
+
+        const shown = !!auth.authorized || !!auth.login || !!auth.logout || !!auth.register
             || !!tasks.fetching || !!tasks.updating || !!tasks.dumping || !!tasks.loading
             || !!tasks.exporting || !!tasks.deleting || !!tasks.creating || !!formats.fetching
             || !!users.fetching || !!share.fetching || !!models.creating || !!models.starting
@@ -169,90 +222,78 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
             showError(models.metaFetching.message, models.metaFetching.reason);
         }
         if (models.inferenceStatusFetching) {
-            showError(models.inferenceStatusFetching.message, models.inferenceStatusFetching.reason);
+            showError(
+                models.inferenceStatusFetching.message,
+                models.inferenceStatusFetching.reason,
+            );
         }
 
         if (shown) {
-            this.props.resetErrors();
-        }
-    }
-
-    public componentDidMount() {
-        this.props.verifyAuthorized();
-    }
-
-    public componentDidUpdate() {
-        this.showErrors();
-        this.showMessages();
-
-        if (!this.props.userInitialized || this.props.user == null) {
-            // not authorized user
-            return;
-        }
-
-        if (!this.props.formatsInitialized && !this.props.formatsFetching) {
-            this.props.loadFormats();
-        }
-
-        if (!this.props.usersInitialized && !this.props.usersFetching) {
-            this.props.loadUsers();
-        }
-
-        if (!this.props.pluginsInitialized && !this.props.pluginsFetching) {
-            this.props.initPlugins();
+            resetErrors();
         }
     }
 
     // Where you go depends on your URL
-    public render() {
-        const readyForRender =
-            (this.props.userInitialized && this.props.user == null) ||
-            (this.props.userInitialized && this.props.formatsInitialized &&
-             this.props.pluginsInitialized && this.props.usersInitialized);
+    public render(): JSX.Element {
+        const {
+            userInitialized,
+            usersInitialized,
+            pluginsInitialized,
+            formatsInitialized,
+            installedAutoAnnotation,
+            installedTFSegmentation,
+            installedTFAnnotation,
+            user,
+        } = this.props;
 
-        const withModels = this.props.installedAutoAnnotation
-            || this.props.installedTFAnnotation || this.props.installedTFSegmentation;
+        const readyForRender = (userInitialized && user == null)
+            || (userInitialized && formatsInitialized
+            && pluginsInitialized && usersInitialized);
+
+        const withModels = installedAutoAnnotation
+            || installedTFAnnotation || installedTFSegmentation;
 
         if (readyForRender) {
-            if (this.props.user) {
+            if (user) {
                 return (
                     <BrowserRouter>
                         <Layout>
                             <HeaderContainer> </HeaderContainer>
                             <Layout.Content>
                                 <Switch>
-                                    <Route exact path='/tasks' component={TasksPageContainer}/>
-                                    <Route path='/tasks/create' component={CreateTaskPageContainer}/>
-                                    <Route exact path='/tasks/:id' component={TaskPageContainer}/>
-                                    <Route path='/tasks/:id/jobs/:id' component={AnnotationPageContainer}/>
-                                    { withModels &&
-                                        <Route exact path='/models' component={ModelsPageContainer}/> }
-                                    { this.props.installedAutoAnnotation &&
-                                        <Route path='/models/create' component={CreateModelPageContainer}/> }
-                                    <Redirect push to='/tasks'/>
+                                    <Route exact path='/tasks' component={TasksPageContainer} />
+                                    <Route path='/tasks/create' component={CreateTaskPageContainer} />
+                                    <Route exact path='/tasks/:id' component={TaskPageContainer} />
+                                    <Route path='/tasks/:id/jobs/:id' component={AnnotationPageContainer} />
+                                    { withModels
+                                        && <Route exact path='/models' component={ModelsPageContainer} /> }
+                                    { installedAutoAnnotation
+                                        && <Route path='/models/create' component={CreateModelPageContainer} /> }
+                                    <Redirect push to='/tasks' />
                                 </Switch>
-                                <FeedbackComponent/>
-                                <ModelRunnerModalContainer/>
+                                <FeedbackComponent />
+                                <ModelRunnerModalContainer />
+                                {/* eslint-disable-next-line */}
                                 <a id='downloadAnchor' style={{ display: 'none' }} download/>
                             </Layout.Content>
                         </Layout>
                     </BrowserRouter>
                 );
-            } else {
-                return (
-                    <BrowserRouter>
-                        <Switch>
-                            <Route exact path='/auth/register' component={RegisterPageContainer}/>
-                            <Route exact path='/auth/login' component={LoginPageContainer}/>
-                            <Redirect to='/auth/login'/>
-                        </Switch>
-                    </BrowserRouter>
-                );
             }
-        } else {
+
             return (
-                <Spin size='large' style={{margin: '25% 50%'}}/>
+                <BrowserRouter>
+                    <Switch>
+                        <Route exact path='/auth/register' component={RegisterPageContainer} />
+                        <Route exact path='/auth/login' component={LoginPageContainer} />
+                        <Redirect to='/auth/login' />
+                    </Switch>
+                </BrowserRouter>
             );
         }
+
+        return (
+            <Spin size='large' style={{ margin: '25% 50%' }} />
+        );
     }
 }

@@ -8,32 +8,31 @@ import {
     Icon,
 } from 'antd';
 
-export default function EmptyListComponent() {
-    const emptyTasksIcon = () => (<img src='/assets/empty-tasks-icon.svg'/>);
+export default function EmptyListComponent(): JSX.Element {
+    const emptyTasksIcon = (): JSX.Element => (<img alt='' src='/assets/empty-tasks-icon.svg' />);
 
     return (
         <div className='cvat-empty-task-list'>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Icon className='cvat-empty-tasks-icon' component={emptyTasksIcon}/>
+                    <Icon className='cvat-empty-tasks-icon' component={emptyTasksIcon} />
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Text strong>{'No tasks created yet ...'}</Text>
+                    <Text strong>No tasks created yet ...</Text>
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Text type='secondary'>{'To get started with your annotation project'}</Text>
+                    <Text type='secondary'>To get started with your annotation project</Text>
                 </Col>
             </Row>
-            <Row  type='flex' justify='center' align='middle'>
+            <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Link to='/tasks/create'>{'create a new task'}</Link>
+                    <Link to='/tasks/create'>create a new task</Link>
                 </Col>
             </Row>
         </div>
-
-    )
+    );
 }

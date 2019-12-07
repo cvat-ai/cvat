@@ -18,7 +18,7 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
-    const { models} = state;
+    const { models } = state;
 
     return {
         isAdmin: state.auth.user.isAdmin,
@@ -28,19 +28,15 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        createModel(name: string, files: ModelFiles, global: boolean) {
+        createModel(name: string, files: ModelFiles, global: boolean): void {
             dispatch(createModelAsync(name, files, global));
         },
     };
 }
 
-function CreateModelPageContainer(props: StateToProps & DispatchToProps) {
+function CreateModelPageContainer(props: StateToProps & DispatchToProps): JSX.Element {
     return (
-        <CreateModelPageComponent
-            isAdmin={props.isAdmin}
-            modelCreatingStatus={props.modelCreatingStatus}
-            createModel={props.createModel}
-        />
+        <CreateModelPageComponent {...props} />
     );
 }
 

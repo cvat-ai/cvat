@@ -24,17 +24,19 @@ interface Props {
     onJobUpdate(jobInstance: any): void;
 }
 
-export default function JobListComponent(props: Props) {
-    const { jobs } = props.taskInstance;
+export default function JobListComponent(props: Props): JSX.Element {
+    const {
+        taskInstance,
+        registeredUsers,
+        onJobUpdate,
+    } = props;
+
+    const { jobs } = taskInstance;
     const columns = [{
         title: 'Job',
         dataIndex: 'job',
         key: 'job',
-        render: (id: number) => {
-            return (
-                <a href={`${baseURL}/?id=${id}`}>{ `Job #${id++}` }</a>
-            );
-        }
+        render: (id: number): JSX.Element => (<a href={`${baseURL}/?id=${id}`}>{ `Job #${id}` }</a>),
     }, {
         title: 'Frames',
         dataIndex: 'frames',
@@ -44,14 +46,20 @@ export default function JobListComponent(props: Props) {
         title: 'Status',
         dataIndex: 'status',
         key: 'status',
-        render: (status: string) => {
-            const progressColor = status === 'completed' ? 'cvat-job-completed-color':
-                status === 'validation' ? 'cvat-job-validation-color' : 'cvat-job-annotation-color';
+        render: (status: string): JSX.Element => {
+            let progressColor = null;
+            if (status === 'completed') {
+                progressColor = 'cvat-job-completed-color';
+            } else if (status === 'validation') {
+                progressColor = 'cvat-job-validation-color';
+            } else {
+                progressColor = 'cvat-job-annotation-color';
+            }
 
             return (
                 <Text strong className={progressColor}>{ status }</Text>
             );
-        }
+        },
     }, {
         title: 'Started on',
         dataIndex: 'started',
@@ -66,22 +74,24 @@ export default function JobListComponent(props: Props) {
         title: 'Assignee',
         dataIndex: 'assignee',
         key: 'assignee',
-        render: (jobInstance: any) => {
-            const assignee = jobInstance.assignee ? jobInstance.assignee.username : null
+        render: (jobInstance: any): JSX.Element => {
+            const assignee = jobInstance.assignee ? jobInstance.assignee.username : null;
+
             return (
                 <UserSelector
-                    users={props.registeredUsers}
+                    users={registeredUsers}
                     value={assignee}
-                    onChange={(value: string) => {
-                        let [userInstance] = props.registeredUsers
-                                .filter((user: any) => user.username === value);
+                    onChange={(value: string): void => {
+                        let [userInstance] = [...registeredUsers]
+                            .filter((user: any) => user.username === value);
 
                         if (userInstance === undefined) {
                             userInstance = null;
                         }
 
+                        // eslint-disable-next-line
                         jobInstance.assignee = userInstance;
-                        props.onJobUpdate(jobInstance);
+                        onJobUpdate(jobInstance);
                     }}
                 />
             );

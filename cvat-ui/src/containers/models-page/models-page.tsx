@@ -43,33 +43,28 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        getModels() {
+        getModels(): void {
             dispatch(getModelsAsync());
         },
-        deleteModel(id: number) {
+        deleteModel(id: number): void {
             dispatch(deleteModelAsync(id));
         },
     };
 }
 
-function ModelsPageContainer(props: DispatchToProps & StateToProps) {
-    const render = props.installedAutoAnnotation
-        || props.installedTFAnnotation
-        || props.installedTFSegmentation;
+function ModelsPageContainer(props: DispatchToProps & StateToProps): JSX.Element | null {
+    const {
+        installedAutoAnnotation,
+        installedTFSegmentation,
+        installedTFAnnotation,
+    } = props;
+
+    const render = installedAutoAnnotation
+        || installedTFAnnotation
+        || installedTFSegmentation;
 
     return (
-        render ?
-            <ModelsPageComponent
-                installedAutoAnnotation={props.installedAutoAnnotation}
-                installedTFSegmentation={props.installedTFSegmentation}
-                installedTFAnnotation={props.installedTFAnnotation}
-                modelsInitialized={props.modelsInitialized}
-                modelsFetching={props.modelsFetching}
-                registeredUsers={props.registeredUsers}
-                models={props.models}
-                getModels={props.getModels}
-                deleteModel={props.deleteModel}
-            /> : null
+        render ? <ModelsPageComponent {...props} /> : null
     );
 }
 

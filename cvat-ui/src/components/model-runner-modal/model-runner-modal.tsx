@@ -41,25 +41,31 @@ interface State {
     mapping: StringObject;
     colors: StringObject;
     matching: {
-        model: string,
-        task: string,
+        model: string;
+        task: string;
     };
 }
 
-const nextColor = (function *() {
+function colorGenerator(): () => string {
     const values = [
         'magenta', 'green', 'geekblue',
         'orange', 'red', 'cyan',
         'blue', 'volcano', 'purple',
     ];
 
-    for (let i = 0; i < values.length; i++) {
-        yield values[i];
-        if (i === values.length) {
-            i = 0;
+    let index = 0;
+
+    return (): string => {
+        const color = values[index++];
+        if (index >= values.length) {
+            index = 0;
         }
-    }
-})();
+
+        return color;
+    };
+}
+
+const nextColor = colorGenerator();
 
 export default class ModelRunnerModalComponent extends React.PureComponent<Props, State> {
     public constructor(props: Props) {
@@ -76,51 +82,115 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
         };
     }
 
-    private renderModelSelector() {
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
+        const {
+            taskInstance,
+            modelsInitialized,
+            modelsFetching,
+            models,
+            visible,
+            getModels,
+        } = this.props;
+
+        const {
+            selectedModel,
+        } = this.state;
+
+        if (!modelsInitialized && !modelsFetching) {
+            getModels();
+        }
+
+        if (!prevProps.visible && visible) {
+            this.setState({
+                selectedModel: null,
+                mapping: {},
+                matching: {
+                    model: '',
+                    task: '',
+                },
+                cleanOut: false,
+            });
+        }
+
+        if (selectedModel && prevState.selectedModel !== selectedModel) {
+            const selectedModelInstance = models
+                .filter((model) => model.name === selectedModel)[0];
+
+            if (!selectedModelInstance.primary) {
+                let taskLabels: string[] = taskInstance.labels
+                    .map((label: any): string => label.name);
+                const [defaultMapping, defaultColors]: StringObject[] = selectedModelInstance.labels
+                    .reduce((acc: StringObject[], label): StringObject[] => {
+                        if (taskLabels.includes(label)) {
+                            acc[0][label] = label;
+                            acc[1][label] = nextColor();
+                            taskLabels = taskLabels.filter((_label): boolean => _label !== label);
+                        }
+
+                        return acc;
+                    }, [{}, {}]);
+
+                this.setState({
+                    mapping: defaultMapping,
+                    colors: defaultColors,
+                });
+            }
+        }
+    }
+
+    private renderModelSelector(): JSX.Element {
+        const { models } = this.props;
+
         return (
             <Row type='flex' align='middle'>
                 <Col span={4}>Model:</Col>
                 <Col span={19}>
                     <Select
                         placeholder='Select a model'
-                        style={{width: '100%'}}
-                        onChange={(value: string) => this.setState({
+                        style={{ width: '100%' }}
+                        onChange={(value: string): void => this.setState({
                             selectedModel: value,
                             mapping: {},
-                        })
-                    }>
-                        {this.props.models.map((model) =>
+                        })}
+                    >
+                        {models.map((model): JSX.Element => (
                             <Select.Option key={model.name}>
                                 {model.name}
                             </Select.Option>
-                        )}
+                        ))}
                     </Select>
                 </Col>
             </Row>
         );
     }
 
-    private renderMappingTag(modelLabel: string, taskLabel: string) {
+    private renderMappingTag(modelLabel: string, taskLabel: string): JSX.Element {
+        const {
+            colors,
+            mapping,
+        } = this.state;
+
         return (
             <Row key={`${modelLabel}-${taskLabel}`} type='flex' justify='start' align='middle'>
                 <Col span={10}>
-                    <Tag color={this.state.colors[modelLabel]}>{modelLabel}</Tag>
+                    <Tag color={colors[modelLabel]}>{modelLabel}</Tag>
                 </Col>
                 <Col span={10} offset={1}>
-                    <Tag color={this.state.colors[modelLabel]}>{taskLabel}</Tag>
+                    <Tag color={colors[modelLabel]}>{taskLabel}</Tag>
                 </Col>
                 <Col span={1} offset={1}>
                     <Tooltip overlay='Remove the mapped values'>
                         <Icon
                             className='cvat-run-model-dialog-remove-mapping-icon'
                             type='close-circle'
-                            onClick={() => {
-                            const mapping = {...this.state.mapping};
-                            delete mapping[modelLabel];
-                            this.setState({
-                                mapping,
-                            });
-                        }}/>
+                            onClick={(): void => {
+                                const newMapping = { ...mapping };
+                                delete newMapping[modelLabel];
+                                this.setState({
+                                    mapping: newMapping,
+                                });
+                            }}
+                        />
                     </Tooltip>
                 </Col>
             </Row>
@@ -130,106 +200,126 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
     private renderMappingInputSelector(
         value: string,
         current: string,
-        options: string[]
-    ) {
+        options: string[],
+    ): JSX.Element {
+        const {
+            matching,
+            mapping,
+            colors,
+        } = this.state;
+
         return (
             <Select
                 value={value}
                 placeholder={`${current} labels`}
-                style={{width: '100%'}}
-                onChange={(value: string) => {
-                    const anotherValue = current === 'Model' ?
-                        this.state.matching.task : this.state.matching.model;
+                style={{ width: '100%' }}
+                onChange={(selectedValue: string): void => {
+                    const anotherValue = current === 'Model'
+                        ? matching.task : matching.model;
 
                     if (!anotherValue) {
-                        const matching = { ...this.state.matching };
+                        const newMatching = { ...matching };
                         if (current === 'Model') {
-                            matching.model = value;
+                            newMatching.model = selectedValue;
                         } else {
-                            matching.task = value;
+                            newMatching.task = selectedValue;
                         }
                         this.setState({
-                            matching,
+                            matching: newMatching,
                         });
                     } else {
-                        const colors = {...this.state.colors};
-                        const mapping = {...this.state.mapping};
+                        const newColors = { ...colors };
+                        const newMapping = { ...mapping };
 
                         if (current === 'Model') {
-                            colors[value] = nextColor.next().value;
-                            mapping[value] = anotherValue;
+                            newColors[selectedValue] = nextColor();
+                            newMapping[selectedValue] = anotherValue;
                         } else {
-                            colors[anotherValue] = nextColor.next().value;
-                            mapping[anotherValue] = value;
+                            newColors[anotherValue] = nextColor();
+                            newMapping[anotherValue] = selectedValue;
                         }
 
                         this.setState({
-                            colors,
-                            mapping,
+                            colors: newColors,
+                            mapping: newMapping,
                             matching: {
                                 task: '',
                                 model: '',
                             },
-                        })
+                        });
                     }
                 }}
             >
-                {options.map((label: string) =>
+                {options.map((label: string): JSX.Element => (
                     <Select.Option key={label}>
                         {label}
                     </Select.Option>
-                )}
+                ))}
             </Select>
         );
     }
 
-    private renderMappingInput(availableModelLabels: string[], availableTaskLabels: string[]) {
+    private renderMappingInput(
+        availableModelLabels: string[],
+        availableTaskLabels: string[],
+    ): JSX.Element {
+        const { matching } = this.state;
         return (
             <Row type='flex' justify='start' align='middle'>
                 <Col span={10}>
                     {this.renderMappingInputSelector(
-                        this.state.matching.model,
+                        matching.model,
                         'Model',
                         availableModelLabels,
                     )}
                 </Col>
                 <Col span={10} offset={1}>
                     {this.renderMappingInputSelector(
-                        this.state.matching.task,
+                        matching.task,
                         'Task',
                         availableTaskLabels,
                     )}
                 </Col>
                 <Col span={1} offset={1}>
                     <Tooltip overlay='Specify a label mapping between model labels and task labels'>
-                        <Icon className='cvat-run-model-dialog-info-icon' type='question-circle'/>
+                        <Icon className='cvat-run-model-dialog-info-icon' type='question-circle' />
                     </Tooltip>
                 </Col>
             </Row>
         );
     }
 
-    private renderContent() {
-        const model = this.state.selectedModel && this.props.models
-            .filter((model) => model.name === this.state.selectedModel)[0];
+    private renderContent(): JSX.Element {
+        const {
+            selectedModel,
+            cleanOut,
+            mapping,
+        } = this.state;
+        const {
+            models,
+            taskInstance,
+        } = this.props;
+
+        const model = selectedModel && models
+            .filter((_model): boolean => _model.name === selectedModel)[0];
 
         const excludedLabels: {
-            model: string[],
-            task: string[],
+            model: string[];
+            task: string[];
         } = {
             model: [],
             task: [],
         };
 
         const withMapping = model && !model.primary;
-        const tags = withMapping ? Object.keys(this.state.mapping)
+        const tags = withMapping ? Object.keys(mapping)
             .map((modelLabel: string) => {
-                const taskLabel = this.state.mapping[modelLabel];
+                const taskLabel = mapping[modelLabel];
                 excludedLabels.model.push(modelLabel);
                 excludedLabels.task.push(taskLabel);
                 return this.renderMappingTag(
                     modelLabel,
-                    this.state.mapping[modelLabel],
+                    mapping[modelLabel],
                 );
             }) : [];
 
@@ -237,10 +327,10 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
             .filter(
                 (label: string) => !excludedLabels.model.includes(label),
             ) : [];
-        const availableTaskLabels = this.props.taskInstance.labels
+        const availableTaskLabels = taskInstance.labels
             .map(
                 (label: any) => label.name,
-            ).filter((label: string) => !excludedLabels.task.includes(label))
+            ).filter((label: string): boolean => !excludedLabels.task.includes(label));
 
         const mappingISAvailable = !!availableModelLabels.length
             && !!availableTaskLabels.length;
@@ -253,97 +343,73 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     && mappingISAvailable
                     && this.renderMappingInput(availableModelLabels, availableTaskLabels)
                 }
-                { withMapping &&
-                    <div>
-                        <Checkbox
-                            checked={this.state.cleanOut}
-                            onChange={(e: any) => this.setState({
-                                cleanOut: e.target.checked,
-                            })}
-                        > Clean old annotations </Checkbox>
-                    </div>
+                { withMapping
+                    && (
+                        <div>
+                            <Checkbox
+                                checked={cleanOut}
+                                onChange={(e: any): void => this.setState({
+                                    cleanOut: e.target.checked,
+                                })}
+                            >
+                                Clean old annotations
+                            </Checkbox>
+                        </div>
+                    )
                 }
             </div>
         );
     }
 
-    private renderSpin() {
-        return (
-            <Spin size='large' style={{margin: '25% 50%'}}/>
-        );
-    }
+    public render(): JSX.Element | false {
+        const {
+            selectedModel,
+            mapping,
+            cleanOut,
+        } = this.state;
 
-    public componentDidUpdate(prevProps: Props, prevState: State) {
-        if (!this.props.modelsInitialized && !this.props.modelsFetching) {
-            this.props.getModels();
-        }
+        const {
+            models,
+            visible,
+            taskInstance,
+            modelsInitialized,
+            runInference,
+            closeDialog,
+        } = this.props;
 
-        if (!prevProps.visible && this.props.visible) {
-            this.setState({
-                selectedModel: null,
-                mapping: {},
-                matching: {
-                    model: '',
-                    task: '',
-                },
-                cleanOut: false,
-            });
-        }
-
-        if (this.state.selectedModel && prevState.selectedModel !== this.state.selectedModel) {
-            const model = this.props.models
-                .filter((model) => model.name === this.state.selectedModel)[0];
-            if (!model.primary) {
-                let taskLabels: string[] = this.props.taskInstance.labels
-                    .map((label: any) => label.name);
-                const defaultMapping: StringObject = model.labels
-                    .reduce((acc: StringObject, label) => {
-                        if (taskLabels.includes(label)) {
-                            acc[label] = label;
-                            taskLabels = taskLabels.filter((_label) => _label !== label)
-                        }
-
-                        return acc;
-                    }, {});
-
-                this.setState({
-                    mapping: defaultMapping,
-                });
-            }
-        }
-    }
-
-    public render() {
-        const activeModel = this.props.models.filter(
-            (model) => model.name === this.state.selectedModel
+        const activeModel = models.filter(
+            (model): boolean => model.name === selectedModel,
         )[0];
 
-        let enabledSubmit = !!activeModel
-            && activeModel.primary || !!Object.keys(this.state.mapping).length;
+        const enabledSubmit = (!!activeModel
+            && activeModel.primary) || !!Object.keys(mapping).length;
 
         return (
-            this.props.visible && <Modal
-                closable={false}
-                okType='danger'
-                okText='Submit'
-                onOk={() => {
-                    this.props.runInference(
-                        this.props.taskInstance,
-                        this.props.models
-                            .filter((model) => model.name === this.state.selectedModel)[0],
-                        this.state.mapping,
-                        this.state.cleanOut,
-                    );
-                    this.props.closeDialog()
-                }}
-                onCancel={() => this.props.closeDialog()}
-                okButtonProps={{disabled: !enabledSubmit}}
-                title='Automatic annotation'
-                visible={true}
-            >
-                {!this.props.modelsInitialized && this.renderSpin()}
-                {this.props.modelsInitialized && this.renderContent()}
-            </Modal>
+            visible && (
+                <Modal
+                    closable={false}
+                    okType='danger'
+                    okText='Submit'
+                    onOk={(): void => {
+                        runInference(
+                            taskInstance,
+                            models
+                                .filter((model): boolean => model.name === selectedModel)[0],
+                            mapping,
+                            cleanOut,
+                        );
+                        closeDialog();
+                    }}
+                    onCancel={(): void => closeDialog()}
+                    okButtonProps={{ disabled: !enabledSubmit }}
+                    title='Automatic annotation'
+                    visible
+                >
+                    {!modelsInitialized
+                        && <Spin size='large' style={{ margin: '25% 50%' }} />}
+                    {modelsInitialized && this.renderContent()}
+                </Modal>
+            )
         );
     }
 }

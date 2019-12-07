@@ -35,73 +35,76 @@ type Props = FormComponentProps & {
     onSubmit: (label: Label | null) => void;
 };
 
-interface State {
-
-}
-
-class LabelForm extends React.PureComponent<Props, State> {
+class LabelForm extends React.PureComponent<Props, {}> {
     private continueAfterSubmit: boolean;
 
     constructor(props: Props) {
         super(props);
-
         this.continueAfterSubmit = false;
     }
 
-    private handleSubmit = (e: React.FormEvent) => {
+    private handleSubmit = (e: React.FormEvent): void => {
         e.preventDefault();
-        this.props.form.validateFields((error, values) => {
+
+        const {
+            form,
+            label,
+            onSubmit,
+        } = this.props;
+
+        form.validateFields((error, values): void => {
             if (!error) {
-                this.props.onSubmit({
+                onSubmit({
                     name: values.labelName,
-                    id: this.props.label ? this.props.label.id : idGenerator(),
-                    attributes: values.keys.map((key: number, index: number) => {
-                        return {
+                    id: label ? label.id : idGenerator(),
+                    attributes: values.keys.map((key: number, index: number): Attribute => (
+                        {
                             name: values.attrName[key],
                             type: values.type[key],
                             mutable: values.mutable[key],
-                            id: this.props.label && index < this.props.label.attributes.length
-                                ? this.props.label.attributes[index].id : key,
+                            id: label && index < label.attributes.length
+                                ? label.attributes[index].id : key,
                             values: Array.isArray(values.values[key])
-                                ? values.values[key] : [values.values[key]]
-                        };
-                    }),
+                                ? values.values[key] : [values.values[key]],
+                        }
+                    )),
                 });
 
-                this.props.form.resetFields();
+                form.resetFields();
 
                 if (!this.continueAfterSubmit) {
-                    this.props.onSubmit(null);
+                    onSubmit(null);
                 }
             }
         });
-    }
+    };
 
-    private addAttribute = () => {
+    private addAttribute = (): void => {
         const { form } = this.props;
         const keys = form.getFieldValue('keys');
         const nextKeys = keys.concat(idGenerator());
         form.setFieldsValue({
             keys: nextKeys,
         });
-    }
+    };
 
-    private removeAttribute = (key: number) => {
+    private removeAttribute = (key: number): void => {
         const { form } = this.props;
         const keys = form.getFieldValue('keys');
         form.setFieldsValue({
             keys: keys.filter((_key: number) => _key !== key),
         });
-    }
+    };
 
-    private renderAttributeNameInput(key: number, attr: Attribute | null) {
+    private renderAttributeNameInput(key: number, attr: Attribute | null): JSX.Element {
         const locked = attr ? attr.id >= 0 : false;
         const value = attr ? attr.name : '';
+        const { form } = this.props;
 
         return (
             <Col span={5}>
-                <Form.Item hasFeedback> {
-                    this.props.form.getFieldDecorator(`attrName[${key}]`, {
+                <Form.Item hasFeedback>
+                    {form.getFieldDecorator(`attrName[${key}]`, {
                         initialValue: value,
                         rules: [{
                             required: true,
@@ -110,42 +113,54 @@ class LabelForm extends React.PureComponent<Props, State> {
                             pattern: patterns.validateAttributeName.pattern,
                             message: patterns.validateAttributeName.message,
                         }],
-                    })(<Input disabled={locked} placeholder='Name'/>)
-                } </Form.Item>
-            </Col>
-        );
-    }
-
-    private renderAttributeTypeInput(key: number, attr: Attribute | null) {
-        const locked = attr ? attr.id >= 0 : false;
-        const type = attr ? attr.type.toUpperCase() : AttributeType.SELECT;
-
-        return (
-            <Col span={4}>
-                <Form.Item>
-                    <Tooltip overlay='An HTML element representing the attribute'>
-                        {this.props.form.getFieldDecorator(`type[${key}]`, {
-                            initialValue: type,
-                        })(
-                            <Select disabled={locked}>
-                                <Select.Option value={AttributeType.SELECT}> Select </Select.Option>
-                                <Select.Option value={AttributeType.RADIO}> Radio </Select.Option>
-                                <Select.Option value={AttributeType.CHECKBOX}> Checkbox </Select.Option>
-                                <Select.Option value={AttributeType.TEXT}> Text </Select.Option>
-                                <Select.Option value={AttributeType.NUMBER}> Number </Select.Option>
-                            </Select>
-                        )
-                    }</Tooltip>
+                    })(<Input disabled={locked} placeholder='Name' />)}
                 </Form.Item>
             </Col>
         );
     }
 
-    private renderAttributeValuesInput(key: number, attr: Attribute | null) {
+    private renderAttributeTypeInput(key: number, attr: Attribute | null): JSX.Element {
+        const locked = attr ? attr.id >= 0 : false;
+        const type = attr ? attr.type.toUpperCase() : AttributeType.SELECT;
+        const { form } = this.props;
+
+        return (
+            <Col span={4}>
+                <Form.Item>
+                    <Tooltip overlay='An HTML element representing the attribute'>
+                        { form.getFieldDecorator(`type[${key}]`, {
+                            initialValue: type,
+                        })(
+                            <Select disabled={locked}>
+                                <Select.Option value={AttributeType.SELECT}>
+                                    Select
+                                </Select.Option>
+                                <Select.Option value={AttributeType.RADIO}>
+                                    Radio
+                                </Select.Option>
+                                <Select.Option value={AttributeType.CHECKBOX}>
+                                    Checkbox
+                                </Select.Option>
+                                <Select.Option value={AttributeType.TEXT}>
+                                    Text
+                                </Select.Option>
+                                <Select.Option value={AttributeType.NUMBER}>
+                                    Number
+                                </Select.Option>
+                            </Select>,
+                        )}
+                    </Tooltip>
+                </Form.Item>
+            </Col>
+        );
+    }
+
+    private renderAttributeValuesInput(key: number, attr: Attribute | null): JSX.Element {
         const locked = attr ? attr.id >= 0 : false;
         const existedValues = attr ? attr.values : [];
+        const { form } = this.props;
 
-        const validator = (_: any, values: string[], callback: any) => {
+        const validator = (_: any, values: string[], callback: any): void => {
             if (locked && existedValues) {
                 if (!equalArrayHead(existedValues, values)) {
                     callback('You can only append new values');
@@ -159,11 +174,11 @@ class LabelForm extends React.PureComponent<Props, State> {
             }
 
             callback();
-        }
+        };
 
         return (
             <Form.Item>
-                { this.props.form.getFieldDecorator(`values[${key}]`, {
+                { form.getFieldDecorator(`values[${key}]`, {
                     initialValue: existedValues,
                     rules: [{
                         required: true,
@@ -174,37 +189,41 @@ class LabelForm extends React.PureComponent<Props, State> {
                 })(
                     <Select
                         mode='tags'
-                        dropdownMenuStyle={{display: 'none'}}
+                        dropdownMenuStyle={{ display: 'none' }}
                         placeholder='Attribute values'
-                    />
+                    />,
                 )}
             </Form.Item>
         );
     }
 
-    private renderBooleanValueInput(key: number, attr: Attribute | null) {
+    private renderBooleanValueInput(key: number, attr: Attribute | null): JSX.Element {
         const value = attr ? attr.values[0] : 'false';
+        const { form } = this.props;
 
         return (
             <Form.Item>
-                { this.props.form.getFieldDecorator(`values[${key}]`, {
+                { form.getFieldDecorator(`values[${key}]`, {
                     initialValue: value,
                 })(
                     <Select>
                         <Select.Option value='false'> False </Select.Option>
                         <Select.Option value='true'> True </Select.Option>
-                    </Select>
+                    </Select>,
                 )}
             </Form.Item>
         );
     }
 
-    private renderNumberRangeInput(key: number, attr: Attribute | null) {
+    private renderNumberRangeInput(key: number, attr: Attribute | null): JSX.Element {
         const locked = attr ? attr.id >= 0 : false;
         const value = attr ? attr.values[0] : '';
+        const { form } = this.props;
 
-        const validator = (_: any, value: string, callback: any) => {
-            const numbers = value.split(';').map((number) => Number.parseFloat(number));
+        const validator = (_: any, strNumbers: string, callback: any): void => {
+            const numbers = strNumbers
+                .split(';')
+                .map((number): number => Number.parseFloat(number));
             if (numbers.length !== 3) {
                 callback('Invalid input');
             }
@@ -224,58 +243,60 @@ class LabelForm extends React.PureComponent<Props, State> {
             }
 
             callback();
-        }
+        };
 
         return (
             <Form.Item>
-                { this.props.form.getFieldDecorator(`values[${key}]`, {
+                { form.getFieldDecorator(`values[${key}]`, {
                     initialValue: value,
                     rules: [{
                         required: true,
                         message: 'Please set a range',
                     }, {
                         validator,
-                    }]
+                    }],
                 })(
-                    <Input disabled={locked} placeholder='min;max;step'/>
+                    <Input disabled={locked} placeholder='min;max;step' />,
                 )}
             </Form.Item>
         );
     }
 
-    private renderDefaultValueInput(key: number, attr: Attribute | null) {
+    private renderDefaultValueInput(key: number, attr: Attribute | null): JSX.Element {
         const value = attr ? attr.values[0] : '';
+        const { form } = this.props;
 
         return (
             <Form.Item>
-                { this.props.form.getFieldDecorator(`values[${key}]`, {
+                { form.getFieldDecorator(`values[${key}]`, {
                     initialValue: value,
                 })(
-                    <Input placeholder='Default value'/>
+                    <Input placeholder='Default value' />,
                 )}
             </Form.Item>
         );
     }
 
-    private renderMutableAttributeInput(key: number, attr: Attribute | null) {
+    private renderMutableAttributeInput(key: number, attr: Attribute | null): JSX.Element {
         const locked = attr ? attr.id >= 0 : false;
         const value = attr ? attr.mutable : false;
+        const { form } = this.props;
 
         return (
             <Form.Item>
                 <Tooltip overlay='Can this attribute be changed frame to frame?'>
-                    { this.props.form.getFieldDecorator(`mutable[${key}]`, {
+                    { form.getFieldDecorator(`mutable[${key}]`, {
                         initialValue: value,
                         valuePropName: 'checked',
                     })(
-                        <Checkbox disabled={locked}> Mutable </Checkbox>
+                        <Checkbox disabled={locked}> Mutable </Checkbox>,
                     )}
                 </Tooltip>
             </Form.Item>
         );
     }
 
-    private renderDeleteAttributeButton(key: number, attr: Attribute | null) {
+    private renderDeleteAttributeButton(key: number, attr: Attribute | null): JSX.Element {
         const locked = attr ? attr.id >= 0 : false;
 
         return (
@@ -285,20 +306,25 @@ class LabelForm extends React.PureComponent<Props, State> {
                         type='link'
                         className='cvat-delete-attribute-button'
                         disabled={locked}
-                        onClick={() => {
+                        onClick={(): void => {
                             this.removeAttribute(key);
                         }}
                     >
-                        <Icon type='close-circle'/>
+                        <Icon type='close-circle' />
                     </Button>
                 </Tooltip>
             </Form.Item>
         );
     }
 
-    private renderAttribute = (key: number, index: number) => {
-        const attr = (this.props.label && index < this.props.label.attributes.length
-            ? this.props.label.attributes[index]
+    private renderAttribute = (key: number, index: number): JSX.Element => {
+        const {
+            label,
+            form,
+        } = this.props;
+
+        const attr = (label && index < label.attributes.length
+            ? label.attributes[index]
             : null);
 
         return (
@@ -306,23 +332,23 @@ class LabelForm extends React.PureComponent<Props, State> {
                 <Row type='flex' justify='space-between' align='middle'>
                     { this.renderAttributeNameInput(key, attr) }
                     { this.renderAttributeTypeInput(key, attr) }
-                    <Col span={6}> {
-                        (() => {
-                            const type = this.props.form.getFieldValue(`type[${key}]`);
+                    <Col span={6}>
+                        {((): JSX.Element => {
+                            const type = form.getFieldValue(`type[${key}]`);
                             let element = null;
-
-                            [AttributeType.SELECT, AttributeType.RADIO]
-                                .includes(type) ?
-                                element = this.renderAttributeValuesInput(key, attr)
-                            : type === AttributeType.CHECKBOX ?
-                                element = this.renderBooleanValueInput(key, attr)
-                            : type === AttributeType.NUMBER ?
-                                element = this.renderNumberRangeInput(key, attr)
-                            :   element = this.renderDefaultValueInput(key, attr)
+                            if ([AttributeType.SELECT, AttributeType.RADIO].includes(type)) {
+                                element = this.renderAttributeValuesInput(key, attr);
+                            } else if (type === AttributeType.CHECKBOX) {
+                                element = this.renderBooleanValueInput(key, attr);
+                            } else if (type === AttributeType.NUMBER) {
+                                element = this.renderNumberRangeInput(key, attr);
+                            } else {
+                                element = this.renderDefaultValueInput(key, attr);
+                            }
 
                             return element;
-                        })()
-                    } </Col>
+                        })()}
+                    </Col>
                     <Col span={5}>
                         { this.renderMutableAttributeInput(key, attr) }
                     </Col>
@@ -332,16 +358,20 @@ class LabelForm extends React.PureComponent<Props, State> {
                 </Row>
             </Form.Item>
         );
-    }
+    };
 
-    private renderLabelNameInput() {
-        const value = this.props.label ? this.props.label.name : '';
-        const locked = this.props.label ? this.props.label.id >= 0 : false;
+    private renderLabelNameInput(): JSX.Element {
+        const {
+            label,
+            form,
+        } = this.props;
+        const value = label ? label.name : '';
+        const locked = label ? label.id >= 0 : false;
 
         return (
             <Col span={10}>
-                <Form.Item hasFeedback> {
-                    this.props.form.getFieldDecorator('labelName', {
+                <Form.Item hasFeedback>
+                    {form.getFieldDecorator('labelName', {
                         initialValue: value,
                         rules: [{
                             required: true,
@@ -349,99 +379,119 @@ class LabelForm extends React.PureComponent<Props, State> {
                         }, {
                             pattern: patterns.validateAttributeName.pattern,
                             message: patterns.validateAttributeName.message,
-                        }]
-                    })(<Input disabled={locked} placeholder='Label name'/>)
-                } </Form.Item>
+                        }],
+                    })(<Input disabled={locked} placeholder='Label name' />)}
+                </Form.Item>
             </Col>
         );
     }
 
-    private renderNewAttributeButton() {
+    private renderNewAttributeButton(): JSX.Element {
         return (
             <Col span={3}>
                 <Form.Item>
                     <Button type='ghost' onClick={this.addAttribute}>
-                        Add an attribute <Icon type="plus"/>
+                        Add an attribute
+                        <Icon type='plus' />
                     </Button>
                 </Form.Item>
             </Col>
         );
     }
 
-    private renderDoneButton() {
+    private renderDoneButton(): JSX.Element {
         return (
             <Col>
                 <Tooltip overlay='Save the label and return'>
                     <Button
-                        style={{width: '150px'}}
+                        style={{ width: '150px' }}
                         type='primary'
                         htmlType='submit'
-                        onClick={() => {
+                        onClick={(): void => {
                             this.continueAfterSubmit = false;
                         }}
-                    > Done </Button>
+                    >
+                        Done
+                    </Button>
                 </Tooltip>
             </Col>
         );
     }
 
-    private renderContinueButton() {
+    private renderContinueButton(): JSX.Element {
+        const { label } = this.props;
+
         return (
-            this.props.label ? <div/> :
-                <Col  offset={1}>
-                    <Tooltip overlay='Save the label and create one more'>
-                        <Button
-                            style={{width: '150px'}}
-                            type='primary'
-                            htmlType='submit'
-                            onClick={() => {
-                                this.continueAfterSubmit = true;
-                            }}
-                        > Continue </Button>
-                    </Tooltip>
-                </Col>
-            );
+            label ? <div />
+                : (
+                    <Col offset={1}>
+                        <Tooltip overlay='Save the label and create one more'>
+                            <Button
+                                style={{ width: '150px' }}
+                                type='primary'
+                                htmlType='submit'
+                                onClick={(): void => {
+                                    this.continueAfterSubmit = true;
+                                }}
+                            >
+                                Continue
+                            </Button>
+                        </Tooltip>
+                    </Col>
+                )
+        );
     }
 
-    private renderCancelButton() {
+    private renderCancelButton(): JSX.Element {
+        const { onSubmit } = this.props;
+
         return (
             <Col offset={1}>
                 <Tooltip overlay='Do not save the label and return'>
                     <Button
-                        style={{width: '150px'}}
+                        style={{ width: '150px' }}
                         type='danger'
-                        onClick={() => {
-                            this.props.onSubmit(null);
+                        onClick={(): void => {
+                            onSubmit(null);
                         }}
-                    > Cancel </Button>
+                    >
+                        Cancel
+                    </Button>
                 </Tooltip>
             </Col>
         );
     }
 
-    public render() {
-        this.props.form.getFieldDecorator('keys', {
-            initialValue: this.props.label
-                ? this.props.label.attributes.map((attr: Attribute) => attr.id)
-                : []
+    public render(): JSX.Element {
+        const {
+            label,
+            form,
+        } = this.props;
+
+        form.getFieldDecorator('keys', {
+            initialValue: label
+                ? label.attributes.map((attr: Attribute): number => attr.id)
+                : [],
         });
 
-        let keys = this.props.form.getFieldValue('keys');
+        const keys = form.getFieldValue('keys');
         const attributeItems = keys.map(this.renderAttribute);
 
         return (
             <Form onSubmit={this.handleSubmit}>
                 <Row type='flex' justify='start' align='middle'>
                     { this.renderLabelNameInput() }
-                    <Col span={1}/>
+                    <Col span={1} />
                     { this.renderNewAttributeButton() }
                 </Row>
-                { attributeItems.length > 0 ?
-                    <Row type='flex' justify='start' align='middle'>
-                        <Col>
-                            <Text>Attributes</Text>
-                        </Col>
-                    </Row> : null
+                { attributeItems.length > 0
+                    && (
+                        <Row type='flex' justify='start' align='middle'>
+                            <Col>
+                                <Text>Attributes</Text>
+                            </Col>
+                        </Row>
+                    )
                 }
                 { attributeItems.reverse() }
                 <Row type='flex' justify='start' align='middle'>

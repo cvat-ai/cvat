@@ -7,6 +7,8 @@ import {
     Form,
 } from 'antd';
 
+import patterns from '../../utils/validation-patterns';
+
 export interface RegisterData {
     username: string;
     firstName: string;
@@ -16,28 +18,22 @@ export interface RegisterData {
     password2: string;
 }
 
-import patterns from '../../utils/validation-patterns';
-
 type RegisterFormProps = {
     fetching: boolean;
     onSubmit(registerData: RegisterData): void;
 } & FormComponentProps;
 
 class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
-    constructor(props: RegisterFormProps) {
-        super(props);
-    }
-
-    private validateConfirmation = (rule: any, value: any, callback: any) => {
+    private validateConfirmation = (rule: any, value: any, callback: any): void => {
         const { form } = this.props;
         if (value && value !== form.getFieldValue('password1')) {
-          callback('Two passwords that you enter is inconsistent!');
+            callback('Two passwords that you enter is inconsistent!');
         } else {
-          callback();
+            callback();
         }
-      };
+    };
 
-    private validatePassword = (_: any, value: any, callback: any) => {
+    private validatePassword = (_: any, value: any, callback: any): void => {
         const { form } = this.props;
         if (!patterns.validatePasswordLength.pattern.test(value)) {
             callback(patterns.validatePasswordLength.message);
@@ -56,12 +52,12 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
         }
 
         if (value) {
-          form.validateFields(['password2'], { force: true });
+            form.validateFields(['password2'], { force: true });
         }
         callback();
     };
 
-    private validateUsername = (_: any, value: any, callback: any) => {
+    private validateUsername = (_: any, value: any, callback: any): void => {
         if (!patterns.validateUsernameLength.pattern.test(value)) {
             callback(patterns.validateUsernameLength.message);
         }
@@ -73,19 +69,26 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
         callback();
     };
 
-    private handleSubmit = (e: React.FormEvent) => {
+    private handleSubmit = (e: React.FormEvent): void => {
         e.preventDefault();
-        this.props.form.validateFields((error, values) => {
+        const {
+            form,
+            onSubmit,
+        } = this.props;
+
+        form.validateFields((error, values): void => {
             if (!error) {
-                this.props.onSubmit(values);
+                onSubmit(values);
             }
         });
-    }
+    };
 
-    private renderFirstNameField() {
+    private renderFirstNameField(): JSX.Element {
+        const { form } = this.props;
+
         return (
             <Form.Item hasFeedback>
-                {this.props.form.getFieldDecorator('firstName', {
+                {form.getFieldDecorator('firstName', {
                     rules: [{
                         required: true,
                         message: 'Please specify a first name',
@@ -93,18 +96,20 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     }],
                 })(
                     <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)' }} />}
                         placeholder='First name'
-                    />
+                    />,
                 )}
             </Form.Item>
-        )
+        );
     }
 
-    private renderLastNameField() {
+    private renderLastNameField(): JSX.Element {
+        const { form } = this.props;
+
         return (
             <Form.Item hasFeedback>
-                {this.props.form.getFieldDecorator('lastName', {
+                {form.getFieldDecorator('lastName', {
                     rules: [{
                         required: true,
                         message: 'Please specify a last name',
@@ -112,18 +117,20 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     }],
                 })(
                     <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)' }} />}
                         placeholder='Last name'
-                    />
+                    />,
                 )}
             </Form.Item>
-        )
+        );
     }
 
-    private renderUsernameField() {
+    private renderUsernameField(): JSX.Element {
+        const { form } = this.props;
+
         return (
             <Form.Item hasFeedback>
-                {this.props.form.getFieldDecorator('username', {
+                {form.getFieldDecorator('username', {
                     rules: [{
                         required: true,
                         message: 'Please specify a username',
@@ -132,40 +139,44 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     }],
                 })(
                     <Input
-                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        prefix={<Icon type='user-add' style={{ color: 'rgba(0,0,0,.25)' }} />}
                         placeholder='Username'
-                    />
+                    />,
                 )}
             </Form.Item>
-        )
+        );
     }
 
-    private renderEmailField() {
+    private renderEmailField(): JSX.Element {
+        const { form } = this.props;
+
         return (
             <Form.Item hasFeedback>
-                {this.props.form.getFieldDecorator('email', {
+                {form.getFieldDecorator('email', {
                     rules: [{
                         type: 'email',
                         message: 'The input is not valid E-mail!',
-                        }, {
+                    }, {
                         required: true,
                         message: 'Please specify an email address',
                     }],
                 })(
                     <Input
                         autoComplete='email'
-                        prefix={<Icon type='mail' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                        prefix={<Icon type='mail' style={{ color: 'rgba(0,0,0,.25)' }} />}
                         placeholder='Email address'
-                    />
+                    />,
                 )}
             </Form.Item>
-        )
+        );
     }
 
-    private renderPasswordField() {
+    private renderPasswordField(): JSX.Element {
+        const { form } = this.props;
+
         return (
             <Form.Item hasFeedback>
-                {this.props.form.getFieldDecorator('password1', {
+                {form.getFieldDecorator('password1', {
                     rules: [{
                         required: true,
                         message: 'Please input your password!',
@@ -174,17 +185,19 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     }],
                 })(<Input.Password
                     autoComplete='new-password'
-                    prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                    prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)' }} />}
                     placeholder='Password'
                 />)}
             </Form.Item>
-        )
+        );
     }
 
-    private renderPasswordConfirmationField() {
+    private renderPasswordConfirmationField(): JSX.Element {
+        const { form } = this.props;
+
         return (
             <Form.Item hasFeedback>
-                {this.props.form.getFieldDecorator('password2', {
+                {form.getFieldDecorator('password2', {
                     rules: [{
                         required: true,
                         message: 'Please confirm your password!',
@@ -193,16 +206,16 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                     }],
                 })(<Input.Password
                     autoComplete='new-password'
-                    prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)'}} />}
+                    prefix={<Icon type='lock' style={{ color: 'rgba(0,0,0,.25)' }} />}
                     placeholder='Confirm password'
                 />)}
             </Form.Item>
-        )
+        );
     }
 
+    public render(): JSX.Element {
+        const { fetching } = this.props;
 
-
-    public render() {
         return (
             <Form onSubmit={this.handleSubmit} className='login-form'>
                 {this.renderFirstNameField()}
@@ -217,8 +230,8 @@ class RegisterFormComponent extends React.PureComponent<RegisterFormProps> {
                         type='primary'
                         htmlType='submit'
                         className='register-form-button'
-                        loading={this.props.fetching}
-                        disabled={this.props.fetching}
+                        loading={fetching}
+                        disabled={fetching}
                     >
                         Submit
                     </Button>

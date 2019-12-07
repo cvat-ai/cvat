@@ -36,14 +36,16 @@ interface MinActionsMenuProps {
     onOpenRunWindow: (taskInstance: any) => void;
 }
 
-export function handleMenuClick(props: MinActionsMenuProps, params: ClickParam) {
+export function handleMenuClick(props: MinActionsMenuProps, params: ClickParam): void {
     const { taskInstance } = props;
     const tracker = taskInstance.bugTracker;
 
     if (params.keyPath.length !== 2) {
         switch (params.key) {
             case 'tracker': {
-                window.open(`${tracker}`, '_blank')
+                // false positive eslint(security/detect-non-literal-fs-filename)
+                // eslint-disable-next-line
+                window.open(`${tracker}`, '_blank');
                 return;
             } case 'auto_annotation': {
                 props.onOpenRunWindow(taskInstance);
@@ -57,36 +59,51 @@ export function handleMenuClick(props: MinActionsMenuProps, params: ClickParam) 
                         props.onDeleteTask(taskInstance);
                     },
                 });
-                return;
+                break;
             } default: {
-                return;
+                // do nothing
             }
         }
     }
 }
 
-export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
-    const tracker = props.taskInstance.bugTracker;
-    const renderModelRunner = props.installedAutoAnnotation ||
-        props.installedTFAnnotation || props.installedTFSegmentation;
+export default function ActionsMenuComponent(props: ActionsMenuComponentProps): JSX.Element {
+    const {
+        taskInstance,
+        installedAutoAnnotation,
+        installedTFAnnotation,
+        installedTFSegmentation,
+        dumpers,
+        loaders,
+        exporters,
+        inferenceIsActive,
+    } = props;
+    const tracker = taskInstance.bugTracker;
+    const renderModelRunner = installedAutoAnnotation
+        || installedTFAnnotation || installedTFSegmentation;
 
     return (
-        <Menu selectable={false} className='cvat-actions-menu' onClick={
-            (params: ClickParam) => handleMenuClick(props, params)
-        }>
+        <Menu
+            selectable={false}
+            className='cvat-actions-menu'
+            onClick={
+                (params: ClickParam): void => handleMenuClick(props, params)
+            }
+        >
             <Menu.SubMenu key='dump' title='Dump annotations'>
                 {
-                    props.dumpers.map((dumper) => DumperItemComponent({
+                    dumpers.map((dumper): JSX.Element => DumperItemComponent({
                         dumper,
                         taskInstance: props.taskInstance,
                         dumpActivity: (props.dumpActivities || [])
                             .filter((_dumper: string) => _dumper === dumper.name)[0] || null,
                         onDumpAnnotation: props.onDumpAnnotation,
-                }   ))}
+                    }))
+                }
             </Menu.SubMenu>
             <Menu.SubMenu key='load' title='Upload annotations'>
                 {
-                    props.loaders.map((loader) => LoaderItemComponent({
+                    loaders.map((loader): JSX.Element => LoaderItemComponent({
                         loader,
                         taskInstance: props.taskInstance,
                         loadActivity: props.loadActivity,
@@ -96,7 +113,7 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
             </Menu.SubMenu>
             <Menu.SubMenu key='export' title='Export as a dataset'>
                 {
-                    props.exporters.map((exporter) => ExportItemComponent({
+                    exporters.map((exporter): JSX.Element => ExportItemComponent({
                         exporter,
                         taskInstance: props.taskInstance,
                         exportActivity: (props.exportActivities || [])
@@ -107,10 +124,17 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
             </Menu.SubMenu>
             {tracker && <Menu.Item key='tracker'>Open bug tracker</Menu.Item>}
             {
-                renderModelRunner &&
-                <Menu.Item disabled={props.inferenceIsActive} key='auto_annotation'>Automatic annotation</Menu.Item>
+                renderModelRunner
+                    && (
+                        <Menu.Item
+                            disabled={inferenceIsActive}
+                            key='auto_annotation'
+                        >
+                            Automatic annotation
+                        </Menu.Item>
+                    )
             }
-            <hr/>
+            <hr />
             <Menu.Item key='delete'>Delete</Menu.Item>
         </Menu>
     );

@@ -18,15 +18,15 @@ export default (state = defaultState, action: AnyAction): AuthState => {
                 user: action.payload.user,
             };
         case AuthActionTypes.AUTHORIZED_FAILED:
-                return {
-                    ...state,
-                    initialized: true,
-                };
+            return {
+                ...state,
+                initialized: true,
+            };
         case AuthActionTypes.LOGIN:
             return {
                 ...state,
                 fetching: true,
-            }
+            };
         case AuthActionTypes.LOGIN_SUCCESS:
             return {
                 ...state,
@@ -48,11 +48,6 @@ export default (state = defaultState, action: AnyAction): AuthState => {
                 ...state,
                 fetching: false,
                 user: null,
-            };
-        case AuthActionTypes.LOGIN_FAILED:
-            return {
-                ...state,
-                fetching: false,
             };
         case AuthActionTypes.REGISTER:
             return {
