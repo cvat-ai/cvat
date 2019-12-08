@@ -22,18 +22,8 @@ format_spec = {
     ],
 }
 
-def generate_pascal_colormap(size=256):
-    # RGB format, (0, 0, 0) used for background
-    import numpy as np
-    colormap = np.zeros((size, 3), dtype=int)
-    ind = np.arange(size, dtype=int)
-
-    for shift in reversed(range(8)):
-        for channel in range(3):
-            colormap[:, channel] |= ((ind >> channel) & 1) << shift
-        ind >>= 3
-
-    return colormap
+MASK_BY_CLASS = 0
+MASK_BY_INSTANCE = 1
 
 def convert_box_to_polygon(shape):
         xtl = shape.points[0]
@@ -43,6 +33,47 @@ def convert_box_to_polygon(shape):
 
         return [xtl, ytl, xbr, ytl, xbr, ybr, xtl, ybr]
 
+def create_mask_colorizer(annotations, colorize_type):
+    import numpy as np
+    from collections import OrderedDict
+
+    class MaskColorizer:
+
+        def __init__(self, annotations, colorize_type):
+
+            if colorize_type == MASK_BY_CLASS:
+                self.colors = self.gen_class_mask_colors(annotations)
+            elif colorize_type == MASK_BY_INSTANCE:
+                self.colors = self.gen_instance_mask_colors()
+
+        def generate_pascal_colormap(self, size=256):
+            # RGB format, (0, 0, 0) used for background
+            colormap = np.zeros((size, 3), dtype=int)
+            ind = np.arange(size, dtype=int)
+
+            for shift in reversed(range(8)):
+                for channel in range(3):
+                    colormap[:, channel] |= ((ind >> channel) & 1) << shift
+                ind >>= 3
+
+            return colormap
+
+        def gen_class_mask_colors(self, annotations):
+            colormap = self.generate_pascal_colormap()
+            labels = [label[1]["name"] for label in annotations.meta["task"]["labels"] if label[1]["name"] != 'background']
+            labels.insert(0, 'background')
+            label_colors = OrderedDict((label, colormap[idx]) for idx, label in enumerate(labels))
+
+            return label_colors
+
+        def gen_instance_mask_colors(self):
+            colormap = self.generate_pascal_colormap()
+            instance_colors = OrderedDict((idx, colormap[idx]) for idx in range(len(colormap)))
+
+            return instance_colors
+
+    return MaskColorizer(annotations, colorize_type)
+
 def dump_by_class(file_object, annotations):
     from zipfile import ZipFile, ZIP_STORED
     import numpy as np
@@ -50,12 +81,8 @@ def dump_by_class(file_object, annotations):
     from pycocotools import mask as maskUtils
     import matplotlib.image
     import io
-    from collections import OrderedDict
 
-    colormap = generate_pascal_colormap()
-    labels = [label[1]["name"] for label in annotations.meta["task"]["labels"] if label[1]["name"] != 'background']
-    labels.insert(0, 'background')
-    label_colors = OrderedDict((label, colormap[idx]) for idx, label in enumerate(labels))
+    colorizer = create_mask_colorizer(annotations, colorize_type=MASK_BY_CLASS)
 
     with ZipFile(file_object, "w", ZIP_STORED) as output_zip:
         for frame_annotation in annotations.group_by_frame():
@@ -79,14 +106,14 @@ def dump_by_class(file_object, annotations):
                 mask = maskUtils.decode(rle)
                 idx = (mask > 0)
                 # get corresponding color for each class
-                label_color = label_colors[shape.label] / 255
+                label_color = colorizer.colors[shape.label] / 255
                 img_class_mask[idx] = label_color
 
             # write class mask into SegmentationClass
             matplotlib.image.imsave(buf_class_mask, img_class_mask, format='png')
             output_zip.writestr(os.path.join("SegmentationClass", annotation_name), buf_class_mask.getvalue())
         # Store color map for each class
-        labels = '\n'.join('{}:{}'.format(label, ','.join(str(i) for i in color)) for label, color in label_colors.items())
+        labels = '\n'.join('{}:{}'.format(label, ','.join(str(i) for i in color)) for label, color in colorizer.colors.items())
         output_zip.writestr('colormap.txt', labels)
 
 def dump_by_instance(file_object, annotations):
@@ -96,10 +123,8 @@ def dump_by_instance(file_object, annotations):
     from pycocotools import mask as maskUtils
     import matplotlib.image
     import io
-    from collections import OrderedDict
 
-    colormap = generate_pascal_colormap()
-    instance_colors = OrderedDict((idx, colormap[idx]) for idx in range(len(colormap)))
+    colorizer = create_mask_colorizer(annotations, colorize_type=MASK_BY_INSTANCE)
 
     with ZipFile(file_object, "w", ZIP_STORED) as output_zip:
         for frame_annotation in annotations.group_by_frame():
@@ -123,12 +148,12 @@ def dump_by_instance(file_object, annotations):
                 mask = maskUtils.decode(rle)
                 idx = (mask > 0)
                 # get corresponding instance color for each shape
-                instance_color = instance_colors[shape_index+1] / 255
+                instance_color = colorizer.colors[shape_index+1] / 255
                 img_instance_mask[idx] = instance_color
 
             # write instance mask into SegmentationObject
             matplotlib.image.imsave(buf_instance_mask, img_instance_mask, format='png')
             output_zip.writestr(os.path.join("SegmentationObject", annotation_name), buf_instance_mask.getvalue())
         # Store color map for each class
-        labels = '\n'.join('{}:{}'.format(label, ','.join(str(i) for i in color)) for label, color in instance_colors.items())
+        labels = '\n'.join('{}:{}'.format(label, ','.join(str(i) for i in color)) for label, color in colorizer.colors.items())
         output_zip.writestr('colormap.txt', labels)
