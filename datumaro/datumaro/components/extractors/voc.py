@@ -137,9 +137,9 @@ class VocExtractor(Extractor):
         return self._categories
 
     def __iter__(self):
-        for subset_name, subset in self._subsets.items():
-            for item in subset.items:
-                yield self._get(item, subset_name)
+        for subset in self._subsets.values():
+            for item in subset:
+                yield item
 
     def _get(self, item, subset_name):
         image = None
@@ -468,9 +468,9 @@ class VocResultsExtractor(Extractor):
         return self._categories
 
     def __iter__(self):
-        for subset_name, subset in self._subsets.items():
-            for item in subset.items:
-                yield self._get(item, subset_name)
+        for subset in self._subsets.values():
+            for item in subset:
+                yield item
 
     def _get(self, item, subset_name):
         image = None

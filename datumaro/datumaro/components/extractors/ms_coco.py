@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections import OrderedDict
 import numpy as np
 import os.path as osp
 
@@ -49,7 +50,7 @@ class CocoExtractor(Extractor):
             self._name = name
             self._parent = parent
             self.loaders = {}
-            self.items = set()
+            self.items = OrderedDict()
 
         def __iter__(self):
             for img_id in self.items:
@@ -75,7 +76,7 @@ class CocoExtractor(Extractor):
         loader = self._make_subset_loader(path)
         subset.loaders[task] = loader
         for img_id in loader.getImgIds():
-            subset.items.add(img_id)
+            subset.items[img_id] = None
         self._subsets[subset_name] = subset
 
         self._load_categories()
@@ -151,9 +152,9 @@ class CocoExtractor(Extractor):
         return self._categories
 
     def __iter__(self):
-        for subset_name, subset in self._subsets.items():
-            for img_id in subset.items:
-                yield self._get(img_id, subset_name)
+        for subset in self._subsets.values():
+            for item in subset:
+                yield item
 
     def __len__(self):
         length = 0

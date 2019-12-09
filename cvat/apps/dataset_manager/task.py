@@ -379,7 +379,12 @@ EXPORT_FORMATS = [
         'name': 'MS COCO',
         'tag': 'coco',
         'is_default': False,
-    }
+    },
+    {
+        'name': 'YOLO',
+        'tag': 'yolo',
+        'is_default': False,
+    },
 ]
 
 def get_export_formats():
