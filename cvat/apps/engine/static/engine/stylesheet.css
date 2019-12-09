@@ -475,9 +475,16 @@
     margin: 0px auto;
     border: 1px solid dimgrey;
     border-radius: 6px;
-    text-align: left;
     width: 100%;
     text-align: center;
+    border-collapse: separate;
+    border-spacing: 3px;
+}
+
+#annotationStatisticTable th, #annotationStatisticTable td { padding: 3px; }
+
+#annotationSettingsTable th, #annotationSettingsTable td {
+    padding: 20px;
 }
 
 #playerPanel {
