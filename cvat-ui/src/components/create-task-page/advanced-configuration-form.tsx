@@ -84,7 +84,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const { form } = this.props;
 
         return (
-            <Form.Item label='Image quality'>
+            <Form.Item label={<span>Image quality</span>}>
                 <Tooltip overlay='Defines image compression level'>
                     {form.getFieldDecorator('imageQuality', {
                         initialValue: 70,
@@ -110,7 +110,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const { form } = this.props;
 
         return (
-            <Form.Item label='Overlap size'>
+            <Form.Item label={<span>Overlap size</span>}>
                 <Tooltip overlay='Defines a number of intersected frames between different segments'>
                     {form.getFieldDecorator('overlapSize')(
                         <Input size='large' type='number' />,
@@ -124,7 +124,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const { form } = this.props;
 
         return (
-            <Form.Item label='Segment size'>
+            <Form.Item label={<span>Segment size</span>}>
                 <Tooltip overlay='Defines a number of frames in a segment'>
                     {form.getFieldDecorator('segmentSize')(
                         <Input size='large' type='number' />,
@@ -138,7 +138,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const { form } = this.props;
 
         return (
-            <Form.Item label='Start frame'>
+            <Form.Item label={<span>Start frame</span>}>
                 {form.getFieldDecorator('startFrame')(
                     <Input
                         size='large'
@@ -155,7 +155,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const { form } = this.props;
 
         return (
-            <Form.Item label='Stop frame'>
+            <Form.Item label={<span>Stop frame</span>}>
                 {form.getFieldDecorator('stopFrame')(
                     <Input
                         size='large'
@@ -172,7 +172,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const { form } = this.props;
 
         return (
-            <Form.Item label='Frame step'>
+            <Form.Item label={<span>Frame step</span>}>
                 {form.getFieldDecorator('frameStep')(
                     <Input
                         size='large'
@@ -210,7 +210,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item
                 hasFeedback
-                label='Dataset repository URL'
+                label={<span>Dataset repository URL</span>}
                 extra='Attach a repository to store annotations there'
             >
                 {form.getFieldDecorator('repository', {
@@ -265,7 +265,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         return (
             <Form.Item
                 hasFeedback
-                label='Issue tracker'
+                label={<span>Issue tracker</span>}
                 extra='Attach issue tracker where the task is described'
             >
                 {form.getFieldDecorator('bugTracker', {
