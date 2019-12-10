@@ -177,23 +177,25 @@ class LabelForm extends React.PureComponent<Props, {}> {
         };
 
         return (
-            <Form.Item>
-                { form.getFieldDecorator(`values[${key}]`, {
-                    initialValue: existedValues,
-                    rules: [{
-                        required: true,
-                        message: 'Please specify values',
-                    }, {
-                        validator,
-                    }],
-                })(
-                    <Select
-                        mode='tags'
-                        dropdownMenuStyle={{ display: 'none' }}
-                        placeholder='Attribute values'
-                    />,
-                )}
-            </Form.Item>
+            <Tooltip overlay='Press enter to add a new value'>
+                <Form.Item>
+                    { form.getFieldDecorator(`values[${key}]`, {
+                        initialValue: existedValues,
+                        rules: [{
+                            required: true,
+                            message: 'Please specify values',
+                        }, {
+                            validator,
+                        }],
+                    })(
+                        <Select
+                            mode='tags'
+                            dropdownMenuStyle={{ display: 'none' }}
+                            placeholder='Attribute values'
+                        />,
+                    )}
+                </Form.Item>
+            </Tooltip>
         );
     }
 
@@ -202,16 +204,18 @@ class LabelForm extends React.PureComponent<Props, {}> {
         const { form } = this.props;
 
         return (
-            <Form.Item>
-                { form.getFieldDecorator(`values[${key}]`, {
-                    initialValue: value,
-                })(
-                    <Select>
-                        <Select.Option value='false'> False </Select.Option>
-                        <Select.Option value='true'> True </Select.Option>
-                    </Select>,
-                )}
-            </Form.Item>
+            <Tooltip overlay='Specify a default value'>
+                <Form.Item>
+                    { form.getFieldDecorator(`values[${key}]`, {
+                        initialValue: value,
+                    })(
+                        <Select>
+                            <Select.Option value='false'> False </Select.Option>
+                            <Select.Option value='true'> True </Select.Option>
+                        </Select>,
+                    )}
+                </Form.Item>
+            </Tooltip>
         );
     }
 
