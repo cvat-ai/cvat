@@ -55,7 +55,7 @@ npm run start
 - Run Visual Studio Code from the virtual environment
 
 ```sh
-$ code .
+ code .
 ```
 
 -   Inside Visual Studio Code install [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome) and [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extensions
@@ -63,9 +63,6 @@ $ code .
 -   Reload Visual Studio Code
 
 -   Select `server: debug` configuration and start it (F5) to run REST server and its workers
-
--   Select `cvat-ui: chrome` configuration and start it (F5) to run UI server
-(this server restarts automatically after any changes in the source code)
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 
