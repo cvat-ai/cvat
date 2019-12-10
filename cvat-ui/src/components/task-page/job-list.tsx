@@ -136,7 +136,7 @@ export default function JobListComponent(props: Props): JSX.Element {
                                 for (const job of taskInstance.jobs) {
                                     serialized += `Job #${job.id}`.padEnd(`${latestJob.id}`.length + 6, ' ');
                                     serialized += `: ${baseURL}/?id=${job.id}`
-                                        .padEnd(`${latestJob.id}`.length + baseURL.length + 7, ' ');
+                                        .padEnd(`${latestJob.id}`.length + baseURL.length + 8, ' ');
                                     serialized += `: [${job.startFrame}-${job.stopFrame}]`
                                         .padEnd(`${latestJob.startFrame}${latestJob.stopFrame}`.length + 5, ' ');
 

@@ -139,7 +139,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                     />
                 ),
                 duration: null,
-                description: error.length > 200 ? '' : error,
+                description: error.length > 200 ? 'Open console to details (F12, Console tab)' : error,
             });
 
             console.error(error);
