@@ -87,73 +87,107 @@
     }
 
     FrameData.prototype.data.implementation = async function (onServerRequest) {
-        async function getFrameData(resolve, reject) {
-            function onDecode(provider, frameNumber) {
-                if (frameNumber === this.number) {
-                    resolve(provider.frame(frameNumber));
+        return new Promise( async (resolve, reject) => {
+            const onDecodeAll = (frameNumber) => {
+                if (chunkNumber in frameDataCache[this.tid].activeChunkrequests) {
+                    // Need to resolve last frame request only
+                    const callbackArray = frameDataCache[this.tid].activeChunkrequests[chunkNumber].callbacks;
+                    if (callbackArray.length) {
+                        const lastRequest = callbackArray.pop();
+                        delete frameDataCache[this.tid].activeChunkrequests[chunkNumber];
+                        console.log(`resolve ${frameNumber}`);
+                        lastRequest.resolve(provider.frame(frameNumber));
+                    }
                 }
-            }
+            };
 
-            function rejectRequest() {
-                reject(this.number);
-            }
+            const rejectRequestAll = () => {
+                if (chunkNumber in frameDataCache[this.tid].activeChunkrequests) {
+                    for (const r of frameDataCache[this.tid].activeChunkrequests[chunkNumber].callbacks) {
+                        console.log(`reject ${r.frameNumber}`);
+                        r.reject(r.frameNumber);
+                    }
+                    delete frameDataCache[this.tid].activeChunkrequests[chunkNumber];
+                }
+            };
+
+            const { provider } = frameDataCache[this.tid];
+            const { chunkSize } = frameDataCache[this.tid];
+            const start = Math.max(this.startFrame, parseInt(this.number / chunkSize, 10) * chunkSize);
+            const stop =  Math.min(this.stopFrame, (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1);
+            const chunkNumber = Math.floor(this.number / chunkSize);
 
             if (isNode) {
                 resolve("Dummy data");
             } else if (isBrowser) {
                 try {
-                    const { provider } = frameDataCache[this.tid];
-                    const { chunkSize } = frameDataCache[this.tid];
                     const { decodedBlocksCacheSize } = frameDataCache[this.tid];
-
                     let frame = await provider.frame(this.number);
                     if (frame === null) {
                         onServerRequest();
-                        const start = Math.max(this.startFrame, parseInt(this.number / chunkSize, 10) * chunkSize);
-                        const stop =  Math.min(this.stopFrame, (parseInt(this.number / chunkSize, 10) + 1) * chunkSize - 1);
-                        const chunkNumber = Math.floor(this.number / chunkSize);
+                        if (!provider.is_chunk_cached(start, stop)) {
+                            if (!(chunkNumber in frameDataCache[this.tid].activeChunkrequests)) {
 
-                        if (frame === null) {
-                            if (!provider.is_chunk_cached(start, stop)){
-                                serverProxy.frames.getData(this.tid, chunkNumber).then(chunk => {
-                                    provider.requestDecodeBlock(chunk, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
-                                }).catch(exception => {
-                                    if (exception instanceof Exception) {
-                                        reject(exception);
-                                    } else {
-                                        reject(new Exception(exception.message));
-                                    }
-                                });
-                            } else {
-                                provider.requestDecodeBlock(null, start, stop, onDecode.bind(this, provider), rejectRequest.bind(this));
+                                // delete all unnecessary requests
+                                for (const chunkNumber in frameDataCache[this.tid].activeChunkrequests) {
+                                    delete frameDataCache[this.tid].activeChunkrequests[chunkNumber];
+                                }
+                                console.log(`request chunk ${chunkNumber} from the server`);
+                                frameDataCache[this.tid].activeChunkrequests[chunkNumber] = {
+                                    request: serverProxy.frames.getData(this.tid, chunkNumber),
+                                    callbacks: [],
+                                };
                             }
+                            frameDataCache[this.tid].activeChunkrequests[chunkNumber].callbacks.push({
+                                resolve,
+                                reject,
+                                frameNumber: this.number,
+                            });
+                            frameDataCache[this.tid].activeChunkrequests[chunkNumber].request.then(chunk => {
+                                // if (this.number === frameDataCache[this.tid].lastFrameRequest) {
+                                    console.log(`request decode [${start}:${stop}]`);
+                                    provider.requestDecodeBlock(chunk, start, stop, onDecodeAll, rejectRequestAll);
+                                // }
+                            }).catch(exception => {
+                                if (exception instanceof Exception) {
+                                    reject(exception);
+                                } else {
+                                    reject(new Exception(exception.message));
+                                }
+                            });
+                        } else {
+                            frameDataCache[this.tid].activeChunkrequests[chunkNumber].callbacks.push({
+                                resolve,
+                                reject,
+                                frameNumber: this.number,
+                            });
+                            provider.requestDecodeBlock(null, start, stop, onDecodeAll, rejectRequestAll);
                         }
                     } else {
-                        if (this.number % chunkSize > 1 && !provider.isNextChunkExists(this.number) && decodedBlocksCacheSize > 1) {
-                            const nextChunkNumber = Math.floor(this.number / chunkSize) + 1;
-                            const start = Math.max(this.startFrame, nextChunkNumber * chunkSize);
-                            const stop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
+                        // if (this.number % chunkSize > 1 && !provider.isNextChunkExists(this.number) && decodedBlocksCacheSize > 1) {
+                        //     const nextChunkNumber = chunkNumber + 1;
+                        //     const nextStart = Math.max(this.startFrame, nextChunkNumber * chunkSize);
+                        //     const nextStop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
 
-                            if (start < this.stopFrame) {
-                                provider.setReadyToLoading(nextChunkNumber);
-                                if (!provider.is_chunk_cached(start, stop)){
-                                    serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
-                                        provider.requestDecodeBlock(nextChunk, start, stop, undefined, undefined);
-                                    }).catch(exception => {
-                                        if (exception instanceof Exception) {
-                                            reject(exception);
-                                        } else {
-                                            reject(new Exception(exception.message));
-                                        }
-                                    });
-                                } else {
-                                    provider.requestDecodeBlock(null, start, stop, undefined, undefined);
-                                }
-                            }
-                        }
+                        //     if (nextStart < this.stopFrame) {
+                        //         provider.setReadyToLoading(nextChunkNumber);
+                        //         if (!provider.is_chunk_cached(nextStart, nextStop)){
+                        //             serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
+                        //                 provider.requestDecodeBlock(nextChunk, nextStart, nextStop, undefined, undefined);
+                        //             }).catch(exception => {
+                        //                 if (exception instanceof Exception) {
+                        //                     reject(exception);
+                        //                 } else {
+                        //                     reject(new Exception(exception.message));
+                        //                 }
+                        //             });
+                        //         } else {
+                        //             provider.requestDecodeBlock(null, nextStart, nextStop, undefined, undefined);
+                        //         }
+                        //     }
+                        // }
                         resolve(frame);
                     }
-
                 } catch (exception) {
                     if (exception instanceof Exception) {
                         reject(exception);
@@ -161,10 +195,9 @@
                         reject(new Exception(exception.message));
                     }
                 }
-        }
-    }
-    return new Promise(getFrameData.bind(this));
-};
+            }
+        });
+    };
 
     async function getPreview(taskID) {
         return new Promise(async (resolve, reject) => {
@@ -212,9 +245,8 @@
                 : cvatData.BlockType.ARCHIVE;
 
             const meta = await serverProxy.frames.getMeta(taskID);
-            const size = getFrameSize(meta);
             // limit of decoded frames cache by 2GB for video and 500 frames for archive
-            // max size of video frame is 1080
+            // max size of video frame is 1920x1080
             const decodedBlocksCacheSize = blockType === cvatData.BlockType.MP4VIDEO ?
                  Math.floor(2147483648 / 1920 / 1080 / 4 / chunkSize) || 1:
                  Math.floor(500 / chunkSize) || 1;
@@ -225,11 +257,12 @@
                 provider: new cvatData.FrameProvider(blockType, chunkSize, 9, decodedBlocksCacheSize, 2),
                 lastFrameRequest : frame,
                 decodedBlocksCacheSize,
+                activeChunkrequests: {},
             };
         }
 
         const size = getFrameSize(frameDataCache[taskID].meta);
-
+        frameDataCache[taskID].lastFrameRequest = frame;
         frameDataCache[taskID].provider.setRenderSize(size.width, size.height);
         return new FrameData(size.width, size.height, taskID, frame, startFrame, stopFrame);
     };

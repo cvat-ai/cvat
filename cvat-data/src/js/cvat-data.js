@@ -95,14 +95,19 @@ class FrameProvider {
     async requestDecodeBlock(block, start, end, resolveCallback, rejectCallback){
         const release = await this._mutex.acquireQueued();
         if (this._requestedBlockDecode !== null) {
-            if (this._requestedBlockDecode.rejectCallback) {
+            if (start === this._requestedBlockDecode.start &&
+                end === this._requestedBlockDecode.end) {
+                    this._requestedBlockDecode.resolveCallback = resolveCallback;
+                    this._requestedBlockDecode.rejectCallback = rejectCallback;
+            } else if (this._requestedBlockDecode.rejectCallback) {
+                console.log(`requestedDecodeBlock !== null, reject previous request [${this._requestedBlockDecode.start}, ${this._requestedBlockDecode.end}]`);
                 this._requestedBlockDecode.rejectCallback();
             }
         }
         if (!(`${start}:${end}` in this._decodingBlocks)) {
             if (block === null)
             {
-                block = this._blocks[Math.floor((start+1) / chunkSize)];
+                block = this._blocks[Math.floor((start+1) / this.blockSize)];
             }
             this._requestedBlockDecode = {
                 block : block,
