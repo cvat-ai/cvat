@@ -66,7 +66,75 @@ npm run start
 
 You have done! Now it is possible to insert breakpoints and debug server and client of the tool.
 
-## JavaScript coding style
+## How to setup additional components in development environment
+
+### Automatic annotation
+- Install OpenVINO on your host machine according to instructions from
+[OpenVINO website](https://docs.openvinotoolkit.org/latest/index.html)
+- Add some environment variables (copy code below to the end of ``.env/bin/activate`` file):
+```sh
+    source /opt/intel/openvino/bin/setupvars.sh
+
+    export OPENVINO_TOOLKIT="yes"
+    export IE_PLUGINS_PATH="/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64"
+    export OpenCV_DIR="/usr/local/lib/cmake/opencv4"
+    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/intel/openvino/inference_engine/lib/intel64"
+```
+
+Notice 1: be sure that these paths actually exist. Some of them can differ in different OpenVINO versions.
+
+Notice 2: you need to deactivate, activate again and restart vs code
+to changes in ``.env/bin/activate`` file are active.
+
+### ReID algorithm
+- Perform all steps in the automatic annotation section
+- Download ReID model and save it somewhere:
+```sh
+    wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.xml -O reid.xml
+    wget https://download.01.org/openvinotoolkit/2018_R5/open_model_zoo/person-reidentification-retail-0079/FP32/person-reidentification-retail-0079.bin -O reid.bin
+```
+- Add next line to ``.env/bin/activate``:
+```sh
+    export REID_MODEL_DIR="/path/to/dir" # dir must contain .xml and .bin files
+```
+
+### Deep Extreme Cut
+- Perform all steps in the automatic annotation section
+- Download Deep Extreme Cut model, unpack it, and save somewhere:
+```sh
+wget https://download.01.org/openvinotoolkit/models_contrib/cvat/dextr_model_v1.zip -O dextr.zip
+unzip dextr.zip
+```
+- Add next lines to ``.env/bin/activate``:
+```sh
+    export WITH_DEXTR="yes"
+    export DEXTR_MODEL_DIR="/path/to/dir" # dir must contain .xml and .bin files
+```
+
+### Tensorflow RCNN
+- Download RCNN model, unpack it, and save it somewhere:
+```sh
+wget -O model.tar.gz http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_resnet_v2_atrous_coco_2018_01_28.tar.gz && \
+tar -xzf model.tar.gz
+```
+- Add next lines to ``.env/bin/activate``:
+```sh
+    export TF_ANNOTATION="yes"
+    export TF_ANNOTATION_MODEL_PATH="/path/to/the/model/graph" # truncate .pb extension
+```
+
+### Tensorflow Mask RCNN
+- Download Mask RCNN model, and save it somewhere:
+```sh
+wget https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5
+```
+- Add next lines to ``.env/bin/activate``:
+```sh
+    export AUTO_SEGMENTATION="yes"
+    export AUTO_SEGMENTATION_PATH="/path/to/dir" # dir must contain mask_rcnn_coco.h5 file
+```
+
+## JavaScript/Typescript coding style
 
 We use the [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript) for JavaScript code with a
 litle exception - we prefere 4 spaces for indentation of nested blocks and statements.
