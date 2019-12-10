@@ -351,6 +351,7 @@ class ProjectDataset(Extractor):
         # merge items
         subsets = defaultdict(lambda: Subset(self))
         for source_name, source in self._sources.items():
+            log.info("Loading '%s' source contents..." % source_name)
             for item in source:
                 if dataset_filter and not dataset_filter(item):
                     continue
@@ -386,6 +387,7 @@ class ProjectDataset(Extractor):
 
         # override with our items, fallback to existing images
         if own_source is not None:
+            log.info("Loading own dataset...")
             for item in own_source:
                 if dataset_filter and not dataset_filter(item):
                     continue
