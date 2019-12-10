@@ -5,7 +5,7 @@
   "main": "src/index.tsx",
   "scripts": {
     "build": "webpack --config ./webpack.config.js",
-    "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
+    "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development'"
   },
   "author": "Intel",
   "license": "MIT",
