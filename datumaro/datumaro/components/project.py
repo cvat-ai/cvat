@@ -361,7 +361,7 @@ class ProjectDataset(Extractor):
                     image = None
                     if existing_item.has_image:
                         # TODO: think of image comparison
-                        image = lambda: existing_item.image
+                        image = self._lazy_image(existing_item)
 
                     path = existing_item.path
                     if item.path != path:
@@ -398,7 +398,7 @@ class ProjectDataset(Extractor):
                         image = None
                         if existing_item.has_image:
                             # TODO: think of image comparison
-                            image = lambda: existing_item.image
+                            image = self._lazy_image(existing_item)
                         item = DatasetItemWrapper(item=item, path=None,
                             annotations=item.annotations, image=image)
 
@@ -411,6 +411,11 @@ class ProjectDataset(Extractor):
         self._subsets = dict(subsets)
 
         self._length = None
+
+    @staticmethod
+    def _lazy_image(item):
+        # NOTE: avoid https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
+        return lambda: item.image
 
     @staticmethod
     def _merge_anno(a, b):
