@@ -12,10 +12,11 @@ import {
 import Text from 'antd/lib/typography/Text';
 
 import moment from 'moment';
+import copy from 'copy-to-clipboard';
 
 import UserSelector from './user-selector';
 import getCore from '../../core';
-import copyToClipboard from '../../utils/copy-to-clipboard';
+
 
 const core = getCore();
 
@@ -145,7 +146,7 @@ export default function JobListComponent(props: Props): JSX.Element {
                                     }
                                     serialized += '\n';
                                 }
-                                copyToClipboard(serialized);
+                                copy(serialized);
                             }}
                         >
                             <Icon type='copy' theme='twoTone' />

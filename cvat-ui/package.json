@@ -41,6 +41,7 @@
     "@types/react-router-dom": "^5.1.0",
     "@types/react-share": "^3.0.1",
     "antd": "^3.25.2",
+    "copy-to-clipboard": "^3.2.0",
     "dotenv-webpack": "^1.7.0",
     "moment": "^2.24.0",
     "prop-types": "^15.7.2",

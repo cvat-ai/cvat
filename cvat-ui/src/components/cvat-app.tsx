@@ -139,7 +139,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                     />
                 ),
                 duration: null,
-                description: error.length > 200 ? 'Open browser console to get details' : error,
+                description: error.length > 200 ? 'Open the Browser Console to get details' : error,
             });
 
             console.error(error);
