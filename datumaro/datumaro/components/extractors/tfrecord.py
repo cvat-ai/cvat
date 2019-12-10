@@ -4,16 +4,14 @@
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict
-from io import BytesIO
 import numpy as np
 import os.path as osp
-from PIL import Image
 import re
 
 from datumaro.components.extractor import AnnotationType, DEFAULT_SUBSET_NAME, \
     LabelCategories, BboxObject, DatasetItem, Extractor
 from datumaro.components.formats.tfrecord import DetectionApiPath
-from datumaro.util.image import lazy_image
+from datumaro.util.image import lazy_image, decode_image
 from datumaro.util.tf_util import import_tf as _import_tf
 
 
@@ -171,8 +169,7 @@ class DetectionApiExtractor(Extractor):
 
             image = None
             if image is None and frame_image and frame_format:
-                with BytesIO(frame_image) as buffer:
-                    image = Image.open(buffer)
+                image = lazy_image(frame_image, loader=decode_image)
             if image is None and frame_filename and images_dir:
                 image_path = osp.join(images_dir, frame_filename)
                 if osp.exists(image_path):

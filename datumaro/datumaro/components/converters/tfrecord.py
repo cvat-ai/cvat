@@ -5,15 +5,13 @@
 
 import codecs
 from collections import OrderedDict
-from io import BytesIO
-import numpy as np
 import os
 import os.path as osp
-from PIL import Image
 import string
 
 from datumaro.components.extractor import AnnotationType, DEFAULT_SUBSET_NAME
 from datumaro.components.formats.tfrecord import DetectionApiPath
+from datumaro.util.image import encode_image
 from datumaro.util.tf_util import import_tf as _import_tf
 
 
@@ -59,14 +57,12 @@ def _make_tf_example(item, get_label_id, get_label, save_images=False):
 
     if save_images and item.has_image:
         fmt = DetectionApiPath.IMAGE_FORMAT
-        with BytesIO() as buffer:
-            image = Image.fromarray(item.image.astype(np.uint8))
-            image.save(buffer, format=fmt)
+        buffer = encode_image(item.image, DetectionApiPath.IMAGE_EXT)
 
-            features.update({
-                'image/encoded': bytes_feature(buffer.getvalue()),
-                'image/format': bytes_feature(fmt.encode('utf-8')),
-            })
+        features.update({
+            'image/encoded': bytes_feature(buffer),
+            'image/format': bytes_feature(fmt.encode('utf-8')),
+        })
 
     xmins = [] # List of normalized left x coordinates in bounding box (1 per box)
     xmaxs = [] # List of normalized right x coordinates in bounding box (1 per box)
