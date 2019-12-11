@@ -36,7 +36,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         numberOfTasks: state.tasks.count,
         numberOfVisibleTasks: state.tasks.current.length,
         numberOfHiddenTasks: tasks.hideEmpty ? tasks.current
-            .filter((task: Task) => !task.instance.jobs.length).length : 0,
+            .filter((task: Task): boolean => !task.instance.jobs.length).length : 0,
     };
 }
 
