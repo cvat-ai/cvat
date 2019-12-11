@@ -13,6 +13,10 @@ from furl import furl
 from . import forms
 from . import signature
 
+from django.utils.decorators import method_decorator
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 def register_user(request):
     if request.method == 'POST':
         form = forms.NewUserForm(request.POST)
@@ -27,7 +31,25 @@ def register_user(request):
         form = forms.NewUserForm()
     return render(request, 'register.html', {'form': form})
 
+@method_decorator(name='post', decorator=swagger_auto_schema(
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=[
+            'url'
+        ],
+        properties={
+            'url': openapi.Schema(type=openapi.TYPE_STRING)
+        }
+    ),
+    responses={'200': openapi.Response(description='text URL')}
+))
 class SigningView(views.APIView):
+    """
+    This method signs URL for access to the server.
+
+    Signed URL contains a token which authenticates a user on the server.
+    Signed URL is valid during 30 seconds since signing.
+    """
     def post(self, request):
         url = request.data.get('url')
         if not url:
