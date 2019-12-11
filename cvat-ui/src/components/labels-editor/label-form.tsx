@@ -509,8 +509,3 @@ class LabelForm extends React.PureComponent<Props, {}> {
 }
 
 export default Form.create<Props>()(LabelForm);
-
-
-// add validators
-// add initial values
-// add readonly fields

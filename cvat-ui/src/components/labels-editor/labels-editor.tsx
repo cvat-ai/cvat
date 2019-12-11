@@ -3,10 +3,14 @@ import React from 'react';
 import {
     Tabs,
     Icon,
+    Button,
+    Tooltip,
     notification,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
+
+import copy from 'copy-to-clipboard';
 
 import RawViewer from './raw-viewer';
 import ConstructorViewer from './constructor-viewer';
@@ -225,7 +229,35 @@ export default class LabelsEditor
         } = this.state;
 
         return (
-            <Tabs defaultActiveKey='2' type='card' tabBarStyle={{ marginBottom: '0px' }}>
+            <Tabs
+                defaultActiveKey='2'
+                type='card'
+                tabBarStyle={{ marginBottom: '0px' }}
+                tabBarExtraContent={(
+                    <>
+                        <Tooltip overlay='Copied to clipboard!' trigger='click'>
+                            <Button
+                                type='link'
+                                icon='copy'
+                                onClick={(): void => {
+                                    copy(JSON.stringify(
+                                        savedLabels.concat(unsavedLabels).map((label): any => ({
+                                            ...label,
+                                            id: undefined,
+                                            attributes: label.attributes.map((attribute): any => ({
+                                                ...attribute,
+                                                id: undefined,
+                                            })),
+                                        })), null, 4,
+                                    ));
+                                }}
+                            >
+                                Copy
+                            </Button>
+                        </Tooltip>
+                    </>
+                )}
+            >
                 <Tabs.TabPane
                     tab={
                         (
