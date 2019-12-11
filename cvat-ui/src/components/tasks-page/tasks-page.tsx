@@ -98,6 +98,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         if (prevProps.location.search !== location.search) {
             // get new tasks if any query changes
             const query = updateQuery(gettingQuery, location.search);
+            message.destroy();
             onGetTasks(query);
             return;
         }
