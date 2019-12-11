@@ -22,6 +22,7 @@ import patterns from '../../utils/validation-patterns';
 import { getReposData, syncRepos } from '../../utils/git-utils';
 
 const core = getCore();
+const PLACEHOLDER = 'Not specified';
 
 interface Props {
     previewImage: string;
@@ -49,7 +50,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         this.mounted = false;
         this.state = {
             name: taskInstance.name,
-            bugTracker: taskInstance.bugTracker,
+            bugTracker: taskInstance.bugTracker || PLACEHOLDER,
             repository: '',
             repositoryStatus: '',
         };
@@ -305,36 +306,53 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         } = this.props;
         const { bugTracker } = this.state;
 
+        const onStart = () => {
+            if (bugTracker === PLACEHOLDER) {
+                this.setState({
+                    bugTracker: '',
+                });
+            }
+        }
+
         let shown = false;
         const onChangeValue = (value: string): void => {
-            if (value && !patterns.validateURL.pattern.test(value)) {
-                if (!shown) {
-                    Modal.error({
-                        title: `Could not update the task ${taskInstance.id}`,
-                        content: 'Issue tracker is expected to be URL',
-                        onOk: (() => {
-                            shown = false;
-                        }),
+            if (value) {
+                if (!patterns.validateURL.pattern.test(value)) {
+                    if (!shown) {
+                        Modal.error({
+                            title: `Could not update the task ${taskInstance.id}`,
+                            content: 'Issue tracker is expected to be URL',
+                            onOk: (() => {
+                                shown = false;
+                            }),
+                        });
+                        shown = true;
+                    }
+                    this.setState({
+                        bugTracker: PLACEHOLDER,
                     });
-                    shown = true;
+                } else {
+                    this.setState({
+                        bugTracker: value,
+                    });
+
+                    taskInstance.bugTracker = value;
+                    onTaskUpdate(taskInstance);
                 }
             } else {
                 this.setState({
-                    bugTracker: value,
+                    bugTracker: PLACEHOLDER,
                 });
-
-                taskInstance.bugTracker = value;
-                onTaskUpdate(taskInstance);
             }
         };
 
-        if (bugTracker) {
-            return (
-                <Row>
-                    <Col>
-                        <Text strong className='cvat-black-color'>Issue Tracker</Text>
-                        <br />
-                        <Text editable={{ onChange: onChangeValue }}>{bugTracker}</Text>
+        return (
+            <Row>
+                <Col>
+                    <Text strong className='cvat-black-color'>Issue Tracker</Text>
+                    <br/>
+                    <Text editable={{onStart, onChange: onChangeValue}}>{bugTracker}</Text>
+                    {!!bugTracker.length && bugTracker !== PLACEHOLDER &&
                         <Button
                             type='ghost'
                             size='small'
@@ -345,19 +363,8 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                             }}
                             className='cvat-open-bug-tracker-button'
                         >
-                                Open the issue
-                        </Button>
-                    </Col>
-                </Row>
-            );
-        }
-
-        return (
-            <Row>
-                <Col>
-                    <Text strong className='cvat-black-color'>Issue Tracker</Text>
-                    <br />
-                    <Text editable={{ onChange: onChangeValue }}>Not specified</Text>
+                            Open the issue
+                        </Button>}
                 </Col>
             </Row>
         );
