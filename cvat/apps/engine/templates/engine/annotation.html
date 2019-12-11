@@ -26,6 +26,7 @@
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/jquery-3.3.1.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/js.cookie.js' %}"></script>
     <script type="text/javascript" src="{% static 'engine/js/3rdparty/jquery.fullscreen.js' %}"></script>
+    <script type="text/javascript" src="{% static 'engine/js/3rdparty/opencv.js' %}"></script>
     {% for js_file in js_3rdparty %}
         <script type="text/javascript" src="{% static js_file %}"></script>
     {% endfor %}
@@ -321,6 +322,10 @@
                     <tr>
                         <td> <label> Rotate All Images </label> </td>
                         <td> <input type = "checkbox"  id="rotateAllImages" class="settingsBox"/> </td>
+                    </tr>
+                    <tr>
+                        <td> <label> Equalize </label> </td>
+                        <td> <input type = "checkbox"  id="equalize" class="settingsBox"/> </td>
                     </tr>
                 </table>
             </div>
