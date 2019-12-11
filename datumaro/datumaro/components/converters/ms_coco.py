@@ -29,8 +29,9 @@ def _cast(value, type_conv, default=None):
         return default
 
 class _TaskConverter:
-    def __init__(self):
+    def __init__(self, context):
         self._min_ann_id = 1
+        self._context = context
 
         data = {
             'licenses': [],
@@ -191,6 +192,13 @@ class _InstancesConverter(_TaskConverter):
                     rle = mask_utils.merge(rles)
                     area = mask_utils.area(rle)
 
+                    if self._context._merge_polygons:
+                        binary_mask = mask_utils.decode(rle).astype(np.bool)
+                        binary_mask = np.asfortranarray(binary_mask, dtype=np.uint8)
+                        segmentation = mask_tools.convert_mask_to_rle(binary_mask)
+                        is_crowd = True
+                        bbox = [int(i) for i in mask_utils.toBbox(rle)]
+
             if ann.group is not None:
                 # Mark the group as visited to prevent repeats
                 for a in annotations[:]:
@@ -201,6 +209,18 @@ class _InstancesConverter(_TaskConverter):
                 is_crowd = False
                 segmentation = [ann.get_polygon()]
                 area = ann.area()
+
+                if self._context._merge_polygons:
+                    h, w, _ = item.image.shape
+                    rles = mask_utils.frPyObjects(segmentation, h, w)
+                    rle = mask_utils.merge(rles)
+                    area = mask_utils.area(rle)
+                    binary_mask = mask_utils.decode(rle).astype(np.bool)
+                    binary_mask = np.asfortranarray(binary_mask, dtype=np.uint8)
+                    segmentation = mask_tools.convert_mask_to_rle(binary_mask)
+                    is_crowd = True
+                    bbox = [int(i) for i in mask_utils.toBbox(rle)]
+
             if bbox is None:
                 bbox = ann.get_bbox()
 
@@ -347,15 +367,23 @@ class _Converter:
         CocoAnnotationType.labels: _LabelsConverter,
     }
 
-    def __init__(self, extractor, save_dir, save_images=False, task=None):
-        if not task:
-            task = list(self._TASK_CONVERTER.keys())
-        elif task in CocoAnnotationType:
-            task = [task]
-        self._task = task
+    def __init__(self, extractor, save_dir,
+            tasks=None, save_images=False, merge_polygons=False):
+        assert tasks is None or isinstance(tasks, (CocoTask, list))
+        if tasks is None:
+            tasks = list(self._TASK_CONVERTER)
+        elif isinstance(tasks, CocoTask):
+            tasks = [tasks]
+        else:
+            for t in tasks:
+                assert t in CocoTask
+        self._tasks = tasks
+
         self._extractor = extractor
         self._save_dir = save_dir
+
         self._save_images = save_images
+        self._merge_polygons = merge_polygons
 
     def make_dirs(self):
         self._images_dir = osp.join(self._save_dir, CocoPath.IMAGES_DIR)
