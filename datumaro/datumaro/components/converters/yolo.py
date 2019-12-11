@@ -27,11 +27,26 @@ def _make_yolo_bbox(img_size, box):
 class YoloConverter(Converter):
     # https://github.com/AlexeyAB/darknet#how-to-train-to-detect-your-custom-objects
 
-    def __init__(self, task=None, save_images=False, apply_colormap=False):
+    def __init__(self, save_images=False, cmdline_args=None):
         super().__init__()
-        self._task = task
         self._save_images = save_images
-        self._apply_colormap = apply_colormap
+
+        if cmdline_args is not None:
+            options = self._parse_cmdline(cmdline_args)
+            for k, v in options.items():
+                if hasattr(self, '_' + str(k)):
+                    setattr(self, '_' + str(k), v)
+
+    @classmethod
+    def build_cmdline_parser(cls, parser=None):
+        import argparse
+        if not parser:
+            parser = argparse.ArgumentParser()
+
+        parser.add_argument('--save-images', action='store_true',
+            help="Save images (default: %(default)s)")
+
+        return parser
 
     def __call__(self, extractor, save_dir):
         os.makedirs(save_dir, exist_ok=True)
