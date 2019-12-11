@@ -87,8 +87,11 @@ export default class FileManager extends React.PureComponent<Props, State> {
             <Tabs.TabPane key='local' tab='My computer'>
                 <Upload.Dragger
                     multiple
+                    listType='text'
                     fileList={files.local as any[]}
-                    showUploadList={false}
+                    showUploadList={files.local.length < 5 && {
+                        showRemoveIcon: false,
+                    }}
                     beforeUpload={(_: RcFile, newLocalFiles: RcFile[]): boolean => {
                         this.setState({
                             files: {
@@ -107,12 +110,12 @@ export default class FileManager extends React.PureComponent<Props, State> {
                         Support for a bulk images or a single video
                     </p>
                 </Upload.Dragger>
-                { !!files.local.length
+                { files.local.length >= 5
                     && (
                         <>
                             <br />
                             <Text className='cvat-black-color'>
-                                {`${files.local.length} file(s) selected`}
+                                {`${files.local.length} files selected`}
                             </Text>
                         </>
                     )
