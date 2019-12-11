@@ -14,7 +14,7 @@ from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
     DEFAULT_SUBSET_NAME, AnnotationType, PointsObject, BboxObject
 )
-from datumaro.components.formats.ms_coco import CocoAnnotationType, CocoPath
+from datumaro.components.formats.ms_coco import CocoTask, CocoPath
 from datumaro.util import find
 from datumaro.util.image import save_image
 import datumaro.util.mask_tools as mask_tools
@@ -360,11 +360,11 @@ class _LabelsConverter(_TaskConverter):
 
 class _Converter:
     _TASK_CONVERTER = {
-        CocoAnnotationType.image_info: _ImageInfoConverter,
-        CocoAnnotationType.instances: _InstancesConverter,
-        CocoAnnotationType.person_keypoints: _KeypointsConverter,
-        CocoAnnotationType.captions: _CaptionsConverter,
-        CocoAnnotationType.labels: _LabelsConverter,
+        CocoTask.image_info: _ImageInfoConverter,
+        CocoTask.instances: _InstancesConverter,
+        CocoTask.person_keypoints: _KeypointsConverter,
+        CocoTask.captions: _CaptionsConverter,
+        CocoTask.labels: _LabelsConverter,
     }
 
     def __init__(self, extractor, save_dir,
@@ -393,11 +393,13 @@ class _Converter:
         os.makedirs(self._ann_dir, exist_ok=True)
 
     def make_task_converter(self, task):
-        return self._TASK_CONVERTER[task]()
+        if task not in self._TASK_CONVERTER:
+            raise NotImplementedError()
+        return self._TASK_CONVERTER[task](self)
 
     def make_task_converters(self):
         return {
-            task: self.make_task_converter(task) for task in self._task
+            task: self.make_task_converter(task) for task in self._tasks
         }
 
     def save_image(self, item, filename):
@@ -439,32 +441,56 @@ class _Converter:
                         '%s_%s.json' % (task.name, subset_name)))
 
 class CocoConverter(Converter):
-    def __init__(self, task=None, save_images=False):
+    def __init__(self,
+            tasks=None, save_images=False, merge_polygons=False,
+            cmdline_args=None):
         super().__init__()
-        self._task = task
-        self._save_images = save_images
+
+        self._options = {
+            'tasks': tasks,
+            'save_images': save_images,
+            'merge_polygons': merge_polygons,
+        }
+
+        if cmdline_args is not None:
+            self._options.update(self._parse_cmdline(cmdline_args))
+
+    @staticmethod
+    def _split_tasks_string(s):
+        return [CocoTask[i.strip()] for i in s.split(',')]
+
+    @classmethod
+    def build_cmdline_parser(cls, parser=None):
+        import argparse
+        if not parser:
+            parser = argparse.ArgumentParser()
+
+        parser.add_argument('--save-images', action='store_true',
+            help="Save images (default: %(default)s)")
+        parser.add_argument('--merge-polygons', action='store_true',
+            help="Merge instance polygons into a mask (default: %(default)s)")
+        parser.add_argument('--tasks', type=cls._split_tasks_string,
+            default=None,
+            help="COCO task filter, comma-separated list of {%s} "
+                "(default: all)" % ', '.join([t.name for t in CocoTask]))
+
+        return parser
 
     def __call__(self, extractor, save_dir):
-        converter = _Converter(extractor, save_dir,
-            save_images=self._save_images, task=self._task)
+        converter = _Converter(extractor, save_dir, **self._options)
         converter.convert()
 
-def CocoInstancesConverter(save_images=False):
-    return CocoConverter(CocoAnnotationType.instances,
-        save_images=save_images)
+def CocoInstancesConverter(**kwargs):
+    return CocoConverter(CocoTask.instances, **kwargs)
 
-def CocoImageInfoConverter(save_images=False):
-    return CocoConverter(CocoAnnotationType.image_info,
-        save_images=save_images)
+def CocoImageInfoConverter(**kwargs):
+    return CocoConverter(CocoTask.image_info, **kwargs)
 
-def CocoPersonKeypointsConverter(save_images=False):
-    return CocoConverter(CocoAnnotationType.person_keypoints,
-        save_images=save_images)
+def CocoPersonKeypointsConverter(**kwargs):
+    return CocoConverter(CocoTask.person_keypoints, **kwargs)
 
-def CocoCaptionsConverter(save_images=False):
-    return CocoConverter(CocoAnnotationType.captions,
-        save_images=save_images)
+def CocoCaptionsConverter(**kwargs):
+    return CocoConverter(CocoTask.captions, **kwargs)
 
-def CocoLabelsConverter(save_images=False):
-    return CocoConverter(CocoAnnotationType.labels,
-        save_images=save_images)
+def CocoLabelsConverter(**kwargs):
+    return CocoConverter(CocoTask.labels, **kwargs)

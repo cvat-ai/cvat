@@ -7,16 +7,16 @@ from collections import defaultdict
 import os
 import os.path as osp
 
-from datumaro.components.formats.ms_coco import CocoAnnotationType, CocoPath
+from datumaro.components.formats.ms_coco import CocoTask, CocoPath
 
 
 class CocoImporter:
     _COCO_EXTRACTORS = {
-        CocoAnnotationType.instances: 'coco_instances',
-        CocoAnnotationType.person_keypoints: 'coco_person_kp',
-        CocoAnnotationType.captions: 'coco_captions',
-        CocoAnnotationType.labels: 'coco_labels',
-        CocoAnnotationType.image_info: 'coco_images',
+        CocoTask.instances: 'coco_instances',
+        CocoTask.person_keypoints: 'coco_person_kp',
+        CocoTask.captions: 'coco_captions',
+        CocoTask.labels: 'coco_labels',
+        CocoTask.image_info: 'coco_images',
     }
 
     def __init__(self, task_filter=None):
@@ -58,12 +58,12 @@ class CocoImporter:
             name_parts = osp.splitext(ann_file)[0].rsplit('_', maxsplit=1)
             ann_type = name_parts[0]
             try:
-                ann_type = CocoAnnotationType[ann_type]
+                ann_type = CocoTask[ann_type]
             except KeyError:
                 raise Exception(
                     'Unknown subset type %s, only known are: %s' % \
                     (ann_type,
-                     ', '.join([e.name for e in CocoAnnotationType])
+                     ', '.join([e.name for e in CocoTask])
                     ))
             subset_name = name_parts[1]
             subsets[subset_name][ann_type] = subset_path
