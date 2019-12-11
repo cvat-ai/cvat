@@ -54,14 +54,14 @@ def build_import_parser(parser):
         help="Source project format (options: %s)" % (', '.join(importers_list)))
     parser.add_argument('-d', '--dest', default='.', dest='dst_dir',
         help="Directory to save the new project to (default: current dir)")
-    parser.add_argument('extra_args', nargs=argparse.REMAINDER,
-        help="Additional arguments for importer")
     parser.add_argument('-n', '--name', default=None,
         help="Name of the new project (default: same as project dir)")
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
     parser.add_argument('--copy', action='store_true',
         help="Make a deep copy instead of saving source links")
+    # parser.add_argument('extra_args', nargs=argparse.REMAINDER,
+    #     help="Additional arguments for importer (pass '-- -h' for help)")
     return parser
 
 def import_command(args):
@@ -111,8 +111,8 @@ def build_export_parser(parser):
         help="Output format")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
-    parser.add_argument('--save-images', action='store_true',
-        help="Save images")
+    parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
+        help="Additional arguments for converter (pass '-- -h' for help)")
     return parser
 
 def export_command(args):
@@ -125,7 +125,7 @@ def export_command(args):
         save_dir=dst_dir,
         output_format=args.output_format,
         filter_expr=args.filter,
-        save_images=args.save_images)
+        cmdline_args=args.extra_args)
     log.info("Project exported to '%s' as '%s'" % \
         (dst_dir, args.output_format))
 

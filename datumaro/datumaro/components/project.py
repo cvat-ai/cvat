@@ -542,7 +542,7 @@ class ProjectDataset(Extractor):
         return self
 
     def save(self, save_dir=None, merge=False, recursive=True,
-            save_images=False, apply_colormap=True):
+            save_images=False):
         if save_dir is None:
             assert self.config.project_dir
             save_dir = self.config.project_dir
@@ -562,7 +562,6 @@ class ProjectDataset(Extractor):
 
         converter_kwargs = {
             'save_images': save_images,
-            'apply_colormap': apply_colormap,
         }
 
         if merge:
