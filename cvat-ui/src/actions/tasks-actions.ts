@@ -30,7 +30,7 @@ export enum TasksActionTypes {
     UPDATE_TASK = 'UPDATE_TASK',
     UPDATE_TASK_SUCCESS = 'UPDATE_TASK_SUCCESS',
     UPDATE_TASK_FAILED = 'UPDATE_TASK_FAILED',
-    RESET_ERROR = 'RESET_ERROR',
+    HIDE_EMPTY_TASKS = 'HIDE_EMPTY_TASKS',
 }
 
 function getTasks(): AnyAction {
@@ -90,8 +90,7 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             return;
         }
 
-        const array = Array.from(result)
-            .filter((task: any) => task.jobs.length > 0);
+        const array = Array.from(result);
         const previews = [];
         const promises = array
             .map((task): string => (task as any).frames.preview());
@@ -512,4 +511,15 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
             dispatch(updateTaskFailed(error, task));
         }
     };
+}
+
+export function hideEmptyTasks(hideEmpty: boolean): AnyAction {
+    const action = {
+        type: TasksActionTypes.HIDE_EMPTY_TASKS,
+        payload: {
+            hideEmpty,
+        },
+    };
+
+    return action;
 }

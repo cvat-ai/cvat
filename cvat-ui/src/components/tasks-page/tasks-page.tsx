@@ -4,7 +4,11 @@ import { withRouter } from 'react-router-dom';
 
 import {
     Spin,
+    Button,
+    message,
 } from 'antd';
+
+import Text from 'antd/lib/typography/Text';
 
 import {
     TasksQuery,
@@ -19,7 +23,9 @@ interface TasksPageProps {
     gettingQuery: TasksQuery;
     numberOfTasks: number;
     numberOfVisibleTasks: number;
+    numberOfHiddenTasks: number;
     onGetTasks: (gettingQuery: TasksQuery) => void;
+    hideEmptyTasks: (hideEmpty: boolean) => void;
 }
 
 function getSearchField(gettingQuery: TasksQuery): string {
@@ -43,6 +49,31 @@ function getSearchField(gettingQuery: TasksQuery): string {
     return searchString.slice(0, -5);
 }
 
+function updateQuery(previousQuery: TasksQuery, searchString: string): TasksQuery {
+    const params = new URLSearchParams(searchString);
+    const query = { ...previousQuery };
+    for (const field of Object.keys(query)) {
+        if (params.has(field)) {
+            const value = params.get(field);
+            if (value) {
+                if (field === 'id' || field === 'page') {
+                    if (Number.isInteger(+value)) {
+                        query[field] = +value;
+                    }
+                } else {
+                    query[field] = value;
+                }
+            }
+        } else if (field === 'page') {
+            query[field] = 1;
+        } else {
+            query[field] = null;
+        }
+    }
+
+    return query;
+}
+
 class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteComponentProps> {
     public componentDidMount(): void {
         const {
@@ -50,36 +81,52 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
             location,
             onGetTasks,
         } = this.props;
-        const params = new URLSearchParams(location.search);
 
-        const query = { ...gettingQuery };
-        for (const field of Object.keys(query)) {
-            if (params.has(field)) {
-                const value = params.get(field);
-                if (value) {
-                    if (field === 'id' || field === 'page') {
-                        if (Number.isInteger(+value)) {
-                            query[field] = +value;
-                        }
-                    } else {
-                        query[field] = value;
-                    }
-                }
-            } else if (field === 'page') {
-                query[field] = 1;
-            } else {
-                query[field] = null;
-            }
+        const query = updateQuery(gettingQuery, location.search);
+        onGetTasks(query);
+    }
+
+    public componentDidUpdate(prevProps: TasksPageProps & RouteComponentProps): void {
+        const {
+            location,
+            gettingQuery,
+            onGetTasks,
+            numberOfHiddenTasks,
+            hideEmptyTasks,
+        } = this.props;
+
+        if (prevProps.location.search !== location.search) {
+            // get new tasks if any query changes
+            const query = updateQuery(gettingQuery, location.search);
+            message.destroy();
+            onGetTasks(query);
+            return;
         }
 
-        this.updateURL(query);
-        onGetTasks(query);
+        if (numberOfHiddenTasks) {
+            message.destroy();
+            message.info(
+                <>
+                    <Text>
+                        Some tasks have not been showed because they do not have any data.
+                    </Text>
+                    <Button
+                        type='link'
+                        onClick={(): void => {
+                            hideEmptyTasks(false);
+                            message.destroy();
+                        }}
+                    >
+                        Show all
+                    </Button>
+                </>, 7,
+            );
+        }
     }
 
     private handleSearch = (value: string): void => {
         const {
             gettingQuery,
-            onGetTasks,
         } = this.props;
 
         const query = { ...gettingQuery };
@@ -114,19 +161,19 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
         }
 
         this.updateURL(query);
-        onGetTasks(query);
     };
 
     private handlePagination = (page: number): void => {
         const {
             gettingQuery,
-            onGetTasks,
         } = this.props;
-        const query = { ...gettingQuery };
 
+        // modify query object
+        const query = { ...gettingQuery };
         query.page = page;
+
+        // update url according to new query object
         this.updateURL(query);
-        onGetTasks(query);
     };
 
     private updateURL(gettingQuery: TasksQuery): void {
@@ -137,9 +184,16 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
                 queryString += `${field}=${gettingQuery[field]}&`;
             }
         }
-        history.replace({
-            search: queryString.slice(0, -1),
-        });
+
+        const oldQueryString = history.location.search;
+        if (oldQueryString !== queryString) {
+            history.push({
+                search: queryString.slice(0, -1),
+            });
+
+            // force update if any changes
+            this.forceUpdate();
+        }
     }
 
     public render(): JSX.Element {
