@@ -26,48 +26,58 @@ class FrameProviderWrapper extends Listener {
 
     async require(frameNumber) {
         this._required = frameNumber;
-        const frameData = await window.cvatTask.frames.get(frameNumber);
-        const ranges = await window.cvatTask.frames.ranges();
-        for (const range of ranges) {
-            const [start, stop] = range.split(':').map((el) => +el);
-            if (frameNumber >= start && frameNumber <= stop) {
-                const data = await frameData.data();
+        try {
+            const frameData = await window.cvatTask.frames.get(frameNumber);
+            const ranges = await window.cvatTask.frames.ranges();
+            for (const range of ranges) {
+                const [start, stop] = range.split(':').map((el) => +el);
+                if (frameNumber >= start && frameNumber <= stop) {
+                    const data = await frameData.data();
+                    this._loaded = frameNumber;
+                    this._result = {
+                        data,
+                        renderWidth: frameData.width,
+                        renderHeight: frameData.height,
+                    };
+                    return this._result;
+                }
+            }
+
+            // fetching from server
+            // we don't want to wait it
+            // but we promise to notify the player when frame is loaded
+            frameData.data().then((data) => {
                 this._loaded = frameNumber;
                 this._result = {
                     data,
                     renderWidth: frameData.width,
                     renderHeight: frameData.height,
                 };
-                return this._result;
-            }
-        }
 
-
-
-        // fetching from server
-        // we don't want to wait it
-        // but we promise to notify the player when frame is loaded
-        frameData.data().then((data) => {
-            this._loaded = frameNumber;
-            this._result = {
-                data,
-                renderWidth: frameData.width,
-                renderHeight: frameData.height,
-            };
-
-            this.notify();
-        }).catch((error) => {
+                this.notify();
+            }).catch((error) => {
+                if (typeof (error) === 'number') {
+                    if (this._required === error) {
+                        console.log('Unexpecter error. Requested frame was rejected');
+                    } else {
+                        console.log(`${error} rejected - ok`);
+                    }
+                } else {
+                    throw error;
+                }
+            });
+        } catch (error) {
             if (typeof (error) === 'number') {
                 if (this._required === error) {
                     console.log('Unexpecter error. Requested frame was rejected');
                 } else {
                     console.log(`${error} rejected - ok`);
+                    throw error;
                 }
             } else {
-                console.log(error);
+                throw error;
             }
-        });
-
+        }
         return null;
     }
 
@@ -224,6 +234,7 @@ class PlayerModel extends Listener {
         this._pauseFlag = false;
         this._playing = true;
         const timeout = 1000 / this._settings.fps;
+        this._frame.requested.clear();
         const playFunc = async () => {
             if (this._pauseFlag) { // pause method without notify (for frame downloading)
                 if (this._playInterval) {
@@ -234,30 +245,20 @@ class PlayerModel extends Listener {
             }
             const skip = Math.max(Math.floor(this._settings.fps / 25), 1);
             const requestedFrame = this._frame.current + skip;
-            if ((requestedFrame) % this._frame.chunkSize === 0 && this._frame.requested.size) {
+            if (requestedFrame % this._frame.chunkSize === 0 && this._frame.requested.size) {
                 if (this._playInterval) {
                     clearInterval(this._playInterval);
                     this._playInterval = null;
                     return;
                 }
             }
-            try {
-                const res = await this.shift(skip);
-                if (this._pauseFlag) { // pause method without notify (for frame downloading)
-                    if (this._playInterval) {
-                        clearInterval(this._playInterval);
-                        this._playInterval = null;
-                    }
-                    return;
-                }
-
-                if (!res) {
-                    this.pause(); // if not changed, pause
-                } else if (this._frame.requested.size === 0 && !this._playInterval) {
-                    this._playInterval = setInterval(playFunc, timeout);
-                }
-            } catch (error) {
+            const res = await this.shift(skip);
+            if (!res) {
+                this.pause(); // if not changed, pause
+            } else if (this._frame.requested.size === 0 && !this._playInterval) {
+                this._playInterval = setInterval(playFunc, timeout);
             }
+
         };
         this._playInterval = setInterval(playFunc, timeout);
     }
@@ -332,6 +333,9 @@ class PlayerModel extends Listener {
 
             return changed;
         } catch (error) {
+            if (typeof (error) === 'number') {
+                this._frame.requested.delete(error);
+            }
         }
     }
 

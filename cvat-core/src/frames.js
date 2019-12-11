@@ -89,26 +89,54 @@
     FrameData.prototype.data.implementation = async function (onServerRequest) {
         return new Promise( async (resolve, reject) => {
             const onDecodeAll = (frameNumber) => {
-                if (chunkNumber in frameDataCache[this.tid].activeChunkrequests) {
-                    // Need to resolve last frame request only
-                    const callbackArray = frameDataCache[this.tid].activeChunkrequests[chunkNumber].callbacks;
+                if (frameDataCache[this.tid].activeChunkRequest && chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber) {
+                    const callbackArray = frameDataCache[this.tid].activeChunkRequest.callbacks;
                     if (callbackArray.length) {
                         const lastRequest = callbackArray.pop();
-                        delete frameDataCache[this.tid].activeChunkrequests[chunkNumber];
-                        console.log(`resolve ${frameNumber}`);
+                        frameDataCache[this.tid].activeChunkRequest = undefined;
                         lastRequest.resolve(provider.frame(frameNumber));
                     }
                 }
             };
 
             const rejectRequestAll = () => {
-                if (chunkNumber in frameDataCache[this.tid].activeChunkrequests) {
-                    for (const r of frameDataCache[this.tid].activeChunkrequests[chunkNumber].callbacks) {
-                        console.log(`reject ${r.frameNumber}`);
+                if (frameDataCache[this.tid].activeChunkRequest && chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber) {
+                    for (const r of frameDataCache[this.tid].activeChunkRequest.callbacks) {
                         r.reject(r.frameNumber);
                     }
-                    delete frameDataCache[this.tid].activeChunkrequests[chunkNumber];
+                    frameDataCache[this.tid].activeChunkRequest = undefined;
                 }
+            };
+
+            const makeActiveRequest = () => {
+                const activeChunk = frameDataCache[this.tid].activeChunkRequest
+                activeChunk.request = serverProxy.frames.getData(this.tid, activeChunk.chunkNumber).then(
+                    (chunk) => {
+                        frameDataCache[this.tid].activeChunkRequest.completed = true;
+                        provider.requestDecodeBlock(chunk,
+                            frameDataCache[this.tid].activeChunkRequest.start,
+                            frameDataCache[this.tid].activeChunkRequest.stop,
+                            frameDataCache[this.tid].activeChunkRequest.onDecodeAll,
+                            frameDataCache[this.tid].activeChunkRequest.rejectRequestAll
+                        );
+                }).catch(exception => {
+                    if (exception instanceof Exception) {
+                        reject(exception);
+                    } else {
+                        reject(new Exception(exception.message));
+                    }
+                }).finally(() => {
+                    if (frameDataCache[this.tid].nextChunkRequest) {
+                        if (frameDataCache[this.tid].activeChunkRequest) {
+                            for (const r of frameDataCache[this.tid].activeChunkRequest.callbacks) {
+                                r.reject(r.frameNumber);
+                            }
+                        }
+                        frameDataCache[this.tid].activeChunkRequest = frameDataCache[this.tid].nextChunkRequest;
+                        frameDataCache[this.tid].nextChunkRequest = undefined;
+                        makeActiveRequest();
+                    }
+                });
             };
 
             const { provider } = frameDataCache[this.tid];
@@ -126,37 +154,56 @@
                     if (frame === null) {
                         onServerRequest();
                         if (!provider.is_chunk_cached(start, stop)) {
-                            if (!(chunkNumber in frameDataCache[this.tid].activeChunkrequests)) {
-
-                                // delete all unnecessary requests
-                                for (const chunkNumber in frameDataCache[this.tid].activeChunkrequests) {
-                                    delete frameDataCache[this.tid].activeChunkrequests[chunkNumber];
+                            if (!frameDataCache[this.tid].activeChunkRequest || (frameDataCache[this.tid].activeChunkRequest && frameDataCache[this.tid].activeChunkRequest.completed)) {
+                                if (frameDataCache[this.tid].activeChunkRequest) {
+                                    frameDataCache[this.tid].activeChunkRequest.rejectRequestAll();
                                 }
-                                console.log(`request chunk ${chunkNumber} from the server`);
-                                frameDataCache[this.tid].activeChunkrequests[chunkNumber] = {
-                                    request: serverProxy.frames.getData(this.tid, chunkNumber),
-                                    callbacks: [],
+                                frameDataCache[this.tid].activeChunkRequest = {
+                                    request: undefined,
+                                    chunkNumber,
+                                    start,
+                                    stop,
+                                    onDecodeAll,
+                                    rejectRequestAll,
+                                    completed: false,
+                                    callbacks: [{
+                                        resolve,
+                                        reject,
+                                        frameNumber: this.number,
+                                    }],
                                 };
-                            }
-                            frameDataCache[this.tid].activeChunkrequests[chunkNumber].callbacks.push({
-                                resolve,
-                                reject,
-                                frameNumber: this.number,
-                            });
-                            frameDataCache[this.tid].activeChunkrequests[chunkNumber].request.then(chunk => {
-                                // if (this.number === frameDataCache[this.tid].lastFrameRequest) {
-                                    console.log(`request decode [${start}:${stop}]`);
-                                    provider.requestDecodeBlock(chunk, start, stop, onDecodeAll, rejectRequestAll);
-                                // }
-                            }).catch(exception => {
-                                if (exception instanceof Exception) {
-                                    reject(exception);
+                                makeActiveRequest();
+                            } else {
+                                if (frameDataCache[this.tid].activeChunkRequest.chunkNumber === chunkNumber) {
+                                    frameDataCache[this.tid].activeChunkRequest.callbacks.push({
+                                        resolve,
+                                        reject,
+                                        frameNumber: this.number,
+                                    });
                                 } else {
-                                    reject(new Exception(exception.message));
+                                    if (frameDataCache[this.tid].nextChunkRequest) {
+                                        for (const r of frameDataCache[this.tid].nextChunkRequest.callbacks) {
+                                            r.reject(r.frameNumber);
+                                        }
+                                    }
+                                    frameDataCache[this.tid].nextChunkRequest = {
+                                        request: undefined,
+                                        chunkNumber,
+                                        start,
+                                        stop,
+                                        onDecodeAll,
+                                        rejectRequestAll,
+                                        completed: false,
+                                        callbacks: [{
+                                            resolve,
+                                            reject,
+                                            frameNumber: this.number,
+                                        }],
+                                    };
                                 }
-                            });
+                            }
                         } else {
-                            frameDataCache[this.tid].activeChunkrequests[chunkNumber].callbacks.push({
+                            frameDataCache[this.tid].activeChunkRequest.callbacks.push({
                                 resolve,
                                 reject,
                                 frameNumber: this.number,
@@ -164,28 +211,28 @@
                             provider.requestDecodeBlock(null, start, stop, onDecodeAll, rejectRequestAll);
                         }
                     } else {
-                        // if (this.number % chunkSize > 1 && !provider.isNextChunkExists(this.number) && decodedBlocksCacheSize > 1) {
-                        //     const nextChunkNumber = chunkNumber + 1;
-                        //     const nextStart = Math.max(this.startFrame, nextChunkNumber * chunkSize);
-                        //     const nextStop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
+                        if (this.number % chunkSize > 1 && !provider.isNextChunkExists(this.number) && decodedBlocksCacheSize > 1) {
+                            const nextChunkNumber = chunkNumber + 1;
+                            const nextStart = Math.max(this.startFrame, nextChunkNumber * chunkSize);
+                            const nextStop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
 
-                        //     if (nextStart < this.stopFrame) {
-                        //         provider.setReadyToLoading(nextChunkNumber);
-                        //         if (!provider.is_chunk_cached(nextStart, nextStop)){
-                        //             serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
-                        //                 provider.requestDecodeBlock(nextChunk, nextStart, nextStop, undefined, undefined);
-                        //             }).catch(exception => {
-                        //                 if (exception instanceof Exception) {
-                        //                     reject(exception);
-                        //                 } else {
-                        //                     reject(new Exception(exception.message));
-                        //                 }
-                        //             });
-                        //         } else {
-                        //             provider.requestDecodeBlock(null, nextStart, nextStop, undefined, undefined);
-                        //         }
-                        //     }
-                        // }
+                            if (nextStart < this.stopFrame) {
+                                provider.setReadyToLoading(nextChunkNumber);
+                                if (!provider.is_chunk_cached(nextStart, nextStop)){
+                                    serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
+                                        provider.requestDecodeBlock(nextChunk, nextStart, nextStop, undefined, undefined);
+                                    }).catch(exception => {
+                                        if (exception instanceof Exception) {
+                                            reject(exception);
+                                        } else {
+                                            reject(new Exception(exception.message));
+                                        }
+                                    });
+                                } else {
+                                    provider.requestDecodeBlock(null, nextStart, nextStop, undefined, undefined);
+                                }
+                            }
+                        }
                         resolve(frame);
                     }
                 } catch (exception) {
@@ -257,7 +304,8 @@
                 provider: new cvatData.FrameProvider(blockType, chunkSize, 9, decodedBlocksCacheSize, 2),
                 lastFrameRequest : frame,
                 decodedBlocksCacheSize,
-                activeChunkrequests: {},
+                activeChunkRequest: undefined,
+                nextChunkRequest: undefined,
             };
         }
 

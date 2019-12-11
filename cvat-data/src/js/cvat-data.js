@@ -100,7 +100,6 @@ class FrameProvider {
                     this._requestedBlockDecode.resolveCallback = resolveCallback;
                     this._requestedBlockDecode.rejectCallback = rejectCallback;
             } else if (this._requestedBlockDecode.rejectCallback) {
-                console.log(`requestedDecodeBlock !== null, reject previous request [${this._requestedBlockDecode.start}, ${this._requestedBlockDecode.end}]`);
                 this._requestedBlockDecode.rejectCallback();
             }
         }
