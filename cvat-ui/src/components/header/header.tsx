@@ -57,7 +57,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     type='link'
                     value='tasks'
                     onClick={
-                        (): void => props.history.push('/tasks')
+                        (): void => props.history.push('/tasks?page=1')
                     }
                 >
                     Tasks
