@@ -21,6 +21,7 @@ export interface TaskItemProps {
     taskInstance: any;
     previewImage: string;
     deleted: boolean;
+    hidden: boolean;
     activeInference: ActiveInference | null;
 }
 
@@ -181,11 +182,18 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     public render(): JSX.Element {
-        const { deleted } = this.props;
+        const {
+            deleted,
+            hidden,
+        } = this.props;
         const style = {};
         if (deleted) {
             (style as any).pointerEvents = 'none';
             (style as any).opacity = 0.5;
+        }
+
+        if (hidden) {
+            (style as any).display = 'none';
         }
 
         return (

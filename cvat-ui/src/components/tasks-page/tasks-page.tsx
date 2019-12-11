@@ -4,7 +4,11 @@ import { withRouter } from 'react-router-dom';
 
 import {
     Spin,
+    Button,
+    message,
 } from 'antd';
+
+import Text from 'antd/lib/typography/Text';
 
 import {
     TasksQuery,
@@ -19,7 +23,9 @@ interface TasksPageProps {
     gettingQuery: TasksQuery;
     numberOfTasks: number;
     numberOfVisibleTasks: number;
+    numberOfHiddenTasks: number;
     onGetTasks: (gettingQuery: TasksQuery) => void;
+    hideEmptyTasks: (hideEmpty: boolean) => void;
 }
 
 function getSearchField(gettingQuery: TasksQuery): string {
@@ -85,12 +91,35 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
             location,
             gettingQuery,
             onGetTasks,
+            numberOfHiddenTasks,
+            hideEmptyTasks,
         } = this.props;
 
         if (prevProps.location.search !== location.search) {
             // get new tasks if any query changes
             const query = updateQuery(gettingQuery, location.search);
             onGetTasks(query);
+            return;
+        }
+
+        if (numberOfHiddenTasks) {
+            message.destroy();
+            message.info(
+                <>
+                    <Text>
+                        Some tasks have not been showed because they do not have any data.
+                    </Text>
+                    <Button
+                        type='link'
+                        onClick={(): void => {
+                            hideEmptyTasks(false);
+                            message.destroy();
+                        }}
+                    >
+                        Show all
+                    </Button>
+                </>, 7,
+            );
         }
     }
 

@@ -24,6 +24,7 @@ export interface Task {
 export interface TasksState {
     initialized: boolean;
     fetching: boolean;
+    hideEmpty: boolean;
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
