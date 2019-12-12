@@ -14,7 +14,8 @@ from urllib import error as urlerror
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
-from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES
+from cvat.apps.engine.media_extractors import get_mime, MEDIA_TYPES, Mpeg4ChunkWriter, ZipChunkWriter, Mpeg4CompressedChunkWriter, ZipCompressedChunkWriter
+from cvat.apps.engine.models import DataChoice
 
 import django_rq
 from django.conf import settings
@@ -243,39 +244,53 @@ def _create_thread(tid, data):
         job.meta['status'] = 'Images are being compressed... {}%'.format(round(progress * 100))
         job.save_meta()
 
-    frame_counter = 0
-    for extractor in extractors:
-        media_meta, image_count = extractor.save_as_chunks(
-            chunk_size=db_data.chunk_size,
-            compressed_chunk_path=db_data.get_compressed_chunk_path,
-            original_chunk_path=db_data.get_original_chunk_path,
-            compressed_chunk_type=db_data.compressed_chunk_type,
-            original_chunk_type=db_data.original_chunk_type,
-            progress_callback=update_progress,
-            quality=db_data.image_quality,
-        )
-        db_data.size += image_count
+    compressed_chunk_writer_class = Mpeg4CompressedChunkWriter if db_data.compressed_chunk_type == DataChoice.VIDEO else ZipCompressedChunkWriter
+    original_chunk_writer_class = Mpeg4ChunkWriter if db_data.original_chunk_type == DataChoice.VIDEO else ZipChunkWriter
 
-        if db_data.compressed_chunk_type == models.DataChoice.IMAGESET:
-            for image_meta in media_meta:
-                db_images.append(models.Image(
-                    data=db_data,
-                    path=os.path.relpath(image_meta['name'], upload_dir),
-                    frame=frame_counter,
-                    width=image_meta['size'][0],
-                    height=image_meta['size'][1],
-                ))
-                frame_counter += 1
-    extractors[0].save_preview(db_data.get_preview_path())
-    if db_data.compressed_chunk_type == models.DataChoice.VIDEO:
+    compressed_chunk_writer = compressed_chunk_writer_class(db_data.image_quality)
+    original_chunk_writer = original_chunk_writer_class(100)
+
+    frame_counter = 0
+    total_len = sum(len(e) for e in extractors)
+    image_names = []
+    image_sizes = []
+    for extractor in extractors:
+        for chunk_idx, chunk_images in enumerate(extractor.slice_by_size(db_data.chunk_size)):
+            images = []
+            for img in chunk_images:
+                images.append(img[0])
+                image_names.append(img[1])
+
+            compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
+            img_sizes = compressed_chunk_writer.save_as_chunk(images, compressed_chunk_path)
+            image_sizes.extend(img_sizes)
+
+            original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
+            original_chunk_writer.save_as_chunk(images, original_chunk_path)
+
+            db_data.size += len(chunk_images)
+            update_progress(db_data.size / total_len)
+
+    if db_data.compressed_chunk_type == models.DataChoice.IMAGESET:
+        for image_name, image_size in zip(image_names, image_sizes):
+            db_images.append(models.Image(
+                data=db_data,
+                path=os.path.relpath(image_name, upload_dir),
+                frame=frame_counter,
+                width=image_size[0],
+                height=image_size[1],
+            ))
+            frame_counter += 1
+        models.Image.objects.bulk_create(db_images)
+    else:
         models.Video.objects.create(
             data=db_data,
-            path=os.path.relpath(media_meta[0]['name'], upload_dir),
-            width=media_meta[0]['size'][0], height=media_meta[0]['size'][1])
+            path=os.path.relpath(image_names[0], upload_dir),
+            width=image_sizes[0][0], height=image_sizes[0][1])
         if db_data.stop_frame == 0:
             db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
-    else:
-        models.Image.objects.bulk_create(db_images)
+
+    extractors[0].save_preview(db_data.get_preview_path())
 
     db_data.client_files.all().delete()
     db_data.server_files.all().delete()

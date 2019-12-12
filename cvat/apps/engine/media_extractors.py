@@ -4,6 +4,7 @@ import shutil
 import zipfile
 from io import BytesIO
 import itertools
+from abc import ABC, abstractmethod
 
 import av
 import av.datasets
@@ -27,7 +28,7 @@ def get_mime(name):
 
     return 'unknown'
 
-class IMediaExtractor:
+class IMediaReader(ABC):
     def __init__(self, source_path, step, start, stop):
         self._source_path = sorted(source_path)
         self._step = step
@@ -43,25 +44,35 @@ class IMediaExtractor:
         if tmp_dir:
             shutil.rmtree(tmp_dir)
 
-#Note step, start, stop have no affect
-class ImageListExtractor(IMediaExtractor):
-    def __init__(self, source_path, step=1, start=0, stop=0):
-        if not source_path:
-            raise Exception('No image found')
-        super().__init__(
-            source_path=source_path,
-            step=1,
-            start=0,
-            stop=0,
-        )
-
+    @abstractmethod
     def __iter__(self):
-        return iter(self._source_path)
+        pass
 
+    @abstractmethod
     def __getitem__(self, k):
-        return self._source_path[k]
+        pass
 
-    def compress_image(self, image_path, quality):
+    # @abstractmethod
+    # def get_preview(self):
+    #     pass
+
+    def slice_by_size(self, size):
+        it = itertools.islice(self, self._start, self._stop if self._stop else None)
+        frames = list(itertools.islice(it, 0, size * self._step, self._step))
+        while frames:
+            yield frames
+            frames = list(itertools.islice(it, 0, size * self._step, self._step))
+
+    @abstractmethod
+    def get_image_names(self):
+        pass
+
+class IChunkWriter(ABC):
+    def __init__(self, quality):
+        self._image_quality = quality
+
+    @staticmethod
+    def _compress_image(image_path, quality):
         image = Image.open(image_path)
         # Ensure image data fits into 8bit per pixel before RGB conversion as PIL clips values on conversion
         if image.mode == "I":
@@ -78,6 +89,148 @@ class ImageListExtractor(IMediaExtractor):
         width, height = converted_image.size
         converted_image.close()
         return width, height, buf
+
+    @abstractmethod
+    def save_as_chunk(self, images, chunk_path):
+        pass
+
+class ZipChunkWriter(IChunkWriter):
+    def save_as_chunk(self, images, chunk_path):
+        with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
+            for idx, image_file in enumerate(images):
+                arcname = '{:06d}.{}'.format(idx, os.path.basename(image_file)[1])
+                zip_chunk.write(filename=image_file, arcname=arcname)
+
+        return []
+
+class ZipCompressedChunkWriter(IChunkWriter):
+    def save_as_chunk(self, images, chunk_path):
+        image_sizes = []
+        with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
+            for idx, image_file in enumerate(images):
+                w, h, image_buf = self._compress_image(image_file, self._image_quality)
+                image_sizes.append((w, h))
+                arcname = '{:06d}.jpeg'.format(idx)
+                zip_chunk.writestr(arcname, image_buf.getvalue())
+
+        return image_sizes
+
+class Mpeg4ChunkWriter(IChunkWriter):
+    def __init__(self, _):
+        super().__init__(17)
+        self._output_fps = 25
+
+    @staticmethod
+    def _create_av_container(path, w, h, rate, pix_format, options):
+            container = av.open(path, 'w')
+            video_stream = container.add_stream('libx264', rate=rate)
+            video_stream.pix_fmt = pix_format
+            video_stream.width = w
+            video_stream.height = h
+            video_stream.options = options
+
+            return container, video_stream
+
+    def save_as_chunk(self, images, chunk_path):
+        if not images:
+            raise Exception('no images to save')
+        # frame_count = 0
+
+        input_w = images[0].width
+        input_h = images[0].height
+
+        # idx = 0
+        output_container, output_v_stream = self._create_av_container(
+            path=chunk_path,
+            w=input_w,
+            h=input_h,
+            rate=self._output_fps,
+            pix_format='yuv420p',
+            options={
+                "crf": "15",
+                "preset": "ultrafast",
+            },
+        )
+
+        self._encode_images(images, output_container, output_v_stream)
+        return [(input_w, input_h)]
+
+    @staticmethod
+    def _encode_images(images, container, stream):
+        for frame in images:
+            # let libav set the correct pts and time_base
+            frame.pts = None
+            frame.time_base = None
+
+            for packet in stream.encode(frame):
+                container.mux(packet)
+
+        # Flush streams
+        for packet in stream.encode():
+            container.mux(packet)
+
+class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
+    def __init__(self, quality):
+        # translate inversed range [1:100] to [0:51]
+        self._image_quality = round(51 * (100 - quality) / 99)
+        self._output_fps = 25
+
+
+    def save_as_chunk(self, images, chunk_path):
+        if not images:
+            raise Exception('no images to save')
+        # frame_count = 0
+
+        input_w = images[0].width
+        input_h = images[0].height
+
+        downscale_factor = 1
+        while input_h / downscale_factor >= 1080:
+            downscale_factor *= 2
+
+        output_h = input_h // downscale_factor
+        output_w = input_w // downscale_factor
+
+
+        output_container, output_v_stream = self._create_av_container(
+            path=chunk_path,
+            w=output_w,
+            h=output_h,
+            rate=self._output_fps,
+            pix_format='yuv420p',
+            options={
+                'profile': 'baseline',
+                'coder': '0',
+                'crf': str(self._image_quality),
+                'wpredp': '0',
+                'flags': '-loop'
+            },
+        )
+
+        self._encode_images(images, output_container, output_v_stream)
+        output_container.close()
+        return [(input_w, input_h)]
+
+#Note step, start, stop have no affect
+class ImageListReader(IMediaReader):
+    def __init__(self, source_path, step=1, start=0, stop=0):
+        if not source_path:
+            raise Exception('No image found')
+        super().__init__(
+            source_path=source_path,
+            step=1,
+            start=0,
+            stop=0,
+        )
+
+    def __iter__(self):
+        return zip(self._source_path, self.get_image_names())
+
+    def __getitem__(self, k):
+        return self._source_path[k]
+
+    def __len__(self):
+        return len(self._source_path)
 
     def save_as_chunks(self, chunk_size, compressed_chunk_path, original_chunk_path, compressed_chunk_type,
             original_chunk_type, progress_callback=None, quality=100):
@@ -113,7 +266,7 @@ class ImageListExtractor(IMediaExtractor):
         return self._source_path
 
 #Note step, start, stop have no affect
-class DirectoryExtractor(ImageListExtractor):
+class DirectoryReader(ImageListReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
         image_paths = []
         for source in source_path:
@@ -129,7 +282,7 @@ class DirectoryExtractor(ImageListExtractor):
         )
 
 #Note step, start, stop have no affect
-class ArchiveExtractor(DirectoryExtractor):
+class ArchiveReader(DirectoryReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
         self._tmp_dir = self.create_tmp_dir()
         self._archive_source = source_path[0]
@@ -145,10 +298,10 @@ class ArchiveExtractor(DirectoryExtractor):
         self.delete_tmp_dir(self._tmp_dir)
 
     def get_image_names(self):
-        return  [os.path.join(os.path.dirname(self._archive_source), os.path.relpath(p, self._tmp_dir)) for p in super().get_image_names()]
+        return [os.path.join(os.path.dirname(self._archive_source), os.path.relpath(p, self._tmp_dir)) for p in super().get_image_names()]
 
 #Note step, start, stop have no affect
-class PDFExtractor(DirectoryExtractor):
+class PdfReader(DirectoryReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
         if not source_path:
             raise Exception('No PDF found')
@@ -175,7 +328,7 @@ class PDFExtractor(DirectoryExtractor):
     def get_image_names(self):
         return  [os.path.join(os.path.dirname(self._pdf_source), os.path.relpath(p, self._tmp_dir)) for p in super().get_image_names()]
 
-class VideoExtractor(IMediaExtractor):
+class VideoReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
         self._tmp_dir = self.create_tmp_dir()
         self._imagename_pattern = {
@@ -190,6 +343,30 @@ class VideoExtractor(IMediaExtractor):
             start=start,
             stop=stop,
         )
+
+    def __iter__(self):
+        def decode_frames(container):
+            for packet in container.demux():
+                if packet.stream.type == 'video':
+                    for frame in packet.decode():
+                        yield frame
+
+        container = self._get_av_container()
+        source_video_stream = container.streams.video[0]
+        source_video_stream.thread_type = 'AUTO'
+        image_names = self.get_image_names()
+
+        return itertools.zip_longest(decode_frames(container), image_names, fillvalue=image_names[0])
+
+    def __len__(self):
+        container = self._get_av_container()
+        # Not for all containers return real value
+        length = container.streams.video[0].frames
+        container.close()
+        return length
+
+    def __getitem__(self, k):
+        return next(itertools.islice(self, k, None))
 
     def _get_av_container(self):
         return av.open(av.datasets.curated(self._source_path[0]))
@@ -312,6 +489,9 @@ class VideoExtractor(IMediaExtractor):
         preview = next(container.decode(stream))
         preview.to_image().save(preview_path)
 
+    def get_image_names(self):
+        return self._source_path
+
 def _is_archive(path):
     mime = mimetypes.guess_type(path)
     mime_type = mime[0]
@@ -349,31 +529,31 @@ def _is_pdf(path):
 MEDIA_TYPES = {
     'image': {
         'has_mime_type': _is_image,
-        'extractor': ImageListExtractor,
+        'extractor': ImageListReader,
         'mode': 'annotation',
         'unique': False,
     },
     'video': {
         'has_mime_type': _is_video,
-        'extractor': VideoExtractor,
+        'extractor': VideoReader,
         'mode': 'interpolation',
         'unique': True,
     },
     'archive': {
         'has_mime_type': _is_archive,
-        'extractor': ArchiveExtractor,
+        'extractor': ArchiveReader,
         'mode': 'annotation',
         'unique': True,
     },
     'directory': {
         'has_mime_type': _is_dir,
-        'extractor': DirectoryExtractor,
+        'extractor': DirectoryReader,
         'mode': 'annotation',
         'unique': False,
     },
     'pdf': {
         'has_mime_type': _is_pdf,
-        'extractor': PDFExtractor,
+        'extractor': PdfReader,
         'mode': 'annotation',
         'unique': True,
     },
