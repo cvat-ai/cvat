@@ -144,6 +144,11 @@ class _Converter:
                     ET.SubElement(root_elem, 'filename').text = \
                         item_id + VocPath.IMAGE_EXT
 
+                    source_elem = ET.SubElement(root_elem, 'source')
+                    ET.SubElement(source_elem, 'database').text = 'Unknown'
+                    ET.SubElement(source_elem, 'annotation').text = 'Unknown'
+                    ET.SubElement(source_elem, 'image').text = 'Unknown'
+
                     if item.has_image:
                         h, w, c = item.image.shape
                         size_elem = ET.SubElement(root_elem, 'size')
@@ -152,8 +157,8 @@ class _Converter:
                         ET.SubElement(size_elem, 'depth').text = str(c)
 
                     item_segmented = 0 < len(masks)
-                    if item_segmented:
-                        ET.SubElement(root_elem, 'segmented').text = '1'
+                    ET.SubElement(root_elem, 'segmented').text = \
+                        str(int(item_segmented))
 
                     objects_with_parts = []
                     objects_with_actions = defaultdict(dict)
