@@ -16,7 +16,7 @@ import Text from 'antd/lib/typography/Text';
 import getCore from '../../core';
 import {
     CVATLogo,
-    UserIcon,
+    AccountIcon,
 } from '../../icons';
 
 const core = getCore();
@@ -138,7 +138,7 @@ function HeaderContainer(props: Props): JSX.Element {
                 </Button>
                 <Dropdown overlay={menu} className='cvat-header-menu-dropdown'>
                     <span>
-                        <Icon className='cvat-header-user-icon' component={UserIcon} />
+                        <Icon className='cvat-header-account-icon' component={AccountIcon} />
                         <Text strong>
                             {username.length > 14 ? `${username.slice(0, 10)} ...` : username}
                         </Text>

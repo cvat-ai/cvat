@@ -10,38 +10,41 @@ interface State {
 }
 
 export default class StandardWorkspaceComponent extends React.PureComponent<{}, State> {
-    public constructor() {
-        super(arguments);
-
+    public constructor(props: any) {
+        super(props);
         this.state = {
-            collapsed: false,
-        }
+            collapsed: true,
+        };
     }
 
-    public render() {
+    public render(): JSX.Element {
+        const { collapsed } = this.state;
         return (
             <Layout.Sider
                 className='cvat-annotation-page-objects-sidebar'
                 theme='light'
                 width={300}
                 collapsedWidth={0}
-                reverseArrow={true}
-                collapsible={true}
+                reverseArrow
+                collapsible
                 trigger={null}
-                collapsed={this.state.collapsed}
+                collapsed={collapsed}
             >
-                <span className={`cvat-annotation-page-objects-sidebar
-                        ant-layout-sider-zero-width-trigger ant-layout-sider-zero-width-trigger-left`}
+                {/* eslint-disable-next-line */}
+                <span
+                    className={`cvat-annotation-page-objects-sidebar
+                        ant-layout-sider-zero-width-trigger
+                        ant-layout-sider-zero-width-trigger-left`}
                     onClick={
-                        () => this.setState({collapsed: !this.state.collapsed})
+                        (): void => this.setState({ collapsed: !collapsed })
                     }
                 >
-                    {this.state.collapsed && <Icon type='menu-fold' title='Show'/>}
-                    {!this.state.collapsed && <Icon type='menu-unfold' title='Hide'/>}
+                    {collapsed && <Icon type='menu-fold' title='Show' />}
+                    {!collapsed && <Icon type='menu-unfold' title='Hide' />}
                 </span>
 
-                Right sidebar</Layout.Sider>
+                Right sidebar
+            </Layout.Sider>
         );
     }
 }
-
