@@ -6,6 +6,7 @@ from io import BytesIO
 import itertools
 from abc import ABC, abstractmethod
 
+
 import av
 import av.datasets
 import numpy as np
@@ -155,9 +156,31 @@ class PdfReader(DirectoryReader):
     def get_image_names(self):
         return  [os.path.join(os.path.dirname(self._pdf_source), os.path.relpath(p, self._tmp_dir)) for p in super().get_image_names()]
 
+class ZipReader(IMediaReader):
+    def __init__(self, source_path, step=1, start=0, stop=0):
+        self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
+        self._file_list = sorted([f for f in self._zip_source.namelist() if get_mime(f) == 'image'])
+        super().__init__(source_path, step, start, stop)
+
+    def __iter__(self):
+        for f in self._file_list:
+            yield self._zip_source.read(f)
+
+    def __len__(self):
+        return len(self._file_list)
+
+    def __getitem__(self, k):
+        return self._zip_source.read(self._file_list[k])
+
+    def save_preview(self, preview_path):
+        with open(preview_path, 'wb') as f:
+            f.write(self._zip_source.read(self._file_list[0]))
+
+    def get_image_names(self):
+        return [os.path.join(os.path.dirname(self._zip_source.filename), p) for p in self._file_list]
+
 class VideoReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
-        self._tmp_dir = self.create_tmp_dir()
         self._imagename_pattern = {
             'cmd': '%09d.tiff',
             'py': '{:09d}.tiff'
