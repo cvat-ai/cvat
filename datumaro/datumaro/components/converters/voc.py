@@ -4,9 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict, defaultdict
+import logging as log
+from lxml import etree as ET
 import os
 import os.path as osp
-from lxml import etree as ET
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import DEFAULT_SUBSET_NAME, AnnotationType
@@ -296,6 +297,12 @@ class _Converter:
         if len(class_lists) == 0:
             return
 
+        label_cat = self._extractor.categories().get(AnnotationType.label, None)
+        if not label_cat:
+            log.warn("Unable to save classification task lists "
+                "as source does not provide class labels. Skipped.")
+            return
+
         for label in VocLabel:
             ann_file = osp.join(self._cls_subsets_dir,
                 '%s_%s.txt' % (label.name, subset_name))
@@ -303,7 +310,8 @@ class _Converter:
                 for item, item_labels in class_lists.items():
                     if not item_labels:
                         continue
-                    presented = label.value in item_labels
+                    item_labels = [label_cat.items[l].name for l in item_labels]
+                    presented = label.name in item_labels
                     f.write('%s % d\n' % \
                         (item, 1 if presented else -1))
 
