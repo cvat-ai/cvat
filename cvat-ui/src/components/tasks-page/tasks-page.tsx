@@ -15,6 +15,7 @@ import {
 } from '../../reducers/interfaces';
 
 import TopBar from './top-bar';
+import FeedbackComponent from '../feedback';
 import EmptyListComponent from './empty-list';
 import TaskListContainer from '../../containers/tasks-page/tasks-list';
 
@@ -222,6 +223,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
                         />
                     ) : <EmptyListComponent />
                 }
+                <FeedbackComponent />
             </div>
         );
     }

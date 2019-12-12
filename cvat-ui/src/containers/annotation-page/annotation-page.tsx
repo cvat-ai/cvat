@@ -1,11 +1,9 @@
 import React from 'react';
 
-export default class AnnotationPageContainer extends React.PureComponent {
-    public render(): JSX.Element {
-        return (
-            <div>
-                AnnotationPage
-            </div>
-        );
-    }
+import AnnotationPageComponent from '../../components/annotation-page/annotation-page';
+
+export default function AnnotationPageContainer() {
+    return (
+        <AnnotationPageComponent/>
+    );
 }

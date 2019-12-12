@@ -340,6 +340,10 @@
     margin-right: 15px;
 }
 
+.cvat-actions-menu > .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow {
+    width: 0px;
+}
+
 .cvat-task-item-preview {
     max-width: 140px;
     max-height: 80px;
@@ -799,6 +803,37 @@ textarea.ant-input.cvat-raw-labels-viewer {
 
 .cvat-run-model-dialog-remove-mapping-icon {
     color: red;
+}
+
+.cvat-annotation-page.ant-layout {
+    height: 100%
+}
+
+.ant-layout-header.cvat-annotation-page-header {
+    background-color: #F1F1F1;
+    border-bottom: 1px solid #D7D7D7;
+    height: 50px;
+}
+
+.ant-layout-sider.cvat-annotation-page-controls-sidebar {
+    background-color: #F1F1F1;
+    border-right: 1px solid #D7D7D7;
+}
+
+.ant-layout-sider.cvat-annotation-page-objects-sidebar {
+    background-color: #F1F1F1;
+    border-left: 1px solid #D7D7D7;
+}
+
+.ant-layout-content.cvat-annotation-page-canvas-container {
+    background-color: white;
+}
+
+.ant-layout-sider-zero-width-trigger-left.cvat-annotation-page-objects-sidebar {
+    top: 0px;
+    right: 0px;
+    left: auto;
+    background: white;
 }
 
 #root {
