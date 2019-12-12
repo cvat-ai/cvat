@@ -96,7 +96,7 @@ class CuboidController extends PolyShapeController {
         });
 
         this.makeDraggable();
-        this.makeResizable();
+        // this.makeResizable();
     }
 
     // computes new position of points given an initial position and a current position
@@ -266,19 +266,19 @@ class CuboidController extends PolyShapeController {
         const controller = this;
         const view = this.cuboidView._uis.shape;
         const { viewModel } = this;
-        view.front_left_edge.selectize({
-            points: 't,b',
-            rotationPoint: false,
-        }).resize(viewModel.computeSideEdgeConstraints(viewModel.fl)).on('resizing', function () {
-            controller.resizeControl(viewModel.fl, this, viewModel.computeSideEdgeConstraints(viewModel.fl));
-        });
-
-        view.front_right_edge.selectize({
-            points: 't,b',
-            rotationPoint: false,
-        }).resize().on('resizing', function () {
-            controller.resizeControl(viewModel.fr, this, viewModel.computeMidConstraints());
-        });
+        // view.front_left_edge.selectize({
+        //     points: 't,b',
+        //     rotationPoint: false,
+        // }).resize(viewModel.computeSideEdgeConstraints(viewModel.fl)).on('resizing', function () {
+        //     controller.resizeControl(viewModel.fl, this, viewModel.computeSideEdgeConstraints(viewModel.fl));
+        // });
+        //
+        // view.front_right_edge.selectize({
+        //     points: 't,b',
+        //     rotationPoint: false,
+        // }).resize().on('resizing', function () {
+        //     controller.resizeControl(viewModel.fr, this, viewModel.computeMidConstraints());
+        // });
 
         view.dorsal_right_edge.selectize({
             points: 't,b',
