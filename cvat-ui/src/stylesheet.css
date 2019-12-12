@@ -62,36 +62,8 @@
     font-size: 40px;
 }
 
-.anticon.cvat-logo-icon {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
-    margin-right: 20px;
-}
-
-.anticon.cvat-logo-icon > img {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    height: 15.8px;
-    margin-left: 18px;
-}
-
-.anticon.cvat-back-icon > img {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    height: 15.8px;
-    margin-left: 18px;
-    margin-right: 18px;
-}
-
-.anticon.cvat-back-icon:hover > img {
-    -webkit-filter: invert(0.4);
-            filter: invert(0.4);
+.anticon.cvat-logo-icon > svg {
+    transform: scale(0.7);
 }
 
 .ant-btn.cvat-header-button {
@@ -101,51 +73,20 @@
 }
 
 
-.ant-menu.cvat-header-menu {
-    width: -webkit-fit-content;
-    width: -moz-fit-content;
-    width: fit-content;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
-    border: 0px;
+.ant-dropdown-trigger.cvat-header-menu-dropdown {
+    display: flex;
+    align-items: center;
     border-left: 1px solid #c3c3c3;
-    height: 100%;
-    background: rgba(255,255,255,0);
+    padding: 0px 20px;
 }
 
-.ant-menu.cvat-header-menu > li.ant-menu-submenu {
-    border-bottom: unset;
-}
-
-
-.ant-menu.cvat-header-menu > li > div {
-    margin-top: 0px;
-}
-
-.anticon.cvat-header-user-icon {
-    display: contents;
-}
-
-.anticon.cvat-header-user-icon > img {
-    width: 17px;
-    margin: 16px;
+.anticon.cvat-header-user-icon > svg {
+    transform: scale(0.4);
 }
 
 .anticon.cvat-header-menu-icon {
     margin-left: 16px;
     margin-right: 0px;
-}
-
-.anticon.cvat-header-menu-icon > img {
-    width: 14px;
-    -webkit-transform: rotate(-90deg);
-        -ms-transform: rotate(-90deg);
-            transform: rotate(-90deg);
-}
-
-.anticon.cvat-empty-tasks-icon > img {
-    width: 90px;
 }
 
 .cvat-title {
@@ -284,14 +225,15 @@
 }
 
 .cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) {
-    margin-right: 20px;
-    margin-top: 20px;
+    margin-right: 5px;
+    margin-top: 10px;
 }
 
 .cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) > div {
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
+    align-items: center;
 }
 
 .cvat-task-item-menu-icon > img {
@@ -751,8 +693,8 @@ textarea.ant-input.cvat-raw-labels-viewer {
     overflow: hidden;
 }
 
-.anticon.cvat-empty-models-icon > img {
-    width: 90px;
+.cvat-menu-icon {
+    transform: scale(0.5);
 }
 
 .cvat-create-model-form-wrapper {

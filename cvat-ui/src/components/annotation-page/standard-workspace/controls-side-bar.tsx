@@ -1,7 +1,5 @@
 import React from 'react';
 
-import logo from '../../../../dist/assets/icon-undo.svg'
-
 import {
     Layout,
 } from 'antd';
