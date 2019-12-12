@@ -329,6 +329,12 @@ class FrameProvider {
                 if (this._decodingBlocks[`${start}:${end}`].resolveCallback) {
                     this._decodingBlocks[`${start}:${end}`].resolveCallback(event.data.index);
                 }
+
+                if (event.data.index in this._promisedFrames) {
+                    this._promisedFrames[event.data.index].resolve(this._frames[event.data.index]);
+                    delete this._promisedFrames[event.data.index];
+                }
+
                 if (event.data.isEnd){
                     const t = performance.now() - t0;
                     console.log(`Decode time of archive chunk ${Math.floor((start+1)/ this._blockSize)}: ${t}; fps: ${36000/t}`);
