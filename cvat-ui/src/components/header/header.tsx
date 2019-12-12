@@ -7,13 +7,16 @@ import {
     Layout,
     Icon,
     Button,
+    Popover,
     Menu,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
 
 import getCore from '../../core';
-
+import axios from 'axios';
+import { render } from 'react-dom';
+import ReactDOM from 'react-dom';
 const core = getCore();
 const serverHost = core.config.backendAPI.slice(0, -7);
 
@@ -31,6 +34,8 @@ type Props = HeaderContainerProps & RouteComponentProps;
 
 const cvatLogo = (): JSX.Element => <img alt='' src='/assets/cvat-logo.svg' />;
 const userLogo = (): JSX.Element => <img alt='' src='/assets/icon-account.svg' />;
+const text = React.createElement('div', {id : 'about'});
+const content = React.createElement('div', {id : 'version'});
 
 function HeaderContainer(props: Props): JSX.Element {
     const {
@@ -62,6 +67,34 @@ function HeaderContainer(props: Props): JSX.Element {
                 >
                     Tasks
                 </Button>
+                <Popover placement="bottom" title={content} content={text} trigger="click" overlayStyle={{width : "50vw"}}>
+                <Button
+                    className='cvat-header-button'
+                    type='link'
+                    value='tasks'
+                    onClick={
+                        (): void => {
+                        const t = localStorage.getItem('token');
+                        const token ='Token '+ t.replace(/['"]+/g, '')
+                        const data = axios.get(`${serverHost}/api/v1/server/about`,{ headers: {Authorization : token}}).then(
+                            function(response) {
+                                return response.data;
+                                
+                            }
+                        )
+                        data.then(function(val) { 
+                            const version = 'cvat-version : ' + val.version;
+                            ReactDOM.render(version,document.getElementById('version'))
+                            ReactDOM.render(val.description,document.getElementById('about'))
+                            
+                        });
+                        
+                    }
+                    }
+                >
+                    About
+                </Button>
+                </Popover> 
                 { renderModels
                     && (
                         <Button
