@@ -25,6 +25,10 @@ from datumaro.components.converters.voc import (
 
 from datumaro.components.converters.yolo import YoloConverter
 
+from datumaro.components.converters.tfrecord import (
+    DetectionApiConverter,
+)
+
 
 items = [
     ('datumaro', DatumaroConverter),
@@ -44,4 +48,6 @@ items = [
     ('voc_layout', VocLayoutConverter),
 
     ('yolo', YoloConverter),
+
+    ('tf_detection_api', DetectionApiConverter),
 ]

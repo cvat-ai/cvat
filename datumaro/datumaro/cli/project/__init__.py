@@ -48,7 +48,7 @@ def build_import_parser(parser):
     import datumaro.components.importers as importers_module
     importers_list = [name for name, cls in importers_module.items]
 
-    parser.add_argument('source_path',
+    parser.add_argument('-s', '--source', required=True,
         help="Path to import a project from")
     parser.add_argument('-f', '--format', required=True,
         help="Source project format (options: %s)" % (', '.join(importers_list)))
@@ -60,6 +60,8 @@ def build_import_parser(parser):
         help="Name of the new project (default: same as project dir)")
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
+    parser.add_argument('--copy', action='store_true',
+        help="Make a deep copy instead of saving source links")
     return parser
 
 def import_command(args):
@@ -74,14 +76,19 @@ def import_command(args):
         project_name = osp.basename(project_dir)
 
     log.info("Importing project from '%s' as '%s'" % \
-        (args.source_path, args.format))
+        (args.source, args.format))
 
-    source_path = osp.abspath(args.source_path)
-    project = Project.import_from(source_path, args.format)
+    source = osp.abspath(args.source)
+    project = Project.import_from(source, args.format)
     project.config.project_name = project_name
     project.config.project_dir = project_dir
-    project = project.make_dataset()
-    project.save(merge=True, save_images=False)
+
+    dataset = project.make_dataset()
+    if args.copy:
+        log.info("Cloning data...")
+        dataset.save(merge=True, save_images=True)
+    else:
+        project.save()
 
     log.info("Project has been created at '%s'" % (project_dir))
 

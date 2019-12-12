@@ -242,13 +242,23 @@ class TaskProject:
         images_meta = {
             'images': items,
         }
-        for db_image in self._db_task.image_set.all():
-            frame_info = {
-                'id': db_image.frame,
-                'width': db_image.width,
-                'height': db_image.height,
-            }
-            items.append(frame_info)
+        db_video = getattr(self._db_task, 'video', None)
+        if db_video is not None:
+            for i in range(self._db_task.size):
+                frame_info = {
+                    'id': str(i),
+                    'width': db_video.width,
+                    'height': db_video.height,
+                }
+                items.append(frame_info)
+        else:
+            for db_image in self._db_task.image_set.all():
+                frame_info = {
+                    'id': db_image.frame,
+                    'width': db_image.width,
+                    'height': db_image.height,
+                }
+                items.append(frame_info)
 
         with open(osp.join(save_dir, 'config.json'), 'w') as config_file:
             json.dump(config, config_file)
@@ -383,6 +393,11 @@ EXPORT_FORMATS = [
     {
         'name': 'YOLO',
         'tag': 'yolo',
+        'is_default': False,
+    },
+    {
+        'name': 'TF Detection API TFrecord',
+        'tag': 'tf_detection_api',
         'is_default': False,
     },
 ]
