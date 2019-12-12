@@ -79,7 +79,8 @@ class ShapeCreatorModel extends Listener {
         this._shapeCollection.update();
     }
 
-    switchCreateMode(forceClose) {
+    switchCreateMode(forceClose, usingShortkey) {
+        this._usingShortkey = usingShortkey;
         // if parameter force (bool) setup to true, current result will not save
         if (!forceClose) {
             this._createMode = !this._createMode && window.cvat.mode == null;
@@ -146,15 +147,15 @@ class ShapeCreatorController {
             let shortkeys = window.cvat.config.shortkeys;
 
             let switchDrawHandler = Logger.shortkeyLogDecorator(function() {
-                this.switchCreateMode(false);
+                this.switchCreateMode(false, true);
             }.bind(this));
 
             Mousetrap.bind(shortkeys["switch_draw_mode"].value, switchDrawHandler.bind(this), 'keydown');
         }
     }
 
-    switchCreateMode(force) {
-        this._model.switchCreateMode(force);
+    switchCreateMode(force, usingShortkey) {
+        this._model.switchCreateMode(force, usingShortkey);
     }
 
     setDefaultShapeType(type) {
@@ -261,6 +262,23 @@ class ShapeCreatorView {
         this._polyShapeSizeInput.on('keydown', function(e) {
             e.stopPropagation();
         });
+
+        this._playerFrame.on('mousemove.shapeCreatorAIM', (e) => {
+            if (!['polygon', 'polyline', 'points'].includes(this._type)) {
+                this._aimCoord = window.cvat.translate.point.clientToCanvas(this._frameContent.node, e.clientX, e.clientY);
+                if (this._aim) {
+                    this._aim.x.attr({
+                        y1: this._aimCoord.y,
+                        y2: this._aimCoord.y,
+                    });
+
+                    this._aim.y.attr({
+                        x1: this._aimCoord.x,
+                        x2: this._aimCoord.x,
+                    });
+                }
+            }
+        });
     }
 
 
@@ -323,7 +341,6 @@ class ShapeCreatorView {
                 }
             }
         });
-
 
         this._frameContent.on('mousemove.shapeCreator', (e) => {
             if (e.shiftKey && ['polygon', 'polyline'].includes(this._type)) {
@@ -388,8 +405,7 @@ class ShapeCreatorView {
         }.bind(this));
     }
 
-
-    _create() {
+    _create(usingShortkey) {
         let sizeUI = null;
         switch(this._type) {
         case 'box':
@@ -425,7 +441,7 @@ class ShapeCreatorView {
                     this._controller.finish(box, this._type);
                 }
 
-                this._controller.switchCreateMode(true);
+                this._controller.switchCreateMode(true, usingShortkey);
             }.bind(this)).on('drawupdate', (e) => {
                 sizeUI = drawBoxSize.call(sizeUI, this._frameContent, this._frameText, e.target.getBBox());
             }).on('drawcancel', () => {
@@ -517,34 +533,27 @@ class ShapeCreatorView {
             this._mode = model.defaultMode;
 
             if (!['polygon', 'polyline', 'points'].includes(this._type)) {
+                if (!model._usingShortkey) {
+                    this._aimCoord = {
+                        x: 0,
+                        y: 0
+                    };
+                }
                 this._drawAim();
-                this._playerFrame.on('mousemove.shapeCreatorAIM', (e) => {
-                    this._aimCoord = window.cvat.translate.point.clientToCanvas(this._frameContent.node, e.clientX, e.clientY);
-                    if (this._aim) {
-                        this._aim.x.attr({
-                            y1: this._aimCoord.y,
-                            y2: this._aimCoord.y,
-                        });
-
-                        this._aim.y.attr({
-                            x1: this._aimCoord.x,
-                            x2: this._aimCoord.x,
-                        });
-                    }
-                });
             }
 
             this._createButton.text("Stop Creation");
             document.oncontextmenu = () => false;
-            this._create();
+            this._create(model._usingShortkey);
+            if (!model._usingShortkey) {
+                this._aimCoord = {
+                    x: 0,
+                    y: 0
+                };
+            }
         }
         else {
-            this._playerFrame.off('mousemove.shapeCreatorAIM');
             this._removeAim();
-            this._aimCoord = {
-                x: 0,
-                y: 0
-            };
             this._cancel = true;
             this._createButton.text("Create Shape");
             document.oncontextmenu = null;
