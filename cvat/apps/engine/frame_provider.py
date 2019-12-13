@@ -1,8 +1,9 @@
 import os
 import zipfile
 import math
+from io import BytesIO
 
-from cvat.apps.engine.media_extractors import ArchiveReader, VideoReader
+from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.models import DataChoice
 
 
@@ -10,7 +11,7 @@ class FrameProvider():
     def __init__(self, db_data):
         self._db_data = db_data
         if db_data.compressed_chunk_type == DataChoice.IMAGESET:
-            self._chunk_extractor_class = ArchiveReader
+            self._chunk_extractor_class = ZipReader
         elif db_data.compressed_chunk_type == DataChoice.VIDEO:
             self._chunk_extractor_class = VideoReader
         else:
@@ -40,16 +41,23 @@ class FrameProvider():
         chunk_path = self.get_compressed_chunk(chunk_number)
         if chunk_number != self._extracted_chunk:
             self._extracted_chunk = chunk_number
-            self._chunk_extractor = self.ArchiveReader([chunk_path], 95)
+            self._chunk_extractor = self._chunk_extractor_class([chunk_path])
 
-        return self._chunk_extractor[frame_offset]
+        frame, _ = self._chunk_extractor[frame_offset]
+        if self._chunk_extractor_class is VideoReader:
+            pil_img = frame.to_image()
+            buf = BytesIO()
+            pil_img.save(buf, format='PNG')
+            return buf
+
+        return frame
 
     def get_original_frame(self, frame_number):
         _, chunk_number, frame_offset = self._validate_frame_number(frame_number)
         chunk_path = self.get_original_chunk(chunk_number)
         if chunk_number != self._extracted_chunk:
             self._extracted_chunk = chunk_number
-            self._chunk_extractor = self.ArchiveReader([chunk_path], 95)
+            self._chunk_extractor = self._chunk_extractor_class([chunk_path])
 
         return self._chunk_extractor[frame_offset]
 

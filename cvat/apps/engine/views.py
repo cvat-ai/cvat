@@ -9,7 +9,7 @@ import shutil
 from datetime import datetime
 from tempfile import mkstemp, NamedTemporaryFile
 
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.conf import settings
 from sendfile import sendfile
@@ -461,6 +461,22 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         except Exception as e:
             slogger.task[pk].error(
                 "cannot get chunk #{}".format(chunk), exc_info=True)
+            return HttpResponseBadRequest(str(e))
+
+    @action(detail=True, methods=['GET'], serializer_class=None,
+        url_path='frames/(?P<frame>\d+)')
+    def frame(self, request, pk, frame):
+        """Get a frame for the task"""
+
+        try:
+            db_task = self.get_object()
+            frame_provider = FrameProvider(db_task.data)
+            buf = frame_provider.get_compressed_frame(frame)
+            return HttpResponse(buf.getvalue(), content_type='image/png')
+
+        except Exception as e:
+            slogger.task[pk].error(
+                'cannot get frame {}'.format(frame), exc_info=True)
             return HttpResponseBadRequest(str(e))
 
     @action(detail=True, methods=['GET'], serializer_class=None,

@@ -62,8 +62,9 @@ class IMediaReader(ABC):
             yield frames
             frames = list(itertools.islice(it, 0, size * self._step, self._step))
 
+    @property
     @abstractmethod
-    def get_image_names(self):
+    def image_names(self):
         pass
 
 #Note step, start, stop have no affect
@@ -79,10 +80,10 @@ class ImageListReader(IMediaReader):
         )
 
     def __iter__(self):
-        return zip(self._source_path, self.get_image_names())
+        return zip(self._source_path, self.image_names)
 
     def __getitem__(self, k):
-        return (self._source_path[k], self.get_image_names()[k])
+        return (self._source_path[k], self.image_names[k])
 
     def __len__(self):
         return len(self._source_path)
@@ -90,7 +91,8 @@ class ImageListReader(IMediaReader):
     def save_preview(self, preview_path):
         shutil.copyfile(self._source_path[0], preview_path)
 
-    def get_image_names(self):
+    @property
+    def image_names(self):
         return self._source_path
 
 #Note step, start, stop have no affect
@@ -125,8 +127,9 @@ class ArchiveReader(DirectoryReader):
     def __del__(self):
         self.delete_tmp_dir(self._tmp_dir)
 
-    def get_image_names(self):
-        return [os.path.join(os.path.dirname(self._archive_source), os.path.relpath(p, self._tmp_dir)) for p in super().get_image_names()]
+    @property
+    def image_names(self):
+        return [os.path.join(os.path.dirname(self._archive_source), os.path.relpath(p, self._tmp_dir)) for p in super().image_names]
 
 #Note step, start, stop have no affect
 class PdfReader(DirectoryReader):
@@ -153,8 +156,9 @@ class PdfReader(DirectoryReader):
     def __del__(self):
         self.delete_tmp_dir(self._tmp_dir)
 
-    def get_image_names(self):
-        return  [os.path.join(os.path.dirname(self._pdf_source), os.path.relpath(p, self._tmp_dir)) for p in super().get_image_names()]
+    @property
+    def image_names(self):
+        return  [os.path.join(os.path.dirname(self._pdf_source), os.path.relpath(p, self._tmp_dir)) for p in super().image_names]
 
 class ZipReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
@@ -163,14 +167,14 @@ class ZipReader(IMediaReader):
         super().__init__(file_list, step, start, stop)
 
     def __iter__(self):
-        for f in zip(self._source_path, self.get_image_names()):
+        for f in zip(self._source_path, self.image_names):
             yield (BytesIO(self._zip_source.read(f[0])), f[1])
 
     def __len__(self):
         return len(self._source_path)
 
     def __getitem__(self, k):
-        return (BytesIO(self._zip_source.read(self._source_path[k])), self.get_image_names()[k])
+        return (BytesIO(self._zip_source.read(self._source_path[k])), self.image_names[k])
 
     def __del__(self):
         self._zip_source.close()
@@ -179,15 +183,12 @@ class ZipReader(IMediaReader):
         with open(preview_path, 'wb') as f:
             f.write(self._zip_source.read(self._source_path[0]))
 
-    def get_image_names(self):
+    @property
+    def image_names(self):
         return [os.path.join(os.path.dirname(self._zip_source.filename), p) for p in self._source_path]
 
 class VideoReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
-        self._imagename_pattern = {
-            'cmd': '%09d.tiff',
-            'py': '{:09d}.tiff'
-        }
         self._output_fps = 25
 
         super().__init__(
@@ -207,7 +208,7 @@ class VideoReader(IMediaReader):
         container = self._get_av_container()
         source_video_stream = container.streams.video[0]
         source_video_stream.thread_type = 'AUTO'
-        image_names = self.get_image_names()
+        image_names = self.image_names
 
         return itertools.zip_longest(decode_frames(container), image_names, fillvalue=image_names[0])
 
@@ -218,7 +219,7 @@ class VideoReader(IMediaReader):
         return length
 
     def __getitem__(self, k):
-        return (next(itertools.islice(self, k, None)), self.get_image_names()[k])
+        return next(itertools.islice(self, k, k + 1))
 
     def _get_av_container(self):
         return av.open(av.datasets.curated(self._source_path[0]))
@@ -229,7 +230,8 @@ class VideoReader(IMediaReader):
         preview = next(container.decode(stream))
         preview.to_image().save(preview_path)
 
-    def get_image_names(self):
+    @property
+    def image_names(self):
         return self._source_path
 
 class IChunkWriter(ABC):
