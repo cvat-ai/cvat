@@ -235,6 +235,7 @@ class VocExtractorTest(TestCase):
                     {
                         'pose': VOC.VocPose(1).name,
                         'truncated': True,
+                        'occluded': False,
                         'difficult': False,
                     },
                     obj1.attributes)
@@ -365,16 +366,9 @@ class VocExtractorTest(TestCase):
                 self.assertFalse(obj2 is None)
                 self.assertListEqual([4, 5, 2, 2], obj2.get_bbox())
 
-                count = 1
                 for action in VOC.VocAction:
-                    if action.value % 2 == 1:
-                        count += 1
-                        ann = find(item.annotations,
-                            lambda x: x.type == AnnotationType.label and \
-                                get_label(extractor, x.label) == action.name)
-                        self.assertFalse(ann is None)
-                        self.assertTrue(obj2.id == ann.group)
-                self.assertEqual(count, len(item.annotations))
+                    attr = obj2.attributes[action.name]
+                    self.assertEqual(attr, action.value % 2)
 
             subset_name = 'test'
             generated_subset = generated_subsets[subset_name]
@@ -388,50 +382,54 @@ class VocExtractorTest(TestCase):
                 self.assertEqual(0, len(item.annotations))
 
 class VocConverterTest(TestCase):
-    def _test_can_save_voc(self, extractor_type, converter_type, test_dir):
-        dummy_dir = osp.join(test_dir, 'dummy')
-        generate_dummy_voc(dummy_dir)
-        gen_extractor = extractor_type(dummy_dir)
+    def _test_can_save_voc(self, src_extractor, converter, test_dir):
+        converter(src_extractor, test_dir)
 
-        conv_dir = osp.join(test_dir, 'converted')
-        converter = converter_type()
-        converter(gen_extractor, conv_dir)
+        dst_extractor = VocImporter()(test_dir).make_dataset()
 
-        conv_extractor = extractor_type(conv_dir)
-        for item_a, item_b in zip_longest(gen_extractor, conv_extractor):
+        self.assertEqual(len(src_extractor), len(dst_extractor))
+        for item_a, item_b in zip_longest(src_extractor, dst_extractor):
             self.assertEqual(item_a.id, item_b.id)
             self.assertEqual(len(item_a.annotations), len(item_b.annotations))
             for ann_a, ann_b in zip(item_a.annotations, item_b.annotations):
                 self.assertEqual(ann_a.type, ann_b.type)
 
+    def _test_can_save_voc_dummy(self, extractor_type, converter, test_dir):
+        dummy_dir = osp.join(test_dir, 'dummy')
+        generate_dummy_voc(dummy_dir)
+        gen_extractor = extractor_type(dummy_dir)
+
+        self._test_can_save_voc(gen_extractor, converter,
+            osp.join(test_dir, 'converted'))
+
     def test_can_save_voc_cls(self):
         with TestDir() as test_dir:
-            self._test_can_save_voc(
-                VocClassificationExtractor, VocClassificationConverter,
+            self._test_can_save_voc_dummy(
+                VocClassificationExtractor, VocClassificationConverter(),
                 test_dir.path)
 
     def test_can_save_voc_det(self):
         with TestDir() as test_dir:
-            self._test_can_save_voc(
-                VocDetectionExtractor, VocDetectionConverter,
+            self._test_can_save_voc_dummy(
+                VocDetectionExtractor, VocDetectionConverter(),
                 test_dir.path)
 
     def test_can_save_voc_segm(self):
         with TestDir() as test_dir:
-            self._test_can_save_voc(
-                VocSegmentationExtractor, VocSegmentationConverter,
+            self._test_can_save_voc_dummy(
+                VocSegmentationExtractor, VocSegmentationConverter(),
                 test_dir.path)
 
     def test_can_save_voc_layout(self):
         with TestDir() as test_dir:
-            self._test_can_save_voc(
-                VocLayoutExtractor, VocLayoutConverter,
+            self._test_can_save_voc_dummy(
+                VocLayoutExtractor, VocLayoutConverter(label_map='voc'),
                 test_dir.path)
 
     def test_can_save_voc_action(self):
         with TestDir() as test_dir:
-            self._test_can_save_voc(
-                VocActionExtractor, VocActionConverter,
+            self._test_can_save_voc_dummy(
+                VocActionExtractor, VocActionConverter(),
                 test_dir.path)
 
     def test_can_save_dataset_with_no_subsets(self):
@@ -460,19 +458,8 @@ class VocConverterTest(TestCase):
                 }
 
         with TestDir() as test_dir:
-            src_extractor = TestExtractor()
-            converter = VocConverter()
-
-            converter(src_extractor, test_dir.path)
-
-            dst_extractor = VocImporter()(test_dir.path).make_dataset()
-
-            self.assertEqual(len(src_extractor), len(dst_extractor))
-            for item_a, item_b in zip_longest(src_extractor, dst_extractor):
-                self.assertEqual(item_a.id, item_b.id)
-                self.assertEqual(len(item_a.annotations), len(item_b.annotations))
-                for ann_a, ann_b in zip(item_a.annotations, item_b.annotations):
-                    self.assertEqual(ann_a.type, ann_b.type)
+            self._test_can_save_voc(TestExtractor(), VocConverter(),
+                test_dir.path)
 
 class VocImporterTest(TestCase):
     def test_can_import(self):
@@ -487,3 +474,16 @@ class VocImporterTest(TestCase):
             self.assertEqual(
                 sum([len(s) for _, s in subsets.items()]),
                 len(dataset))
+
+class VocFormatTest(TestCase):
+    def test_can_write_and_parse_labelmap(self):
+        src_label_map = VOC.make_voc_label_map()
+        src_label_map['qq'] = [None, ['part1', 'part2'], ['act1', 'act2']]
+
+        with TestDir() as test_dir:
+            file_path = osp.join(test_dir.path, 'test.txt')
+
+            VOC.write_label_map(file_path, src_label_map)
+            dst_label_map = VOC.parse_label_map(file_path)
+
+            self.assertEqual(src_label_map, dst_label_map)

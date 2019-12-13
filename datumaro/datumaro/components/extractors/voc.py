@@ -4,18 +4,15 @@
 # SPDX-License-Identifier: MIT
 
 from collections import defaultdict
-from itertools import chain
 import os
 import os.path as osp
 from xml.etree import ElementTree as ET
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, LabelObject, MaskObject, BboxObject,
-    LabelCategories, MaskCategories
 )
-from datumaro.components.formats.voc import (VocLabel, VocAction,
-    VocBodyPart, VocTask, VocPath, VocColormap, VocInstColormap,
-    VocIgnoredLabel
+from datumaro.components.formats.voc import (
+    VocTask, VocPath, VocInstColormap, parse_label_map, make_voc_categories
 )
 from datumaro.util import dir_items
 from datumaro.util.image import lazy_image
@@ -23,31 +20,6 @@ from datumaro.util.mask_tools import lazy_mask, invert_colormap
 
 
 _inverse_inst_colormap = invert_colormap(VocInstColormap)
-
-# pylint: disable=pointless-statement
-def _make_voc_categories():
-    categories = {}
-
-    label_categories = LabelCategories()
-    for label in chain(VocLabel, VocAction, VocBodyPart):
-        label_categories.add(label.name)
-    categories[AnnotationType.label] = label_categories
-
-    def label_id(class_index):
-        if class_index in [0, VocIgnoredLabel]:
-            return class_index
-
-        class_label = VocLabel(class_index).name
-        label_id, _ = label_categories.find(class_label)
-        return label_id + 1
-    colormap = { label_id(idx): tuple(color) \
-        for idx, color in VocColormap.items() }
-    mask_categories = MaskCategories(colormap)
-    mask_categories.inverse_colormap # force init
-    categories[AnnotationType.mask] = mask_categories
-
-    return categories
-# pylint: enable=pointless-statement
 
 class VocExtractor(Extractor):
     class Subset(Extractor):
@@ -87,10 +59,10 @@ class VocExtractor(Extractor):
         label_annotations = defaultdict(list)
         label_anno_files = [s for s in dir_files \
             if '_' in s and s[s.rfind('_') + 1:] in subset_names]
-        for ann_file in label_anno_files:
-            with open(osp.join(subsets_dir, ann_file + '.txt'), 'r') as f:
-                label = ann_file[:ann_file.rfind('_')]
-                label_id = VocLabel[label].value
+        for ann_filename in label_anno_files:
+            with open(osp.join(subsets_dir, ann_filename + '.txt'), 'r') as f:
+                label = ann_filename[:ann_filename.rfind('_')]
+                label_id = self._get_label_id(label)
                 for line in f:
                     item, present = line.split()
                     if present == '1':
@@ -113,7 +85,11 @@ class VocExtractor(Extractor):
         self._annotations[VocTask.detection] = det_annotations
 
     def _load_categories(self):
-        self._categories = _make_voc_categories()
+        label_map = None
+        label_map_path = osp.join(self._path, VocPath.LABELMAP_FILE)
+        if osp.isfile(label_map_path):
+            label_map = parse_label_map(label_map_path)
+        self._categories = make_voc_categories(label_map)
 
     def __init__(self, path, task):
         super().__init__()
@@ -187,11 +163,10 @@ class VocExtractor(Extractor):
 
         cls_annotations = self._annotations.get(VocTask.classification)
         if cls_annotations is not None and \
-           self._task is VocTask.classification:
+                self._task is VocTask.classification:
             item_labels = cls_annotations.get(item)
             if item_labels is not None:
-                for label in item_labels:
-                    label_id = self._get_label_id(VocLabel(label).name)
+                for label_id in item_labels:
                     item_annotations.append(LabelObject(label_id))
 
         det_annotations = self._annotations.get(VocTask.detection)
@@ -215,16 +190,16 @@ class VocExtractor(Extractor):
                     continue
 
                 difficult_elem = object_elem.find('difficult')
-                if difficult_elem is not None:
-                    attributes['difficult'] = (difficult_elem.text == '1')
+                attributes['difficult'] = difficult_elem is not None and \
+                    difficult_elem.text == '1'
 
                 truncated_elem = object_elem.find('truncated')
-                if truncated_elem is not None:
-                    attributes['truncated'] = (truncated_elem.text == '1')
+                attributes['truncated'] = truncated_elem is not None and \
+                    truncated_elem.text == '1'
 
                 occluded_elem = object_elem.find('occluded')
-                if occluded_elem is not None:
-                    attributes['occluded'] = (occluded_elem.text == '1')
+                attributes['occluded'] = occluded_elem is not None and \
+                    occluded_elem.text == '1'
 
                 pose_elem = object_elem.find('pose')
                 if pose_elem is not None:
@@ -238,34 +213,34 @@ class VocExtractor(Extractor):
                     attributes['point'] = point
 
                 actions_elem = object_elem.find('actions')
-                if actions_elem is not None and \
-                   self._task is VocTask.action_classification:
-                    for action in VocAction:
-                        action_elem = actions_elem.find(action.name)
-                        if action_elem is None or action_elem.text != '1':
-                            continue
+                actions = {a: False
+                    for a in self._categories[AnnotationType.label] \
+                        .items[obj_label_id].attributes}
+                if actions_elem is not None:
+                    for action_elem in actions_elem:
+                        actions[action_elem.tag] = (action_elem.text == '1')
+                for action, present in actions.items():
+                    attributes[action] = present
 
-                        act_label_id = self._get_label_id(action.name)
-                        assert group in [None, obj_id]
-                        group = obj_id
-                        item_annotations.append(LabelObject(act_label_id,
-                            group=obj_id))
+                for part_elem in object_elem.findall('part'):
+                    part = part_elem.find('name').text
+                    part_label_id = self._get_label_id(part)
+                    bbox = self._parse_bbox(part_elem)
+                    group = obj_id
 
-                if self._task is VocTask.person_layout:
-                    for part_elem in object_elem.findall('part'):
-                        part = part_elem.find('name').text
-                        part_label_id = self._get_label_id(part)
-                        bbox = self._parse_bbox(part_elem)
-                        group = obj_id
-                        item_annotations.append(BboxObject(
-                            *bbox, label=part_label_id,
-                            group=obj_id))
+                    if self._task is not VocTask.person_layout:
+                        break
+                    item_annotations.append(BboxObject(
+                        *bbox, label=part_label_id,
+                        group=obj_id))
 
-                if self._task in [VocTask.action_classification, VocTask.person_layout]:
-                    if group is None:
-                        continue
+                if self._task is VocTask.person_layout and group is None:
+                    continue
+                if self._task is VocTask.action_classification and not actions:
+                    continue
 
-                item_annotations.append(BboxObject(*obj_bbox, label=obj_label_id,
+                item_annotations.append(BboxObject(
+                    *obj_bbox, label=obj_label_id,
                     attributes=attributes, id=obj_id, group=group))
 
         return item_annotations
@@ -414,7 +389,7 @@ class VocResultsExtractor(Extractor):
             if mark != task_desc['mark']:
                 continue
 
-            label_id = VocLabel[label].value
+            label_id = self._get_label_id(label)
             anns = defaultdict(list)
             with open(osp.join(task_dir, ann_file + ann_ext), 'r') as f:
                 for line in f:
@@ -441,7 +416,11 @@ class VocResultsExtractor(Extractor):
             VocTask.action_classification)
 
     def _load_categories(self):
-        self._categories = _make_voc_categories()
+        label_map = None
+        label_map_path = osp.join(self._path, VocPath.LABELMAP_FILE)
+        if osp.isfile(label_map_path):
+            label_map = parse_label_map(label_map_path)
+        self._categories = make_voc_categories(label_map)
 
     def _get_label_id(self, label):
         label_id = self._categories[AnnotationType.label].find(label)
@@ -511,9 +490,8 @@ class VocComp_1_2_Extractor(VocResultsExtractor):
         if cls_ann is not None:
             for desc in cls_ann:
                 label_id, conf = desc
-                label_id = self._get_label_id(VocLabel(int(label_id)).name)
                 annotations.append(LabelObject(
-                    label_id,
+                    int(label_id),
                     attributes={ 'score': float(conf) }
                 ))
 
@@ -538,11 +516,10 @@ class VocComp_3_4_Extractor(VocResultsExtractor):
         if det_ann is not None:
             for desc in det_ann:
                 label_id, conf, left, top, right, bottom = desc
-                label_id = self._get_label_id(VocLabel(int(label_id)).name)
                 annotations.append(BboxObject(
                     x=float(left), y=float(top),
                     w=float(right) - float(left), h=float(bottom) - float(top),
-                    label=label_id,
+                    label=int(label_id),
                     attributes={ 'score': float(conf) }
                 ))
 
@@ -639,7 +616,7 @@ class VocComp_7_8_Extractor(VocResultsExtractor):
                 conf = float(layout_elem.find('confidence').text)
                 parts = []
                 for part_elem in layout_elem.findall('part'):
-                    label_id = VocBodyPart[part_elem.find('class').text].value
+                    label_id = self._get_label_id(part_elem.find('class').text)
                     bbox_elem = part_elem.find('bndbox')
                     xmin = float(bbox_elem.find('xmin').text)
                     xmax = float(bbox_elem.find('xmax').text)
@@ -671,8 +648,7 @@ class VocComp_7_8_Extractor(VocResultsExtractor):
                 }
 
                 for part in parts:
-                    part_id, bbox = part
-                    label_id = self._get_label_id(VocBodyPart(part_id).name)
+                    label_id, bbox = part
                     annotations.append(BboxObject(
                         *bbox, label=label_id,
                         attributes=attributes))
@@ -691,6 +667,12 @@ class VocComp_9_10_Extractor(VocResultsExtractor):
         self._subsets = subsets
         self._annotations = dict(annotations)
 
+    def _load_categories(self):
+        from collections import OrderedDict
+        from datumaro.components.formats.voc import VocAction
+        label_map = OrderedDict((a.name, [[], [], []]) for a in VocAction)
+        self._categories = make_voc_categories(label_map)
+
     def _get_annotations(self, item, subset_name):
         annotations = []
 
@@ -698,9 +680,8 @@ class VocComp_9_10_Extractor(VocResultsExtractor):
         if action_ann is not None:
             for desc in action_ann:
                 action_id, obj_id, conf = desc
-                label_id = self._get_label_id(VocAction(int(action_id)).name)
                 annotations.append(LabelObject(
-                    label_id,
+                    action_id,
                     attributes={
                         'score': conf,
                         'object_id': int(obj_id),
