@@ -22,6 +22,7 @@ import {
     SplitIcon,
 } from '../../../icons';
 
+
 export default function ControlsSideBarComponent(): JSX.Element {
     return (
         <Layout.Sider

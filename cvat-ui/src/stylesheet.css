@@ -794,6 +794,10 @@ textarea.ant-input.cvat-raw-labels-viewer {
     padding: 0px;
 }
 
+.annotation-header-left-group {
+    height: 100%;
+}
+
 .annotation-header-left-group > div {
     height: 100%;
     padding: 0px;
@@ -804,10 +808,11 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .annotation-header-left-group > div:first-child {
-    -webkit-filter: invert(1);
-            filter: invert(1);
+    -webkit-filter: invert(0.9);
+            filter: invert(0.9);
     background: white;
     border-radius: 0px;
+    width: 70px;
 }
 
 .annotation-header-left-group > div > * {
@@ -826,6 +831,40 @@ textarea.ant-input.cvat-raw-labels-viewer {
     padding: 3px;
 }
 
+.annotation-header-left-group > div:hover > i {
+    -webkit-transform: scale(0.9);
+        -ms-transform: scale(0.9);
+            transform: scale(0.9);
+}
+
+.annotation-header-left-group > div:active > i {
+    -webkit-transform: scale(0.8);
+        -ms-transform: scale(0.8);
+            transform: scale(0.8);
+}
+
+.annotation-header-player-group {
+    display: flex;
+    align-items: center;
+}
+
+.annotation-header-player-group > i {
+    -webkit-transform: scale(0.6);
+    -ms-transform: scale(0.6);
+        transform: scale(0.6);
+}
+
+.annotation-header-player-group > i:hover {
+    -webkit-transform: scale(0.7);
+    -ms-transform: scale(0.7);
+        transform: scale(0.7);
+}
+
+.annotation-header-player-group > i:active {
+    -webkit-transform: scale(0.6);
+    -ms-transform: scale(0.6);
+        transform: scale(0.6);
+}
 
 .cvat-annotation-page-controls-sidebar {
     background-color: #F1F1F1;
