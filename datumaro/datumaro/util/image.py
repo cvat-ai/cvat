@@ -28,7 +28,7 @@ def load_image(path):
 
     if _IMAGE_BACKEND == _IMAGE_BACKENDS.cv2:
         import cv2
-        image = cv2.imread(path)
+        image = cv2.imread(path, cv2.IMREAD_UNCHANGED)
         image = image.astype(np.float32)
     elif _IMAGE_BACKEND == _IMAGE_BACKENDS.PIL:
         from PIL import Image
@@ -39,13 +39,15 @@ def load_image(path):
     else:
         raise NotImplementedError()
 
-    assert len(image.shape) == 3
-    assert image.shape[2] in [1, 3, 4]
+    assert len(image.shape) in [2, 3]
+    if len(image.shape) == 3:
+        assert image.shape[2] in [3, 4]
     return image
 
 def save_image(path, image, params=None):
     if _IMAGE_BACKEND == _IMAGE_BACKENDS.cv2:
         import cv2
+        image = image.astype(np.uint8)
         cv2.imwrite(path, image, params=params)
     elif _IMAGE_BACKEND == _IMAGE_BACKENDS.PIL:
         from PIL import Image
@@ -109,8 +111,9 @@ def decode_image(image_bytes):
     else:
         raise NotImplementedError()
 
-    assert len(image.shape) == 3
-    assert image.shape[2] in [1, 3, 4]
+    assert len(image.shape) in [2, 3]
+    if len(image.shape) == 3:
+        assert image.shape[2] in [3, 4]
     return image
 
 
