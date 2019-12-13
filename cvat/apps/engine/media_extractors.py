@@ -82,7 +82,7 @@ class ImageListReader(IMediaReader):
         return zip(self._source_path, self.get_image_names())
 
     def __getitem__(self, k):
-        return self._source_path[k]
+        return (self._source_path[k], self.get_image_names()[k])
 
     def __len__(self):
         return len(self._source_path)
@@ -159,25 +159,28 @@ class PdfReader(DirectoryReader):
 class ZipReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
         self._zip_source = zipfile.ZipFile(source_path[0], mode='r')
-        self._file_list = sorted([f for f in self._zip_source.namelist() if get_mime(f) == 'image'])
-        super().__init__(source_path, step, start, stop)
+        file_list = [f for f in self._zip_source.namelist() if get_mime(f) == 'image']
+        super().__init__(file_list, step, start, stop)
 
     def __iter__(self):
-        for f in self._file_list:
-            yield self._zip_source.read(f)
+        for f in zip(self._source_path, self.get_image_names()):
+            yield (BytesIO(self._zip_source.read(f[0])), f[1])
 
     def __len__(self):
-        return len(self._file_list)
+        return len(self._source_path)
 
     def __getitem__(self, k):
-        return self._zip_source.read(self._file_list[k])
+        return (BytesIO(self._zip_source.read(self._source_path[k])), self.get_image_names()[k])
+
+    def __del__(self):
+        self._zip_source.close()
 
     def save_preview(self, preview_path):
         with open(preview_path, 'wb') as f:
-            f.write(self._zip_source.read(self._file_list[0]))
+            f.write(self._zip_source.read(self._source_path[0]))
 
     def get_image_names(self):
-        return [os.path.join(os.path.dirname(self._zip_source.filename), p) for p in self._file_list]
+        return [os.path.join(os.path.dirname(self._zip_source.filename), p) for p in self._source_path]
 
 class VideoReader(IMediaReader):
     def __init__(self, source_path, step=1, start=0, stop=0):
@@ -215,7 +218,7 @@ class VideoReader(IMediaReader):
         return length
 
     def __getitem__(self, k):
-        return next(itertools.islice(self, k, None))
+        return (next(itertools.islice(self, k, None)), self.get_image_names()[k])
 
     def _get_av_container(self):
         return av.open(av.datasets.curated(self._source_path[0]))
@@ -259,18 +262,21 @@ class IChunkWriter(ABC):
 class ZipChunkWriter(IChunkWriter):
     def save_as_chunk(self, images, chunk_path):
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
-            for idx, image_file in enumerate(images):
-                arcname = '{:06d}.{}'.format(idx, os.path.basename(image_file)[1])
-                zip_chunk.write(filename=image_file, arcname=arcname)
-
+            for idx, (image, image_name) in enumerate(images):
+                arcname = '{:06d}.{}'.format(idx, os.path.splitext(image_name)[1])
+                if isinstance(image, BytesIO):
+                    zip_chunk.writestr(arcname, image.getvalue())
+                else:
+                    zip_chunk.write(filename=image, arcname=arcname)
+        # We doesnot read images in this case and dont know img size
         return []
 
 class ZipCompressedChunkWriter(IChunkWriter):
     def save_as_chunk(self, images, chunk_path):
         image_sizes = []
         with zipfile.ZipFile(chunk_path, 'x') as zip_chunk:
-            for idx, image_file in enumerate(images):
-                w, h, image_buf = self._compress_image(image_file, self._image_quality)
+            for idx, (image, _) in enumerate(images):
+                w, h, image_buf = self._compress_image(image, self._image_quality)
                 image_sizes.append((w, h))
                 arcname = '{:06d}.jpeg'.format(idx)
                 zip_chunk.writestr(arcname, image_buf.getvalue())
@@ -297,8 +303,8 @@ class Mpeg4ChunkWriter(IChunkWriter):
         if not images:
             raise Exception('no images to save')
 
-        input_w = images[0].width
-        input_h = images[0].height
+        input_w = images[0][0].width
+        input_h = images[0][0].height
 
         output_container, output_v_stream = self._create_av_container(
             path=chunk_path,
@@ -318,7 +324,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
 
     @staticmethod
     def _encode_images(images, container, stream):
-        for frame in images:
+        for frame, _ in images:
             # let libav set the correct pts and time_base
             frame.pts = None
             frame.time_base = None
@@ -341,8 +347,8 @@ class Mpeg4CompressedChunkWriter(Mpeg4ChunkWriter):
         if not images:
             raise Exception('no images to save')
 
-        input_w = images[0].width
-        input_h = images[0].height
+        input_w = images[0][0].width
+        input_h = images[0][0].height
 
         downscale_factor = 1
         while input_h / downscale_factor >= 1080:
@@ -374,7 +380,7 @@ def _is_archive(path):
     mime = mimetypes.guess_type(path)
     mime_type = mime[0]
     encoding = mime[1]
-    supportedArchives = ['application/zip', 'application/x-rar-compressed',
+    supportedArchives = ['application/x-rar-compressed',
         'application/x-tar', 'application/x-7z-compressed', 'application/x-cpio',
         'gzip', 'bzip2']
     return mime_type in supportedArchives or encoding in supportedArchives
@@ -395,6 +401,13 @@ def _is_dir(path):
 def _is_pdf(path):
     mime = mimetypes.guess_type(path)
     return mime[0] == 'application/pdf'
+
+def _is_zip(path):
+    mime = mimetypes.guess_type(path)
+    mime_type = mime[0]
+    encoding = mime[1]
+    supportedArchives = ['application/zip']
+    return mime_type in supportedArchives or encoding in supportedArchives
 
 # 'has_mime_type': function receives 1 argument - path to file.
 #                  Should return True if file has specified media type.
@@ -435,4 +448,10 @@ MEDIA_TYPES = {
         'mode': 'annotation',
         'unique': True,
     },
+    'zip': {
+        'has_mime_type': _is_zip,
+        'extractor': ZipReader,
+        'mode': 'annotation',
+        'unique': True,
+    }
 }
