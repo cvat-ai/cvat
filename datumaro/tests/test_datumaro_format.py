@@ -18,7 +18,7 @@ class DatumaroConverterTest(TestCase):
     class TestExtractor(Extractor):
         def __iter__(self):
             items = [
-                DatasetItem(id=100, subset='train',
+                DatasetItem(id=100, subset='train', image=np.ones((10, 6, 3)),
                     annotations=[
                         CaptionObject('hello', id=1),
                         CaptionObject('world', id=2, group=5),
@@ -75,8 +75,7 @@ class DatumaroConverterTest(TestCase):
         with TestDir() as test_dir:
             source_dataset = self.TestExtractor()
 
-            converter = DatumaroConverter(
-                save_images=True, apply_colormap=True)
+            converter = DatumaroConverter(save_images=True)
             converter(source_dataset, test_dir.path)
 
             project = Project.import_from(test_dir.path, 'datumaro')

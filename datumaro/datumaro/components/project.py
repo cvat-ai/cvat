@@ -542,7 +542,7 @@ class ProjectDataset(Extractor):
         return self
 
     def save(self, save_dir=None, merge=False, recursive=True,
-            save_images=False, apply_colormap=True):
+            save_images=False):
         if save_dir is None:
             assert self.config.project_dir
             save_dir = self.config.project_dir
@@ -562,7 +562,6 @@ class ProjectDataset(Extractor):
 
         converter_kwargs = {
             'save_images': save_images,
-            'apply_colormap': apply_colormap,
         }
 
         if merge:
@@ -653,7 +652,10 @@ class Project:
         self.env.sources.unregister(name)
 
     def get_source(self, name):
-        return self.config.sources[name]
+        try:
+            return self.config.sources[name]
+        except KeyError:
+            raise KeyError("Source '%s' is not found" % name)
 
     def get_subsets(self):
         return self.config.subsets
@@ -670,7 +672,10 @@ class Project:
         self.env.register_model(name, value)
 
     def get_model(self, name):
-        return self.env.models.get(name)
+        try:
+            return self.env.models.get(name)
+        except KeyError:
+            raise KeyError("Model '%s' is not found" % name)
 
     def remove_model(self, name):
         self.env.unregister_model(name)

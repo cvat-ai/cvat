@@ -13,8 +13,10 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, LabelObject, MaskObject, BboxObject,
     LabelCategories, MaskCategories
 )
-from datumaro.components.formats.voc import VocLabel, VocAction, \
-    VocBodyPart, VocTask, VocPath, VocColormap, VocInstColormap
+from datumaro.components.formats.voc import (VocLabel, VocAction,
+    VocBodyPart, VocTask, VocPath, VocColormap, VocInstColormap,
+    VocIgnoredLabel
+)
 from datumaro.util import dir_items
 from datumaro.util.image import lazy_image
 from datumaro.util.mask_tools import lazy_mask, invert_colormap
@@ -32,13 +34,16 @@ def _make_voc_categories():
     categories[AnnotationType.label] = label_categories
 
     def label_id(class_index):
+        if class_index in [0, VocIgnoredLabel]:
+            return class_index
+
         class_label = VocLabel(class_index).name
         label_id, _ = label_categories.find(class_label)
-        return label_id
+        return label_id + 1
     colormap = { label_id(idx): tuple(color) \
         for idx, color in VocColormap.items() }
     mask_categories = MaskCategories(colormap)
-    mask_categories.inverse_colormap # init inverse colormap
+    mask_categories.inverse_colormap # force init
     categories[AnnotationType.mask] = mask_categories
 
     return categories

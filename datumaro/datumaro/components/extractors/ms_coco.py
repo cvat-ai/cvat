@@ -16,7 +16,7 @@ from datumaro.components.extractor import (Extractor, DatasetItem,
     BboxObject, CaptionObject,
     LabelCategories, PointsCategories
 )
-from datumaro.components.formats.ms_coco import CocoAnnotationType, CocoPath
+from datumaro.components.formats.ms_coco import CocoTask, CocoPath
 from datumaro.util.image import lazy_image
 
 
@@ -103,9 +103,9 @@ class CocoExtractor(Extractor):
 
         self._categories = {}
 
-        label_loader = loaders.get(CocoAnnotationType.labels)
-        instances_loader = loaders.get(CocoAnnotationType.instances)
-        person_kp_loader = loaders.get(CocoAnnotationType.person_keypoints)
+        label_loader = loaders.get(CocoTask.labels)
+        instances_loader = loaders.get(CocoTask.instances)
+        person_kp_loader = loaders.get(CocoTask.person_keypoints)
 
         if label_loader is None and instances_loader is not None:
             label_loader = instances_loader
@@ -209,7 +209,7 @@ class CocoExtractor(Extractor):
         if 'score' in ann:
             attributes['score'] = ann['score']
 
-        if ann_type is CocoAnnotationType.instances:
+        if ann_type is CocoTask.instances:
             x, y, w, h = ann['bbox']
             label_id = self._parse_label(ann)
             group = None
@@ -253,13 +253,13 @@ class CocoExtractor(Extractor):
                 BboxObject(x, y, w, h, label=label_id,
                     id=ann_id, attributes=attributes, group=group)
             )
-        elif ann_type is CocoAnnotationType.labels:
+        elif ann_type is CocoTask.labels:
             label_id = self._parse_label(ann)
             parsed_annotations.append(
                 LabelObject(label=label_id,
                     id=ann_id, attributes=attributes)
             )
-        elif ann_type is CocoAnnotationType.person_keypoints:
+        elif ann_type is CocoTask.person_keypoints:
             keypoints = ann['keypoints']
             points = [p for i, p in enumerate(keypoints) if i % 3 != 2]
             visibility = keypoints[2::3]
@@ -276,7 +276,7 @@ class CocoExtractor(Extractor):
                 parsed_annotations.append(
                     BboxObject(*bbox, label=label_id, group=group)
                 )
-        elif ann_type is CocoAnnotationType.captions:
+        elif ann_type is CocoTask.captions:
             caption = ann['caption']
             parsed_annotations.append(
                 CaptionObject(caption,
@@ -289,21 +289,21 @@ class CocoExtractor(Extractor):
 
 class CocoImageInfoExtractor(CocoExtractor):
     def __init__(self, path, **kwargs):
-        super().__init__(path, task=CocoAnnotationType.image_info, **kwargs)
+        super().__init__(path, task=CocoTask.image_info, **kwargs)
 
 class CocoCaptionsExtractor(CocoExtractor):
     def __init__(self, path, **kwargs):
-        super().__init__(path, task=CocoAnnotationType.captions, **kwargs)
+        super().__init__(path, task=CocoTask.captions, **kwargs)
 
 class CocoInstancesExtractor(CocoExtractor):
     def __init__(self, path, **kwargs):
-        super().__init__(path, task=CocoAnnotationType.instances, **kwargs)
+        super().__init__(path, task=CocoTask.instances, **kwargs)
 
 class CocoPersonKeypointsExtractor(CocoExtractor):
     def __init__(self, path, **kwargs):
-        super().__init__(path, task=CocoAnnotationType.person_keypoints,
+        super().__init__(path, task=CocoTask.person_keypoints,
             **kwargs)
 
 class CocoLabelsExtractor(CocoExtractor):
     def __init__(self, path, **kwargs):
-        super().__init__(path, task=CocoAnnotationType.labels, **kwargs)
+        super().__init__(path, task=CocoTask.labels, **kwargs)
