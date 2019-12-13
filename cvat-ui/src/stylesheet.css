@@ -1,3 +1,10 @@
+hr {
+    border: 0;
+    height: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 .cvat-header.ant-layout-header {
     display: -webkit-box;
     display: -ms-flexbox;
@@ -63,7 +70,9 @@
 }
 
 .anticon.cvat-logo-icon > svg {
-    transform: scale(0.7);
+    -webkit-transform: scale(0.7);
+        -ms-transform: scale(0.7);
+            transform: scale(0.7);
 }
 
 .ant-btn.cvat-header-button {
@@ -74,14 +83,20 @@
 
 
 .ant-dropdown-trigger.cvat-header-menu-dropdown {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
     border-left: 1px solid #c3c3c3;
     padding: 0px 20px;
 }
 
 .anticon.cvat-header-account-icon > svg {
-    transform: scale(0.4);
+    -webkit-transform: scale(0.4);
+        -ms-transform: scale(0.4);
+            transform: scale(0.4);
 }
 
 .anticon.cvat-header-menu-icon {
@@ -233,7 +248,9 @@
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
-    align-items: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
 }
 
 .cvat-task-item-menu-icon > img {
@@ -694,7 +711,9 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-menu-icon {
-    transform: scale(0.5);
+    -webkit-transform: scale(0.5);
+        -ms-transform: scale(0.5);
+            transform: scale(0.5);
 }
 
 .cvat-create-model-form-wrapper {
@@ -771,25 +790,58 @@ textarea.ant-input.cvat-raw-labels-viewer {
 .ant-layout-header.cvat-annotation-page-header {
     background-color: #F1F1F1;
     border-bottom: 1px solid #D7D7D7;
-    height: 50px;
+    height: 54px;
+    padding: 0px;
 }
 
-.ant-layout-sider.cvat-annotation-page-controls-sidebar {
+.annotation-header-left-group > div {
+    height: 100%;
+    padding: 0px;
+    width: 54px;
+    height: 54px;
+    float: left;
+    text-align: center;
+}
+
+.annotation-header-left-group > div:first-child {
+    -webkit-filter: invert(1);
+            filter: invert(1);
+    background: white;
+    border-radius: 0px;
+}
+
+.annotation-header-left-group > div > * {
+    display: block;
+    line-height: 0px;
+}
+
+.annotation-header-left-group > div > span {
+    font-size: 10px;
+}
+
+.annotation-header-left-group > div > i {
+    -webkit-transform: scale(0.8);
+        -ms-transform: scale(0.8);
+            transform: scale(0.8);
+    padding: 3px;
+}
+
+
+.cvat-annotation-page-controls-sidebar {
     background-color: #F1F1F1;
     border-right: 1px solid #D7D7D7;
-    padding: 5px;
 }
 
-.ant-layout-sider.cvat-annotation-page-objects-sidebar {
+.cvat-annotation-page-objects-sidebar {
     background-color: #F1F1F1;
     border-left: 1px solid #D7D7D7;
 }
 
-.ant-layout-content.cvat-annotation-page-canvas-container {
+.cvat-annotation-page-canvas-container {
     background-color: white;
 }
 
-.ant-layout-sider-zero-width-trigger-left.cvat-annotation-page-objects-sidebar {
+.cvat-annotation-page-objects-sidebar {
     top: 0px;
     right: 0px;
     left: auto;
@@ -798,16 +850,25 @@ textarea.ant-input.cvat-raw-labels-viewer {
 
 .cvat-annotation-page-controls-sidebar > div > i {
     border-radius: 3.3px;
-}
-
-.cvat-annotation-page-controls-sidebar > div > i > svg {
-    transform: scale(0.7);
+    -webkit-transform: scale(0.65);
+        -ms-transform: scale(0.65);
+            transform: scale(0.65);
+    padding: 2px;
 }
 
 .cvat-annotation-page-controls-sidebar > div > i:hover {
     background: #D8D8D8;
+    -webkit-transform: scale(0.75);
+        -ms-transform: scale(0.75);
+            transform: scale(0.75);
 }
 
 .cvat-annotation-page-controls-sidebar > div > i:active {
     background: #C3C3C3;
+}
+
+.cvat-annotation-page-controls-sidebar > div > i > svg {
+    -webkit-transform: scale(0.8);
+        -ms-transform: scale(0.8);
+            transform: scale(0.8);
 }

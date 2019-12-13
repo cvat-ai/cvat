@@ -17,6 +17,10 @@ import SVGTagIcon from './assets/tag-icon.svg';
 import SVGMergeIcon from './assets/merge-icon.svg';
 import SVGGroupIcon from './assets/group-icon.svg';
 import SVGSplitIcon from './assets/split-icon.svg';
+import SVGMainMenuIcon from './assets/main-menu-icon.svg';
+import SVGSaveIcon from './assets/save-icon.svg';
+import SVGUndoIcon from './assets/undo-icon.svg';
+import SVGRedoIcon from './assets/redo-icon.svg';
 
 export const CVATLogo = (): JSX.Element => <SVGCVATLogo />;
 export const AccountIcon = (): JSX.Element => <SVGAccountIcon />;
@@ -35,3 +39,7 @@ export const TagIcon = (): JSX.Element => <SVGTagIcon />;
 export const MergeIcon = (): JSX.Element => <SVGMergeIcon />;
 export const GroupIcon = (): JSX.Element => <SVGGroupIcon />;
 export const SplitIcon = (): JSX.Element => <SVGSplitIcon />;
+export const MainMenuIcon = (): JSX.Element => <SVGMainMenuIcon />;
+export const SaveIcon = (): JSX.Element => <SVGSaveIcon />;
+export const UndoIcon = (): JSX.Element => <SVGUndoIcon />;
+export const RedoIcon = (): JSX.Element => <SVGRedoIcon />;

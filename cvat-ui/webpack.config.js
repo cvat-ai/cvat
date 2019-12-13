@@ -60,9 +60,12 @@ module.exports = {
                     loader: 'react-svg-loader',
                     query: {
                         svgo: {
-                            pretty: true,
-                        }
-                    }
+                            plugins: [
+                                { pretty: true, },
+                                { cleanupIDs: false, }
+                            ],
+                        },
+                    },
                 }
             ]
         }],

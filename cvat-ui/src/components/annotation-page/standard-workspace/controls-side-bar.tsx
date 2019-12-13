@@ -27,7 +27,7 @@ export default function ControlsSideBarComponent(): JSX.Element {
         <Layout.Sider
             className='cvat-annotation-page-controls-sidebar'
             theme='light'
-            width={50}
+            width={44}
         >
             <Tooltip overlay='Cursor' placement='right'>
                 <Icon component={CursorIcon} />
