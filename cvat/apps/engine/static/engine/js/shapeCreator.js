@@ -79,7 +79,8 @@ class ShapeCreatorModel extends Listener {
         this._shapeCollection.update();
     }
 
-    switchCreateMode(forceClose) {
+    switchCreateMode(forceClose, usingShortkey) {
+        this._usingShortkey = usingShortkey;
         // if parameter force (bool) setup to true, current result will not save
         if (!forceClose) {
             this._createMode = !this._createMode && window.cvat.mode == null;
@@ -111,6 +112,10 @@ class ShapeCreatorModel extends Listener {
 
     get createMode() {
         return this._createMode;
+    }
+
+    get usingShortkey() {
+        return this._usingShortkey;
     }
 
     get defaultType() {
@@ -146,15 +151,15 @@ class ShapeCreatorController {
             let shortkeys = window.cvat.config.shortkeys;
 
             let switchDrawHandler = Logger.shortkeyLogDecorator(function() {
-                this.switchCreateMode(false);
+                this.switchCreateMode(false, true);
             }.bind(this));
 
             Mousetrap.bind(shortkeys["switch_draw_mode"].value, switchDrawHandler.bind(this), 'keydown');
         }
     }
 
-    switchCreateMode(force) {
-        this._model.switchCreateMode(force);
+    switchCreateMode(force, usingShortkey = false) {
+        this._model.switchCreateMode(force, usingShortkey);
     }
 
     setDefaultShapeType(type) {
@@ -261,6 +266,23 @@ class ShapeCreatorView {
         this._polyShapeSizeInput.on('keydown', function(e) {
             e.stopPropagation();
         });
+
+        this._playerFrame.on('mousemove.shapeCreatorAIM', (e) => {
+            if (!['polygon', 'polyline', 'points'].includes(this._type)) {
+                this._aimCoord = window.cvat.translate.point.clientToCanvas(this._frameContent.node, e.clientX, e.clientY);
+                if (this._aim) {
+                    this._aim.x.attr({
+                        y1: this._aimCoord.y,
+                        y2: this._aimCoord.y,
+                    });
+
+                    this._aim.y.attr({
+                        x1: this._aimCoord.x,
+                        x2: this._aimCoord.x,
+                    });
+                }
+            }
+        });
     }
 
 
@@ -324,7 +346,6 @@ class ShapeCreatorView {
             }
         });
 
-
         this._frameContent.on('mousemove.shapeCreator', (e) => {
             if (e.shiftKey && ['polygon', 'polyline'].includes(this._type)) {
                 if (lastPoint.x === null || lastPoint.y === null) {
@@ -387,7 +408,6 @@ class ShapeCreatorView {
             this._controller.switchCreateMode(true);
         }.bind(this));
     }
-
 
     _create() {
         let sizeUI = null;
@@ -517,21 +537,13 @@ class ShapeCreatorView {
             this._mode = model.defaultMode;
 
             if (!['polygon', 'polyline', 'points'].includes(this._type)) {
+                if (!model.usingShortkey) {
+                    this._aimCoord = {
+                        x: 0,
+                        y: 0
+                    };
+                }
                 this._drawAim();
-                this._playerFrame.on('mousemove.shapeCreatorAIM', (e) => {
-                    this._aimCoord = window.cvat.translate.point.clientToCanvas(this._frameContent.node, e.clientX, e.clientY);
-                    if (this._aim) {
-                        this._aim.x.attr({
-                            y1: this._aimCoord.y,
-                            y2: this._aimCoord.y,
-                        });
-
-                        this._aim.y.attr({
-                            x1: this._aimCoord.x,
-                            x2: this._aimCoord.x,
-                        });
-                    }
-                });
             }
 
             this._createButton.text("Stop Creation");
@@ -539,12 +551,7 @@ class ShapeCreatorView {
             this._create();
         }
         else {
-            this._playerFrame.off('mousemove.shapeCreatorAIM');
             this._removeAim();
-            this._aimCoord = {
-                x: 0,
-                y: 0
-            };
             this._cancel = true;
             this._createButton.text("Create Shape");
             document.oncontextmenu = null;
