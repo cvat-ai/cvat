@@ -194,6 +194,8 @@ def build_export_parser(parser):
         help="Output format")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.add_argument('--overwrite', action='store_true',
+        help="Overwrite existing files in the save directory")
     parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
         help="Additional arguments for converter (pass '-- -h' for help)")
     return parser
@@ -202,7 +204,11 @@ def export_command(args):
     project = load_project(args.project_dir)
 
     dst_dir = osp.abspath(args.dst_dir)
-    os.makedirs(dst_dir, exist_ok=False)
+    if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
+        log.error("Directory '%s' already exists "
+            "(pass --overwrite to force creation)" % dst_dir)
+        return 1
+    os.makedirs(dst_dir, exist_ok=args.overwrite)
 
     source_project = project.make_source_project(args.name)
     source_project.make_dataset().export(
