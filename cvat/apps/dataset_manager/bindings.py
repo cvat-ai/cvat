@@ -28,7 +28,7 @@ class CvatImagesDirExtractor(datumaro.Extractor):
                         id=item_id, image=lazy_image(path))
                     items.append((item.id, item))
 
-        items = sorted(items, key=lambda e: e[0])
+        items = sorted(items, key=lambda e: int(e[0]))
         items = OrderedDict(items)
         self._items = items
 
@@ -74,7 +74,7 @@ class CvatTaskExtractor(datumaro.Extractor):
                 id=cvat_anno.frame, annotations=dm_anno)
             dm_annotations.append((dm_item.id, dm_item))
 
-        dm_annotations = sorted(dm_annotations, key=lambda e: e[0])
+        dm_annotations = sorted(dm_annotations, key=lambda e: int(e[0]))
         self._items = OrderedDict(dm_annotations)
 
         self._subsets = None

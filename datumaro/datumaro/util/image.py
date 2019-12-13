@@ -5,6 +5,7 @@
 
 # pylint: disable=unused-import
 
+from io import BytesIO
 import numpy as np
 
 from enum import Enum
@@ -42,19 +43,75 @@ def load_image(path):
     assert image.shape[2] in [1, 3, 4]
     return image
 
-def save_image(path, image):
+def save_image(path, image, params=None):
     if _IMAGE_BACKEND == _IMAGE_BACKENDS.cv2:
         import cv2
-        cv2.imwrite(path, image)
+        cv2.imwrite(path, image, params=params)
     elif _IMAGE_BACKEND == _IMAGE_BACKENDS.PIL:
         from PIL import Image
+
+        if not params:
+            params = {}
+
         image = image.astype(np.uint8)
         if len(image.shape) == 3 and image.shape[2] in [3, 4]:
             image[:, :, :3] = image[:, :, 2::-1] # BGR to RGB
         image = Image.fromarray(image)
-        image.save(path)
+        image.save(path, **params)
     else:
         raise NotImplementedError()
+
+def encode_image(image, ext, params=None):
+    if _IMAGE_BACKEND == _IMAGE_BACKENDS.cv2:
+        import cv2
+
+        if not ext.startswith('.'):
+            ext = '.' + ext
+
+        if ext.upper() == '.JPG':
+            params = [ int(cv2.IMWRITE_JPEG_QUALITY), 75 ]
+
+        success, result = cv2.imencode(ext, image, params=params)
+        if not success:
+            raise Exception("Failed to encode image to '%s' format" % (ext))
+        return result.tobytes()
+    elif _IMAGE_BACKEND == _IMAGE_BACKENDS.PIL:
+        from PIL import Image
+
+        if ext.startswith('.'):
+            ext = ext[1:]
+
+        if not params:
+            params = {}
+
+        image = image.astype(np.uint8)
+        if len(image.shape) == 3 and image.shape[2] in [3, 4]:
+            image[:, :, :3] = image[:, :, 2::-1] # BGR to RGB
+        image = Image.fromarray(image)
+        with BytesIO() as buffer:
+            image.save(buffer, format=ext, **params)
+            return buffer.getvalue()
+    else:
+        raise NotImplementedError()
+
+def decode_image(image_bytes):
+    if _IMAGE_BACKEND == _IMAGE_BACKENDS.cv2:
+        import cv2
+        image = np.frombuffer(image_bytes, dtype=np.uint8)
+        image = cv2.imdecode(image, cv2.IMREAD_UNCHANGED)
+        image = image.astype(np.float32)
+    elif _IMAGE_BACKEND == _IMAGE_BACKENDS.PIL:
+        from PIL import Image
+        image = Image.open(BytesIO(image_bytes))
+        image = np.asarray(image, dtype=np.float32)
+        if len(image.shape) == 3 and image.shape[2] in [3, 4]:
+            image[:, :, :3] = image[:, :, 2::-1] # RGB to BGR
+    else:
+        raise NotImplementedError()
+
+    assert len(image.shape) == 3
+    assert image.shape[2] in [1, 3, 4]
+    return image
 
 
 class lazy_image:

@@ -14,6 +14,11 @@ from datumaro.components.importers.voc import (
     VocResultsImporter,
 )
 
+from datumaro.components.importers.tfrecord import (
+    DetectionApiImporter,
+)
+
+
 items = [
     ('datumaro', DatumaroImporter),
 
@@ -21,4 +26,6 @@ items = [
 
     ('voc', VocImporter),
     ('voc_results', VocResultsImporter),
+
+    ('tf_detection_api', DetectionApiImporter),
 ]
