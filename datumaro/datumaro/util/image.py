@@ -47,6 +47,10 @@ def load_image(path):
 def save_image(path, image, params=None):
     if _IMAGE_BACKEND == _IMAGE_BACKENDS.cv2:
         import cv2
+        ext = path[-4:]
+        if ext.upper() == '.JPG':
+            params = [ int(cv2.IMWRITE_JPEG_QUALITY), 75 ]
+
         image = image.astype(np.uint8)
         cv2.imwrite(path, image, params=params)
     elif _IMAGE_BACKEND == _IMAGE_BACKENDS.PIL:
@@ -73,6 +77,7 @@ def encode_image(image, ext, params=None):
         if ext.upper() == '.JPG':
             params = [ int(cv2.IMWRITE_JPEG_QUALITY), 75 ]
 
+        image = image.astype(np.uint8)
         success, result = cv2.imencode(ext, image, params=params)
         if not success:
             raise Exception("Failed to encode image to '%s' format" % (ext))

@@ -34,7 +34,7 @@ from datumaro.util.test_utils import TestDir
 
 class VocTest(TestCase):
     def test_colormap_generator(self):
-        reference = [
+        reference = np.array([
             [  0,   0,   0],
             [128,   0,   0],
             [  0, 128,   0],
@@ -55,7 +55,9 @@ class VocTest(TestCase):
             [128,  64,   0],
             [  0, 192,   0],
             [128, 192,   0],
-        ]
+            [  0,  64, 128],
+            [224, 224, 192], # ignored
+        ])
 
         self.assertTrue(np.array_equal(reference, list(VOC.VocColormap.values())))
 
@@ -192,7 +194,7 @@ class VocExtractorTest(TestCase):
                         count += 1
                         ann = find(item.annotations,
                             lambda x: x.type == AnnotationType.label and \
-                                x.label == label.value)
+                                get_label(extractor, x.label) == label.name)
                         self.assertFalse(ann is None)
                 self.assertEqual(count, len(item.annotations))
 

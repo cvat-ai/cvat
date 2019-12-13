@@ -71,7 +71,7 @@ class _TaskConverter:
             'id': _cast(item.id, int, 0),
             'width': int(w),
             'height': int(h),
-            'file_name': filename,
+            'file_name': _cast(filename, str, ''),
             'license': 0,
             'flickr_url': '',
             'coco_url': '',
@@ -117,8 +117,8 @@ class _InstancesConverter(_TaskConverter):
         for idx, cat in enumerate(label_categories.items):
             self.categories.append({
                 'id': 1 + idx,
-                'name': cat.name,
-                'supercategory': cat.parent,
+                'name': _cast(cat.name, str, ''),
+                'supercategory': _cast(cat.parent, str, ''),
             })
 
     def save_annotations(self, item):
@@ -282,8 +282,8 @@ class _KeypointsConverter(_TaskConverter):
 
             cat = {
                 'id': 1 + idx,
-                'name': label_cat.name,
-                'supercategory': label_cat.parent,
+                'name': _cast(label_cat.name, str, ''),
+                'supercategory': _cast(label_cat.parent, str, ''),
                 'keypoints': [str(l) for l in kp_cat.labels],
                 'skeleton': [int(i) for i in kp_cat.adjacent],
             }
@@ -339,8 +339,8 @@ class _LabelsConverter(_TaskConverter):
         for idx, cat in enumerate(label_categories.items):
             self.categories.append({
                 'id': 1 + idx,
-                'name': cat.name,
-                'supercategory': cat.parent,
+                'name': _cast(cat.name, str, ''),
+                'supercategory': _cast(cat.parent, str, ''),
             })
 
     def save_annotations(self, item):

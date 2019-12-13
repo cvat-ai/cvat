@@ -26,8 +26,16 @@ def build_create_parser(parser):
 def create_command(args):
     project_dir = osp.abspath(args.dst_dir)
     project_path = make_project_path(project_dir)
+
+    if not args.overwrite and osp.isdir(project_dir) and os.listdir(project_dir):
+        log.error("Directory '%s' already exists "
+            "(pass --overwrite to force creation)" % project_dir)
+        return 1
+    os.makedirs(project_dir, exist_ok=args.overwrite)
+
     if not args.overwrite and osp.isfile(project_path):
-        log.error("Project file '%s' already exists" % (project_path))
+        log.error("Project file '%s' already exists "
+            "(pass --overwrite to force creation)" % project_path)
         return 1
 
     project_name = args.name
@@ -59,7 +67,7 @@ def build_import_parser(parser):
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
     parser.add_argument('--copy', action='store_true',
-        help="Make a deep copy instead of saving source links")
+        help="Copy the dataset instead of saving source links")
     # parser.add_argument('extra_args', nargs=argparse.REMAINDER,
     #     help="Additional arguments for importer (pass '-- -h' for help)")
     return parser
@@ -67,8 +75,16 @@ def build_import_parser(parser):
 def import_command(args):
     project_dir = osp.abspath(args.dst_dir)
     project_path = make_project_path(project_dir)
+
+    if not args.overwrite and osp.isdir(project_dir) and os.listdir(project_dir):
+        log.error("Directory '%s' already exists "
+            "(pass --overwrite to force creation)" % project_dir)
+        return 1
+    os.makedirs(project_dir, exist_ok=args.overwrite)
+
     if not args.overwrite and osp.isfile(project_path):
-        log.error("Project file '%s' already exists" % (project_path))
+        log.error("Project file '%s' already exists "
+            "(pass --overwrite to force creation)" % project_path)
         return 1
 
     project_name = args.name

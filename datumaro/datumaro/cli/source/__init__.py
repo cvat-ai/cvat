@@ -26,7 +26,7 @@ def create_command(args):
     name = args.name
 
     if project.env.git.has_submodule(name):
-        log.fatal("Source '%s' already exists" % (name))
+        log.fatal("Submodule '%s' already exists" % (name))
         return 1
 
     try:
@@ -171,12 +171,21 @@ def remove_command(args):
 def build_export_parser(parser):
     parser.add_argument('-n', '--name', required=True,
         help="Source dataset to be extracted")
+    parser.add_argument('-e', '--filter', default=None,
+        help="Filter expression for dataset items. Examples: "
+             "extract images with width < height: "
+             "'/item[image/width < image/height]'; "
+             "extract images with large-area bboxes: "
+             "'/item[annotation/type=\"bbox\" and annotation/area>2000]'"
+        )
     parser.add_argument('-d', '--dest', dest='dst_dir', required=True,
         help="Directory to save output")
     parser.add_argument('-f', '--output-format', required=True,
-        help="Output format (default: %(default)s)")
+        help="Output format")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
+        help="Additional arguments for converter (pass '-- -h' for help)")
     return parser
 
 def export_command(args):
@@ -187,8 +196,10 @@ def export_command(args):
 
     source_project = project.make_source_project(args.name)
     source_project.make_dataset().export(
-        save_dir=args.dst_dir,
-        output_format=args.output_format)
+        save_dir=dst_dir,
+        output_format=args.output_format,
+        filter_expr=args.filter,
+        cmdline_args=args.extra_args)
     log.info("Source '%s' exported to '%s' as '%s'" % \
         (args.name, dst_dir, args.output_format))
 
