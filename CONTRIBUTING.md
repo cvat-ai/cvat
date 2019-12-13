@@ -49,7 +49,7 @@ Password (again): ***
 ```sh
 cd cvat-core && npm install
 cd ../cvat-ui && npm install
-npm run start
+npm run server
 ```
 
 - Run Visual Studio Code from the virtual environment
