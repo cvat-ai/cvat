@@ -114,6 +114,10 @@ class ShapeCreatorModel extends Listener {
         return this._createMode;
     }
 
+    get usingShortkey() {
+        return this._usingShortkey;
+    }
+
     get defaultType() {
         return this._defaultType;
     }
@@ -154,7 +158,7 @@ class ShapeCreatorController {
         }
     }
 
-    switchCreateMode(force, usingShortkey) {
+    switchCreateMode(force, usingShortkey = false) {
         this._model.switchCreateMode(force, usingShortkey);
     }
 
@@ -533,7 +537,7 @@ class ShapeCreatorView {
             this._mode = model.defaultMode;
 
             if (!['polygon', 'polyline', 'points'].includes(this._type)) {
-                if (!model._usingShortkey) {
+                if (!model.usingShortkey) {
                     this._aimCoord = {
                         x: 0,
                         y: 0
@@ -544,13 +548,7 @@ class ShapeCreatorView {
 
             this._createButton.text("Stop Creation");
             document.oncontextmenu = () => false;
-            this._create(model._usingShortkey);
-            if (!model._usingShortkey) {
-                this._aimCoord = {
-                    x: 0,
-                    y: 0
-                };
-            }
+            this._create(model.usingShortkey);
         }
         else {
             this._removeAim();
