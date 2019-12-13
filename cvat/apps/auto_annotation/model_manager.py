@@ -231,7 +231,7 @@ def run_inference_thread(tid, model_file, weights_file, labels_mapping, attribut
         result = None
         slogger.glob.info("auto annotation with openvino toolkit for task {}".format(tid))
         result = run_inference_engine_annotation(
-            data=ImageLoader(FrameProvider(db_task)),
+            data=ImageLoader(FrameProvider(db_task.data)),
             model_file=model_file,
             weights_file=weights_file,
             labels_mapping=labels_mapping,

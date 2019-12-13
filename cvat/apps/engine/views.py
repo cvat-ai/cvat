@@ -279,19 +279,66 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-    @action(detail=True, methods=['POST'])
+    @action(detail=True, methods=['POST', 'GET'])
     def data(self, request, pk):
-        db_task = self.get_object() # call check_object_permissions as well
-        serializer = DataSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        db_data = serializer.save()
-        db_task.data = db_data
-        db_task.save()
-        # FIXME
-        data = {k:v for k, v in serializer.data.items()}
-        data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
-        task.create(db_task.id, data)
-        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        if request.method == 'POST':
+            db_task = self.get_object() # call check_object_permissions as well
+            serializer = DataSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            db_data = serializer.save()
+            db_task.data = db_data
+            db_task.save()
+            data = {k:v for k, v in serializer.data.items()}
+            data['use_zip_chunks'] = serializer.validated_data['use_zip_chunks']
+            task.create(db_task.id, data)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        else:
+            data_type = request.query_params.get('type', None)
+            number = request.query_params.get('number', None)
+            quality = request.query_params.get('quality', 'compressed')
+
+            possible_data_type_values = ('chunk', 'frame', 'preview')
+            possible_quality_values = ('compressed', 'original')
+
+            if not data_type or data_type not in possible_data_type_values:
+                return Response(data='data type not specified or has wrong value', status=status.HTTP_400_BAD_REQUEST)
+            elif data_type == 'chunk' or data_type == 'frame':
+                if not number:
+                    return Response(data='number not specified', status=status.HTTP_400_BAD_REQUEST)
+                elif quality not in possible_quality_values:
+                    return Response(data='wrong quality value', status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                db_task = self.get_object()
+                frame_provider = FrameProvider(db_task.data)
+
+                if data_type == 'chunk':
+                    number = int(number)
+                    if quality == 'compressed':
+                        path = os.path.realpath(frame_provider.get_compressed_chunk(number))
+                    else:
+                        path = os.path.realpath(frame_provider.get_original_chunk(number))
+                    # Follow symbol links if the chunk is a link on a real image otherwise
+                    # mimetype detection inside sendfile will work incorrectly.
+                    return sendfile(request, path)
+
+                elif data_type == 'frame':
+                    number = int(number)
+                    if quality == 'compressed':
+                        buf = frame_provider.get_compressed_frame(number)
+                    else:
+                        buf = frame_provider.get_original_frame(number)
+
+                    return HttpResponse(buf.getvalue(), content_type='image/png')
+
+                elif data_type == 'preview':
+                    return sendfile(request, frame_provider.get_preview())
+                else:
+                    return Response(data='unknown data type {}.'.format(data_type), status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                msg = 'cannot get requested data type: {}, number: {}, quality: {}'.format(data_type, number, quality)
+                slogger.task[pk].error(msg, exc_info=True)
+                return Response(data=msg + '\n' + str(e), status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
@@ -422,7 +469,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
     @staticmethod
     @action(detail=True, methods=['GET'], serializer_class=ImageMetaSerializer,
-        url_path='frames/meta')
+        url_path='data/meta')
     def data_info(request, pk):
         data = {
             'original_size': [],
@@ -444,53 +491,6 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         serializer = ImageMetaSerializer(many=True, data=data['original_size'])
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data)
-
-    @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='frames/chunk/(?P<chunk>\d+)')
-    def chunk(self, request, pk, chunk):
-        """Get a chunk of frames for the task"""
-
-        try:
-            db_task = self.get_object()
-            # Follow symbol links if the chunk is a link on a real image otherwise
-            # mimetype detection inside sendfile will work incorrectly.
-            frame_provider = FrameProvider(db_task.data)
-            path = os.path.realpath(frame_provider.get_compressed_chunk(chunk))
-
-            return sendfile(request, path)
-        except Exception as e:
-            slogger.task[pk].error(
-                "cannot get chunk #{}".format(chunk), exc_info=True)
-            return HttpResponseBadRequest(str(e))
-
-    @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='frames/(?P<frame>\d+)')
-    def frame(self, request, pk, frame):
-        """Get a frame for the task"""
-
-        try:
-            db_task = self.get_object()
-            frame_provider = FrameProvider(db_task.data)
-            buf = frame_provider.get_compressed_frame(frame)
-            return HttpResponse(buf.getvalue(), content_type='image/png')
-
-        except Exception as e:
-            slogger.task[pk].error(
-                'cannot get frame {}'.format(frame), exc_info=True)
-            return HttpResponseBadRequest(str(e))
-
-    @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='frames/preview')
-    def preview(self, request, pk):
-        """Get a peview image of the task"""
-        try:
-            db_task = self.get_object()
-            frame_provider = FrameProvider(db_task.data)
-            return sendfile(request, frame_provider.get_preview())
-        except Exception as e:
-            slogger.task[pk].error(
-                "cannot get preview image", exc_info=True)
-            return HttpResponseBadRequest(str(e))
 
 class JobViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):

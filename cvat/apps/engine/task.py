@@ -259,12 +259,13 @@ def _create_thread(tid, data):
             for img in chunk_images:
                 image_names.append(img[1])
 
-            compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
-            img_sizes = compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
-            image_sizes.extend(img_sizes)
-
             original_chunk_path = db_data.get_original_chunk_path(chunk_idx)
             original_chunk_writer.save_as_chunk(chunk_images, original_chunk_path)
+
+            compressed_chunk_path = db_data.get_compressed_chunk_path(chunk_idx)
+            img_sizes = compressed_chunk_writer.save_as_chunk(chunk_images, compressed_chunk_path)
+
+            image_sizes.extend(img_sizes)
 
             db_data.size += len(chunk_images)
             update_progress(db_data.size / total_len)

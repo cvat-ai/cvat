@@ -92,7 +92,7 @@ def run_inference_engine_annotation(image_list, labels_mapping, treshold):
     return result
 
 
-def run_tensorflow_annotation(image_list, labels_mapping, treshold):
+def run_tensorflow_annotation(frame_provider, labels_mapping, treshold):
     def _normalize_box(box, w, h):
         xmin = int(box[1] * w)
         ymin = int(box[0] * h)
@@ -118,17 +118,17 @@ def run_tensorflow_annotation(image_list, labels_mapping, treshold):
             config = tf.ConfigProto()
             config.gpu_options.allow_growth=True
             sess = tf.Session(graph=detection_graph, config=config)
-            for image_num, image_path in enumerate(image_list):
+            for image_num, image in enumerate(frame_provider.get_original_frame_iter()):
 
                 job.refresh()
                 if 'cancel' in job.meta:
                     del job.meta['cancel']
                     job.save()
                     return None
-                job.meta['progress'] = image_num * 100 / len(image_list)
+                job.meta['progress'] = image_num * 100 / len(frame_provider)
                 job.save_meta()
 
-                image = Image.open(image_path)
+                image = Image.open(image)
                 width, height = image.size
                 if width > 1920 or height > 1080:
                     image = image.resize((width // 2, height // 2), Image.ANTIALIAS)
@@ -189,7 +189,7 @@ def create_thread(tid, labels_mapping, user):
         # Get job indexes and segment length
         db_task = TaskModel.objects.get(pk=tid)
         # Get image list
-        image_list = FrameProvider(db_task)
+        image_list = FrameProvider(db_task.data)
 
         # Run auto annotation by tf
         result = None

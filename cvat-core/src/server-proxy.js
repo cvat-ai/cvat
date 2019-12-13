@@ -387,8 +387,7 @@
 
                 let response = null;
                 try {
-                    // TODO: change 0 frame to preview
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/0`, {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/data?type=preview`, {
                         proxy: config.proxy,
                         responseType: 'blob',
                     });
@@ -408,7 +407,7 @@
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/chunk/${chunk}`, {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/data?type=chunk&number=${chunk}&quality=compressed`, {
                         proxy: config.proxy,
                         responseType: 'arraybuffer',
                     });
@@ -427,7 +426,7 @@
 
                 let response = null;
                 try {
-                    response = await Axios.get(`${backendAPI}/tasks/${tid}/frames/meta`, {
+                    response = await Axios.get(`${backendAPI}/tasks/${tid}/data/meta`, {
                         proxy: config.proxy,
                     });
                 } catch (errorData) {
