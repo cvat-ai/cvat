@@ -68,6 +68,8 @@ def build_import_parser(parser):
         help="Overwrite existing files in the save directory")
     parser.add_argument('--copy', action='store_true',
         help="Copy the dataset instead of saving source links")
+    parser.add_argument('--skip-check', action='store_true',
+        help="Skip source checking")
     # parser.add_argument('extra_args', nargs=argparse.REMAINDER,
     #     help="Additional arguments for importer (pass '-- -h' for help)")
     return parser
@@ -99,7 +101,9 @@ def import_command(args):
     project.config.project_name = project_name
     project.config.project_dir = project_dir
 
-    dataset = project.make_dataset()
+    if not args.skip_check or args.copy:
+        log.info("Checking the dataset...")
+        dataset = project.make_dataset()
     if args.copy:
         log.info("Cloning data...")
         dataset.save(merge=True, save_images=True)
