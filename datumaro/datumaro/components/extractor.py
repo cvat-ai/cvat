@@ -53,6 +53,11 @@ class Categories:
     def __init__(self, attributes=None):
         if attributes is None:
             attributes = set()
+        else:
+            if not isinstance(attributes, set):
+                attributes = set(attributes)
+            for attr in attributes:
+                assert isinstance(attr, str)
         self.attributes = attributes
 
     def __eq__(self, other):
@@ -62,7 +67,7 @@ class Categories:
             (self.attributes == other.attributes)
 
 class LabelCategories(Categories):
-    Category = namedtuple('Category', ['name', 'parent'])
+    Category = namedtuple('Category', ['name', 'parent', 'attributes'])
 
     def __init__(self, items=None, attributes=None):
         super().__init__(attributes=attributes)
@@ -81,11 +86,18 @@ class LabelCategories(Categories):
             indices[item.name] = index
         self._indices = indices
 
-    def add(self, name, parent=None):
+    def add(self, name, parent=None, attributes=None):
         assert name not in self._indices
+        if attributes is None:
+            attributes = set()
+        else:
+            if not isinstance(attributes, set):
+                attributes = set(attributes)
+            for attr in attributes:
+                assert isinstance(attr, str)
 
         index = len(self.items)
-        self.items.append(self.Category(name, parent))
+        self.items.append(self.Category(name, parent, attributes))
         self._indices[name] = index
 
     def find(self, name):
