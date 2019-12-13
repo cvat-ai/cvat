@@ -6,11 +6,11 @@
 from enum import Enum
 
 
-CocoAnnotationType = Enum('CocoAnnotationType', [
+CocoTask = Enum('CocoTask', [
     'instances',
     'person_keypoints',
     'captions',
-    'labels', # extension, does not exist in original COCO format
+    'labels', # extension, does not exist in the original COCO format
     'image_info',
     'panoptic',
     'stuff',

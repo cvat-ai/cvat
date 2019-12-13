@@ -4,9 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict, defaultdict
+import logging as log
+from lxml import etree as ET
 import os
 import os.path as osp
-from lxml import etree as ET
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import DEFAULT_SUBSET_NAME, AnnotationType
@@ -31,11 +32,18 @@ class _Converter:
     _BODY_PARTS = set([entry.name for entry in VocBodyPart])
     _ACTIONS = set([entry.name for entry in VocAction])
 
-    def __init__(self, task, extractor, save_dir,
-            apply_colormap=True, save_images=False):
+    def __init__(self, extractor, save_dir,
+            tasks=None, apply_colormap=True, save_images=False):
+        assert tasks is None or isinstance(tasks, (VocTask, list))
+        if tasks is None:
+            tasks = list(VocTask)
+        elif isinstance(tasks, VocTask):
+            tasks = [tasks]
+        else:
+            for t in tasks:
+                assert t in VocTask
+        self._tasks = tasks
 
-        assert not task or task in VocTask
-        self._task = task
         self._extractor = extractor
         self._save_dir = save_dir
         self._apply_colormap = apply_colormap
@@ -136,6 +144,11 @@ class _Converter:
                     ET.SubElement(root_elem, 'filename').text = \
                         item_id + VocPath.IMAGE_EXT
 
+                    source_elem = ET.SubElement(root_elem, 'source')
+                    ET.SubElement(source_elem, 'database').text = 'Unknown'
+                    ET.SubElement(source_elem, 'annotation').text = 'Unknown'
+                    ET.SubElement(source_elem, 'image').text = 'Unknown'
+
                     if item.has_image:
                         h, w, c = item.image.shape
                         size_elem = ET.SubElement(root_elem, 'size')
@@ -144,8 +157,8 @@ class _Converter:
                         ET.SubElement(size_elem, 'depth').text = str(c)
 
                     item_segmented = 0 < len(masks)
-                    if item_segmented:
-                        ET.SubElement(root_elem, 'segmented').text = '1'
+                    ET.SubElement(root_elem, 'segmented').text = \
+                        str(int(item_segmented))
 
                     objects_with_parts = []
                     objects_with_actions = defaultdict(dict)
@@ -205,10 +218,10 @@ class _Converter:
 
                                 objects_with_actions[new_obj_id][action] = presented
 
-                    if self._task in [None,
+                    if set(self._tasks) & set([None,
                             VocTask.detection,
                             VocTask.person_layout,
-                            VocTask.action_classification]:
+                            VocTask.action_classification]):
                         with open(osp.join(self._ann_dir, item_id + '.xml'), 'w') as f:
                             f.write(ET.tostring(root_elem,
                                 encoding='unicode', pretty_print=True))
@@ -245,19 +258,19 @@ class _Converter:
                     action_list[item_id] = None
                     segm_list[item_id] = None
 
-                if self._task in [None,
+                if set(self._tasks) & set([None,
                         VocTask.classification,
                         VocTask.detection,
                         VocTask.action_classification,
-                        VocTask.person_layout]:
+                        VocTask.person_layout]):
                     self.save_clsdet_lists(subset_name, clsdet_list)
-                    if self._task in [None, VocTask.classification]:
+                    if set(self._tasks) & set([None, VocTask.classification]):
                         self.save_class_lists(subset_name, class_lists)
-                if self._task in [None, VocTask.action_classification]:
+                if set(self._tasks) & set([None, VocTask.action_classification]):
                     self.save_action_lists(subset_name, action_list)
-                if self._task in [None, VocTask.person_layout]:
+                if set(self._tasks) & set([None, VocTask.person_layout]):
                     self.save_layout_lists(subset_name, layout_list)
-                if self._task in [None, VocTask.segmentation]:
+                if set(self._tasks) & set([None, VocTask.segmentation]):
                     self.save_segm_lists(subset_name, segm_list)
 
     def save_action_lists(self, subset_name, action_list):
@@ -289,6 +302,12 @@ class _Converter:
         if len(class_lists) == 0:
             return
 
+        label_cat = self._extractor.categories().get(AnnotationType.label, None)
+        if not label_cat:
+            log.warn("Unable to save classification task lists "
+                "as source does not provide class labels. Skipped.")
+            return
+
         for label in VocLabel:
             ann_file = osp.join(self._cls_subsets_dir,
                 '%s_%s.txt' % (label.name, subset_name))
@@ -296,7 +315,8 @@ class _Converter:
                 for item, item_labels in class_lists.items():
                     if not item_labels:
                         continue
-                    presented = label.value in item_labels
+                    item_labels = [label_cat.items[l].name for l in item_labels]
+                    presented = label.name in item_labels
                     f.write('%s % d\n' % \
                         (item, 1 if presented else -1))
 
@@ -337,34 +357,57 @@ class _Converter:
         save_image(path, data)
 
 class VocConverter(Converter):
-    def __init__(self, task=None, save_images=False, apply_colormap=False):
+    def __init__(self,
+            tasks=None, save_images=False, apply_colormap=False,
+            cmdline_args=None):
         super().__init__()
-        self._task = task
-        self._save_images = save_images
-        self._apply_colormap = apply_colormap
+
+        self._options = {
+            'tasks': tasks,
+            'save_images': save_images,
+            'apply_colormap': apply_colormap,
+        }
+
+        if cmdline_args is not None:
+            self._options.update(self._parse_cmdline(cmdline_args))
+
+    @staticmethod
+    def _split_tasks_string(s):
+        return [VocTask[i.strip()] for i in s.split(',')]
+
+    @classmethod
+    def build_cmdline_parser(cls, parser=None):
+        import argparse
+        if not parser:
+            parser = argparse.ArgumentParser()
+
+        parser.add_argument('--save-images', action='store_true',
+            help="Save images (default: %(default)s)")
+        parser.add_argument('--apply-colormap', type=bool, default=True,
+            help="Use colormap for class and instance masks "
+                "(default: %(default)s)")
+        parser.add_argument('--tasks', type=cls._split_tasks_string,
+            default=None,
+            help="VOC task filter, comma-separated list of {%s} "
+                "(default: all)" % ', '.join([t.name for t in VocTask]))
+
+        return parser
 
     def __call__(self, extractor, save_dir):
-        converter = _Converter(self._task, extractor, save_dir,
-            apply_colormap=self._apply_colormap,
-            save_images=self._save_images)
+        converter = _Converter(extractor, save_dir, **self._options)
         converter.convert()
 
-def VocClassificationConverter(save_images=False):
-    return VocConverter(VocTask.classification,
-        save_images=save_images)
+def VocClassificationConverter(**kwargs):
+    return VocConverter(VocTask.classification, **kwargs)
 
-def VocDetectionConverter(save_images=False):
-    return VocConverter(VocTask.detection,
-        save_images=save_images)
+def VocDetectionConverter(**kwargs):
+    return VocConverter(VocTask.detection, **kwargs)
 
-def VocLayoutConverter(save_images=False):
-    return VocConverter(VocTask.person_layout,
-        save_images=save_images)
+def VocLayoutConverter(**kwargs):
+    return VocConverter(VocTask.person_layout, **kwargs)
 
-def VocActionConverter(save_images=False):
-    return VocConverter(VocTask.action_classification,
-        save_images=save_images)
+def VocActionConverter(**kwargs):
+    return VocConverter(VocTask.action_classification, **kwargs)
 
-def VocSegmentationConverter(save_images=False, apply_colormap=True):
-    return VocConverter(VocTask.segmentation,
-        save_images=save_images, apply_colormap=apply_colormap)
+def VocSegmentationConverter(**kwargs):
+    return VocConverter(VocTask.segmentation, **kwargs)

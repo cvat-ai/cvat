@@ -5,6 +5,7 @@
 
 from collections import defaultdict
 import json
+import logging as log
 import os.path as osp
 
 from datumaro.components.extractor import (Extractor, DatasetItem,
@@ -140,11 +141,10 @@ class DatumaroExtractor(Extractor):
                 mask = None
 
                 if osp.isfile(mask_path):
-                    mask_cat = self._categories.get(AnnotationType.mask)
-                    if mask_cat is not None:
-                        mask = lazy_mask(mask_path, mask_cat.inverse_colormap)
-                    else:
-                        mask = lazy_image(mask_path)
+                    mask = lazy_mask(mask_path)
+                else:
+                    log.warn("Not found mask image file '%s', skipped." % \
+                        mask_path)
 
                 loaded.append(MaskObject(label=label_id, image=mask,
                     id=ann_id, attributes=attributes, group=group))
