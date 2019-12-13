@@ -409,7 +409,7 @@ class ShapeCreatorView {
         }.bind(this));
     }
 
-    _create(usingShortkey) {
+    _create() {
         let sizeUI = null;
         switch(this._type) {
         case 'box':
@@ -445,7 +445,7 @@ class ShapeCreatorView {
                     this._controller.finish(box, this._type);
                 }
 
-                this._controller.switchCreateMode(true, usingShortkey);
+                this._controller.switchCreateMode(true);
             }.bind(this)).on('drawupdate', (e) => {
                 sizeUI = drawBoxSize.call(sizeUI, this._frameContent, this._frameText, e.target.getBBox());
             }).on('drawcancel', () => {
@@ -548,7 +548,7 @@ class ShapeCreatorView {
 
             this._createButton.text("Stop Creation");
             document.oncontextmenu = () => false;
-            this._create(model.usingShortkey);
+            this._create();
         }
         else {
             this._removeAim();
