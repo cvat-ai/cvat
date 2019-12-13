@@ -24,5 +24,6 @@
             "changeProcessCWD": true
         }
     ],
+    "python.linting.pylintEnabled": true,
     "python.envFile": "${workspaceFolder}/.vscode/python.env"
 }
