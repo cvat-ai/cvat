@@ -47,7 +47,6 @@ def load_image(path):
 def save_image(path, image, params=None):
     if _IMAGE_BACKEND == _IMAGE_BACKENDS.cv2:
         import cv2
-
         ext = path[-4:]
         if ext.upper() == '.JPG':
             params = [ int(cv2.IMWRITE_JPEG_QUALITY), 75 ]
