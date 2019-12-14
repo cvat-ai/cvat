@@ -176,34 +176,7 @@ function setupFrameFilters() {
     });
 
     equalize.on('click', () => {
-        var imgSrc = new Image;
-        imgSrc.src = frameBackground.css('background-image').slice(5, -2);
-
-        var imgRGBA = cv.imread(imgSrc);
-
-        let img = new cv.Mat();
-        // There is no COLOR_RGBA2YUV so we do it in two steps.
-        cv.cvtColor(imgRGBA, img, cv.COLOR_RGBA2BGR);
-        cv.cvtColor(img, img, cv.COLOR_BGR2YUV);
-
-        // Equalize Y component
-        let planes = new cv.MatVector();
-        cv.split(img, planes);
-        cv.equalizeHist(planes.get(0), planes.get(0));
-
-        // Convert back to RGB
-        cv.merge(planes, img);
-        cv.cvtColor(img, img, cv.COLOR_YUV2RGB);
-
-        var out = document.createElement("canvas");
-        cv.imshow(out, img);
-
-        let data = out.toDataURL();
-        frameBackground.css('background-image', "url(" + data + ")");
-
-        imgRGBA.delete();
-        img.delete();
-        planes.delete();
+        equalizeHist(frameBackground);
     });
 }
 
