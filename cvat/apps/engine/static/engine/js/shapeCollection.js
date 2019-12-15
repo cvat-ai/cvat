@@ -648,7 +648,6 @@ class ShapeCollectionModel extends Listener {
             totalForLabels.points.interpolation += statistic[labelId].points.interpolation;
             totalForLabels.cuboids.annotation += statistic[labelId].cuboids.annotation;
             totalForLabels.cuboids.interpolation += statistic[labelId].cuboids.interpolation;
-            totalForLabels.cuboids.annotation += statistic[labelId].cuboids.annotation;
             totalForLabels.cuboids.interpolation += statistic[labelId].cuboids.interpolation;
             totalForLabels.manually += statistic[labelId].manually;
             totalForLabels.interpolated += statistic[labelId].interpolated;
