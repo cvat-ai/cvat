@@ -22,7 +22,11 @@
 */
 
 const MIN_EDGE_LENGTH = 7;
-const EDGE_MARGIN = 20;
+
+const orientationEnum  ={
+        LEFT : 0,
+        RIGHT: 1,
+};
 
 class CuboidController extends PolyShapeController {
     constructor(cuboidModel) {
@@ -30,6 +34,8 @@ class CuboidController extends PolyShapeController {
         const frame = window.cvat.player.frames.current;
         const points = PolylineModel.convertStringToNumberArray(cuboidModel._interpolatePosition(frame).points);
         this.viewModel = new Cuboid2PointViewModel(points);
+        this.orientation = orientationEnum.LEFT;
+
     }
 
     setView(cuboidView) {
@@ -51,6 +57,13 @@ class CuboidController extends PolyShapeController {
         const grabPoints=  cuboidview._uis.shape.getGrabPoints();
         const draggableFaces = [cuboidview._uis.shape.left,cuboidview._uis.shape.dorsal,cuboidview._uis.shape.right];
 
+        if(this.viewModel.dl.points[0].x >this.viewModel.fl.points[0].x ){
+            this.orientation = orientationEnum.LEFT;
+        }else{
+            this.orientation = orientationEnum.RIGHT;
+        }
+
+        this.updateGrabPoints();
         cuboidview._uis.shape.on('mousedown', () => {
             ShapeView.prototype._positionateMenus.call(cuboidview);
         });
@@ -92,6 +105,7 @@ class CuboidController extends PolyShapeController {
                 cuboidview.notify('drag');
                 controller.updateModel();
                 controller.updateViewModel();
+                controller.updateGrabPoints();
             });
         });
 
@@ -108,6 +122,46 @@ class CuboidController extends PolyShapeController {
             newPoints[i] = { x: startPosition[i].x + dx, y: startPosition[i].y + dy };
         }
         this.viewModel.setPoints(newPoints);
+    }
+
+    updateGrabPoints(){
+        // if the cuboid is front face is on the left
+        const view = this.cuboidView._uis.shape;
+        const viewModel = this.viewModel;
+        const controller  = this;
+        if(this.orientation === orientationEnum.LEFT){
+            if(viewModel.dl.points[0].x > viewModel.fl.points[0].x){
+                view.dorsal_right_edge.selectize({
+                    points: 't,b',
+                    rotationPoint: false,
+                }).resize(viewModel.computeSideEdgeConstraints(viewModel.dr)).on('resizing', function () {
+                    controller.resizeControl(viewModel.dr, this, viewModel.computeSideEdgeConstraints(viewModel.dr));
+                    controller.updateViewAndVM();
+                });
+                view.dr_center.show();
+
+                view.dorsal_left_edge.selectize(false);
+                view.dl_center.hide();
+                this.orientation = orientationEnum.RIGHT;
+            }
+        }
+
+        else if(this.orientation === orientationEnum.RIGHT){
+            if(viewModel.dl.points[0].x <= viewModel.fl.points[0].x){
+                view.dorsal_left_edge.selectize({
+                    points: 't,b',
+                    rotationPoint: false,
+                }).resize().on('resizing', function () {
+                    controller.resizeControl(viewModel.dl, this, viewModel.computeSideEdgeConstraints(viewModel.dl));
+                    controller.updateViewAndVM(true);
+                });
+                view.dl_center.show();
+
+                view.dorsal_right_edge.selectize(false);
+                view.dr_center.hide();
+                this.orientation = orientationEnum.LEFT;
+            }
+        }
     }
 
     makeDraggable() {
@@ -308,20 +362,20 @@ class CuboidController extends PolyShapeController {
             controller.updateViewAndVM();
         });
 
-        view.dorsal_right_edge.selectize({
-            points: 't,b',
-            rotationPoint: false,
-        }).resize(viewModel.computeSideEdgeConstraints(viewModel.dr)).on('resizing', function () {
-            controller.resizeControl(viewModel.dr, this, viewModel.computeSideEdgeConstraints(viewModel.dr));
-            controller.updateViewAndVM();
-        });
-        view.dorsal_left_edge.selectize({
-            points: 't,b',
-            rotationPoint: false,
-        }).resize().on('resizing', function () {
-            controller.resizeControl(viewModel.dl, this, viewModel.computeSideEdgeConstraints(viewModel.dl));
-            controller.updateViewAndVM(true);
-        });
+        // view.dorsal_right_edge.selectize({
+        //     points: 't,b',
+        //     rotationPoint: false,
+        // }).resize(viewModel.computeSideEdgeConstraints(viewModel.dr)).on('resizing', function () {
+        //     controller.resizeControl(viewModel.dr, this, viewModel.computeSideEdgeConstraints(viewModel.dr));
+        //     controller.updateViewAndVM();
+        // });
+        // view.dorsal_left_edge.selectize({
+        //     points: 't,b',
+        //     rotationPoint: false,
+        // }).resize().on('resizing', function () {
+        //     controller.resizeControl(viewModel.dl, this, viewModel.computeSideEdgeConstraints(viewModel.dl));
+        //     controller.updateViewAndVM(true);
+        // });
 
     }
 
@@ -608,7 +662,7 @@ class Cuboid2PointViewModel {
     }
 
     computeSideEdgeConstraints(edge) {
-        let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y - 5;
+        let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y - 1;
 
         let minY = edge.canvasPoints[1].y-mid_length;
         let maxY = edge.canvasPoints[0].y+mid_length;

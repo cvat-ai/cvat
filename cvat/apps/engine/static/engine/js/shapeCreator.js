@@ -420,7 +420,7 @@ class ShapeCreatorView {
                         let height  = actualPoints[1].y -actualPoints[0].y;
                          p1 = {x: actualPoints[0].x, y: actualPoints[0].y };
                          p2 = {x: actualPoints[0].x, y: actualPoints[1].y};
-                         p3 = {x: actualPoints[2].x, y: actualPoints[2].y - height -1};
+                         p3 = {x: actualPoints[2].x, y: actualPoints[2].y - height +1};
                          p4 = {x: actualPoints[2].x, y: actualPoints[2].y };
 
                          p5 = { x: actualPoints[3].x, y: actualPoints[3].y - height};
@@ -437,7 +437,7 @@ class ShapeCreatorView {
                          p4 = {x: actualPoints[0].x, y: actualPoints[1].y};
 
                          let vector = {x:actualPoints[3].x - actualPoints[2].x, y:actualPoints[3].y - actualPoints[2].y};
-                         p5 = { x: actualPoints[0].x+vector.x, y: actualPoints[0].y+vector.y-1};
+                         p5 = { x: actualPoints[0].x+vector.x, y: actualPoints[0].y+vector.y+1};
                          p6 = { x: actualPoints[0].x+vector.x, y: actualPoints[1].y+vector.y };
 
                          points = [p1, p2, p3, p4, p5, p6];
