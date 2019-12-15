@@ -124,7 +124,7 @@ class CLI():
             response.raise_for_status()
             if response.status_code == 201:
                 break
-        
+
         log.info('Upload job for Task ID {} \
              with annotation file {} finished'.format(task_id, filename))
 
