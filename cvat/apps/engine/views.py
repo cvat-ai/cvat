@@ -52,7 +52,7 @@ import cvat.apps.dataset_manager.task as DatumaroTask
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.utils.decorators import method_decorator
-from drf_yasg.inspectors import SwaggerAutoSchema, NotHandled, CoreAPICompatInspector
+from drf_yasg.inspectors import NotHandled, CoreAPICompatInspector
 from django_filters.rest_framework import DjangoFilterBackend
 
 # Server REST API
@@ -687,13 +687,6 @@ class JobViewSet(viewsets.GenericViewSet,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
-class NoPagingFilterAutoSchema(SwaggerAutoSchema):
-    def should_page(self):
-        return False
-
-    def should_filter(self):
-        return False
-
 @method_decorator(name='list', decorator=swagger_auto_schema(
     operation_summary='Method provides a paginated list of users registered on the server'))
 @method_decorator(name='retrieve', decorator=swagger_auto_schema(
@@ -730,7 +723,7 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return [perm() for perm in permissions]
 
-    @swagger_auto_schema(method='get',auto_schema=NoPagingFilterAutoSchema, operation_summary='Method returns an instance of a user who is currently authorized')
+    @swagger_auto_schema(method='get', operation_summary='Method returns an instance of a user who is currently authorized')
     @action(detail=False, methods=['GET'])
     def self(self, request):
         """
@@ -776,14 +769,15 @@ def rq_handler(job, exc_type, exc_value, tb):
 
     return True
 
-@swagger_auto_schema(method='get', manual_parameters=[openapi.Parameter('format', in_=openapi.IN_QUERY,
-        description='A name of a loader\nYou can get annotation loaders from this API:\n/server/annotation/formats',
-        required=True, type=openapi.TYPE_STRING)],
-    operation_summary='Method allows to upload annotations',
-    responses={'202': openapi.Response(description='Load of annotations has been started'),
-        '201': openapi.Response(description='Annotations have been uploaded')},
-    tags=['tasks'])
-@api_view(['GET'])
+# TODO: Method should be reimplemented as a separated view
+# @swagger_auto_schema(method='put', manual_parameters=[openapi.Parameter('format', in_=openapi.IN_QUERY,
+#         description='A name of a loader\nYou can get annotation loaders from this API:\n/server/annotation/formats',
+#         required=True, type=openapi.TYPE_STRING)],
+#     operation_summary='Method allows to upload annotations',
+#     responses={'202': openapi.Response(description='Load of annotations has been started'),
+#         '201': openapi.Response(description='Annotations have been uploaded')},
+#     tags=['tasks'])
+# @api_view(['PUT'])
 def load_data_proxy(request, rq_id, rq_func, pk):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)
