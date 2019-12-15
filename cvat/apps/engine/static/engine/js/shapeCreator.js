@@ -409,6 +409,54 @@ class ShapeCreatorView {
                 }
                 else if (this._type === 'polygon' && actualPoints.length < 3) {
                     showMessage("Min 3 points must be for polygon drawing.");
+                }else if(this._type === 'cuboid' && (actualPoints.length != 4 || !this._checKValidCuboidTrace(actualPoints))){
+                    showMessage("Exactly 4 points must be used for cuboid drawing and must be drawn in a rotated 'L' shape.");
+                }else if(this._type === 'cuboid'){
+                    // actualPoints =  PolyShapeModel.convertNumberArrayToString(actualPoints);
+                    let p1,p2,p3,p4,p5,p6 = null;
+                    let points = null;
+                    // starting from the left side
+                    if(actualPoints[0].x < actualPoints[3].x){
+                        let height  = actualPoints[1].y -actualPoints[0].y;
+                         p1 = {x: actualPoints[0].x, y: actualPoints[0].y };
+                         p2 = {x: actualPoints[0].x, y: actualPoints[1].y};
+                         p3 = {x: actualPoints[2].x, y: actualPoints[2].y - height -1};
+                         p4 = {x: actualPoints[2].x, y: actualPoints[2].y };
+
+                         p5 = { x: actualPoints[3].x, y: actualPoints[3].y - height};
+                         p6 = { x: actualPoints[3].x, y: actualPoints[3].y };
+
+                         points = [p1, p2, p3, p4, p5, p6];
+
+
+                    }else{
+                        let height  = actualPoints[1].y -actualPoints[0].y;
+                         p1 = {x: actualPoints[2].x, y: actualPoints[2].y - height};
+                         p2 = {x: actualPoints[2].x, y: actualPoints[2].y };
+                         p3 = {x: actualPoints[0].x, y: actualPoints[0].y };
+                         p4 = {x: actualPoints[0].x, y: actualPoints[1].y};
+
+                         let vector = {x:actualPoints[3].x - actualPoints[2].x, y:actualPoints[3].y - actualPoints[2].y};
+                         p5 = { x: actualPoints[0].x+vector.x, y: actualPoints[0].y+vector.y-1};
+                         p6 = { x: actualPoints[0].x+vector.x, y: actualPoints[1].y+vector.y };
+
+                         points = [p1, p2, p3, p4, p5, p6];
+
+
+                    }
+                    if (!CuboidModel.isWithinFrame(points)) {
+                        this._controller.switchCreateMode(true);
+                        return;
+                    }
+
+                    const viewModel = new Cuboid2PointViewModel(points);
+                    points = viewModel.getPoints();
+
+                    points = PolyShapeModel.convertNumberArrayToString(points);
+                    e.target.setAttribute('points',
+                        window.cvat.translate.points.actualToCanvas(points));
+                    this._controller.finish({ points }, this._type);
+                    this._controller.switchCreateMode(true);
                 }
                 else {
                     let frameWidth = window.cvat.player.geometry.frameWidth;
@@ -435,6 +483,10 @@ class ShapeCreatorView {
 
             this._controller.switchCreateMode(true);
         }.bind(this));
+    }
+
+    _checKValidCuboidTrace(actualPoints){
+        return actualPoints[0].y < actualPoints[1].y && (actualPoints[2].x < actualPoints[0].x && actualPoints[3].x < actualPoints[0].x) ||  (actualPoints[2].x > actualPoints[0].x && actualPoints[3].x > actualPoints[0].x);
     }
 
 
@@ -520,7 +572,10 @@ class ShapeCreatorView {
             this._createPolyEvents();
             break;
         case 'cuboid':
-            this._createCuboidEvent();
+            this._drawInstance = this._frameContent.polyline().draw({snapToGrid: 0.1}).addClass('shapeCreation').attr({
+                'stroke-width':  STROKE_WIDTH / this._scale,
+            });
+            this._createPolyEvents();
             break;
         default:
             throw Error(`Bad type found ${this._type}`);

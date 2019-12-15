@@ -96,7 +96,7 @@ class CuboidController extends PolyShapeController {
         });
 
         this.makeDraggable();
-        // this.makeResizable();
+        this.makeResizable();
     }
 
     // computes new position of points given an initial position and a current position
@@ -218,6 +218,7 @@ class CuboidController extends PolyShapeController {
         }).on('dragmove', function () {
             view.front_top_edge.center(this.cx(),this.cy());
             controller.horizontalEdgeControl(viewModel.top, view.front_top_edge.attr('x2'), view.front_top_edge.attr('y2'));
+            controller.updateViewAndVM();
         });
 
         view.rt_center.draggable(function (x, y) {
@@ -225,6 +226,7 @@ class CuboidController extends PolyShapeController {
         }).on('dragmove', function () {
             view.right_top_edge.center(this.cx(),this.cy());
             controller.horizontalEdgeControl(viewModel.top, view.right_top_edge.attr('x1'), view.right_top_edge.attr('y1'));
+            controller.updateViewAndVM();
         });
 
         view.fb_center.draggable(function (x, y) {
@@ -232,6 +234,7 @@ class CuboidController extends PolyShapeController {
         }).on('dragmove', function () {
             view.front_bot_edge.center(this.cx(),this.cy());
             controller.horizontalEdgeControl(viewModel.bot, view.front_bot_edge.attr('x2'), view.front_bot_edge.attr('y2'));
+            controller.updateViewAndVM();
         });
 
         view.rb_center.draggable(function (x, y) {
@@ -239,6 +242,7 @@ class CuboidController extends PolyShapeController {
         }).on('dragmove', function () {
             view.right_bot_edge.center(this.cx(),this.cy());
             controller.horizontalEdgeControl(viewModel.bot, view.right_bot_edge.attr('x1'), view.right_bot_edge.attr('y1'));
+            controller.updateViewAndVM();
         });
 
         // Controllable faces
@@ -269,38 +273,56 @@ class CuboidController extends PolyShapeController {
     // Drag controls for the non-vertical edges
     horizontalEdgeControl(updating_face, mid_x, mid_y) {
         const midPoints = convertPlainArrayToActual([mid_x, mid_y])[0];
-        const newPoints = this.edgeIntersections(midPoints);
+        const newPoints = this.edgeIntersections(midPoints,this.viewModel.fl.points[0],this.viewModel.dr.points[0]);
         const leftPoints = newPoints[0];
         const rightPoints = newPoints[1];
 
         updating_face.points = [leftPoints, midPoints, rightPoints, null];
-        this.updateViewAndVM();
     }
 
     makeResizable() {
         const controller = this;
         const view = this.cuboidView._uis.shape;
         const { viewModel } = this;
-        // view.front_left_edge.selectize({
-        //     points: 't,b',
-        //     rotationPoint: false,
-        // }).resize(viewModel.computeSideEdgeConstraints(viewModel.fl)).on('resizing', function () {
-        //     controller.resizeControl(viewModel.fl, this, viewModel.computeSideEdgeConstraints(viewModel.fl));
-        // });
-        //
-        // view.front_right_edge.selectize({
-        //     points: 't,b',
-        //     rotationPoint: false,
-        // }).resize().on('resizing', function () {
-        //     controller.resizeControl(viewModel.fr, this, viewModel.computeMidConstraints());
-        // });
+        view.front_left_edge.selectize({
+            points: 't,b',
+            rotationPoint: false,
+        }).resize().on('resizing', function () {
+            let dx = view.front_left_edge.attr('x1') - view.front_top_edge.attr('x1');
+            let dy  = view.front_left_edge.attr('y1') - view.front_top_edge.attr('y1');
+            view.front_top_edge.dmove(dx,dy);
+            dx = view.front_left_edge.attr('x2') - view.front_bot_edge.attr('x1');
+            dy = view.front_left_edge.attr('y2') - view.front_bot_edge.attr('y1');
+            view.front_bot_edge.dmove(dx,dy);
+            controller.horizontalEdgeControl(viewModel.top, view.front_top_edge.attr('x2'), view.front_top_edge.attr('y2'));
+            controller.horizontalEdgeControl(viewModel.bot, view.front_bot_edge.attr('x2'), view.front_bot_edge.attr('y2'));
+            controller.updateViewAndVM();
+        });
+
+        view.front_right_edge.selectize({
+            points: 't,b',
+            rotationPoint: false,
+        }).resize().on('resizing', function () {
+            controller.horizontalEdgeControl(viewModel.top, view.front_right_edge.attr('x1'), view.front_right_edge.attr('y1'));
+            controller.horizontalEdgeControl(viewModel.bot, view.front_right_edge.attr('x2'), view.front_right_edge.attr('y2'));
+            controller.updateViewAndVM();
+        });
 
         view.dorsal_right_edge.selectize({
             points: 't,b',
             rotationPoint: false,
         }).resize(viewModel.computeSideEdgeConstraints(viewModel.dr)).on('resizing', function () {
             controller.resizeControl(viewModel.dr, this, viewModel.computeSideEdgeConstraints(viewModel.dr));
+            controller.updateViewAndVM();
         });
+        view.dorsal_left_edge.selectize({
+            points: 't,b',
+            rotationPoint: false,
+        }).resize().on('resizing', function () {
+            controller.resizeControl(viewModel.dl, this, viewModel.computeSideEdgeConstraints(viewModel.dl));
+            controller.updateViewAndVM(true);
+        });
+
     }
 
     resizeControl(vm_edge, updated_edge, constraints) {
@@ -311,7 +333,6 @@ class CuboidController extends PolyShapeController {
         bot_point.y = Math.clamp(bot_point.y, constraints.y2_range.min, constraints.y2_range.max);
 
         vm_edge.points = [top_point, bot_point];
-        this.updateViewAndVM();
     }
 
     // updates the view model with the actual position of the points on screen
@@ -330,9 +351,9 @@ class CuboidController extends PolyShapeController {
     }
 
     // Given a midpoint of the cuboid, calculates where the left and right point should fall using the vanishing points
-    edgeIntersections(midPoint) {
-        const left_x = this.viewModel.fl.points[0].x;
-        const right_x = this.viewModel.dr.points[0].x;
+    edgeIntersections(midPoint,leftPoint,rightPoint) {
+        const left_x = leftPoint.x;
+        const right_x = rightPoint.x;
 
         const tlf_line = CuboidController.createEquation(this.viewModel.vpl, [midPoint.x, midPoint.y]);
         const trf_line = CuboidController.createEquation(this.viewModel.vpr, [midPoint.x, midPoint.y]);
@@ -375,6 +396,7 @@ class CuboidController extends PolyShapeController {
         view.front_left_edge.selectize(false);
         view.front_right_edge.selectize(false);
         view.dorsal_right_edge.selectize(false);
+        view.dorsal_left_edge.selectize(false);
 
         view.dorsal.off();
         view.left.off();
@@ -559,14 +581,13 @@ class Equation {
 }
 
 class Cuboid2PointViewModel {
-    constructor(points) {
+    constructor(points, leftFacing) {
         this.points = points;
         this._initEdges();
         this._initFaces();
-        this.topIsClockwise = false;
-        this.botIsClockwise = false;
+        this._updateVanishingPoints();
+        this.buildBackEdge(leftFacing);
         this.updatePoints();
-        this.buildBackEdge();
     }
 
     getPoints() {
@@ -578,7 +599,7 @@ class Cuboid2PointViewModel {
     }
 
     updatePoints() {
-        this._updateVanishingPoints();
+
         // making sure that the edges are vertical
         this.fr.points[0].x = this.fr.points[1].x;
         this.fl.points[0].x = this.fl.points[1].x;
@@ -587,7 +608,7 @@ class Cuboid2PointViewModel {
     }
 
     computeSideEdgeConstraints(edge) {
-        let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y + EDGE_MARGIN;
+        let mid_length = this.fr.canvasPoints[1].y-this.fr.canvasPoints[0].y - 5;
 
         let minY = edge.canvasPoints[1].y-mid_length;
         let maxY = edge.canvasPoints[0].y+mid_length;
@@ -615,40 +636,6 @@ class Cuboid2PointViewModel {
                 min:miny2,
             }
         }
-    }
-
-    computeMidConstraints(){
-        let left_length = this.fl.canvasPoints[1].y-this.fl.canvasPoints[0].y;
-        let right_length = this.dr.canvasPoints[1].y-this.dr.canvasPoints[0].y;
-        let minimum_length = Math.max(left_length,right_length) - EDGE_MARGIN;
-
-        let minY = this.fr.canvasPoints[1].y-minimum_length;
-        let maxY = this.fr.canvasPoints[0].y+minimum_length;
-
-        const y1 = this.fl.points[0].y;
-        const y2 = this.fl.points[1].y;
-
-        const miny1 = y2 - 1000;
-        const maxy1 = y2 - MIN_EDGE_LENGTH;
-
-        const miny2 = y1 + MIN_EDGE_LENGTH;
-        const maxy2 = y1 + 1000;
-
-        return{
-            constraint: {
-	    	    minY: minY,
-    		    maxY: maxY,
-	        },
-	        y1_range:{
-                max:maxy1,
-                min:miny1,
-            },
-            y2_range:{
-                max:maxy2,
-                min:miny2,
-            }
-        }
-
     }
 
     // boolean value parameter controls which edges should be used to recalculate vaninishing points
@@ -759,10 +746,7 @@ class Cuboid2PointViewModel {
         this.points[bot_index] = { x: p2[0], y: p2[1] };
 
         //Making sure that the vertical edges stay vertical
-        this.fr.points[0].x = this.fr.points[1].x;
-        this.fl.points[0].x = this.fl.points[1].x;
-        this.dr.points[0].x = this.dr.points[1].x;
-
+        this.updatePoints();
     }
 
     get vplCanvas() {
