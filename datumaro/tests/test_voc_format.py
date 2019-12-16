@@ -1,5 +1,4 @@
 import cv2
-from itertools import zip_longest
 import numpy as np
 import os
 import os.path as osp
@@ -382,13 +381,25 @@ class VocExtractorTest(TestCase):
                 self.assertEqual(0, len(item.annotations))
 
 class VocConverterTest(TestCase):
-    def _test_can_save_voc(self, src_extractor, converter, test_dir):
+    def _test_can_save_voc(self, src_extractor, converter, test_dir,
+            target_extractor=None):
         converter(src_extractor, test_dir)
 
-        dst_extractor = VocImporter()(test_dir).make_dataset()
+        result_extractor = VocImporter()(test_dir).make_dataset()
+        if target_extractor is None:
+            target_extractor = src_extractor
 
-        self.assertEqual(len(src_extractor), len(dst_extractor))
-        for item_a, item_b in zip_longest(src_extractor, dst_extractor):
+        if AnnotationType.label in target_extractor.categories():
+            self.assertEqual(
+                target_extractor.categories()[AnnotationType.label].items,
+                result_extractor.categories()[AnnotationType.label].items)
+        if AnnotationType.mask in target_extractor.categories():
+            self.assertEqual(
+                target_extractor.categories()[AnnotationType.mask].colormap,
+                result_extractor.categories()[AnnotationType.mask].colormap)
+
+        self.assertEqual(len(target_extractor), len(result_extractor))
+        for item_a, item_b in zip(target_extractor, result_extractor):
             self.assertEqual(item_a.id, item_b.id)
             self.assertEqual(len(item_a.annotations), len(item_b.annotations))
             for ann_a, ann_b in zip(item_a.annotations, item_b.annotations):
@@ -405,19 +416,19 @@ class VocConverterTest(TestCase):
     def test_can_save_voc_cls(self):
         with TestDir() as test_dir:
             self._test_can_save_voc_dummy(
-                VocClassificationExtractor, VocClassificationConverter(),
+                VocClassificationExtractor, VocClassificationConverter(label_map='voc'),
                 test_dir.path)
 
     def test_can_save_voc_det(self):
         with TestDir() as test_dir:
             self._test_can_save_voc_dummy(
-                VocDetectionExtractor, VocDetectionConverter(),
+                VocDetectionExtractor, VocDetectionConverter(label_map='voc'),
                 test_dir.path)
 
     def test_can_save_voc_segm(self):
         with TestDir() as test_dir:
             self._test_can_save_voc_dummy(
-                VocSegmentationExtractor, VocSegmentationConverter(),
+                VocSegmentationExtractor, VocSegmentationConverter(label_map='voc'),
                 test_dir.path)
 
     def test_can_save_voc_layout(self):
@@ -429,7 +440,7 @@ class VocConverterTest(TestCase):
     def test_can_save_voc_action(self):
         with TestDir() as test_dir:
             self._test_can_save_voc_dummy(
-                VocActionExtractor, VocActionConverter(),
+                VocActionExtractor, VocActionConverter(label_map='voc'),
                 test_dir.path)
 
     def test_can_save_dataset_with_no_subsets(self):
@@ -450,16 +461,120 @@ class VocConverterTest(TestCase):
                     yield item
 
             def categories(self):
+                return VOC.make_voc_categories()
+
+        with TestDir() as test_dir:
+            self._test_can_save_voc(TestExtractor(), VocConverter(label_map='voc'),
+                test_dir.path)
+
+    def test_dataset_with_voc_labelmap(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                yield DatasetItem(id=1, annotations=[
+                        BboxObject(2, 3, 4, 5, label=0, id=1),
+                        BboxObject(1, 2, 3, 4, label=1, id=2),
+                    ])
+
+            def categories(self):
                 label_cat = LabelCategories()
-                for label in VOC.VocLabel:
-                    label_cat.add(label.name)
+                label_cat.add(VOC.VocLabel(1).name)
+                label_cat.add('non_voc_label')
                 return {
                     AnnotationType.label: label_cat,
                 }
 
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                yield DatasetItem(id=1, annotations=[
+                        BboxObject(2, 3, 4, 5, label=0, id=1),
+                    ])
+
+            def categories(self):
+                return VOC.make_voc_categories()
+
         with TestDir() as test_dir:
-            self._test_can_save_voc(TestExtractor(), VocConverter(),
-                test_dir.path)
+            self._test_can_save_voc(
+                SrcExtractor(), VocConverter(label_map='voc'),
+                test_dir.path, target_extractor=DstExtractor())
+
+    def test_dataset_with_guessed_labelmap(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                yield DatasetItem(id=1, annotations=[
+                        BboxObject(2, 3, 4, 5, label=0, id=1),
+                        BboxObject(1, 2, 3, 4, label=1, id=2),
+                    ])
+
+            def categories(self):
+                label_cat = LabelCategories()
+                label_cat.add(VOC.VocLabel(1).name)
+                label_cat.add('non_voc_label')
+                return {
+                    AnnotationType.label: label_cat,
+                }
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                yield DatasetItem(id=1, annotations=[
+                        BboxObject(2, 3, 4, 5, label=0, id=1),
+                        BboxObject(1, 2, 3, 4,
+                            label=self.categories()[AnnotationType.label] \
+                                .find('non_voc_label')[0], id=2),
+                    ])
+
+            def categories(self):
+                label_map = VOC.make_voc_label_map()
+                label_map['non_voc_label'] = [None, [], []]
+                for label_desc in label_map.values():
+                    label_desc[0] = None # rebuild colormap
+                return VOC.make_voc_categories(label_map)
+
+        with TestDir() as test_dir:
+            self._test_can_save_voc(
+                SrcExtractor(), VocConverter(label_map='guess'),
+                test_dir.path, target_extractor=DstExtractor())
+
+    def test_dataset_with_fixed_labelmap(self):
+        class SrcExtractor(Extractor):
+            def __iter__(self):
+                yield DatasetItem(id=1, annotations=[
+                        BboxObject(2, 3, 4, 5, label=0, id=1),
+                        BboxObject(1, 2, 3, 4, label=1, id=2, group=2,
+                            attributes={'act1': True}),
+                        BboxObject(2, 3, 4, 5, label=2, id=3, group=2),
+                        BboxObject(2, 3, 4, 6, label=3, id=4, group=2),
+                    ])
+
+            def categories(self):
+                label_cat = LabelCategories()
+                label_cat.add('foreign_label')
+                label_cat.add('label', attributes=['act1', 'act2'])
+                label_cat.add('label_part1')
+                label_cat.add('label_part2')
+                return {
+                    AnnotationType.label: label_cat,
+                }
+
+        label_map = {
+            'label': [None, ['label_part1', 'label_part2'], ['act1', 'act2']]
+        }
+
+        class DstExtractor(Extractor):
+            def __iter__(self):
+                yield DatasetItem(id=1, annotations=[
+                        BboxObject(1, 2, 3, 4, label=0, id=2, group=2,
+                            attributes={'act1': True, 'act2': False}),
+                        BboxObject(2, 3, 4, 5, label=1, id=3, group=2),
+                        BboxObject(2, 3, 4, 6, label=2, id=4, group=2),
+                    ])
+
+            def categories(self):
+                return VOC.make_voc_categories(label_map)
+
+        with TestDir() as test_dir:
+            self._test_can_save_voc(
+                SrcExtractor(), VocConverter(label_map=label_map),
+                test_dir.path, target_extractor=DstExtractor())
 
 class VocImporterTest(TestCase):
     def test_can_import(self):
