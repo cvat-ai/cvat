@@ -1110,7 +1110,7 @@ SVG.Cube = SVG.invent({
             this.dorsal_left_edge.stroke({ color: fillColor });
 
             this.face.stroke({color:fillColor,width:0});
-            this.right.stroke({color:fillColor,width:0});
+            this.right.stroke({color:fillColor});
             this.dorsal.stroke({color:fillColor});
             this.left.stroke({color:fillColor});
         },
@@ -1123,6 +1123,8 @@ SVG.Cube = SVG.invent({
             arr.push(this.front_top_edge);
             arr.push(this.front_bot_edge);
             arr.push(this.dorsal_left_edge);
+            arr.push(this.right_top_edge);
+            arr.push(this.right_bot_edge);
             return arr;
         },
 
