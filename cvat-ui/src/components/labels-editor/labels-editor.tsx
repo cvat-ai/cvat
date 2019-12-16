@@ -3,10 +3,14 @@ import React from 'react';
 import {
     Tabs,
     Icon,
-    Modal,
+    Button,
+    Tooltip,
+    notification,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
+
+import copy from 'copy-to-clipboard';
 
 import RawViewer from './raw-viewer';
 import ConstructorViewer from './constructor-viewer';
@@ -39,7 +43,6 @@ interface LabelsEditorState {
 
 export default class LabelsEditor
     extends React.PureComponent<LabelsEditortProps, LabelsEditorState> {
-
     public constructor(props: LabelsEditortProps) {
         super(props);
 
@@ -51,37 +54,46 @@ export default class LabelsEditor
         };
     }
 
-    private handleSubmit(savedLabels: Label[], unsavedLabels: Label[]) {
-        function transformLabel(label: Label): any {
-            return {
-                name: label.name,
-                id: label.id < 0 ? undefined : label.id,
-                attributes: label.attributes.map((attr: Attribute): any => {
-                    return {
-                        name: attr.name,
-                        id: attr.id < 0 ? undefined : attr.id,
-                        input_type: attr.type.toLowerCase(),
-                        default_value: attr.values[0],
-                        mutable: attr.mutable,
-                        values: [...attr.values],
-                    };
-                }),
-            }
-        }
-
-        const output = [];
-        for (const label of savedLabels.concat(unsavedLabels)) {
-            output.push(transformLabel(label));
-        }
-
-        this.props.onSubmit(output);
+    public componentDidMount(): void {
+        // just need performe the same code
+        this.componentDidUpdate(null as any as LabelsEditortProps);
     }
 
-    private handleRawSubmit = (labels: Label[]) => {
+    public componentDidUpdate(prevProps: LabelsEditortProps): void {
+        function transformLabel(label: any): Label {
+            return {
+                name: label.name,
+                id: label.id || idGenerator(),
+                attributes: label.attributes.map((attr: any): Attribute => (
+                    {
+                        id: attr.id || idGenerator(),
+                        name: attr.name,
+                        type: attr.input_type,
+                        mutable: attr.mutable,
+                        values: [...attr.values],
+                    }
+                )),
+            };
+        }
+
+        const { labels } = this.props;
+
+        if (!prevProps || prevProps.labels !== labels) {
+            const transformedLabels = labels.map(transformLabel);
+            this.setState({
+                savedLabels: transformedLabels
+                    .filter((label: Label) => label.id >= 0),
+                unsavedLabels: transformedLabels
+                    .filter((label: Label) => label.id < 0),
+            });
+        }
+    }
+
+    private handleRawSubmit = (labels: Label[]): void => {
         const unsavedLabels = [];
         const savedLabels = [];
 
-        for (let label of labels) {
+        for (const label of labels) {
             if (label.id >= 0) {
                 savedLabels.push(label);
             } else {
@@ -95,158 +107,221 @@ export default class LabelsEditor
         });
 
         this.handleSubmit(savedLabels, unsavedLabels);
-    }
-
-    private handleUpdate = (label: Label | null) => {
-        if (label) {
-            const savedLabels = this.state.savedLabels
-                .filter((_label: Label) => _label.id !== label.id);
-            const unsavedLabels = this.state.unsavedLabels
-                .filter((_label: Label) => _label.id !== label.id);
-            if (label.id >= 0) {
-                savedLabels.push(label);
-                this.setState({
-                    savedLabels,
-                    constructorMode: ConstructorMode.SHOW,
-                });
-            } else {
-                unsavedLabels.push(label);
-                this.setState({
-                    unsavedLabels,
-                    constructorMode: ConstructorMode.SHOW,
-                });
-            }
-
-            this.handleSubmit(savedLabels, unsavedLabels);
-        } else {
-            this.setState({
-                constructorMode: ConstructorMode.SHOW,
-            });
-        }
     };
 
-    private handleDelete = (label: Label) => {
-        // the label is saved on the server, cannot delete it
-        if (typeof(label.id) !== 'undefined' && label.id >= 0) {
-            Modal.error({
-                title: 'Could not delete the label',
-                content: 'It has been already saved on the server',
-            });
-        }
-
-        const unsavedLabels = this.state.unsavedLabels.filter(
-            (_label: Label) => _label.id !== label.id
-        );
-
-        this.setState({
-            unsavedLabels: [...unsavedLabels],
-        });
-
-        this.handleSubmit(this.state.savedLabels, unsavedLabels);
-    };
-
-    private handleCreate = (label: Label | null) => {
+    private handleCreate = (label: Label | null): void => {
         if (label === null) {
             this.setState({
                 constructorMode: ConstructorMode.SHOW,
             });
         } else {
-            const unsavedLabels = [...this.state.unsavedLabels,
+            const {
+                unsavedLabels,
+                savedLabels,
+            } = this.state;
+            const newUnsavedLabels = [
+                ...unsavedLabels,
                 {
                     ...label,
-                    id: idGenerator()
-                }
+                    id: idGenerator(),
+                },
             ];
 
             this.setState({
-                unsavedLabels,
+                unsavedLabels: newUnsavedLabels,
             });
 
-            this.handleSubmit(this.state.savedLabels, unsavedLabels);
+            this.handleSubmit(savedLabels, newUnsavedLabels);
         }
     };
 
-    public componentDidMount() {
-        this.componentDidUpdate(null as any as LabelsEditortProps);
-    }
+    private handleUpdate = (label: Label | null): void => {
+        const {
+            savedLabels,
+            unsavedLabels,
+        } = this.state;
 
-    public componentDidUpdate(prevProps: LabelsEditortProps) {
-        function transformLabel(label: any): Label {
-            return {
-                name: label.name,
-                id: label.id || idGenerator(),
-                attributes: label.attributes.map((attr: any): Attribute => {
-                    return {
-                        id: attr.id || idGenerator(),
-                        name: attr.name,
-                        type: attr.input_type,
-                        mutable: attr.mutable,
-                        values: [...attr.values],
-                    };
-                }),
+        if (label) {
+            const filteredSavedLabels = savedLabels
+                .filter((_label: Label) => _label.id !== label.id);
+            const filteredUnsavedLabels = unsavedLabels
+                .filter((_label: Label) => _label.id !== label.id);
+            if (label.id >= 0) {
+                filteredSavedLabels.push(label);
+                this.setState({
+                    savedLabels: filteredSavedLabels,
+                    constructorMode: ConstructorMode.SHOW,
+                });
+            } else {
+                filteredUnsavedLabels.push(label);
+                this.setState({
+                    unsavedLabels: filteredUnsavedLabels,
+                    constructorMode: ConstructorMode.SHOW,
+                });
             }
-        }
 
-        if (!prevProps || prevProps.labels !== this.props.labels) {
-            const transformedLabels = this.props.labels.map(transformLabel);
+            this.handleSubmit(filteredSavedLabels, filteredUnsavedLabels);
+        } else {
             this.setState({
-                savedLabels: transformedLabels
-                    .filter((label: Label) => label.id >= 0),
-                unsavedLabels: transformedLabels
-                    .filter((label: Label) => label.id < 0),
+                constructorMode: ConstructorMode.SHOW,
             });
         }
+    };
+
+    private handleDelete = (label: Label): void => {
+        // the label is saved on the server, cannot delete it
+        if (typeof (label.id) !== 'undefined' && label.id >= 0) {
+            notification.error({
+                message: 'Could not delete the label',
+                description: 'It has been already saved on the server',
+            });
+        }
+
+        const {
+            unsavedLabels,
+            savedLabels,
+        } = this.state;
+
+        const filteredUnsavedLabels = unsavedLabels.filter(
+            (_label: Label): boolean => _label.id !== label.id,
+        );
+
+        this.setState({
+            unsavedLabels: filteredUnsavedLabels,
+        });
+
+        this.handleSubmit(savedLabels, filteredUnsavedLabels);
+    };
+
+    private handleSubmit(savedLabels: Label[], unsavedLabels: Label[]): void {
+        function transformLabel(label: Label): any {
+            return {
+                name: label.name,
+                id: label.id < 0 ? undefined : label.id,
+                attributes: label.attributes.map((attr: Attribute): any => (
+                    {
+                        name: attr.name,
+                        id: attr.id < 0 ? undefined : attr.id,
+                        input_type: attr.type.toLowerCase(),
+                        default_value: attr.values[0],
+                        mutable: attr.mutable,
+                        values: [...attr.values],
+                    }
+                )),
+            };
+        }
+
+        const { onSubmit } = this.props;
+        const output = [];
+        for (const label of savedLabels.concat(unsavedLabels)) {
+            output.push(transformLabel(label));
+        }
+
+        onSubmit(output);
     }
 
-    public render() {
+    public render(): JSX.Element {
+        const {
+            savedLabels,
+            unsavedLabels,
+            constructorMode,
+            labelForUpdate,
+        } = this.state;
+
         return (
-            <Tabs defaultActiveKey='2' type='card' tabBarStyle={{marginBottom: '0px'}}>
-                <Tabs.TabPane tab={
-                    <span>
-                        <Icon type='edit'/>
-                        <Text> Raw </Text>
-                    </span>
-                } key='1'>
+            <Tabs
+                defaultActiveKey='2'
+                type='card'
+                tabBarStyle={{ marginBottom: '0px' }}
+                tabBarExtraContent={(
+                    <>
+                        <Tooltip overlay='Copied to clipboard!' trigger='click'>
+                            <Button
+                                type='link'
+                                icon='copy'
+                                onClick={(): void => {
+                                    copy(JSON.stringify(
+                                        savedLabels.concat(unsavedLabels).map((label): any => ({
+                                            ...label,
+                                            id: undefined,
+                                            attributes: label.attributes.map((attribute): any => ({
+                                                ...attribute,
+                                                id: undefined,
+                                            })),
+                                        })), null, 4,
+                                    ));
+                                }}
+                            >
+                                Copy
+                            </Button>
+                        </Tooltip>
+                    </>
+                )}
+            >
+                <Tabs.TabPane
+                    tab={
+                        (
+                            <span>
+                                <Icon type='edit' />
+                                <Text>Raw</Text>
+                            </span>
+                        )
+                    }
+                    key='1'
+                >
                     <RawViewer
-                        labels={[...this.state.savedLabels, ...this.state.unsavedLabels]}
+                        labels={[...savedLabels, ...unsavedLabels]}
                         onSubmit={this.handleRawSubmit}
                     />
                 </Tabs.TabPane>
 
-                <Tabs.TabPane tab={
-                    <span>
-                        <Icon type='build'/>
-                        <Text> Constructor </Text>
-                    </span>
-                } key='2'>
+                <Tabs.TabPane
+                    tab={
+                        (
+                            <span>
+                                <Icon type='build' />
+                                <Text>Constructor</Text>
+                            </span>
+                        )
+                    }
+                    key='2'
+                >
                     {
-                        this.state.constructorMode === ConstructorMode.SHOW ?
-                        <ConstructorViewer
-                            labels={[...this.state.savedLabels, ...this.state.unsavedLabels]}
-                            onUpdate={(label: Label) => {
-                                this.setState({
-                                    constructorMode: ConstructorMode.UPDATE,
-                                    labelForUpdate: label,
-                                });
-                            }}
-                            onDelete={this.handleDelete}
-                            onCreate={() => {
-                                this.setState({
-                                    constructorMode: ConstructorMode.CREATE,
-                                })
-                            }}
-                        /> :
-
-                        this.state.constructorMode === ConstructorMode.UPDATE
-                            && this.state.labelForUpdate !== null ?
-                        <ConstructorUpdater
-                            label={this.state.labelForUpdate}
-                            onUpdate={this.handleUpdate}
-                        /> :
-
-                        <ConstructorCreator
-                            onCreate={this.handleCreate}
-                        />
+                        constructorMode === ConstructorMode.SHOW
+                            && (
+                                <ConstructorViewer
+                                    labels={[...savedLabels, ...unsavedLabels]}
+                                    onUpdate={(label: Label): void => {
+                                        this.setState({
+                                            constructorMode: ConstructorMode.UPDATE,
+                                            labelForUpdate: label,
+                                        });
+                                    }}
+                                    onDelete={this.handleDelete}
+                                    onCreate={(): void => {
+                                        this.setState({
+                                            constructorMode: ConstructorMode.CREATE,
+                                        });
+                                    }}
+                                />
+                            )
+                    }
+                    {
+                        constructorMode === ConstructorMode.UPDATE
+                            && labelForUpdate !== null && (
+                            <ConstructorUpdater
+                                label={labelForUpdate}
+                                onUpdate={this.handleUpdate}
+                            />
+                        )
+                    }
+                    {
+                        constructorMode === ConstructorMode.CREATE
+                            && (
+                                <ConstructorCreator
+                                    onCreate={this.handleCreate}
+                                />
+                            )
                     }
                 </Tabs.TabPane>
             </Tabs>

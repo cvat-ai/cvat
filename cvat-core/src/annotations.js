@@ -225,6 +225,25 @@
         return result;
     }
 
+    async function exportDataset(session, format) {
+        if (!(format instanceof String || typeof format === 'string')) {
+            throw new ArgumentError(
+                'Format must be a string',
+            );
+        }
+        if (!(session instanceof Task)) {
+            throw new ArgumentError(
+                'A dataset can only be created from a task',
+            );
+        }
+
+        let result = null;
+        result = await serverProxy.tasks
+            .exportDataset(session.id, format);
+
+        return result;
+    }
+
     module.exports = {
         getAnnotations,
         putAnnotations,
@@ -238,5 +257,6 @@
         selectObject,
         uploadAnnotations,
         dumpAnnotations,
+        exportDataset,
     };
 })();

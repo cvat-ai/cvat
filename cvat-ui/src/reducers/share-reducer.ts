@@ -1,7 +1,12 @@
 import { AnyAction } from 'redux';
 
 import { ShareActionTypes } from '../actions/share-actions';
-import { ShareState, ShareFileInfo, ShareItem } from './interfaces';
+import { AuthActionTypes } from '../actions/auth-actions';
+import {
+    ShareState,
+    ShareFileInfo,
+    ShareItem,
+} from './interfaces';
 
 const defaultState: ShareState = {
     root: {
@@ -9,17 +14,10 @@ const defaultState: ShareState = {
         type: 'DIR',
         children: [],
     },
-    error: null,
 };
 
 export default function (state = defaultState, action: AnyAction): ShareState {
     switch (action.type) {
-        case ShareActionTypes.LOAD_SHARE_DATA: {
-            return {
-                ...state,
-                error: null,
-            };
-        }
         case ShareActionTypes.LOAD_SHARE_DATA_SUCCESS: {
             const { values } = action.payload;
             const { directory } = action.payload;
@@ -45,12 +43,9 @@ export default function (state = defaultState, action: AnyAction): ShareState {
                 ...state,
             };
         }
-        case ShareActionTypes.LOAD_SHARE_DATA_FAILED: {
-            const { error } = action.payload;
-
+        case AuthActionTypes.LOGOUT_SUCCESS: {
             return {
-                ...state,
-                error,
+                ...defaultState,
             };
         }
         default:

@@ -4,6 +4,9 @@ ARG http_proxy
 ARG https_proxy
 ARG no_proxy
 ARG socks_proxy
+ARG REACT_APP_API_PORT
+ARG REACT_APP_API_PROTOCOL
+ARG REACT_APP_API_HOST
 
 ENV TERM=xterm \
     http_proxy=${http_proxy}   \
@@ -36,7 +39,7 @@ RUN npm install
 # Build source code
 COPY cvat-core/ /tmp/cvat-core/
 COPY cvat-ui/ /tmp/cvat-ui/
-RUN mv .env.production .env && npm run build
+RUN npm run build
 
 FROM nginx
 # Replace default.conf configuration to remove unnecessary rules

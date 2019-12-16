@@ -9,40 +9,46 @@ import { ClickParam } from 'antd/lib/menu/index';
 
 import LoaderItemComponent from './loader-item';
 import DumperItemComponent from './dumper-item';
-
+import ExportItemComponent from './export-item';
 
 interface ActionsMenuComponentProps {
     taskInstance: any;
     loaders: any[];
     dumpers: any[];
+    exporters: any[];
     loadActivity: string | null;
     dumpActivities: string[] | null;
+    exportActivities: string[] | null;
     installedTFAnnotation: boolean;
+    installedTFSegmentation: boolean;
     installedAutoAnnotation: boolean;
+    inferenceIsActive: boolean;
     onLoadAnnotation: (taskInstance: any, loader: any, file: File) => void;
-    onDumpAnnotation: (task: any, dumper: any) => void;
-    onDeleteTask: (task: any) => void;
+    onDumpAnnotation: (taskInstance: any, dumper: any) => void;
+    onExportDataset: (taskInstance: any, exporter: any) => void;
+    onDeleteTask: (taskInstance: any) => void;
+    onOpenRunWindow: (taskInstance: any) => void;
 }
 
 interface MinActionsMenuProps {
     taskInstance: any;
     onDeleteTask: (task: any) => void;
+    onOpenRunWindow: (taskInstance: any) => void;
 }
 
-export function handleMenuClick(props: MinActionsMenuProps, params: ClickParam) {
+export function handleMenuClick(props: MinActionsMenuProps, params: ClickParam): void {
     const { taskInstance } = props;
     const tracker = taskInstance.bugTracker;
 
     if (params.keyPath.length !== 2) {
         switch (params.key) {
             case 'tracker': {
-                window.open(`${tracker}`, '_blank')
+                // false positive eslint(security/detect-non-literal-fs-filename)
+                // eslint-disable-next-line
+                window.open(`${tracker}`, '_blank');
                 return;
-            } case 'auto': {
-
-                return;
-            } case 'tf': {
-
+            } case 'auto_annotation': {
+                props.onOpenRunWindow(taskInstance);
                 return;
             } case 'delete': {
                 const taskID = taskInstance.id;
@@ -53,33 +59,51 @@ export function handleMenuClick(props: MinActionsMenuProps, params: ClickParam) 
                         props.onDeleteTask(taskInstance);
                     },
                 });
-                return;
+                break;
             } default: {
-                return;
+                // do nothing
             }
         }
     }
 }
 
-export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
-    const tracker = props.taskInstance.bugTracker;
+export default function ActionsMenuComponent(props: ActionsMenuComponentProps): JSX.Element {
+    const {
+        taskInstance,
+        installedAutoAnnotation,
+        installedTFAnnotation,
+        installedTFSegmentation,
+        dumpers,
+        loaders,
+        exporters,
+        inferenceIsActive,
+    } = props;
+    const tracker = taskInstance.bugTracker;
+    const renderModelRunner = installedAutoAnnotation
+        || installedTFAnnotation || installedTFSegmentation;
 
     return (
-        <Menu subMenuCloseDelay={0.15} className='cvat-task-item-menu' onClick={
-            (params: ClickParam) => handleMenuClick(props, params)
-        }>
+        <Menu
+            selectable={false}
+            className='cvat-actions-menu'
+            onClick={
+                (params: ClickParam): void => handleMenuClick(props, params)
+            }
+        >
             <Menu.SubMenu key='dump' title='Dump annotations'>
                 {
-                    props.dumpers.map((dumper) => DumperItemComponent({
+                    dumpers.map((dumper): JSX.Element => DumperItemComponent({
                         dumper,
                         taskInstance: props.taskInstance,
-                        dumpActivities: props.dumpActivities,
+                        dumpActivity: (props.dumpActivities || [])
+                            .filter((_dumper: string) => _dumper === dumper.name)[0] || null,
                         onDumpAnnotation: props.onDumpAnnotation,
-                }   ))}
+                    }))
+                }
             </Menu.SubMenu>
             <Menu.SubMenu key='load' title='Upload annotations'>
                 {
-                    props.loaders.map((loader) => LoaderItemComponent({
+                    loaders.map((loader): JSX.Element => LoaderItemComponent({
                         loader,
                         taskInstance: props.taskInstance,
                         loadActivity: props.loadActivity,
@@ -87,14 +111,30 @@ export default function ActionsMenuComponent(props: ActionsMenuComponentProps) {
                     }))
                 }
             </Menu.SubMenu>
-            {tracker ? <Menu.Item key='tracker'>Open bug tracker</Menu.Item> : null}
-            { props.installedTFAnnotation ?
-                <Menu.Item key='tf'>Run TF annotation</Menu.Item> : null
+            <Menu.SubMenu key='export' title='Export as a dataset'>
+                {
+                    exporters.map((exporter): JSX.Element => ExportItemComponent({
+                        exporter,
+                        taskInstance: props.taskInstance,
+                        exportActivity: (props.exportActivities || [])
+                            .filter((_exporter: string) => _exporter === exporter.name)[0] || null,
+                        onExportDataset: props.onExportDataset,
+                    }))
+                }
+            </Menu.SubMenu>
+            {tracker && <Menu.Item key='tracker'>Open bug tracker</Menu.Item>}
+            {
+                renderModelRunner
+                    && (
+                        <Menu.Item
+                            disabled={inferenceIsActive}
+                            key='auto_annotation'
+                        >
+                            Automatic annotation
+                        </Menu.Item>
+                    )
             }
-            { props.installedAutoAnnotation ?
-                <Menu.Item key='auto'>Run auto annotation</Menu.Item> : null
-            }
-            <hr/>
+            <hr />
             <Menu.Item key='delete'>Delete</Menu.Item>
         </Menu>
     );

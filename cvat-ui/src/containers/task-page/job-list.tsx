@@ -2,11 +2,17 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import JobListComponent from '../../components/task-page/job-list';
-import { CombinedState } from '../../reducers/root-reducer';
-import { updateJobAsync } from '../../actions/task-actions';
+import { updateJobAsync } from '../../actions/tasks-actions';
+import {
+    Task,
+    CombinedState,
+} from '../../reducers/interfaces';
+
+interface OwnProps {
+    task: Task;
+}
 
 interface StateToProps {
-    taskInstance: any;
     registeredUsers: any[];
 }
 
@@ -16,23 +22,28 @@ interface DispatchToProps {
 
 function mapStateToProps(state: CombinedState): StateToProps {
     return {
-        taskInstance: state.activeTask.task ? state.activeTask.task.instance : null,
         registeredUsers: state.users.users,
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        onJobUpdate: (jobInstance: any) => dispatch(updateJobAsync(jobInstance)),
+        onJobUpdate: (jobInstance: any): void => dispatch(updateJobAsync(jobInstance)),
     };
 }
 
-function TaskPageContainer(props: StateToProps & DispatchToProps) {
+function TaskPageContainer(props: StateToProps & DispatchToProps & OwnProps): JSX.Element {
+    const {
+        task,
+        registeredUsers,
+        onJobUpdate,
+    } = props;
+
     return (
         <JobListComponent
-            taskInstance={props.taskInstance}
-            registeredUsers={props.registeredUsers}
-            onJobUpdate={props.onJobUpdate}
+            taskInstance={task.instance}
+            registeredUsers={registeredUsers}
+            onJobUpdate={onJobUpdate}
         />
     );
 }

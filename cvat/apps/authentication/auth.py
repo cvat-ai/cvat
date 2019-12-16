@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 from django.conf import settings
 from django.db.models import Q
 import rules
@@ -11,6 +10,20 @@ from . import signature
 from rest_framework.permissions import BasePermission
 from django.core import signing
 from rest_framework import authentication, exceptions
+from rest_framework.authentication import TokenAuthentication as _TokenAuthentication
+from django.contrib.auth import login
+
+# Even with token authorization it is very important to have a valid session id
+# in cookies because in some cases we cannot use token authorization (e.g. when
+# we redirect to the server in UI using just URL). To overkill that we override
+# the class to call `login` method which restores the session id in cookies.
+class TokenAuthentication(_TokenAuthentication):
+    def authenticate(self, request):
+        auth = super().authenticate(request)
+        session = getattr(request, 'session')
+        if auth is not None and session.session_key is None:
+            login(request, auth[0], 'django.contrib.auth.backends.ModelBackend')
+        return auth
 
 def register_signals():
     from django.db.models.signals import post_migrate, post_save

@@ -5,27 +5,8 @@ import usersReducer from './users-reducer';
 import shareReducer from './share-reducer';
 import formatsReducer from './formats-reducer';
 import pluginsReducer from './plugins-reducer';
-import taskReducer from './task-reducer';
-
-import {
-    AuthState,
-    TasksState,
-    UsersState,
-    ShareState,
-    FormatsState,
-    PluginsState,
-    TaskState,
-} from './interfaces';
-
-export interface CombinedState {
-    auth: AuthState;
-    tasks: TasksState;
-    users: UsersState;
-    share: ShareState;
-    formats: FormatsState;
-    plugins: PluginsState;
-    activeTask: TaskState;
-}
+import modelsReducer from './models-reducer';
+import notificationsReducer from './notifications-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
@@ -35,6 +16,7 @@ export default function createRootReducer(): Reducer {
         share: shareReducer,
         formats: formatsReducer,
         plugins: pluginsReducer,
-        activeTask: taskReducer,
+        models: modelsReducer,
+        notifications: notificationsReducer,
     });
 }

@@ -1,12 +1,19 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { TreeNodeNormal } from 'antd/lib/tree/Tree'
+import { TreeNodeNormal } from 'antd/lib/tree/Tree';
 import FileManagerComponent, { Files } from '../../components/file-manager/file-manager';
 
 import { loadShareDataAsync } from '../../actions/share-actions';
-import { ShareItem } from '../../reducers/interfaces';
-import { CombinedState } from '../../reducers/root-reducer';
+import {
+    ShareItem,
+    CombinedState,
+} from '../../reducers/interfaces';
+
+interface OwnProps {
+    ref: any;
+    withRemote: boolean;
+}
 
 interface StateToProps {
     treeData: TreeNodeNormal[];
@@ -37,13 +44,15 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        getTreeData: (key: string, success: () => void, failure: () => void) => {
+        getTreeData: (key: string, success: () => void, failure: () => void): void => {
             dispatch(loadShareDataAsync(key, success, failure));
-        }
+        },
     };
 }
 
-class FileManagerContainer extends React.PureComponent<StateToProps & DispatchToProps> {
+type Props = StateToProps & DispatchToProps & OwnProps;
+
+export class FileManagerContainer extends React.PureComponent<Props> {
     private managerComponentRef: any;
 
     public getFiles(): Files {
@@ -54,12 +63,21 @@ class FileManagerContainer extends React.PureComponent<StateToProps & DispatchTo
         return this.managerComponentRef.reset();
     }
 
-    public render() {
+    public render(): JSX.Element {
+        const {
+            treeData,
+            getTreeData,
+            withRemote,
+        } = this.props;
+
         return (
             <FileManagerComponent
-                treeData={this.props.treeData}
-                onLoadData={this.props.getTreeData}
-                ref={(component) => this.managerComponentRef = component}
+                treeData={treeData}
+                onLoadData={getTreeData}
+                withRemote={withRemote}
+                ref={(component): void => {
+                    this.managerComponentRef = component;
+                }}
             />
         );
     }

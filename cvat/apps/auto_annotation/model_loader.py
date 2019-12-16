@@ -1,12 +1,11 @@
 
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
 import json
 import cv2
 import os
-import subprocess
 import numpy as np
 
 from cvat.apps.auto_annotation.inference_engine import make_plugin, make_network

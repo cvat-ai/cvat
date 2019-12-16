@@ -86,6 +86,12 @@ class Task(models.Model):
 
         return path
 
+    @staticmethod
+    def get_image_frame(image_path):
+        assert image_path.endswith('.jpg')
+        index = os.path.splitext(os.path.basename(image_path))[0]
+        return int(index)
+
     def get_frame_step(self):
         match = re.search("step\s*=\s*([1-9]\d*)", self.frame_filter)
         return int(match.group(1)) if match else 1

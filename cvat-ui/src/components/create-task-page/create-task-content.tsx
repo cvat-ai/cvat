@@ -4,10 +4,9 @@ import {
     Row,
     Col,
     Alert,
-    Modal,
     Button,
     Collapse,
-    message,
+    notification,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
@@ -22,13 +21,12 @@ export interface CreateTaskData {
     basic: BaseConfiguration;
     advanced: AdvancedConfiguration;
     labels: any[];
-    files: Files,
+    files: Files;
 }
 
 interface Props {
     onCreate: (data: CreateTaskData) => void;
     status: string;
-    error: string;
     installedGit: boolean;
 }
 
@@ -60,142 +58,13 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         this.state = { ...defaultState };
     }
 
-    private validateLabels = () => {
-        return !!this.state.labels.length;
-    }
+    public componentDidUpdate(prevProps: Props): void {
+        const { status } = this.props;
 
-    private validateFiles = () => {
-        const files = this.fileManagerContainer.getFiles();
-        this.setState({
-            files,
-        });
-        const totalLen = Object.keys(files).reduce(
-            (acc, key) => acc + files[key].length, 0,
-        );
-
-        return !!totalLen;
-    }
-
-    private handleSubmitBasicConfiguration = (values: BaseConfiguration) => {
-        this.setState({
-            basic: {...values},
-        });
-    };
-
-    private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration) => {
-        this.setState({
-            advanced: {...values},
-        });
-    };
-
-    private handleSubmitClick = () => {
-        if (!this.validateLabels()) {
-            Modal.error({
-                title: 'Could not create a task',
-                content: 'A task must contain at least one label',
+        if (status === 'CREATED' && prevProps.status !== 'CREATED') {
+            notification.info({
+                message: 'The task has been created',
             });
-            return;
-        }
-
-        if (!this.validateFiles()) {
-            Modal.error({
-                title: 'Could not create a task',
-                content: 'A task must contain at least one file',
-            });
-            return;
-        }
-
-        this.basicConfigurationComponent.submit()
-            .then(() => {
-                return this.advancedConfigurationComponent ?
-                    this.advancedConfigurationComponent.submit() :
-                    new Promise((resolve) => {
-                        resolve();
-                    })
-            })
-            .then(() => {
-                this.props.onCreate(this.state);
-            })
-            .catch((_: any) => {
-                Modal.error({
-                    title: 'Could not create a task',
-                    content: 'Please, check configuration you specified',
-                });
-            });
-    }
-
-    private renderBasicBlock() {
-        return (
-            <Col span={24}>
-                <BasicConfigurationForm wrappedComponentRef={
-                    (component: any) => { this.basicConfigurationComponent = component }
-                } onSubmit={this.handleSubmitBasicConfiguration}/>
-            </Col>
-        );
-    }
-
-    private renderLabelsBlock() {
-        return (
-            <Col span={24}>
-                <Text type='secondary'> Labels </Text>
-                <LabelsEditor
-                    labels={this.state.labels}
-                    onSubmit={
-                        (labels) => {
-                            this.setState({
-                                labels,
-                            });
-                        }
-                    }
-                />
-            </Col>
-        );
-    }
-
-    private renderFilesBlock() {
-        return (
-            <Col span={24}>
-                <FileManagerContainer ref={
-                    (container: any) =>
-                        this.fileManagerContainer = container
-                }/>
-            </Col>
-        );
-    }
-
-    private renderAdvancedBlock() {
-        return (
-            <Col span={24}>
-                <Collapse>
-                    <Collapse.Panel
-                        header={
-                            <Text className='cvat-title'> Advanced configuration </Text>
-                        } key='1'>
-                        <AdvancedConfigurationForm
-                            installedGit={this.props.installedGit}
-                            wrappedComponentRef={
-                                (component: any) => {
-                                    this.advancedConfigurationComponent = component
-                                }
-                            }
-                            onSubmit={this.handleSubmitAdvancedConfiguration}
-                        />
-                    </Collapse.Panel>
-                </Collapse>
-            </Col>
-        );
-    }
-
-    public componentDidUpdate(prevProps: Props) {
-        if (this.props.error && prevProps.error !== this.props.error) {
-            Modal.error({
-                title: 'Could not create task',
-                content: this.props.error,
-            });
-        }
-
-        if (this.props.status === 'CREATED' && prevProps.status !== 'CREATED') {
-            message.success('The task has been created');
 
             this.basicConfigurationComponent.resetFields();
             if (this.advancedConfigurationComponent) {
@@ -210,15 +79,155 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         }
     }
 
-    public render() {
-        const loading = !!this.props.status
-            && this.props.status !== 'CREATED'
-            && !this.props.error;
+    private validateLabels = (): boolean => {
+        const { labels } = this.state;
+        return !!labels.length;
+    };
+
+    private validateFiles = (): boolean => {
+        const files = this.fileManagerContainer.getFiles();
+        this.setState({
+            files,
+        });
+        const totalLen = Object.keys(files).reduce(
+            (acc, key) => acc + files[key].length, 0,
+        );
+
+        return !!totalLen;
+    };
+
+    private handleSubmitBasicConfiguration = (values: BaseConfiguration): void => {
+        this.setState({
+            basic: { ...values },
+        });
+    };
+
+    private handleSubmitAdvancedConfiguration = (values: AdvancedConfiguration): void => {
+        this.setState({
+            advanced: { ...values },
+        });
+    };
+
+    private handleSubmitClick = (): void => {
+        if (!this.validateLabels()) {
+            notification.error({
+                message: 'Could not create a task',
+                description: 'A task must contain at least one label',
+            });
+            return;
+        }
+
+        if (!this.validateFiles()) {
+            notification.error({
+                message: 'Could not create a task',
+                description: 'A task must contain at least one file',
+            });
+            return;
+        }
+
+        this.basicConfigurationComponent.submit()
+            .then(() => {
+                if (this.advancedConfigurationComponent) {
+                    return this.advancedConfigurationComponent.submit();
+                }
+
+                return new Promise((resolve): void => {
+                    resolve();
+                });
+            }).then((): void => {
+                const { onCreate } = this.props;
+                onCreate(this.state);
+            }).catch((): void => {
+                notification.error({
+                    message: 'Could not create a task',
+                    description: 'Please, check configuration you specified',
+                });
+            });
+    };
+
+    private renderBasicBlock(): JSX.Element {
+        return (
+            <Col span={24}>
+                <BasicConfigurationForm
+                    wrappedComponentRef={
+                        (component: any): void => { this.basicConfigurationComponent = component; }
+                    }
+                    onSubmit={this.handleSubmitBasicConfiguration}
+                />
+            </Col>
+        );
+    }
+
+    private renderLabelsBlock(): JSX.Element {
+        const { labels } = this.state;
+
+        return (
+            <Col span={24}>
+                <Text type='danger'>* </Text>
+                <Text className='cvat-black-color'>Labels:</Text>
+                <LabelsEditor
+                    labels={labels}
+                    onSubmit={
+                        (newLabels): void => {
+                            this.setState({
+                                labels: newLabels,
+                            });
+                        }
+                    }
+                />
+            </Col>
+        );
+    }
+
+    private renderFilesBlock(): JSX.Element {
+        return (
+            <Col span={24}>
+                <Text type='danger'>* </Text>
+                <Text className='cvat-black-color'>Select files:</Text>
+                <FileManagerContainer
+                    ref={
+                        (container: any): void => { this.fileManagerContainer = container; }
+                    }
+                    withRemote
+                />
+            </Col>
+        );
+    }
+
+    private renderAdvancedBlock(): JSX.Element {
+        const { installedGit } = this.props;
+        return (
+            <Col span={24}>
+                <Collapse>
+                    <Collapse.Panel
+                        key='1'
+                        header={
+                            <Text className='cvat-title'>Advanced configuration</Text>
+                        }
+                    >
+                        <AdvancedConfigurationForm
+                            installedGit={installedGit}
+                            wrappedComponentRef={
+                                (component: any): void => {
+                                    this.advancedConfigurationComponent = component;
+                                }
+                            }
+                            onSubmit={this.handleSubmitAdvancedConfiguration}
+                        />
+                    </Collapse.Panel>
+                </Collapse>
+            </Col>
+        );
+    }
+
+    public render(): JSX.Element {
+        const { status } = this.props;
+        const loading = !!status && status !== 'CREATED' && status !== 'FAILED';
 
         return (
             <Row type='flex' justify='start' align='middle' className='cvat-create-task-content'>
                 <Col span={24}>
-                    <Text className='cvat-title'> Basic configuration </Text>
+                    <Text className='cvat-title'>Basic configuration</Text>
                 </Col>
 
                 { this.renderBasicBlock() }
@@ -226,16 +235,18 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                 { this.renderFilesBlock() }
                 { this.renderAdvancedBlock() }
 
-                <Col span={14}>
-                    {loading ? <Alert message={this.props.status}/> : null}
+                <Col span={18}>
+                    {loading ? <Alert message={status} /> : null}
                 </Col>
-                <Col span={10}>
+                <Col span={6}>
                     <Button
                         loading={loading}
                         disabled={loading}
                         type='danger'
                         onClick={this.handleSubmitClick}
-                    > Submit </Button>
+                    >
+                        Submit
+                    </Button>
                 </Col>
             </Row>
         );

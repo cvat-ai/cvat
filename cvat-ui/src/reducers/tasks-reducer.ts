@@ -1,11 +1,13 @@
 import { AnyAction } from 'redux';
 import { TasksActionTypes } from '../actions/tasks-actions';
+import { AuthActionTypes } from '../actions/auth-actions';
 
 import { TasksState, Task } from './interfaces';
 
 const defaultState: TasksState = {
     initialized: false,
-    tasksFetchingError: null,
+    fetching: false,
+    hideEmpty: false,
     count: 0,
     current: [],
     gettingQuery: {
@@ -20,47 +22,24 @@ const defaultState: TasksState = {
     },
     activities: {
         dumps: {
-            dumpingError: null,
+            byTask: {},
+        },
+        exports: {
             byTask: {},
         },
         loads: {
-            loadingError: null,
-            loadingDoneMessage: '',
             byTask: {},
         },
         deletes: {
-            deletingError: null,
             byTask: {},
         },
         creates: {
-            creatingError: null,
             status: '',
         },
     },
 };
 
-export default (inputState: TasksState = defaultState, action: AnyAction): TasksState => {
-    function cleanupTemporaryInfo(stateToResetErrors: TasksState): TasksState {
-        return {
-            ...stateToResetErrors,
-            tasksFetchingError: null,
-            activities: {
-                ...stateToResetErrors.activities,
-                dumps: {
-                    ...stateToResetErrors.activities.dumps,
-                    dumpingError: null,
-                },
-                loads: {
-                    ...stateToResetErrors.activities.loads,
-                    loadingError: null,
-                    loadingDoneMessage: '',
-                },
-            },
-        };
-    }
-
-    const state = cleanupTemporaryInfo(inputState);
-
+export default (state: TasksState = defaultState, action: AnyAction): TasksState => {
     switch (action.type) {
         case TasksActionTypes.GET_TASKS:
             return {
@@ -68,11 +47,15 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                 activities: {
                     ...state.activities,
                     deletes: {
-                        deletingError: null,
                         byTask: {},
                     },
                 },
                 initialized: false,
+                fetching: true,
+                hideEmpty: true,
+                count: 0,
+                current: [],
+                gettingQuery: { ...action.payload.query },
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
             const combinedWithPreviews = action.payload.array
@@ -84,6 +67,7 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
             return {
                 ...state,
                 initialized: true,
+                fetching: false,
                 count: action.payload.count,
                 current: combinedWithPreviews,
                 gettingQuery: { ...action.payload.query },
@@ -93,10 +77,7 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
             return {
                 ...state,
                 initialized: true,
-                count: 0,
-                current: [],
-                gettingQuery: { ...action.payload.query },
-                tasksFetchingError: action.payload.error,
+                fetching: false,
             };
         case TasksActionTypes.DUMP_ANNOTATIONS: {
             const { task } = action.payload;
@@ -109,8 +90,6 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
             const theTaskDumpingActivities = [...tasksDumpingActivities.byTask[task.id] || []];
             if (!theTaskDumpingActivities.includes(dumper.name)) {
                 theTaskDumpingActivities.push(dumper.name);
-            } else {
-                throw Error('Dump with the same dumper for this same task has been already started');
             }
             tasksDumpingActivities.byTask[task.id] = theTaskDumpingActivities;
 
@@ -146,11 +125,9 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
         case TasksActionTypes.DUMP_ANNOTATIONS_FAILED: {
             const { task } = action.payload;
             const { dumper } = action.payload;
-            const dumpingError = action.payload.error;
 
             const tasksDumpingActivities = {
                 ...state.activities.dumps,
-                dumpingError,
             };
 
             const theTaskDumpingActivities = tasksDumpingActivities.byTask[task.id]
@@ -163,6 +140,70 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                 activities: {
                     ...state.activities,
                     dumps: tasksDumpingActivities,
+                },
+            };
+        }
+        case TasksActionTypes.EXPORT_DATASET: {
+            const { task } = action.payload;
+            const { exporter } = action.payload;
+
+            const tasksExportingActivities = {
+                ...state.activities.exports,
+            };
+
+            const theTaskDumpingActivities = [...tasksExportingActivities.byTask[task.id] || []];
+            if (!theTaskDumpingActivities.includes(exporter.name)) {
+                theTaskDumpingActivities.push(exporter.name);
+            }
+            tasksExportingActivities.byTask[task.id] = theTaskDumpingActivities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    exports: tasksExportingActivities,
+                },
+            };
+        }
+        case TasksActionTypes.EXPORT_DATASET_SUCCESS: {
+            const { task } = action.payload;
+            const { exporter } = action.payload;
+
+            const tasksExportingActivities = {
+                ...state.activities.exports,
+            };
+
+            const theTaskExportingActivities = tasksExportingActivities.byTask[task.id]
+                .filter((exporterName: string): boolean => exporterName !== exporter.name);
+
+            tasksExportingActivities.byTask[task.id] = theTaskExportingActivities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    exports: tasksExportingActivities,
+                },
+            };
+        }
+        case TasksActionTypes.EXPORT_DATASET_FAILED: {
+            const { task } = action.payload;
+            const { exporter } = action.payload;
+
+            const tasksExportingActivities = {
+                ...state.activities.exports,
+            };
+
+            const theTaskExportingActivities = tasksExportingActivities.byTask[task.id]
+                .filter((exporterName: string): boolean => exporterName !== exporter.name);
+
+            tasksExportingActivities.byTask[task.id] = theTaskExportingActivities;
+
+            return {
+                ...state,
+                activities: {
+                    ...state.activities,
+                    exports: tasksExportingActivities,
                 },
             };
         }
@@ -203,14 +244,12 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                     ...state.activities,
                     loads: {
                         ...tasksLoadingActivity,
-                        loadingDoneMessage: `Annotations have been loaded to the task ${task.id}`,
                     },
                 },
             };
         }
         case TasksActionTypes.LOAD_ANNOTATIONS_FAILED: {
             const { task } = action.payload;
-            const loadingError = action.payload.error;
 
             const tasksLoadingActivity = {
                 ...state.activities.loads,
@@ -224,7 +263,6 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                     ...state.activities,
                     loads: {
                         ...tasksLoadingActivity,
-                        loadingError,
                     },
                 },
             };
@@ -267,7 +305,6 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
         }
         case TasksActionTypes.DELETE_TASK_FAILED: {
             const { taskID } = action.payload;
-            const { error } = action.payload;
 
             const deletesActivities = state.activities.deletes;
 
@@ -282,7 +319,6 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                     ...state.activities,
                     deletes: {
                         ...deletesActivities,
-                        deletingError: error,
                     },
                 },
             };
@@ -293,7 +329,6 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
                 activities: {
                     ...state.activities,
                     creates: {
-                        creatingError: null,
                         status: '',
                     },
                 },
@@ -326,17 +361,61 @@ export default (inputState: TasksState = defaultState, action: AnyAction): Tasks
             };
         }
         case TasksActionTypes.CREATE_TASK_FAILED: {
-            const { error } = action.payload;
-
             return {
                 ...state,
                 activities: {
                     ...state.activities,
                     creates: {
                         ...state.activities.creates,
-                        creatingError: error,
+                        status: 'FAILED',
                     },
                 },
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK: {
+            return {
+                ...state,
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_SUCCESS: {
+            return {
+                ...state,
+                current: state.current.map((task): Task => {
+                    if (task.instance.id === action.payload.task.id) {
+                        return {
+                            ...task,
+                            instance: action.payload.task,
+                        };
+                    }
+
+                    return task;
+                }),
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_FAILED: {
+            return {
+                ...state,
+                current: state.current.map((task): Task => {
+                    if (task.instance.id === action.payload.task.id) {
+                        return {
+                            ...task,
+                            instance: action.payload.task,
+                        };
+                    }
+
+                    return task;
+                }),
+            };
+        }
+        case TasksActionTypes.HIDE_EMPTY_TASKS: {
+            return {
+                ...state,
+                hideEmpty: action.payload.hideEmpty,
+            };
+        }
+        case AuthActionTypes.LOGOUT_SUCCESS: {
+            return {
+                ...defaultState,
             };
         }
         default:

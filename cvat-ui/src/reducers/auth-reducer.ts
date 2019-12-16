@@ -5,10 +5,7 @@ import { AuthState } from './interfaces';
 
 const defaultState: AuthState = {
     initialized: false,
-    authError: null,
-    loginError: null,
-    logoutError: null,
-    registerError: null,
+    fetching: false,
     user: null,
 };
 
@@ -19,48 +16,55 @@ export default (state = defaultState, action: AnyAction): AuthState => {
                 ...state,
                 initialized: true,
                 user: action.payload.user,
-                authError: null,
             };
         case AuthActionTypes.AUTHORIZED_FAILED:
             return {
                 ...state,
                 initialized: true,
-                authError: action.payload.error,
+            };
+        case AuthActionTypes.LOGIN:
+            return {
+                ...state,
+                fetching: true,
             };
         case AuthActionTypes.LOGIN_SUCCESS:
             return {
                 ...state,
+                fetching: false,
                 user: action.payload.user,
-                loginError: null,
             };
         case AuthActionTypes.LOGIN_FAILED:
             return {
                 ...state,
-                user: null,
-                loginError: action.payload.error,
+                fetching: false,
+            };
+        case AuthActionTypes.LOGOUT:
+            return {
+                ...state,
+                fetching: true,
             };
         case AuthActionTypes.LOGOUT_SUCCESS:
             return {
                 ...state,
+                fetching: false,
                 user: null,
-                logoutError: null,
             };
-        case AuthActionTypes.LOGOUT_FAILED:
+        case AuthActionTypes.REGISTER:
             return {
                 ...state,
-                logoutError: action.payload.error,
+                fetching: true,
+                user: action.payload.user,
             };
         case AuthActionTypes.REGISTER_SUCCESS:
             return {
                 ...state,
+                fetching: false,
                 user: action.payload.user,
-                registerError: null,
             };
         case AuthActionTypes.REGISTER_FAILED:
             return {
                 ...state,
-                user: null,
-                registerError: action.payload.error,
+                fetching: false,
             };
         default:
             return state;

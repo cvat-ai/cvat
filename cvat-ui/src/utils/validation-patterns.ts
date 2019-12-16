@@ -52,8 +52,15 @@ const validationPatterns = {
     },
 
     validateURL: {
-        pattern: /^(https?):\/\/[^\s$.?#].[^\s]*$/,
+        // eslint-disable-next-line
+        pattern: /^((https?:\/\/)|(git@))[^\s$.?#].[^\s]*$/, // url, ssh url, ip
         message: 'URL is not valid',
+    },
+
+    validatePath: {
+        // eslint-disable-next-line
+        pattern: /^\[\/?([A-z0-9-_+]+\/)*([A-z0-9]+\.(xml|zip|json))\]$/,
+        message: 'Git path is not valid',
     },
 };
 

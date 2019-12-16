@@ -7,6 +7,7 @@ import json
 import os
 
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from rest_framework.decorators import api_view
 from django.db.models import Q
 from rules.contrib.views import permission_required, objectgetter
 
@@ -124,10 +125,11 @@ def delete_model(request, mid):
     model_manager.delete(mid)
     return HttpResponse()
 
+@api_view(['POST'])
 @login_required
 def get_meta_info(request):
     try:
-        tids = json.loads(request.body.decode('utf-8'))
+        tids = request.data
         response = {
             "admin": has_admin_role(request.user),
             "models": [],
@@ -147,6 +149,7 @@ def get_meta_info(request):
                 "uploadDate": dl_model.created_date,
                 "updateDate": dl_model.updated_date,
                 "labels": labels,
+                "owner": dl_model.owner.id,
             })
 
         queue = django_rq.get_queue("low")

@@ -14,7 +14,7 @@ export enum UsersActionTypes {
 function getUsers(): AnyAction {
     const action = {
         type: UsersActionTypes.GET_USERS,
-        payload: { },
+        payload: {},
     };
 
     return action;
@@ -41,8 +41,9 @@ function getUsersFailed(error: any): AnyAction {
 export function getUsersAsync():
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(getUsers());
+
         try {
-            dispatch(getUsers());
             const users = await core.users.get();
             dispatch(
                 getUsersSuccess(

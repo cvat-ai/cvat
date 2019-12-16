@@ -4,7 +4,6 @@ import {
     Input,
 } from 'antd';
 
-import Text from 'antd/lib/typography/Text';
 import Form, { FormComponentProps } from 'antd/lib/form/Form';
 
 export interface BaseConfiguration {
@@ -16,11 +15,16 @@ type Props = FormComponentProps & {
 };
 
 class BasicConfigurationForm extends React.PureComponent<Props> {
-    public async submit() {
+    public submit(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.props.form.validateFields((error, values) => {
+            const {
+                form,
+                onSubmit,
+            } = this.props;
+
+            form.validateFields((error, values): void => {
                 if (!error) {
-                    this.props.onSubmit({
+                    onSubmit({
                         name: values.name,
                     });
                     resolve();
@@ -28,26 +32,28 @@ class BasicConfigurationForm extends React.PureComponent<Props> {
                     reject();
                 }
             });
-        })
+        });
     }
 
-    public resetFields() {
-        this.props.form.resetFields();
+    public resetFields(): void {
+        const { form } = this.props;
+        form.resetFields();
     }
 
-    public render() {
-        const { getFieldDecorator } = this.props.form;
+    public render(): JSX.Element {
+        const { form } = this.props;
+        const { getFieldDecorator } = form;
+
         return (
-            <Form onSubmit={(e: React.FormEvent) => e.preventDefault()}>
-                <Text type='secondary'> Name </Text>
-                <Form.Item style={{marginBottom: '0px'}}>
+            <Form onSubmit={(e: React.FormEvent): void => e.preventDefault()}>
+                <Form.Item hasFeedback label={<span>Name</span>}>
                     { getFieldDecorator('name', {
                         rules: [{
                             required: true,
                             message: 'Please, specify a name',
-                        }] // TODO: Add task name pattern
+                        }],
                     })(
-                        <Input/>
+                        <Input />,
                     ) }
                 </Form.Item>
             </Form>

@@ -3,7 +3,8 @@
     "eslint.enable": true,
     "eslint.validate": [
         "javascript",
-        "typescript"
+        "typescript",
+        "typescriptreact",
     ],
     "eslint.workingDirectories": [
         {
@@ -23,5 +24,6 @@
             "changeProcessCWD": true
         }
     ],
-    "python.linting.pylintEnabled": true
+    "python.linting.pylintEnabled": true,
+    "python.envFile": "${workspaceFolder}/.vscode/python.env"
 }
