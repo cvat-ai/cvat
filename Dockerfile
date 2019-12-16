@@ -163,6 +163,9 @@ RUN sed -r "s/^(.*)#.*$/\1/g" ${HOME}/datumaro/requirements.txt | xargs -n 1 -L 
 RUN patch --binary -p1 < ${HOME}/cvat/apps/engine/static/engine/js/3rdparty.patch
 RUN chown -R ${USER}:${USER} .
 
+# Download OpenCV.js
+RUN wget https://docs.opencv.org/master/opencv.js -O ${HOME}/cvat/apps/engine/static/engine/js/3rdparty/opencv.js
+
 # RUN all commands below as 'django' user
 USER ${USER}
 

@@ -1,10 +1,9 @@
 /* global
-    require:false
 */
+
 "use strict";
 
 var cv;
-$.getScript('https://unpkg.com/opencv_js_cvat@1.0.1/opencv.js');
 
 function equalizeHist(frame) {
     const imgSrc = new Image();
