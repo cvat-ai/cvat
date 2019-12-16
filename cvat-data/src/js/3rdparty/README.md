@@ -1,11 +1,9 @@
 ## 3rdparty components
 
-These files are from the [JSMpeg](https://github.com/phoboslab/jsmpeg) repository:
-- buffer.js
-- decoder.js
-- jsmpeg.js
-- mpeg1.js
-- ts.js
+These files are from the [Broadway.js](https://github.com/mbebenita/Broadway) repository:
+- Decoder.js
+- mp4.js
+- avc.wasm
 
 ### Why do we store them here?
 
@@ -17,6 +15,10 @@ But there aren't any ways to do that (even with syntetic environment, provided f
 For example there are issues with canvas using (webpack doesn't work with binary canvas package for node-js) and others.
 So, we have solved to write patch file for this library.
 It modifies source code a little to support our scenario of using.
+
+### How to build awc.wasm and Decoder.js
+
+Instructions will be added in the future.
 
 ### How work with a patch file
 ```bash

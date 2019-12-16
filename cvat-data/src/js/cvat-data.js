@@ -7,7 +7,7 @@
     require:true
 */
 // require("./decode_video")
-const { MP4Reader, Bytestream } = require('./mp4');
+const { MP4Reader, Bytestream } = require('./3rdparty/mp4');
 
 const BlockType = Object.freeze({
     MP4VIDEO: 'mp4video',
@@ -115,7 +115,7 @@ class FrameProvider {
                 resolveCallback : resolveCallback,
                 rejectCallback : rejectCallback,
             }
-        } else { // request to decode the same block, update callbacks
+        } else {
             this._decodingBlocks[`${start}:${end}`].rejectCallback = rejectCallback;
             this._decodingBlocks[`${start}:${end}`].resolveCallback = resolveCallback;
         }
@@ -219,7 +219,6 @@ class FrameProvider {
             const worker = new Worker('/static/engine/js/Decoder.js');
             let index = start;
 
-            const t0 = performance.now();
             worker.onmessage = (e) => {
                 if (e.data.consoleLog) { // ignore initialization message
                   return;
@@ -239,8 +238,6 @@ class FrameProvider {
                     delete this._promisedFrames[index];
                 }
                 if (index === end) {
-                    const t = performance.now() - t0;
-                    console.log(`Decode time of chunk ${Math.floor((start+1)/ this._blockSize)}: ${t}; fps: ${36000/t}`);
                     this._decodeThreadCount--;
                     delete this._decodingBlocks[`${start}:${end}`];
                     worker.terminate();
@@ -252,7 +249,6 @@ class FrameProvider {
                 console.log(['ERROR: Line ', e.lineno, ' in ', e.filename, ': ', e.message].join(''));
                 worker.terminate();
                 this._decodeThreadCount--;
-                // console.log(this._decodeThreadCount);
 
                 for (let i = index; i <= end; i++){
                     if (i in this._promisedFrames) {
@@ -314,7 +310,6 @@ class FrameProvider {
                 this._decodeThreadCount--;
             };
 
-            const t0 = performance.now();
             worker.postMessage({block : block,
                                 start : start,
                                   end : end });
@@ -336,8 +331,6 @@ class FrameProvider {
                 }
 
                 if (event.data.isEnd){
-                    const t = performance.now() - t0;
-                    console.log(`Decode time of archive chunk ${Math.floor((start+1)/ this._blockSize)}: ${t}; fps: ${36000/t}`);
                     delete this._decodingBlocks[`${start}:${end}`];
                     this._decodeThreadCount--;
                 }
