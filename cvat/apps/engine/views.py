@@ -21,7 +21,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework import serializers
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action
 from rest_framework import mixins
 from django_filters import rest_framework as filters
 import django_rq
