@@ -30,8 +30,8 @@ class VocExtractor(Extractor):
             self.items = []
 
         def __iter__(self):
-            for item in self.items:
-                yield self._parent._get(item, self._name)
+            for item_id in self.items:
+                yield self._parent._get(item_id, self._name)
 
         def __len__(self):
             return len(self.items)
@@ -122,17 +122,17 @@ class VocExtractor(Extractor):
             for item in subset:
                 yield item
 
-    def _get(self, item, subset_name):
+    def _get(self, item_id, subset_name):
         image = None
         image_path = osp.join(self._path, VocPath.IMAGES_DIR,
-            item + VocPath.IMAGE_EXT)
+            item_id + VocPath.IMAGE_EXT)
         if osp.isfile(image_path):
             image = lazy_image(image_path)
 
-        annotations = self._get_annotations(item)
+        annotations = self._get_annotations(item_id)
 
         return DatasetItem(annotations=annotations,
-            id=item, subset=subset_name, image=image)
+            id=item_id, subset=subset_name, image=image)
 
     def _get_label_id(self, label):
         label_id, _ = self._categories[AnnotationType.label].find(label)
@@ -258,58 +258,48 @@ class VocExtractor(Extractor):
             return None
 
 class VocClassificationExtractor(VocExtractor):
-    _ANNO_DIR = 'Main'
-
     def __init__(self, path):
         super().__init__(path, task=VocTask.classification)
 
-        subsets_dir = osp.join(path, VocPath.SUBSETS_DIR, self._ANNO_DIR)
+        subsets_dir = osp.join(path, VocPath.SUBSETS_DIR, 'Main')
         subsets = self._load_subsets(subsets_dir)
         self._subsets = subsets
 
         self._load_cls_annotations(subsets_dir, subsets)
 
 class VocDetectionExtractor(VocExtractor):
-    _ANNO_DIR = 'Main'
-
     def __init__(self, path):
         super().__init__(path, task=VocTask.detection)
 
-        subsets_dir = osp.join(path, VocPath.SUBSETS_DIR, self._ANNO_DIR)
+        subsets_dir = osp.join(path, VocPath.SUBSETS_DIR, 'Main')
         subsets = self._load_subsets(subsets_dir)
         self._subsets = subsets
 
         self._load_det_annotations()
 
 class VocSegmentationExtractor(VocExtractor):
-    _ANNO_DIR = 'Segmentation'
-
     def __init__(self, path):
         super().__init__(path, task=VocTask.segmentation)
 
-        subsets_dir = osp.join(path, VocPath.SUBSETS_DIR, self._ANNO_DIR)
+        subsets_dir = osp.join(path, VocPath.SUBSETS_DIR, 'Segmentation')
         subsets = self._load_subsets(subsets_dir)
         self._subsets = subsets
 
 class VocLayoutExtractor(VocExtractor):
-    _ANNO_DIR = 'Layout'
-
     def __init__(self, path):
         super().__init__(path, task=VocTask.person_layout)
 
-        subsets_dir = osp.join(path, VocPath.SUBSETS_DIR, self._ANNO_DIR)
+        subsets_dir = osp.join(path, VocPath.SUBSETS_DIR, 'Layout')
         subsets = self._load_subsets(subsets_dir)
         self._subsets = subsets
 
         self._load_det_annotations()
 
 class VocActionExtractor(VocExtractor):
-    _ANNO_DIR = 'Action'
-
     def __init__(self, path):
         super().__init__(path, task=VocTask.action_classification)
 
-        subsets_dir = osp.join(path, VocPath.SUBSETS_DIR, self._ANNO_DIR)
+        subsets_dir = osp.join(path, VocPath.SUBSETS_DIR, 'Action')
         subsets = self._load_subsets(subsets_dir)
         self._subsets = subsets
 

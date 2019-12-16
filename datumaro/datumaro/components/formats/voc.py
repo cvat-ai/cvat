@@ -161,6 +161,7 @@ def parse_label_map(path):
 
 def write_label_map(path, label_map):
     with open(path, 'w') as f:
+        f.write('# label:color_rgb:parts:actions\n')
         for label_name, label_desc in label_map.items():
             if label_desc[0]:
                 color_rgb = ','.join(str(c) for c in label_desc[0][::-1])
@@ -180,11 +181,12 @@ def make_voc_categories(label_map=None):
     categories = {}
 
     label_categories = LabelCategories()
-    label_categories.attributes.update('difficult', 'truncated', 'occluded')
+    label_categories.attributes.update(['difficult', 'truncated', 'occluded'])
 
     for label, desc in label_map.items():
         label_categories.add(label, attributes=desc[2])
-    for part in set(chain(*(desc[1] for desc in label_map.values()))):
+    for part in OrderedDict((k, None) for k in chain(
+            *(desc[1] for desc in label_map.values()))):
         label_categories.add(part)
     categories[AnnotationType.label] = label_categories
 
