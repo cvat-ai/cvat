@@ -6,19 +6,19 @@ self.onmessage = function (e) {
     const start =  e.data.start;
     const end =  e.data.end;
     const block =  e.data.block;
-    
+
     zip.loadAsync(block).then((_zip) => {
         fileMapping = {};
         let index = start;
         _zip.forEach((relativePath) => {
 
-            fileMapping[relativePath] = index++; 
+            fileMapping[relativePath] = index++;
         });
         index = start;
         let inverseUnzippedFilesCount = end;
         _zip.forEach((relativePath) => {
             const fileIndex = index++;
-            
+
             _zip.file(relativePath).async('blob').then((fileData) => {
                 const reader = new FileReader();
                 reader.onload = (function(i, event){
@@ -28,7 +28,7 @@ self.onmessage = function (e) {
                         self.close();
                     }
                 }).bind(fileIndex, relativePath);
-                
+
                 reader.readAsDataURL(fileData);
             });
         });

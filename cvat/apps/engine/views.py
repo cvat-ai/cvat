@@ -294,8 +294,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
         else:
             data_type = request.query_params.get('type', None)
-            number = request.query_params.get('number', None)
-            quality = request.query_params.get('quality', 'compressed')
+            data_id = request.query_params.get('number', None)
+            data_quality = request.query_params.get('quality', 'compressed')
 
             possible_data_type_values = ('chunk', 'frame', 'preview')
             possible_quality_values = ('compressed', 'original')
@@ -303,9 +303,9 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             if not data_type or data_type not in possible_data_type_values:
                 return Response(data='data type not specified or has wrong value', status=status.HTTP_400_BAD_REQUEST)
             elif data_type == 'chunk' or data_type == 'frame':
-                if not number:
+                if not data_id:
                     return Response(data='number not specified', status=status.HTTP_400_BAD_REQUEST)
-                elif quality not in possible_quality_values:
+                elif data_quality not in possible_quality_values:
                     return Response(data='wrong quality value', status=status.HTTP_400_BAD_REQUEST)
 
             try:
@@ -313,21 +313,21 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 frame_provider = FrameProvider(db_task.data)
 
                 if data_type == 'chunk':
-                    number = int(number)
-                    if quality == 'compressed':
-                        path = os.path.realpath(frame_provider.get_compressed_chunk(number))
+                    data_id = int(data_id)
+                    if data_quality == 'compressed':
+                        path = os.path.realpath(frame_provider.get_compressed_chunk(data_id))
                     else:
-                        path = os.path.realpath(frame_provider.get_original_chunk(number))
+                        path = os.path.realpath(frame_provider.get_original_chunk(data_id))
                     # Follow symbol links if the chunk is a link on a real image otherwise
                     # mimetype detection inside sendfile will work incorrectly.
                     return sendfile(request, path)
 
                 elif data_type == 'frame':
-                    number = int(number)
-                    if quality == 'compressed':
-                        buf = frame_provider.get_compressed_frame(number)
+                    data_id = int(data_id)
+                    if data_quality == 'compressed':
+                        buf = frame_provider.get_compressed_frame(data_id)
                     else:
-                        buf = frame_provider.get_original_frame(number)
+                        buf = frame_provider.get_original_frame(data_id)
 
                     return HttpResponse(buf.getvalue(), content_type='image/png')
 
@@ -336,7 +336,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 else:
                     return Response(data='unknown data type {}.'.format(data_type), status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
-                msg = 'cannot get requested data type: {}, number: {}, quality: {}'.format(data_type, number, quality)
+                msg = 'cannot get requested data type: {}, number: {}, quality: {}'.format(data_type, data_id, data_quality)
                 slogger.task[pk].error(msg, exc_info=True)
                 return Response(data=msg + '\n' + str(e), status=status.HTTP_400_BAD_REQUEST)
 

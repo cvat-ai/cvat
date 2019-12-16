@@ -109,26 +109,11 @@ class FrameProvider():
 
     def get_compressed_chunk(self, chunk_number):
         chunk_number = self._validate_chunk_number(chunk_number)
-
-        chunk_path = self._db_data.get_compressed_chunk_path(chunk_number)
-        if self._db_data.compressed_chunk_type == DataChoice.LIST:
-            zip_chunk_path = '{}.zip'.format(os.path.splitext(chunk_path)[0])
-            if not os.path.exists(zip_chunk_path):
-                with zipfile.ZipFile(zip_chunk_path, 'x') as zip_chunk:
-                    with open(chunk_path, 'r') as images:
-                        for idx, im_path in enumerate(images):
-                            zip_chunk.write(
-                                filename=im_path.strip(),
-                                arcname='{:06d}.jpeg'.format(idx),
-                            )
-            chunk_path = zip_chunk_path
-
-        return chunk_path
+        return self._db_data.get_compressed_chunk_path(chunk_number)
 
     def get_original_chunk(self, chunk_number):
         chunk_number = self._validate_chunk_number(chunk_number)
-        chunk_path = self._db_data.get_original_chunk_path(chunk_number)
-        return chunk_path
+        return self._db_data.get_original_chunk_path(chunk_number)
 
     def get_preview(self):
         return self._db_data.get_preview_path()

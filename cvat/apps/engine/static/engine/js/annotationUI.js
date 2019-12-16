@@ -500,6 +500,7 @@ function buildAnnotationUI(jobData, taskData, imageMetaData, annotationData, ann
             task_id: taskData.id,
             mode: taskData.mode,
             images: imageMetaData,
+            chunk_size: taskData.data_chunk_size,
         },
         search: {
             value: window.location.search,

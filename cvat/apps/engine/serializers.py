@@ -165,7 +165,6 @@ class DataSerializer(serializers.ModelSerializer):
         model = models.Data
         fields = ('chunk_size', 'size', 'image_quality', 'start_frame', 'stop_frame', 'frame_filter',
             'compressed_chunk_type', 'original_chunk_type', 'client_files', 'server_files', 'remote_files', 'use_zip_chunks')
-        read_only_fields = ('use_zip_chunks', )
 
     def validate_frame_filter(self, value):
         match = re.search("step\s*=\s*([1-9]\d*)", value)

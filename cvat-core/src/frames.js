@@ -292,8 +292,7 @@
                 : cvatData.BlockType.ARCHIVE;
 
             const meta = await serverProxy.frames.getMeta(taskID);
-            // limit of decoded frames cache by 2GB for video and 500 frames for archive
-            // max size of video frame is 1920x1080
+            // limit of decoded frames cache by 2GB for video (max height of video frame is 1080) and 500 frames for archive
             const decodedBlocksCacheSize = blockType === cvatData.BlockType.MP4VIDEO ?
                  Math.floor(2147483648 / 1920 / 1080 / 4 / chunkSize) || 1:
                  Math.floor(500 / chunkSize) || 1;

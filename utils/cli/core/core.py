@@ -78,16 +78,16 @@ class CLI():
                 else:
                     raise e
 
-    # def tasks_frame(self, task_id, frame_ids, outdir='', **kwargs):
-    #     """ Download the requested frame numbers for a task and save images as
-    #     task_<ID>_frame_<FRAME>.jpg."""
-    #     for frame_id in frame_ids:
-    #         url = self.api.tasks_id_frame_id(task_id, frame_id)
-    #         response = self.session.get(url)
-    #         response.raise_for_status()
-    #         im = Image.open(BytesIO(response.content))
-    #         outfile = 'task_{}_frame_{:06d}.jpg'.format(task_id, frame_id)
-    #         im.save(os.path.join(outdir, outfile))
+    def tasks_frame(self, task_id, frame_ids, outdir='', **kwargs):
+        """ Download the requested frame numbers for a task and save images as
+        task_<ID>_frame_<FRAME>.jpg."""
+        for frame_id in frame_ids:
+            url = self.api.tasks_id_frame_id(task_id, frame_id)
+            response = self.session.get(url)
+            response.raise_for_status()
+            im = Image.open(BytesIO(response.content))
+            outfile = 'task_{}_frame_{:06d}.jpg'.format(task_id, frame_id)
+            im.save(os.path.join(outdir, outfile))
 
     def tasks_dump(self, task_id, fileformat, filename, **kwargs):
         """ Download annotations for a task in the specified format
@@ -134,7 +134,7 @@ class CVAT_API_V1():
         return self.tasks_id(task_id) + '/data'
 
     def tasks_id_frame_id(self, task_id, frame_id):
-        return self.tasks_id(task_id) + '/frames/{}'.format(frame_id)
+        return self.tasks_id(task_id) + '/data?type=frame&number={}&quality=compressed'.format(frame_id)
 
     def tasks_id_annotations_filename(self, task_id, name, fileformat):
         return self.tasks_id(task_id) + '/annotations/{}?format={}' \

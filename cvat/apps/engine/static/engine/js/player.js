@@ -102,7 +102,7 @@ class PlayerModel extends Listener {
             stop: window.cvat.player.frames.stop,
             current: window.cvat.player.frames.current,
             requested: new Set(),
-            chunkSize: 36,
+            chunkSize: window.cvat.job.chunk_size,
             previous: null,
         };
 
