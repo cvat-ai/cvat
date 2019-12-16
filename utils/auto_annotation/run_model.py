@@ -29,6 +29,7 @@ def _get_kwargs():
     parser.add_argument('--show-images', action='store_true', help='Show the results of the annotation in a window')
     parser.add_argument('--show-image-delay', default=0, type=int, help='Displays the images for a set duration in milliseconds, default is until a key is pressed')
     parser.add_argument('--serialize', default=False, action='store_true', help='Try to serialize the result')
+    parser.add_argument('--show-labels', action='store_true', help='Show the labels on the window')
     
     return vars(parser.parse_args())
 
@@ -44,6 +45,16 @@ def pairwise(iterable):
     for i in range(0, len(iterable) - 1, 2):
         result.append((iterable[i], iterable[i+1]))
     return np.array(result, dtype=np.int32)
+
+def find_min_y(array):
+    min_ = sys.maxsize
+    index = None
+    for i, pair in enumerate(array):
+        if pair[1] < min_:
+            min_ = pair[1]
+            index = i
+
+    return array[index]
 
 
 def main():
@@ -104,6 +115,54 @@ def main():
                                               py_file,
                                               restricted=restricted)
 
+
+    logging.warning('Inference didn\'t have any errors.')
+    show_images = kwargs.get('show_images', False)
+
+    if show_images:
+        if image_files is None:
+            logging.critical("Warning, no images provided!")
+            logging.critical('Exiting without presenting results')
+            return
+
+        if not results['shapes']:
+            logging.warning(str(results))
+            logging.critical("No objects detected!")
+            return
+
+        show_image_delay = kwargs['show_image_delay']
+        show_labels = kwargs.get('show_labels')
+
+        for index, data in enumerate(image_data):
+            for detection in results['shapes']:
+                if not detection['frame'] == index:
+                    continue
+                points = detection['points']
+                label_str = detection['label_id']
+
+                # Cv2 doesn't like floats for drawing
+                points = [int(p) for p in points]
+                color = random_color()
+
+                if detection['type'] == 'rectangle':
+                    cv2.rectangle(data, (points[0], points[1]), (points[2], points[3]), color, 3)
+
+                    if show_labels:
+                        cv2.putText(data, label_str, (points[0], points[1] - 7), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
+
+                elif detection['type'] in ('polygon', 'polyline'):
+                    # polylines is picky about datatypes
+                    points = pairwise(points)
+                    cv2.polylines(data, [points], 1, color)
+
+                    if show_labels:
+                        min_point = find_min_y(points)
+                        cv2.putText(data, label_str, (min_point[0], min_point[1] - 7), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
+
+            cv2.imshow(str(index), data)
+            cv2.waitKey(show_image_delay)
+            cv2.destroyWindow(str(index))
+
     if kwargs['serialize']:
         os.environ['DJANGO_SETTINGS_MODULE'] = 'cvat.settings.production'
         import django
@@ -130,39 +189,6 @@ def main():
         if not serializer.is_valid():
             logging.critical('Data unable to be serialized correctly!')
             serializer.is_valid(raise_exception=True)
-
-    logging.warning('Program didn\'t have any errors.')
-    show_images = kwargs.get('show_images', False)
-
-    if show_images:
-        if image_files is None:
-            logging.critical("Warning, no images provided!")
-            logging.critical('Exiting without presenting results')
-            return
-
-        if not results['shapes']:
-            logging.warning(str(results))
-            logging.critical("No objects detected!")
-            return
-
-        show_image_delay = kwargs['show_image_delay']
-        for index, data in enumerate(image_data):
-            for detection in results['shapes']:
-                if not detection['frame'] == index:
-                    continue
-                points = detection['points']
-                # Cv2 doesn't like floats for drawing
-                points = [int(p) for p in points]
-                color = random_color()
-                if detection['type'] == 'rectangle':
-                    cv2.rectangle(data, (points[0], points[1]), (points[2], points[3]), color, 3)
-                elif detection['type'] in ('polygon', 'polyline'):
-                    # polylines is picky about datatypes
-                    points = pairwise(points)
-                    cv2.polylines(data, [points], 1, color)
-            cv2.imshow(str(index), data)
-            cv2.waitKey(show_image_delay)
-            cv2.destroyWindow(str(index))
 
 if __name__ == '__main__':
     main()
