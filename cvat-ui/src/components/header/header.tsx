@@ -51,14 +51,22 @@ function HeaderContainer(props: Props): JSX.Element {
 
     const menu = (
         <Menu className='cvat-header-menu' mode='vertical'>
+            <Menu.Item>
+                <Icon type='setting' />
+                Settings
+            </Menu.Item>
+            <Menu.Item>
+                <Icon type='info-circle' />
+                About
+            </Menu.Item>
             <Menu.Item
                 onClick={onLogout}
                 disabled={logoutFetching}
-                className='cvat-header-button'
             >
-                {logoutFetching && <Icon type='loading' />}
+                {logoutFetching ? <Icon type='loading' /> : <Icon type='logout' />}
                 Logout
             </Menu.Item>
+
         </Menu>
     );
 

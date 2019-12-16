@@ -794,12 +794,11 @@ textarea.ant-input.cvat-raw-labels-viewer {
     padding: 0px;
 }
 
-.annotation-header-left-group {
+.cvat-annotation-header-left-group {
     height: 100%;
 }
 
-.annotation-header-left-group > div {
-    height: 100%;
+.cvat-annotation-header-left-group > div {
     padding: 0px;
     width: 54px;
     height: 54px;
@@ -807,7 +806,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     text-align: center;
 }
 
-.annotation-header-left-group > div:first-child {
+.cvat-annotation-header-left-group > div:first-child {
     -webkit-filter: invert(0.9);
             filter: invert(0.9);
     background: white;
@@ -815,55 +814,140 @@ textarea.ant-input.cvat-raw-labels-viewer {
     width: 70px;
 }
 
-.annotation-header-left-group > div > * {
+.cvat-annotation-header-left-group > div > * {
     display: block;
     line-height: 0px;
 }
 
-.annotation-header-left-group > div > span {
+.cvat-annotation-header-left-group > div > span {
     font-size: 10px;
 }
 
-.annotation-header-left-group > div > i {
+.cvat-annotation-header-left-group > div > i {
     -webkit-transform: scale(0.8);
         -ms-transform: scale(0.8);
             transform: scale(0.8);
     padding: 3px;
 }
 
-.annotation-header-left-group > div:hover > i {
+.cvat-annotation-header-left-group > div:hover > i {
     -webkit-transform: scale(0.9);
         -ms-transform: scale(0.9);
             transform: scale(0.9);
 }
 
-.annotation-header-left-group > div:active > i {
+.cvat-annotation-header-left-group > div:active > i {
     -webkit-transform: scale(0.8);
         -ms-transform: scale(0.8);
             transform: scale(0.8);
 }
 
-.annotation-header-player-group {
-    display: flex;
-    align-items: center;
+.cvat-annotation-header-player-group > div {
+    height: 54px;
 }
 
-.annotation-header-player-group > i {
+.cvat-annotation-header-player-buttons {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+    position: relative;
+    height: 100%;
+    margin-right: 10px;
+}
+
+.cvat-annotation-header-player-buttons > i {
     -webkit-transform: scale(0.6);
     -ms-transform: scale(0.6);
         transform: scale(0.6);
 }
 
-.annotation-header-player-group > i:hover {
+.cvat-annotation-header-player-buttons > i:hover {
     -webkit-transform: scale(0.7);
     -ms-transform: scale(0.7);
         transform: scale(0.7);
 }
 
-.annotation-header-player-group > i:active {
+.cvat-annotation-header-player-buttons > i:active {
     -webkit-transform: scale(0.6);
     -ms-transform: scale(0.6);
         transform: scale(0.6);
+}
+
+.cvat-annotation-header-player-controls {
+    position: relative;
+    height: 100%;
+    line-height: 27px;
+}
+
+.cvat-annotation-header-player-controls > div {
+    position: relative;
+    height: 50%;
+}
+
+.cvat-annotation-header-player-slider {
+    width: 350px;
+}
+
+.cvat-annotation-header-player-slider > .ant-slider-rail {
+    background-color: #979797;
+}
+
+.cvat-annotation-header-filename-wrapper {
+    max-width: 180px;
+    overflow: hidden;
+    -o-text-overflow: ellipsis;
+       text-overflow: ellipsis;
+}
+
+.cvat-annotation-header-frame-selector {
+    width: 5em;
+    margin-right: 0.5em;
+}
+
+.cvat-annotation-header-right-group {
+    height: 100%;
+}
+
+.cvat-annotation-header-right-group > div {
+    height: 54px;
+    float: left;
+    text-align: center;
+    margin-right: 10px;
+}
+
+.cvat-annotation-header-right-group > div:not(:nth-child(3)) > * {
+    display: block;
+    line-height: 0px;
+}
+
+.cvat-annotation-header-right-group > div > span {
+    font-size: 10px;
+}
+
+.cvat-annotation-header-right-group > div > i {
+    -webkit-transform: scale(0.8);
+        -ms-transform: scale(0.8);
+            transform: scale(0.8);
+    padding: 3px;
+}
+
+.cvat-annotation-header-right-group > div:hover > i {
+    -webkit-transform: scale(0.9);
+        -ms-transform: scale(0.9);
+            transform: scale(0.9);
+}
+
+.cvat-annotation-header-right-group > div:active > i {
+    -webkit-transform: scale(0.8);
+        -ms-transform: scale(0.8);
+            transform: scale(0.8);
+}
+
+.cvat-annotation-header-workspace-selector {
+    width: 150px;
 }
 
 .cvat-annotation-page-controls-sidebar {

@@ -28,6 +28,8 @@ import SVGPlaycontrolPlayIcon from './assets/playcontrol-play-icon.svg';
 import SVGPlaycontrolNextIcon from './assets/playcontrol-next-icon.svg';
 import SVGPlaycontrolForwardJumpIcon from './assets/playcontrol-forward-jump-icon.svg';
 import SVGPlaycontrolLastIcon from './assets/playcontrol-last-icon.svg';
+import SVGInfoIcon from './assets/info-icon.svg';
+import SVGFullscreenIcon from './assets/fullscreen-icon.svg';
 
 
 export const CVATLogo = (): JSX.Element => <SVGCVATLogo />;
@@ -58,3 +60,5 @@ export const PlaycontrolPlayIcon = (): JSX.Element => <SVGPlaycontrolPlayIcon />
 export const PlaycontrolNextIcon = (): JSX.Element => <SVGPlaycontrolNextIcon />;
 export const PlaycontrolForwardJumpIcon = (): JSX.Element => <SVGPlaycontrolForwardJumpIcon />;
 export const PlaycontrolLastIcon = (): JSX.Element => <SVGPlaycontrolLastIcon />;
+export const InfoIcon = (): JSX.Element => <SVGInfoIcon />;
+export const FullscreenIcon = (): JSX.Element => <SVGFullscreenIcon />;
