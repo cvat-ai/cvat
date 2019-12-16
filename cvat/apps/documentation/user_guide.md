@@ -55,7 +55,7 @@ computer vision tasks developed by our team.
 
     ![](static/documentation/images/image001.jpg)
 
--  For register a new user  press "Create an account"
+-  For register a new user press "Create an account"
 
     ![](static/documentation/images/image002.jpg)
 
@@ -87,51 +87,51 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
 1.  Specify parameters of the task:
 
-    ***Basic configuration***
+    #### Basic configuration
 
     **Name** The name of the task to be created.
 
     ![](static/documentation/images/image005.jpg)
 
     **Labels**. There are two ways of working with labels:
-    - The ``Constructor`` is a simple way to add and adjust labels. 
-      To add a new label click the ``Add label`` button.
+      - The ``Constructor`` is a simple way to add and adjust labels. 
+        To add a new label click the ``Add label`` button.
  
-       ![](static/documentation/images/image123.jpg)
+         ![](static/documentation/images/image123.jpg)
      
-       You can set a name of the label in the ``Label name`` field. 
+         You can set a name of the label in the ``Label name`` field. 
  
-       ![](static/documentation/images/image124.jpg) 
+         ![](static/documentation/images/image124.jpg) 
      
-       If necessary you can add an attribute and set its properties by clicking ``Add an attribute``:  
+         If necessary you can add an attribute and set its properties by clicking ``Add an attribute``:  
         
-       ![](static/documentation/images/image125.jpg)
+         ![](static/documentation/images/image125.jpg)
 
-       1. Set the attribute’s name. 
-       1. Choose the way to display the attribute: 
-          - Select — drop down list of value 
-          - Radio — is used when it is necessary to choose just one option out of few suggested. 
-          - Checkbox — is used when it is necessary to choose any number of options out of suggested. 
-          - Text — is used when an attribute is entered as a text. 
-          - Number — is used when an attribute is entered as a number. 
-       1. Set values for the attribute. The values could be separated by pressing ``Enter``. 
-         The entered value is displayed as a separate element which could be deleted 
-         by pressing ``Backspace`` or clicking the close button (x). 
-         If the specified way of displaying the attribute is Text or Number, 
-         the entered value will be displayed as text by default (e.g. you can specify the text format).
-       1. Checkbox ``Mutable`` determines if an attribute would be changed frame to frame. 
-       1. You can delete the attribute by clicking the close button (x). 
+          1. Set the attribute’s name. 
+          1. Choose the way to display the attribute: 
+              - Select — drop down list of value 
+              - Radio — is used when it is necessary to choose just one option out of few suggested. 
+              - Checkbox — is used when it is necessary to choose any number of options out of suggested. 
+              - Text — is used when an attribute is entered as a text. 
+              - Number — is used when an attribute is entered as a number. 
+          1. Set values for the attribute. The values could be separated by pressing ``Enter``. 
+          The entered value is displayed as a separate element which could be deleted 
+          by pressing ``Backspace`` or clicking the close button (x). 
+          If the specified way of displaying the attribute is Text or Number, 
+          the entered value will be displayed as text by default (e.g. you can specify the text format).
+          1. Checkbox ``Mutable`` determines if an attribute would be changed frame to frame. 
+          1. You can delete the attribute by clicking the close button (x). 
  
-       Click the ``Continue`` button to add more labels. 
-       If you need to cancel adding a label - press the ``Cancel`` button. 
-       After all the necessary labels are added click the ``Done`` button.
+      Click the ``Continue`` button to add more labels. 
+      If you need to cancel adding a label - press the ``Cancel`` button. 
+      After all the necessary labels are added click the ``Done`` button.
      
       After clicking ``Done`` the added labels would be displayed as separate elements of different colour. 
       You can edit or delete labels by clicking ``Update attributes`` or ``Delete label``. 
     - The ``Raw`` is a way of working with labels for an advanced user. 
       Raw presents label data in *json* format with an option of editing and copying labels as a text. 
       The ``Done`` button applies the changes and the ``Reset`` button cancels the changes.  
-    ![](static/documentation/images/image126.jpg)
+      ![](static/documentation/images/image126.jpg)
 
     **Select files**. Press tab ``My computer`` to choose some files for annotation from your PC. 
     If you select tab ``Connected file share`` you can choose files for annotation from your network. 
@@ -139,7 +139,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     
       ![](static/documentation/images/image127.jpg)
 
-    ***Advanced configuration***
+    #### Advanced configuration
 
       ![](static/documentation/images/image128.jpg)  
 
@@ -236,24 +236,32 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     Push ``Open`` button to go to task details.
 
-1. Task details is a task page which contains a preview, a progress bar and the details of the task (specified when the task was created) and the jobs section. The next actions are available on this page:
+1.  Task details is a task page which contains a preview, a progress bar 
+and the details of the task (specified when the task was created) and the jobs section. 
+The next actions are available on this page:
 
     ![](static/documentation/images/image131.jpg)
 
-   1. Change the task’s title.
-   1. Open ``Actions`` menu.  
-   1. Change issue tracker or open issue tracker if it is specified.
-   1. Change labels.You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. By clicking ``Copy`` you will copy the labels to the clipboard.
-   1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or choose the right person out of the dropdown list.
+   1.  Change the task’s title.
+   1.  Open ``Actions`` menu.  
+   1.  Change issue tracker or open issue tracker if it is specified.
+   1.  Change labels.You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
+   By clicking ``Copy`` you will copy the labels to the clipboard.
+   1.  Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or 
+   choose the right person out of the dropdown list.
 
-   1. ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
+   1.  ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
       - Jobs name whit a hyperlink to it.
       - Frames — the frame interval. 
-      - A status of the job. The status is specified by the user in the menu inside the job. There are three types of status: annotation, validation or completed. The status of the job is changes the progress bar of the task.
-      - Started on — 
+      - A status of the job. The status is specified by the user in the menu inside the job. 
+      There are three types of status: annotation, validation or completed. 
+      The status of the job is changes the progress bar of the task.
+      - Started on — start date of this job.
       - Duration — is the amount of time the job is being worked.
-      - Assignee is the user who is working on the job. You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
-      -  ``Copy``. By clicking Copy you will copy the job list to the clipboard. The job list contains direct links to jobs. 
+      - Assignee is the user who is working on the job. 
+      You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
+      - ``Copy``. By clicking Copy you will copy the job list to the clipboard. 
+      The job list contains direct links to jobs. 
 
 
 1.  Follow a link inside ``Jobs`` section to start annotation process.
