@@ -915,7 +915,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     height: 54px;
     float: left;
     text-align: center;
-    margin-right: 10px;
+    margin-right: 20px;
 }
 
 .cvat-annotation-header-right-group > div:not(:nth-child(3)) > * {
