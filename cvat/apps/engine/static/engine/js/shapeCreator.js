@@ -509,7 +509,7 @@ class ShapeCreatorView {
         }.bind(this));
     }
     _checKValidCuboidTrace(actualPoints){
-        return actualPoints[0].y < actualPoints[1].y && (actualPoints[2].x < actualPoints[0].x && actualPoints[3].x < actualPoints[0].x) ||  (actualPoints[2].x > actualPoints[0].x && actualPoints[3].x > actualPoints[0].x);
+        return (actualPoints[0].y < actualPoints[1].y) && ((actualPoints[2].x < actualPoints[0].x && actualPoints[3].x < actualPoints[0].x) ||  (actualPoints[2].x > actualPoints[0].x && actualPoints[3].x > actualPoints[0].x));
     }
     _create() {
         let sizeUI = null;
