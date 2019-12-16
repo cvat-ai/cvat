@@ -22,9 +22,7 @@ import AnnotationPageContainer from '../containers/annotation-page/annotation-pa
 import LoginPageContainer from '../containers/login-page/login-page';
 import RegisterPageContainer from '../containers/register-page/register-page';
 import HeaderContainer from '../containers/header/header';
-import ModelRunnerModalContainer from '../containers/model-runner-dialog/model-runner-dialog';
 
-import FeedbackComponent from './feedback';
 import { NotificationsState } from '../reducers/interfaces';
 
 type CVATAppProps = {
@@ -262,17 +260,15 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                             <Layout.Content>
                                 <Switch>
                                     <Route exact path='/tasks' component={TasksPageContainer} />
-                                    <Route path='/tasks/create' component={CreateTaskPageContainer} />
+                                    <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                     <Route exact path='/tasks/:id' component={TaskPageContainer} />
-                                    <Route path='/tasks/:id/jobs/:id' component={AnnotationPageContainer} />
+                                    <Route exact path='/tasks/:id/jobs/:id' component={AnnotationPageContainer} />
                                     { withModels
                                         && <Route exact path='/models' component={ModelsPageContainer} /> }
                                     { installedAutoAnnotation
-                                        && <Route path='/models/create' component={CreateModelPageContainer} /> }
+                                        && <Route exact path='/models/create' component={CreateModelPageContainer} /> }
                                     <Redirect push to='/tasks' />
                                 </Switch>
-                                <FeedbackComponent />
-                                <ModelRunnerModalContainer />
                                 {/* eslint-disable-next-line */}
                                 <a id='downloadAnchor' style={{ display: 'none' }} download/>
                             </Layout.Content>

@@ -1,3 +1,10 @@
+hr {
+    border: 0;
+    height: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
 .cvat-header.ant-layout-header {
     display: -webkit-box;
     display: -ms-flexbox;
@@ -62,36 +69,10 @@
     font-size: 40px;
 }
 
-.anticon.cvat-logo-icon {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
-    margin-right: 20px;
-}
-
-.anticon.cvat-logo-icon > img {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    height: 15.8px;
-    margin-left: 18px;
-}
-
-.anticon.cvat-back-icon > img {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    height: 15.8px;
-    margin-left: 18px;
-    margin-right: 18px;
-}
-
-.anticon.cvat-back-icon:hover > img {
-    -webkit-filter: invert(0.4);
-            filter: invert(0.4);
+.anticon.cvat-logo-icon > svg {
+    -webkit-transform: scale(0.7);
+        -ms-transform: scale(0.7);
+            transform: scale(0.7);
 }
 
 .ant-btn.cvat-header-button {
@@ -101,51 +82,26 @@
 }
 
 
-.ant-menu.cvat-header-menu {
-    width: -webkit-fit-content;
-    width: -moz-fit-content;
-    width: fit-content;
+.ant-dropdown-trigger.cvat-header-menu-dropdown {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
     -webkit-box-align: center;
         -ms-flex-align: center;
             align-items: center;
-    border: 0px;
     border-left: 1px solid #c3c3c3;
-    height: 100%;
-    background: rgba(255,255,255,0);
+    padding: 0px 20px;
 }
 
-.ant-menu.cvat-header-menu > li.ant-menu-submenu {
-    border-bottom: unset;
-}
-
-
-.ant-menu.cvat-header-menu > li > div {
-    margin-top: 0px;
-}
-
-.anticon.cvat-header-user-icon {
-    display: contents;
-}
-
-.anticon.cvat-header-user-icon > img {
-    width: 17px;
-    margin: 16px;
+.anticon.cvat-header-account-icon > svg {
+    -webkit-transform: scale(0.4);
+        -ms-transform: scale(0.4);
+            transform: scale(0.4);
 }
 
 .anticon.cvat-header-menu-icon {
     margin-left: 16px;
     margin-right: 0px;
-}
-
-.anticon.cvat-header-menu-icon > img {
-    width: 14px;
-    -webkit-transform: rotate(-90deg);
-        -ms-transform: rotate(-90deg);
-            transform: rotate(-90deg);
-}
-
-.anticon.cvat-empty-tasks-icon > img {
-    width: 90px;
 }
 
 .cvat-title {
@@ -284,14 +240,17 @@
 }
 
 .cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) {
-    margin-right: 20px;
-    margin-top: 20px;
+    margin-right: 5px;
+    margin-top: 10px;
 }
 
 .cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) > div {
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
 }
 
 .cvat-task-item-menu-icon > img {
@@ -338,6 +297,10 @@
 
 .cvat-actions-menu > li:nth-child(2) > div > span {
     margin-right: 15px;
+}
+
+.cvat-actions-menu > .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow {
+    width: 0px;
 }
 
 .cvat-task-item-preview {
@@ -747,8 +710,10 @@ textarea.ant-input.cvat-raw-labels-viewer {
     overflow: hidden;
 }
 
-.anticon.cvat-empty-models-icon > img {
-    width: 90px;
+.cvat-menu-icon {
+    -webkit-transform: scale(0.5);
+        -ms-transform: scale(0.5);
+            transform: scale(0.5);
 }
 
 .cvat-create-model-form-wrapper {
@@ -815,4 +780,218 @@ textarea.ant-input.cvat-raw-labels-viewer {
 
 #cvat-create-model-button {
     padding: 0 30px;
+}
+
+/* Annotation view */
+.cvat-annotation-page.ant-layout {
+    height: 100%
+}
+
+.ant-layout-header.cvat-annotation-page-header {
+    background-color: #F1F1F1;
+    border-bottom: 1px solid #D7D7D7;
+    height: 54px;
+    padding: 0px;
+}
+
+.cvat-annotation-header-left-group {
+    height: 100%;
+}
+
+.cvat-annotation-header-left-group > div {
+    padding: 0px;
+    width: 54px;
+    height: 54px;
+    float: left;
+    text-align: center;
+}
+
+.cvat-annotation-header-left-group > div:first-child {
+    -webkit-filter: invert(0.9);
+            filter: invert(0.9);
+    background: white;
+    border-radius: 0px;
+    width: 70px;
+}
+
+.cvat-annotation-header-left-group > div > * {
+    display: block;
+    line-height: 0px;
+}
+
+.cvat-annotation-header-left-group > div > span {
+    font-size: 10px;
+}
+
+.cvat-annotation-header-left-group > div > i {
+    -webkit-transform: scale(0.8);
+        -ms-transform: scale(0.8);
+            transform: scale(0.8);
+    padding: 3px;
+}
+
+.cvat-annotation-header-left-group > div:hover > i {
+    -webkit-transform: scale(0.9);
+        -ms-transform: scale(0.9);
+            transform: scale(0.9);
+}
+
+.cvat-annotation-header-left-group > div:active > i {
+    -webkit-transform: scale(0.8);
+        -ms-transform: scale(0.8);
+            transform: scale(0.8);
+}
+
+.cvat-annotation-header-player-group > div {
+    height: 54px;
+}
+
+.cvat-annotation-header-player-buttons {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+    position: relative;
+    height: 100%;
+    margin-right: 10px;
+}
+
+.cvat-annotation-header-player-buttons > i {
+    -webkit-transform: scale(0.6);
+    -ms-transform: scale(0.6);
+        transform: scale(0.6);
+}
+
+.cvat-annotation-header-player-buttons > i:hover {
+    -webkit-transform: scale(0.7);
+    -ms-transform: scale(0.7);
+        transform: scale(0.7);
+}
+
+.cvat-annotation-header-player-buttons > i:active {
+    -webkit-transform: scale(0.6);
+    -ms-transform: scale(0.6);
+        transform: scale(0.6);
+}
+
+.cvat-annotation-header-player-controls {
+    position: relative;
+    height: 100%;
+    line-height: 27px;
+}
+
+.cvat-annotation-header-player-controls > div {
+    position: relative;
+    height: 50%;
+}
+
+.cvat-annotation-header-player-slider {
+    width: 350px;
+}
+
+.cvat-annotation-header-player-slider > .ant-slider-rail {
+    background-color: #979797;
+}
+
+.cvat-annotation-header-filename-wrapper {
+    max-width: 180px;
+    overflow: hidden;
+    -o-text-overflow: ellipsis;
+       text-overflow: ellipsis;
+}
+
+.cvat-annotation-header-frame-selector {
+    width: 5em;
+    margin-right: 0.5em;
+}
+
+.cvat-annotation-header-right-group {
+    height: 100%;
+}
+
+.cvat-annotation-header-right-group > div {
+    height: 54px;
+    float: left;
+    text-align: center;
+    margin-right: 20px;
+}
+
+.cvat-annotation-header-right-group > div:not(:nth-child(3)) > * {
+    display: block;
+    line-height: 0px;
+}
+
+.cvat-annotation-header-right-group > div > span {
+    font-size: 10px;
+}
+
+.cvat-annotation-header-right-group > div > i {
+    -webkit-transform: scale(0.8);
+        -ms-transform: scale(0.8);
+            transform: scale(0.8);
+    padding: 3px;
+}
+
+.cvat-annotation-header-right-group > div:hover > i {
+    -webkit-transform: scale(0.9);
+        -ms-transform: scale(0.9);
+            transform: scale(0.9);
+}
+
+.cvat-annotation-header-right-group > div:active > i {
+    -webkit-transform: scale(0.8);
+        -ms-transform: scale(0.8);
+            transform: scale(0.8);
+}
+
+.cvat-annotation-header-workspace-selector {
+    width: 150px;
+}
+
+.cvat-annotation-page-controls-sidebar {
+    background-color: #F1F1F1;
+    border-right: 1px solid #D7D7D7;
+}
+
+.cvat-annotation-page-objects-sidebar {
+    background-color: #F1F1F1;
+    border-left: 1px solid #D7D7D7;
+}
+
+.cvat-annotation-page-canvas-container {
+    background-color: white;
+}
+
+.cvat-annotation-page-objects-sidebar {
+    top: 0px;
+    right: 0px;
+    left: auto;
+    background: white;
+}
+
+.cvat-annotation-page-controls-sidebar > div > i {
+    border-radius: 3.3px;
+    -webkit-transform: scale(0.65);
+        -ms-transform: scale(0.65);
+            transform: scale(0.65);
+    padding: 2px;
+}
+
+.cvat-annotation-page-controls-sidebar > div > i:hover {
+    background: #D8D8D8;
+    -webkit-transform: scale(0.75);
+        -ms-transform: scale(0.75);
+            transform: scale(0.75);
+}
+
+.cvat-annotation-page-controls-sidebar > div > i:active {
+    background: #C3C3C3;
+}
+
+.cvat-annotation-page-controls-sidebar > div > i > svg {
+    -webkit-transform: scale(0.8);
+        -ms-transform: scale(0.8);
+            transform: scale(0.8);
 }

@@ -8,14 +8,14 @@ import {
     Icon,
 } from 'antd';
 
-export default function EmptyListComponent(): JSX.Element {
-    const emptyTasksIcon = (): JSX.Element => (<img alt='' src='/assets/empty-tasks-icon.svg' />);
+import { EmptyTasksIcon } from '../../icons';
 
+export default function EmptyListComponent(): JSX.Element {
     return (
         <div className='cvat-empty-task-list'>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
-                    <Icon className='cvat-empty-tasks-icon' component={emptyTasksIcon} />
+                    <Icon className='cvat-empty-tasks-icon' component={EmptyTasksIcon} />
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>

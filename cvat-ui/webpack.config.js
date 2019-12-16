@@ -52,6 +52,22 @@ module.exports = {
         }, {
             test: /\.(css|sass)$/,
             use: ['style-loader', 'css-loader']
+        }, {
+            test: /\.svg$/,
+            exclude: /node_modules/,
+            use: ['babel-loader',
+                {
+                    loader: 'react-svg-loader',
+                    query: {
+                        svgo: {
+                            plugins: [
+                                { pretty: true, },
+                                { cleanupIDs: false, }
+                            ],
+                        },
+                    },
+                }
+            ]
         }],
     },
     plugins: [

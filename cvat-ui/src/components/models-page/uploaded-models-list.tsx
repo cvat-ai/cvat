@@ -48,7 +48,7 @@ export default function UploadedModelsListComponent(props: Props): JSX.Element {
                         <Col span={4} xxl={3}>
                             <Text strong>Framework</Text>
                         </Col>
-                        <Col span={6} xxl={7}>
+                        <Col span={5} xxl={7}>
                             <Text strong>Name</Text>
                         </Col>
                         <Col span={3}>
@@ -60,7 +60,7 @@ export default function UploadedModelsListComponent(props: Props): JSX.Element {
                         <Col span={5}>
                             <Text strong>Labels</Text>
                         </Col>
-                        <Col span={2} />
+                        <Col span={3} xxl={2} />
                     </Row>
                     { items }
                 </Col>
