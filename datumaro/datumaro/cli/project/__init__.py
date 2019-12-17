@@ -68,6 +68,8 @@ def build_import_parser(parser):
         help="Overwrite existing files in the save directory")
     parser.add_argument('--copy', action='store_true',
         help="Copy the dataset instead of saving source links")
+    parser.add_argument('--skip-check', action='store_true',
+        help="Skip source checking")
     # parser.add_argument('extra_args', nargs=argparse.REMAINDER,
     #     help="Additional arguments for importer (pass '-- -h' for help)")
     return parser
@@ -99,7 +101,9 @@ def import_command(args):
     project.config.project_name = project_name
     project.config.project_dir = project_dir
 
-    dataset = project.make_dataset()
+    if not args.skip_check or args.copy:
+        log.info("Checking the dataset...")
+        dataset = project.make_dataset()
     if args.copy:
         log.info("Cloning data...")
         dataset.save(merge=True, save_images=True)
@@ -127,6 +131,8 @@ def build_export_parser(parser):
         help="Output format")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.add_argument('--overwrite', action='store_true',
+        help="Overwrite existing files in the save directory")
     parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
         help="Additional arguments for converter (pass '-- -h' for help)")
     return parser
@@ -135,7 +141,11 @@ def export_command(args):
     project = load_project(args.project_dir)
 
     dst_dir = osp.abspath(args.dst_dir)
-    os.makedirs(dst_dir, exist_ok=False)
+    if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
+        log.error("Directory '%s' already exists "
+            "(pass --overwrite to force creation)" % dst_dir)
+        return 1
+    os.makedirs(dst_dir, exist_ok=args.overwrite)
 
     project.make_dataset().export(
         save_dir=dst_dir,
