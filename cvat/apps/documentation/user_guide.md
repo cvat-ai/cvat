@@ -98,7 +98,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     -   The ``Constructor`` is a simple way to add and adjust labels. 
     To add a new label click the ``Add label`` button.
           
-        ![](static/documentation/images/image123.jpg)
+          ![](static/documentation/images/image123.jpg)
            
         You can set a name of the label in the ``Label name`` field. 
            
@@ -243,15 +243,15 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     ![](static/documentation/images/image131.jpg)
 
     - The next actions are available on this page:
-      1.    Change the task’s title.
-      1.    Open ``Actions`` menu.  
-      1.    Change issue tracker or open issue tracker if it is specified.
-      1.    Change labels.
-      You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
-      By clicking ``Copy`` you will copy the labels to the clipboard.
-      1.    Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or 
-      choose the right person out of the dropdown list.
-      1.    ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
+        1.    Change the task’s title.
+        1.    Open ``Actions`` menu.  
+        1.    Change issue tracker or open issue tracker if it is specified.
+        1.    Change labels.
+        You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
+        By clicking ``Copy`` you will copy the labels to the clipboard.
+        1.    Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or 
+        choose the right person out of the dropdown list.
+        1.    ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
             - Jobs name whit a hyperlink to it.
             - Frames — the frame interval. 
             - A status of the job. The status is specified by the user in the menu inside the job. 
