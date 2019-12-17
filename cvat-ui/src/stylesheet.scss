@@ -404,6 +404,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     display: flex;
     overflow-y: auto;
     min-height: 9em;
+    flex-wrap: wrap;
 }
 
 .cvat-constructor-viewer-item {

@@ -1,3 +1,4 @@
+/* eslint-disable */
 module.exports = {
     parser: false,
     plugins: {
