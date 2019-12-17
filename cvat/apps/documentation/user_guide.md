@@ -100,13 +100,13 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
           
           ![](static/documentation/images/image123.jpg)
            
-        You can set a name of the label in the ``Label name`` field. 
+          You can set a name of the label in the ``Label name`` field. 
            
-        ![](static/documentation/images/image124.jpg) 
+          ![](static/documentation/images/image124.jpg) 
            
-        If necessary you can add an attribute and set its properties by clicking ``Add an attribute``: 
+          If necessary you can add an attribute and set its properties by clicking ``Add an attribute``: 
          
-        ![](static/documentation/images/image125.jpg)
+          ![](static/documentation/images/image125.jpg)
 
           1.  Set the attribute’s name. 
           1.  Choose the way to display the attribute: 
@@ -123,12 +123,12 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
           1.  Checkbox ``Mutable`` determines if an attribute would be changed frame to frame. 
           1.  You can delete the attribute by clicking the close button (x). 
  
-        Click the ``Continue`` button to add more labels. 
-        If you need to cancel adding a label - press the ``Cancel`` button. 
-        After all the necessary labels are added click the ``Done`` button.
+          Click the ``Continue`` button to add more labels. 
+          If you need to cancel adding a label - press the ``Cancel`` button. 
+          After all the necessary labels are added click the ``Done`` button.
      
-        After clicking ``Done`` the added labels would be displayed as separate elements of different colour. 
-        You can edit or delete labels by clicking ``Update attributes`` or ``Delete label``. 
+          After clicking ``Done`` the added labels would be displayed as separate elements of different colour. 
+          You can edit or delete labels by clicking ``Update attributes`` or ``Delete label``. 
     -   The ``Raw`` is a way of working with labels for an advanced user. 
     Raw presents label data in _json_ format with an option of editing and copying labels as a text. 
     The ``Done`` button applies the changes and the ``Reset`` button cancels the changes.  
@@ -243,15 +243,15 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     ![](static/documentation/images/image131.jpg)
 
     - The next actions are available on this page:
-       1.   Change the task’s title.
-       1.   Open ``Actions`` menu.  
-       1.   Change issue tracker or open issue tracker if it is specified.
-       1.   Change labels.
-       You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
-       By clicking ``Copy`` you will copy the labels to the clipboard.
-       1.   Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or 
-       choose the right person out of the dropdown list.
-       1.   ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
+      1.    Change the task’s title.
+      1.    Open ``Actions`` menu.  
+      1.    Change issue tracker or open issue tracker if it is specified.
+      1.    Change labels.
+      You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
+      By clicking ``Copy`` you will copy the labels to the clipboard.
+      1.    Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or 
+      choose the right person out of the dropdown list.
+      1.    ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
             - Jobs name whit a hyperlink to it.
             - Frames — the frame interval. 
             - A status of the job. The status is specified by the user in the menu inside the job. 
