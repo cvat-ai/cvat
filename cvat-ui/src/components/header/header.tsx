@@ -5,93 +5,154 @@ import { withRouter } from 'react-router-dom';
 
 import {
     Layout,
-    Radio,
     Icon,
     Button,
     Menu,
-    Modal,
+    Dropdown,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
 
 import getCore from '../../core';
+import {
+    CVATLogo,
+    AccountIcon,
+} from '../../icons';
 
 const core = getCore();
+const serverHost = core.config.backendAPI.slice(0, -7);
 
 interface HeaderContainerProps {
     onLogout: () => void;
+    logoutFetching: boolean;
     installedAnalytics: boolean;
     installedAutoAnnotation: boolean;
+    installedTFAnnotation: boolean;
+    installedTFSegmentation: boolean;
     username: string;
-    logoutError: string;
 }
 
-function HeaderContainer(props: HeaderContainerProps & RouteComponentProps) {
-    const cvatLogo = () => (<img src='/assets/cvat-logo.svg'/>);
-    const userLogo = () => (<img src='/assets/icon-account.svg' />);
+type Props = HeaderContainerProps & RouteComponentProps;
 
-    if (props.logoutError) {
-        Modal.error({
-            title: 'Could not logout',
-            content: `${props.logoutError}`,
-        });
-    }
+function HeaderContainer(props: Props): JSX.Element {
+    const {
+        installedTFSegmentation,
+        installedAutoAnnotation,
+        installedTFAnnotation,
+        installedAnalytics,
+        username,
+        onLogout,
+        logoutFetching,
+    } = props;
 
-    let activeTab = null;
+    const renderModels = installedAutoAnnotation
+        || installedTFAnnotation
+        || installedTFSegmentation;
 
-    if (props.history.location.pathname === '/tasks') {
-        activeTab = 'tasks';
-    } else if (props.history.location.pathname === '/models') {
-        activeTab = 'models';
-    }
+    const menu = (
+        <Menu className='cvat-header-menu' mode='vertical'>
+            <Menu.Item>
+                <Icon type='setting' />
+                Settings
+            </Menu.Item>
+            <Menu.Item>
+                <Icon type='info-circle' />
+                About
+            </Menu.Item>
+            <Menu.Item
+                onClick={onLogout}
+                disabled={logoutFetching}
+            >
+                {logoutFetching ? <Icon type='loading' /> : <Icon type='logout' />}
+                Logout
+            </Menu.Item>
+
+        </Menu>
+    );
 
     return (
         <Layout.Header className='cvat-header'>
             <div className='cvat-left-header'>
-                <Icon className='cvat-logo-icon' component={cvatLogo}/>
+                <Icon className='cvat-logo-icon' component={CVATLogo} />
 
-                <Radio.Group size='default' value={activeTab} className='cvat-header-buttons'>
-                    <Radio.Button value='tasks'onChange={
-                        () => props.history.push('/tasks')
-                    }> Tasks </Radio.Button>
-                    { props.installedAutoAnnotation ?
-                        <Radio.Button value='models' onChange={
-                            () => props.history.push('/models')
-                        }> Models </Radio.Button> : null
+                <Button
+                    className='cvat-header-button'
+                    type='link'
+                    value='tasks'
+                    onClick={
+                        (): void => props.history.push('/tasks?page=1')
                     }
-                    { props.installedAnalytics ?
-                        <Button className='cvat-header-button' type='link' onClick={
-                            () => {
-                                const serverHost = core.config.backendAPI.slice(0, -7);
-                                window.open(`${serverHost}/analytics/app/kibana`, '_blank');
+                >
+                    Tasks
+                </Button>
+                { renderModels
+                    && (
+                        <Button
+                            className='cvat-header-button'
+                            type='link'
+                            value='models'
+                            onClick={
+                                (): void => props.history.push('/models')
                             }
-                        }> Analytics </Button> : null
-                    }
-                </Radio.Group>
+                        >
+                            Models
+                        </Button>
+                    )
+                }
+                { installedAnalytics
+                    && (
+                        <Button
+                            className='cvat-header-button'
+                            type='link'
+                            onClick={
+                                (): void => {
+                                    // false positive
+                                    // eslint-disable-next-line
+                                    window.open(`${serverHost}/analytics/app/kibana`, '_blank');
+                                }
+                            }
+                        >
+                            Analytics
+                        </Button>
+                    )
+                }
             </div>
             <div className='cvat-right-header'>
-                <Button className='cvat-header-button' type='link' onClick={
-                        () => window.open('https://github.com/opencv/cvat', '_blank')
-                }> <Icon type='github' /> GitHub </Button>
-                <Button className='cvat-header-button' type='link' onClick={
-                        () => {
-                            const serverHost = core.config.backendAPI.slice(0, -7);
+                <Button
+                    className='cvat-header-button'
+                    type='link'
+                    onClick={
+                        (): void => {
+                            window.open('https://github.com/opencv/cvat', '_blank');
+                        }
+                    }
+                >
+                    <Icon type='github' />
+                    <Text className='cvat-black-color'>GitHub</Text>
+                </Button>
+                <Button
+                    className='cvat-header-button'
+                    type='link'
+                    onClick={
+                        (): void => {
+                            // false positive
+                            // eslint-disable-next-line
                             window.open(`${serverHost}/documentation/user_guide.html`, '_blank')
                         }
-                }> <Icon type='question-circle' /> Help </Button>
-                <Menu className='cvat-header-menu' subMenuCloseDelay={0.1} mode='horizontal'>
-                    <Menu.SubMenu title={
-                        <span>
-                            <Icon className='cvat-header-user-icon' component={userLogo} />
-                            <span>
-                                <Text strong>{props.username}</Text>
-                                <Icon className='cvat-header-menu-icon' type='caret-down'/>
-                            </span>
-                        </span>
-                    }>
-                        <Menu.Item onClick={props.onLogout}>Logout</Menu.Item>
-                    </Menu.SubMenu>
-                </Menu>
+                    }
+                >
+                    <Icon type='question-circle' />
+                    Help
+                </Button>
+                <Dropdown overlay={menu} className='cvat-header-menu-dropdown'>
+                    <span>
+                        <Icon className='cvat-header-account-icon' component={AccountIcon} />
+                        <Text strong>
+                            {username.length > 14 ? `${username.slice(0, 10)} ...` : username}
+                        </Text>
+                        <Icon className='cvat-header-menu-icon' type='caret-down' />
+                    </span>
+                </Dropdown>
             </div>
         </Layout.Header>
     );

@@ -52,6 +52,22 @@ module.exports = {
         }, {
             test: /\.(css|sass)$/,
             use: ['style-loader', 'css-loader']
+        }, {
+            test: /\.svg$/,
+            exclude: /node_modules/,
+            use: ['babel-loader',
+                {
+                    loader: 'react-svg-loader',
+                    query: {
+                        svgo: {
+                            plugins: [
+                                { pretty: true, },
+                                { cleanupIDs: false, }
+                            ],
+                        },
+                    },
+                }
+            ]
         }],
     },
     plugins: [
@@ -59,7 +75,9 @@ module.exports = {
           template: "./src/index.html",
           inject: false,
         }),
-        new Dotenv(),
+        new Dotenv({
+            systemvars: true,
+        }),
     ],
     node: { fs: 'empty' },
 };

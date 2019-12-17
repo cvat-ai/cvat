@@ -1,35 +1,32 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { loginAsync } from '../../actions/auth-actions';
-import { CombinedState } from '../../reducers/root-reducer';
 import LoginPageComponent from '../../components/login-page/login-page';
+import { CombinedState } from '../../reducers/interfaces';
 
 interface StateToProps {
-    loginError: any;
+    fetching: boolean;
 }
 
 interface DispatchToProps {
-    login(username: string, password: string): void;
+    onLogin(username: string, password: string): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     return {
-        loginError: state.auth.loginError,
+        fetching: state.auth.fetching,
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        login: (...args) => dispatch(loginAsync(...args)),
+        onLogin: (...args): void => dispatch(loginAsync(...args)),
     };
 }
 
-function LoginPageContainer(props: StateToProps & DispatchToProps) {
+function LoginPageContainer(props: DispatchToProps & StateToProps): JSX.Element {
     return (
-        <LoginPageComponent
-            onLogin={props.login}
-            loginError={props.loginError ? props.loginError.toString() : ''}
-        />
+        <LoginPageComponent {...props} />
     );
 }
 

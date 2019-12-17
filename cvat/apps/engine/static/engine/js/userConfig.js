@@ -24,7 +24,7 @@ class Config {
 
             switch_occluded_property: {
                 value: 'q,/'.split(','),
-                view_value: 'Q or Num Devision',
+                view_value: 'Q or Num Division',
                 description: 'switch occluded property for active shape',
             },
 
@@ -67,7 +67,7 @@ class Config {
             change_shape_color: {
                 value: 'enter',
                 view_value: 'Enter',
-                description: 'change color for highligted shape',
+                description: 'change color for highlighted shape',
             },
 
             change_player_brightness: {
@@ -211,7 +211,7 @@ class Config {
             switch_paste: {
                 value: 'ctrl+v',
                 view_value: 'Ctrl + V',
-                description: 'swich paste mode',
+                description: 'switch paste mode',
             },
 
             switch_aam_mode: {
@@ -332,7 +332,7 @@ class Config {
 
             reset_zoom: {
                 value: 'false',
-                description: 'reset frame zoom when move beetween the frames',
+                description: 'reset frame zoom when move between the frames',
             },
 
             enable_auto_save: {

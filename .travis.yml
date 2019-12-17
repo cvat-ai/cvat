@@ -12,5 +12,6 @@ before_script:
   - docker-compose -f docker-compose.yml -f docker-compose.ci.yml up --build -d
 
 script:
-  - docker exec -it cvat /bin/bash -c 'python3 manage.py test cvat/apps/engine utils/cli'
+  - docker exec -it cvat /bin/bash -c 'python3 manage.py test cvat/apps utils/cli'
+  - docker exec -it cvat /bin/bash -c 'python3 manage.py test datumaro/'
   - docker exec -it cvat /bin/bash -c 'cd cvat-core && npm install && npm run test && npm run coveralls'

@@ -10,12 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to [get basic information about users without admin permissions](
 https://github.com/opencv/cvat/issues/750).
 - Changed REST API: removed PUT and added DELETE methods for /api/v1/users/ID.
-- Added Mask-RCNN Auto Annotation Script in OpenVINO format
-- Added Yolo Auto Annotation Script
+- Mask-RCNN Auto Annotation Script in OpenVINO format
+- Yolo Auto Annotation Script
 - Auto segmentation using Mask_RCNN component (Keras+Tensorflow Mask R-CNN Segmentation)
+- Added MOT CSV format support
+- Ability to dump/load annotations in LabelMe format from UI
+- REST API to export an annotation task (images + annotations)
+- Datumaro is an experimental framework to build, analyze, debug and visualize datasets for DL algorithms
+- Text Detection Auto Annoation Script in OpenVINO format for version 4
+- Added in OpenVINO Semantic Segmentation for roads
+- Ability to visualize labels when using Auto Annotation runner
 
 ### Changed
--
+- page_size parameter for all REST API methods
+- React & Redux & Antd based dashboard
+- Yolov3 interpretation script fix and changes to mapping.json
 
 ### Deprecated
 -
@@ -25,6 +34,7 @@ https://github.com/opencv/cvat/issues/750).
 
 ### Fixed
 - [Mask problem on coco json style](https://github.com/opencv/cvat/issues/718)
+- [Exception in Git plugin](https://github.com/opencv/cvat/issues/826)
 
 ### Security
 -

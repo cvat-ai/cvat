@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Intel Corporation
+# Copyright (C) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
 
@@ -32,8 +32,9 @@ INTERNAL_IPS = ['127.0.0.1']
 
 try:
     sys.path.append(BASE_DIR)
-    from keys.secret_key import SECRET_KEY
+    from keys.secret_key import SECRET_KEY # pylint: disable=unused-import
 except ImportError:
+
     from django.utils.crypto import get_random_string
     keys_dir = os.path.join(BASE_DIR, 'keys')
     if not os.path.isdir(keys_dir):
@@ -93,10 +94,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'cvat.apps.engine',
-    'cvat.apps.dashboard',
     'cvat.apps.authentication',
     'cvat.apps.documentation',
     'cvat.apps.git',
+    'cvat.apps.dataset_manager',
     'cvat.apps.annotation',
     'django_rq',
     'compressor',
@@ -125,7 +126,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'cvat.apps.authentication.auth.TokenAuthentication',
         'cvat.apps.authentication.auth.SignatureAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication'
@@ -138,7 +139,7 @@ REST_FRAMEWORK = {
     # Need to add 'api-docs' here as a workaround for include_docs_urls.
     'ALLOWED_VERSIONS': ('v1', 'api-docs'),
     'DEFAULT_PAGINATION_CLASS':
-        'rest_framework.pagination.PageNumberPagination',
+        'cvat.apps.engine.pagination.CustomPagination',
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': (
         'rest_framework.filters.SearchFilter',
@@ -159,7 +160,7 @@ if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
 if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
     INSTALLED_APPS += ['cvat.apps.auto_annotation']
 
-if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
+if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no') and os.environ.get('REID_MODEL_DIR', ''):
     INSTALLED_APPS += ['cvat.apps.reid']
 
 if 'yes' == os.environ.get('WITH_DEXTR', 'no'):
@@ -175,13 +176,15 @@ if 'yes' == os.environ.get('AUTO_SEGMENTATION', 'no'):
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    # FIXME
+    # 'corsheaders.middleware.CorsPostCsrfMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dj_pagination.middleware.PaginationMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 # Cross-Origin Resource Sharing settings for CVAT UI
@@ -190,8 +193,12 @@ UI_HOST = os.environ.get('UI_HOST', 'localhost')
 UI_PORT = os.environ.get('UI_PORT', '3000')
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [UI_HOST]
-UI_URL = '{}://{}:{}'.format(UI_SCHEME, UI_HOST, UI_PORT)
+UI_URL = '{}://{}'.format(UI_SCHEME, UI_HOST)
+if len(UI_URL):
+    UI_URL += ':{}'.format(UI_PORT)
+
 CORS_ORIGIN_WHITELIST = [UI_URL]
+CORS_REPLACE_HTTPS_REFERER = True
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',

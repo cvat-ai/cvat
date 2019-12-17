@@ -11,7 +11,7 @@ import Text from 'antd/lib/typography/Text';
 interface DumperItemComponentProps {
     taskInstance: any;
     dumper: any;
-    dumpActivities: string[] | null;
+    dumpActivity: string | null;
     onDumpAnnotation: (task: any, dumper: any) => void;
 }
 
@@ -20,29 +20,31 @@ function isDefaultFormat(dumperName: string, taskMode: string): boolean {
     || (dumperName === 'CVAT XML 1.1 for images' && taskMode === 'annotation');
 }
 
-export default function DumperItemComponent(props: DumperItemComponentProps) {
-    const task = props.taskInstance;
-    const { mode } = task;
+export default function DumperItemComponent(props: DumperItemComponentProps): JSX.Element {
+    const {
+        taskInstance,
+        dumpActivity,
+    } = props;
+    const { mode } = taskInstance;
     const { dumper } = props;
-
-    const dumpingWithThisDumper = (props.dumpActivities || [])
-        .filter((_dumper: string) => _dumper === dumper.name)[0];
-
-    const pending = !!dumpingWithThisDumper;
+    const pending = !!dumpActivity;
 
     return (
-        <Menu.Item className='cvat-task-item-dump-submenu-item' key={dumper.name}>
-            <Button block={true} type='link' disabled={pending}
-                onClick={() => {
-                    props.onDumpAnnotation(task, dumper);
-                }}>
-                <Icon type='download'/>
+        <Menu.Item className='cvat-actions-menu-dump-submenu-item' key={dumper.name}>
+            <Button
+                block
+                type='link'
+                disabled={pending}
+                onClick={(): void => {
+                    props.onDumpAnnotation(taskInstance, dumper);
+                }}
+            >
+                <Icon type='download' />
                 <Text strong={isDefaultFormat(dumper.name, mode)}>
                     {dumper.name}
                 </Text>
-                {pending ? <Icon type='loading'/> : null}
+                {pending && <Icon type='loading' />}
             </Button>
         </Menu.Item>
     );
 }
-

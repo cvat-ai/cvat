@@ -3,25 +3,39 @@ import ReactDOM from 'react-dom';
 import { connect, Provider } from 'react-redux';
 
 import CVATApplication from './components/cvat-app';
-import createCVATStore from './store';
+
+import createRootReducer from './reducers/root-reducer';
+import createCVATStore, { getCVATStore } from './store';
 
 import { authorizedAsync } from './actions/auth-actions';
-import { gettingFormatsAsync } from './actions/formats-actions';
+import { getFormatsAsync } from './actions/formats-actions';
 import { checkPluginsAsync } from './actions/plugins-actions';
 import { getUsersAsync } from './actions/users-actions';
+import {
+    resetErrors,
+    resetMessages,
+} from './actions/notification-actions';
 
-import { CombinedState } from './reducers/root-reducer';
+import {
+    CombinedState,
+    NotificationsState,
+} from './reducers/interfaces';
 
-const cvatStore = createCVATStore();
+createCVATStore(createRootReducer);
+const cvatStore = getCVATStore();
 
 interface StateToProps {
     pluginsInitialized: boolean;
+    pluginsFetching: boolean;
     userInitialized: boolean;
     usersInitialized: boolean;
+    usersFetching: boolean;
     formatsInitialized: boolean;
-    gettingAuthError: any;
-    gettingFormatsError: any;
-    gettingUsersError: any;
+    formatsFetching: boolean;
+    installedAutoAnnotation: boolean;
+    installedTFSegmentation: boolean;
+    installedTFAnnotation: boolean;
+    notifications: NotificationsState;
     user: any;
 }
 
@@ -30,6 +44,8 @@ interface DispatchToProps {
     verifyAuthorized: () => void;
     loadUsers: () => void;
     initPlugins: () => void;
+    resetErrors: () => void;
+    resetMessages: () => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -39,43 +55,36 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const { users } = state;
 
     return {
-        pluginsInitialized: plugins.initialized,
         userInitialized: auth.initialized,
+        pluginsInitialized: plugins.initialized,
+        pluginsFetching: plugins.fetching,
         usersInitialized: users.initialized,
+        usersFetching: users.fetching,
         formatsInitialized: formats.initialized,
-        gettingAuthError: auth.authError,
-        gettingUsersError: users.gettingUsersError,
-        gettingFormatsError: formats.gettingFormatsError,
+        formatsFetching: formats.fetching,
+        installedAutoAnnotation: plugins.plugins.AUTO_ANNOTATION,
+        installedTFSegmentation: plugins.plugins.TF_SEGMENTATION,
+        installedTFAnnotation: plugins.plugins.TF_ANNOTATION,
+        notifications: { ...state.notifications },
         user: auth.user,
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        loadFormats: (): void => dispatch(gettingFormatsAsync()),
+        loadFormats: (): void => dispatch(getFormatsAsync()),
         verifyAuthorized: (): void => dispatch(authorizedAsync()),
         initPlugins: (): void => dispatch(checkPluginsAsync()),
         loadUsers: (): void => dispatch(getUsersAsync()),
+        resetErrors: (): void => dispatch(resetErrors()),
+        resetMessages: (): void => dispatch(resetMessages()),
     };
 }
 
-function reduxAppWrapper(props: StateToProps & DispatchToProps) {
+function reduxAppWrapper(props: StateToProps & DispatchToProps): JSX.Element {
     return (
-        <CVATApplication
-            initPlugins={props.initPlugins}
-            loadFormats={props.loadFormats}
-            loadUsers={props.loadUsers}
-            verifyAuthorized={props.verifyAuthorized}
-            pluginsInitialized={props.pluginsInitialized}
-            userInitialized={props.userInitialized}
-            usersInitialized={props.usersInitialized}
-            formatsInitialized={props.formatsInitialized}
-            gettingAuthError={props.gettingAuthError ? props.gettingAuthError.toString() : ''}
-            gettingFormatsError={props.gettingFormatsError ? props.gettingFormatsError.toString() : ''}
-            gettingUsersError={props.gettingUsersError ? props.gettingUsersError.toString() : ''}
-            user={props.user}
-        />
-    )
+        <CVATApplication {...props} />
+    );
 }
 
 const ReduxAppWrapper = connect(
@@ -86,8 +95,8 @@ const ReduxAppWrapper = connect(
 ReactDOM.render(
     (
         <Provider store={cvatStore}>
-            <ReduxAppWrapper/>
+            <ReduxAppWrapper />
         </Provider>
     ),
-    document.getElementById('root')
-)
+    document.getElementById('root'),
+);

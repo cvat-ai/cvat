@@ -12,47 +12,17 @@ import {
 import { FormComponentProps } from 'antd/lib/form/Form';
 
 import {
-    Attribute,
     Label,
-    equalArrayHead,
+    Attribute,
 } from './common';
-
-
 
 type Props = FormComponentProps & {
     labels: Label[];
     onSubmit: (labels: Label[]) => void;
-}
+};
 
-interface State {
-    labels: object[];
-    valid: boolean;
-}
-
-class RawViewer extends React.PureComponent<Props, State> {
-    public constructor(props: Props) {
-        super(props);
-
-        const labels = JSON.parse(JSON.stringify(this.props.labels));
-        for (const label of labels) {
-            for (const attr of label.attributes) {
-                if (attr.id < 0) {
-                    delete attr.id;
-                }
-            }
-
-            if (label.id < 0) {
-                delete label.id;
-            }
-        }
-
-        this.state = {
-            labels,
-            valid: true,
-        };
-    }
-
-    private validateLabels = (_: any, value: string, callback: any) => {
+class RawViewer extends React.PureComponent<Props> {
+    private validateLabels = (_: any, value: string, callback: any): void => {
         try {
             JSON.parse(value);
         } catch (error) {
@@ -60,50 +30,73 @@ class RawViewer extends React.PureComponent<Props, State> {
         }
 
         callback();
-    }
+    };
 
-    private handleSubmit = (e: React.FormEvent) => {
+    private handleSubmit = (e: React.FormEvent): void => {
+        const {
+            form,
+            onSubmit,
+        } = this.props;
+
         e.preventDefault();
-        this.props.form.validateFields((error, values) => {
+        form.validateFields((error, values): void => {
             if (!error) {
-                this.props.onSubmit(JSON.parse(values.labels));
+                onSubmit(JSON.parse(values.labels));
             }
         });
-    }
+    };
 
-    public render() {
-        const textLabels = JSON.stringify(this.state.labels, null, 2);
+    public render(): JSX.Element {
+        const { labels } = this.props;
+        const convertedLabels = labels.map((label: any): Label => (
+            {
+                ...label,
+                id: label.id < 0 ? undefined : label.id,
+                attributes: label.attributes.map((attribute: any): Attribute => (
+                    {
+                        ...attribute,
+                        id: attribute.id < 0 ? undefined : attribute.id,
+                    }
+                )),
+            }
+        ));
+
+        const textLabels = JSON.stringify(convertedLabels, null, 2);
+        const { form } = this.props;
 
         return (
             <Form onSubmit={this.handleSubmit}>
-                <Form.Item> {
-                    this.props.form.getFieldDecorator('labels', {
+                <Form.Item>
+                    {form.getFieldDecorator('labels', {
                         initialValue: textLabels,
                         rules: [{
                             validator: this.validateLabels,
-                        }]
-                    })( <Input.TextArea rows={5} className='cvat-raw-labels-viewer'/> )
-                } </Form.Item>
+                        }],
+                    })(<Input.TextArea rows={5} className='cvat-raw-labels-viewer' />)}
+                </Form.Item>
                 <Row type='flex' justify='start' align='middle'>
-                    <Col span={4}>
+                    <Col>
                         <Tooltip overlay='Save labels and return'>
                             <Button
-                                style={{width: '150px'}}
+                                style={{ width: '150px' }}
                                 type='primary'
                                 htmlType='submit'
-                            > Done </Button>
+                            >
+                                Done
+                            </Button>
                         </Tooltip>
                     </Col>
-                    <Col span={1}/>
-                    <Col span={4}>
+                    <Col offset={1}>
                         <Tooltip overlay='Do not save the label and return'>
                             <Button
-                                style={{width: '150px'}}
+                                style={{ width: '150px' }}
                                 type='danger'
-                                onClick={() => {
-                                    this.props.form.resetFields();
+                                onClick={(): void => {
+                                    form.resetFields();
                                 }}
-                            > Reset </Button>
+                            >
+                                Reset
+                            </Button>
                         </Tooltip>
                     </Col>
                 </Row>

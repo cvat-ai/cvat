@@ -4,11 +4,21 @@ import { SupportedPlugins } from '../reducers/interfaces';
 import PluginChecker from '../utils/plugin-checker';
 
 export enum PluginsActionTypes {
+    CHECK_PLUGINS = 'CHECK_PLUGINS',
     CHECKED_ALL_PLUGINS = 'CHECKED_ALL_PLUGINS'
 }
 
 interface PluginObjects {
     [plugin: string]: boolean;
+}
+
+function checkPlugins(): AnyAction {
+    const action = {
+        type: PluginsActionTypes.CHECK_PLUGINS,
+        payload: {},
+    };
+
+    return action;
 }
 
 function checkedAllPlugins(plugins: PluginObjects): AnyAction {
@@ -25,6 +35,7 @@ function checkedAllPlugins(plugins: PluginObjects): AnyAction {
 export function checkPluginsAsync():
 ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
+        dispatch(checkPlugins());
         const plugins: PluginObjects = {};
 
         const promises: Promise<boolean>[] = [];

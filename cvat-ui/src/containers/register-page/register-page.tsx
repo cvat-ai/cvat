@@ -1,38 +1,34 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { registerAsync } from '../../actions/auth-actions';
-import { CombinedState } from '../../reducers/root-reducer';
 import RegisterPageComponent from '../../components/register-page/register-page';
+import { CombinedState } from '../../reducers/interfaces';
 
 interface StateToProps {
-    registerError: any;
+    fetching: boolean;
 }
 
 interface DispatchToProps {
-    register: (username: string, firstName: string,
+    onRegister: (username: string, firstName: string,
         lastName: string, email: string,
         password1: string, password2: string) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     return {
-        registerError: state.auth.registerError,
+        fetching: state.auth.fetching,
     };
 }
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        register: (...args) => dispatch(registerAsync(...args))
-    }
+        onRegister: (...args): void => dispatch(registerAsync(...args)),
+    };
 }
 
-type RegisterPageContainerProps = StateToProps & DispatchToProps;
-function RegisterPageContainer(props: RegisterPageContainerProps) {
+function RegisterPageContainer(props: StateToProps & DispatchToProps): JSX.Element {
     return (
-        <RegisterPageComponent
-            registerError={props.registerError ? props.registerError.toString() : ''}
-            onRegister={props.register}
-        />
+        <RegisterPageComponent {...props} />
     );
 }
 

@@ -6,38 +6,53 @@ import getCore from '../core';
 const cvat = getCore();
 
 export enum FormatsActionTypes {
-    GETTING_FORMATS_SUCCESS = 'GETTING_FORMATS_SUCCESS',
-    GETTING_FORMATS_FAILED = 'GETTING_FORMATS_FAILED',
+    GET_FORMATS = 'GET_FORMATS',
+    GET_FORMATS_SUCCESS = 'GET_FORMATS_SUCCESS',
+    GET_FORMATS_FAILED = 'GET_FORMATS_FAILED',
 }
 
-export function gettingFormatsSuccess(formats: any): AnyAction {
+function getFormats(): AnyAction {
     return {
-        type: FormatsActionTypes.GETTING_FORMATS_SUCCESS,
+        type: FormatsActionTypes.GET_FORMATS,
+        payload: {},
+    };
+}
+
+function getFormatsSuccess(
+    annotationFormats: any[],
+    datasetFormats: any[],
+): AnyAction {
+    return {
+        type: FormatsActionTypes.GET_FORMATS_SUCCESS,
         payload: {
-            formats,
+            annotationFormats,
+            datasetFormats,
         },
     };
 }
 
-export function gettingFormatsFailed(error: any): AnyAction {
+function getFormatsFailed(error: any): AnyAction {
     return {
-        type: FormatsActionTypes.GETTING_FORMATS_FAILED,
+        type: FormatsActionTypes.GET_FORMATS_FAILED,
         payload: {
             error,
         },
     };
 }
 
-export function gettingFormatsAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
+export function getFormatsAsync(): ThunkAction<Promise<void>, {}, {}, AnyAction> {
     return async (dispatch: ActionCreator<Dispatch>): Promise<void> => {
-        let formats = null;
+        dispatch(getFormats());
+        let annotationFormats = null;
+        let datasetFormats = null;
         try {
-            formats = await cvat.server.formats();
+            annotationFormats = await cvat.server.formats();
+            datasetFormats = await cvat.server.datasetFormats();
         } catch (error) {
-            dispatch(gettingFormatsFailed(error));
+            dispatch(getFormatsFailed(error));
             return;
         }
 
-        dispatch(gettingFormatsSuccess(formats));
+        dispatch(getFormatsSuccess(annotationFormats, datasetFormats));
     };
 }

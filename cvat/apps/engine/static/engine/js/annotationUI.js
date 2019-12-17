@@ -384,6 +384,13 @@ function setupMenu(job, task, shapeCollectionModel,
         $('#settingsWindow').removeClass('hidden');
     });
 
+    $('#openTaskButton').on('click', () => {
+        const win = window.open(
+            `${window.UI_URL}/tasks/${window.cvat.job.task_id}`, '_blank'
+        );
+        win.focus();
+    });
+
     $('#settingsButton').attr('title', `
         ${shortkeys.open_settings.view_value} - ${shortkeys.open_settings.description}`);
 

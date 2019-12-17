@@ -6,6 +6,7 @@ import {
     Pagination,
 } from 'antd';
 
+import ModelRunnerModalContainer from '../../containers/model-runner-dialog/model-runner-dialog';
 import TaskItem from '../../containers/tasks-page/task-item';
 
 export interface ContentListProps {
@@ -15,10 +16,15 @@ export interface ContentListProps {
     numberOfTasks: number;
 }
 
-export default function TaskListComponent(props: ContentListProps) {
-    const tasks = props.currentTasksIndexes;
-    const taskViews = tasks.map(
-        (tid, id) => <TaskItem idx={id} taskID={tid} key={tid}/>
+export default function TaskListComponent(props: ContentListProps): JSX.Element {
+    const {
+        currentTasksIndexes,
+        numberOfTasks,
+        currentPage,
+        onSwitchPage,
+    } = props;
+    const taskViews = currentTasksIndexes.map(
+        (tid, id): JSX.Element => <TaskItem idx={id} taskID={tid} key={tid} />,
     );
 
     return (
@@ -32,14 +38,15 @@ export default function TaskListComponent(props: ContentListProps) {
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination
                         className='cvat-tasks-pagination'
-                        onChange={props.onSwitchPage}
-                        total={props.numberOfTasks}
+                        onChange={onSwitchPage}
+                        total={numberOfTasks}
                         pageSize={10}
-                        current={props.currentPage}
+                        current={currentPage}
                         showQuickJumper
                     />
                 </Col>
             </Row>
+            <ModelRunnerModalContainer />
         </>
-    )
+    );
 }
