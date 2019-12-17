@@ -6,8 +6,6 @@ hr {
 }
 
 .cvat-header.ant-layout-header {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
     padding-left: 0px;
     padding-right: 0px;
@@ -18,40 +16,24 @@ hr {
 
 .cvat-left-header {
     width: 50%;
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-pack: start;
-        -ms-flex-pack: start;
-            justify-content: flex-start;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    justify-content: flex-start;
+    align-items: center;
 }
 
 .cvat-right-header {
     width: 50%;
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-pack: end;
-        -ms-flex-pack: end;
-            justify-content: flex-end;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    justify-content: flex-end;
+    align-items: center;
 }
 
 .cvat-flex {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
 }
 
 .cvat-flex-center {
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    align-items: center;
 }
 
 .cvat-black-color {
@@ -70,9 +52,7 @@ hr {
 }
 
 .anticon.cvat-logo-icon > svg {
-    -webkit-transform: scale(0.7);
-        -ms-transform: scale(0.7);
-            transform: scale(0.7);
+    transform: scale(0.7);
 }
 
 .ant-btn.cvat-header-button {
@@ -83,20 +63,14 @@ hr {
 
 
 .ant-dropdown-trigger.cvat-header-menu-dropdown {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    align-items: center;
     border-left: 1px solid #c3c3c3;
     padding: 0px 20px;
 }
 
 .anticon.cvat-header-account-icon > svg {
-    -webkit-transform: scale(0.4);
-        -ms-transform: scale(0.4);
-            transform: scale(0.4);
+    transform: scale(0.4);
 }
 
 .anticon.cvat-header-menu-icon {
@@ -124,18 +98,12 @@ hr {
 }
 
 .cvat-tasks-page > div:nth-child(2) > div:nth-child(1) {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
 }
 
 .cvat-tasks-page > div:nth-child(2) > div:nth-child(2) {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-pack: end;
-        -ms-flex-pack: end;
-            justify-content: flex-end;
+    justify-content: flex-end;
 }
 
 .cvat-tasks-page > div:nth-child(2) > div:nth-child(1) > span:nth-child(2) {
@@ -144,10 +112,7 @@ hr {
 }
 
 .cvat-tasks-page > span.ant-typography {
-    -webkit-user-select: none;
-       -moz-user-select: none;
-        -ms-user-select: none;
-            user-select: none;
+    user-select: none;
 }
 
 .cvat-tasks-page {
@@ -204,12 +169,8 @@ hr {
 }
 
 .ant-pagination.cvat-tasks-pagination {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-pack: center;
-        -ms-flex-pack: center;
-            justify-content: center;
+    justify-content: center;
 }
 
 .cvat-task-list {
@@ -245,12 +206,8 @@ hr {
 }
 
 .cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) > div {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    align-items: center;
 }
 
 .cvat-task-item-menu-icon > img {
@@ -258,13 +215,11 @@ hr {
 }
 
 .cvat-task-item-menu-icon > img:hover {
-    -webkit-filter: invert(0.5);
-            filter: invert(0.5);
+    filter: invert(0.5);
 }
 
 .ant-menu.cvat-actions-menu {
-    -webkit-box-shadow: 0 0 17px rgba(0,0,0,0.2);
-            box-shadow: 0 0 17px rgba(0,0,0,0.2);
+    box-shadow: 0 0 17px rgba(0,0,0,0.2);
 }
 
 .cvat-actions-menu > hr {
@@ -309,12 +264,8 @@ hr {
 }
 
 .cvat-task-item-preview-wrapper {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-pack: center;
-        -ms-flex-pack: center;
-            justify-content: center;
+    justify-content: center;
     overflow: hidden;
     margin: 20px;
     margin-top: 0px;
@@ -373,10 +324,7 @@ hr {
 }
 
 .cvat-dataset-repository-url > .ant-tag-red {
-    -webkit-user-select: none;
-       -moz-user-select: none;
-        -ms-user-select: none;
-            user-select: none;
+    user-select: none;
     opacity: 0.4;
 }
 
@@ -399,8 +347,6 @@ hr {
 }
 
 .cvat-task-job-list > div:nth-child(1) > div:nth-child(1) {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
 }
 
@@ -415,12 +361,8 @@ hr {
 }
 
 .cvat-task-preview-wrapper {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-pack: start;
-        -ms-flex-pack: start;
-            justify-content: start;
+    justify-content: flex-start;
     overflow: hidden;
     margin-bottom: 20px;
 }
@@ -436,8 +378,7 @@ hr {
 
 textarea.ant-input.cvat-raw-labels-viewer {
     border-color: #d9d9d9;
-    -webkit-box-shadow: none;
-            box-shadow: none;
+    box-shadow: none;
     border-top: none;
     border-radius: 0px 0px 5px 5px;
     min-height: 9em;
@@ -446,50 +387,35 @@ textarea.ant-input.cvat-raw-labels-viewer {
 
 .cvat-raw-labels-viewer:focus {
     border-color: #d9d9d9;
-    -webkit-box-shadow: none;
-            box-shadow: none;
+    box-shadow: none;
 }
 
 .cvat-raw-labels-viewer:hover {
     border-color: #d9d9d9;
-    -webkit-box-shadow: none;
-            box-shadow: none;
+    box-shadow: none;
 }
 
 .cvat-constructor-viewer {
     border: 1px solid #d9d9d9;
-    -webkit-box-shadow: none;
-            box-shadow: none;
+    box-shadow: none;
     border-top: none;
     border-radius: 0px 0px 5px 5px;
     padding: 5px;
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -ms-flex-wrap: wrap;
-        flex-wrap: wrap;
     overflow-y: auto;
     min-height: 9em;
+    flex-wrap: wrap;
 }
 
 .cvat-constructor-viewer-item {
-    height: -webkit-fit-content;
-    height: -moz-fit-content;
     height: fit-content;
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    align-items: center;
     padding: 2px 10px;
     border-radius: 2px;
     margin: 2px;
     margin-left: 8px;
-    -webkit-user-select: none;
-       -moz-user-select: none;
-        -ms-user-select: none;
-            user-select: none;
+    user-select: none;
     border: 1px solid rgba(0, 0, 0, 0);
     opacity: 0.6;
 }
@@ -509,23 +435,14 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-constructor-viewer-new-item {
-    height: -webkit-fit-content;
-    height: -moz-fit-content;
     height: fit-content;
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    align-items: center;
     padding: 2px 10px;
     border-radius: 2px;
     margin: 2px;
     margin-left: 8px;
-    -webkit-user-select: none;
-       -moz-user-select: none;
-        -ms-user-select: none;
-            user-select: none;
+    user-select: none;
     opacity: 1;
 }
 
@@ -615,8 +532,6 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-share-tree {
-    height: -webkit-fit-content;
-    height: -moz-fit-content;
     height: fit-content;
     min-height: 10em;
     max-height: 20em;
@@ -634,18 +549,12 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-models-page > div:nth-child(1) > div:nth-child(1) {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
 }
 
 .cvat-models-page > div:nth-child(1) > div:nth-child(2) {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-pack: end;
-        -ms-flex-pack: end;
-            justify-content: flex-end;
+    justify-content: flex-end;
 }
 
 /* empty-models icon */
@@ -688,32 +597,24 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-models-list-item > div {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    align-items: center;
 }
 
 .cvat-models-list-item > div:nth-child(2) > span {
-    -o-text-overflow: ellipsis;
-       text-overflow: ellipsis;
+    text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
 }
 
 .cvat-models-list-item > div:nth-child(3) > span {
-    -o-text-overflow: ellipsis;
-       text-overflow: ellipsis;
+    text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
 }
 
 .cvat-menu-icon {
-    -webkit-transform: scale(0.5);
-        -ms-transform: scale(0.5);
-            transform: scale(0.5);
+    transform: scale(0.5);
 }
 
 .cvat-create-model-form-wrapper {
@@ -770,7 +671,6 @@ textarea.ant-input.cvat-raw-labels-viewer {
     width: 100%;
     height: 100%;
     min-height: 100%;
-    display: -ms-grid;
     display: grid;
 }
 
@@ -807,8 +707,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-annotation-header-left-group > div:first-child {
-    -webkit-filter: invert(0.9);
-            filter: invert(0.9);
+    filter: invert(0.9);
     background: white;
     border-radius: 0px;
     width: 70px;
@@ -824,22 +723,16 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-annotation-header-left-group > div > i {
-    -webkit-transform: scale(0.8);
-        -ms-transform: scale(0.8);
-            transform: scale(0.8);
+    transform: scale(0.8);
     padding: 3px;
 }
 
 .cvat-annotation-header-left-group > div:hover > i {
-    -webkit-transform: scale(0.9);
-        -ms-transform: scale(0.9);
-            transform: scale(0.9);
+    transform: scale(0.9);
 }
 
 .cvat-annotation-header-left-group > div:active > i {
-    -webkit-transform: scale(0.8);
-        -ms-transform: scale(0.8);
-            transform: scale(0.8);
+    transform: scale(0.8);
 }
 
 .cvat-annotation-header-player-group > div {
@@ -847,33 +740,23 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-annotation-header-player-buttons {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    align-items: center;
     position: relative;
     height: 100%;
     margin-right: 10px;
 }
 
 .cvat-annotation-header-player-buttons > i {
-    -webkit-transform: scale(0.6);
-    -ms-transform: scale(0.6);
-        transform: scale(0.6);
+    transform: scale(0.6);
 }
 
 .cvat-annotation-header-player-buttons > i:hover {
-    -webkit-transform: scale(0.7);
-    -ms-transform: scale(0.7);
-        transform: scale(0.7);
+    transform: scale(0.7);
 }
 
 .cvat-annotation-header-player-buttons > i:active {
-    -webkit-transform: scale(0.6);
-    -ms-transform: scale(0.6);
-        transform: scale(0.6);
+    transform: scale(0.6);
 }
 
 .cvat-annotation-header-player-controls {
@@ -898,8 +781,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 .cvat-annotation-header-filename-wrapper {
     max-width: 180px;
     overflow: hidden;
-    -o-text-overflow: ellipsis;
-       text-overflow: ellipsis;
+    text-overflow: ellipsis;
 }
 
 .cvat-annotation-header-frame-selector {
@@ -928,22 +810,16 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-annotation-header-right-group > div > i {
-    -webkit-transform: scale(0.8);
-        -ms-transform: scale(0.8);
-            transform: scale(0.8);
+    transform: scale(0.8);
     padding: 3px;
 }
 
 .cvat-annotation-header-right-group > div:hover > i {
-    -webkit-transform: scale(0.9);
-        -ms-transform: scale(0.9);
-            transform: scale(0.9);
+    transform: scale(0.9);
 }
 
 .cvat-annotation-header-right-group > div:active > i {
-    -webkit-transform: scale(0.8);
-        -ms-transform: scale(0.8);
-            transform: scale(0.8);
+    transform: scale(0.8);
 }
 
 .cvat-annotation-header-workspace-selector {
@@ -973,17 +849,13 @@ textarea.ant-input.cvat-raw-labels-viewer {
 
 .cvat-annotation-page-controls-sidebar > div > i {
     border-radius: 3.3px;
-    -webkit-transform: scale(0.65);
-        -ms-transform: scale(0.65);
-            transform: scale(0.65);
+    transform: scale(0.65);
     padding: 2px;
 }
 
 .cvat-annotation-page-controls-sidebar > div > i:hover {
     background: #D8D8D8;
-    -webkit-transform: scale(0.75);
-        -ms-transform: scale(0.75);
-            transform: scale(0.75);
+    transform: scale(0.75);
 }
 
 .cvat-annotation-page-controls-sidebar > div > i:active {
@@ -991,7 +863,5 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-annotation-page-controls-sidebar > div > i > svg {
-    -webkit-transform: scale(0.8);
-        -ms-transform: scale(0.8);
-            transform: scale(0.8);
+    transform: scale(0.8);
 }

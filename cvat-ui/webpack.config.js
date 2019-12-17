@@ -39,9 +39,7 @@ module.exports = {
                     }]],
                     presets: [
                         ['@babel/preset-env', {
-                            targets: {
-                                chrome: 58,
-                            },
+                            targets: '> 3%', // https://github.com/browserslist/browserslist
                         }],
                         ['@babel/preset-react'],
                         ['@babel/typescript'],
@@ -50,8 +48,22 @@ module.exports = {
                 },
             },
         }, {
-            test: /\.(css|sass)$/,
-            use: ['style-loader', 'css-loader']
+            test: /node_modules\/antd\/[\w\/]*.less$/,
+            use: ['style-loader', 'css-loader', {
+                loader: 'less-loader',
+                options: {
+                    javascriptEnabled: true,
+                },
+            }]
+        }, {
+            test: /\.(css|scss)$/,
+            exclude: /node_modules/,
+            use: ['style-loader', {
+                loader: 'css-loader',
+                options: {
+                    importLoaders: 2,
+                },
+            }, 'postcss-loader', 'sass-loader']
         }, {
             test: /\.svg$/,
             exclude: /node_modules/,

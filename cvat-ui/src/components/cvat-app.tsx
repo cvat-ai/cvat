@@ -1,6 +1,6 @@
 import React from 'react';
-import 'antd/dist/antd.css';
-import '../stylesheet.css';
+import 'antd/dist/antd.less';
+import '../stylesheet.scss';
 import { BrowserRouter } from 'react-router-dom';
 import {
     Switch,

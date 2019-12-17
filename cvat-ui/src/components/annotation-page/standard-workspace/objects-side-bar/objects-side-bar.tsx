@@ -36,11 +36,15 @@ export default class StandardWorkspaceComponent extends React.PureComponent<{}, 
                         ant-layout-sider-zero-width-trigger
                         ant-layout-sider-zero-width-trigger-left`}
                     onClick={
-                        (): void => this.setState({ collapsed: !collapsed })
+                        (): void => this.setState(
+                            (prevState: State): State => ({
+                                collapsed: !prevState.collapsed,
+                            }),
+                        )
                     }
                 >
-                    {collapsed && <Icon type='menu-fold' title='Show' />}
-                    {!collapsed && <Icon type='menu-unfold' title='Hide' />}
+                    {collapsed ? <Icon type='menu-fold' title='Show' />
+                        : <Icon type='menu-unfold' title='Hide' />}
                 </span>
 
                 Right sidebar
