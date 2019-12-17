@@ -22,6 +22,7 @@ class CvatExtractor(Extractor):
     def __init__(self, path):
         super().__init__()
 
+        assert osp.isfile(path)
         rootpath = path.rsplit(CvatPath.ANNOTATIONS_DIR, maxsplit=1)[0]
         self._path = rootpath
 

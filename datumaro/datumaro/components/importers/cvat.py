@@ -35,7 +35,6 @@ class CvatImporter:
             })
 
         if len(project.config.sources) == 0:
-            raise Exception(
-                "Failed to find 'cvat' dataset at '%s'" % path)
+            raise Exception("Failed to find 'cvat' dataset at '%s'" % path)
 
         return project
