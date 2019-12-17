@@ -43,8 +43,8 @@ export default class StandardWorkspaceComponent extends React.PureComponent<{}, 
                         )
                     }
                 >
-                    {collapsed && <Icon type='menu-fold' title='Show' />}
-                    {!collapsed && <Icon type='menu-unfold' title='Hide' />}
+                    {collapsed ? <Icon type='menu-fold' title='Show' />
+                        : <Icon type='menu-unfold' title='Hide' />}
                 </span>
 
                 Right sidebar
