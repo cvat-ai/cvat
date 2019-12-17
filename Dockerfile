@@ -47,7 +47,7 @@ RUN apt-get update && \
         git-core \
         libsm6 \
         libxext6 && \
-    pip3 install -U setuptools && \
+    pip install -U pip && pip3 install -U setuptools && \
     ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime && \
     dpkg-reconfigure -f noninteractive tzdata && \
     add-apt-repository --remove ppa:mc3man/gstffmpeg-keep -y && \
