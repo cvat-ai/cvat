@@ -170,8 +170,13 @@ class Task(models.Model):
         return os.path.join(self.get_data_dirname(), d1, d2,
             str(frame) + '.jpg')
 
+    def get_frame_step(self):
+        match = re.search("step\s*=\s*([1-9]\d*)", self.frame_filter)
+        return int(match.group(1)) if match else 1
+
     def get_task_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
+
 
     def get_task_logs_dirname(self):
         return os.path.join(self.get_task_dirname(), 'logs')

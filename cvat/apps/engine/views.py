@@ -577,6 +577,73 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             result_ttl=ttl, failure_ttl=ttl)
         return Response(status=status.HTTP_202_ACCEPTED)
 
+    @action(detail=True, methods=['GET'], serializer_class=None,
+        url_path='dataset')
+    def dataset_export(self, request, pk):
+        """Export task as a dataset in a specific format"""
+
+        db_task = self.get_object()
+
+        action = request.query_params.get("action", "")
+        action = action.lower()
+        if action not in ["", "download"]:
+            raise serializers.ValidationError(
+                "Unexpected parameter 'action' specified for the request")
+
+        dst_format = request.query_params.get("format", "")
+        if not dst_format:
+            dst_format = DatumaroTask.DEFAULT_FORMAT
+        dst_format = dst_format.lower()
+        if dst_format not in [f['tag']
+                for f in DatumaroTask.get_export_formats()]:
+            raise serializers.ValidationError(
+                "Unexpected parameter 'format' specified for the request")
+
+        rq_id = "task_dataset_export.{}.{}".format(pk, dst_format)
+        queue = django_rq.get_queue("default")
+
+        rq_job = queue.fetch_job(rq_id)
+        if rq_job:
+            task_time = timezone.localtime(db_task.updated_date)
+            request_time = rq_job.meta.get('request_time',
+                timezone.make_aware(datetime.min))
+            if request_time < task_time:
+                rq_job.cancel()
+                rq_job.delete()
+            else:
+                if rq_job.is_finished:
+                    file_path = rq_job.return_value
+                    if action == "download" and osp.exists(file_path):
+                        rq_job.delete()
+
+                        timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+                        filename = "task_{}-{}-{}.zip".format(
+                            db_task.name, timestamp, dst_format)
+                        return sendfile(request, file_path, attachment=True,
+                            attachment_filename=filename.lower())
+                    else:
+                        if osp.exists(file_path):
+                            return Response(status=status.HTTP_201_CREATED)
+                elif rq_job.is_failed:
+                    exc_info = str(rq_job.exc_info)
+                    rq_job.delete()
+                    return Response(exc_info,
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                else:
+                    return Response(status=status.HTTP_202_ACCEPTED)
+
+        try:
+            server_address = request.get_host()
+        except Exception:
+            server_address = None
+
+        ttl = DatumaroTask.CACHE_TTL.total_seconds()
+        queue.enqueue_call(func=DatumaroTask.export_project,
+            args=(pk, request.user, dst_format, server_address), job_id=rq_id,
+            meta={ 'request_time': timezone.localtime() },
+            result_ttl=ttl, failure_ttl=ttl)
+        return Response(status=status.HTTP_202_ACCEPTED)
+
 class JobViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all().order_by('id')

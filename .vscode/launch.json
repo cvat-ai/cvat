@@ -72,6 +72,22 @@
             "console": "internalConsole"
         },
         {
+            "name": "server: RQ - scheduler",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "pythonPath": "${config:python.pythonPath}",
+            "program": "${workspaceRoot}/manage.py",
+            "args": [
+                "rqscheduler",
+            ],
+            "django": true,
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "console": "internalConsole"
+        },
+        {
             "name": "server: RQ - low",
             "type": "python",
             "request": "launch",
@@ -134,7 +150,7 @@
                 "test",
                 "--settings",
                 "cvat.settings.testing",
-                "cvat/apps/engine",
+                "cvat/apps",
                 "utils/cli"
             ],
             "django": true,
@@ -177,6 +193,7 @@
                 "server: django",
                 "server: RQ - default",
                 "server: RQ - low",
+                "server: RQ - scheduler",
                 "server: git",
             ]
         }
