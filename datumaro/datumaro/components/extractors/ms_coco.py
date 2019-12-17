@@ -178,15 +178,7 @@ class CocoExtractor(Extractor):
                 image_info = loader.loadImgs(img_id)[0]
                 file_name = image_info['file_name']
                 if file_name != '':
-                    image_dir = osp.join(self._path, CocoPath.IMAGES_DIR)
-                    search_paths = [
-                        osp.join(image_dir, file_name),
-                        osp.join(image_dir, subset, file_name),
-                    ]
-                    for image_path in search_paths:
-                        if osp.exists(image_path):
-                            image = lazy_image(image_path)
-                            break
+                    image = self._find_image(file_name, subset)
 
             annIds = loader.getAnnIds(imgIds=img_id)
             anns = loader.loadAnns(annIds)
@@ -286,6 +278,16 @@ class CocoExtractor(Extractor):
             raise NotImplementedError()
 
         return parsed_annotations
+
+    def _find_image(self, file_name, subset):
+        images_dir = osp.join(self._path, CocoPath.IMAGES_DIR)
+        search_paths = [
+            osp.join(images_dir, file_name),
+            osp.join(images_dir, subset, file_name),
+        ]
+        for image_path in search_paths:
+            if osp.exists(image_path):
+                return lazy_image(image_path)
 
 class CocoImageInfoExtractor(CocoExtractor):
     def __init__(self, path, **kwargs):
