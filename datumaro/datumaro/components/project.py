@@ -269,6 +269,8 @@ class Subset(Extractor):
 class DatasetItemWrapper(DatasetItem):
     def __init__(self, item, path, annotations, image=None):
         self._item = item
+        if path is None:
+            path = []
         self._path = path
         self._annotations = annotations
         self._image = image
@@ -334,7 +336,8 @@ class ProjectDataset(Extractor):
         own_source = None
         own_source_dir = osp.join(config.project_dir, config.dataset_dir)
         if osp.isdir(own_source_dir):
-            own_source = env.make_extractor(DEFAULT_FORMAT, own_source_dir)
+            own_source = \
+                env.make_importer(DEFAULT_FORMAT)(own_source_dir).make_dataset()
 
         # merge categories
         # TODO: implement properly with merging and annotations remapping
