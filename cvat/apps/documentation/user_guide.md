@@ -98,7 +98,7 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     -   The ``Constructor`` is a simple way to add and adjust labels. 
     To add a new label click the ``Add label`` button.
           
-        ![](static/documentation/images/image123.jpg)
+          ![](static/documentation/images/image123.jpg)
            
         You can set a name of the label in the ``Label name`` field. 
            
@@ -242,27 +242,27 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
   
     ![](static/documentation/images/image131.jpg)
 
-    -  The next actions are available on this page:
-       1.  Change the task’s title.
-       1.  Open ``Actions`` menu.  
-       1.  Change issue tracker or open issue tracker if it is specified.
-       1.  Change labels.
+    - The next actions are available on this page:
+       1.   Change the task’s title.
+       1.   Open ``Actions`` menu.  
+       1.   Change issue tracker or open issue tracker if it is specified.
+       1.   Change labels.
        You can add new labels or add attributes for the existing labels in the Raw mode or the Constructor mode. 
        By clicking ``Copy`` you will copy the labels to the clipboard.
-       1.  Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or 
+       1.   Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or 
        choose the right person out of the dropdown list.
-       1. ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
-          - Jobs name whit a hyperlink to it.
-          - Frames — the frame interval. 
-          - A status of the job. The status is specified by the user in the menu inside the job. 
-          There are three types of status: annotation, validation or completed. 
-          The status of the job is changes the progress bar of the task.
-          - Started on — start date of this job.
-          - Duration — is the amount of time the job is being worked.
-          - Assignee is the user who is working on the job. 
-          You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
-          - ``Copy``. By clicking Copy you will copy the job list to the clipboard. 
-          The job list contains direct links to jobs. 
+       1.   ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
+            - Jobs name whit a hyperlink to it.
+            - Frames — the frame interval. 
+            - A status of the job. The status is specified by the user in the menu inside the job. 
+            There are three types of status: annotation, validation or completed. 
+            The status of the job is changes the progress bar of the task.
+            - Started on — start date of this job.
+            - Duration — is the amount of time the job is being worked.
+            - Assignee is the user who is working on the job. 
+            You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
+            - ``Copy``. By clicking Copy you will copy the job list to the clipboard. 
+            The job list contains direct links to jobs. 
 
 1.  Follow a link inside ``Jobs`` section to start annotation process.
     In some cases, you can have several links. It depends on size of your
