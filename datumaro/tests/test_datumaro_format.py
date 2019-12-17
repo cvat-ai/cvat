@@ -1,4 +1,3 @@
-from itertools import zip_longest
 import numpy as np
 
 from unittest import TestCase
@@ -47,11 +46,11 @@ class DatumaroConverterTest(TestCase):
                     ]),
 
                 DatasetItem(id=42, subset='test'),
+
+                DatasetItem(id=42),
+                DatasetItem(id=43),
             ]
             return iter(items)
-
-        def subsets(self):
-            return ['train', 'val', 'test']
 
         def categories(self):
             label_categories = LabelCategories()
@@ -91,8 +90,9 @@ class DatumaroConverterTest(TestCase):
             for subset_name in source_dataset.subsets():
                 source_subset = source_dataset.get_subset(subset_name)
                 parsed_subset = parsed_dataset.get_subset(subset_name)
+                self.assertEqual(len(source_subset), len(parsed_subset))
                 for idx, (item_a, item_b) in enumerate(
-                        zip_longest(source_subset, parsed_subset)):
+                        zip(source_subset, parsed_subset)):
                     self.assertEqual(item_a, item_b, str(idx))
 
             self.assertEqual(
