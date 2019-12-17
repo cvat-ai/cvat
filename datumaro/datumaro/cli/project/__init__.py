@@ -137,7 +137,11 @@ def export_command(args):
     dst_dir = osp.abspath(args.dst_dir)
     os.makedirs(dst_dir, exist_ok=False)
 
-    project.make_dataset().export(
+    log.info("Loading the project...")
+    dataset = project.make_dataset()
+
+    log.info("Exporting the project...")
+    dataset.export(
         save_dir=dst_dir,
         output_format=args.output_format,
         filter_expr=args.filter,
