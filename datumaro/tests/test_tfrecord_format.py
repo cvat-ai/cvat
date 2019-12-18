@@ -6,12 +6,8 @@ from datumaro.components.project import Project
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, BboxObject, LabelCategories
 )
-from datumaro.components.extractors.tfrecord import (
-    DetectionApiExtractor,
-)
-from datumaro.components.converters.tfrecord import (
-    DetectionApiConverter,
-)
+from datumaro.components.extractors.tfrecord import DetectionApiExtractor
+from datumaro.components.converters.tfrecord import DetectionApiConverter
 from datumaro.util import find
 from datumaro.util.test_utils import TestDir
 
@@ -47,7 +43,7 @@ class TfrecordConverterTest(TestCase):
     def test_can_save_bboxes(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=1, subset='train',
                         image=np.ones((16, 16, 3)),
                         annotations=[
@@ -67,10 +63,7 @@ class TfrecordConverterTest(TestCase):
                     DatasetItem(id=3, subset='test',
                         image=np.ones((5, 4, 3)) * 3,
                     ),
-                ]
-
-                for item in items:
-                    yield item
+                ])
 
             def categories(self):
                 label_cat = LabelCategories()
@@ -88,7 +81,7 @@ class TfrecordConverterTest(TestCase):
     def test_can_save_dataset_with_no_subsets(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=1,
                         image=np.ones((16, 16, 3)),
                         annotations=[
@@ -107,10 +100,7 @@ class TfrecordConverterTest(TestCase):
                     DatasetItem(id=3,
                         image=np.ones((8, 4, 3)) * 3,
                     ),
-                ]
-
-                for item in items:
-                    yield item
+                ])
 
             def categories(self):
                 label_cat = LabelCategories()

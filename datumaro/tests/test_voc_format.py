@@ -27,6 +27,7 @@ from datumaro.components.converters.voc import (
     VocSegmentationConverter,
 )
 from datumaro.components.importers.voc import VocImporter
+from datumaro.components.project import Project
 from datumaro.util import find
 from datumaro.util.test_utils import TestDir
 
@@ -446,7 +447,7 @@ class VocConverterTest(TestCase):
     def test_can_save_dataset_with_no_subsets(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=1, annotations=[
                         BboxObject(2, 3, 4, 5, label=2, id=1),
                         BboxObject(2, 3, 4, 5, label=3, id=2),
@@ -455,10 +456,7 @@ class VocConverterTest(TestCase):
                     DatasetItem(id=2, annotations=[
                         BboxObject(5, 4, 6, 5, label=3, id=1),
                     ]),
-                ]
-
-                for item in items:
-                    yield item
+                ])
 
             def categories(self):
                 return VOC.make_voc_categories()
@@ -582,7 +580,7 @@ class VocImporterTest(TestCase):
             dummy_dir = osp.join(test_dir.path, 'dummy')
             subsets = generate_dummy_voc(dummy_dir)
 
-            dataset = VocImporter()(dummy_dir).make_dataset()
+            dataset = Project.import_from(dummy_dir, 'voc').make_dataset()
 
             self.assertEqual(len(VOC.VocTask), len(dataset.sources))
             self.assertEqual(set(subsets), set(dataset.subsets()))

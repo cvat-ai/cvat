@@ -3,8 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from glob import glob
+import logging as log
 import os.path as osp
-from datumaro.util import dir_items
 
 
 class YoloImporter:
@@ -15,13 +16,14 @@ class YoloImporter:
         if not osp.exists(path):
             raise Exception("Failed to find 'yolo' dataset at '%s'" % path)
 
-        configs = []
-        if osp.isfile(path):
-            configs = path
-        elif osp.isdir(path):
-            configs = [osp.join(path, p) for p in dir_items(path, '.data')]
+        if path.endswith('.data') and osp.isfile(path):
+            config_paths = [path]
+        else:
+            config_paths = glob(osp.join(path, '*.data'))
 
-        for config_path in configs:
+        for config_path in config_paths:
+            log.info("Found a dataset at '%s'" % config_path)
+
             source_name = osp.splitext(osp.basename(config_path))[0]
             project.add_source(source_name, {
                 'url': config_path,

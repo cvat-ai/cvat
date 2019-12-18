@@ -7,6 +7,7 @@ import argparse
 import logging as log
 import os
 import os.path as osp
+import shutil
 
 from datumaro.components.project import Project
 from datumaro.components.comparator import Comparator
@@ -27,10 +28,13 @@ def create_command(args):
     project_dir = osp.abspath(args.dst_dir)
     project_path = make_project_path(project_dir)
 
-    if not args.overwrite and osp.isdir(project_dir) and os.listdir(project_dir):
-        log.error("Directory '%s' already exists "
-            "(pass --overwrite to force creation)" % project_dir)
-        return 1
+    if osp.isdir(project_dir) and os.listdir(project_dir):
+        if not args.overwrite:
+            log.error("Directory '%s' already exists "
+                "(pass --overwrite to force creation)" % project_dir)
+            return 1
+        else:
+            shutil.rmtree(project_dir)
     os.makedirs(project_dir, exist_ok=args.overwrite)
 
     if not args.overwrite and osp.isfile(project_path):
@@ -78,10 +82,13 @@ def import_command(args):
     project_dir = osp.abspath(args.dst_dir)
     project_path = make_project_path(project_dir)
 
-    if not args.overwrite and osp.isdir(project_dir) and os.listdir(project_dir):
-        log.error("Directory '%s' already exists "
-            "(pass --overwrite to force creation)" % project_dir)
-        return 1
+    if osp.isdir(project_dir) and os.listdir(project_dir):
+        if not args.overwrite:
+            log.error("Directory '%s' already exists "
+                "(pass --overwrite to force creation)" % project_dir)
+            return 1
+        else:
+            shutil.rmtree(project_dir)
     os.makedirs(project_dir, exist_ok=args.overwrite)
 
     if not args.overwrite and osp.isfile(project_path):
@@ -147,7 +154,11 @@ def export_command(args):
         return 1
     os.makedirs(dst_dir, exist_ok=args.overwrite)
 
-    project.make_dataset().export(
+    log.info("Loading the project...")
+    dataset = project.make_dataset()
+
+    log.info("Exporting the project...")
+    dataset.export(
         save_dir=dst_dir,
         output_format=args.output_format,
         filter_expr=args.filter,

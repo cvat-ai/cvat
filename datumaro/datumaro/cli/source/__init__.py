@@ -210,8 +210,12 @@ def export_command(args):
         return 1
     os.makedirs(dst_dir, exist_ok=args.overwrite)
 
+    log.info("Loading the project...")
     source_project = project.make_source_project(args.name)
-    source_project.make_dataset().export(
+    dataset = source_project.make_dataset()
+
+    log.info("Exporting the project...")
+    dataset.export(
         save_dir=dst_dir,
         output_format=args.output_format,
         filter_expr=args.filter,

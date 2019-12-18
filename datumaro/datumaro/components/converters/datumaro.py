@@ -11,8 +11,7 @@ import os.path as osp
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME,
-    AnnotationType, Annotation,
+    DEFAULT_SUBSET_NAME, Annotation,
     LabelObject, MaskObject, PointsObject, PolygonObject,
     PolyLineObject, BboxObject, CaptionObject,
     LabelCategories, MaskCategories, PointsCategories
@@ -52,11 +51,13 @@ class _SubsetWriter:
 
     def write_item(self, item):
         annotations = []
-        self.items.append({
+        item_desc = {
             'id': item.id,
-            'path': item.path,
             'annotations': annotations,
-        })
+        }
+        if item.path:
+            item_desc['path'] = item.path
+        self.items.append(item_desc)
 
         for ann in item.annotations:
             if isinstance(ann, LabelObject):

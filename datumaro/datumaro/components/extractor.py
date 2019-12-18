@@ -476,6 +476,7 @@ class DatasetItem:
             (self.id == other.id) and \
             (self.subset == other.subset) and \
             (self.annotations == other.annotations) and \
+            (self.path == other.path) and \
             (self.has_image == other.has_image) and \
             (self.has_image and np.all(self.image == other.image) or \
                 not self.has_image)
