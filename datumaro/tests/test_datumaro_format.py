@@ -16,7 +16,7 @@ from datumaro.util.mask_tools import generate_colormap
 class DatumaroConverterTest(TestCase):
     class TestExtractor(Extractor):
         def __iter__(self):
-            items = [
+            return iter([
                 DatasetItem(id=100, subset='train', image=np.ones((10, 6, 3)),
                     annotations=[
                         CaptionObject('hello', id=1),
@@ -49,8 +49,7 @@ class DatumaroConverterTest(TestCase):
 
                 DatasetItem(id=42),
                 DatasetItem(id=43),
-            ]
-            return iter(items)
+            ])
 
         def categories(self):
             label_categories = LabelCategories()

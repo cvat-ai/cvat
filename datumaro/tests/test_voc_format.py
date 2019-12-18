@@ -438,7 +438,7 @@ class VocConverterTest(TestCase):
     def test_can_save_dataset_with_no_subsets(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=1, annotations=[
                         BboxObject(2, 3, 4, 5, label=2, id=1),
                         BboxObject(2, 3, 4, 5, label=3, id=2),
@@ -447,10 +447,7 @@ class VocConverterTest(TestCase):
                     DatasetItem(id=2, annotations=[
                         BboxObject(5, 4, 6, 5, label=3, id=1),
                     ]),
-                ]
-
-                for item in items:
-                    yield item
+                ])
 
             def categories(self):
                 label_cat = LabelCategories()

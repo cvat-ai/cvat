@@ -101,7 +101,7 @@ class CvatExtractorTest(TestCase):
     def test_can_load(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=1, subset='train', image=np.ones((8, 8, 3)),
                         annotations=[
                             BboxObject(0, 2, 4, 2, label=0,
@@ -119,8 +119,7 @@ class CvatExtractorTest(TestCase):
                             PointsObject([1, 2, 3, 4, 5, 6], label=1,
                                 attributes={'occluded': False, 'z_order': 2}),
                         ]),
-                ]
-                return iter(items)
+                ])
 
             def categories(self):
                 label_categories = LabelCategories()
