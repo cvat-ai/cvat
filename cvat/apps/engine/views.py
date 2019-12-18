@@ -55,6 +55,22 @@ from django.utils.decorators import method_decorator
 from drf_yasg.inspectors import NotHandled, CoreAPICompatInspector
 from django_filters.rest_framework import DjangoFilterBackend
 
+# drf-yasg component doesn't handle correctly URL_FORMAT_OVERRIDE and
+# send requests with ?format=openapi suffix instead of ?scheme=openapi.
+# We map the required paramater explicitly and add it into query arguments
+# on the server side.
+def wrap_swagger(view):
+    @login_required
+    def _map_format_to_schema(request, scheme=None):
+        if 'format' in request.GET:
+            request.GET = request.GET.copy()
+            format_alias = settings.REST_FRAMEWORK['URL_FORMAT_OVERRIDE']
+            request.GET[format_alias] = request.GET['format']
+
+        return view(request, format=scheme)
+
+    return _map_format_to_schema
+
 # Server REST API
 @login_required
 def dispatch_request(request):

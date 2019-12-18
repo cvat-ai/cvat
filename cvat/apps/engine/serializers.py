@@ -26,8 +26,12 @@ class AttributeSerializer(serializers.ModelSerializer):
         return attribute
 
     def to_representation(self, instance):
-        attribute = super().to_representation(instance)
-        attribute['values'] = attribute['values'].split('\n')
+        if instance:
+            attribute = super().to_representation(instance)
+            attribute['values'] = attribute['values'].split('\n')
+        else:
+            attribute = instance
+
         return attribute
 
 class LabelSerializer(serializers.ModelSerializer):
@@ -75,8 +79,11 @@ class ClientFileSerializer(serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     def to_representation(self, instance):
-        upload_dir = instance.task.get_upload_dirname()
-        return instance.file.path[len(upload_dir) + 1:]
+        if instance:
+            upload_dir = instance.task.get_upload_dirname()
+            return instance.file.path[len(upload_dir) + 1:]
+        else:
+            return instance
 
 class ServerFileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -89,7 +96,7 @@ class ServerFileSerializer(serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     def to_representation(self, instance):
-        return instance.file
+        return instance.file if instance else instance
 
 class RemoteFileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -102,7 +109,7 @@ class RemoteFileSerializer(serializers.ModelSerializer):
 
     # pylint: disable=no-self-use
     def to_representation(self, instance):
-        return instance.file
+        return instance.file if instance else instance
 
 class RqStatusSerializer(serializers.Serializer):
     state = serializers.ChoiceField(choices=[
