@@ -62,14 +62,16 @@ def build_import_parser(parser):
     dir_parser.add_argument('url',
         help="Path to the source directory")
     dir_parser.add_argument('--copy', action='store_true',
-        help="Copy data to the project")
+        help="Copy the dataset instead of saving source links")
 
+    parser.add_argument('-n', '--name', default=None,
+        help="Name of the new source")
     parser.add_argument('-f', '--format', default=None,
         help="Name of the source dataset format (default: 'project')")
-    parser.add_argument('-n', '--name', default=None,
-        help="Name of the source to be imported")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.add_argument('--skip-check', action='store_true',
+        help="Skip source checking")
     return parser
 
 def import_command(args):
@@ -99,6 +101,10 @@ def import_command(args):
         if args.format:
             source['format'] = args.format
         project.add_source(name, source)
+
+        if not args.skip_check:
+            log.info("Checking the source...")
+            project.make_source_project(name)
         project.save()
 
         log.info("Source '%s' has been added to the project, location: '%s'" \
@@ -131,6 +137,10 @@ def import_command(args):
         if args.format:
             source['format'] = args.format
         project.add_source(name, source)
+
+        if not args.skip_check:
+            log.info("Checking the source...")
+            project.make_source_project(name)
         project.save()
 
         log.info("Source '%s' has been added to the project, location: '%s'" \
@@ -184,6 +194,8 @@ def build_export_parser(parser):
         help="Output format")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
+    parser.add_argument('--overwrite', action='store_true',
+        help="Overwrite existing files in the save directory")
     parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
         help="Additional arguments for converter (pass '-- -h' for help)")
     return parser
@@ -192,7 +204,11 @@ def export_command(args):
     project = load_project(args.project_dir)
 
     dst_dir = osp.abspath(args.dst_dir)
-    os.makedirs(dst_dir, exist_ok=False)
+    if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
+        log.error("Directory '%s' already exists "
+            "(pass --overwrite to force creation)" % dst_dir)
+        return 1
+    os.makedirs(dst_dir, exist_ok=args.overwrite)
 
     source_project = project.make_source_project(args.name)
     source_project.make_dataset().export(

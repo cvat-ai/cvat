@@ -242,7 +242,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
                     <Button
                         loading={loading}
                         disabled={loading}
-                        type='danger'
+                        type='primary'
                         onClick={this.handleSubmitClick}
                     >
                         Submit

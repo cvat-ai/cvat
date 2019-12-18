@@ -145,7 +145,7 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                 </Col>
                 <Col span={6}>
                     <Button
-                        type='danger'
+                        type='primary'
                         disabled={loading}
                         loading={loading}
                         onClick={this.handleSubmitClick}

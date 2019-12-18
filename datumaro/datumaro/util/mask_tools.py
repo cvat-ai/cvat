@@ -69,6 +69,16 @@ def apply_colormap(mask, colormap=None):
     painted_mask = np.reshape(painted_mask, (*mask.shape, 3))
     return painted_mask.astype(np.float32)
 
+def remap_mask(mask, map_fn):
+    # Changes mask elements from one colormap to another
+    assert len(mask.shape) == 2
+
+    shape = mask.shape
+    mask = np.reshape(mask, (-1, 1))
+    mask = np.apply_along_axis(map_fn, 1, mask)
+    mask = np.reshape(mask, shape)
+    return mask
+
 
 def load_mask(path, colormap=None):
     mask = load_image(path)

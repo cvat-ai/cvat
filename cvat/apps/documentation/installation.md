@@ -58,7 +58,7 @@ server. Proxy is an advanced topic and it is not covered by the guide.
 
     ```bash
     sudo apt-get install -y python3-pip
-    sudo pip3 install docker-compose
+    sudo python3 -m pip install docker-compose
     ```
 
 -   Clone _CVAT_ source code from the

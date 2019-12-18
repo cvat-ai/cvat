@@ -33,5 +33,5 @@ apt-get update && apt-get install -y --no-install-recommends --allow-unauthentic
 rm -rf /var/lib/apt/lists/* \
     /etc/apt/sources.list.d/nvidia-ml.list /etc/apt/sources.list.d/cuda.list
 
-pip3 uninstall -y tensorflow
-pip3 install --no-cache-dir tensorflow-gpu==1.12.3
+python3 -m pip uninstall -y tensorflow
+python3 -m pip install --no-cache-dir tensorflow-gpu==1.15.0
