@@ -62,12 +62,16 @@ hr {
     padding: 0px;
 }
 
-.cvat-feedback-button > i {
-    font-size: 40px;
+.cvat-feedback-button {
+    > i {
+        font-size: 40px;
+    }
 }
 
-.anticon.cvat-logo-icon > svg {
-    transform: scale(0.7);
+.anticon.cvat-logo-icon {
+    > svg {
+        transform: scale(0.7);
+    }
 }
 
 .ant-btn.cvat-header-button {
@@ -84,8 +88,10 @@ hr {
     padding: 0px 20px;
 }
 
-.anticon.cvat-header-account-icon > svg {
-    transform: scale(0.4);
+.anticon.cvat-header-account-icon {
+    > svg {
+        transform: scale(0.4);
+    }
 }
 
 .anticon.cvat-header-menu-icon {
@@ -101,89 +107,70 @@ hr {
 }
 
 .cvat-tasks-page {
-    padding-top: 30px;
-}
-
-.cvat-tasks-page > div:nth-child(1) {
-    margin-bottom: 10px;
-}
-
-.cvat-tasks-page > div:nth-child(1) > div > span {
-    color: $text-color;
-}
-
-.cvat-tasks-page > div:nth-child(2) > div:nth-child(1) {
-    display: flex;
-}
-
-.cvat-tasks-page > div:nth-child(2) > div:nth-child(2) {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.cvat-tasks-page > div:nth-child(2) > div:nth-child(1) > span:nth-child(2) {
-    width: 200px;
-    margin-left: 10px;
-}
-
-.cvat-tasks-page > span.ant-typography {
-    user-select: none;
-}
-
-.cvat-tasks-page {
+    padding-top: 15px;
     height: 100%;
-}
 
-.cvat-tasks-page > div:nth-child(4) {
-    margin-top: 10px;
-}
+    > div:nth-child(1) {
+        margin-bottom: 10px;
 
-.cvat-tasks-page > div:nth-child(3) {
-    margin-top: 10px;
-}
-
-/* > 1280 */
-@media only screen and (min-height: 1280px) {
-    .cvat-tasks-page > div:nth-child(3) {
-        height: 80%;
+        div > {
+            span {
+                color: $text-color;
+            }
+        }
     }
-}
 
-/* 769 => 1280 */
-@media only screen and (max-height: 1280px) {
-    .cvat-tasks-page > div:nth-child(3) {
-        height: 80%;
+    > div:nth-child(2) {
+        > div:nth-child(1) {
+            display: flex;
+
+            > span:nth-child(2) {
+                width: 200px;
+                margin-left: 10px;
+            }
+        }
+
+        > div:nth-child(2) {
+            display: flex;
+            justify-content: flex-end;
+        }
     }
-}
 
-/* 0 => 768 */
-@media only screen and (max-height: 768px) {
-    .cvat-tasks-page > div:nth-child(3) {
-        height: 70%;
+    > div:nth-child(3) {
+        height: 83%;
+        margin-top: 10px;
+    }
+
+    > div:nth-child(4) {
+        margin-top: 10px;
     }
 }
 
 /* empty-tasks icon */
-.cvat-empty-task-list > div:nth-child(1) {
-    margin-top: 50px;
+.cvat-empty-task-list {
+    > div:nth-child(1) {
+        margin-top: 50px;
+    }
+
+    > div:nth-child(2) {
+        > div {
+            margin-top: 20px;
+
+            /* No tasks created yet */
+            > span {
+                font-size: 20px;
+                color: $text-color;
+            }
+        }
+    }
+
+    /* To get started with your annotation project .. */
+    > div:nth-child(3) {
+        margin-top: 10px;
+    }
 }
 
-.cvat-empty-task-list > div:nth-child(2) > div {
-    margin-top: 20px;
-}
-
-/* No tasks created yet */
-.cvat-empty-task-list > div:nth-child(2) > div > span {
-    font-size: 20px;
-    color: $text-color;
-}
-
-/* To get started with your annotation project .. */
-.cvat-empty-task-list > div:nth-child(3) {
-    margin-top: 10px;
-}
-
-.ant-pagination.cvat-tasks-pagination {
+.cvat-tasks-pagination {
     display: flex;
     justify-content: center;
 }
@@ -201,72 +188,72 @@ hr {
     margin-bottom: 15px;
     padding-top: 20px;
     background: $background-color-1;
+
+    /* description */
+    > div:nth-child(2) {
+        word-break: break-all;
+        max-height: 100%;
+        overflow: hidden;
+    }
+
+    /* open, actions */
+    div:nth-child(4) {
+        > div {
+            margin-right: 20px;
+        }
+
+        /* actions */
+        > div:nth-child(2) {
+            margin-right: 5px;
+            margin-top: 10px;
+
+            > div {
+                display: flex;
+                align-items: center;
+            }
+        }
+    }
+
+    &:hover {
+        border: 1px solid $border-color-hover;
+    }
 }
 
-.cvat-tasks-list-item:hover {
-    border: 1px solid $border-color-hover;
-}
+.cvat-task-item-menu-icon {
+    > img {
+        height: 20px;
 
-.cvat-tasks-list-item > div:nth-child(2) {
-    word-break: break-all;
-}
-
-.cvat-tasks-list-item > div:nth-child(4) > div {
-    margin-right: 20px;
-}
-
-.cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) {
-    margin-right: 5px;
-    margin-top: 10px;
-}
-
-.cvat-tasks-list-item > div:nth-child(4) > div:nth-child(2) > div {
-    display: flex;
-    align-items: center;
-}
-
-.cvat-task-item-menu-icon > img {
-    height: 20px;
-}
-
-.cvat-task-item-menu-icon > img:hover {
-    filter: invert(0.5);
+        &:hover {
+            filter: invert(0.5);
+        }
+    }
 }
 
 .ant-menu.cvat-actions-menu {
     box-shadow: 0 0 17px rgba(0,0,0,0.2);
+
+    > li:hover {
+        background-color: $hover-menu-color;
+    }
+
+    .ant-menu-submenu-arrow {
+        width: 0px;
+    }
 }
 
-.cvat-actions-menu > *:hover {
-    background-color: $hover-menu-color;
+.cvat-actions-menu-load-submenu-item,
+.cvat-actions-menu-dump-submenu-item,
+.cvat-actions-menu-export-submenu-item {
+    &:hover {
+        background-color: $hover-menu-color;
+    }
 }
 
-.cvat-actions-menu-load-submenu-item:hover {
-    background-color: $hover-menu-color;
-}
-
-.cvat-actions-menu-dump-submenu-item > button {
-    text-align: start;
-}
-
-.cvat-actions-menu-export-submenu-item:hover {
-    background-color: $hover-menu-color;
-}
-
-.cvat-actions-menu-export-submenu-item > button {
-    text-align: start;
-}
-
-.cvat-actions-menu-dump-submenu-item:hover {
-    background-color: $hover-menu-color;
-}
-
-.cvat-actions-menu > li:nth-child(2) > div > span {
-    margin-right: 15px;
-}
-
-.cvat-actions-menu > .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow {
-    width: 0px;
+.cvat-actions-menu-dump-submenu-item,
+.cvat-actions-menu-export-submenu-item {
+    > button {
+        text-align: left;
+    }
 }
 
 .cvat-task-item-preview {
