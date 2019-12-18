@@ -96,23 +96,22 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     ![](static/documentation/images/image005.jpg)
 
     **Labels**. There are two ways of working with labels:
-      -    The ``Constructor`` is a simple way to add and adjust labels. 
-      To add a new label click the ``Add label`` button.
+       -  The ``Constructor`` is a simple way to add and adjust labels. 
+       To add a new label click the ``Add label`` button.
 
-           ![](static/documentation/images/image123.jpg)
+          ![](static/documentation/images/image123.jpg)
            
-           You can set a name of the label in the ``Label name`` field.       
+          You can set a name of the label in the ``Label name`` field.       
       
-           ![](static/documentation/images/image124.jpg) 
+          ![](static/documentation/images/image124.jpg) 
            
-           If necessary you can add an attribute and set its properties by clicking ``Add an attribute``:  
-       
-           ![](static/documentation/images/image125.jpg)
+          If necessary you can add an attribute and set its properties by clicking ``Add an attribute``:  
+          ![](static/documentation/images/image125.jpg)
 
-           The following actions are available here:
+          The following actions are available here:
            1.  Set the attribute’s name. 
            1.  Choose the way to display the attribute: 
-               - Select — drop down list of value 
+              - Select — drop down list of value 
                - Radio — is used when it is necessary to choose just one option out of few suggested. 
                - Checkbox — is used when it is necessary to choose any number of options out of suggested. 
                - Text — is used when an attribute is entered as a text. 
@@ -131,9 +130,9 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
      
            After clicking ``Done`` the added labels would be displayed as separate elements of different colour. 
            You can edit or delete labels by clicking ``Update attributes`` or ``Delete label``. 
-      -    The ``Raw`` is a way of working with labels for an advanced user. 
-      Raw presents label data in _json_ format with an option of editing and copying labels as a text. 
-      The ``Done`` button applies the changes and the ``Reset`` button cancels the changes. 
+       -  The ``Raw`` is a way of working with labels for an advanced user. 
+       Raw presents label data in _json_ format with an option of editing and copying labels as a text. 
+       The ``Done`` button applies the changes and the ``Reset`` button cancels the changes. 
 
            ![](static/documentation/images/image126.jpg)
 
