@@ -36,8 +36,10 @@ export default function ModelsPageComponent(props: Props): JSX.Element {
         deleteModel,
     } = props;
 
-    if (!modelsInitialized && !modelsFetching) {
-        props.getModels();
+    if (!modelsInitialized) {
+        if (!modelsFetching) {
+            props.getModels();
+        }
         return (
             <Spin size='large' style={{ margin: '25% 45%' }} />
         );
