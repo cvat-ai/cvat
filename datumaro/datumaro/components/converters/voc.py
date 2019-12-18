@@ -4,9 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict, defaultdict
+import logging as log
+from lxml import etree as ET
 import os
 import os.path as osp
-from lxml import etree as ET
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import DEFAULT_SUBSET_NAME, AnnotationType
@@ -143,6 +144,11 @@ class _Converter:
                     ET.SubElement(root_elem, 'filename').text = \
                         item_id + VocPath.IMAGE_EXT
 
+                    source_elem = ET.SubElement(root_elem, 'source')
+                    ET.SubElement(source_elem, 'database').text = 'Unknown'
+                    ET.SubElement(source_elem, 'annotation').text = 'Unknown'
+                    ET.SubElement(source_elem, 'image').text = 'Unknown'
+
                     if item.has_image:
                         h, w, c = item.image.shape
                         size_elem = ET.SubElement(root_elem, 'size')
@@ -151,8 +157,8 @@ class _Converter:
                         ET.SubElement(size_elem, 'depth').text = str(c)
 
                     item_segmented = 0 < len(masks)
-                    if item_segmented:
-                        ET.SubElement(root_elem, 'segmented').text = '1'
+                    ET.SubElement(root_elem, 'segmented').text = \
+                        str(int(item_segmented))
 
                     objects_with_parts = []
                     objects_with_actions = defaultdict(dict)
@@ -296,6 +302,12 @@ class _Converter:
         if len(class_lists) == 0:
             return
 
+        label_cat = self._extractor.categories().get(AnnotationType.label, None)
+        if not label_cat:
+            log.warn("Unable to save classification task lists "
+                "as source does not provide class labels. Skipped.")
+            return
+
         for label in VocLabel:
             ann_file = osp.join(self._cls_subsets_dir,
                 '%s_%s.txt' % (label.name, subset_name))
@@ -303,7 +315,8 @@ class _Converter:
                 for item, item_labels in class_lists.items():
                     if not item_labels:
                         continue
-                    presented = label.value in item_labels
+                    item_labels = [label_cat.items[l].name for l in item_labels]
+                    presented = label.name in item_labels
                     f.write('%s % d\n' % \
                         (item, 1 if presented else -1))
 

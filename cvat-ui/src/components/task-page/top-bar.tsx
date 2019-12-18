@@ -11,14 +11,13 @@ import {
 import Text from 'antd/lib/typography/Text';
 
 import ActionsMenuContainer from '../../containers/actions-menu/actions-menu';
+import { MenuIcon } from '../../icons';
 
 interface DetailsComponentProps {
     taskInstance: any;
 }
 
 export default function DetailsComponent(props: DetailsComponentProps): JSX.Element {
-    const subMenuIcon = (): JSX.Element => (<img alt='' src='/assets/icon-sub-menu.svg' />);
-
     const { taskInstance } = props;
     const { id } = taskInstance;
 
@@ -37,7 +36,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                 >
                     <Button size='large' className='cvat-flex cvat-flex-center'>
                         <Text className='cvat-black-color'>Actions</Text>
-                        <Icon className='cvat-task-item-menu-icon' component={subMenuIcon} />
+                        <Icon className='cvat-menu-icon' component={MenuIcon} />
                     </Button>
                 </Dropdown>
             </Col>

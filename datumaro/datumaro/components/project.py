@@ -652,7 +652,10 @@ class Project:
         self.env.sources.unregister(name)
 
     def get_source(self, name):
-        return self.config.sources[name]
+        try:
+            return self.config.sources[name]
+        except KeyError:
+            raise KeyError("Source '%s' is not found" % name)
 
     def get_subsets(self):
         return self.config.subsets
@@ -669,7 +672,10 @@ class Project:
         self.env.register_model(name, value)
 
     def get_model(self, name):
-        return self.env.models.get(name)
+        try:
+            return self.env.models.get(name)
+        except KeyError:
+            raise KeyError("Model '%s' is not found" % name)
 
     def remove_model(self, name):
         self.env.unregister_model(name)

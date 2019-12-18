@@ -8,6 +8,7 @@ import TopBarComponent from './top-bar';
 import UploadedModelsList from './uploaded-models-list';
 import BuiltModelsList from './built-models-list';
 import EmptyListComponent from './empty-list';
+import FeedbackComponent from '../feedback';
 import { Model } from '../../reducers/interfaces';
 
 interface Props {
@@ -64,6 +65,7 @@ export default function ModelsPageComponent(props: Props): JSX.Element {
                 && !installedTFSegmentation
                 && <EmptyListComponent />
             }
+            <FeedbackComponent />
         </div>
     );
 }

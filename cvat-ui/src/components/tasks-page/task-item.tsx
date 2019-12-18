@@ -16,6 +16,7 @@ import moment from 'moment';
 
 import ActionsMenuContainer from '../../containers/actions-menu/actions-menu';
 import { ActiveInference } from '../../reducers/interfaces';
+import { MenuIcon } from '../../icons';
 
 export interface TaskItemProps {
     taskInstance: any;
@@ -148,7 +149,6 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
     }
 
     private renderNavigation(): JSX.Element {
-        const subMenuIcon = (): JSX.Element => (<img alt='' src='/assets/icon-sub-menu.svg' />);
         const {
             taskInstance,
             history,
@@ -173,7 +173,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                     <Col>
                         <Text className='cvat-black-color'>Actions</Text>
                         <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
-                            <Icon className='cvat-task-item-menu-icon' component={subMenuIcon} />
+                            <Icon className='cvat-menu-icon' component={MenuIcon} />
                         </Dropdown>
                     </Col>
                 </Row>
