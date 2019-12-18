@@ -97,8 +97,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     -   The ``Constructor`` is a simple way to add and adjust labels. 
     To add a new label click the ``Add label`` button.
-          
-        ![](static/documentation/images/image123.jpg)
+
+          ![](static/documentation/images/image123.jpg)
            
           You can set a name of the label in the ``Label name`` field. 
            
