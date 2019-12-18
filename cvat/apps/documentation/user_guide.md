@@ -97,33 +97,33 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     -   The ``Constructor`` is a simple way to add and adjust labels. 
     To add a new label click the ``Add label`` button.
-      
-      ![](static/documentation/images/image123.jpg)
-           
-      You can set a name of the label in the ``Label name`` field.     
-        
-       ![](static/documentation/images/image124.jpg) 
-           
-      If necessary you can add an attribute and set its properties by clicking ``Add an attribute``:
-        
-      ![](static/documentation/images/image125.jpg)
 
-      - The following actions are available here:
+        ![](static/documentation/images/image123.jpg)
+           
+        You can set a name of the label in the ``Label name`` field.     
+        
+        ![](static/documentation/images/image124.jpg) 
+           
+        If necessary you can add an attribute and set its properties by clicking ``Add an attribute``:
+        
+        ![](static/documentation/images/image125.jpg)
 
-        1.  Set the attribute’s name. 
-        1.  Choose the way to display the attribute: 
-            - Select — drop down list of value 
-            - Radio — is used when it is necessary to choose just one option out of few suggested. 
-            - Checkbox — is used when it is necessary to choose any number of options out of suggested. 
-            - Text — is used when an attribute is entered as a text. 
-            - Number — is used when an attribute is entered as a number. 
-        1.  Set values for the attribute. The values could be separated by pressing ``Enter``. 
-        The entered value is displayed as a separate element which could be deleted 
-        by pressing ``Backspace`` or clicking the close button (x). 
-        If the specified way of displaying the attribute is Text or Number, 
-        the entered value will be displayed as text by default (e.g. you can specify the text format).
-        1.  Checkbox ``Mutable`` determines if an attribute would be changed frame to frame. 
-        1.  You can delete the attribute by clicking the close button (x). 
+        - The following actions are available here:
+
+          1.  Set the attribute’s name. 
+          1.  Choose the way to display the attribute: 
+              - Select — drop down list of value 
+              - Radio — is used when it is necessary to choose just one option out of few suggested. 
+              - Checkbox — is used when it is necessary to choose any number of options out of suggested. 
+              - Text — is used when an attribute is entered as a text. 
+              - Number — is used when an attribute is entered as a number. 
+          1.  Set values for the attribute. The values could be separated by pressing ``Enter``. 
+          The entered value is displayed as a separate element which could be deleted 
+          by pressing ``Backspace`` or clicking the close button (x). 
+          If the specified way of displaying the attribute is Text or Number, 
+          the entered value will be displayed as text by default (e.g. you can specify the text format).
+          1.  Checkbox ``Mutable`` determines if an attribute would be changed frame to frame. 
+          1.  You can delete the attribute by clicking the close button (x). 
  
       Click the ``Continue`` button to add more labels. 
       If you need to cancel adding a label - press the ``Cancel`` button. 
