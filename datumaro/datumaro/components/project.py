@@ -336,8 +336,10 @@ class ProjectDataset(Extractor):
         own_source = None
         own_source_dir = osp.join(config.project_dir, config.dataset_dir)
         if osp.isdir(own_source_dir):
-            own_source = \
-                env.make_importer(DEFAULT_FORMAT)(own_source_dir).make_dataset()
+            log.disable(log.INFO)
+            own_source = env.make_importer(DEFAULT_FORMAT)(own_source_dir) \
+                .make_dataset()
+            log.disable(log.NOTSET)
 
         # merge categories
         # TODO: implement properly with merging and annotations remapping
@@ -354,7 +356,7 @@ class ProjectDataset(Extractor):
         # merge items
         subsets = defaultdict(lambda: Subset(self))
         for source_name, source in self._sources.items():
-            log.info("Loading '%s' source contents..." % source_name)
+            log.debug("Loading '%s' source contents..." % source_name)
             for item in source:
                 if dataset_filter and not dataset_filter(item):
                     continue
@@ -390,7 +392,7 @@ class ProjectDataset(Extractor):
 
         # override with our items, fallback to existing images
         if own_source is not None:
-            log.info("Loading own dataset...")
+            log.debug("Loading own dataset...")
             for item in own_source:
                 if dataset_filter and not dataset_filter(item):
                     continue

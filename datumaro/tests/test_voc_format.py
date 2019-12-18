@@ -28,6 +28,7 @@ from datumaro.components.converters.voc import (
     VocSegmentationConverter,
 )
 from datumaro.components.importers.voc import VocImporter
+from datumaro.components.project import Project
 from datumaro.util import find
 from datumaro.util.test_utils import TestDir
 
@@ -480,7 +481,7 @@ class VocImporterTest(TestCase):
             dummy_dir = osp.join(test_dir.path, 'dummy')
             subsets = generate_dummy_voc(dummy_dir)
 
-            dataset = VocImporter()(dummy_dir).make_dataset()
+            dataset = Project.import_from(dummy_dir, 'voc').make_dataset()
 
             self.assertEqual(len(VOC.VocTask), len(dataset.sources))
             self.assertEqual(set(subsets), set(dataset.subsets()))
