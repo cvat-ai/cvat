@@ -12,7 +12,10 @@ import {
 import TopBarComponent from './top-bar';
 import DetailsContainer from '../../containers/task-page/details';
 import JobListContainer from '../../containers/task-page/job-list';
+import ModelRunnerModalContainer from '../../containers/model-runner-dialog/model-runner-dialog';
 import { Task } from '../../reducers/interfaces';
+
+
 
 interface TaskPageComponentProps {
     task: Task | null;
@@ -75,13 +78,16 @@ class TaskPageComponent extends React.PureComponent<Props> {
         }
 
         return (
-            <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
-                    <TopBarComponent taskInstance={(task as Task).instance} />
-                    <DetailsContainer task={(task as Task)} />
-                    <JobListContainer task={(task as Task)} />
-                </Col>
-            </Row>
+            <>
+                <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
+                    <Col md={22} lg={18} xl={16} xxl={14}>
+                        <TopBarComponent taskInstance={(task as Task).instance} />
+                        <DetailsContainer task={(task as Task)} />
+                        <JobListContainer task={(task as Task)} />
+                    </Col>
+                </Row>
+                <ModelRunnerModalContainer />
+            </>
         );
     }
 }
