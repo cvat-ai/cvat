@@ -97,8 +97,8 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     **Labels**. There are two ways of working with labels:
 
-      -  The ``Constructor`` is a simple way to add and adjust labels. 
-      To add a new label click the ``Add label`` button.
+       -  The ``Constructor`` is a simple way to add and adjust labels. 
+       To add a new label click the ``Add label`` button.
           ![](static/documentation/images/image123.jpg)
            
           You can set a name of the label in the ``Label name`` field.     
@@ -133,9 +133,9 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
           After clicking ``Done`` the added labels would be displayed as separate elements of different colour. 
           You can edit or delete labels by clicking ``Update attributes`` or ``Delete label``. 
 
-      -  The ``Raw`` is a way of working with labels for an advanced user. 
-      Raw presents label data in _json_ format with an option of editing and copying labels as a text. 
-      The ``Done`` button applies the changes and the ``Reset`` button cancels the changes.  
+       -  The ``Raw`` is a way of working with labels for an advanced user. 
+       Raw presents label data in _json_ format with an option of editing and copying labels as a text. 
+       The ``Done`` button applies the changes and the ``Reset`` button cancels the changes.  
           ![](static/documentation/images/image126.jpg)
 
     **Select files**. Press tab ``My computer`` to choose some files for annotation from your PC. 
