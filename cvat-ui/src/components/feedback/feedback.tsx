@@ -1,3 +1,4 @@
+import './styles.scss';
 import React from 'react';
 
 import {
@@ -26,10 +27,6 @@ import {
 } from 'react-share';
 
 import Text from 'antd/lib/typography/Text';
-
-interface State {
-    active: boolean;
-}
 
 function renderContent(): JSX.Element {
     const githubURL = 'https://github.com/opencv/cvat';

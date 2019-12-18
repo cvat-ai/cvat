@@ -1,0 +1,32 @@
+@import '../../base.scss';
+
+.ant-menu.cvat-actions-menu {
+    box-shadow: 0 0 17px rgba(0,0,0,0.2);
+
+    > li:hover {
+        background-color: $hover-menu-color;
+    }
+
+    .ant-menu-submenu-arrow {
+        width: 0px;
+    }
+}
+
+.cvat-actions-menu-load-submenu-item,
+.cvat-actions-menu-dump-submenu-item,
+.cvat-actions-menu-export-submenu-item {
+    &:hover {
+        background-color: $hover-menu-color;
+    }
+}
+
+.cvat-actions-menu-dump-submenu-item,
+.cvat-actions-menu-export-submenu-item {
+    > button {
+        text-align: left;
+    }
+}
+
+.cvat-menu-icon {
+    transform: scale(0.5);
+}

@@ -1,3 +1,4 @@
+import './styles.scss';
 import React from 'react';
 
 import {
@@ -8,7 +9,7 @@ import TopBarComponent from './top-bar';
 import UploadedModelsList from './uploaded-models-list';
 import BuiltModelsList from './built-models-list';
 import EmptyListComponent from './empty-list';
-import FeedbackComponent from '../feedback';
+import FeedbackComponent from '../feedback/feedback';
 import { Model } from '../../reducers/interfaces';
 
 interface Props {

@@ -1,3 +1,4 @@
+import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
@@ -14,8 +15,6 @@ import DetailsContainer from '../../containers/task-page/details';
 import JobListContainer from '../../containers/task-page/job-list';
 import ModelRunnerModalContainer from '../../containers/model-runner-dialog/model-runner-dialog';
 import { Task } from '../../reducers/interfaces';
-
-
 
 interface TaskPageComponentProps {
     task: Task | null;

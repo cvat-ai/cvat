@@ -1,0 +1,12 @@
+.cvat-feedback-button {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    padding: 0px;
+}
+
+.cvat-feedback-button {
+    > i {
+        font-size: 40px;
+    }
+}
