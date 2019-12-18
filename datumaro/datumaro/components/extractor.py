@@ -276,6 +276,8 @@ class PolygonObject(ShapeObject):
     # pylint: disable=redefined-builtin
     def __init__(self, points=None,
             label=None, id=None, attributes=None, group=None):
+        if points is not None:
+            assert len(points) % 2 == 0 and 3 <= len(points) // 2, "Wrong polygon points: %s" % points
         super().__init__(type=AnnotationType.polygon,
             points=points, label=label,
             id=id, attributes=attributes, group=group)
