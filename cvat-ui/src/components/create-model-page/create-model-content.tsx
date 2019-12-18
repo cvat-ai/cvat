@@ -128,7 +128,7 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                 </Col>
                 <Col span={24}>
                     <Text type='danger'>* </Text>
-                    <Text className='cvat-black-color'>Select files:</Text>
+                    <Text className='cvat-text-color'>Select files:</Text>
                 </Col>
                 <Col span={24}>
                     <ConnectedFileManager

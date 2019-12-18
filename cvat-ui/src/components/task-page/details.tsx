@@ -123,7 +123,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                         onTaskUpdate(taskInstance);
                     },
                 }}
-                className='cvat-black-color'
+                className='cvat-text-color'
             >
                 {name}
             </Title>
@@ -150,26 +150,26 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             <>
                 <Row type='flex' justify='start' align='middle'>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'>Overlap size</Text>
+                        <Text strong className='cvat-text-color'>Overlap size</Text>
                         <br />
-                        <Text className='cvat-black-color'>{overlap}</Text>
+                        <Text className='cvat-text-color'>{overlap}</Text>
                     </Col>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'>Segment size</Text>
+                        <Text strong className='cvat-text-color'>Segment size</Text>
                         <br />
-                        <Text className='cvat-black-color'>{segmentSize}</Text>
+                        <Text className='cvat-text-color'>{segmentSize}</Text>
                     </Col>
                 </Row>
                 <Row type='flex' justify='space-between' align='middle'>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'>Image quality</Text>
+                        <Text strong className='cvat-text-color'>Image quality</Text>
                         <br />
-                        <Text className='cvat-black-color'>{imageQuality}</Text>
+                        <Text className='cvat-text-color'>{imageQuality}</Text>
                     </Col>
                     <Col span={12}>
-                        <Text strong className='cvat-black-color'>Z-order</Text>
+                        <Text strong className='cvat-text-color'>Z-order</Text>
                         <br />
-                        <Text className='cvat-black-color'>{zOrder}</Text>
+                        <Text className='cvat-text-color'>{zOrder}</Text>
                     </Col>
                 </Row>
             </>
@@ -236,7 +236,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
                 && (
                     <Row>
                         <Col className='cvat-dataset-repository-url'>
-                            <Text strong className='cvat-black-color'>Dataset Repository</Text>
+                            <Text strong className='cvat-text-color'>Dataset Repository</Text>
                             <br />
                             <a href={repository} rel='noopener noreferrer' target='_blank'>{repository}</a>
                             {repositoryStatus === 'sync'
@@ -332,7 +332,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
             return (
                 <Row>
                     <Col>
-                        <Text strong className='cvat-black-color'>Issue Tracker</Text>
+                        <Text strong className='cvat-text-color'>Issue Tracker</Text>
                         <br />
                         <Text editable={{ onChange: onChangeValue }}>{bugTracker}</Text>
                         <Button
@@ -355,7 +355,7 @@ export default class DetailsComponent extends React.PureComponent<Props, State> 
         return (
             <Row>
                 <Col>
-                    <Text strong className='cvat-black-color'>Issue Tracker</Text>
+                    <Text strong className='cvat-text-color'>Issue Tracker</Text>
                     <br />
                     <Text editable={{ onChange: onChangeValue }}>Not specified</Text>
                 </Col>

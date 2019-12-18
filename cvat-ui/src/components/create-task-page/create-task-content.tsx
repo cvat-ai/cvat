@@ -164,7 +164,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         return (
             <Col span={24}>
                 <Text type='danger'>* </Text>
-                <Text className='cvat-black-color'>Labels:</Text>
+                <Text className='cvat-text-color'>Labels:</Text>
                 <LabelsEditor
                     labels={labels}
                     onSubmit={
@@ -183,7 +183,7 @@ export default class CreateTaskContent extends React.PureComponent<Props, State>
         return (
             <Col span={24}>
                 <Text type='danger'>* </Text>
-                <Text className='cvat-black-color'>Select files:</Text>
+                <Text className='cvat-text-color'>Select files:</Text>
                 <FileManagerContainer
                     ref={
                         (container: any): void => { this.fileManagerContainer = container; }

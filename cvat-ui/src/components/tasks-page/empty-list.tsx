@@ -12,7 +12,7 @@ import { EmptyTasksIcon } from '../../icons';
 
 export default function EmptyListComponent(): JSX.Element {
     return (
-        <div className='cvat-empty-task-list'>
+        <div className='cvat-empty-tasks-list'>
             <Row type='flex' justify='center' align='middle'>
                 <Col>
                     <Icon className='cvat-empty-tasks-icon' component={EmptyTasksIcon} />

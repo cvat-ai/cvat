@@ -39,7 +39,7 @@ export default function UploadedModelsListComponent(props: Props): JSX.Element {
         <>
             <Row type='flex' justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
-                    <Text className='cvat-black-color' strong>Uploaded by a user</Text>
+                    <Text className='cvat-text-color' strong>Uploaded by a user</Text>
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>

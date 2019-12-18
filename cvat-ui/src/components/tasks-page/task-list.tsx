@@ -30,7 +30,7 @@ export default function TaskListComponent(props: ContentListProps): JSX.Element 
     return (
         <>
             <Row type='flex' justify='center' align='middle'>
-                <Col className='cvat-task-list' md={22} lg={18} xl={16} xxl={14}>
+                <Col className='cvat-tasks-list' md={22} lg={18} xl={16} xxl={14}>
                     { taskViews }
                 </Col>
             </Row>

@@ -1,3 +1,4 @@
+import './styles.scss';
 import React from 'react';
 
 import { RouteComponentProps } from 'react-router';
@@ -128,7 +129,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     }
                 >
                     <Icon type='github' />
-                    <Text className='cvat-black-color'>GitHub</Text>
+                    <Text className='cvat-text-color'>GitHub</Text>
                 </Button>
                 <Button
                     className='cvat-header-button'
