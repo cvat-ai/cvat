@@ -14,6 +14,8 @@ $player-slider-color: #979797;
 $danger-icon-color: #FF4136;
 $info-icon-color: #0074D9;
 
+$monospaced-fonts-stack: Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+
 hr {
     border: none;
     border-top: 1px solid $border-color-1;
@@ -256,17 +258,17 @@ hr {
     }
 }
 
-.cvat-task-item-preview {
-    max-width: 140px;
-    max-height: 80px;
-}
-
 .cvat-task-item-preview-wrapper {
     display: flex;
     justify-content: center;
     overflow: hidden;
     margin: 20px;
     margin-top: 0px;
+
+    > .cvat-task-item-preview {
+        max-width: 140px;
+        max-height: 80px;
+    }
 }
 
 .cvat-task-progress {
@@ -279,8 +281,10 @@ hr {
     margin-right: 5px;
 }
 
-.cvat-task-completed-progress > div > div > div > div.ant-progress-bg {
-    background: $completed-progress-color !important; /* csslint allow: important */
+.cvat-task-completed-progress {
+    div.ant-progress-bg {
+        background: $completed-progress-color !important; /* csslint allow: important */
+    }
 }
 
 .cvat-task-progress-progress {
@@ -298,40 +302,48 @@ hr {
 .cvat-task-details-wrapper {
     overflow-y: auto;
     height: 100%;
+
+    .cvat-task-details {
+        width: 100%;
+        height: auto;
+        border: 1px solid $border-color-1;
+        border-radius: 3px;
+        padding: 20px;
+        background: $background-color-1;
+
+        > div:nth-child(2) {
+            > div:nth-child(2) {
+                padding-left: 20px;
+
+                > div:not(:first-child) {
+                    margin-top: 20px;
+                }
+            }
+        }
+    }
 }
 
-.cvat-task-details {
-    width: 100%;
-    height: auto;
-    border: 1px solid $border-color-1;
-    border-radius: 3px;
-    padding: 20px;
-    background: $background-color-1;
-}
+.cvat-dataset-repository-url {
+    > a {
+        margin-right: 10px;
+    }
 
-.cvat-task-details > div:nth-child(2) > div:nth-child(2) {
-    padding-left: 20px;
-}
+    > .ant-tag-red {
+        user-select: none;
+        opacity: 0.4;
 
-.cvat-task-details > div:nth-child(2) > div:nth-child(2) > div:not(:first-child) {
-    margin-top: 20px;
-}
+        &:hover {
+            opacity: 0.8;
+        }
 
-.cvat-dataset-repository-url > a {
-    margin-right: 10px;
-}
+        &:active {
+            opacity: 1;
+        }
+    }
 
-.cvat-dataset-repository-url > .ant-tag-red {
-    user-select: none;
-    opacity: 0.4;
-}
-
-.cvat-dataset-repository-url > .ant-tag-red:hover {
-    opacity: 0.8;
-}
-
-.cvat-dataset-repository-url > .ant-tag-red:active {
-    opacity: 1;
+    > .ant-tag > i {
+        margin-right: 5px;
+    }
 }
 
 .cvat-task-job-list {
@@ -342,10 +354,10 @@ hr {
     margin-top: 20px;
     padding: 20px;
     background: $background-color-1;
-}
 
-.cvat-task-job-list > div:nth-child(1) > div:nth-child(1) {
-    display: flex;
+    > div:nth-child(1) > div:nth-child(1) {
+        display: flex;
+    }
 }
 
 .cvat-task-top-bar {
@@ -353,16 +365,16 @@ hr {
     margin-bottom: 10px;
 }
 
-.cvat-task-preview {
-    max-width: 252px;
-    max-height: 144px;
-}
-
 .cvat-task-preview-wrapper {
     display: flex;
     justify-content: flex-start;
     overflow: hidden;
     margin-bottom: 20px;
+
+    > .cvat-task-preview {
+        max-width: 252px;
+        max-height: 144px;
+    }
 }
 
 .cvat-user-selector {
@@ -380,17 +392,17 @@ textarea.ant-input.cvat-raw-labels-viewer {
     border-top: none;
     border-radius: 0px 0px 5px 5px;
     min-height: 9em;
-    font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
-}
+    font-family: $monospaced-fonts-stack;
 
-.cvat-raw-labels-viewer:focus {
-    border-color: $border-color-2;
-    box-shadow: none;
-}
+    &:focus {
+        border-color: $border-color-2;
+        box-shadow: none;
+    }
 
-.cvat-raw-labels-viewer:hover {
-    border-color: $border-color-2;
-    box-shadow: none;
+    &:hover {
+        border-color: $border-color-2;
+        box-shadow: none;
+    }
 }
 
 .cvat-constructor-viewer {
@@ -416,19 +428,19 @@ textarea.ant-input.cvat-raw-labels-viewer {
     user-select: none;
     border: 1px solid $transparent-color;
     opacity: 0.6;
-}
 
-.cvat-constructor-viewer-item > span {
-    margin-left: 5px;
-    color: white;
-}
+    > span {
+        margin-left: 5px;
+        color: white;
 
-.cvat-constructor-viewer-item > span > i:hover {
-    filter: invert(1);
-}
+        > i:hover {
+            filter: invert(1);
+        }
+    }
 
-.cvat-constructor-viewer-item:hover {
-    opacity: 1;
+    &:hover {
+        opacity: 1;
+    }
 }
 
 .cvat-constructor-viewer-new-item {
@@ -443,12 +455,12 @@ textarea.ant-input.cvat-raw-labels-viewer {
     opacity: 1;
 }
 
-.cvat-label-constructor-creator > form:first-child {
-    margin-top: 10px;
-}
-
-.cvat-label-constructor-updater > form:first-child {
-    margin-top: 10px;
+.cvat-label-constructor-creator,
+.cvat-label-constructor-updater
+{
+    > form:first-child {
+        margin-top: 10px;
+    }
 }
 
 .cvat-attribute-constructor-form > div:first-child > div:nth-child(4) {
@@ -468,9 +480,10 @@ textarea.ant-input.cvat-raw-labels-viewer {
 /* Pagination in center */
 .cvat-task-jobs-table > div > div {
     text-align: center;
-}
-.cvat-task-jobs-table > div > div > .ant-table-pagination.ant-pagination {
-    float: none;
+
+    > .ant-table-pagination.ant-pagination {
+        float: none;
+    }
 }
 
 .cvat-job-completed-color {
@@ -490,30 +503,30 @@ textarea.ant-input.cvat-raw-labels-viewer {
     margin-top: 40px;
     overflow-y: auto;
     height: 90%;
-}
 
-.cvat-create-task-form-wrapper > div > span {
-    font-size: 36px;
-}
+    > div > span {
+        font-size: 36px;
+    }
 
-.cvat-create-task-content {
-    margin-top: 20px;
-    width: 100%;
-    height: auto;
-    border: 1px solid $border-color-1;
-    border-radius: 3px;
-    padding: 20px;
-    background: $background-color-1;
-    text-align: initial;
-}
+    .cvat-create-task-content {
+        margin-top: 20px;
+        width: 100%;
+        height: auto;
+        border: 1px solid $border-color-1;
+        border-radius: 3px;
+        padding: 20px;
+        background: $background-color-1;
+        text-align: initial;
 
-.cvat-create-task-content > div:not(first-child) {
-    margin-top: 10px;
-}
+        > div:not(first-child) {
+            margin-top: 10px;
+        }
 
-.cvat-create-task-content > div:nth-child(7) > button {
-    float: right;
-    width: 120px;
+        > div:nth-child(7) > button {
+            float: right;
+            width: 120px;
+        }
+    }
 }
 
 .cvat-share-tree {
@@ -527,34 +540,37 @@ textarea.ant-input.cvat-raw-labels-viewer {
     padding-top: 30px;
     height: 100%;
     overflow: auto;
+
+    > div:nth-child(1) {
+        margin-bottom: 10px;
+
+        > div:nth-child(1) {
+            display: flex;
+        }
+
+        > div:nth-child(2) {
+            display: flex;
+            justify-content: flex-end;
+        }
+    }
 }
 
-.cvat-models-page > div:nth-child(1) {
-    margin-bottom: 10px;
-}
 
-.cvat-models-page > div:nth-child(1) > div:nth-child(1) {
-    display: flex;
-}
+.cvat-empty-models-list {
+    /* empty-models icon */
+    > div:nth-child(1) {
+        margin-top: 50px;
+    }
 
-.cvat-models-page > div:nth-child(1) > div:nth-child(2) {
-    display: flex;
-    justify-content: flex-end;
-}
+    /* No models uploaded yet */
+    > div:nth-child(2) > div {
+        margin-top: 20px;
 
-/* empty-models icon */
-.cvat-empty-models-list > div:nth-child(1) {
-    margin-top: 50px;
-}
-
-.cvat-empty-models-list > div:nth-child(2) > div {
-    margin-top: 20px;
-}
-
-/* No models uploaded yet */
-.cvat-empty-models-list > div:nth-child(2) > div > span {
-    font-size: 20px;
-    color: $text-color;
+        > span {
+            font-size: 20px;
+            color: $text-color;
+        }
+    }
 }
 
 /* To annotate your task automatically */
