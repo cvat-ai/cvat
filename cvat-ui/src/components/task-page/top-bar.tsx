@@ -34,7 +34,7 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                         />
                     )}
                 >
-                    <Button size='large' className='cvat-flex cvat-flex-center'>
+                    <Button size='large'>
                         <Text className='cvat-text-color'>Actions</Text>
                         <Icon className='cvat-menu-icon' component={MenuIcon} />
                     </Button>
