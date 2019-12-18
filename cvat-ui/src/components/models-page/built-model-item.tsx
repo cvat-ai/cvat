@@ -24,7 +24,7 @@ export default function BuiltModelItemComponent(props: Props): JSX.Element {
                 <Tag color='orange'>Tensorflow</Tag>
             </Col>
             <Col span={6} xxl={7}>
-                <Text className='cvat-black-color'>
+                <Text className='cvat-text-color'>
                     {model.name}
                 </Text>
             </Col>

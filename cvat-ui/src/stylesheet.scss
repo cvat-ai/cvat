@@ -1,8 +1,23 @@
+$header-color: #D8D8D8;
+$text-color: #303030;
+$hover-menu-color: rgba(24,144,255,0.05);
+$completed-progress-color: #61C200;
+$inprogress-progress-color: #1890FF;
+$pending-progress-color: #C1C1C1;
+$border-color-1: #c3c3c3;
+$border-color-2: #d9d9d9;
+$border-color-hover: #40a9ff;
+$background-color-1: white;
+$background-color-2: #F1F1F1;
+$transparent-color: rgba(0, 0, 0, 0);
+$player-slider-color: #979797;
+$danger-icon-color: #FF4136;
+$info-icon-color: #0074D9;
+
 hr {
-    border: 0;
-    height: 0;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    border: none;
+    border-top: 1px solid $border-color-1;
+    height: 1px;
 }
 
 .cvat-header.ant-layout-header {
@@ -11,7 +26,7 @@ hr {
     padding-right: 0px;
     line-height: 0px;
     height: 44px;
-    background: #D8D8D8;
+    background: $header-color;
 }
 
 .cvat-left-header {
@@ -36,8 +51,8 @@ hr {
     align-items: center;
 }
 
-.cvat-black-color {
-    color: #363435;
+.cvat-text-color {
+    color: $text-color;
 }
 
 .cvat-feedback-button {
@@ -56,7 +71,7 @@ hr {
 }
 
 .ant-btn.cvat-header-button {
-    color: black;
+    color: $text-color;
     padding: 0px 10px;
     margin-right: 10px;
 }
@@ -65,7 +80,7 @@ hr {
 .ant-dropdown-trigger.cvat-header-menu-dropdown {
     display: flex;
     align-items: center;
-    border-left: 1px solid #c3c3c3;
+    border-left: 1px solid $border-color-1;
     padding: 0px 20px;
 }
 
@@ -81,7 +96,7 @@ hr {
 .cvat-title {
     font-weight: 400;
     font-size: 21px;
-    color: black;
+    color: $text-color;
     padding-top: 5px;
 }
 
@@ -94,7 +109,7 @@ hr {
 }
 
 .cvat-tasks-page > div:nth-child(1) > div > span {
-    color: black;
+    color: $text-color;
 }
 
 .cvat-tasks-page > div:nth-child(2) > div:nth-child(1) {
@@ -160,7 +175,7 @@ hr {
 /* No tasks created yet */
 .cvat-empty-task-list > div:nth-child(2) > div > span {
     font-size: 20px;
-    color: #4A4A4A;
+    color: $text-color;
 }
 
 /* To get started with your annotation project .. */
@@ -181,15 +196,15 @@ hr {
 .cvat-tasks-list-item {
     width: 100%;
     height: 120px;
-    border: 1px solid #c3c3c3;
+    border: 1px solid $border-color-1;
     border-radius: 3px;
     margin-bottom: 15px;
     padding-top: 20px;
-    background: white;
+    background: $background-color-1;
 }
 
 .cvat-tasks-list-item:hover {
-    border: 1px solid #40a9ff;
+    border: 1px solid $border-color-hover;
 }
 
 .cvat-tasks-list-item > div:nth-child(2) {
@@ -222,16 +237,12 @@ hr {
     box-shadow: 0 0 17px rgba(0,0,0,0.2);
 }
 
-.cvat-actions-menu > hr {
-    border: 0.5px solid #D6D6D6;
-}
-
 .cvat-actions-menu > *:hover {
-    background-color: rgba(24,144,255,0.05);
+    background-color: $hover-menu-color;
 }
 
 .cvat-actions-menu-load-submenu-item:hover {
-    background-color: rgba(24,144,255,0.05);
+    background-color: $hover-menu-color;
 }
 
 .cvat-actions-menu-dump-submenu-item > button {
@@ -239,7 +250,7 @@ hr {
 }
 
 .cvat-actions-menu-export-submenu-item:hover {
-    background-color: rgba(24,144,255,0.05);
+    background-color: $hover-menu-color;
 }
 
 .cvat-actions-menu-export-submenu-item > button {
@@ -247,7 +258,7 @@ hr {
 }
 
 .cvat-actions-menu-dump-submenu-item:hover {
-    background-color: rgba(24,144,255,0.05);
+    background-color: $hover-menu-color;
 }
 
 .cvat-actions-menu > li:nth-child(2) > div > span {
@@ -276,24 +287,24 @@ hr {
 }
 
 .cvat-task-completed-progress {
-    color: #61C200;
-    fill: #61C200;
+    color: $completed-progress-color;
+    fill: $completed-progress-color;
     margin-right: 5px;
 }
 
 .cvat-task-completed-progress > div > div > div > div.ant-progress-bg {
-    background: #52c41a !important; /* csslint allow: important */
+    background: $completed-progress-color !important; /* csslint allow: important */
 }
 
 .cvat-task-progress-progress {
-    color: #1890FF;
-    fill: #1890FF;
+    color: $inprogress-progress-color;
+    fill: $inprogress-progress-color;
     margin-right: 5px;
 }
 
 .cvat-task-pending-progress {
-    color: #C1C1C1;
-    fill: #C1C1C1;
+    color: $pending-progress-color;
+    fill: $pending-progress-color;
     margin-right: 5px;
 }
 
@@ -305,10 +316,10 @@ hr {
 .cvat-task-details {
     width: 100%;
     height: auto;
-    border: 1px solid #c3c3c3;
+    border: 1px solid $border-color-1;
     border-radius: 3px;
     padding: 20px;
-    background: white;
+    background: $background-color-1;
 }
 
 .cvat-task-details > div:nth-child(2) > div:nth-child(2) {
@@ -339,11 +350,11 @@ hr {
 .cvat-task-job-list {
     width: 100%;
     height: auto;
-    border: 1px solid #c3c3c3;
+    border: 1px solid $border-color-1;
     border-radius: 3px;
     margin-top: 20px;
     padding: 20px;
-    background: white;
+    background: $background-color-1;
 }
 
 .cvat-task-job-list > div:nth-child(1) > div:nth-child(1) {
@@ -377,7 +388,7 @@ hr {
 }
 
 textarea.ant-input.cvat-raw-labels-viewer {
-    border-color: #d9d9d9;
+    border-color: $border-color-2;
     box-shadow: none;
     border-top: none;
     border-radius: 0px 0px 5px 5px;
@@ -386,17 +397,17 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-raw-labels-viewer:focus {
-    border-color: #d9d9d9;
+    border-color: $border-color-2;
     box-shadow: none;
 }
 
 .cvat-raw-labels-viewer:hover {
-    border-color: #d9d9d9;
+    border-color: $border-color-2;
     box-shadow: none;
 }
 
 .cvat-constructor-viewer {
-    border: 1px solid #d9d9d9;
+    border: 1px solid $border-color-2;
     box-shadow: none;
     border-top: none;
     border-radius: 0px 0px 5px 5px;
@@ -416,7 +427,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
     margin: 2px;
     margin-left: 8px;
     user-select: none;
-    border: 1px solid rgba(0, 0, 0, 0);
+    border: 1px solid $transparent-color;
     opacity: 0.6;
 }
 
@@ -426,12 +437,11 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-constructor-viewer-item > span > i:hover {
-    color: #111111;
+    filter: invert(1);
 }
 
 .cvat-constructor-viewer-item:hover {
     opacity: 1;
-    border: 1px solid rgba(0, 0, 0, 255);
 }
 
 .cvat-constructor-viewer-new-item {
@@ -446,14 +456,6 @@ textarea.ant-input.cvat-raw-labels-viewer {
     opacity: 1;
 }
 
-.labels-editor-new-label-button > i {
-    margin-left: 10px;
-}
-
-.labels-editor-new-label-button > i:hover {
-    color: #111111;
-}
-
 .cvat-label-constructor-creator > form:first-child {
     margin-top: 10px;
 }
@@ -466,12 +468,8 @@ textarea.ant-input.cvat-raw-labels-viewer {
     display: contents;
 }
 
-.cvat-save-attribute-button:hover > i {
-    color: black;
-}
-
 .cvat-delete-attribute-button:hover > i {
-    color: red;
+    color: $danger-icon-color;
 }
 
 .ant-typography.cvat-jobs-header {
@@ -489,15 +487,15 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-job-completed-color {
-    color: #61C200;
+    color: $completed-progress-color;
 }
 
 .cvat-job-validation-color {
-    color: #1890FF;
+    color: $inprogress-progress-color;
 }
 
 .cvat-job-annotation-color {
-    color: #C1C1C1;
+    color: $pending-progress-color;
 }
 
 .cvat-create-task-form-wrapper {
@@ -515,10 +513,10 @@ textarea.ant-input.cvat-raw-labels-viewer {
     margin-top: 20px;
     width: 100%;
     height: auto;
-    border: 1px solid #c3c3c3;
+    border: 1px solid $border-color-1;
     border-radius: 3px;
     padding: 20px;
-    background: white;
+    background: $background-color-1;
     text-align: initial;
 }
 
@@ -569,7 +567,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 /* No models uploaded yet */
 .cvat-empty-models-list > div:nth-child(2) > div > span {
     font-size: 20px;
-    color: #4A4A4A;
+    color: $text-color;
 }
 
 /* To annotate your task automatically */
@@ -585,15 +583,15 @@ textarea.ant-input.cvat-raw-labels-viewer {
 .cvat-models-list-item {
     width: 100%;
     height: 60px;
-    border: 1px solid #c3c3c3;
+    border: 1px solid $border-color-1;
     border-radius: 3px;
     margin-bottom: 15px;
     padding: 15px;
-    background: white;
+    background: $background-color-1;
 }
 
 .cvat-models-list-item:hover {
-    border: 1px solid #40a9ff;
+    border: 1px solid $border-color-hover;
 }
 
 .cvat-models-list-item > div {
@@ -632,17 +630,17 @@ textarea.ant-input.cvat-raw-labels-viewer {
     margin-top: 20px;
     width: 100%;
     height: auto;
-    border: 1px solid #c3c3c3;
+    border: 1px solid $border-color-1;
     border-radius: 3px;
     padding: 20px;
-    background: white;
+    background: $background-color-1;
     text-align: initial;
 }
 
 .cvat-create-model-content > div:nth-child(1) > i {
     float: right;
     font-size: 20px;
-    color: red;
+    color: $danger-icon-color;
 }
 
 .cvat-create-model-content > div:nth-child(4) {
@@ -660,11 +658,11 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-run-model-dialog-info-icon {
-    color: blue;
+    color: $info-icon-color;
 }
 
 .cvat-run-model-dialog-remove-mapping-icon {
-    color: red;
+    color: $danger-icon-color;
 }
 
 #root {
@@ -688,8 +686,8 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .ant-layout-header.cvat-annotation-page-header {
-    background-color: #F1F1F1;
-    border-bottom: 1px solid #D7D7D7;
+    background-color: $background-color-2;
+    border-bottom: 1px solid $border-color-1;
     height: 54px;
     padding: 0px;
 }
@@ -708,7 +706,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 
 .cvat-annotation-header-left-group > div:first-child {
     filter: invert(0.9);
-    background: white;
+    background: $background-color-1;
     border-radius: 0px;
     width: 70px;
 }
@@ -775,7 +773,7 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-annotation-header-player-slider > .ant-slider-rail {
-    background-color: #979797;
+    background-color: $player-slider-color;
 }
 
 .cvat-annotation-header-filename-wrapper {
@@ -827,24 +825,24 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-annotation-page-controls-sidebar {
-    background-color: #F1F1F1;
-    border-right: 1px solid #D7D7D7;
+    background-color: $background-color-2;
+    border-right: 1px solid $border-color-1;
 }
 
 .cvat-annotation-page-objects-sidebar {
-    background-color: #F1F1F1;
-    border-left: 1px solid #D7D7D7;
+    background-color: $background-color-2;
+    border-left: 1px solid $border-color-1;
 }
 
 .cvat-annotation-page-canvas-container {
-    background-color: white;
+    background-color: $background-color-1;
 }
 
 .cvat-annotation-page-objects-sidebar {
     top: 0px;
     right: 0px;
     left: auto;
-    background: white;
+    background: $background-color-2;
 }
 
 .cvat-annotation-page-controls-sidebar > div > i {
@@ -854,12 +852,12 @@ textarea.ant-input.cvat-raw-labels-viewer {
 }
 
 .cvat-annotation-page-controls-sidebar > div > i:hover {
-    background: #D8D8D8;
+    background: $header-color;
     transform: scale(0.75);
 }
 
 .cvat-annotation-page-controls-sidebar > div > i:active {
-    background: #C3C3C3;
+    transform: scale(0.65);
 }
 
 .cvat-annotation-page-controls-sidebar > div > i > svg {

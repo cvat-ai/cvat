@@ -114,7 +114,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                     && (
                         <>
                             <br />
-                            <Text className='cvat-black-color'>
+                            <Text className='cvat-text-color'>
                                 {`${files.local.length} files selected`}
                             </Text>
                         </>
@@ -185,7 +185,7 @@ export default class FileManager extends React.PureComponent<Props, State> {
                         >
                             { renderTreeNodes(treeData) }
                         </Tree>
-                    ) : <Text className='cvat-black-color'>No data found</Text>
+                    ) : <Text className='cvat-text-color'>No data found</Text>
                 }
             </Tabs.TabPane>
         );

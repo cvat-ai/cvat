@@ -71,7 +71,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     valuePropName: 'checked',
                 })(
                     <Checkbox>
-                        <Text className='cvat-black-color'>
+                        <Text className='cvat-text-color'>
                             Z-order
                         </Text>
                     </Checkbox>,
@@ -195,7 +195,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     initialValue: false,
                 })(
                     <Checkbox>
-                        <Text className='cvat-black-color'>
+                        <Text className='cvat-text-color'>
                             Use LFS (Large File Support):
                         </Text>
                     </Checkbox>,

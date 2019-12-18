@@ -35,17 +35,17 @@ export default function UploadedModelItem(props: Props): JSX.Element {
                 <Tag color='purple'>OpenVINO</Tag>
             </Col>
             <Col span={5} xxl={7}>
-                <Text className='cvat-black-color'>
+                <Text className='cvat-text-color'>
                     {model.name}
                 </Text>
             </Col>
             <Col span={3}>
-                <Text className='cvat-black-color'>
+                <Text className='cvat-text-color'>
                     {owner ? owner.username : 'undefined'}
                 </Text>
             </Col>
             <Col span={4}>
-                <Text className='cvat-black-color'>
+                <Text className='cvat-text-color'>
                     {moment(model.uploadDate).format('MMMM Do YYYY')}
                 </Text>
             </Col>
@@ -66,7 +66,7 @@ export default function UploadedModelItem(props: Props): JSX.Element {
                 </Select>
             </Col>
             <Col span={3} xxl={2}>
-                <Text className='cvat-black-color'>Actions</Text>
+                <Text className='cvat-text-color'>Actions</Text>
                 <Dropdown overlay={
                     (
                         <Menu className='cvat-task-item-menu'>

@@ -95,7 +95,7 @@ export default function Feedback(): JSX.Element {
             <Popover
                 placement='leftTop'
                 title={
-                    <Text className='cvat-black-color'>Help to make CVAT better</Text>
+                    <Text className='cvat-text-color'>Help to make CVAT better</Text>
                 }
                 content={renderContent()}
                 visible={visible}
