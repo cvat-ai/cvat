@@ -8,7 +8,6 @@ from unittest import TestCase
 from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, PointsObject, PolygonObject, PolyLineObject, BboxObject,
     LabelCategories,
-    DEFAULT_SUBSET_NAME
 )
 from datumaro.components.importers.cvat import CvatImporter
 import datumaro.components.formats.cvat as Cvat
