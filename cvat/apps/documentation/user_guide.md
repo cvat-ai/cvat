@@ -97,16 +97,18 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
     -   The ``Constructor`` is a simple way to add and adjust labels. 
     To add a new label click the ``Add label`` button.
-       
-           ![](static/documentation/images/image123.jpg)
+      
+      ![](static/documentation/images/image123.jpg)
            
-        You can set a name of the label in the ``Label name`` field. 
+      You can set a name of the label in the ``Label name`` field.     
+        
+       ![](static/documentation/images/image124.jpg) 
            
-        ![](static/documentation/images/image124.jpg) 
-           
-        If necessary you can add an attribute and set its properties by clicking ``Add an attribute``: 
-         
-        ![](static/documentation/images/image125.jpg)
+      If necessary you can add an attribute and set its properties by clicking ``Add an attribute``:
+        
+      ![](static/documentation/images/image125.jpg)
+
+      - The following actions are available here:
 
         1.  Set the attribute’s name. 
         1.  Choose the way to display the attribute: 
@@ -123,12 +125,12 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
         1.  Checkbox ``Mutable`` determines if an attribute would be changed frame to frame. 
         1.  You can delete the attribute by clicking the close button (x). 
  
-        Click the ``Continue`` button to add more labels. 
-        If you need to cancel adding a label - press the ``Cancel`` button. 
-        After all the necessary labels are added click the ``Done`` button.
+      Click the ``Continue`` button to add more labels. 
+      If you need to cancel adding a label - press the ``Cancel`` button. 
+      After all the necessary labels are added click the ``Done`` button.
      
-        After clicking ``Done`` the added labels would be displayed as separate elements of different colour. 
-        You can edit or delete labels by clicking ``Update attributes`` or ``Delete label``. 
+      After clicking ``Done`` the added labels would be displayed as separate elements of different colour. 
+      You can edit or delete labels by clicking ``Update attributes`` or ``Delete label``. 
 
     -   The ``Raw`` is a way of working with labels for an advanced user. 
     Raw presents label data in _json_ format with an option of editing and copying labels as a text. 
