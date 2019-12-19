@@ -26,13 +26,18 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
+    const { tasks } = state;
+    const {
+        gettingQuery,
+        current,
+    } = tasks;
     const { params } = own.match;
     const taskID = +params.tid;
     const jobID = +params.jid;
 
-    const filteredTasks = state.tasks.current
+    const filteredTasks = current
         .filter((_task: Task) => _task.instance.id === taskID);
-    const task = filteredTasks[0] || (state.tasks.gettingQuery.id === taskID
+    const task = filteredTasks[0] || (gettingQuery.id === taskID || Number.isNaN(taskID)
         ? undefined : null);
 
     const job = task ? task.instance.jobs
@@ -40,7 +45,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
 
     return {
         jobInstance: job,
-        fetching: state.tasks.fetching,
+        fetching: tasks.fetching,
     };
 }
 
