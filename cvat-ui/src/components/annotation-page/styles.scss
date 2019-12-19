@@ -14,36 +14,6 @@
 .cvat-annotation-header-left-group {
     height: 100%;
 
-    > div {
-        padding: 0px;
-        width: 54px;
-        height: 54px;
-        float: left;
-        text-align: center;
-
-        > span {
-            font-size: 10px;
-        }
-
-        > i {
-            transform: scale(0.8);
-            padding: 3px;
-        }
-
-        &:hover > i {
-            transform: scale(0.9);
-        }
-
-        &:active > i {
-            transform: scale(0.8);
-        }
-
-        > * {
-            display: block;
-            line-height: 0px;
-        }
-    }
-
     > div:first-child {
         filter: invert(0.9);
         background: $background-color-1;
@@ -52,8 +22,40 @@
     }
 }
 
+.cvat-annotation-header-button {
+    padding: 0px;
+    width: 54px;
+    height: 54px;
+    float: left;
+    text-align: center;
+    user-select: none;
+
+    > span {
+        font-size: 10px;
+    }
+
+    > i {
+        transform: scale(0.8);
+        padding: 3px;
+    }
+
+    &:hover > i {
+        transform: scale(0.9);
+    }
+
+    &:active > i {
+        transform: scale(0.8);
+    }
+
+    > * {
+        display: block;
+        line-height: 0px;
+    }
+}
+
 .cvat-annotation-header-player-group > div {
     height: 54px;
+    line-height: 0px;
 }
 
 .cvat-annotation-header-player-buttons {
@@ -96,14 +98,16 @@
 }
 
 .cvat-annotation-header-filename-wrapper {
-    max-width: 180px;
+    max-width: 300px;
     overflow: hidden;
     text-overflow: ellipsis;
+    user-select: none;
 }
 
 .cvat-annotation-header-frame-selector {
     width: 5em;
-    margin-right: 0.5em;
+    padding-right: 5px;
+    margin-left: 5px;
 }
 
 .cvat-annotation-header-right-group {

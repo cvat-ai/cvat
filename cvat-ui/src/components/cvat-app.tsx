@@ -1,5 +1,5 @@
 import 'antd/dist/antd.less';
-import '../base.scss';
+import '../styles.scss';
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import {
@@ -262,7 +262,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                                     <Route exact path='/tasks' component={TasksPageContainer} />
                                     <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                     <Route exact path='/tasks/:id' component={TaskPageContainer} />
-                                    <Route exact path='/tasks/:id/jobs/:id' component={AnnotationPageContainer} />
+                                    <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                     { withModels
                                         && <Route exact path='/models' component={ModelsPageContainer} /> }
                                     { installedAutoAnnotation
@@ -289,7 +289,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         }
 
         return (
-            <Spin size='large' style={{ margin: '25% 50%' }} />
+            <Spin size='large' className='cvat-spinner' />
         );
     }
 }
