@@ -278,25 +278,26 @@ On the ``Models`` page allows you to manage your deep learning (DL) models uploa
 Using the functionality you can upload, update or delete a specific DL model.  
 To open the model manager, click the ``Models`` button on the navigation bar. 
 The ``Models`` page contains information about all the existing models. The list of models is divided into two sections:
-  - Primary — contains default CVAT models. Each model is a separate element. 
-  It contains the model’s name, a framework on which the model was based on and 
-  ``Supported labels`` (a dropdown list of all supported labels).
-  - Uploaded by a user — Contains models uploaded by a user. 
-  The list of user models has additional columns with the following information: 
-  name of the user who uploaded the model and the upload date. 
-  Here you can delete models in the ``Actions`` menu.
+- Primary — contains default CVAT models. Each model is a separate element. 
+It contains the model’s name, a framework on which the model was based on and 
+``Supported labels`` (a dropdown list of all supported labels).
+- Uploaded by a user — Contains models uploaded by a user. 
+The list of user models has additional columns with the following information: 
+name of the user who uploaded the model and the upload date. 
+Here you can delete models in the ``Actions`` menu.
 
 ![](static/documentation/images/image099.jpg)
 
 In order to add your model, click `` Create new model``. 
 Enter model name, and select model file using "Select files" button. 
 To annotate a task with a custom model you need to prepare 4 files:
-  - ``Model config`` (*.xml) - a text file with network configuration. 
-  - ``Model weights`` (*.bin) - a binary file with trained weights. 
-  - ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with 
-  string values for label numbers.
-  - ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
-  which can be processed by CVAT. 
+   - ``Model config`` (*.xml) - a text file with network configuration. 
+   - ``Model weights`` (*.bin) - a binary file with trained weights. 
+   - ``Label map`` (*.json) - a simple json file with label_map dictionary like an object with 
+   string values for label numbers.
+   - ``Interpretation script`` (*.py) - a file used to convert net output layer to a predefined structure 
+   which can be processed by CVAT. 
+
 You can learn more about creating model files by pressing [(?)](/cvat/apps/auto_annotation).
 Check the box `` Load globally`` if you want everyone to be able to use the model. 
 Click the ``Submit`` button to submit  a model. 
