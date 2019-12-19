@@ -430,7 +430,10 @@ class ShapeCreatorView {
                 } else if (this._type === 'polygon' && actualPoints.length < 3) {
                     showMessage('Min 3 points must be for polygon drawing.');
                 } else if (this._type === 'cuboid' && (actualPoints.length != 4 || !this._checKValidCuboidTrace(actualPoints))) {
-                    showMessage("Exactly 4 points must be used for cuboid drawing and must be drawn in a rotated 'L' shape.");
+                    showMessage('Exactly 4 points must be used for cuboid drawing.'
+                        + ' Second point must be below the first point.'
+                        + '(HINT) The first 3 points define the front face'
+                        + ' and the last point should define the depth and orientation of the cuboid ');
                 } else if (this._type === 'cuboid') {
                     // actualPoints =  PolyShapeModel.convertNumberArrayToString(actualPoints);
                     let p1; let p2; let p3; let p4; let p5; let p6 = null;
