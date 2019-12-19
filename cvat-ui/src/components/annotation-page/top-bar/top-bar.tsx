@@ -34,25 +34,25 @@ export default function AnnotationPageComponent(): JSX.Element {
         <Layout.Header className='cvat-annotation-page-header'>
             <Row type='flex' justify='space-between'>
                 <Col className='cvat-annotation-header-left-group'>
-                    <div>
+                    <div className='cvat-annotation-header-button'>
                         <Icon component={MainMenuIcon} />
                         <span>Menu</span>
                     </div>
-                    <div>
+                    <div className='cvat-annotation-header-button'>
                         <Icon component={SaveIcon} />
                         <span>Save</span>
                     </div>
-                    <div>
+                    <div className='cvat-annotation-header-button'>
                         <Icon component={UndoIcon} />
                         <span>Undo</span>
                     </div>
-                    <div>
+                    <div className='cvat-annotation-header-button'>
                         <Icon component={RedoIcon} />
                         <span>Redo</span>
                     </div>
                 </Col>
                 <Col className='cvat-annotation-header-player-group'>
-                    <Row type='flex'>
+                    <Row type='flex' align='middle'>
                         <Col className='cvat-annotation-header-player-buttons'>
                             <Icon component={PlaycontrolFirstIcon} />
                             <Icon component={PlaycontrolBackJumpIcon} />
@@ -68,26 +68,25 @@ export default function AnnotationPageComponent(): JSX.Element {
                                     <Slider className='cvat-annotation-header-player-slider' tipFormatter={null} />
                                 </Col>
                             </Row>
-                            <Row type='flex' justify='space-between'>
+                            <Row type='flex' justify='space-around'>
                                 <Col className='cvat-annotation-header-filename-wrapper'>
                                     <Tooltip overlay='filename.png'>
                                         <Text type='secondary'>filename.png</Text>
                                     </Tooltip>
                                 </Col>
-                                <Col>
-                                    <Input className='cvat-annotation-header-frame-selector' type='number' size='small' />
-                                    <Text type='secondary'>of 200</Text>
-                                </Col>
                             </Row>
+                        </Col>
+                        <Col>
+                            <Input className='cvat-annotation-header-frame-selector' type='number' />
                         </Col>
                     </Row>
                 </Col>
                 <Col className='cvat-annotation-header-right-group'>
-                    <div>
+                    <div className='cvat-annotation-header-button'>
                         <Icon component={FullscreenIcon} />
                         <span>Fullscreen</span>
                     </div>
-                    <div>
+                    <div className='cvat-annotation-header-button'>
                         <Icon component={InfoIcon} />
                         <span>Info</span>
                     </div>
