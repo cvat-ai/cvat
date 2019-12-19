@@ -207,7 +207,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
 
         if (tasksFetching) {
             return (
-                <Spin size='large' style={{ margin: '25% 45%' }} />
+                <Spin size='large' className='cvat-spinner' />
             );
         }
 

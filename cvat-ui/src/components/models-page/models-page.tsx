@@ -42,7 +42,7 @@ export default function ModelsPageComponent(props: Props): JSX.Element {
             props.getModels();
         }
         return (
-            <Spin size='large' style={{ margin: '25% 45%' }} />
+            <Spin size='large' className='cvat-spinner' />
         );
     }
 

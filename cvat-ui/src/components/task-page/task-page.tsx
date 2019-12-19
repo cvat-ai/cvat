@@ -66,7 +66,7 @@ class TaskPageComponent extends React.PureComponent<Props> {
                 }
             }
             return (
-                <Spin size='large' style={{ margin: '25% 50%' }} />
+                <Spin size='large' className='cvat-spinner' />
             );
         }
 

@@ -407,7 +407,7 @@ export default class ModelRunnerModalComponent extends React.PureComponent<Props
                     visible
                 >
                     {!modelsInitialized
-                        && <Spin size='large' style={{ margin: '25% 50%' }} />}
+                        && <Spin size='large' className='cvat-spinner' />}
                     {modelsInitialized && this.renderContent()}
                 </Modal>
             )
