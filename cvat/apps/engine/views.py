@@ -11,7 +11,7 @@ from datetime import datetime
 from tempfile import mkstemp, NamedTemporaryFile
 
 from django.views.generic import RedirectView
-from django.http import HttpResponseBadRequest, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import render
 from django.conf import settings
 from sendfile import sendfile
@@ -343,11 +343,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 elif data_type == 'frame':
                     data_id = int(data_id)
                     if data_quality == 'compressed':
-                        buf = frame_provider.get_compressed_frame(data_id)
+                        buf, mime = frame_provider.get_compressed_frame(data_id)
                     else:
-                        buf = frame_provider.get_original_frame(data_id)
+                        buf, mime = frame_provider.get_original_frame(data_id)
 
-                    return HttpResponse(buf.getvalue(), content_type='image/png')
+                    return HttpResponse(buf.getvalue(), content_type=mime)
 
                 elif data_type == 'preview':
                     return sendfile(request, frame_provider.get_preview())

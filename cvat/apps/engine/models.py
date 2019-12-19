@@ -165,18 +165,8 @@ class Task(models.Model):
     class Meta:
         default_permissions = ()
 
-    def get_frame_path(self, frame):
-        d1, d2 = str(int(frame) // 10000), str(int(frame) // 100)
-        return os.path.join(self.get_data_dirname(), d1, d2,
-            str(frame) + '.jpg')
-
-    def get_frame_step(self):
-        match = re.search("step\s*=\s*([1-9]\d*)", self.frame_filter)
-        return int(match.group(1)) if match else 1
-
     def get_task_dirname(self):
         return os.path.join(settings.TASKS_ROOT, str(self.id))
-
 
     def get_task_logs_dirname(self):
         return os.path.join(self.get_task_dirname(), 'logs')
@@ -190,9 +180,8 @@ class Task(models.Model):
     def get_task_artifacts_dirname(self):
         return os.path.join(self.get_task_dirname(), 'artifacts')
 
-    def get_task_datum_dirname(self):
-        return os.path.join(self.get_task_dirname(), 'datum')
-
+    def get_task_datumaro_dirname(self):
+        return os.path.join(self.get_task_dirname(), 'datumaro')
 
     def __str__(self):
         return self.name

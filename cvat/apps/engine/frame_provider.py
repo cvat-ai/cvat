@@ -5,6 +5,7 @@ from io import BytesIO
 
 from cvat.apps.engine.media_extractors import VideoReader, ZipReader
 from cvat.apps.engine.models import DataChoice
+from cvat.apps.engine.mime_types import mimetypes
 
 
 class FrameProvider():
@@ -43,7 +44,7 @@ class FrameProvider():
         return frame_number_, chunk_number, frame_offset
 
     @staticmethod
-    def _av_frame_to_bytes(av_frame):
+    def _av_frame_to_png_bytes(av_frame):
         pil_img = av_frame.to_image()
         buf = BytesIO()
         pil_img.save(buf, format='PNG')
@@ -57,11 +58,11 @@ class FrameProvider():
             extracted_chunk = chunk_number
             chunk_reader = reader_class([chunk_path])
 
-        frame, _ = chunk_reader[frame_offset]
+        frame, frame_name  = chunk_reader[frame_offset]
         if reader_class is VideoReader:
-            return self._av_frame_to_bytes(frame)
+            return (self._av_frame_to_png_bytes(frame), 'image/png')
 
-        return frame
+        return (frame, mimetypes.guess_type(frame_name))
 
     def get_compressed_frame(self, frame_number):
         return self._get_frame(

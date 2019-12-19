@@ -180,7 +180,14 @@ frames_parser.add_argument(
     '--outdir',
     type=str,
     default='',
-    help='directory to save images'
+    help='directory to save images (default: CWD)'
+)
+frames_parser.add_argument(
+    '--quality',
+    type=str,
+    choices=('original', 'compressed'),
+    default='original',
+    help='choose quality of images (default: %(default)s)'
 )
 
 #######################################################################

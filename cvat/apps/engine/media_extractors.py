@@ -6,19 +6,13 @@ from io import BytesIO
 import itertools
 from abc import ABC, abstractmethod
 
-
 import av
 import av.datasets
 import numpy as np
 from pyunpack import Archive
 from PIL import Image
-import mimetypes
 
-_SCRIPT_DIR = os.path.realpath(os.path.dirname(__file__))
-MEDIA_MIMETYPES_FILES = [
-    os.path.join(_SCRIPT_DIR, "media.mimetypes"),
-]
-mimetypes.init(files=MEDIA_MIMETYPES_FILES)
+from cvat.apps.engine.mime_types import mimetypes
 
 def get_mime(name):
     for type_name, type_def in MEDIA_TYPES.items():
