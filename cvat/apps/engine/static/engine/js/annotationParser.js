@@ -29,10 +29,10 @@ class AnnotationParser {
         const imWidth = this._im_meta[frame].width;
         const imHeight = this._im_meta[frame].height;
 
-        let xtl = +box.getAttribute('xtl');
-        let ytl = +box.getAttribute('ytl');
-        let xbr = +box.getAttribute('xbr');
-        let ybr = +box.getAttribute('ybr');
+        const xtl = +box.getAttribute('xtl');
+        const ytl = +box.getAttribute('ytl');
+        const xbr = +box.getAttribute('xbr');
+        const ybr = +box.getAttribute('ybr');
 
         if (xtl < 0 || ytl < 0 || xbr < 0 || ybr < 0
             || xtl > imWidth || ytl > imHeight || xbr > imWidth || ybr > imHeight) {
@@ -155,7 +155,7 @@ class AnnotationParser {
             polygons: [],
             polylines: [],
             points: [],
-            cuboids:[]
+            cuboids: [],
         };
 
         const tracks = xml.getElementsByTagName('track');
@@ -164,14 +164,14 @@ class AnnotationParser {
             polygon: this._getShapeFromPath('polygon', tracks),
             polyline: this._getShapeFromPath('polyline', tracks),
             points: this._getShapeFromPath('points', tracks),
-            cuboid: this._getShapeFromPath('cuboid', tracks)
+            cuboid: this._getShapeFromPath('cuboid', tracks),
         };
         const shapeTarget = {
             box: 'boxes',
             polygon: 'polygons',
             polyline: 'polylines',
             points: 'points',
-            cuboid: 'cuboids'
+            cuboid: 'cuboids',
         };
 
         const images = xml.getElementsByTagName('image');
