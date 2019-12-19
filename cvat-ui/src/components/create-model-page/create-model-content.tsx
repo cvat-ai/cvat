@@ -75,8 +75,7 @@ export default class CreateModelContent extends React.PureComponent<Props> {
                     return acc;
                 }, grouppedFiles);
 
-                if (Object.keys(grouppedFiles)
-                    .map((key: string) => grouppedFiles[key])
+                if (Object.values(grouppedFiles)
                     .filter((val) => !!val).length !== 4) {
                     notification.error({
                         message: 'Could not upload a model',

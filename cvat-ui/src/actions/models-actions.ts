@@ -485,9 +485,10 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 );
 
                 parse(response.run)
-                    .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
                     .forEach((inferenceMeta: InferenceMeta): void => {
-                        subscribe('auto_annotation/check', inferenceMeta, dispatch);
+                        if (inferenceMeta.active) {
+                            subscribe('auto_annotation/check', inferenceMeta, dispatch);
+                        }
                     });
             }
 
@@ -503,9 +504,10 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 );
 
                 parse(response)
-                    .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
                     .forEach((inferenceMeta: InferenceMeta): void => {
-                        subscribe('tensorflow/annotation/check/task', inferenceMeta, dispatch);
+                        if (inferenceMeta.active) {
+                            subscribe('tensorflow/annotation/check/task', inferenceMeta, dispatch);
+                        }
                     });
             }
 
@@ -521,9 +523,10 @@ ThunkAction<Promise<void>, {}, {}, AnyAction> {
                 );
 
                 parse(response)
-                    .filter((inferenceMeta: InferenceMeta): boolean => inferenceMeta.active)
                     .forEach((inferenceMeta: InferenceMeta): void => {
-                        subscribe('tensorflow/segmentation/check/task', inferenceMeta, dispatch);
+                        if (inferenceMeta.active) {
+                            subscribe('tensorflow/segmentation/check/task', inferenceMeta, dispatch);
+                        }
                     });
             }
         } catch (error) {

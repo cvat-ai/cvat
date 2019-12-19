@@ -41,6 +41,21 @@ interface LabelsEditorState {
     labelForUpdate: Label | null;
 }
 
+function getFilteredLabels(labels: Label[]) {
+    const savedLabels: Label[] = [];
+    const unsavedLabels: Label[] = [];
+
+    for (const label of labels) {
+        if (label.id >= 0) {
+            savedLabels.push(label);
+        } else {
+            unsavedLabels.push(label);
+        }
+    }
+
+    return [savedLabels, unsavedLabels]
+}
+
 export default class LabelsEditor
     extends React.PureComponent<LabelsEditortProps, LabelsEditorState> {
     public constructor(props: LabelsEditortProps) {
@@ -80,26 +95,17 @@ export default class LabelsEditor
 
         if (!prevProps || prevProps.labels !== labels) {
             const transformedLabels = labels.map(transformLabel);
+            const [savedLabels, unsavedLabels] = getFilteredLabels(transformedLabels)
+
             this.setState({
-                savedLabels: transformedLabels
-                    .filter((label: Label) => label.id >= 0),
-                unsavedLabels: transformedLabels
-                    .filter((label: Label) => label.id < 0),
+                unsavedLabels,
+                savedLabels,
             });
         }
     }
 
     private handleRawSubmit = (labels: Label[]): void => {
-        const unsavedLabels = [];
-        const savedLabels = [];
-
-        for (const label of labels) {
-            if (label.id >= 0) {
-                savedLabels.push(label);
-            } else {
-                unsavedLabels.push(label);
-            }
-        }
+        const [savedLabels, unsavedLabels] = getFilteredLabels(labels)
 
         this.setState({
             unsavedLabels,

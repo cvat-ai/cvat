@@ -23,6 +23,19 @@ interface Props {
     deleteModel(id: number): void;
 }
 
+function getModels(models: Model[]) {
+    const uploadedModels: Model[] = [];
+    const integratedModels: Model[] = [];
+    for (const model of models) {
+        if (model.id !== null) {
+            uploadedModels.push(model);
+        } else {
+            integratedModels.push(model);
+        }
+    }
+    return [uploadedModels, integratedModels]
+}
+
 export default function ModelsPageComponent(props: Props): JSX.Element {
     const {
         installedAutoAnnotation,
@@ -43,21 +56,20 @@ export default function ModelsPageComponent(props: Props): JSX.Element {
         );
     }
 
-    const uploadedModels = models.filter((model): boolean => model.id !== null);
-    const integratedModels = models.filter((model): boolean => model.id === null);
+    const [uploadedModels, integratedModels] = getModels(models);
 
     return (
         <div className='cvat-models-page'>
             <TopBarComponent installedAutoAnnotation={installedAutoAnnotation} />
-            { !!integratedModels.length
-                && <BuiltModelsList models={integratedModels} />
-            }
             { !!uploadedModels.length && (
-                <UploadedModelsList
-                    registeredUsers={registeredUsers}
-                    models={uploadedModels}
-                    deleteModel={deleteModel}
-                />
+                <>
+                    <BuiltModelsList models={integratedModels} />
+                    <UploadedModelsList
+                        registeredUsers={registeredUsers}
+                        models={uploadedModels}
+                        deleteModel={deleteModel}
+                    />
+                </>
             )}
             { installedAutoAnnotation
                 && !uploadedModels.length
