@@ -15,27 +15,3 @@ $danger-icon-color: #FF4136;
 $info-icon-color: #0074D9;
 
 $monospaced-fonts-stack: Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
-
-hr {
-    border: none;
-    border-top: 1px solid $border-color-1;
-    height: 1px;
-}
-
-.cvat-text-color {
-    color: $text-color;
-}
-
-.cvat-title {
-    font-weight: 400;
-    font-size: 21px;
-    color: $text-color;
-    padding-top: 5px;
-}
-
-#root {
-    width: 100%;
-    height: 100%;
-    min-height: 100%;
-    display: grid;
-}

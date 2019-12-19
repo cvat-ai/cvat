@@ -1,5 +1,5 @@
 import 'antd/dist/antd.less';
-import '../base.scss';
+import '../styles.scss';
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import {
