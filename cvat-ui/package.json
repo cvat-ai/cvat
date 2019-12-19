@@ -5,7 +5,7 @@
   "main": "src/index.tsx",
   "scripts": {
     "build": "webpack --config ./webpack.config.js",
-    "server": "nodemon --watch config --exec 'webpack-dev-server --config ./webpack.config.js --mode=development --open'"
+    "start": "webpack-dev-server --config ./webpack.config.js --mode=development"
   },
   "author": "Intel",
   "license": "MIT",
@@ -25,7 +25,13 @@
     "eslint-plugin-react": "^7.17.0",
     "eslint-plugin-react-hooks": "^1.7.0",
     "html-webpack-plugin": "^3.2.0",
-    "nodemon": "^1.19.2",
+    "less": "^3.10.3",
+    "less-loader": "^5.0.0",
+    "node-sass": "^4.13.0",
+    "postcss-loader": "^3.0.0",
+    "postcss-preset-env": "^6.7.0",
+    "react-svg-loader": "^3.0.3",
+    "sass-loader": "^8.0.0",
     "style-loader": "^1.0.0",
     "typescript": "^3.7.3",
     "webpack": "^4.41.2",
@@ -41,6 +47,7 @@
     "@types/react-router-dom": "^5.1.0",
     "@types/react-share": "^3.0.1",
     "antd": "^3.25.2",
+    "copy-to-clipboard": "^3.2.0",
     "dotenv-webpack": "^1.7.0",
     "moment": "^2.24.0",
     "prop-types": "^15.7.2",

@@ -1,6 +1,6 @@
+import 'antd/dist/antd.less';
+import '../styles.scss';
 import React from 'react';
-import 'antd/dist/antd.css';
-import '../stylesheet.css';
 import { BrowserRouter } from 'react-router-dom';
 import {
     Switch,
@@ -22,9 +22,7 @@ import AnnotationPageContainer from '../containers/annotation-page/annotation-pa
 import LoginPageContainer from '../containers/login-page/login-page';
 import RegisterPageContainer from '../containers/register-page/register-page';
 import HeaderContainer from '../containers/header/header';
-import ModelRunnerModalContainer from '../containers/model-runner-dialog/model-runner-dialog';
 
-import FeedbackComponent from './feedback';
 import { NotificationsState } from '../reducers/interfaces';
 
 type CVATAppProps = {
@@ -139,7 +137,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                     />
                 ),
                 duration: null,
-                description: error.length > 200 ? '' : error,
+                description: error.length > 200 ? 'Open the Browser Console to get details' : error,
             });
 
             console.error(error);
@@ -262,17 +260,15 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
                             <Layout.Content>
                                 <Switch>
                                     <Route exact path='/tasks' component={TasksPageContainer} />
-                                    <Route path='/tasks/create' component={CreateTaskPageContainer} />
+                                    <Route exact path='/tasks/create' component={CreateTaskPageContainer} />
                                     <Route exact path='/tasks/:id' component={TaskPageContainer} />
-                                    <Route path='/tasks/:id/jobs/:id' component={AnnotationPageContainer} />
+                                    <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
                                     { withModels
                                         && <Route exact path='/models' component={ModelsPageContainer} /> }
                                     { installedAutoAnnotation
-                                        && <Route path='/models/create' component={CreateModelPageContainer} /> }
+                                        && <Route exact path='/models/create' component={CreateModelPageContainer} /> }
                                     <Redirect push to='/tasks' />
                                 </Switch>
-                                <FeedbackComponent />
-                                <ModelRunnerModalContainer />
                                 {/* eslint-disable-next-line */}
                                 <a id='downloadAnchor' style={{ display: 'none' }} download/>
                             </Layout.Content>
@@ -293,7 +289,7 @@ export default class CVATApplication extends React.PureComponent<CVATAppProps> {
         }
 
         return (
-            <Spin size='large' style={{ margin: '25% 50%' }} />
+            <Spin size='large' className='cvat-spinner' />
         );
     }
 }

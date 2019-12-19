@@ -15,6 +15,7 @@ import {
 
 interface StateToProps {
     deleted: boolean;
+    hidden: boolean;
     previewImage: string;
     taskInstance: any;
     activeInference: ActiveInference | null;
@@ -35,6 +36,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const id = own.taskID;
 
     return {
+        hidden: state.tasks.hideEmpty && task.instance.jobs.length === 0,
         deleted: deletes.byTask[id] ? deletes.byTask[id] === true : false,
         previewImage: task.preview,
         taskInstance: task.instance,

@@ -7,6 +7,7 @@ import { TasksState, Task } from './interfaces';
 const defaultState: TasksState = {
     initialized: false,
     fetching: false,
+    hideEmpty: false,
     count: 0,
     current: [],
     gettingQuery: {
@@ -51,6 +52,10 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 },
                 initialized: false,
                 fetching: true,
+                hideEmpty: true,
+                count: 0,
+                current: [],
+                gettingQuery: { ...action.payload.query },
             };
         case TasksActionTypes.GET_TASKS_SUCCESS: {
             const combinedWithPreviews = action.payload.array
@@ -73,9 +78,6 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
                 ...state,
                 initialized: true,
                 fetching: false,
-                count: 0,
-                current: [],
-                gettingQuery: { ...action.payload.query },
             };
         case TasksActionTypes.DUMP_ANNOTATIONS: {
             const { task } = action.payload;
@@ -403,6 +405,12 @@ export default (state: TasksState = defaultState, action: AnyAction): TasksState
 
                     return task;
                 }),
+            };
+        }
+        case TasksActionTypes.HIDE_EMPTY_TASKS: {
+            return {
+                ...state,
+                hideEmpty: action.payload.hideEmpty,
             };
         }
         case AuthActionTypes.LOGOUT_SUCCESS: {

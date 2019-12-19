@@ -269,6 +269,8 @@ class Subset(Extractor):
 class DatasetItemWrapper(DatasetItem):
     def __init__(self, item, path, annotations, image=None):
         self._item = item
+        if path is None:
+            path = []
         self._path = path
         self._annotations = annotations
         self._image = image
@@ -334,7 +336,10 @@ class ProjectDataset(Extractor):
         own_source = None
         own_source_dir = osp.join(config.project_dir, config.dataset_dir)
         if osp.isdir(own_source_dir):
-            own_source = env.make_extractor(DEFAULT_FORMAT, own_source_dir)
+            log.disable(log.INFO)
+            own_source = env.make_importer(DEFAULT_FORMAT)(own_source_dir) \
+                .make_dataset()
+            log.disable(log.NOTSET)
 
         # merge categories
         # TODO: implement properly with merging and annotations remapping
@@ -351,6 +356,7 @@ class ProjectDataset(Extractor):
         # merge items
         subsets = defaultdict(lambda: Subset(self))
         for source_name, source in self._sources.items():
+            log.debug("Loading '%s' source contents..." % source_name)
             for item in source:
                 if dataset_filter and not dataset_filter(item):
                     continue
@@ -360,7 +366,7 @@ class ProjectDataset(Extractor):
                     image = None
                     if existing_item.has_image:
                         # TODO: think of image comparison
-                        image = lambda: existing_item.image
+                        image = self._lazy_image(existing_item)
 
                     path = existing_item.path
                     if item.path != path:
@@ -386,6 +392,7 @@ class ProjectDataset(Extractor):
 
         # override with our items, fallback to existing images
         if own_source is not None:
+            log.debug("Loading own dataset...")
             for item in own_source:
                 if dataset_filter and not dataset_filter(item):
                     continue
@@ -396,7 +403,7 @@ class ProjectDataset(Extractor):
                         image = None
                         if existing_item.has_image:
                             # TODO: think of image comparison
-                            image = lambda: existing_item.image
+                            image = self._lazy_image(existing_item)
                         item = DatasetItemWrapper(item=item, path=None,
                             annotations=item.annotations, image=image)
 
@@ -409,6 +416,11 @@ class ProjectDataset(Extractor):
         self._subsets = dict(subsets)
 
         self._length = None
+
+    @staticmethod
+    def _lazy_image(item):
+        # NOTE: avoid https://docs.python.org/3/faq/programming.html#why-do-lambdas-defined-in-a-loop-with-different-values-all-return-the-same-result
+        return lambda: item.image
 
     @staticmethod
     def _merge_anno(a, b):
@@ -535,7 +547,7 @@ class ProjectDataset(Extractor):
         return self
 
     def save(self, save_dir=None, merge=False, recursive=True,
-            save_images=False, apply_colormap=True):
+            save_images=False):
         if save_dir is None:
             assert self.config.project_dir
             save_dir = self.config.project_dir
@@ -555,7 +567,6 @@ class ProjectDataset(Extractor):
 
         converter_kwargs = {
             'save_images': save_images,
-            'apply_colormap': apply_colormap,
         }
 
         if merge:
@@ -646,7 +657,10 @@ class Project:
         self.env.sources.unregister(name)
 
     def get_source(self, name):
-        return self.config.sources[name]
+        try:
+            return self.config.sources[name]
+        except KeyError:
+            raise KeyError("Source '%s' is not found" % name)
 
     def get_subsets(self):
         return self.config.subsets
@@ -663,7 +677,10 @@ class Project:
         self.env.register_model(name, value)
 
     def get_model(self, name):
-        return self.env.models.get(name)
+        try:
+            return self.env.models.get(name)
+        except KeyError:
+            raise KeyError("Model '%s' is not found" % name)
 
     def remove_model(self, name):
         self.env.unregister_model(name)

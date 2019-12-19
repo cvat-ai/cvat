@@ -145,7 +145,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter'),
 
     # Disable default handling of the 'format' query parameter by REST framework
-    'URL_FORMAT_OVERRIDE': None,
+    'URL_FORMAT_OVERRIDE': 'scheme',
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {
@@ -158,7 +158,7 @@ if 'yes' == os.environ.get('TF_ANNOTATION', 'no'):
 if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
     INSTALLED_APPS += ['cvat.apps.auto_annotation']
 
-if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no'):
+if 'yes' == os.environ.get('OPENVINO_TOOLKIT', 'no') and os.environ.get('REID_MODEL_DIR', ''):
     INSTALLED_APPS += ['cvat.apps.reid']
 
 if 'yes' == os.environ.get('WITH_DEXTR', 'no'):

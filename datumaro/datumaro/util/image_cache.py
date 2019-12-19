@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 _instance = None
 
-DEFAULT_CAPACITY = 1000
+DEFAULT_CAPACITY = 2
 
 class ImageCache:
     @staticmethod

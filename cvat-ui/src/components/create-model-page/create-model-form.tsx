@@ -45,7 +45,7 @@ export class CreateModelForm extends React.PureComponent<Props> {
                 <Row>
                     <Col span={24}>
                         <Text type='danger'>* </Text>
-                        <Text className='cvat-black-color'>Name:</Text>
+                        <Text className='cvat-text-color'>Name:</Text>
                     </Col>
                     <Col span={14}>
                         <Form.Item hasFeedback>
@@ -65,7 +65,7 @@ export class CreateModelForm extends React.PureComponent<Props> {
                                     valuePropName: 'checked',
                                 })(
                                     <Checkbox>
-                                        <Text className='cvat-black-color'>
+                                        <Text className='cvat-text-color'>
                                             Load globally
                                         </Text>
                                     </Checkbox>,

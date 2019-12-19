@@ -3,16 +3,20 @@ import React from 'react';
 import {
     Row,
     Col,
+    Icon,
     Table,
+    Button,
+    Tooltip,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
-import Title from 'antd/lib/typography/Title';
 
 import moment from 'moment';
+import copy from 'copy-to-clipboard';
 
 import UserSelector from './user-selector';
 import getCore from '../../core';
+
 
 const core = getCore();
 
@@ -41,7 +45,7 @@ export default function JobListComponent(props: Props): JSX.Element {
         title: 'Frames',
         dataIndex: 'frames',
         key: 'frames',
-        className: 'cvat-black-color',
+        className: 'cvat-text-color',
     }, {
         title: 'Status',
         dataIndex: 'status',
@@ -64,12 +68,12 @@ export default function JobListComponent(props: Props): JSX.Element {
         title: 'Started on',
         dataIndex: 'started',
         key: 'started',
-        className: 'cvat-black-color',
+        className: 'cvat-text-color',
     }, {
         title: 'Duration',
         dataIndex: 'duration',
         key: 'duration',
-        className: 'cvat-black-color',
+        className: 'cvat-text-color',
     }, {
         title: 'Assignee',
         dataIndex: 'assignee',
@@ -123,10 +127,35 @@ export default function JobListComponent(props: Props): JSX.Element {
         <div className='cvat-task-job-list'>
             <Row type='flex' justify='space-between' align='middle'>
                 <Col>
-                    <Title level={4} className='cvat-black-color cvat-jobs-header'> Jobs </Title>
+                    <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
+                    <Tooltip trigger='click' title='Copied to clipboard!'>
+                        <Button
+                            type='link'
+                            onClick={(): void => {
+                                let serialized = '';
+                                const [latestJob] = [...taskInstance.jobs].reverse();
+                                for (const job of taskInstance.jobs) {
+                                    serialized += `Job #${job.id}`.padEnd(`${latestJob.id}`.length + 6, ' ');
+                                    serialized += `: ${baseURL}/?id=${job.id}`
+                                        .padEnd(`${latestJob.id}`.length + baseURL.length + 8, ' ');
+                                    serialized += `: [${job.startFrame}-${job.stopFrame}]`
+                                        .padEnd(`${latestJob.startFrame}${latestJob.stopFrame}`.length + 5, ' ');
+
+                                    if (job.assignee) {
+                                        serialized += `\t assigned to: ${job.assignee.username}`;
+                                    }
+                                    serialized += '\n';
+                                }
+                                copy(serialized);
+                            }}
+                        >
+                            <Icon type='copy' theme='twoTone' />
+                            Copy
+                        </Button>
+                    </Tooltip>
                 </Col>
                 <Col>
-                    <Text className='cvat-black-color'>
+                    <Text className='cvat-text-color'>
                         {`${completed} of ${data.length} jobs`}
                     </Text>
                 </Col>

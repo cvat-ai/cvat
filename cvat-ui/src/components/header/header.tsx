@@ -1,3 +1,4 @@
+import './styles.scss';
 import React from 'react';
 
 import { RouteComponentProps } from 'react-router';
@@ -8,11 +9,16 @@ import {
     Icon,
     Button,
     Menu,
+    Dropdown,
 } from 'antd';
 
 import Text from 'antd/lib/typography/Text';
 
 import getCore from '../../core';
+import {
+    CVATLogo,
+    AccountIcon,
+} from '../../icons';
 
 const core = getCore();
 const serverHost = core.config.backendAPI.slice(0, -7);
@@ -29,9 +35,6 @@ interface HeaderContainerProps {
 
 type Props = HeaderContainerProps & RouteComponentProps;
 
-const cvatLogo = (): JSX.Element => <img alt='' src='/assets/cvat-logo.svg' />;
-const userLogo = (): JSX.Element => <img alt='' src='/assets/icon-account.svg' />;
-
 function HeaderContainer(props: Props): JSX.Element {
     const {
         installedTFSegmentation,
@@ -47,17 +50,38 @@ function HeaderContainer(props: Props): JSX.Element {
         || installedTFAnnotation
         || installedTFSegmentation;
 
+    const menu = (
+        <Menu className='cvat-header-menu' mode='vertical'>
+            <Menu.Item>
+                <Icon type='setting' />
+                Settings
+            </Menu.Item>
+            <Menu.Item>
+                <Icon type='info-circle' />
+                About
+            </Menu.Item>
+            <Menu.Item
+                onClick={onLogout}
+                disabled={logoutFetching}
+            >
+                {logoutFetching ? <Icon type='loading' /> : <Icon type='logout' />}
+                Logout
+            </Menu.Item>
+
+        </Menu>
+    );
+
     return (
         <Layout.Header className='cvat-header'>
             <div className='cvat-left-header'>
-                <Icon className='cvat-logo-icon' component={cvatLogo} />
+                <Icon className='cvat-logo-icon' component={CVATLogo} />
 
                 <Button
                     className='cvat-header-button'
                     type='link'
                     value='tasks'
                     onClick={
-                        (): void => props.history.push('/tasks')
+                        (): void => props.history.push('/tasks?page=1')
                     }
                 >
                     Tasks
@@ -105,7 +129,7 @@ function HeaderContainer(props: Props): JSX.Element {
                     }
                 >
                     <Icon type='github' />
-                    <Text className='cvat-black-color'>GitHub</Text>
+                    <Text className='cvat-text-color'>GitHub</Text>
                 </Button>
                 <Button
                     className='cvat-header-button'
@@ -121,32 +145,15 @@ function HeaderContainer(props: Props): JSX.Element {
                     <Icon type='question-circle' />
                     Help
                 </Button>
-                <Menu className='cvat-header-menu' subMenuCloseDelay={0.1} mode='horizontal'>
-                    <Menu.SubMenu
-                        title={
-                            (
-                                <span>
-                                    <Icon className='cvat-header-user-icon' component={userLogo} />
-                                    <span>
-                                        <Text strong>
-                                            {username.length > 14 ? `${username.slice(0, 10)} ...` : username}
-                                        </Text>
-                                        <Icon className='cvat-header-menu-icon' type='caret-down' />
-                                    </span>
-                                </span>
-                            )
-                        }
-                    >
-                        <Menu.Item
-                            onClick={onLogout}
-                            disabled={logoutFetching}
-                            className='cvat-header-button'
-                        >
-                            {logoutFetching && <Icon type='loading' />}
-                            Logout
-                        </Menu.Item>
-                    </Menu.SubMenu>
-                </Menu>
+                <Dropdown overlay={menu} className='cvat-header-menu-dropdown'>
+                    <span>
+                        <Icon className='cvat-header-account-icon' component={AccountIcon} />
+                        <Text strong>
+                            {username.length > 14 ? `${username.slice(0, 10)} ...` : username}
+                        </Text>
+                        <Icon className='cvat-header-menu-icon' type='caret-down' />
+                    </span>
+                </Dropdown>
             </div>
         </Layout.Header>
     );

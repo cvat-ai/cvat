@@ -14,7 +14,7 @@ class YoloFormatTest(TestCase):
     def test_can_save_and_load(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=1, subset='train', image=np.ones((8, 8, 3)),
                         annotations=[
                             BboxObject(0, 2, 4, 2, label=2),
@@ -34,8 +34,7 @@ class YoloFormatTest(TestCase):
                             BboxObject(0, 2, 4, 2, label=6),
                             BboxObject(0, 7, 3, 2, label=7),
                         ]),
-                ]
-                return iter(items)
+                ])
 
             def categories(self):
                 label_categories = LabelCategories()

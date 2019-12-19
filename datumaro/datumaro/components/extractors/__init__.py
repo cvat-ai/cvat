@@ -26,9 +26,9 @@ from datumaro.components.extractors.voc import (
     VocComp_9_10_Extractor,
 )
 
-from datumaro.components.extractors.yolo import (
-    YoloExtractor,
-)
+from datumaro.components.extractors.yolo import YoloExtractor
+from datumaro.components.extractors.tfrecord import DetectionApiExtractor
+from datumaro.components.extractors.cvat import CvatExtractor
 
 items = [
     ('datumaro', DatumaroExtractor),
@@ -52,4 +52,8 @@ items = [
     ('voc_comp_9_10', VocComp_9_10_Extractor),
 
     ('yolo', YoloExtractor),
+
+    ('tf_detection_api', DetectionApiExtractor),
+
+    ('cvat', CvatExtractor),
 ]

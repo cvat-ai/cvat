@@ -102,7 +102,7 @@ class cvat_rest_api_task_images(datumaro.Extractor):
                 id=item_id, image=self._make_image_loader(item_id))
             items.append((item.id, item))
 
-        items = sorted(items, key=lambda e: e[0])
+        items = sorted(items, key=lambda e: int(e[0]))
         items = OrderedDict(items)
         self._items = items
 

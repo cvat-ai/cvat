@@ -82,7 +82,11 @@ def main(args=None):
     set_up_logger(general_args)
 
     command = get_command(command_name, general_args)
-    return command(command_args)
+    try:
+        return command(command_args)
+    except Exception as e:
+        log.error(e)
+        raise
 
 
 if __name__ == '__main__':

@@ -37,8 +37,21 @@ $ python cvat/utils/auto_annotation/run_model.py --py /path/to/python/interp.py 
                                                  --show-images
 ```
 
+If you'd like to see the labels printed on the image, use the `--show-labels` flag
+
+```shell
+$ python cvat/utils/auto_annotation/run_model.py --py /path/to/python/interp.py \
+                                                 --xml /path/to/xml/file.xml \
+                                                 --bin /path/to/bin/file.bin \
+                                                 --json /path/to/json/mapping/mapping.json \
+                                                 --image-files /path/to/img.jpg /path2/to/img2.png /path/to/img3.jpg \ 
+                                                 --show-images \
+						 --show-labels
+```
+
 There's a command that let's you scan quickly by setting the length of time (in milliseconds) to display each image. 
 Use the `--show-image-delay` flag and set the appropriate time.
+In this example, 2000 milliseconds is 2 seconds for each image.
 
 ```shell
 # Display each image in a window for 2 seconds

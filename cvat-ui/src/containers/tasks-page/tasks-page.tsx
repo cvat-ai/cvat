@@ -2,23 +2,29 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import {
+    Task,
     TasksQuery,
     CombinedState,
 } from '../../reducers/interfaces';
 
 import TasksPageComponent from '../../components/tasks-page/tasks-page';
 
-import { getTasksAsync } from '../../actions/tasks-actions';
+import {
+    getTasksAsync,
+    hideEmptyTasks,
+} from '../../actions/tasks-actions';
 
 interface StateToProps {
     tasksFetching: boolean;
     gettingQuery: TasksQuery;
     numberOfTasks: number;
     numberOfVisibleTasks: number;
+    numberOfHiddenTasks: number;
 }
 
 interface DispatchToProps {
     onGetTasks: (gettingQuery: TasksQuery) => void;
+    hideEmptyTasks: (hideEmpty: boolean) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -29,6 +35,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         gettingQuery: tasks.gettingQuery,
         numberOfTasks: state.tasks.count,
         numberOfVisibleTasks: state.tasks.current.length,
+        numberOfHiddenTasks: tasks.hideEmpty ? tasks.current
+            .filter((task: Task): boolean => !task.instance.jobs.length).length : 0,
     };
 }
 
@@ -36,6 +44,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onGetTasks: (query: TasksQuery): void => {
             dispatch(getTasksAsync(query));
+        },
+        hideEmptyTasks: (hideEmpty: boolean): void => {
+            dispatch(hideEmptyTasks(hideEmpty));
         },
     };
 }

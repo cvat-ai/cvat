@@ -1,0 +1,34 @@
+@import './base.scss';
+
+hr {
+    border: none;
+    border-top: 1px solid $border-color-1;
+    height: 1px;
+}
+
+.cvat-spinner {
+    margin: 25% 50%;
+}
+
+.cvat-not-found {
+    margin: 10% 25%;
+}
+
+.cvat-text-color {
+    color: $text-color;
+}
+
+.cvat-title {
+    font-weight: 400;
+    font-size: 21px;
+    color: $text-color;
+    padding-top: 5px;
+}
+
+#root {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    min-width: 1280px;
+    min-height: 768px;
+}

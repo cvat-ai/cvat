@@ -7,3 +7,4 @@ Pillow>=6.1.0
 pycocotools>=2.0.0
 PyYAML>=5.1.1
 tensorboardX>=1.8
+tensorflow>=1.12.0

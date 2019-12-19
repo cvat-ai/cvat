@@ -11,15 +11,13 @@ import os.path as osp
 
 from datumaro.components.converter import Converter
 from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME,
-    AnnotationType, Annotation,
+    DEFAULT_SUBSET_NAME, Annotation,
     LabelObject, MaskObject, PointsObject, PolygonObject,
     PolyLineObject, BboxObject, CaptionObject,
     LabelCategories, MaskCategories, PointsCategories
 )
 from datumaro.components.formats.datumaro import DatumaroPath
 from datumaro.util.image import save_image
-from datumaro.util.mask_tools import apply_colormap
 
 
 def _cast(value, type_conv, default=None):
@@ -53,11 +51,13 @@ class _SubsetWriter:
 
     def write_item(self, item):
         annotations = []
-        self.items.append({
+        item_desc = {
             'id': item.id,
-            'path': item.path,
             'annotations': annotations,
-        })
+        }
+        if item.path:
+            item_desc['path'] = item.path
+        self.items.append(item_desc)
 
         for ann in item.annotations:
             if isinstance(ann, LabelObject):
@@ -117,13 +117,6 @@ class _SubsetWriter:
         mask_id = None
         if mask is None:
             return mask_id
-
-        if self._converter._apply_colormap:
-            categories = self._converter._extractor.categories()
-            categories = categories[AnnotationType.mask]
-            colormap = categories.colormap
-
-            mask = apply_colormap(mask, colormap)
 
         mask_id = self._next_mask_id
         self._next_mask_id += 1
@@ -232,12 +225,10 @@ class _SubsetWriter:
         return converted
 
 class _Converter:
-    def __init__(self, extractor, save_dir,
-            save_images=False, apply_colormap=False):
+    def __init__(self, extractor, save_dir, save_images=False,):
         self._extractor = extractor
         self._save_dir = save_dir
         self._save_images = save_images
-        self._apply_colormap = apply_colormap
 
     def convert(self):
         os.makedirs(self._save_dir, exist_ok=True)
@@ -282,13 +273,27 @@ class _Converter:
         save_image(image_path, image)
 
 class DatumaroConverter(Converter):
-    def __init__(self, save_images=False, apply_colormap=False):
+    def __init__(self, save_images=False, cmdline_args=None):
         super().__init__()
-        self._save_images = save_images
-        self._apply_colormap = apply_colormap
+
+        self._options = {
+            'save_images': save_images,
+        }
+
+        if cmdline_args is not None:
+            self._options.update(self._parse_cmdline(cmdline_args))
+
+    @classmethod
+    def build_cmdline_parser(cls, parser=None):
+        import argparse
+        if not parser:
+            parser = argparse.ArgumentParser()
+
+        parser.add_argument('--save-images', action='store_true',
+            help="Save images (default: %(default)s)")
+
+        return parser
 
     def __call__(self, extractor, save_dir):
-        converter = _Converter(extractor, save_dir,
-            apply_colormap=self._apply_colormap,
-            save_images=self._save_images)
+        converter = _Converter(extractor, save_dir, **self._options)
         converter.convert()

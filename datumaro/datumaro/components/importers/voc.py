@@ -19,7 +19,7 @@ class VocImporter:
         (VocTask.action_classification, 'voc_action', 'Action'),
     ]
 
-    def __call__(self, path):
+    def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
         project = Project()
 
@@ -31,6 +31,7 @@ class VocImporter:
             project.add_source(task.name, {
                 'url': path,
                 'format': extractor_type,
+                'options': extra_params,
             })
 
         if len(project.config.sources) == 0:
@@ -53,7 +54,7 @@ class VocResultsImporter:
         ('comp10', 'voc_comp_9_10', 'Action'),
     ]
 
-    def __call__(self, path):
+    def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
         project = Project()
 
@@ -68,6 +69,7 @@ class VocResultsImporter:
             project.add_source(task_name, {
                 'url': task_dir,
                 'format': extractor_type,
+                'options': extra_params,
             })
 
         if len(project.config.sources) == 0:

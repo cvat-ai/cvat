@@ -7,6 +7,7 @@ import argparse
 import logging as log
 import os
 import os.path as osp
+import shutil
 
 from datumaro.components.project import Project
 from datumaro.components.comparator import Comparator
@@ -26,8 +27,19 @@ def build_create_parser(parser):
 def create_command(args):
     project_dir = osp.abspath(args.dst_dir)
     project_path = make_project_path(project_dir)
+
+    if osp.isdir(project_dir) and os.listdir(project_dir):
+        if not args.overwrite:
+            log.error("Directory '%s' already exists "
+                "(pass --overwrite to force creation)" % project_dir)
+            return 1
+        else:
+            shutil.rmtree(project_dir)
+    os.makedirs(project_dir, exist_ok=args.overwrite)
+
     if not args.overwrite and osp.isfile(project_path):
-        log.error("Project file '%s' already exists" % (project_path))
+        log.error("Project file '%s' already exists "
+            "(pass --overwrite to force creation)" % project_path)
         return 1
 
     project_name = args.name
@@ -48,25 +60,40 @@ def build_import_parser(parser):
     import datumaro.components.importers as importers_module
     importers_list = [name for name, cls in importers_module.items]
 
-    parser.add_argument('source_path',
+    parser.add_argument('-s', '--source', required=True,
         help="Path to import a project from")
     parser.add_argument('-f', '--format', required=True,
         help="Source project format (options: %s)" % (', '.join(importers_list)))
     parser.add_argument('-d', '--dest', default='.', dest='dst_dir',
         help="Directory to save the new project to (default: current dir)")
-    parser.add_argument('extra_args', nargs=argparse.REMAINDER,
-        help="Additional arguments for importer")
     parser.add_argument('-n', '--name', default=None,
         help="Name of the new project (default: same as project dir)")
     parser.add_argument('--overwrite', action='store_true',
         help="Overwrite existing files in the save directory")
+    parser.add_argument('--copy', action='store_true',
+        help="Copy the dataset instead of saving source links")
+    parser.add_argument('--skip-check', action='store_true',
+        help="Skip source checking")
+    # parser.add_argument('extra_args', nargs=argparse.REMAINDER,
+    #     help="Additional arguments for importer (pass '-- -h' for help)")
     return parser
 
 def import_command(args):
     project_dir = osp.abspath(args.dst_dir)
     project_path = make_project_path(project_dir)
+
+    if osp.isdir(project_dir) and os.listdir(project_dir):
+        if not args.overwrite:
+            log.error("Directory '%s' already exists "
+                "(pass --overwrite to force creation)" % project_dir)
+            return 1
+        else:
+            shutil.rmtree(project_dir)
+    os.makedirs(project_dir, exist_ok=args.overwrite)
+
     if not args.overwrite and osp.isfile(project_path):
-        log.error("Project file '%s' already exists" % (project_path))
+        log.error("Project file '%s' already exists "
+            "(pass --overwrite to force creation)" % project_path)
         return 1
 
     project_name = args.name
@@ -74,14 +101,21 @@ def import_command(args):
         project_name = osp.basename(project_dir)
 
     log.info("Importing project from '%s' as '%s'" % \
-        (args.source_path, args.format))
+        (args.source, args.format))
 
-    source_path = osp.abspath(args.source_path)
-    project = Project.import_from(source_path, args.format)
+    source = osp.abspath(args.source)
+    project = Project.import_from(source, args.format)
     project.config.project_name = project_name
     project.config.project_dir = project_dir
-    project = project.make_dataset()
-    project.save(merge=True, save_images=False)
+
+    if not args.skip_check or args.copy:
+        log.info("Checking the dataset...")
+        dataset = project.make_dataset()
+    if args.copy:
+        log.info("Cloning data...")
+        dataset.save(merge=True, save_images=True)
+    else:
+        project.save()
 
     log.info("Project has been created at '%s'" % (project_dir))
 
@@ -104,21 +138,31 @@ def build_export_parser(parser):
         help="Output format")
     parser.add_argument('-p', '--project', dest='project_dir', default='.',
         help="Directory of the project to operate on (default: current dir)")
-    parser.add_argument('--save-images', action='store_true',
-        help="Save images")
+    parser.add_argument('--overwrite', action='store_true',
+        help="Overwrite existing files in the save directory")
+    parser.add_argument('extra_args', nargs=argparse.REMAINDER, default=None,
+        help="Additional arguments for converter (pass '-- -h' for help)")
     return parser
 
 def export_command(args):
     project = load_project(args.project_dir)
 
     dst_dir = osp.abspath(args.dst_dir)
-    os.makedirs(dst_dir, exist_ok=False)
+    if not args.overwrite and osp.isdir(dst_dir) and os.listdir(dst_dir):
+        log.error("Directory '%s' already exists "
+            "(pass --overwrite to force creation)" % dst_dir)
+        return 1
+    os.makedirs(dst_dir, exist_ok=args.overwrite)
 
-    project.make_dataset().export(
+    log.info("Loading the project...")
+    dataset = project.make_dataset()
+
+    log.info("Exporting the project...")
+    dataset.export(
         save_dir=dst_dir,
         output_format=args.output_format,
         filter_expr=args.filter,
-        save_images=args.save_images)
+        cmdline_args=args.extra_args)
     log.info("Project exported to '%s' as '%s'" % \
         (dst_dir, args.output_format))
 

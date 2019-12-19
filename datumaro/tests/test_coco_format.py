@@ -7,9 +7,7 @@ from PIL import Image
 from unittest import TestCase
 
 from datumaro.components.project import Project
-from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME,
-    Extractor, DatasetItem,
+from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, LabelObject, MaskObject, PointsObject, PolygonObject,
     BboxObject, CaptionObject,
     LabelCategories, PointsCategories
@@ -138,9 +136,8 @@ class CocoImporterTest(TestCase):
             self.assertFalse(ann_2_mask is None)
 
 class CocoConverterTest(TestCase):
-    def _test_save_and_load(self, source_dataset, converter_type, test_dir,
-            importer_params=None):
-        converter = converter_type()
+    def _test_save_and_load(self, source_dataset, converter, test_dir,
+            importer_params=None, target_dataset=None):
         converter(source_dataset, test_dir.path)
 
         if not importer_params:
@@ -149,10 +146,10 @@ class CocoConverterTest(TestCase):
             **importer_params)
         parsed_dataset = project.make_dataset()
 
-        source_subsets = [s if s else DEFAULT_SUBSET_NAME
-            for s in source_dataset.subsets()]
+        if target_dataset is not None:
+            source_dataset = target_dataset
         self.assertListEqual(
-            sorted(source_subsets),
+            sorted(source_dataset.subsets()),
             sorted(parsed_dataset.subsets()),
         )
 
@@ -171,7 +168,7 @@ class CocoConverterTest(TestCase):
     def test_can_save_and_load_captions(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, subset='train',
                         annotations=[
                             CaptionObject('hello', id=1),
@@ -187,20 +184,16 @@ class CocoConverterTest(TestCase):
                             CaptionObject('word', id=1),
                         ]
                     ),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train', 'val']
+                ])
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoCaptionsConverter, test_dir)
+                CocoCaptionsConverter(), test_dir)
 
     def test_can_save_and_load_instances(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
                             # Bbox + single polygon
@@ -233,11 +226,7 @@ class CocoConverterTest(TestCase):
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
                         ]),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train', 'val']
+                ])
 
             def categories(self):
                 label_categories = LabelCategories()
@@ -249,12 +238,12 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoInstancesConverter, test_dir)
+                CocoInstancesConverter(), test_dir)
 
     def test_can_save_and_load_instances_with_mask_conversion(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, image=np.zeros((5, 5, 3)), subset='train',
                         annotations=[
                             BboxObject(0, 0, 5, 5, label=3, id=4, group=4,
@@ -275,11 +264,7 @@ class CocoConverterTest(TestCase):
                                 label=3, id=4, group=4),
                         ]
                     ),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train']
+                ])
 
             def categories(self):
                 label_categories = LabelCategories()
@@ -291,13 +276,66 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoInstancesConverter, test_dir,
+                CocoInstancesConverter(), test_dir,
                 {'merge_instance_polygons': True})
+
+    def test_can_merge_instance_polygons_to_mask_in_coverter(self):
+        label_categories = LabelCategories()
+        for i in range(10):
+            label_categories.add(str(i))
+
+        class SrcTestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=0, image=np.zeros((5, 10, 3)),
+                        annotations=[
+                            PolygonObject([0, 0, 4, 0, 4, 4],
+                                label=3, id=4, group=4,
+                                attributes={ 'is_crowd': False }),
+                            PolygonObject([5, 0, 9, 0, 5, 5],
+                                label=3, id=4, group=4,
+                                attributes={ 'is_crowd': False }),
+                        ]
+                    ),
+                ])
+
+            def categories(self):
+                return { AnnotationType.label: label_categories }
+
+        class DstTestExtractor(Extractor):
+            def __iter__(self):
+                return iter([
+                    DatasetItem(id=0, image=np.zeros((5, 10, 3)),
+                        annotations=[
+                            BboxObject(1, 0, 8, 4, label=3, id=4, group=4,
+                                attributes={ 'is_crowd': True }),
+                            MaskObject(np.array([
+                                    [0, 1, 1, 1, 0, 1, 1, 1, 1, 0],
+                                    [0, 0, 1, 1, 0, 1, 1, 1, 0, 0],
+                                    [0, 0, 0, 1, 0, 1, 1, 0, 0, 0],
+                                    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+                                    # only internal fragment (without the border),
+                                    # but not everywhere...
+                                    dtype=np.bool),
+                                attributes={ 'is_crowd': True },
+                                label=3, id=4, group=4),
+                        ]
+                    ),
+                ])
+
+            def categories(self):
+                return { AnnotationType.label: label_categories }
+
+        with TestDir() as test_dir:
+            self._test_save_and_load(SrcTestExtractor(),
+                CocoInstancesConverter(merge_polygons=True), test_dir,
+                target_dataset=DstTestExtractor())
 
     def test_can_save_and_load_images(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, subset='train'),
                     DatasetItem(id=1, subset='train'),
 
@@ -306,20 +344,16 @@ class CocoConverterTest(TestCase):
                     DatasetItem(id=4, subset='val'),
 
                     DatasetItem(id=5, subset='test'),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train', 'val', 'test']
+                ])
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoImageInfoConverter, test_dir)
+                CocoImageInfoConverter(), test_dir)
 
     def test_can_save_and_load_labels(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, subset='train',
                         annotations=[
                             LabelObject(4, id=1),
@@ -334,11 +368,7 @@ class CocoConverterTest(TestCase):
                         annotations=[
                             LabelObject(2, id=1),
                         ]),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train', 'val']
+                ])
 
             def categories(self):
                 label_categories = LabelCategories()
@@ -350,12 +380,12 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoLabelsConverter, test_dir)
+                CocoLabelsConverter(), test_dir)
 
     def test_can_save_and_load_keypoints(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, subset='train',
                         annotations=[
                             PointsObject([1, 2, 0, 2, 4, 1], [0, 1, 2],
@@ -377,11 +407,7 @@ class CocoConverterTest(TestCase):
                                 group=3, id=3),
                             BboxObject(0, 2, 4, 4, label=2, group=3),
                         ]),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train', 'val']
+                ])
 
             def categories(self):
                 label_categories = LabelCategories()
@@ -397,12 +423,12 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoPersonKeypointsConverter, test_dir)
+                CocoPersonKeypointsConverter(), test_dir)
 
     def test_can_save_dataset_with_no_subsets(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=1, annotations=[
                         LabelObject(2, id=1),
                     ]),
@@ -414,10 +440,7 @@ class CocoConverterTest(TestCase):
                         PolygonObject([0, 0, 4, 0, 4, 4], label=3, id=4, group=4,
                             attributes={ 'is_crowd': False }),
                     ]),
-                ]
-
-                for item in items:
-                    yield item
+                ])
 
             def categories(self):
                 label_cat = LabelCategories()
@@ -429,4 +452,4 @@ class CocoConverterTest(TestCase):
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
-                CocoConverter, test_dir)
+                CocoConverter(), test_dir)

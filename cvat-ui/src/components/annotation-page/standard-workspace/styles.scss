@@ -1,0 +1,39 @@
+@import '../../../base.scss';
+
+.cvat-annotation-page-canvas-container {
+    background-color: $background-color-1;
+}
+
+.cvat-annotation-page-objects-sidebar {
+    top: 0px;
+    right: 0px;
+    left: auto;
+    background-color: $background-color-2;
+    border-left: 1px solid $border-color-1;
+}
+
+.cvat-annotation-page-controls-sidebar {
+    background-color: $background-color-2;
+    border-right: 1px solid $border-color-1;
+
+    > div {
+        > i {
+            border-radius: 3.3px;
+            transform: scale(0.65);
+            padding: 2px;
+
+            &:hover {
+                background: $header-color;
+                transform: scale(0.75);
+            }
+
+            &:active {
+                transform: scale(0.65);
+            }
+
+            > svg {
+                transform: scale(0.8);
+            }
+        }
+    }
+}

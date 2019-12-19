@@ -1,3 +1,4 @@
+import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
@@ -6,20 +7,21 @@ import {
     Col,
     Row,
     Spin,
-    notification,
+    Result,
 } from 'antd';
 
 import TopBarComponent from './top-bar';
 import DetailsContainer from '../../containers/task-page/details';
 import JobListContainer from '../../containers/task-page/job-list';
+import ModelRunnerModalContainer from '../../containers/model-runner-dialog/model-runner-dialog';
 import { Task } from '../../reducers/interfaces';
 
 interface TaskPageComponentProps {
-    task: Task | null;
+    task: Task | null | undefined;
     fetching: boolean;
     deleteActivity: boolean | null;
     installedGit: boolean;
-    onFetchTask: (tid: number) => void;
+    getTask: () => void;
 }
 
 type Props = TaskPageComponentProps & RouteComponentProps<{id: string}>;
@@ -36,52 +38,47 @@ class TaskPageComponent extends React.PureComponent<Props> {
         if (deleteActivity) {
             history.replace('/tasks');
         }
-
-        if (this.attempts === 2) {
-            notification.warning({
-                message: 'Something wrong with the task. It cannot be fetched from the server',
-            });
-        }
     }
 
     public render(): JSX.Element {
         const {
-            match,
             task,
             fetching,
-            onFetchTask,
+            getTask,
         } = this.props;
-        const { id } = match.params;
-        const fetchTask = !task;
 
-        if (fetchTask) {
+        if (task === null) {
             if (!fetching) {
-                if (!this.attempts) {
-                    this.attempts++;
-                    onFetchTask(+id);
-                } else {
-                    this.attempts++;
-                }
+                getTask();
             }
+
             return (
-                <Spin size='large' style={{ margin: '25% 50%' }} />
+                <Spin size='large' className='cvat-spinner' />
             );
         }
 
         if (typeof (task) === 'undefined') {
             return (
-                <div> </div>
+                <Result
+                    className='cvat-not-found'
+                    status='404'
+                    title='Sorry, but this task was not found'
+                    subTitle='Please, be sure information you tried to get exist and you have access'
+                />
             );
         }
 
         return (
-            <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
-                <Col md={22} lg={18} xl={16} xxl={14}>
-                    <TopBarComponent taskInstance={(task as Task).instance} />
-                    <DetailsContainer task={(task as Task)} />
-                    <JobListContainer task={(task as Task)} />
-                </Col>
-            </Row>
+            <>
+                <Row type='flex' justify='center' align='top' className='cvat-task-details-wrapper'>
+                    <Col md={22} lg={18} xl={16} xxl={14}>
+                        <TopBarComponent taskInstance={(task as Task).instance} />
+                        <DetailsContainer task={(task as Task)} />
+                        <JobListContainer task={(task as Task)} />
+                    </Col>
+                </Row>
+                <ModelRunnerModalContainer />
+            </>
         );
     }
 }
