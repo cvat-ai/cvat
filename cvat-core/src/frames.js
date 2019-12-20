@@ -300,7 +300,7 @@
             frameDataCache[taskID] = {
                 meta,
                 chunkSize,
-                provider: new cvatData.FrameProvider(blockType, chunkSize, 9, decodedBlocksCacheSize, 2),
+                provider: new cvatData.FrameProvider(blockType, chunkSize, 9, decodedBlocksCacheSize, 1),
                 lastFrameRequest : frame,
                 decodedBlocksCacheSize,
                 activeChunkRequest: undefined,
