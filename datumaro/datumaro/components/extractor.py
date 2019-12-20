@@ -53,6 +53,11 @@ class Categories:
     def __init__(self, attributes=None):
         if attributes is None:
             attributes = set()
+        else:
+            if not isinstance(attributes, set):
+                attributes = set(attributes)
+            for attr in attributes:
+                assert isinstance(attr, str)
         self.attributes = attributes
 
     def __eq__(self, other):
@@ -62,7 +67,7 @@ class Categories:
             (self.attributes == other.attributes)
 
 class LabelCategories(Categories):
-    Category = namedtuple('Category', ['name', 'parent'])
+    Category = namedtuple('Category', ['name', 'parent', 'attributes'])
 
     def __init__(self, items=None, attributes=None):
         super().__init__(attributes=attributes)
@@ -81,11 +86,18 @@ class LabelCategories(Categories):
             indices[item.name] = index
         self._indices = indices
 
-    def add(self, name, parent=None):
+    def add(self, name, parent=None, attributes=None):
         assert name not in self._indices
+        if attributes is None:
+            attributes = set()
+        else:
+            if not isinstance(attributes, set):
+                attributes = set(attributes)
+            for attr in attributes:
+                assert isinstance(attr, str)
 
         index = len(self.items)
-        self.items.append(self.Category(name, parent))
+        self.items.append(self.Category(name, parent, attributes))
         self._indices[name] = index
 
     def find(self, name):
@@ -264,6 +276,8 @@ class PolygonObject(ShapeObject):
     # pylint: disable=redefined-builtin
     def __init__(self, points=None,
             label=None, id=None, attributes=None, group=None):
+        if points is not None:
+            assert len(points) % 2 == 0 and 3 <= len(points) // 2, "Wrong polygon points: %s" % points
         super().__init__(type=AnnotationType.polygon,
             points=points, label=label,
             id=id, attributes=attributes, group=group)
@@ -462,6 +476,7 @@ class DatasetItem:
             (self.id == other.id) and \
             (self.subset == other.subset) and \
             (self.annotations == other.annotations) and \
+            (self.path == other.path) and \
             (self.has_image == other.has_image) and \
             (self.has_image and np.all(self.image == other.image) or \
                 not self.has_image)

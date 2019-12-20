@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 from collections import defaultdict
-import os
+from glob import glob
+import logging as log
 import os.path as osp
 
 from datumaro.components.formats.ms_coco import CocoTask, CocoPath
@@ -19,9 +20,6 @@ class CocoImporter:
         CocoTask.image_info: 'coco_images',
     }
 
-    def __init__(self, task_filter=None):
-        self._task_filter = task_filter
-
     def __call__(self, path, **extra_params):
         from datumaro.components.project import Project # cyclic import
         project = Project()
@@ -33,6 +31,8 @@ class CocoImporter:
 
         for ann_files in subsets.values():
             for ann_type, ann_file in ann_files.items():
+                log.info("Found a dataset at '%s'" % ann_file)
+
                 source_name = osp.splitext(osp.basename(ann_file))[0]
                 project.add_source(source_name, {
                     'url': ann_file,
@@ -43,28 +43,29 @@ class CocoImporter:
         return project
 
     @staticmethod
-    def find_subsets(dataset_dir):
-        ann_dir = os.path.join(dataset_dir, CocoPath.ANNOTATIONS_DIR)
-        if not osp.isdir(ann_dir):
-            raise NotADirectoryError(
-                'COCO annotations directory not found at "%s"' % ann_dir)
+    def find_subsets(path):
+        if path.endswith('.json') and osp.isfile(path):
+            subset_paths = [path]
+        else:
+            subset_paths = glob(osp.join(path, '*_*.json'))
+
+            if osp.basename(osp.normpath(path)) != CocoPath.ANNOTATIONS_DIR:
+                path = osp.join(path, CocoPath.ANNOTATIONS_DIR)
+            subset_paths += glob(osp.join(path, '*_*.json'))
 
         subsets = defaultdict(dict)
-        for ann_file in os.listdir(ann_dir):
-            subset_path = osp.join(ann_dir, ann_file)
-            if not subset_path.endswith('.json'):
-                continue
+        for subset_path in subset_paths:
+            name_parts = osp.splitext(osp.basename(subset_path))[0] \
+                .rsplit('_', maxsplit=1)
 
-            name_parts = osp.splitext(ann_file)[0].rsplit('_', maxsplit=1)
             ann_type = name_parts[0]
             try:
                 ann_type = CocoTask[ann_type]
             except KeyError:
-                raise Exception(
-                    'Unknown subset type %s, only known are: %s' % \
-                    (ann_type,
-                     ', '.join([e.name for e in CocoTask])
-                    ))
+                log.warn("Skipping '%s': unknown subset "
+                    "type '%s', the only known are: %s" % \
+                    (subset_path, ann_type,
+                        ', '.join([e.name for e in CocoTask])))
             subset_name = name_parts[1]
             subsets[subset_name][ann_type] = subset_path
         return dict(subsets)

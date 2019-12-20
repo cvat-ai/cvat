@@ -42,6 +42,7 @@ Format selection is possible after clicking on the Upload annotation / Dump anno
 | [YOLO](https://pjreddie.com/darknet/yolo/)                                         | X      | X      |
 | [MS COCO Object Detection](http://cocodataset.org/#format-data)                    | X      | X      |
 | PNG mask                                                                           | X      |        |
+| PNG instance mask                                                                  | X      |        |
 | [TFrecord](https://www.tensorflow.org/tutorials/load_data/tf_records)              | X      | X      |
 | [MOT](https://motchallenge.net/)                                                   | X      | X      |
 | [LabelMe](http://labelme.csail.mit.edu/Release3.0)                                 | X      | X      |

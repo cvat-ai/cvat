@@ -145,7 +145,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter'),
 
     # Disable default handling of the 'format' query parameter by REST framework
-    'URL_FORMAT_OVERRIDE': None,
+    'URL_FORMAT_OVERRIDE': 'scheme',
 }
 
 REST_AUTH_REGISTER_SERIALIZERS = {

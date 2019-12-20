@@ -13,6 +13,7 @@ import {
 import Text from 'antd/lib/typography/Text';
 import moment from 'moment';
 
+import { MenuIcon } from '../../icons';
 import { Model } from '../../reducers/interfaces';
 
 interface Props {
@@ -22,7 +23,6 @@ interface Props {
 }
 
 export default function UploadedModelItem(props: Props): JSX.Element {
-    const subMenuIcon = (): JSX.Element => (<img alt='' src='/assets/icon-sub-menu.svg' />);
     const {
         model,
         owner,
@@ -34,18 +34,18 @@ export default function UploadedModelItem(props: Props): JSX.Element {
             <Col span={4} xxl={3}>
                 <Tag color='purple'>OpenVINO</Tag>
             </Col>
-            <Col span={6} xxl={7}>
-                <Text className='cvat-black-color'>
+            <Col span={5} xxl={7}>
+                <Text className='cvat-text-color'>
                     {model.name}
                 </Text>
             </Col>
             <Col span={3}>
-                <Text className='cvat-black-color'>
+                <Text className='cvat-text-color'>
                     {owner ? owner.username : 'undefined'}
                 </Text>
             </Col>
             <Col span={4}>
-                <Text className='cvat-black-color'>
+                <Text className='cvat-text-color'>
                     {moment(model.uploadDate).format('MMMM Do YYYY')}
                 </Text>
             </Col>
@@ -65,8 +65,8 @@ export default function UploadedModelItem(props: Props): JSX.Element {
                     )}
                 </Select>
             </Col>
-            <Col span={2}>
-                <Text className='cvat-black-color'>Actions</Text>
+            <Col span={3} xxl={2}>
+                <Text className='cvat-text-color'>Actions</Text>
                 <Dropdown overlay={
                     (
                         <Menu className='cvat-task-item-menu'>
@@ -81,7 +81,7 @@ export default function UploadedModelItem(props: Props): JSX.Element {
                         </Menu>
                     )}
                 >
-                    <Icon className='cvat-task-item-menu-icon' component={subMenuIcon} />
+                    <Icon className='cvat-menu-icon' component={MenuIcon} />
                 </Dropdown>
             </Col>
         </Row>

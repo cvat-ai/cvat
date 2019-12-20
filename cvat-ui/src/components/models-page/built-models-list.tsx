@@ -24,7 +24,7 @@ export default function IntegratedModelsListComponent(props: Props): JSX.Element
         <>
             <Row type='flex' justify='center' align='middle'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
-                    <Text className='cvat-black-color' strong>Primary</Text>
+                    <Text className='cvat-text-color' strong>Primary</Text>
                 </Col>
             </Row>
             <Row type='flex' justify='center' align='middle'>
