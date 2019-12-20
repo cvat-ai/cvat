@@ -224,6 +224,20 @@
     cursor: w-resize;
 }
 
+.shape-creator-border-point {
+    opacity: 0.75;
+}
+
+.shape-creator-border-point-active:hover {
+    opacity: 1;
+    fill: red;
+}
+
+.shape-creator-border-point-active:active {
+    opacity: 0.75;
+    fill: red;
+}
+
 .shapeText {
     font-size: 0.12em;
     fill: white;
