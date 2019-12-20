@@ -401,10 +401,13 @@ class ShapeCreatorView {
                                     pt.x = +_x;
                                     pt.y = +_y;
                                     pt = pt.matrixTransform(this._frameContent.node.getScreenCTM());
-                                    fakeEvent.clientX = pt.x;
-                                    fakeEvent.clientY = pt.y;
-                                    this._drawInstance.draw('point', new MouseEvent(e.type, fakeEvent));
+
+                                    this._drawInstance.array().valueOf().push([+_x, +_y]);
                                 }
+
+                                this._drawInstance.remember('_paintHandler').drawCircles();
+                                this._drawInstance.plot(this._drawInstance.array().valueOf());
+                                this._rescaleDrawPoints();
 
                                 while (clicks.length > 0) {
                                     clicks.pop();
