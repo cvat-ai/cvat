@@ -16,6 +16,8 @@
     showMessage:false
     STROKE_WIDTH:false
     SVG:false
+    CuboidModel:false
+    Cuboid2PointViewModel:false
 */
 
 'use strict';
@@ -463,8 +465,14 @@ class ShapeCreatorView {
                         p3 = { x: avg, y: actualPoints[0].y };
                         p4 = { x: avg, y: actualPoints[1].y };
 
-                        const vector = { x: actualPoints[3].x - actualPoints[2].x, y: actualPoints[3].y - actualPoints[2].y };
-                        p5 = { x: actualPoints[0].x + vector.x, y: actualPoints[0].y + vector.y + 1 };
+                        const vector = {
+                            x: actualPoints[3].x - actualPoints[2].x,
+                            y: actualPoints[3].y - actualPoints[2].y,
+                        };
+                        p5 = {
+                            x: actualPoints[0].x + vector.x,
+                            y: actualPoints[0].y + vector.y + 1,
+                        };
                         p6 = { x: actualPoints[0].x + vector.x, y: actualPoints[1].y + vector.y };
 
                         points = [p1, p2, p3, p4, p5, p6];
