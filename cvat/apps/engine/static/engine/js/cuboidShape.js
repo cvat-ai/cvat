@@ -59,7 +59,7 @@ class CuboidController extends PolyShapeController {
         const draggableFaces = [
             cuboidview._uis.shape.left,
             cuboidview._uis.shape.dorsal,
-            cuboidview._uis.shape.right
+            cuboidview._uis.shape.right,
         ];
 
         if (this.viewModel.dl.points[0].x > this.viewModel.fl.points[0].x) {
@@ -506,10 +506,6 @@ class CuboidModel extends PolyShapeModel {
     }
 
     makeHull(geoPoints) {
-        const newPoints = geoPoints.slice();
-        newPoints.sort(POINT_COMPARATOR);
-        return makeHullPresorted(newPoints);
-
         // Returns the convex hull, assuming that each points[i] <= points[i + 1].
         function makeHullPresorted(points) {
             if (points.length <= 1) return points.slice();
@@ -519,7 +515,7 @@ class CuboidModel extends PolyShapeModel {
             // graphics convention. This doesn't affect the correctness of the result.
 
             const upperHull = [];
-            for (let i = 0; i < points.length; i++) {
+            for (let i = 0; i < points.length; i += 1) {
                 const p = points[i];
                 while (upperHull.length >= 2) {
                     const q = upperHull[upperHull.length - 1];
@@ -532,7 +528,7 @@ class CuboidModel extends PolyShapeModel {
             upperHull.pop();
 
             const lowerHull = [];
-            for (let i = points.length - 1; i >= 0; i--) {
+            for (let i = points.length - 1; i >= 0; i -= 1) {
                 const p = points[i];
                 while (lowerHull.length >= 2) {
                     const q = lowerHull[lowerHull.length - 1];
@@ -559,6 +555,10 @@ class CuboidModel extends PolyShapeModel {
             if (a.y > b.y) return +1;
             return 0;
         }
+
+        const newPoints = geoPoints.slice();
+        newPoints.sort(POINT_COMPARATOR);
+        return makeHullPresorted(newPoints);
     }
 
     distance(mousePos, frame) {
@@ -566,7 +566,7 @@ class CuboidModel extends PolyShapeModel {
         if (pos.outside) return Number.MAX_SAFE_INTEGER;
         const points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let minDistance = Number.MAX_SAFE_INTEGER;
-        for (let i = 0; i < points.length; i++) {
+        for (let i = 0; i < points.length; i += 1) {
             const p1 = points[i];
             const p2 = points[i + 1] || points[0];
 
@@ -598,6 +598,47 @@ class CuboidModel extends PolyShapeModel {
 
     get draggable() {
         return this._draggable;
+    }
+}
+class Figure {
+    constructor(indices, Vmodel) {
+        this.indices = indices;
+        this.viewmodel = Vmodel;
+    }
+
+    get points() {
+        const points = [];
+        for (const index of this.indices) {
+            points.push(this.viewmodel.points[index]);
+        }
+        return points;
+    }
+
+    // sets the point for a given edge, points must be given in
+    // array form in the same ordering as the getter
+    // if you only need to update a subset of the points,
+    // simply put null for the points you want to keep
+    set points(newPoints) {
+        const oldPoints = this.viewmodel.points;
+        for (let i = 0; i < newPoints.length; i += 1) {
+            if (newPoints[i] !== null) {
+                oldPoints[this.indices[i]] = { x: newPoints[i].x, y: newPoints[i].y };
+            }
+        }
+    }
+
+    get canvasPoints() {
+        let { points } = this;
+        points = window.cvat.translate.points.actualToCanvas(points);
+        return points;
+    }
+}
+
+class Edge extends Figure {
+    getEquation() {
+        let { points } = this;
+        points = convertToArray(points);
+        return CuboidController.createEquation(points[0], points[1]);
     }
 }
 
@@ -804,48 +845,6 @@ class Cuboid2PointViewModel {
     }
 }
 
-class Figure {
-    constructor(indices, Vmodel) {
-        this.indices = indices;
-        this.viewmodel = Vmodel;
-    }
-
-    get points() {
-        const points = [];
-        for (const index of this.indices) {
-            points.push(this.viewmodel.points[index]);
-        }
-        return points;
-    }
-
-    // sets the point for a given edge, points must be given in
-    // array form in the same ordering as the getter
-    // if you only need to update a subset of the points,
-    // simply put null for the points you want to keep
-    set points(newPoints) {
-        const oldPoints = this.viewmodel.points;
-        for (let i = 0; i < newPoints.length; i++) {
-            if (newPoints[i] !== null) {
-                oldPoints[this.indices[i]] = { x: newPoints[i].x, y: newPoints[i].y };
-            }
-        }
-    }
-
-    get canvasPoints() {
-        let { points } = this;
-        points = window.cvat.translate.points.actualToCanvas(points);
-        return points;
-    }
-}
-
-class Edge extends Figure {
-    getEquation() {
-        let { points } = this;
-        points = convertToArray(points);
-        return CuboidController.createEquation(points[0], points[1]);
-    }
-}
-
 class CuboidView extends PolyShapeView {
     constructor(cuboidModel, cuboidController, svgContent, UIContent, textsScene) {
         super(cuboidModel, cuboidController, svgContent, UIContent, textsScene);
@@ -921,6 +920,7 @@ class CuboidView extends PolyShapeView {
         if (this._uis.shape && this._flags.editable) {
             CuboidController.removeEventsFromCube(this._uis.shape);
             this._uis.shape.hideGrabPoints();
+
             PolyShapeView.prototype._makeNotEditable.call(this);
         }
     }
