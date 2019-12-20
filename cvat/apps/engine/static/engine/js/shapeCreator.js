@@ -344,16 +344,19 @@ class ShapeCreatorView {
     }
 
     _drawBorderMarkers() {
+        const accounter = {
+            clicks: [],
+            shapeID: null,
+        };
+
         const namespace = 'http://www.w3.org/2000/svg';
-        const groups = this._controller.currentShapes.reduce((acc, shape) => {
+        const groups = this._controller.currentShapes.reduce((acc, shape, shapeID, shapes) => {
             const group = window.document.createElementNS(namespace, 'g');
-            const clicks = [];
             shape.points.split(/\s/)
-                .map((point, idx, points) => {
+                .map((point, pointID, points) => {
                     const [x, y] = point.split(',');
                     const circle = window.document.createElementNS(namespace, 'circle');
                     circle.classList.add('shape-creator-border-point');
-                    circle.classList.add('shape-creator-border-point-active');
                     circle.setAttribute('fill', shape.color);
                     circle.setAttribute('stroke', 'black');
                     circle.setAttribute('stroke-width', 1 / this._scale);
@@ -362,13 +365,65 @@ class ShapeCreatorView {
                     circle.setAttribute('r', 5 / this._scale); // TODO: base, scalable radius
                     circle.clickListener = (e) => {
                         e.stopPropagation();
-                        if (clicks.includes(idx)) {
-                            circle.classList.add('shape-creator-border-point-active');
-                        } else {
-                            clicks.push(idx);
+                        if (accounter.shapeID !== null && accounter.shapeID !== shapeID) {
+                            if (accounter.clicks.length === 2) {
+                                const pointToAdd = shapes[accounter.shapeID].points.split(/\s/)[accounter.clicks[1]];
+                                const [_x, _y] = pointToAdd.split(',');
+                                this._drawInstance.array().valueOf().pop();
+                                this._drawInstance.array().valueOf().push([+_x, +_y]);
+                                this._drawInstance.array().valueOf().push([+_x, +_y]);
+                                this._drawInstance.remember('_paintHandler').drawCircles();
+                                this._drawInstance.plot(this._drawInstance.array().valueOf());
+                                this._rescaleDrawPoints();
+                            }
 
-                            if (clicks.length > 2) {
-                                const s = Math.sign(clicks[2] - clicks[1]);
+                            while (accounter.clicks.length > 0) {
+                                const resetID = accounter.clicks.pop();
+                                groups[accounter.shapeID]
+                                    .children[resetID].classList.remove('shape-creator-border-point-direction');
+                            }
+                        }
+
+                        accounter.shapeID = shapeID;
+                        if (accounter.clicks.includes(pointID)) {
+                            const resetID = accounter.clicks
+                                .splice(accounter.clicks.indexOf(pointID), 1);
+                            group.children[resetID[0]].classList.remove('shape-creator-border-point-direction');
+                        } else {
+                            accounter.clicks.push(pointID);
+
+                            // up current group to work with its points easy
+                            this._frameContent.node.appendChild(group);
+                            if (accounter.clicks.length === 1) {
+                                if (!this._drawInstance.remember('_paintHandler').startPoint) {
+                                    this._drawInstance.draw('point', e);
+                                    this._drawInstance.array().valueOf().pop();
+                                }
+
+                                this._drawInstance.array().valueOf().pop();
+                                const borderPoint = points[pointID];
+                                const [_x, _y] = borderPoint.split(',');
+                                this._drawInstance.array().valueOf().push([+_x, +_y]);
+                                this._drawInstance.array().valueOf().push([+_x, +_y]);
+
+                                this._drawInstance.remember('_paintHandler').drawCircles();
+                                this._drawInstance.plot(this._drawInstance.array().valueOf());
+                                this._rescaleDrawPoints();
+                            } else if (accounter.clicks.length === 2) {
+                                circle.classList.add('shape-creator-border-point-direction');
+                            } else {
+                        //        const s = (accounter.clicks[1] > accounter.clicks[0]
+                        //            && accounter.clicks[1] > accounter.clicks[2])
+                        //            || (accounter.clicks[1] < accounter.clicks[0]
+                        //                && accounter.clicks[1] < accounter.clicks[2])
+                        //            ? -1 : Math.sign(accounter.clicks[2] - accounter.clicks[0]);
+
+                                // TODO: ADD TWO POINTS TO A BOX
+
+                                const s = Math.sign(accounter.clicks[2] - accounter.clicks[0])
+                                    * Math.sign(accounter.clicks[1] - accounter.clicks[0])
+                                    * Math.sign(accounter.clicks[2] - accounter.clicks[1]);
+
                                 const fakeEvent = {};
                                 // eslint-disable-next-line
                                 for (const prop in e) {
@@ -376,7 +431,7 @@ class ShapeCreatorView {
                                 }
 
                                 const border = [];
-                                for (let i = clicks[0]; ; i += s) {
+                                for (let i = accounter.clicks[0]; ; i += s) {
                                     if (i < 0) {
                                         i = points.length - 1;
                                     } else if (i === points.length) {
@@ -385,7 +440,7 @@ class ShapeCreatorView {
 
                                     border.push(points[i]);
 
-                                    if (i === clicks[clicks.length - 1]) {
+                                    if (i === accounter.clicks[accounter.clicks.length - 1]) {
                                         // put the last element twice
                                         // specific of svg.draw.js
                                         border.push(points[i]);
@@ -393,15 +448,15 @@ class ShapeCreatorView {
                                     }
                                 }
 
+                                if (!this._drawInstance.remember('_paintHandler').startPoint) {
+                                    this._drawInstance.draw('point', e);
+                                    this._drawInstance.array().valueOf().pop();
+                                }
+
                                 // remove the latest cursor position from drawing array
                                 this._drawInstance.array().valueOf().pop();
                                 for (const borderPoint of border) {
                                     const [_x, _y] = borderPoint.split(',');
-                                    let pt = this._frameContent.node.createSVGPoint();
-                                    pt.x = +_x;
-                                    pt.y = +_y;
-                                    pt = pt.matrixTransform(this._frameContent.node.getScreenCTM());
-
                                     this._drawInstance.array().valueOf().push([+_x, +_y]);
                                 }
 
@@ -409,9 +464,12 @@ class ShapeCreatorView {
                                 this._drawInstance.plot(this._drawInstance.array().valueOf());
                                 this._rescaleDrawPoints();
 
-                                while (clicks.length > 0) {
-                                    clicks.pop();
+                                while (accounter.clicks.length > 0) {
+                                    const resetID = accounter.clicks.pop();
+                                    group.children[resetID].classList.remove('shape-creator-border-point-direction');
                                 }
+
+                                accounter.shapeID = null;
                             }
                         }
                     };

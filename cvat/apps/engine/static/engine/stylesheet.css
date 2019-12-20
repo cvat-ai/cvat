@@ -225,17 +225,21 @@
 }
 
 .shape-creator-border-point {
-    opacity: 0.75;
+    opacity: 0.35;
 }
 
-.shape-creator-border-point-active:hover {
+.shape-creator-border-point:hover {
     opacity: 1;
     fill: red;
 }
 
-.shape-creator-border-point-active:active {
-    opacity: 0.75;
+.shape-creator-border-point:active {
+    opacity: 0.35;
     fill: red;
+}
+
+.shape-creator-border-point-direction {
+    fill: blueviolet;
 }
 
 .shapeText {
