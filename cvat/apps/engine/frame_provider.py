@@ -87,7 +87,7 @@ class FrameProvider():
             chunk_path = chunk_path_getter(chunk_idx)
             chunk_reader = reader_class([chunk_path])
             for frame, _ in chunk_reader:
-                yield self._av_frame_to_bytes(frame) if reader_class is VideoReader else frame
+                yield self._av_frame_to_png_bytes(frame) if reader_class is VideoReader else frame
 
     def get_original_frame_iter(self):
         return self._get_frame_iter(

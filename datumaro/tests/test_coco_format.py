@@ -7,9 +7,7 @@ from PIL import Image
 from unittest import TestCase
 
 from datumaro.components.project import Project
-from datumaro.components.extractor import (
-    DEFAULT_SUBSET_NAME,
-    Extractor, DatasetItem,
+from datumaro.components.extractor import (Extractor, DatasetItem,
     AnnotationType, LabelObject, MaskObject, PointsObject, PolygonObject,
     BboxObject, CaptionObject,
     LabelCategories, PointsCategories
@@ -150,10 +148,8 @@ class CocoConverterTest(TestCase):
 
         if target_dataset is not None:
             source_dataset = target_dataset
-        source_subsets = [s if s else DEFAULT_SUBSET_NAME
-            for s in source_dataset.subsets()]
         self.assertListEqual(
-            sorted(source_subsets),
+            sorted(source_dataset.subsets()),
             sorted(parsed_dataset.subsets()),
         )
 
@@ -172,7 +168,7 @@ class CocoConverterTest(TestCase):
     def test_can_save_and_load_captions(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, subset='train',
                         annotations=[
                             CaptionObject('hello', id=1),
@@ -188,11 +184,7 @@ class CocoConverterTest(TestCase):
                             CaptionObject('word', id=1),
                         ]
                     ),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train', 'val']
+                ])
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
@@ -201,7 +193,7 @@ class CocoConverterTest(TestCase):
     def test_can_save_and_load_instances(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, subset='train', image=np.ones((4, 4, 3)),
                         annotations=[
                             # Bbox + single polygon
@@ -234,11 +226,7 @@ class CocoConverterTest(TestCase):
                                 attributes={ 'is_crowd': True },
                                 label=4, group=3, id=3),
                         ]),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train', 'val']
+                ])
 
             def categories(self):
                 label_categories = LabelCategories()
@@ -255,7 +243,7 @@ class CocoConverterTest(TestCase):
     def test_can_save_and_load_instances_with_mask_conversion(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, image=np.zeros((5, 5, 3)), subset='train',
                         annotations=[
                             BboxObject(0, 0, 5, 5, label=3, id=4, group=4,
@@ -276,11 +264,7 @@ class CocoConverterTest(TestCase):
                                 label=3, id=4, group=4),
                         ]
                     ),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train']
+                ])
 
             def categories(self):
                 label_categories = LabelCategories()
@@ -302,7 +286,7 @@ class CocoConverterTest(TestCase):
 
         class SrcTestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, image=np.zeros((5, 10, 3)),
                         annotations=[
                             PolygonObject([0, 0, 4, 0, 4, 4],
@@ -313,15 +297,14 @@ class CocoConverterTest(TestCase):
                                 attributes={ 'is_crowd': False }),
                         ]
                     ),
-                ]
-                return iter(items)
+                ])
 
             def categories(self):
                 return { AnnotationType.label: label_categories }
 
         class DstTestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, image=np.zeros((5, 10, 3)),
                         annotations=[
                             BboxObject(1, 0, 8, 4, label=3, id=4, group=4,
@@ -339,8 +322,7 @@ class CocoConverterTest(TestCase):
                                 label=3, id=4, group=4),
                         ]
                     ),
-                ]
-                return iter(items)
+                ])
 
             def categories(self):
                 return { AnnotationType.label: label_categories }
@@ -353,7 +335,7 @@ class CocoConverterTest(TestCase):
     def test_can_save_and_load_images(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, subset='train'),
                     DatasetItem(id=1, subset='train'),
 
@@ -362,11 +344,7 @@ class CocoConverterTest(TestCase):
                     DatasetItem(id=4, subset='val'),
 
                     DatasetItem(id=5, subset='test'),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train', 'val', 'test']
+                ])
 
         with TestDir() as test_dir:
             self._test_save_and_load(TestExtractor(),
@@ -375,7 +353,7 @@ class CocoConverterTest(TestCase):
     def test_can_save_and_load_labels(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, subset='train',
                         annotations=[
                             LabelObject(4, id=1),
@@ -390,11 +368,7 @@ class CocoConverterTest(TestCase):
                         annotations=[
                             LabelObject(2, id=1),
                         ]),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train', 'val']
+                ])
 
             def categories(self):
                 label_categories = LabelCategories()
@@ -411,7 +385,7 @@ class CocoConverterTest(TestCase):
     def test_can_save_and_load_keypoints(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=0, subset='train',
                         annotations=[
                             PointsObject([1, 2, 0, 2, 4, 1], [0, 1, 2],
@@ -433,11 +407,7 @@ class CocoConverterTest(TestCase):
                                 group=3, id=3),
                             BboxObject(0, 2, 4, 4, label=2, group=3),
                         ]),
-                ]
-                return iter(items)
-
-            def subsets(self):
-                return ['train', 'val']
+                ])
 
             def categories(self):
                 label_categories = LabelCategories()
@@ -458,7 +428,7 @@ class CocoConverterTest(TestCase):
     def test_can_save_dataset_with_no_subsets(self):
         class TestExtractor(Extractor):
             def __iter__(self):
-                items = [
+                return iter([
                     DatasetItem(id=1, annotations=[
                         LabelObject(2, id=1),
                     ]),
@@ -470,10 +440,7 @@ class CocoConverterTest(TestCase):
                         PolygonObject([0, 0, 4, 0, 4, 4], label=3, id=4, group=4,
                             attributes={ 'is_crowd': False }),
                     ]),
-                ]
-
-                for item in items:
-                    yield item
+                ])
 
             def categories(self):
                 label_cat = LabelCategories()

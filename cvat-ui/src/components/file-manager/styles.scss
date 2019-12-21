@@ -1,0 +1,8 @@
+@import '../../base.scss';
+
+.cvat-share-tree {
+    height: fit-content;
+    min-height: 10em;
+    max-height: 20em;
+    overflow: auto;
+}

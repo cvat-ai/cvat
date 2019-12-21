@@ -28,6 +28,8 @@
   - [Annotation with polygons](#annotation-with-polygons)
   - [Annotation with polylines](#annotation-with-polylines)
   - [Annotation with points](#annotation-with-points)
+    - [Points in annotation mode](#points-in-annotation-mode)
+    - [Linear interpolation with one point](#linear-interpolation-with-one-point)
   - [Annotation with Auto Segmentation](#annotation-with-auto-segmentation)
   - [Auto annotation](#auto-annotation)
   - [Shape grouping](#shape-grouping)
@@ -55,6 +57,8 @@ computer vision tasks developed by our team.
 
     ![](static/documentation/images/image001.jpg)
 
+-   For register a new user press "Create an account"
+
     ![](static/documentation/images/image002.jpg)
 
 -   You can register a user but by default it will not have rights even to view
@@ -80,67 +84,71 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
 
 ### Creating an annotation task
 
-1.  Create an annotation task pressing ``Create New Task`` button on the main page.
+1.  Create an annotation task pressing ``Create new task`` button on the main page.
+![](static/documentation/images/image004.jpg)
 
-    ![](static/documentation/images/image004.jpg)
+1.  Specify parameters of the task:
 
-1.  Specify mandatory parameters of the task.
-    You have to fill in ``Name``, ``Labels`` and press the ``Select Files`` button.
-    After that you have to choose data you want to annotate.
+    #### Basic configuration
+
+    **Name** The name of the task to be created.
 
     ![](static/documentation/images/image005.jpg)
 
-    **Labels**. Use the following layout to create labels:
-    ``label_name <prefix>input_type=attribute_name:attribute_value1,attribute_value2``.
-    You can specify multiple labels and attributes and divide them pressing the space button.
-    Attributes belong to a previous label.
+    **Labels**. There are two ways of working with labels:
+    -   The ``Constructor`` is a simple way to add and adjust labels. To add a new label click the ``Add label`` button.
+          ![](static/documentation/images/image123.jpg)
+    
+        You can set a name of the label in the ``Label name`` field.
 
-    Example:
-    - ``vehicle @select=type:__undefined__,car,truck,bus,train ~radio=quality:good,bad ~checkbox=parked:false`` -
-    one label with multiple attributes
-    - ``car person bike`` - three labels without attributes
-    - ``circle @radio=color:green,red,blue @number=radius:0,10,0.1 line square`` -
-    one label with two attributes and two labels without attributes
+          ![](static/documentation/images/image124.jpg)
 
-    ``label_name``: for example _vehicle, person, face etc._
+        If necessary you can add an attribute and set its properties by clicking ``Add an attribute``:
 
-    ``<prefix>``:
-    - Use ``@`` for unique attributes which cannot be changed from frame to frame _(e.g. age, gender, color, etc.)_
-    - Use ``~`` for temporary attributes which can be changed on any frame _(e.g. quality, pose, truncated, etc.)_
+          ![](static/documentation/images/image125.jpg)
 
-    ``input_type``: the following input types are available ``select``, ``checkbox``, ``radio``, ``number``, ``text``.
+        The following actions are available here: 
+        1. Set the attribute’s name. 
+        1. Choose the way to display the attribute: 
+           - Select — drop down list of value 
+           - Radio — is used when it is necessary to choose just one option out of few suggested. 
+           - Checkbox — is used when it is necessary to choose any number of options out of suggested. 
+           - Text — is used when an attribute is entered as a text. 
+           - Number — is used when an attribute is entered as a number. 
+        1. Set values for the attribute. The values could be separated by pressing ``Enter``. 
+        The entered value is displayed as a separate element which could be deleted 
+        by pressing ``Backspace`` or clicking the close button (x). 
+        If the specified way of displaying the attribute is Text or Number, 
+        the entered value will be displayed as text by default (e.g. you can specify the text format).
+        1. Checkbox ``Mutable`` determines if an attribute would be changed frame to frame. 
+        1. You can delete the attribute by clicking the close button (x).
 
-    ``attribute_name``: for example, _age, quality, parked_
+        Click the ``Continue`` button to add more labels. 
+        If you need to cancel adding a label - press the ``Cancel`` button. 
+        After all the necessary labels are added click the ``Done`` button.  
+        After clicking ``Done`` the added labels would be displayed as separate elements of different colour. 
+        You can edit or delete labels by clicking ``Update attributes`` or ``Delete label``. 
 
-    ``attribute_value``: for example, _middle-age, good, true_
+    -   The ``Raw`` is a way of working with labels for an advanced user. 
+    Raw presents label data in _json_ format with an option of editing and copying labels as a text. 
+    The ``Done`` button applies the changes and the ``Reset`` button cancels the changes. 
+          ![](static/documentation/images/image126.jpg)
 
-    Default value for an attribute is the first value after "``:``".
+    **Select files**. Press tab ``My computer`` to choose some files for annotation from your PC. 
+    If you select tab ``Connected file share`` you can choose files for annotation from your network. 
+    If you select `` Remote source`` , you'll see a field where you can enter a list of URLs (one URL per line).
+    
+      ![](static/documentation/images/image127.jpg)
 
-    For ``select`` and ``radio`` input types the special value is available: ``__undefined__``.
-    Specify this value first if an attribute should be annotated explicitly.
+    #### Advanced configuration
 
-    **Bug Tracker**. Specify full bug tracker's URL if you have it.
-
-    **Dataset Repository**.  URL link of the repository optionally specifies the path to the repository for storage
-    (``default: annotation / <dump_file_name> .zip``).
-    The .zip and .xml file extension of annotation are supported.
-    Field format: ``URL [PATH]`` example: ``https://github.com/project/repos.git  [1/2/3/4/annotation.xml]``
-
-    Supported URL formats :
-    - ``https://github.com/project/repos[.git]``
-    - ``github.com/project/repos[.git]``
-    - ``git@github.com:project/repos[.git]``
-
-    The task will be highlighted in red after creation if annotation isn't synchronized with the repository.
-
-    **Use LFS**. If the annotation file is large, you can create a repository with
-    [LFS](https://git-lfs.github.com/) support.
-
-    **Source**. Choose "Local" if you want to use files from your PC.
-    Choose the "Remote" option if you want to use a one url-adress or a list.
-    To create huge tasks please use shared server directory (choose "Share"). 
+      ![](static/documentation/images/image128.jpg)  
 
     **Z-Order**. Defines the order on drawn polygons. Check the box for enable layered displaying.
+    
+    **Image Quality**. Use this option to specify quality of uploaded images.
+    The option helps to load high resolution datasets faster.
+    Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
 
     **Overlap Size**. Use this option to make overlapped segments.
     The option makes tracks continuous from one segment into another.
@@ -168,17 +176,29 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     Thus using "segment size" you can create several jobs for the same annotation task.
     It will help you to parallel data annotation process.
 
-    **Image Quality**. Use this option to specify quality of uploaded images.
-    The option helps to load high resolution datasets faster.
-    Use the value from ``1`` (completely compressed images) to ``95`` (almost not compressed images).
+    **Start frame**. Frame from which video in task begins.
+
+    **Stop frame**. Frame on which video in task ends.
 
     **Frame Filter**. Use this option to filter video frames.
     For example, enter ``step=25`` to leave every twenty fifth frame in the video. Use this option on video files only.
 
-    **Select files or URL list**. If you select `` Remote`` in `` Source``, you'll see a field where you can enter
-    a list of URLs (one URL per line).
-    Press `` Local`` or `` Share`` in the `` source`` field to choose some files
-    for anotation from your local PC or a network folder respectively.
+    **Dataset Repository**.  URL link of the repository optionally specifies the path to the repository for storage
+    (``default: annotation / <dump_file_name> .zip``).
+    The .zip and .xml file extension of annotation are supported.
+    Field format: ``URL [PATH]`` example: ``https://github.com/project/repos.git  [1/2/3/4/annotation.xml]``
+
+    Supported URL formats :
+    - ``https://github.com/project/repos[.git]``
+    - ``github.com/project/repos[.git]``
+    - ``git@github.com:project/repos[.git]``
+
+    The task will be highlighted in red after creation if annotation isn't synchronized with the repository.
+
+    **Use LFS**. If the annotation file is large, you can create a repository with
+    [LFS](https://git-lfs.github.com/) support.
+
+    **Issue tracker**. Specify full issue tracker's URL if it's necessary.
 
     Push ``Submit`` button and it will be added into the list of annotation tasks.
     Then, the created task will be displayed on a dashboard:
@@ -186,35 +206,63 @@ Go to the [Django administration panel](http://localhost:8080/admin). There you 
     ![](static/documentation/images/image006_DETRAC.jpg)
 
 1.  The Dashboard contains elements and each of them relates to a separate task. They are sorted in creation order.
-    Each element contains: task name, preview, execution status, buttons, and one or more links.
-    Each button is responsible for a specific function:
+    Each element contains: task name, preview, progress bar, button ``Open``, and menu ``Actions``.
+    Each button is responsible for a in menu ``Actions`` specific function:
     - ``Dump Annotation`` — download an annotation file from a task. Several formats are available:
       - [CVAT XML 1.1 for video](/cvat/apps/documentation/xml_format.md#interpolation)
-      is highlighted if a task has the interpolation mode 
+      is highlighted if a task has the interpolation mode.
       - [CVAT XML 1.1 for images](/cvat/apps/documentation/xml_format.md#annotation)
-      is highlighted if a task has the annotation mode 
+      is highlighted if a task has the annotation mode. 
       - [PASCAL VOC ZIP 1.0](http://host.robots.ox.ac.uk/pascal/VOC/)
       - [YOLO ZIP 1.0](https://pjreddie.com/darknet/yolo/)
       - [COCO JSON 1.0](http://cocodataset.org/#format-data)
       - ``MASK ZIP 1.0`` — archive contains a mask of each frame in the png format and a text file
-      with the value of each color
+      with the value of each color.
       - [TFRecord ZIP 1.0](https://www.tensorflow.org/tutorials/load_data/tf_records)
+      - [MOT CSV 1.0](https://motchallenge.net/)
+      - [LabelMe ZIP 3.0 for image](http://labelme.csail.mit.edu/Release3.0/)
     - ``Upload annotation`` is possible in same format as ``Dump annotation``, with exception of ``MASK ZIP 1.0``
-      format and without choosing whether [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md)
+      format and without choosing whether [CVAT XML 1.1](/cvat/apps/documentation/xml_format.md) 
+      and [LabelMe ZIP 3.0](http://labelme.csail.mit.edu/Release3.0/)
       refers to an image or video.
-    - ``Update Task`` — bring up "Update task" panel. It is used to edit or add labels line
-    - ``Delete Task`` — delete the task
-    - ``Git Repository Sync`` — sync annotation with the dataset repository.
-      It is available only if you specify a dataset repository when the task has been created.
-    - ``Run TF Annotation`` — automatic annotation with Tensorflow Object Detection API.
-      Presence depends on how you build CVAT instance
-    - ``Run Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
+    - ``Export as a dataset`` — download a data set from a task. Several formats are available:
+      - [Datumaro](https://github.com/opencv/cvat/blob/develop/datumaro/docs/design.md)
+      - [Pascal VOC 2012](http://host.robots.ox.ac.uk/pascal/VOC/)
+      - [MS COCO](http://cocodataset.org/#format-data)
+      - [YOLO](https://pjreddie.com/darknet/yolo/)
+    - ``Auto Annotation`` — automatic annotation with  OpenVINO toolkit.
       Presence depends on how you build CVAT instance.
+    - ``Open bug tracker`` — opens a link to Issue tracker.
+    - ``Delete`` — delete task.
 
-    Item color depends on status of synchronization with the dataset repository:
-    ``red`` means annotations are not synchronized with the repository,
-    ``yellow`` means annotations are in a temporary branch of the repository,
-    ``green`` means annotations are merged into the repository.
+    Push ``Open`` button to go to task details.
+
+1.  Task details is a task page which contains a preview, a progress bar 
+    and the details of the task (specified when the task was created) and the jobs section.
+  
+    ![](static/documentation/images/image131.jpg)
+
+    - The next actions are available on this page:
+      1. Change the task’s title.
+      1. Open ``Actions`` menu.  
+      1. Change issue tracker or open issue tracker if it is specified.
+      1. Change labels.
+      You can add new labels or add attributes for the existing labels in the Raw mode or the        Constructor mode. 
+      By clicking ``Copy`` you will copy the labels to the clipboard.
+      1. Assigned to — is used to assign a task to a person. Start typing an assignee’s name and/or 
+      choose the right person out of the dropdown list.
+    - ``Jobs`` — is a list of all jobs for a particular task. Here you can find the next data:
+      - Jobs name whit a hyperlink to it.
+      - Frames — the frame interval. 
+      - A status of the job. The status is specified by the user in the menu inside the job. 
+      There are three types of status: annotation, validation or completed. 
+      The status of the job is changes the progress bar of the task.
+      - Started on — start date of this job.
+      - Duration — is the amount of time the job is being worked.
+      - Assignee is the user who is working on the job. 
+      You can start typing an assignee’s name and/or choose the right person out of the dropdown list.
+      - ``Copy``. By clicking Copy you will copy the job list to the clipboard. 
+      The job list contains direct links to jobs. 
 
 1.  Follow a link inside ``Jobs`` section to start annotation process.
     In some cases, you can have several links. It depends on size of your
@@ -466,7 +514,7 @@ Usage examples:
 ### Task synchronization with a repository
 
 1.  At the end of the annotation process, a task is synchronized clicking
-    the `` Git Repository Sync`` on the main page. Notice: this feature
+    the `` Synchronize`` on the task page. Notice: this feature
     works only if a git repository was specified when the task was created.
 
     ![](static/documentation/images/image106.jpg)
@@ -881,7 +929,7 @@ By default, objects in the mode are zoomed. Check
 
 It is used for semantic / instance segmentation.
 
-Be sure ``Z-Order`` flag in ``Create task`` dialog is enabled if you want to
+Be sure ``Z-Order`` flag in ``Create new task`` dialog is enabled if you want to
 annotate polygons. Z-Order flag defines order of drawing. It is necessary to
 get right annotation mask without extra work (additional drawing of borders).
 Z-Order can be changed by ``+``/``-`` which set maximum/minimum z-order

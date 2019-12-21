@@ -14,23 +14,29 @@ import {
 type Props = RouteComponentProps<{id: string}>;
 
 interface StateToProps {
-    task: Task | null;
+    task: Task | null | undefined;
     fetching: boolean;
     deleteActivity: boolean | null;
     installedGit: boolean;
 }
 
 interface DispatchToProps {
-    onFetchTask: (tid: number) => void;
+    getTask: () => void;
 }
 
 function mapStateToProps(state: CombinedState, own: Props): StateToProps {
     const { plugins } = state.plugins;
-    const { deletes } = state.tasks.activities;
+    const { tasks } = state;
+    const { gettingQuery } = tasks;
+    const { deletes } = tasks.activities;
+
     const id = +own.match.params.id;
 
-    const filtered = state.tasks.current.filter((task) => task.instance.id === id);
-    const task = filtered[0] || null;
+    const filteredTasks = state.tasks.current
+        .filter((task) => task.instance.id === id);
+
+    const task = filteredTasks[0] || (gettingQuery.id === id || Number.isNaN(id)
+        ? undefined : null);
 
     let deleteActivity = null;
     if (task && id in deletes.byTask) {
@@ -45,11 +51,13 @@ function mapStateToProps(state: CombinedState, own: Props): StateToProps {
     };
 }
 
-function mapDispatchToProps(dispatch: any): DispatchToProps {
+function mapDispatchToProps(dispatch: any, own: Props): DispatchToProps {
+    const id = +own.match.params.id;
+
     return {
-        onFetchTask: (tid: number): void => {
+        getTask: (): void => {
             dispatch(getTasksAsync({
-                id: tid,
+                id,
                 page: 1,
                 search: null,
                 owner: null,

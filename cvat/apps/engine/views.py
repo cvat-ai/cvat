@@ -39,7 +39,7 @@ from cvat.apps.engine.serializers import (TaskSerializer, UserSerializer,
    RqStatusSerializer, DataSerializer, LabeledDataSerializer,
    PluginSerializer, FileInfoSerializer, LogEventSerializer,
    ProjectSerializer, BasicUserSerializer)
-from cvat.apps.annotation.serializers import AnnotationFileSerializer
+from cvat.apps.annotation.serializers import AnnotationFileSerializer, AnnotationFormatSerializer
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from cvat.apps.authentication import auth
@@ -48,6 +48,28 @@ from cvat.apps.annotation.models import AnnotationDumper, AnnotationLoader
 from cvat.apps.annotation.format import get_annotation_formats
 from cvat.apps.engine.frame_provider import FrameProvider
 import cvat.apps.dataset_manager.task as DatumaroTask
+
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from django.utils.decorators import method_decorator
+from drf_yasg.inspectors import NotHandled, CoreAPICompatInspector
+from django_filters.rest_framework import DjangoFilterBackend
+
+# drf-yasg component doesn't handle correctly URL_FORMAT_OVERRIDE and
+# send requests with ?format=openapi suffix instead of ?scheme=openapi.
+# We map the required paramater explicitly and add it into query arguments
+# on the server side.
+def wrap_swagger(view):
+    @login_required
+    def _map_format_to_schema(request, scheme=None):
+        if 'format' in request.GET:
+            request.GET = request.GET.copy()
+            format_alias = settings.REST_FRAMEWORK['URL_FORMAT_OVERRIDE']
+            request.GET[format_alias] = request.GET['format']
+
+        return view(request, format=scheme)
+
+    return _map_format_to_schema
 
 # Server REST API
 @login_required
@@ -79,6 +101,8 @@ class ServerViewSet(viewsets.ViewSet):
         pass
 
     @staticmethod
+    @swagger_auto_schema(method='get', operation_summary='Method provides basic CVAT information',
+        responses={'200': AboutSerializer})
     @action(detail=False, methods=['GET'], serializer_class=AboutSerializer)
     def about(request):
         from cvat import __version__ as cvat_version
@@ -98,8 +122,14 @@ class ServerViewSet(viewsets.ViewSet):
             return Response(data=serializer.data)
 
     @staticmethod
+    @swagger_auto_schema(method='post', request_body=ExceptionSerializer)
     @action(detail=False, methods=['POST'], serializer_class=ExceptionSerializer)
     def exception(request):
+        """
+        Saves an exception from a client on the server
+
+        Sends logs to the ELK if it is connected
+        """
         serializer = ExceptionSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             additional_info = {
@@ -119,8 +149,14 @@ class ServerViewSet(viewsets.ViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @staticmethod
+    @swagger_auto_schema(method='post', request_body=LogEventSerializer(many=True))
     @action(detail=False, methods=['POST'], serializer_class=LogEventSerializer)
     def logs(request):
+        """
+        Saves logs from a client on the server
+
+        Sends logs to the ELK if it is connected
+        """
         serializer = LogEventSerializer(many=True, data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = { "username": request.user.username }
@@ -137,6 +173,11 @@ class ServerViewSet(viewsets.ViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @staticmethod
+    @swagger_auto_schema(
+        method='get', operation_summary='Returns all files and folders that are on the server along specified path',
+        manual_parameters=[openapi.Parameter('directory', openapi.IN_QUERY, type=openapi.TYPE_STRING, description='Directory to browse')],
+        responses={'200' : FileInfoSerializer(many=True)}
+    )
     @action(detail=False, methods=['GET'], serializer_class=FileInfoSerializer)
     def share(request):
         param = request.query_params.get('directory', '/')
@@ -165,6 +206,8 @@ class ServerViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
+    @swagger_auto_schema(method='get', operation_summary='Method provides the list of available annotations formats supported by the server',
+        responses={'200': AnnotationFormatSerializer(many=True)})
     @action(detail=False, methods=['GET'], url_path='annotation/formats')
     def annotation_formats(request):
         data = get_annotation_formats()
@@ -187,6 +230,23 @@ class ProjectFilter(filters.FilterSet):
         model = models.Project
         fields = ("id", "name", "owner", "status", "assignee")
 
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_summary='Returns a paginated list of projects according to query parameters (10 projects per page)',
+    manual_parameters=[
+        openapi.Parameter('id', openapi.IN_QUERY, description="A unique number value identifying this project",
+            type=openapi.TYPE_NUMBER),
+        openapi.Parameter('name', openapi.IN_QUERY, description="Find all projects where name contains a parameter value",
+            type=openapi.TYPE_STRING),
+        openapi.Parameter('owner', openapi.IN_QUERY, description="Find all project where owner name contains a parameter value",
+            type=openapi.TYPE_STRING),
+        openapi.Parameter('status', openapi.IN_QUERY, description="Find all projects with a specific status",
+            type=openapi.TYPE_STRING, enum=[str(i) for i in StatusChoice]),
+        openapi.Parameter('assignee', openapi.IN_QUERY, description="Find all projects where assignee name contains a parameter value",
+            type=openapi.TYPE_STRING)]))
+@method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method creates a new project'))
+@method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific project'))
+@method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific project'))
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a project'))
 class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = models.Project.objects.all().order_by('-id')
     serializer_class = ProjectSerializer
@@ -218,6 +278,8 @@ class ProjectViewSet(auth.ProjectGetQuerySetMixin, viewsets.ModelViewSet):
         else:
             serializer.save(owner=self.request.user)
 
+    @swagger_auto_schema(method='get', operation_summary='Returns information of the tasks of the project with the selected id',
+        responses={'200': TaskSerializer(many=True)})
     @action(detail=True, methods=['GET'], serializer_class=TaskSerializer)
     def tasks(self, request, pk):
         self.get_object() # force to call check_object_permissions
@@ -247,6 +309,35 @@ class TaskFilter(filters.FilterSet):
         fields = ("id", "project_id", "project", "name", "owner", "mode", "status",
             "assignee")
 
+class DjangoFilterInspector(CoreAPICompatInspector):
+    def get_filter_parameters(self, filter_backend):
+        if isinstance(filter_backend, DjangoFilterBackend):
+            result = super(DjangoFilterInspector, self).get_filter_parameters(filter_backend)
+            res = result.copy()
+
+            for param in result:
+                if param.get('name') == 'project_id' or param.get('name') == 'project':
+                    res.remove(param)
+            return res
+
+        return NotHandled
+
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_summary='Returns a paginated list of tasks according to query parameters (10 tasks per page)',
+    manual_parameters=[
+            openapi.Parameter('id',openapi.IN_QUERY,description="A unique number value identifying this task",type=openapi.TYPE_NUMBER),
+            openapi.Parameter('name', openapi.IN_QUERY, description="Find all tasks where name contains a parameter value", type=openapi.TYPE_STRING),
+            openapi.Parameter('owner', openapi.IN_QUERY, description="Find all tasks where owner name contains a parameter value", type=openapi.TYPE_STRING),
+            openapi.Parameter('mode', openapi.IN_QUERY, description="Find all tasks with a specific mode", type=openapi.TYPE_STRING, enum=['annotation', 'interpolation']),
+            openapi.Parameter('status', openapi.IN_QUERY, description="Find all tasks with a specific status", type=openapi.TYPE_STRING,enum=['annotation','validation','completed']),
+            openapi.Parameter('assignee', openapi.IN_QUERY, description="Find all tasks where assignee name contains a parameter value", type=openapi.TYPE_STRING)
+        ],
+    filter_inspectors=[DjangoFilterInspector]))
+@method_decorator(name='create', decorator=swagger_auto_schema(operation_summary='Method creates a new task in a database without any attached images and videos'))
+@method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a specific task'))
+@method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a task by id'))
+@method_decorator(name='destroy', decorator=swagger_auto_schema(operation_summary='Method deletes a specific task, all attached jobs, annotations, and data'))
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(operation_summary='Methods does a partial update of chosen fields in a task'))
 class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
     queryset = Task.objects.all().prefetch_related(
             "label_set__attributespec_set",
@@ -288,6 +379,8 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             shutil.rmtree(instance.data.get_data_dirname(), ignore_errors=True)
             instance.data.delete()
 
+    @swagger_auto_schema(method='get', operation_summary='Returns a list of jobs for a specific task',
+        responses={'200': JobSerializer(many=True)})
     @action(detail=True, methods=['GET'], serializer_class=JobSerializer)
     def jobs(self, request, pk):
         self.get_object() # force to call check_object_permissions
@@ -297,6 +390,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+    @swagger_auto_schema(method='post', operation_summary='Method permanently attaches images or video to a task')
     @action(detail=True, methods=['POST', 'GET'])
     def data(self, request, pk):
         if request.method == 'POST':
@@ -358,6 +452,12 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                 slogger.task[pk].error(msg, exc_info=True)
                 return Response(data=msg + '\n' + str(e), status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(method='get', operation_summary='Method returns annotations for a specific task')
+    @swagger_auto_schema(method='put', operation_summary='Method performs an update of all annotations in a specific task')
+    @swagger_auto_schema(method='patch', operation_summary='Method performs a partial update of annotations in a specific task',
+        manual_parameters=[openapi.Parameter('action', in_=openapi.IN_QUERY, required=True, type=openapi.TYPE_STRING,
+            enum=['create', 'update', 'delete'])])
+    @swagger_auto_schema(method='delete', operation_summary='Method deletes all annotations for a specific task')
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
@@ -396,9 +496,23 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+    @swagger_auto_schema(method='get', operation_summary='Method allows to download annotations as a file',
+        manual_parameters=[openapi.Parameter('filename', openapi.IN_PATH, description="A name of a file with annotations",
+                type=openapi.TYPE_STRING, required=True),
+            openapi.Parameter('format', openapi.IN_QUERY, description="A name of a dumper\nYou can get annotation dumpers from this API:\n/server/annotation/formats",
+                type=openapi.TYPE_STRING, required=True),
+            openapi.Parameter('action', in_=openapi.IN_QUERY, description='Used to start downloading process after annotation file had been created',
+                required=False, enum=['download'], type=openapi.TYPE_STRING)],
+        responses={'202': openapi.Response(description='Dump of annotations has been started'),
+            '201': openapi.Response(description='Annotations file is ready to download'),
+            '200': openapi.Response(description='Download of file started')})
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='annotations/(?P<filename>[^/]+)')
     def dump(self, request, pk, filename):
+        """
+        Dump of annotations in common case is a long process which cannot be performed within one request.
+        First request starts dumping process. When the file is ready (code 201) you can get it with query parameter action=download.
+        """
         filename = re.sub(r'[\\/*?:"<>|]', '_', filename)
         username = request.user.username
         db_task = self.get_object() # call check_object_permissions as well
@@ -457,6 +571,7 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_202_ACCEPTED)
 
+    @swagger_auto_schema(method='get', operation_summary='When task is being created the method returns information about a status of the creation process')
     @action(detail=True, methods=['GET'], serializer_class=RqStatusSerializer)
     def status(self, request, pk):
         self.get_object() # force to call check_object_permissions
@@ -485,10 +600,11 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
 
         return response
 
-    @staticmethod
+    @swagger_auto_schema(method='get', operation_summary='Method provides a list of sizes (width, height) of media files which are related with the task',
+        responses={'200': ImageMetaSerializer(many=True)})
     @action(detail=True, methods=['GET'], serializer_class=ImageMetaSerializer,
         url_path='data/meta')
-    def data_info(request, pk):
+    def data_info(self, request, pk):
         data = {
             'original_size': [],
         }
@@ -510,10 +626,16 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
         if serializer.is_valid(raise_exception=True):
             return Response(serializer.data)
 
+    @swagger_auto_schema(method='get', operation_summary='Export task as a dataset in a specific format',
+        manual_parameters=[openapi.Parameter('action', in_=openapi.IN_QUERY,
+                required=False, type=openapi.TYPE_STRING, enum=['download']),
+            openapi.Parameter('format', in_=openapi.IN_QUERY, required=False, type=openapi.TYPE_STRING)],
+        responses={'202': openapi.Response(description='Dump of annotations has been started'),
+            '201': openapi.Response(description='Annotations file is ready to download'),
+            '200': openapi.Response(description='Download of file started')})
     @action(detail=True, methods=['GET'], serializer_class=None,
         url_path='dataset')
     def dataset_export(self, request, pk):
-        """Export task as a dataset in a specific format"""
 
         db_task = self.get_object()
 
@@ -577,73 +699,10 @@ class TaskViewSet(auth.TaskGetQuerySetMixin, viewsets.ModelViewSet):
             result_ttl=ttl, failure_ttl=ttl)
         return Response(status=status.HTTP_202_ACCEPTED)
 
-    @action(detail=True, methods=['GET'], serializer_class=None,
-        url_path='dataset')
-    def dataset_export(self, request, pk):
-        """Export task as a dataset in a specific format"""
-
-        db_task = self.get_object()
-
-        action = request.query_params.get("action", "")
-        action = action.lower()
-        if action not in ["", "download"]:
-            raise serializers.ValidationError(
-                "Unexpected parameter 'action' specified for the request")
-
-        dst_format = request.query_params.get("format", "")
-        if not dst_format:
-            dst_format = DatumaroTask.DEFAULT_FORMAT
-        dst_format = dst_format.lower()
-        if dst_format not in [f['tag']
-                for f in DatumaroTask.get_export_formats()]:
-            raise serializers.ValidationError(
-                "Unexpected parameter 'format' specified for the request")
-
-        rq_id = "task_dataset_export.{}.{}".format(pk, dst_format)
-        queue = django_rq.get_queue("default")
-
-        rq_job = queue.fetch_job(rq_id)
-        if rq_job:
-            task_time = timezone.localtime(db_task.updated_date)
-            request_time = rq_job.meta.get('request_time',
-                timezone.make_aware(datetime.min))
-            if request_time < task_time:
-                rq_job.cancel()
-                rq_job.delete()
-            else:
-                if rq_job.is_finished:
-                    file_path = rq_job.return_value
-                    if action == "download" and osp.exists(file_path):
-                        rq_job.delete()
-
-                        timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-                        filename = "task_{}-{}-{}.zip".format(
-                            db_task.name, timestamp, dst_format)
-                        return sendfile(request, file_path, attachment=True,
-                            attachment_filename=filename.lower())
-                    else:
-                        if osp.exists(file_path):
-                            return Response(status=status.HTTP_201_CREATED)
-                elif rq_job.is_failed:
-                    exc_info = str(rq_job.exc_info)
-                    rq_job.delete()
-                    return Response(exc_info,
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                else:
-                    return Response(status=status.HTTP_202_ACCEPTED)
-
-        try:
-            server_address = request.get_host()
-        except Exception:
-            server_address = None
-
-        ttl = DatumaroTask.CACHE_TTL.total_seconds()
-        queue.enqueue_call(func=DatumaroTask.export_project,
-            args=(pk, request.user, dst_format, server_address), job_id=rq_id,
-            meta={ 'request_time': timezone.localtime() },
-            result_ttl=ttl, failure_ttl=ttl)
-        return Response(status=status.HTTP_202_ACCEPTED)
-
+@method_decorator(name='retrieve', decorator=swagger_auto_schema(operation_summary='Method returns details of a job'))
+@method_decorator(name='update', decorator=swagger_auto_schema(operation_summary='Method updates a job by id'))
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(
+    operation_summary='Methods does a partial update of chosen fields in a job'))
 class JobViewSet(viewsets.GenericViewSet,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Job.objects.all().order_by('id')
@@ -662,7 +721,13 @@ class JobViewSet(viewsets.GenericViewSet,
 
         return [perm() for perm in permissions]
 
-
+    @swagger_auto_schema(method='get', operation_summary='Method returns annotations for a specific job')
+    @swagger_auto_schema(method='put', operation_summary='Method performs an update of all annotations in a specific job')
+    @swagger_auto_schema(method='patch', manual_parameters=[
+        openapi.Parameter('action', in_=openapi.IN_QUERY, type=openapi.TYPE_STRING, required=True,
+            enum=['create', 'update', 'delete'])],
+            operation_summary='Method performs a partial update of annotations in a specific job')
+    @swagger_auto_schema(method='delete', operation_summary='Method deletes all annotations for a specific job')
     @action(detail=True, methods=['GET', 'DELETE', 'PUT', 'PATCH'],
         serializer_class=LabeledDataSerializer)
     def annotations(self, request, pk):
@@ -703,6 +768,14 @@ class JobViewSet(viewsets.GenericViewSet,
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_summary='Method provides a paginated list of users registered on the server'))
+@method_decorator(name='retrieve', decorator=swagger_auto_schema(
+    operation_summary='Method provides information of a specific user'))
+@method_decorator(name='partial_update', decorator=swagger_auto_schema(
+    operation_summary='Method updates chosen fields of a user'))
+@method_decorator(name='destroy', decorator=swagger_auto_schema(
+    operation_summary='Method deletes a specific user from the server'))
 class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
     mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     queryset = User.objects.all().order_by('id')
@@ -731,8 +804,12 @@ class UserViewSet(viewsets.GenericViewSet, mixins.ListModelMixin,
 
         return [perm() for perm in permissions]
 
+    @swagger_auto_schema(method='get', operation_summary='Method returns an instance of a user who is currently authorized')
     @action(detail=False, methods=['GET'])
     def self(self, request):
+        """
+        Method returns an instance of a user who is currently authorized
+        """
         serializer_class = self.get_serializer_class()
         serializer = serializer_class(request.user, context={ "request": request })
         return Response(serializer.data)
@@ -773,6 +850,15 @@ def rq_handler(job, exc_type, exc_value, tb):
 
     return True
 
+# TODO: Method should be reimplemented as a separated view
+# @swagger_auto_schema(method='put', manual_parameters=[openapi.Parameter('format', in_=openapi.IN_QUERY,
+#         description='A name of a loader\nYou can get annotation loaders from this API:\n/server/annotation/formats',
+#         required=True, type=openapi.TYPE_STRING)],
+#     operation_summary='Method allows to upload annotations',
+#     responses={'202': openapi.Response(description='Load of annotations has been started'),
+#         '201': openapi.Response(description='Annotations have been uploaded')},
+#     tags=['tasks'])
+# @api_view(['PUT'])
 def load_data_proxy(request, rq_id, rq_func, pk):
     queue = django_rq.get_queue("default")
     rq_job = queue.fetch_job(rq_id)

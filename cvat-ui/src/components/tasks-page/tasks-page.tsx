@@ -1,3 +1,4 @@
+import './styles.scss';
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { withRouter } from 'react-router-dom';
@@ -15,7 +16,7 @@ import {
 } from '../../reducers/interfaces';
 
 import TopBar from './top-bar';
-import FeedbackComponent from '../feedback';
+import FeedbackComponent from '../feedback/feedback';
 import EmptyListComponent from './empty-list';
 import TaskListContainer from '../../containers/tasks-page/tasks-list';
 
@@ -206,7 +207,7 @@ class TasksPageComponent extends React.PureComponent<TasksPageProps & RouteCompo
 
         if (tasksFetching) {
             return (
-                <Spin size='large' style={{ margin: '25% 45%' }} />
+                <Spin size='large' className='cvat-spinner' />
             );
         }
 

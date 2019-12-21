@@ -52,7 +52,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
         return (
             <Col span={10}>
                 <Text strong type='secondary'>{`#${id}: `}</Text>
-                <Text strong className='cvat-black-color'>{name}</Text>
+                <Text strong className='cvat-text-color'>{name}</Text>
                 <br />
                 { owner
                     && (
@@ -171,7 +171,7 @@ class TaskItemComponent extends React.PureComponent<TaskItemProps & RouteCompone
                 </Row>
                 <Row type='flex' justify='end'>
                     <Col>
-                        <Text className='cvat-black-color'>Actions</Text>
+                        <Text className='cvat-text-color'>Actions</Text>
                         <Dropdown overlay={<ActionsMenuContainer taskInstance={taskInstance} />}>
                             <Icon className='cvat-menu-icon' component={MenuIcon} />
                         </Dropdown>

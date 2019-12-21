@@ -52,22 +52,30 @@ class LabelForm extends React.PureComponent<Props, {}> {
             onSubmit,
         } = this.props;
 
-        form.validateFields((error, values): void => {
+        form.validateFields((error, formValues): void => {
             if (!error) {
                 onSubmit({
-                    name: values.labelName,
+                    name: formValues.labelName,
                     id: label ? label.id : idGenerator(),
-                    attributes: values.keys.map((key: number, index: number): Attribute => (
-                        {
-                            name: values.attrName[key],
-                            type: values.type[key],
-                            mutable: values.mutable[key],
+                    attributes: formValues.keys.map((key: number, index: number): Attribute => {
+                        let attrValues = formValues.values[key];
+                        if (!Array.isArray(attrValues)) {
+                            if (formValues.type[key] === AttributeType.NUMBER) {
+                                attrValues = attrValues.split(';');
+                            } else {
+                                attrValues = [attrValues];
+                            }
+                        }
+
+                        return {
+                            name: formValues.attrName[key],
+                            type: formValues.type[key],
+                            mutable: formValues.mutable[key],
                             id: label && index < label.attributes.length
                                 ? label.attributes[index].id : key,
-                            values: Array.isArray(values.values[key])
-                                ? values.values[key] : [values.values[key]],
-                        }
-                    )),
+                            values: attrValues,
+                        };
+                    }),
                 });
 
                 form.resetFields();
