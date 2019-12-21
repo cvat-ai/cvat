@@ -91,11 +91,10 @@
             const onDecodeAll = (frameNumber) => {
                 if (frameDataCache[this.tid].activeChunkRequest && chunkNumber === frameDataCache[this.tid].activeChunkRequest.chunkNumber) {
                     const callbackArray = frameDataCache[this.tid].activeChunkRequest.callbacks;
-                    if (callbackArray.length) {
-                        const lastRequest = callbackArray.pop();
-                        frameDataCache[this.tid].activeChunkRequest = undefined;
-                        lastRequest.resolve(provider.frame(frameNumber));
+                    for (const callback of callbackArray) {
+                        callback.resolve(provider.frame(frameNumber));
                     }
+                    frameDataCache[this.tid].activeChunkRequest = undefined;
                 }
             };
 
@@ -211,28 +210,28 @@
                             provider.requestDecodeBlock(null, start, stop, onDecodeAll, rejectRequestAll);
                         }
                     } else {
-                        if (this.number % chunkSize > 1 && !provider.isNextChunkExists(this.number) && decodedBlocksCacheSize > 1) {
-                            const nextChunkNumber = chunkNumber + 1;
-                            const nextStart = Math.max(this.startFrame, nextChunkNumber * chunkSize);
-                            const nextStop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
+                        // if (this.number % chunkSize > 1 && !provider.isNextChunkExists(this.number) && decodedBlocksCacheSize > 1) {
+                        //     const nextChunkNumber = chunkNumber + 1;
+                        //     const nextStart = Math.max(this.startFrame, nextChunkNumber * chunkSize);
+                        //     const nextStop = Math.min(this.stopFrame, (nextChunkNumber + 1) * chunkSize - 1);
 
-                            if (nextStart < this.stopFrame) {
-                                provider.setReadyToLoading(nextChunkNumber);
-                                if (!provider.is_chunk_cached(nextStart, nextStop)){
-                                    serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
-                                        provider.requestDecodeBlock(nextChunk, nextStart, nextStop, undefined, undefined);
-                                    }).catch(exception => {
-                                        if (exception instanceof Exception) {
-                                            reject(exception);
-                                        } else {
-                                            reject(new Exception(exception.message));
-                                        }
-                                    });
-                                } else {
-                                    provider.requestDecodeBlock(null, nextStart, nextStop, undefined, undefined);
-                                }
-                            }
-                        }
+                        //     if (nextStart < this.stopFrame) {
+                        //         provider.setReadyToLoading(nextChunkNumber);
+                        //         if (!provider.is_chunk_cached(nextStart, nextStop)){
+                        //             serverProxy.frames.getData(this.tid, nextChunkNumber).then(nextChunk =>{
+                        //                 provider.requestDecodeBlock(nextChunk, nextStart, nextStop, undefined, undefined);
+                        //             }).catch(exception => {
+                        //                 if (exception instanceof Exception) {
+                        //                     reject(exception);
+                        //                 } else {
+                        //                     reject(new Exception(exception.message));
+                        //                 }
+                        //             });
+                        //         } else {
+                        //             provider.requestDecodeBlock(null, nextStart, nextStop, undefined, undefined);
+                        //         }
+                        //     }
+                        // }
                         resolve(frame);
                     }
                 } catch (exception) {
