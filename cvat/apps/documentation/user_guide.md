@@ -1097,8 +1097,8 @@ You can find the list of available models in the ``Models`` section.
     For example, let’s consider a task where you have to annotate labels “car” and “person”. 
     In this case you should choose the “person” label from the model to connect to the “person” label in the task. 
     As for the “car” label, you should choose the most fitting label available in the model - the “vehicle” label. 
-    Choosing the “vehicle” label implies annotation of all vehicles and however the task requires to annotate cars only, 
-    in this case using auto annotation will help you to complete the task faster. 
+    Choosing the “vehicle” label implies annotation of all vehicles and however the task requires 
+    to annotate cars only, in this case using auto annotation will help you to complete the task faster. 
     Click ``Submit`` to begin the automatic annotation process.
 
     ![](static/documentation/images/image120.jpg)
