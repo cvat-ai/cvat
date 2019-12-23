@@ -31,11 +31,12 @@ class PolyshapeEditorModel extends Listener {
             oncomplete: null,
             type: null,
             event: null,
+            startPoint: null,
             id: null,
         };
     }
 
-    edit(type, points, color, start, event, oncomplete, id) {
+    edit(type, points, color, start, startPoint, e, oncomplete, id) {
         if (!this._active && !window.cvat.mode) {
             window.cvat.mode = this._modeName;
             this._active = true;
@@ -44,7 +45,8 @@ class PolyshapeEditorModel extends Listener {
             this._data.start = start;
             this._data.oncomplete = oncomplete;
             this._data.type = type;
-            this._data.event = event;
+            this._data.event = e;
+            this._data.startPoint = startPoint;
             this._data.id = id;
             this.notify();
         }
@@ -77,6 +79,7 @@ class PolyshapeEditorModel extends Listener {
             this._data.oncomplete = null;
             this._data.type = null;
             this._data.event = null;
+            this._data.startPoint = null;
             this.notify();
         }
     }
@@ -192,6 +195,15 @@ class PolyshapeEditorView {
         return offset;
     }
 
+    _addRawPoint(x, y) {
+        this._correctLine.array().valueOf().pop();
+        this._correctLine.array().valueOf().push([x, y]);
+        this._correctLine.array().valueOf().push([x, y]);
+        this._correctLine.remember('_paintHandler').drawCircles();
+        this._correctLine.plot(this._correctLine.array().valueOf());
+        this._rescaleDrawPoints();
+    }
+
     _startEdit() {
         this._frame = window.cvat.player.frames.current;
         let strokeWidth = this._data.type === 'points' ? 0 : STROKE_WIDTH / this._scale;
@@ -234,13 +246,19 @@ class PolyshapeEditorView {
         }
 
 
+        const [prevPointX, prevPointY] = this._data.startPoint
+            .split(',').map((el) => +el);
         let prevPoint = {
-            x: this._data.event.clientX,
-            y: this._data.event.clientY
+            x: prevPointX,
+            y: prevPointY,
         };
 
+        // draw/remove initial point just to initialize data structures
         this._correctLine.draw('point', this._data.event);
-        this._rescaleDrawPoints();
+        this._correctLine.array().valueOf().pop();
+
+        this._addRawPoint(prevPointX, prevPointY);
+
         this._frameContent.on('mousemove.polyshapeEditor', (e) => {
             if (e.shiftKey && this._data.type != 'points') {
                 let delta = Math.sqrt(Math.pow(e.clientX - prevPoint.x, 2) + Math.pow(e.clientY - prevPoint.y, 2));
@@ -286,7 +304,15 @@ class PolyshapeEditorView {
             }).on('mousedown', (e) => {
                 if (e.which != 1) return;
                 let currentPoints = PolyShapeModel.convertStringToNumberArray(this._data.points);
-                let correctPoints = PolyShapeModel.convertStringToNumberArray(this._correctLine.attr('points'));
+                // replace the latest point from the event
+                // (which has not precise coordinates, to precise coordinates)
+                let correctPoints = this._correctLine
+                    .attr('points')
+                    .split(/\s/)
+                    .slice(0, -1);
+                correctPoints = correctPoints.concat([`${instance.attr('cx')},${instance.attr('cy')}`]).join(' ');
+                correctPoints = PolyShapeModel.convertStringToNumberArray(correctPoints);
+
                 let resultPoints = [];
 
                 if (this._data.type === 'polygon') {
@@ -388,7 +414,7 @@ class PolyshapeEditorView {
         this._frameContent.off('mousedown.polyshapeEditor');
         this._frameContent.off('contextmenu.polyshapeEditor');
 
-        $('body').off('keydown.shapeCreator');
+        $('body').off('keydown.shapeEditor');
         if (this._borderSticker) {
             this._borderSticker.disable();
             this._borderSticker = null;

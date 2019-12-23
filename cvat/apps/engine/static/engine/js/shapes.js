@@ -3007,7 +3007,8 @@ class PolyShapeView extends ShapeView {
 
                             // Run edit mode
                             PolyShapeView.editor.edit(this._controller.type.split('_')[1],
-                                this._uis.shape.attr('points'), this._color, index, e,
+                                this._uis.shape.attr('points'), this._color, index,
+                                this._uis.shape.attr('points').split(/\s/)[index], e,
                                 (points) => {
                                     this._uis.shape.removeClass('hidden');
                                     if (this._uis.points) {
