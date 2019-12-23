@@ -290,8 +290,6 @@ class FrameProvider {
                 });
             }
             this._decodeThreadCount++;
-            release();
-
         } else {
             const worker = new Worker('/static/engine/js/unzip_imgs.js');
 
@@ -309,11 +307,6 @@ class FrameProvider {
                 }
                 this._decodeThreadCount--;
             };
-
-            worker.postMessage({block : block,
-                                start : start,
-                                  end : end });
-            this._decodeThreadCount++;
 
             worker.onmessage = (event) => {
                 this._frames[event.data.index] = {
@@ -336,8 +329,13 @@ class FrameProvider {
                 }
             };
 
-            release();
+            worker.postMessage({block : block,
+                                start : start,
+                                  end : end });
+            this._decodeThreadCount++;
+
         }
+        release();
     }
 
     get decodeThreadCount()

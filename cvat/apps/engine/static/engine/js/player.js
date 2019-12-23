@@ -56,25 +56,23 @@ class FrameProviderWrapper extends Listener {
 
                 this.notify();
             }).catch((error) => {
+                this._loaded = {frameNumber};
                 if (typeof (error) === 'number') {
                     if (this._required === error) {
-                        console.log('Unexpecter error. Requested frame was rejected');
+                        console.log(`Unexpecter error. Requested frame ${error} was rejected`);
                     } else {
                         console.log(`${error} rejected - ok`);
                     }
-                } else {
-                    throw error;
                 }
+                this.notify();
             });
         } catch (error) {
             if (typeof (error) === 'number') {
                 if (this._required === error) {
-                    console.log('Unexpecter error. Requested frame was rejected');
+                    console.log(`Unexpecter error. Requested frame ${error} was rejected`);
                 } else {
                     console.log(`${error} rejected - ok`);
-                    throw error;
                 }
-            } else {
                 throw error;
             }
         }
@@ -90,6 +88,155 @@ class FrameProviderWrapper extends Listener {
     }
 }
 
+class FrameBuffer extends Listener {
+    constructor(size, frameProvider, chunkSize, stopFrame) {
+        super('onFrameReady', () => this._loaded);
+        this._size = size;
+        this._buffer = {};
+        this._requestedChunks = {};
+        this._frameProvider = frameProvider;
+        this._chunkSize = chunkSize;
+        this._frameProvider.subscribe(this);
+        this._loaded = null;
+        this._stopFrame = stopFrame;
+    }
+
+    getFreeBufferSize () {
+        let requestedFrameCount = 0;
+        for (let chunk_idx in this._requestedChunks){
+            if(this._requestedChunks.hasOwnProperty(chunk_idx)){
+                requestedFrameCount += this._requestedChunks[chunk_idx].requestedFrames.size;
+            }
+         }
+        return this._size - Object.keys(this._buffer).length - requestedFrameCount;
+    }
+
+    async onFrameLoad(last) { // callback for FrameProvider instance
+        const isReject = typeof(last) === 'object';
+        if (isReject) {
+            last = last.frameNumber;
+        }
+        const chunk_idx = Math.floor(last / this._chunkSize);
+        if (chunk_idx in this._requestedChunks && this._requestedChunks[chunk_idx].requestedFrames.has(last)) {
+            if (isReject) {
+                this._requestedChunks[chunk_idx].reject(new Set());
+                this._requestedChunks[chunk_idx].requestedFrames.clear();
+            }
+             const frameData = await this._frameProvider.require(last);
+            if (chunk_idx in this._requestedChunks && this._requestedChunks[chunk_idx].requestedFrames.has(last)) {
+                this._requestedChunks[chunk_idx].buffer[last] = frameData;
+                this._requestedChunks[chunk_idx].requestedFrames.delete(last);
+                if (this._requestedChunks[chunk_idx].requestedFrames.size === 0) {
+                    if (this._requestedChunks[chunk_idx].resolve) {
+                        const bufferedframes = Object.keys(this._requestedChunks[chunk_idx].buffer).map(f => +f);
+                        this._requestedChunks[chunk_idx].resolve(new Set(bufferedframes));
+                    }
+                }
+            }
+        } else {
+            this._loaded = last;
+            this.notify();
+        }
+    }
+
+    requestOneChunkFrames(chunk_idx) {
+        return new Promise ( (resolve, reject) => {
+            this._requestedChunks[chunk_idx] = {...this._requestedChunks[chunk_idx], resolve, reject};
+            for (const frame of this._requestedChunks[chunk_idx].requestedFrames.entries()) {
+                const requestedFrame = frame[1];
+                this._frameProvider.require(requestedFrame).then(frameData => {
+                    if (!(chunk_idx in this._requestedChunks) || !this._requestedChunks[chunk_idx].requestedFrames.has(requestedFrame)) {
+                        reject(requestedFrame);
+                    }
+
+                    if (frameData !== null) {
+                        this._requestedChunks[chunk_idx].requestedFrames.delete(requestedFrame);
+                        this._requestedChunks[chunk_idx].buffer[requestedFrame] = frameData;
+                        if (this._requestedChunks[chunk_idx].requestedFrames.size === 0) {
+                            const bufferedframes = Object.keys(this._requestedChunks[chunk_idx].buffer).map(f => +f);
+                            this._requestedChunks[chunk_idx].resolve(new Set(bufferedframes));
+                        }
+                    }
+                }).catch( error => {
+                    reject(error);
+                });
+            }
+        });
+    }
+
+    fillBuffer(startFrame, frameStep=1, count=null) {
+        const freeSize = this.getFreeBufferSize();
+
+        let stopFrame = Math.min(startFrame + frameStep * freeSize, this._stopFrame + 1);
+        if (count) {
+            stopFrame = Math.min(stopFrame, count);
+        }
+
+        for (let i = startFrame; i < stopFrame; i += frameStep) {
+            const chunk_idx = Math.floor(i / this._chunkSize);
+            if (!(chunk_idx in this._requestedChunks)) {
+                this._requestedChunks[chunk_idx] = {
+                    requestedFrames: new Set(),
+                    resolve: null,
+                    reject: null,
+                    buffer: {},
+                };
+            }
+            this._requestedChunks[chunk_idx].requestedFrames.add(i);
+        }
+
+        let bufferedFrames = new Set();
+
+        return new Promise( async (resolve, reject) => {
+            for (const chunk_idx in this._requestedChunks) {
+                if(this._requestedChunks.hasOwnProperty(chunk_idx)) {
+                    try {
+                        const chunkFrames = await this.requestOneChunkFrames(chunk_idx);
+                        if (chunk_idx in this._requestedChunks) {
+                            bufferedFrames = new Set([...bufferedFrames, ...chunkFrames]);
+                            this._buffer = {...this._buffer, ...this._requestedChunks[chunk_idx].buffer};
+                            delete this._requestedChunks[chunk_idx];
+                            if (Object.keys(this._requestedChunks).length === 0){
+                                resolve(bufferedFrames);
+                            }
+                        } else {
+                            reject(parseInt(chunk_idx));
+                        }
+                    } catch (error) {
+                        this._requestedChunks = {};
+                        resolve(bufferedFrames);
+                    }
+                }
+             }
+        });
+    }
+
+    require(frameNumber) {
+        if (frameNumber in this._buffer) {
+            const frame = this._buffer[frameNumber];
+            delete this._buffer[frameNumber];
+            return frame;
+        } else {
+            return this._frameProvider.require(frameNumber);
+        }
+    }
+
+    clear() {
+        for (const chunk_idx in this._requestedChunks) {
+            if (this._requestedChunks.hasOwnProperty(chunk_idx) && this._requestedChunks[chunk_idx].reject) {
+                this._requestedChunks[chunk_idx].reject();
+            }
+        }
+        this._requestedChunks = {};
+        this._buffer = {};
+    }
+
+    deleteFrame(frameNumber){
+        if (frameNumber in this._buffer) {
+            delete this._buffer[frameNumber];
+        }
+    }
+}
 
 const MAX_PLAYER_SCALE = 10;
 const MIN_PLAYER_SCALE = 0.1;
@@ -116,10 +263,16 @@ class PlayerModel extends Listener {
         this._playing = false;
         this._playInterval = null;
         this._pauseFlag = null;
+        this._chunkSize = window.cvat.job.chunk_size;
         this._frameProvider = new FrameProviderWrapper(this._frame.stop);
+        this._bufferSize = 200;
+        this._frameBuffer = new FrameBuffer(this._bufferSize, this._frameProvider, this._chunkSize, this._frame.stop);
         this._continueAfterLoad = false;
-        this._continueTimeout = null;
         this._image = null;
+        this._activeBufrequest = false;
+        this._bufferedFrames = new Set();
+        this._step = 1;
+        this._timeout = 1000 / this._settings.fps;
 
         this._geometry = {
             scale: 1,
@@ -137,7 +290,11 @@ class PlayerModel extends Listener {
         window.cvat.translate.playerOffset = this._geometry.frameOffset;
         window.cvat.player.rotation = this._geometry.rotation;
 
-        this._frameProvider.subscribe(this);
+        this._frameBuffer.subscribe(this);
+    }
+
+    get bufferSize() {
+        return this._bufferSize;
     }
 
     get frames() {
@@ -157,7 +314,6 @@ class PlayerModel extends Listener {
     }
 
     get playing() {
-        // return this._playInterval != null;
         return this._playing;
     }
 
@@ -205,62 +361,99 @@ class PlayerModel extends Listener {
         return this._frame.previous === this._frame.current;
     }
 
-    async onFrameLoad(last) { // callback for FrameProvider instance
+    async onFrameReady(last) { // callback for FrameProvider instance
         if (last === this._frame.current) {
-            if (this._continueTimeout) {
-                clearTimeout(this._continueTimeout);
-                this._continueTimeout = null;
-            }
-
             // If need continue playing after load, set timeout for additional frame download
             if (this._continueAfterLoad) {
-                this._continueTimeout = setTimeout(async () => {
-                    // If you still need to play, start it
-                    this._continueTimeout = null;
-                    if (this._continueAfterLoad) {
-                        this._continueAfterLoad = false;
-                        this.play();
-                    } else { // Else update the frame
-                        await this.shift(0);
-                    }
-                }, 5000);
-            } else { // Just update frame if no need to play
+                this._continueAfterLoad = false;
+                this.play();
+            } else { // Else update the frame
                 await this.shift(0);
             }
         }
     }
 
+    fillBuffer(startFrame, step, count=null) {
+        if (this._activeBufrequest) {
+            return;
+        }
+
+        this._activeBufrequest = true;
+        this._frameBuffer.fillBuffer(startFrame, step, count).then((bufferedFrames) => {
+            this._bufferedFrames = new Set([...this._bufferedFrames, ...bufferedFrames]);
+            if ((!this._pauseFlag || this._continueAfterLoad) && !this._playInterval) {
+                this._continueAfterLoad = false;
+                this._pauseFlag = false;
+                this._playInterval = setInterval(() => this._playFunction(), this._timeout);
+            }
+        }).catch(error => {
+            if (typeof(error) !== 'number') {
+                throw error;
+            }
+        }).finally(() => {
+            this._activeBufrequest = false;
+        });
+    }
+
+    async _playFunction() {
+        if (this._pauseFlag) { // pause method without notify (for frame downloading)
+            if (this._playInterval) {
+                clearInterval(this._playInterval);
+                this._playInterval = null;
+            }
+            return;
+        }
+
+        const requestedFrame = this._frame.current + this._step;
+        if (this._bufferedFrames.size < this._bufferSize / 2 && requestedFrame <= this._frame.stop) {
+            if (this._bufferedFrames.size !== 0) {
+                const maxBufFrame = Math.max(...this._bufferedFrames);
+                if (maxBufFrame !== this._frame.stop) {
+                    this.fillBuffer(maxBufFrame + 1, this._step);
+                }
+            } else {
+                this.fillBuffer(requestedFrame, this._step);
+            }
+        }
+
+        if (!this._bufferedFrames.size) {
+            if (this._frame.current === this._frame.stop) {
+                this.pause();
+            } else {
+                setTimeout(() => {
+                    if (this._activeBufrequest && !this._bufferedFrames.size) {
+                        this._image = null;
+                        this._continueAfterLoad = this.playing;
+                        this._pauseFlag = true;
+                        this.notify();
+                    }
+                }, 500);
+            }
+            return;
+        }
+
+        const res = await this.shift(this._step);
+        if (!res) {
+            this.pause(); // if not changed, pause
+        } else if (this._frame.requested.size === 0 && !this._playInterval) {
+            this._playInterval = setInterval(() => this._playFunction(), this._timeout);
+        }
+    }
+
     play() {
+        this._step = Math.max(Math.floor(this._settings.fps / 25), 1);
         this._pauseFlag = false;
         this._playing = true;
-        const timeout = 1000 / this._settings.fps;
+        this._timeout = 1000 / this._settings.fps;
         this._frame.requested.clear();
-        const playFunc = async () => {
-            if (this._pauseFlag) { // pause method without notify (for frame downloading)
-                if (this._playInterval) {
-                    clearInterval(this._playInterval);
-                    this._playInterval = null;
-                }
-                return;
-            }
-            const skip = Math.max(Math.floor(this._settings.fps / 25), 1);
-            const requestedFrame = this._frame.current + skip;
-            if (requestedFrame % this._frame.chunkSize === 0 && this._frame.requested.size) {
-                if (this._playInterval) {
-                    clearInterval(this._playInterval);
-                    this._playInterval = null;
-                    return;
-                }
-            }
-            const res = await this.shift(skip);
-            if (!res) {
-                this.pause(); // if not changed, pause
-            } else if (this._frame.requested.size === 0 && !this._playInterval) {
-                this._playInterval = setInterval(playFunc, timeout);
-            }
 
-        };
-        this._playInterval = setInterval(playFunc, timeout);
+        this._bufferedFrames.forEach( bufferedFrame => {
+            if (bufferedFrame <= this._frame.current || bufferedFrame >= this._frame.current + this._bufferSize) {
+                this._bufferedFrames.delete(bufferedFrame);
+                this._frameBuffer.deleteFrame(bufferedFrame);
+            }
+        });
+        this._playFunction();
     }
 
     pause() {
@@ -294,7 +487,12 @@ class PlayerModel extends Listener {
             return false;
         }
         try {
-            const frame = await this._frameProvider.require(requestedFrame);
+            if (!this._bufferedFrames.has(requestedFrame)) {
+                this._bufferedFrames.clear();
+                this._frameBuffer.clear();
+            }
+            const frame = await this._frameBuffer.require(requestedFrame);
+            this._bufferedFrames.delete(requestedFrame);
             if (!this._frame.requested.has(requestedFrame)) {
                 return false;
             }
@@ -335,6 +533,8 @@ class PlayerModel extends Listener {
         } catch (error) {
             if (typeof (error) === 'number') {
                 this._frame.requested.delete(error);
+            } else {
+                throw error;
             }
         }
     }
@@ -735,6 +935,7 @@ class PlayerView {
         this._counterClockwiseRotationButtonUI = $('#counterClockwiseRotation');
         this._rotationWrapperUI = $('#rotationWrapper');
         this._rotatateAllImagesUI = $('#rotateAllImages');
+        this._updateCall = performance.now();
 
         this._latestDrawnImage = null;
         this._clockwiseRotationButtonUI.on('click', () => {
