@@ -134,9 +134,9 @@ class PolyshapeEditorView {
         this._scale = window.cvat.player.geometry.scale;
         this._frame = window.cvat.player.frames.current;
 
-        this._autoBorderingCheckbox.on('change.shapeEditor', () => {
+        this._autoBorderingCheckbox.on('change.shapeEditor', (e) => {
             if (this._correctLine) {
-                if (this._borderSticker) {
+                if (!e.target.checked) {
                     this._borderSticker.disable();
                     this._borderSticker = null;
                 } else {
@@ -264,23 +264,24 @@ class PolyshapeEditorView {
         }
 
 
-        const [prevPointX, prevPointY] = this._data.startPoint
+        const [x, y] = this._data.startPoint
             .split(',').map((el) => +el);
         let prevPoint = {
-            x: prevPointX,
-            y: prevPointY,
+            x,
+            y,
         };
 
-        // draw/remove initial point just to initialize data structures
+        // draw and remove initial point just to initialize data structures
         this._correctLine.draw('point', this._data.event);
-        this._correctLine.array().valueOf().pop();
+        this._correctLine.draw('undo');
 
-        this._addRawPoint(prevPointX, prevPointY);
+        this._addRawPoint(x, y);
 
         this._frameContent.on('mousemove.polyshapeEditor', (e) => {
-            if (e.shiftKey && this._data.type != 'points') {
-                let delta = Math.sqrt(Math.pow(e.clientX - prevPoint.x, 2) + Math.pow(e.clientY - prevPoint.y, 2));
-                let deltaTreshold = 15;
+            if (e.shiftKey && this._data.type !== 'points') {
+                const delta = Math.sqrt(Math.pow(e.clientX - prevPoint.x, 2)
+                    + Math.pow(e.clientY - prevPoint.y, 2));
+                const deltaTreshold = 15;
                 if (delta > deltaTreshold) {
                     this._correctLine.draw('point', e);
                     prevPoint = {
@@ -322,7 +323,9 @@ class PolyshapeEditorView {
             }).on('mouseout', () => {
                 instance.attr('stroke-width', STROKE_WIDTH / this._scale);
             }).on('mousedown', (e) => {
-                if (e.which != 1) return;
+                if (e.which !== 1) {
+                    return;
+                }
                 let currentPoints = PolyShapeModel.convertStringToNumberArray(this._data.points);
                 // replace the latest point from the event
                 // (which has not precise coordinates, to precise coordinates)
@@ -400,7 +403,7 @@ class PolyshapeEditorView {
         this._autoBorderingCheckbox[0].disabled = false;
         $('body').on('keydown.shapeEditor', (e) => {
             if (e.ctrlKey && e.keyCode === 17) {
-                this._autoBorderingCheckbox[0].checked = !this._autoBorderingCheckbox[0].checked;
+                this._autoBorderingCheckbox[0].checked = !this._borderSticker;
                 this._autoBorderingCheckbox.trigger('change.shapeEditor');
             }
         });

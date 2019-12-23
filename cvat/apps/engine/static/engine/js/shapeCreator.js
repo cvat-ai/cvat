@@ -19,8 +19,6 @@
     BorderSticker: false
 */
 
-"use strict";
-
 class ShapeCreatorModel extends Listener {
     constructor(shapeCollection) {
         super('onShapeCreatorUpdate', () => this);
@@ -31,13 +29,12 @@ class ShapeCreatorModel extends Listener {
         this._defaultLabel = null;
         this._currentFrame = null;
         this._createEvent = null;
-        this._positionsCache = null;
         this._shapeCollection = shapeCollection;
     }
 
     finish(result) {
-        let data = {};
-        let frame = window.cvat.player.frames.current;
+        const data = {};
+        const frame = window.cvat.player.frames.current;
 
         data.label_id = this._defaultLabel;
         data.group = 0;
@@ -52,7 +49,7 @@ class ShapeCreatorModel extends Listener {
                 mode: this._defaultMode,
                 type: this._defaultType,
                 label: this._defaultLabel,
-                frame: frame,
+                frame,
             });
         }
 
@@ -66,7 +63,7 @@ class ShapeCreatorModel extends Listener {
             this._shapeCollection.add(data, `annotation_${this._defaultType}`);
         }
 
-        let model = this._shapeCollection.shapes.slice(-1)[0];
+        const model = this._shapeCollection.shapes.slice(-1)[0];
 
         // Undo/redo code
         window.cvat.addAction('Draw Object', () => {
@@ -89,17 +86,13 @@ class ShapeCreatorModel extends Listener {
             if (this._createMode) {
                 this._createEvent = Logger.addContinuedEvent(Logger.EventType.drawObject);
                 window.cvat.mode = 'creation';
-            }
-            else if (window.cvat.mode === 'creation') {
+            } else if (window.cvat.mode === 'creation') {
                 window.cvat.mode = null;
-                this._positionsCache = null;
             }
-        }
-        else {
+        } else {
             this._createMode = false;
             if (window.cvat.mode === 'creation') {
                 window.cvat.mode = null;
-                this._positionsCache = null;
                 if (this._createEvent) {
                     this._createEvent.close();
                     this._createEvent = null;
@@ -299,9 +292,9 @@ class ShapeCreatorView {
             }
         });
 
-        this._autoBorderingCheckbox.on('change.shapeCreator', () => {
+        this._autoBorderingCheckbox.on('change.shapeCreator', (e) => {
             if (this._drawInstance) {
-                if (this._borderSticker) {
+                if (!e.target.checked) {
                     this._borderSticker.disable();
                     this._borderSticker = null;
                 } else {
@@ -364,7 +357,7 @@ class ShapeCreatorView {
         this._autoBorderingCheckbox[0].disabled = false;
         $('body').on('keydown.shapeCreator', (e) => {
             if (e.ctrlKey && e.keyCode === 17) {
-                this._autoBorderingCheckbox[0].checked = !this._autoBorderingCheckbox[0].checked;
+                this._autoBorderingCheckbox[0].checked = !this._borderSticker;
                 this._autoBorderingCheckbox.trigger('change.shapeCreator');
             }
         });
