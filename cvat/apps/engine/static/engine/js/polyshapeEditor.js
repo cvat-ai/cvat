@@ -12,16 +12,18 @@
     PolyShapeModel:false
     STROKE_WIDTH:false
     SVG:false
+    BorderSticker:false
 */
 
 "use strict";
 
 class PolyshapeEditorModel extends Listener {
-    constructor() {
+    constructor(shapeCollection) {
         super("onPolyshapeEditorUpdate", () => this);
 
         this._modeName = 'poly_editing';
         this._active = false;
+        this._shapeCollection = shapeCollection;
         this._data = {
             points: null,
             color: null,
@@ -29,10 +31,11 @@ class PolyshapeEditorModel extends Listener {
             oncomplete: null,
             type: null,
             event: null,
+            id: null,
         };
     }
 
-    edit(type, points, color, start, event, oncomplete) {
+    edit(type, points, color, start, event, oncomplete, id) {
         if (!this._active && !window.cvat.mode) {
             window.cvat.mode = this._modeName;
             this._active = true;
@@ -42,6 +45,7 @@ class PolyshapeEditorModel extends Listener {
             this._data.oncomplete = oncomplete;
             this._data.type = type;
             this._data.event = event;
+            this._data.id = id;
             this.notify();
         }
         else if (this._active) {
@@ -84,6 +88,10 @@ class PolyshapeEditorModel extends Listener {
     get data() {
         return this._data;
     }
+
+    get currentShapes() {
+        return this._shapeCollection.currentShapes;
+    }
 }
 
 
@@ -98,6 +106,10 @@ class PolyshapeEditorController {
 
     cancel() {
         this._model.cancel();
+    }
+
+    get currentShapes() {
+        return this._model.currentShapes;
     }
 }
 
@@ -338,6 +350,20 @@ class PolyshapeEditorView {
                 this._controller.finish(PolyShapeModel.convertNumberArrayToString(resultPoints));
             });
         }
+
+        $('body').on('keydown.shapeEditor', (e) => {
+            if (e.ctrlKey && e.keyCode === 17) {
+                if (this._borderSticker) {
+                    this._borderSticker.disable();
+                    this._borderSticker = null;
+                } else {
+                    this._borderSticker = new BorderSticker(this._correctLine, this._frameContent,
+                        this._controller.currentShapes
+                            .filter((shape) => shape.model.id !== this._data.id),
+                        this._scale);
+                }
+            }
+        });
     }
 
     _endEdit() {
@@ -361,6 +387,12 @@ class PolyshapeEditorView {
         this._frameContent.off('mousemove.polyshapeEditor');
         this._frameContent.off('mousedown.polyshapeEditor');
         this._frameContent.off('contextmenu.polyshapeEditor');
+
+        $('body').off('keydown.shapeCreator');
+        if (this._borderSticker) {
+            this._borderSticker.disable();
+            this._borderSticker = null;
+        }
     }
 
 
@@ -378,6 +410,10 @@ class PolyshapeEditorView {
         let scale = player.geometry.scale;
         if (this._scale != scale) {
             this._scale = scale;
+
+            if (this._borderSticker) {
+                this._borderSticker.scale(this._scale);
+            }
 
             let strokeWidth = this._data && this._data.type === 'points' ? 0 : STROKE_WIDTH / this._scale;
             let pointRadius = POINT_RADIUS / this._scale;

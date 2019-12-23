@@ -225,7 +225,7 @@
 }
 
 .shape-creator-border-point {
-    opacity: 0.35;
+    opacity: 0.55;
 }
 
 .shape-creator-border-point:hover {
@@ -234,7 +234,7 @@
 }
 
 .shape-creator-border-point:active {
-    opacity: 0.35;
+    opacity: 0.55;
     fill: red;
 }
 

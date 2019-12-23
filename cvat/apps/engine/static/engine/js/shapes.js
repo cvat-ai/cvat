@@ -3017,7 +3017,8 @@ class PolyShapeView extends ShapeView {
                                         this._uis.shape.attr('points', points);
                                         this._controller.updatePosition(window.cvat.player.frames.current, this._buildPosition());
                                     }
-                                }
+                                },
+                                this._controller.id
                             );
                         }
                     }
