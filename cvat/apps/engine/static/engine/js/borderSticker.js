@@ -26,7 +26,8 @@ class BorderSticker {
                 if (!('points' in pos)) {
                     return {
                         points: window.cvat.translate.points
-                            .actualToCanvas(`${pos.xtl},${pos.ytl} ${pos.xbr},${pos.ybr}`),
+                            .actualToCanvas(`${pos.xtl},${pos.ytl} ${pos.xbr},${pos.ytl}`
+                                + ` ${pos.xbr},${pos.ybr} ${pos.xtl},${pos.ybr}`),
                         color: shape.model.color.shape,
                     };
                 }
@@ -52,6 +53,7 @@ class BorderSticker {
             this._groups.forEach((group) => {
                 Array.from(group.children).forEach((circle) => {
                     circle.removeEventListener('click', circle.clickListener);
+                    circle.removeEventListener('dblclick', circle.doubleClickListener);
                 });
 
                 group.remove();
@@ -62,7 +64,7 @@ class BorderSticker {
     }
 
     _drawBorderMarkers() {
-        const accounter = {
+        this._accounter = {
             clicks: [],
             shapeID: null,
         };
@@ -81,11 +83,14 @@ class BorderSticker {
                     circle.setAttribute('cx', +x);
                     circle.setAttribute('cy', +y);
                     circle.setAttribute('r', 5 / this._scale);
+                    circle.doubleClickListener = (e) => {
+                        e.stopPropagation();
+                    };
                     circle.clickListener = (e) => {
                         e.stopPropagation();
-                        if (accounter.shapeID !== null && accounter.shapeID !== shapeID) {
-                            if (accounter.clicks.length === 2) {
-                                const pointToAdd = shapes[accounter.shapeID].points.split(/\s/)[accounter.clicks[1]];
+                        if (this._accounter.shapeID !== null && this._accounter.shapeID !== shapeID) {
+                            if (this._accounter.clicks.length === 2) {
+                                const pointToAdd = shapes[this._accounter.shapeID].points.split(/\s/)[this._accounter.clicks[1]];
                                 const [_x, _y] = pointToAdd.split(',');
                                 this._drawInstance.array().valueOf().pop();
                                 this._drawInstance.array().valueOf().push([+_x, +_y]);
@@ -95,104 +100,101 @@ class BorderSticker {
                                 this._rescaleDrawPoints();
                             }
 
-                            while (accounter.clicks.length > 0) {
-                                const resetID = accounter.clicks.pop();
-                                groups[accounter.shapeID]
+                            while (this._accounter.clicks.length > 0) {
+                                const resetID = this._accounter.clicks.pop();
+                                groups[this._accounter.shapeID]
                                     .children[resetID].classList.remove('shape-creator-border-point-direction');
                             }
                         }
 
-                        accounter.shapeID = shapeID;
-                        if (accounter.clicks.includes(pointID)) {
-                            const resetID = accounter.clicks
-                                .splice(accounter.clicks.indexOf(pointID), 1);
-                            group.children[resetID[0]].classList.remove('shape-creator-border-point-direction');
-                        } else {
-                            accounter.clicks.push(pointID);
+                        this._accounter.shapeID = shapeID;
 
-                            // up current group to work with its points easy
-                            this._frameContent.node.appendChild(group);
-                            if (accounter.clicks.length === 1) {
-                                if (!this._drawInstance.remember('_paintHandler').startPoint) {
-                                    this._drawInstance.draw('point', e);
-                                    this._drawInstance.array().valueOf().pop();
-                                }
+                        this._accounter.clicks.push(pointID);
 
+                        // up current group to work with its points easy
+                        this._frameContent.node.appendChild(group);
+                        if (this._accounter.clicks.length === 1) {
+                            if (!this._drawInstance.remember('_paintHandler').startPoint) {
+                                this._drawInstance.draw('point', e);
                                 this._drawInstance.array().valueOf().pop();
-                                const borderPoint = points[pointID];
+                            }
+
+                            this._drawInstance.array().valueOf().pop();
+                            const borderPoint = points[pointID];
+                            const [_x, _y] = borderPoint.split(',');
+                            this._drawInstance.array().valueOf().push([+_x, +_y]);
+                            this._drawInstance.array().valueOf().push([+_x, +_y]);
+
+                            this._drawInstance.remember('_paintHandler').drawCircles();
+                            this._drawInstance.plot(this._drawInstance.array().valueOf());
+                            this._rescaleDrawPoints();
+                        } else if (this._accounter.clicks.length === 2) {
+                            circle.classList.add('shape-creator-border-point-direction');
+                        } else {
+                            if (this._accounter.clicks[1] === this._accounter.clicks[2]) {
+                                this._drawInstance.array().valueOf().pop();
+                                const borderPoint = points[this._accounter.clicks[2]];
                                 const [_x, _y] = borderPoint.split(',');
                                 this._drawInstance.array().valueOf().push([+_x, +_y]);
                                 this._drawInstance.array().valueOf().push([+_x, +_y]);
-
-                                this._drawInstance.remember('_paintHandler').drawCircles();
-                                this._drawInstance.plot(this._drawInstance.array().valueOf());
-                                this._rescaleDrawPoints();
-                            } else if (accounter.clicks.length === 2) {
-                                circle.classList.add('shape-creator-border-point-direction');
-                            } else {
-                        //        const s = (accounter.clicks[1] > accounter.clicks[0]
-                        //            && accounter.clicks[1] > accounter.clicks[2])
-                        //            || (accounter.clicks[1] < accounter.clicks[0]
-                        //                && accounter.clicks[1] < accounter.clicks[2])
-                        //            ? -1 : Math.sign(accounter.clicks[2] - accounter.clicks[0]);
-
-                                // TODO: ADD TWO POINTS TO A BOX
-
-                                const s = Math.sign(accounter.clicks[2] - accounter.clicks[0])
-                                    * Math.sign(accounter.clicks[1] - accounter.clicks[0])
-                                    * Math.sign(accounter.clicks[2] - accounter.clicks[1]);
-
-                                const fakeEvent = {};
-                                // eslint-disable-next-line
-                                for (const prop in e) {
-                                    fakeEvent[prop] = e[prop];
-                                }
-
-                                const border = [];
-                                for (let i = accounter.clicks[0]; ; i += s) {
-                                    if (i < 0) {
-                                        i = points.length - 1;
-                                    } else if (i === points.length) {
-                                        i = 0;
-                                    }
-
-                                    border.push(points[i]);
-
-                                    if (i === accounter.clicks[accounter.clicks.length - 1]) {
-                                        // put the last element twice
-                                        // specific of svg.draw.js
-                                        border.push(points[i]);
-                                        break;
-                                    }
-                                }
-
-                                if (!this._drawInstance.remember('_paintHandler').startPoint) {
-                                    this._drawInstance.draw('point', e);
-                                    this._drawInstance.array().valueOf().pop();
-                                }
-
-                                // remove the latest cursor position from drawing array
-                                this._drawInstance.array().valueOf().pop();
-                                for (const borderPoint of border) {
-                                    const [_x, _y] = borderPoint.split(',');
-                                    this._drawInstance.array().valueOf().push([+_x, +_y]);
-                                }
-
                                 this._drawInstance.remember('_paintHandler').drawCircles();
                                 this._drawInstance.plot(this._drawInstance.array().valueOf());
                                 this._rescaleDrawPoints();
 
-                                while (accounter.clicks.length > 0) {
-                                    const resetID = accounter.clicks.pop();
+                                while (this._accounter.clicks.length > 0) {
+                                    const resetID = this._accounter.clicks.pop();
                                     group.children[resetID].classList.remove('shape-creator-border-point-direction');
                                 }
 
-                                accounter.shapeID = null;
+                                this._accounter.shapeID = null;
+
+                                return;
                             }
+
+                            const s = Math.sign(this._accounter.clicks[2] - this._accounter.clicks[0])
+                                * Math.sign(this._accounter.clicks[1] - this._accounter.clicks[0])
+                                * Math.sign(this._accounter.clicks[2] - this._accounter.clicks[1]);
+
+                            const border = [];
+                            for (let i = this._accounter.clicks[0]; ; i += s) {
+                                if (i < 0) {
+                                    i = points.length - 1;
+                                } else if (i === points.length) {
+                                    i = 0;
+                                }
+
+                                border.push(points[i]);
+
+                                if (i === this._accounter.clicks[this._accounter.clicks.length - 1]) {
+                                    // put the last element twice
+                                    // specific of svg.draw.js
+                                    border.push(points[i]);
+                                    break;
+                                }
+                            }
+
+                            // remove the latest cursor position from drawing array
+                            this._drawInstance.array().valueOf().pop();
+                            for (const borderPoint of border) {
+                                const [_x, _y] = borderPoint.split(',');
+                                this._drawInstance.array().valueOf().push([+_x, +_y]);
+                            }
+
+                            this._drawInstance.remember('_paintHandler').drawCircles();
+                            this._drawInstance.plot(this._drawInstance.array().valueOf());
+                            this._rescaleDrawPoints();
+
+                            while (this._accounter.clicks.length > 0) {
+                                const resetID = this._accounter.clicks.pop();
+                                group.children[resetID].classList.remove('shape-creator-border-point-direction');
+                            }
+
+                            this._accounter.shapeID = null;
                         }
                     };
 
                     circle.addEventListener('click', circle.clickListener);
+                    circle.addEventListener('dblclick', circle.doubleClickListener);
 
                     return circle;
                 }).forEach((circle) => group.appendChild(circle));

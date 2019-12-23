@@ -93,6 +93,7 @@ class PolyshapeEditorModel extends Listener {
     }
 
     get currentShapes() {
+        this._shapeCollection.update();
         return this._shapeCollection.currentShapes;
     }
 }
@@ -198,6 +199,7 @@ class PolyshapeEditorView {
     _addRawPoint(x, y) {
         this._correctLine.array().valueOf().pop();
         this._correctLine.array().valueOf().push([x, y]);
+        // not error, specific of the library
         this._correctLine.array().valueOf().push([x, y]);
         this._correctLine.remember('_paintHandler').drawCircles();
         this._correctLine.plot(this._correctLine.array().valueOf());

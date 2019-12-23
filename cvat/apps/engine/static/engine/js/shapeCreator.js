@@ -111,6 +111,7 @@ class ShapeCreatorModel extends Listener {
     }
 
     get currentShapes() {
+        this._shapeCollection.update();
         return this._shapeCollection.currentShapes;
     }
 
@@ -390,14 +391,13 @@ class ShapeCreatorView {
         });
 
         this._drawInstance.on('drawstop', () => {
+            this._frameContent.off('mousedown.shapeCreator');
+            this._frameContent.off('mousemove.shapeCreator');
             $('body').off('keydown.shapeCreator');
             if (this._borderSticker) {
                 this._borderSticker.disable();
                 this._borderSticker = null;
             }
-
-            this._frameContent.off('mousedown.shapeCreator');
-            this._frameContent.off('mousemove.shapeCreator');
         });
         // Also we need callback on drawdone event for get points
         this._drawInstance.on('drawdone', function(e) {
