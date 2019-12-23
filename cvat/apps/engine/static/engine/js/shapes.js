@@ -169,7 +169,7 @@ class ShapeModel extends Listener {
     _setupKeyFrames() {
         for (let frame in this._attributes.mutable) {
             if (!(frame in this._positions)) {
-                let position = this._interpolatePosition(+frame);
+                let position = this.interpolatePosition(+frame);
                 this.updatePosition(+frame, position, true);
             }
         }
@@ -299,12 +299,12 @@ class ShapeModel extends Listener {
     interpolate(frame) {
         return {
             attributes: this._interpolateAttributes(frame),
-            position: this._interpolatePosition(frame)
+            position: this.interpolatePosition(frame)
         };
     }
 
     switchOccluded(frame) {
-        let position = this._interpolatePosition(frame);
+        let position = this.interpolatePosition(frame);
         position.occluded = !position.occluded;
 
         // Undo/redo code
@@ -372,7 +372,7 @@ class ShapeModel extends Listener {
         }, frame);
         // End of undo/redo code
 
-        let position = this._interpolatePosition(frame);
+        let position = this.interpolatePosition(frame);
         position.outside = !position.outside;
         this.updatePosition(frame, position, true);
 
@@ -417,7 +417,7 @@ class ShapeModel extends Listener {
             }
             delete (this._positions[frame]);
         } else {
-            let position = this._interpolatePosition(frame);
+            let position = this.interpolatePosition(frame);
             this.updatePosition(frame, position, true);
 
             if (frame < this._frame) {
@@ -486,7 +486,7 @@ class ShapeModel extends Listener {
     set z_order(value) {
         if (!this._locked) {
             let frame = window.cvat.player.frames.current;
-            let position = this._interpolatePosition(frame);
+            let position = this.interpolatePosition(frame);
             position.z_order = value;
             this.updatePosition(frame, position, true);
             this.notify('z_order');
@@ -622,7 +622,7 @@ class BoxModel extends ShapeModel {
         this._setupKeyFrames();
     }
 
-    _interpolatePosition(frame) {
+    interpolatePosition(frame) {
         if (this._type.startsWith('annotation')) {
             return Object.assign({},
                 this._positions[this._frame],
@@ -727,7 +727,7 @@ class BoxModel extends ShapeModel {
     }
 
     contain(mousePos, frame) {
-        let pos = this._interpolatePosition(frame);
+        let pos = this.interpolatePosition(frame);
         if (pos.outside) return false;
         let x = mousePos.x;
         let y = mousePos.y;
@@ -735,7 +735,7 @@ class BoxModel extends ShapeModel {
     }
 
     distance(mousePos, frame) {
-        let pos = this._interpolatePosition(frame);
+        let pos = this.interpolatePosition(frame);
         if (pos.outside) return Number.MAX_SAFE_INTEGER;
         let points = [{x: pos.xtl, y: pos.ytl,}, {x: pos.xbr, y: pos.ytl,}, {x: pos.xbr, y: pos.ybr,}, {x: pos.xtl, y: pos.ybr,}];
         let minDistance = Number.MAX_SAFE_INTEGER;
@@ -886,7 +886,7 @@ class PolyShapeModel extends ShapeModel {
         this._setupKeyFrames();
     }
 
-    _interpolatePosition(frame) {
+    interpolatePosition(frame) {
         if (this._type.startsWith('annotation')) {
             return Object.assign({},
                 this._positions[this._frame],
@@ -1052,7 +1052,7 @@ class PolyShapeModel extends ShapeModel {
 
     removePoint(idx) {
         let frame = window.cvat.player.frames.current;
-        let position = this._interpolatePosition(frame);
+        let position = this.interpolatePosition(frame);
         let points = PolyShapeModel.convertStringToNumberArray(position.points);
         if (points.length > this._minPoints) {
             points.splice(idx, 1);
@@ -1156,7 +1156,7 @@ class PointsModel extends PolyShapeModel {
         this._minPoints = 1;
     }
 
-    _interpolatePosition(frame) {
+    interpolatePosition(frame) {
         if (this._type.startsWith('annotation')) {
             return Object.assign({}, this._positions[this._frame], {
                 outside: this._frame !== frame,
@@ -1211,7 +1211,7 @@ class PointsModel extends PolyShapeModel {
     }
 
     distance(mousePos, frame) {
-        let pos = this._interpolatePosition(frame);
+        let pos = this.interpolatePosition(frame);
         if (pos.outside) return Number.MAX_SAFE_INTEGER;
         let points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let minDistance = Number.MAX_SAFE_INTEGER;
@@ -1241,7 +1241,7 @@ class PolylineModel extends PolyShapeModel {
     }
 
     distance(mousePos, frame) {
-        let pos = this._interpolatePosition(frame);
+        let pos = this.interpolatePosition(frame);
         if (pos.outside) return Number.MAX_SAFE_INTEGER;
         let points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let minDistance = Number.MAX_SAFE_INTEGER;
@@ -1278,7 +1278,7 @@ class PolygonModel extends PolyShapeModel {
     }
 
     contain(mousePos, frame) {
-        let pos = this._interpolatePosition(frame);
+        let pos = this.interpolatePosition(frame);
         if (pos.outside) return false;
         let points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let wn = 0;
@@ -1310,7 +1310,7 @@ class PolygonModel extends PolyShapeModel {
     }
 
     distance(mousePos, frame) {
-        let pos = this._interpolatePosition(frame);
+        let pos = this.interpolatePosition(frame);
         if (pos.outside) return Number.MAX_SAFE_INTEGER;
         let points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let minDistance = Number.MAX_SAFE_INTEGER;

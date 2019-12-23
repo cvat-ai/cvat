@@ -1,3 +1,5 @@
+/* eslint-disable func-names */
+/* eslint-disable no-underscore-dangle */
 /*
  * Copyright (C) 2018 Intel Corporation
  *
@@ -28,13 +30,36 @@ const orientationEnum = {
     RIGHT: 1,
 };
 
+class Equation {
+    constructor(p1, p2) {
+        this.a = p1[1] - p2[1];
+        this.b = p2[0] - p1[0];
+        this.c = this.b * p1[1] + this.a * p1[0];
+
+        const temp = { x: p1[0], y: p1[1] };
+        const p1Canvas = window.cvat.translate.points.actualToCanvas([temp])[0];
+        this.c_canvas = this.b * p1Canvas.y + this.a * p1Canvas.x;
+    }
+
+    // get the line equation in actual coordinates
+    getY(x) {
+        return (this.c - this.a * x) / this.b;
+    }
+
+    // get the line equation in canvas coordinates
+    getYCanvas(x) {
+        return (this.c_canvas - this.a * x) / this.b;
+    }
+}
+
 class CuboidController extends PolyShapeController {
     constructor(cuboidModel) {
         super(cuboidModel);
         const frame = window.cvat.player.frames.current;
         const points = PolylineModel.convertStringToNumberArray(
-            cuboidModel._interpolatePosition(frame).points,
+            cuboidModel.interpolatePosition(frame).points,
         );
+
         this.viewModel = new Cuboid2PointViewModel(points);
         this.orientation = orientationEnum.LEFT;
     }
@@ -123,7 +148,7 @@ class CuboidController extends PolyShapeController {
         const dx = currentPosition.x - startPoint.x;
         const dy = currentPosition.y - startPoint.y;
         const newPoints = [];
-        for (let i = 0; i < startPosition.length; i++) {
+        for (let i = 0; i < startPosition.length; i += 1) {
             newPoints[i] = { x: startPosition[i].x + dx, y: startPosition[i].y + dy };
         }
         this.viewModel.setPoints(newPoints);
@@ -372,7 +397,7 @@ class CuboidController extends PolyShapeController {
     // updates the view model with the actual position of the points on screen
     // for the case where points are updated when updating the model
     updateViewModel() {
-        let { points } = this._model._interpolatePosition(window.cvat.player.frames.current);
+        let { points } = this._model.interpolatePosition(window.cvat.player.frames.current);
         points = PolylineModel.convertStringToNumberArray(points);
         this.viewModel.setPoints(points);
         this.viewModel.updatePoints();
@@ -407,7 +432,7 @@ class CuboidController extends PolyShapeController {
     // updates the model with the viewModel points
     updateModel() {
         const frame = window.cvat.player.frames.current;
-        const position = this._model._interpolatePosition(frame);
+        const position = this._model.interpolatePosition(frame);
 
         const viewModelpoints = this.viewModel.getPoints();
         position.points = PolylineModel.convertNumberArrayToString(viewModelpoints);
@@ -423,7 +448,7 @@ class CuboidController extends PolyShapeController {
         const edges = view.getEdges();
         const grabPoints = view.getGrabPoints();
         view.off('dragmove').off('dragend').off('dragstart').off('mousedown');
-        for (let i = 0; i < edges.length; i++) {
+        for (let i = 0; i < edges.length; i += 1) {
             CuboidController.removeEventsFromElement(edges[i]);
         }
         grabPoints.forEach((grabPoint) => {
@@ -480,12 +505,12 @@ class CuboidModel extends PolyShapeModel {
             return ((P1.x - P0.x) * (P2.y - P0.y) - (P2.x - P0.x) * (P1.y - P0.y));
         }
 
-        const pos = this._interpolatePosition(frame);
+        const pos = this.interpolatePosition(frame);
         if (pos.outside) return false;
         let points = PolyShapeModel.convertStringToNumberArray(pos.points);
         points = this.makeHull(points);
         let wn = 0;
-        for (let i = 0; i < points.length; i++) {
+        for (let i = 0; i < points.length; i += 1) {
             const p1 = points[i];
             const p2 = points[i + 1] || points[0];
 
@@ -562,7 +587,7 @@ class CuboidModel extends PolyShapeModel {
     }
 
     distance(mousePos, frame) {
-        const pos = this._interpolatePosition(frame);
+        const pos = this.interpolatePosition(frame);
         if (pos.outside) return Number.MAX_SAFE_INTEGER;
         const points = PolyShapeModel.convertStringToNumberArray(pos.points);
         let minDistance = Number.MAX_SAFE_INTEGER;
@@ -639,28 +664,6 @@ class Edge extends Figure {
         let { points } = this;
         points = convertToArray(points);
         return CuboidController.createEquation(points[0], points[1]);
-    }
-}
-
-class Equation {
-    constructor(p1, p2) {
-        this.a = p1[1] - p2[1];
-        this.b = p2[0] - p1[0];
-        this.c = this.b * p1[1] + this.a * p1[0];
-
-        const temp = { x: p1[0], y: p1[1] };
-        const p1Canvas = window.cvat.translate.points.actualToCanvas([temp])[0];
-        this.c_canvas = this.b * p1Canvas.y + this.a * p1Canvas.x;
-    }
-
-    // get the line equation in actual coordinates
-    getY(x) {
-        return (this.c - this.a * x) / this.b;
-    }
-
-    // get the line equation in canvas coordinates
-    getYCanvas(x) {
-        return (this.c_canvas - this.a * x) / this.b;
     }
 }
 
@@ -816,13 +819,9 @@ class Cuboid2PointViewModel {
         let p2 = intersection(vpLeft, leftPoints[1], vpRight, rightPoints[1]);
 
         if (p1 === null) {
-            p1 = [];
-            p1[0] = p2[0];
-            p1[1] = vpLeft[1];
+            p1 = [p2[0], vpLeft[1]];
         } else if (p2 === null) {
-            p2 = [];
-            p2[0] = p1[0];
-            p2[1] = vpLeft[1];
+            p2 = [p1[0], vpLeft[1]];
         }
 
         this.points[topIndex] = { x: p1[0], y: p1[1] };
