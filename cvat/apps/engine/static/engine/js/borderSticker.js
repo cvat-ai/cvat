@@ -175,7 +175,7 @@ class BorderSticker {
 
                             // remove the latest cursor position from drawing array
                             this._drawInstance.array().valueOf().pop();
-                            for (const borderPoint of border) {
+                            for (const borderPoint of border.slice(1)) {
                                 const [_x, _y] = borderPoint.split(',');
                                 this._drawInstance.array().valueOf().push([+_x, +_y]);
                             }
@@ -205,6 +205,21 @@ class BorderSticker {
         this._groups = groups;
         this._groups
             .forEach((group) => this._frameContent.node.appendChild(group));
+    }
+
+    reset() {
+        if (this._accounter.shapeID !== null) {
+            while (this._accounter.clicks.length > 0) {
+                const resetID = this._accounter.clicks.pop();
+                this._groups[this._accounter.shapeID]
+                    .children[resetID].classList.remove('shape-creator-border-point-direction');
+            }
+        }
+
+        this._accounter = {
+            clicks: [],
+            shapeID: null,
+        };
     }
 
     disable() {

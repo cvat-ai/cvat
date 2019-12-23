@@ -124,13 +124,29 @@ class PolyshapeEditorView {
         this._data = null;
 
         this._frameContent = SVG.adopt($('#frameContent')[0]);
+        this._autoBorderingCheckbox = $('#autoBorderingCheckbox');
         this._originalShapePointsGroup = null;
         this._originalShapePoints = [];
         this._originalShape = null;
         this._correctLine = null;
+        this._borderSticker = null;
 
         this._scale = window.cvat.player.geometry.scale;
         this._frame = window.cvat.player.frames.current;
+
+        this._autoBorderingCheckbox.on('change.shapeEditor', () => {
+            if (this._correctLine) {
+                if (this._borderSticker) {
+                    this._borderSticker.disable();
+                    this._borderSticker = null;
+                } else {
+                    this._borderSticker = new BorderSticker(this._correctLine, this._frameContent,
+                        this._controller.currentShapes
+                            .filter((shape) => shape.model.id !== this._data.id),
+                        this._scale);
+                }
+            }
+        });
 
         model.subscribe(this);
     }
@@ -278,8 +294,10 @@ class PolyshapeEditorView {
         this._frameContent.on('contextmenu.polyshapeEditor', (e) => {
             if (PolyShapeModel.convertStringToNumberArray(this._correctLine.attr('points')).length > 2) {
                 this._correctLine.draw('undo');
-            }
-            else {
+                if (this._borderSticker) {
+                    this._borderSticker.reset();
+                }
+            } else {
                 // Finish without points argument is just cancel
                 this._controller.finish();
             }
@@ -379,17 +397,11 @@ class PolyshapeEditorView {
             });
         }
 
+        this._autoBorderingCheckbox[0].disabled = false;
         $('body').on('keydown.shapeEditor', (e) => {
             if (e.ctrlKey && e.keyCode === 17) {
-                if (this._borderSticker) {
-                    this._borderSticker.disable();
-                    this._borderSticker = null;
-                } else {
-                    this._borderSticker = new BorderSticker(this._correctLine, this._frameContent,
-                        this._controller.currentShapes
-                            .filter((shape) => shape.model.id !== this._data.id),
-                        this._scale);
-                }
+                this._autoBorderingCheckbox[0].checked = !this._autoBorderingCheckbox[0].checked;
+                this._autoBorderingCheckbox.trigger('change.shapeEditor');
             }
         });
     }
@@ -417,6 +429,8 @@ class PolyshapeEditorView {
         this._frameContent.off('contextmenu.polyshapeEditor');
 
         $('body').off('keydown.shapeEditor');
+        this._autoBorderingCheckbox[0].checked = false;
+        this._autoBorderingCheckbox[0].disabled = true;
         if (this._borderSticker) {
             this._borderSticker.disable();
             this._borderSticker = null;
